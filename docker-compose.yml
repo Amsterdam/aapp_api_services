@@ -1,0 +1,94 @@
+version: '3.7'
+
+x-app: &base-app
+  build:
+    context: .
+    target: app
+  environment: &base-app-env
+    INGEST_AUTH_TOKEN: "c"
+    API_PORT: 8000
+    POSTGRES_PASSWORD: dev
+    POSTGRES_USER: dev
+    POSTGRES_DB: dev
+    POSTGRES_PORT: 5432
+  ports:
+    - 8000:8000
+  depends_on:
+    db:
+      condition: service_healthy
+
+volumes:
+  db_data:
+  cache:
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: dev
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+      PGDATA: /data
+    volumes:
+      - db_data:/data
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: pg_isready -U dev -d dev
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dev:
+    <<: *base-app
+    build:
+      context: .
+      target: dev
+    volumes:
+      - ./coverage:/app/tests
+      - ./main_application:/app/main_application
+      - ./city_pass:/app/city_pass
+    environment:
+      <<: *base-app-env
+      SECRET_KEY: dev
+      DJANGO_SETTINGS_MODULE: "main_application.settings_development"
+      DEBUG: "true"
+    command: python manage.py runserver 0.0.0.0:8000
+
+  app:
+    <<: *base-app
+    build:
+      context: .
+      target: app
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images/city-pass}:${VERSION:-latest}
+    environment:
+      <<: *base-app-env
+    healthcheck:
+      test: curl -f http://localhost:8000/status/health
+      interval: 10s
+      timeout: 1s
+      retries: 5
+    command: /app/deploy/docker-run.sh
+
+  test:
+    <<: *base-app
+    build:
+      context: .
+      target: tests
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images/city-pass}:${VERSION:-latest}
+    volumes:
+      - ./coverage:/app/tests
+      - ./main_application:/app/main_application
+      - ./city_pass:/app/city_pass
+    environment:
+      <<: *base-app-env
+      DJANGO_SETTINGS_MODULE: "main_application.settings_development"
+      SECRET_KEY: bogus
+      API_PORT: 8000
+      POSTGRES_PASSWORD: dev
+      POSTGRES_USER: dev
+      POSTGRES_DB: dev
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: db
+      NO_COVERAGE: "true"
+    command: python3 /app/manage.py test

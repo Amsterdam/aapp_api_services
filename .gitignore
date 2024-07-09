@@ -1,0 +1,28 @@
+# Pycharm
+.idea
+
+# DB files
+data
+data/db
+
+# Python cache
+__pycache__
+**/pycache
+
+# Python venv
+venv
+
+# Environment files (e.g. DB passwords, sensitive data!!!)
+env
+.env
+!manifests/env
+
+# Coverage report
+.coverage
+
+# Local images
+images
+
+# Azurite
+__azurite*
+__blobstorage*
