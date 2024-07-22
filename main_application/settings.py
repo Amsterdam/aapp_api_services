@@ -155,3 +155,10 @@ LOGGING = {
         },
     },
 }
+
+# Custom settings
+
+API_KEY_HEADER = "X-API-KEY"
+API_KEYS = os.getenv("API_KEYS")
+if API_KEYS:
+    API_KEYS = API_KEYS.split(",")
