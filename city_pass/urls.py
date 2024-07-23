@@ -5,9 +5,9 @@ from city_pass.views import session_views
 
 urlpatterns = [
     # drf-spectacular
-    path("apidocs/", SpectacularAPIView.as_view(), name="schema"),
+    path("openapi/", SpectacularAPIView.as_view(), name="schema"),
     path(
-        "apidocs/swagger-ui/",
+        "apidocs/",
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
