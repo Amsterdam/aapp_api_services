@@ -4,4 +4,4 @@ psycopg2-binary
 uWSGI
 
 azure-identity
-opencensus-ext-django
+opencensus-ext-azure

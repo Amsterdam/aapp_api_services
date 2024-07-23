@@ -5,15 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Django",
+            "name": "Django: runserver",
             "type": "debugpy",
             "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "runserver"
             ],
             "django": true,
-            "autoStartBrowser": false,
-            "program": "${workspaceFolder}/manage.py"
+            "justMyCode": true,
+            "env": {
+                "DEBUG": "true",
+                "DJANGO_SETTINGS_MODULE": "main_application.settings_development",
+            },
         },
         {
             "name": "Django: test specific item",
