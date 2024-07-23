@@ -48,3 +48,8 @@ USER app
 ENV HOME /tmp
 
 CMD ["./manage.py", "runserver", "0.0.0.0:8000"]
+
+### Stage 3: tests
+FROM dev as tests
+
+# TODO: Add coverage file, and black linting here

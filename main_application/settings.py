@@ -82,15 +82,11 @@ WSGI_APPLICATION = 'main_application.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Database credentials from environment variables
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_DB = os.getenv("POSTGRES_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-
-# Setup database
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
     "default": {
@@ -116,9 +112,11 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
+# https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/construction-work/static/"
+STATICFILES_DIR = []
+STATIC_ROOT = "{base_dir}/static".format(base_dir=BASE_DIR)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

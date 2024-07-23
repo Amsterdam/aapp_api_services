@@ -4,7 +4,7 @@ from .azure_util import Azure
 
 azure = Azure()
 
-if "azure.com" in POSTGRES_HOST:
+if POSTGRES_HOST and "azure.com" in POSTGRES_HOST:
     POSTGRES_PASSWORD = azure.auth.db_password
     # Replace password in DATABASES
     DATABASES["default"]["PASSWORD"] = POSTGRES_PASSWORD
