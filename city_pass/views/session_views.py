@@ -4,12 +4,12 @@ from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from city_pass import models, permissions, serializers
+from city_pass import authentication, models, serializers
 
 
 class SessionInitView(generics.RetrieveAPIView):
     serializer_class = serializers.SessionInitOutSerializer
-    permission_classes = [permissions.HasAPIKey]
+    authentication_classes = [authentication.HasAPIKey]
 
     def get(self, request, *args, **kwargs):
         access_token, refresh_token = self.init_session()
