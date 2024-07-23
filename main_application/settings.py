@@ -156,9 +156,9 @@ LOGGING = {
     },
 }
 
-# Custom settings
+# City Pass settings
 
 API_KEY_HEADER = "X-API-KEY"
-API_KEYS = os.getenv("API_KEYS")
+API_KEYS = os.getenv("CITY_PASS_API_KEYS")
 if API_KEYS:
     API_KEYS = API_KEYS.split(",")
