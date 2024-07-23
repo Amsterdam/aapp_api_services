@@ -26,8 +26,9 @@
             "program": "${workspaceFolder}/manage.py",
             "args": [
                 "test",
-                // "city_pass.tests.test_session_views",
-                "city_pass.tests.test_models",
+                // "city_pass.tests.test_models",
+                "city_pass.tests.test_session_views.TestSessionPostCityPassCredentialView",
+                // "city_pass.tests.test_session_views.TestSessionPostCityPassCredentialView.test_post_credentials_success",
             ],
             "django": true,
             "console": "integratedTerminal",

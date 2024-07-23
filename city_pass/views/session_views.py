@@ -1,6 +1,7 @@
 from typing import Tuple
 
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.response import Response
 
@@ -35,5 +36,22 @@ class SessionPostCityPassCredentialView(generics.CreateAPIView):
     serializer_class = serializers.SessionCityPassCredentialSerializer
 
     def post(self, request, *args, **kwargs):
-        # TODO: validate access token
-        pass
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+
+        access_token = models.AccessToken.objects.filter(
+            token=validated_data["session_token"]
+        ).first()
+        if not access_token:
+            return Response(
+                data={"result": "Session token is invalid"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        access_token.session.encrypted_adminstration_no = validated_data[
+            "encrypted_administration_no"
+        ]
+        access_token.session.save()
+
+        return Response(data={"result": "Success"}, status=status.HTTP_200_OK)
