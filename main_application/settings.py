@@ -79,6 +79,24 @@ TEMPLATES = [
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': ["city_pass.permissions.HasAPIKey"],
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'City Pass API',
+    # 'DESCRIPTION': 'Your project description',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "API key authorization": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-API-KEY"
+            }
+        }
+    },
 }
 
 WSGI_APPLICATION = 'main_application.wsgi.application'
