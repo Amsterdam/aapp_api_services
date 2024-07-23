@@ -1,7 +1,6 @@
 from typing import Tuple
 
 from django.db import transaction
-from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.response import Response
 
@@ -55,3 +54,8 @@ class SessionPostCityPassCredentialView(generics.CreateAPIView):
         access_token.session.save()
 
         return Response(data={"result": "Success"}, status=status.HTTP_200_OK)
+
+
+# TODO
+class SessionRefresh(generics.CreateAPIView):
+    pass
