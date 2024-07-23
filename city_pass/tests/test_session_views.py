@@ -1,6 +1,5 @@
 from django.test import TestCase
 from django.conf import settings
-from requests import Session
 
 from city_pass.models import AccessToken, RefreshToken
 
