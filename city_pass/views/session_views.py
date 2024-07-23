@@ -8,8 +8,8 @@ from city_pass import authentication, models, serializers
 
 
 class SessionInitView(generics.RetrieveAPIView):
-    serializer_class = serializers.SessionInitOutSerializer
     authentication_classes = [authentication.APIKeyAuthentication]
+    serializer_class = serializers.SessionInitOutSerializer
 
     def get(self, request, *args, **kwargs):
         access_token, refresh_token = self.init_session()
@@ -28,3 +28,12 @@ class SessionInitView(generics.RetrieveAPIView):
         access_token.save()
         refresh_token.save()
         return access_token.token, refresh_token.token
+
+
+class SessionPostCityPassCredentialView(generics.CreateAPIView):
+    authentication_classes = [authentication.APIKeyAuthentication]
+    serializer_class = serializers.SessionCityPassCredentialSerializer
+
+    def post(self, request, *args, **kwargs):
+        # TODO: validate access token
+        pass

@@ -172,3 +172,8 @@ API_KEY_HEADER = "X-API-KEY"
 API_KEYS = os.getenv("CITY_PASS_API_KEYS")
 if API_KEYS:
     API_KEYS = API_KEYS.split(",")
+
+TOKEN_TTLS = {
+    "ACCESS_TOKEN": 604800,  # 7 days
+    "REFRESH_TOKEN": 2629746,  # 1 month
+}
