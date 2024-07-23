@@ -9,5 +9,5 @@ class HasAPIKey(BasePermission):
 
         if api_key not in settings.API_KEYS:
             return False
-        
+
         return True

@@ -11,5 +11,5 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
-    path('session/init/', session_views.SessionInitView.as_view(), name="session-init"),
+    path("session/init/", session_views.SessionInitView.as_view(), name="session-init"),
 ]
