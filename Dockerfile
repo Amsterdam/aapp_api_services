@@ -5,8 +5,8 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-#COPY requirements.txt /app/
-#COPY requirements_dev.txt /app/
+COPY requirements.txt /app/
+COPY requirements_dev.txt /app/
 COPY manage.py /app/
 COPY uwsgi.ini /app/
 COPY main_application /app/main_application
@@ -27,8 +27,8 @@ RUN apk add --no-cache --virtual .build-deps build-base linux-headers \
          g++ \
     && apk del .build-deps
 
-#RUN pip install --no-cache-dir -r /app/requirements.txt
-#RUN pip install --no-cache-dir -r /app/requirements_dev.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements_dev.txt
 RUN addgroup -S app && adduser -S app -G app
 RUN python3 manage.py collectstatic --no-input
 
@@ -48,7 +48,6 @@ USER app
 ENV HOME /tmp
 
 CMD ["./manage.py", "runserver", "0.0.0.0:8000"]
-
 
 ### Stage 3: tests
 FROM dev as tests
