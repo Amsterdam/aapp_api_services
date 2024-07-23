@@ -5,5 +5,5 @@ uWSGI
 drf_spectacular
 
 azure-identity
-opencensus.ext.django
+opencensus-ext-django
 opencensus-ext-azure
