@@ -35,7 +35,7 @@ if APPLICATIONINSIGHTS_CONNECTION_STRING:
     }
     # Add Azure handler to other loggers
     LOGGING["loggers"]["django"]["handlers"] = ["azure", "console"]
-    LOGGING["loggers"]["construction_work"]["handlers"] = ["azure", "console"]
+    LOGGING["loggers"]["city_pass"]["handlers"] = ["azure", "console"]
 
 STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME")
 

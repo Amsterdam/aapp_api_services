@@ -147,7 +147,7 @@ LOGGING = {
             ).upper(),
             "handlers": ["console"],
         },
-        "construction_work": {
+        "city_pass": {
             "level": "DEBUG",
             "handlers": ["console"],
         },

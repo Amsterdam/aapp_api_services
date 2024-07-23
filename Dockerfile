@@ -13,7 +13,7 @@ COPY main_application /app/main_application
 COPY city_pass /app/city_pass
 COPY /deploy /app/deploy
 
-ENV PYTHONPATH=/app/construction_work
+ENV PYTHONPATH=/app/city_pass
 
 # Install dependencies
 RUN apk add --no-cache --virtual .build-deps build-base linux-headers \
