@@ -30,7 +30,7 @@ class SessionInitView(generics.RetrieveAPIView):
         return access_token.token, refresh_token.token
 
 
-class SessionPostCityPassCredentialView(generics.CreateAPIView):
+class SessionPostCredentialView(generics.CreateAPIView):
     authentication_classes = [authentication.APIKeyAuthentication]
     serializer_class = serializers.SessionCityPassCredentialSerializer
 

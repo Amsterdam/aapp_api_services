@@ -14,7 +14,7 @@ urlpatterns = [
     path("session/init", session_views.SessionInitView.as_view(), name="init-session"),
     path(
         "session/credentials",
-        session_views.SessionPostCityPassCredentialView.as_view(),
+        session_views.SessionPostCredentialView.as_view(),
         name="post-city-pass-credentials",
     ),
 ]
