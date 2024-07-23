@@ -21,6 +21,7 @@ RUN apk add --no-cache --virtual .build-deps build-base linux-headers \
     && apk add --no-cache gcc libffi-dev musl-dev \
     && apk del .build-deps
 
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements_dev.txt
 RUN addgroup -S app && adduser -S app -G app
