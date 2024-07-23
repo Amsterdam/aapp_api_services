@@ -20,9 +20,9 @@ env
 # Coverage report
 .coverage
 
-# Local images
-images
-
 # Azurite
 __azurite*
 __blobstorage*
+
+# Static files
+static

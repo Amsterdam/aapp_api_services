@@ -27,27 +27,7 @@ def main():
     # Give developer easy access to API docs
     print("API documentation: http://127.0.0.1:8000/city-pass/api/v1/apidocs")
 
-    no_coverage = os.getenv("NO_COVERAGE", "false").lower() in ("true", "1")
-
-    if is_testing is True and no_coverage is False:
-        import coverage
-
-        cov = coverage.coverage(
-            source=["city_pass"],
-            omit=["*/tests/*"],
-            data_file="/app/tests/.coverage",
-        )
-        cov.erase()
-        cov.start()
-
-        execute_from_command_line(sys.argv)
-
-        cov.stop()
-        cov.save()
-        cov.report()
-    else:
-        # Start the application
-        execute_from_command_line(sys.argv)
+    execute_from_command_line(sys.argv)
 
 
 if __name__ == "__main__":
