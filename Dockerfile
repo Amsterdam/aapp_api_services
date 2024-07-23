@@ -17,6 +17,8 @@ ENV PYTHONPATH=/app/city_pass
 
 # Install dependencies
 RUN apk add --no-cache --virtual .build-deps build-base linux-headers \
+    # For building uWSGI binary
+    && apk add --no-cache gcc python3-dev \
     # && apk add --no-cache \
         #  bash netcat-openbsd procps \
         #  postgresql15-client \
