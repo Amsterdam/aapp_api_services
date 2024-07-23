@@ -17,14 +17,14 @@ ENV PYTHONPATH=/app/city_pass
 
 # Install dependencies
 RUN apk add --no-cache --virtual .build-deps build-base linux-headers \
-    && apk add --no-cache \
-         bash netcat-openbsd procps \
-         postgresql15-client \
-         curl \
-         libffi-dev libheif-dev libde265-dev \
-         pcre pcre-dev mailcap \
-         gcc python3-dev musl-dev \
-         g++ \
+    # && apk add --no-cache \
+        #  bash netcat-openbsd procps \
+        #  postgresql15-client \
+        #  curl \
+        #  libffi-dev libheif-dev libde265-dev \
+        #  pcre pcre-dev mailcap \
+        #  gcc python3-dev musl-dev \
+        #  g++ \
     && apk del .build-deps
 
 RUN pip install --no-cache-dir -r /app/requirements.txt
