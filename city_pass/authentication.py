@@ -5,7 +5,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
 
-class HasAPIKey(BaseAuthentication):
+class APIKeyAuthentication(BaseAuthentication):
     def authenticate(self, request: HttpRequest):
         api_key = request.headers.get(settings.API_KEY_HEADER)
 
@@ -15,8 +15,8 @@ class HasAPIKey(BaseAuthentication):
         return (None, None)
 
 
-class HasAPIKeyScheme(OpenApiAuthenticationExtension):
-    target_class = "city_pass.authentication.HasAPIKey"
+class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):
+    target_class = "city_pass.authentication.APIKeyAuthentication"
     name = "APIKeyAuthentication"
 
     def get_security_definition(self, auto_schema):

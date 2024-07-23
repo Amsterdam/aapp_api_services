@@ -9,7 +9,7 @@ from city_pass import authentication, models, serializers
 
 class SessionInitView(generics.RetrieveAPIView):
     serializer_class = serializers.SessionInitOutSerializer
-    authentication_classes = [authentication.HasAPIKey]
+    authentication_classes = [authentication.APIKeyAuthentication]
 
     def get(self, request, *args, **kwargs):
         access_token, refresh_token = self.init_session()
