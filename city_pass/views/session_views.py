@@ -1,24 +1,23 @@
 from typing import Tuple
-from django.db import transaction
 
+from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from city_pass import serializers, models, permissions
+from city_pass import authentication, models, serializers
 
 
 class SessionInitView(generics.RetrieveAPIView):
     serializer_class = serializers.SessionInitOutSerializer
-    permission_classes = [permissions.HasAPIKey]
+    authentication_classes = [authentication.APIKeyAuthentication]
 
     def get(self, request, *args, **kwargs):
         access_token, refresh_token = self.init_session()
-        serializer = self.get_serializer({
-            "access_token": access_token,
-            "refresh_token": refresh_token
-        })
+        serializer = self.get_serializer(
+            {"access_token": access_token, "refresh_token": refresh_token}
+        )
         return Response(data=serializer.data, status=status.HTTP_200_OK)
-    
+
     @transaction.atomic
     def init_session(self) -> Tuple[str, str]:
         new_session = models.Session()

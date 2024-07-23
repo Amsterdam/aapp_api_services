@@ -2,6 +2,7 @@ django<5
 djangorestframework
 psycopg2-binary
 uWSGI
+drf_spectacular
 
 azure-identity
 opencensus-ext-azure
