@@ -1,5 +1,7 @@
 django<5
 djangorestframework
 psycopg2-binary
+uWSGI
 
 azure-identity
+opencensus-ext-django
