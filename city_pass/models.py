@@ -31,8 +31,9 @@ class AccessToken(models.Model):
 
 
 class RefreshToken(models.Model):
-    token = models.CharField(max_length=255, unique=True, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True)
+    token = models.CharField(max_length=255, unique=True, null=False)
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):

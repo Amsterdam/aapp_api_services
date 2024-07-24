@@ -70,5 +70,5 @@ class SessionPostCredentialView(generics.CreateAPIView):
 
 
 # TODO
-class SessionRefresh(generics.CreateAPIView):
+class SessionRefreshAccessView(generics.CreateAPIView):
     pass

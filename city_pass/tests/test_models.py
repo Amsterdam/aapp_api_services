@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.test import TestCase
@@ -20,21 +20,22 @@ class TestTokenModels(TestCase):
             "REFRESH_TOKEN": one_hour_in_seconds,
         }
 
-        token_creation_time = "2024-01-01 12:00"
+        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
         with freeze_time(token_creation_time):
             token = token_type(session=self.session)
             token.save()
 
         self.assertEqual(
-            token.created_at.strftime(self.date_format), token_creation_time
+            token.created_at.strftime(self.date_format),
+            token_creation_time.strftime(self.date_format),
         )
 
         # One second before expiration token is still valid
-        with freeze_time("2024-01-01 12:59"):
+        with freeze_time(token_creation_time + timedelta(minutes=59)):
             self.assertTrue(token.is_valid())
 
         # Precisly 1 hour after creation token is invalid
-        with freeze_time("2024-01-01 13:00"):
+        with freeze_time(token_creation_time + timedelta(hours=1)):
             self.assertFalse(token.is_valid())
 
     def test_access_token_is_valid_function(self):
