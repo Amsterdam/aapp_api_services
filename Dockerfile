@@ -20,8 +20,8 @@ RUN apk add --no-cache --virtual .build-deps build-base linux-headers \
     && apk add --no-cache \
     # For building uWSGI binary
     gcc libffi-dev musl-dev \
-    # For debugging database
-    postgresql15-client \
+    # For debugging
+    curl postgresql15-client \
     #
     && apk del .build-deps
 
