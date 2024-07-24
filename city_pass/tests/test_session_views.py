@@ -1,7 +1,10 @@
+from datetime import datetime, timedelta
+
 from django.conf import settings
 from django.test import TestCase
+from freezegun import freeze_time
 
-from city_pass.models import AccessToken, RefreshToken
+from city_pass.models import AccessToken, RefreshToken, Session
 
 
 class TestSessionInitView(TestCase):
@@ -39,3 +42,113 @@ class TestSessionInitView(TestCase):
     def test_session_init_invalid_api_key(self):
         result = self.client.get(self.api_url, headers=None, follow=True)
         self.assertEqual(result.status_code, 403)
+
+
+class TestSessionPostCityPassCredentialView(TestCase):
+    def setUp(self):
+        self.api_url = "/city-pass/api/v1/session/credentials"
+
+        settings.API_KEYS = ["amsterdam"]
+        self.headers = {"X-API-KEY": "amsterdam"}
+
+    def test_post_credentials_success(self):
+        session = Session.objects.create()
+        access_token = AccessToken(session=session)
+        access_token.save()
+        admin_no = "foobar"
+
+        data = {
+            "session_token": access_token.token,
+            "encrypted_administration_no": admin_no,
+        }
+        result = self.client.post(
+            self.api_url,
+            headers=self.headers,
+            data=data,
+            content_type="application/json",
+            follow=True,
+        )
+        self.assertEqual(result.status_code, 200)
+
+        session.refresh_from_db()
+        self.assertEqual(session.encrypted_adminstration_no, admin_no)
+
+    def test_post_credentials_session_token_invalid(self):
+        data = {
+            "session_token": "invalid_token",
+            "encrypted_administration_no": "foobar",
+        }
+
+        result = self.client.post(
+            self.api_url,
+            headers=self.headers,
+            data=data,
+            content_type="application/json",
+            follow=True,
+        )
+        self.assertEqual(result.status_code, 401)
+        self.assertContains(result, "invalid", status_code=401)
+
+    def test_post_credentials_session_token_expired(self):
+        one_hour_in_seconds = 3600
+        settings.TOKEN_TTLS = {
+            "ACCESS_TOKEN": one_hour_in_seconds,
+        }
+
+        session = Session.objects.create()
+        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
+        with freeze_time(token_creation_time):
+            access_token = AccessToken(session=session)
+            access_token.save()
+
+        data = {
+            "session_token": access_token.token,
+            "encrypted_administration_no": "foobar",
+        }
+
+        token_usage_time = token_creation_time + timedelta(
+            seconds=settings.TOKEN_TTLS["ACCESS_TOKEN"]
+        )
+        with freeze_time(token_usage_time):
+            result = self.client.post(
+                self.api_url,
+                headers=self.headers,
+                data=data,
+                content_type="application/json",
+                follow=True,
+            )
+
+        self.assertEqual(result.status_code, 401)
+        self.assertContains(result, "expired", status_code=401)
+
+    def test_post_credentials_missing_session_token(self):
+        data = {
+            "encrypted_administration_no": "foobar",
+        }
+
+        result = self.client.post(
+            self.api_url,
+            headers=self.headers,
+            data=data,
+            content_type="application/json",
+            follow=True,
+        )
+        self.assertEqual(result.status_code, 400)
+
+    def test_post_credentials_missing_admin_no(self):
+        session = Session.objects.create()
+        access_token = AccessToken(session=session)
+        access_token.save()
+
+        data = {
+            "session_token": access_token.token,
+        }
+
+        result = self.client.post(
+            self.api_url,
+            headers=self.headers,
+            data=data,
+            content_type="application/json",
+            follow=True,
+        )
+        self.assertEqual(result.status_code, 400)

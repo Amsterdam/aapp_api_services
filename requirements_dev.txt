@@ -4,5 +4,11 @@
 #
 #    pip-compile --allow-unsafe --output-file=requirements_dev.txt requirements_dev.in
 #
+freezegun==1.5.1
+    # via -r requirements_dev.in
+python-dateutil==2.9.0.post0
+    # via freezegun
 python-dotenv==1.0.1
     # via -r requirements_dev.in
+six==1.16.0
+    # via python-dateutil

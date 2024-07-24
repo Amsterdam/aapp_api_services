@@ -8,13 +8,13 @@ from city_pass import authentication, models, serializers
 
 
 class SessionInitView(generics.RetrieveAPIView):
-    serializer_class = serializers.SessionInitOutSerializer
     authentication_classes = [authentication.APIKeyAuthentication]
+    serializer_class = serializers.SessionInitOutSerializer
 
     def get(self, request, *args, **kwargs):
-        access_token, refresh_token = self.init_session()
+        access_token_str, refresh_token_str = self.init_session()
         serializer = self.get_serializer(
-            {"access_token": access_token, "refresh_token": refresh_token}
+            {"access_token": access_token_str, "refresh_token": refresh_token_str}
         )
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -28,3 +28,40 @@ class SessionInitView(generics.RetrieveAPIView):
         access_token.save()
         refresh_token.save()
         return access_token.token, refresh_token.token
+
+
+class SessionPostCredentialView(generics.CreateAPIView):
+    authentication_classes = [authentication.APIKeyAuthentication]
+    serializer_class = serializers.SessionCityPassCredentialSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+
+        access_token = models.AccessToken.objects.filter(
+            token=validated_data["session_token"]
+        ).first()
+        if not access_token:
+            return Response(
+                data={"result": "Session token is invalid"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not access_token.is_valid():
+            return Response(
+                data={"result": "Session token is expired"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        access_token.session.encrypted_adminstration_no = validated_data[
+            "encrypted_administration_no"
+        ]
+        access_token.session.save()
+
+        return Response(data={"result": "Success"}, status=status.HTTP_200_OK)
+
+
+# TODO
+class SessionRefresh(generics.CreateAPIView):
+    pass
