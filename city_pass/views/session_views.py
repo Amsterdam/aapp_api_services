@@ -9,10 +9,20 @@ from rest_framework.response import Response
 from city_pass import authentication, models, serializers
 
 
+def result_message(detail: str):
+    return {"detail": detail}
+
+
 class SessionInitView(generics.RetrieveAPIView):
     authentication_classes = [authentication.APIKeyAuthentication]
     serializer_class = serializers.SessionTokensOutSerializer
 
+    @extend_schema(
+        responses={
+            200: serializers.SessionTokensOutSerializer,
+            403: serializers.SessionResultSerializer,
+        },
+    )
     def get(self, request, *args, **kwargs):
         access_token_str, refresh_token_str = self.init_session()
         serializer = self.get_serializer(
@@ -42,12 +52,13 @@ class SessionInitView(generics.RetrieveAPIView):
 
 class SessionPostCredentialView(generics.CreateAPIView):
     authentication_classes = [authentication.APIKeyAuthentication]
-    serializer_class = serializers.SessionCityPassCredentialSerializer
+    serializer_class = serializers.SessionCredentialInSerializer
 
     @extend_schema(
         responses={
             200: serializers.SessionResultSerializer,
             401: serializers.SessionResultSerializer,
+            403: serializers.SessionResultSerializer,
         },
     )
     def post(self, request, *args, **kwargs):
@@ -60,13 +71,13 @@ class SessionPostCredentialView(generics.CreateAPIView):
         ).first()
         if not access_token:
             return Response(
-                data={"result": "Session token is invalid"},
+                data=result_message("Session token is invalid"),
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
         if not access_token.is_valid():
             return Response(
-                data={"result": "Session token has expired"},
+                data=result_message("Session token has expired"),
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -75,17 +86,18 @@ class SessionPostCredentialView(generics.CreateAPIView):
         ]
         access_token.session.save()
 
-        return Response(data={"result": "Success"}, status=status.HTTP_200_OK)
+        return Response(data=result_message("Success"), status=status.HTTP_200_OK)
 
 
 class SessionRefreshAccessView(generics.CreateAPIView):
     authentication_classes = [authentication.APIKeyAuthentication]
-    serializer_class = serializers.SessionRefreshAccessInSerializer
+    serializer_class = serializers.SessionRefreshInSerializer
 
     @extend_schema(
         responses={
             200: serializers.SessionTokensOutSerializer,
             401: serializers.SessionResultSerializer,
+            403: serializers.SessionResultSerializer,
         }
     )
     def post(self, request, *args, **kwargs):
@@ -98,13 +110,13 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         ).first()
         if not refresh_token:
             return Response(
-                data={"result": "Refresh token is invalid"},
+                data=result_message("Refresh token is invalid"),
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
         if not refresh_token.is_valid():
             return Response(
-                data={"result": "Refresh token has expired"},
+                data=result_message("Refresh token has expired"),
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
