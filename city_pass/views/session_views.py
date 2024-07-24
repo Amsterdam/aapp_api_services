@@ -12,9 +12,9 @@ class SessionInitView(generics.RetrieveAPIView):
     serializer_class = serializers.SessionInitOutSerializer
 
     def get(self, request, *args, **kwargs):
-        access_token, refresh_token = self.init_session()
+        access_token_str, refresh_token_str = self.init_session()
         serializer = self.get_serializer(
-            {"access_token": access_token, "refresh_token": refresh_token}
+            {"access_token": access_token_str, "refresh_token": refresh_token_str}
         )
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -45,6 +45,12 @@ class SessionPostCredentialView(generics.CreateAPIView):
         if not access_token:
             return Response(
                 data={"result": "Session token is invalid"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not access_token.is_valid():
+            return Response(
+                data={"result": "Session token is expired"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 

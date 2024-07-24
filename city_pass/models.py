@@ -26,6 +26,9 @@ class AccessToken(models.Model):
         now = datetime.now(timezone.utc)
         return now < expiry_time
 
+    def __str__(self) -> str:
+        return self.token
+
 
 class RefreshToken(models.Model):
     token = models.CharField(max_length=255, unique=True, null=False)
@@ -41,3 +44,6 @@ class RefreshToken(models.Model):
         ttl_seconds = settings.TOKEN_TTLS["REFRESH_TOKEN"]
         expiry_time = self.created_at + timedelta(seconds=ttl_seconds)
         return datetime.now(timezone.utc) < expiry_time
+
+    def __str__(self) -> str:
+        return self.token

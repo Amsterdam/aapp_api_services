@@ -1,5 +1,8 @@
+from datetime import datetime, timedelta
+
 from django.conf import settings
 from django.test import TestCase
+from freezegun import freeze_time
 
 from city_pass.models import AccessToken, RefreshToken, Session
 
@@ -84,6 +87,39 @@ class TestSessionPostCityPassCredentialView(TestCase):
             follow=True,
         )
         self.assertEqual(result.status_code, 401)
+        self.assertContains(result, "invalid", status_code=401)
+
+    def test_post_credentials_session_token_expired(self):
+        one_hour_in_seconds = 3600
+        settings.TOKEN_TTLS = {
+            "ACCESS_TOKEN": one_hour_in_seconds,
+        }
+
+        session = Session.objects.create()
+        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
+        with freeze_time(token_creation_time):
+            access_token = AccessToken(session=session)
+            access_token.save()
+
+        data = {
+            "session_token": access_token.token,
+            "encrypted_administration_no": "foobar",
+        }
+
+        token_usage_time = token_creation_time + timedelta(
+            seconds=settings.TOKEN_TTLS["ACCESS_TOKEN"]
+        )
+        with freeze_time(token_usage_time):
+            result = self.client.post(
+                self.api_url,
+                headers=self.headers,
+                data=data,
+                content_type="application/json",
+                follow=True,
+            )
+
+        self.assertEqual(result.status_code, 401)
+        self.assertContains(result, "expired", status_code=401)
 
     def test_post_credentials_missing_session_token(self):
         data = {
