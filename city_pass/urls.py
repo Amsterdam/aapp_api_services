@@ -17,4 +17,9 @@ urlpatterns = [
         session_views.SessionPostCredentialView.as_view(),
         name="post-city-pass-credentials",
     ),
+    path(
+        "session/refresh",
+        session_views.SessionRefreshAccessView.as_view(),
+        name="refresh-access",
+    ),
 ]
