@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 
-class SessionInitOutSerializer(serializers.Serializer):
+class SessionTokensOutSerializer(serializers.Serializer):
     access_token = serializers.CharField()
     refresh_token = serializers.CharField()
 
@@ -13,3 +13,7 @@ class SessionCityPassCredentialSerializer(serializers.Serializer):
 
 class SessionResultSerializer(serializers.Serializer):
     result = serializers.CharField()
+
+
+class SessionRefreshAccessInSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField(required=True)

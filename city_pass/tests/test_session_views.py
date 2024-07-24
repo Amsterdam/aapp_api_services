@@ -15,6 +15,7 @@ class BaseSessionViewTest(TestCase):
 
 class TestSessionInitView(BaseSessionViewTest):
     def setUp(self):
+        super().setUp()
         self.api_url = "/city-pass/api/v1/session/init"
 
     def test_session_init_success(self):
@@ -49,6 +50,7 @@ class TestSessionInitView(BaseSessionViewTest):
 
 class TestSessionPostCityPassCredentialView(BaseSessionViewTest):
     def setUp(self):
+        super().setUp()
         self.api_url = "/city-pass/api/v1/session/credentials"
 
     def test_post_credentials_success(self):
@@ -156,6 +158,7 @@ class TestSessionPostCityPassCredentialView(BaseSessionViewTest):
 
 class TestSessionRefreshAccessView(BaseSessionViewTest):
     def setUp(self) -> None:
+        super().setUp()
         self.api_url = "/city-pass/api/v1/session/refresh"
 
     def test_refresh_success(self):

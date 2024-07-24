@@ -10,7 +10,7 @@ from city_pass import authentication, models, serializers
 
 class SessionInitView(generics.RetrieveAPIView):
     authentication_classes = [authentication.APIKeyAuthentication]
-    serializer_class = serializers.SessionInitOutSerializer
+    serializer_class = serializers.SessionTokensOutSerializer
 
     def get(self, request, *args, **kwargs):
         access_token_str, refresh_token_str = self.init_session()
@@ -69,6 +69,9 @@ class SessionPostCredentialView(generics.CreateAPIView):
         return Response(data={"result": "Success"}, status=status.HTTP_200_OK)
 
 
-# TODO
 class SessionRefreshAccessView(generics.CreateAPIView):
-    pass
+    authentication_classes = [authentication.APIKeyAuthentication]
+    serializer_class = serializers.SessionRefreshAccessInSerializer
+
+    def post(self, request, *args, **kwargs):
+        pass
