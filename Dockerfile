@@ -17,8 +17,12 @@ ENV PYTHONPATH=/app/city_pass
 
 # Install dependencies
 RUN apk add --no-cache --virtual .build-deps build-base linux-headers \
+    && apk add --no-cache \
     # For building uWSGI binary
-    && apk add --no-cache gcc libffi-dev musl-dev \
+    gcc libffi-dev musl-dev \
+    # For debugging database
+    postgresql15-client \
+    #
     && apk del .build-deps
 
 RUN pip install --upgrade pip
