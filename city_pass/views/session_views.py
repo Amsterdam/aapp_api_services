@@ -1,6 +1,7 @@
 from typing import Tuple
 
 from django.db import transaction
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 
@@ -34,6 +35,12 @@ class SessionPostCredentialView(generics.CreateAPIView):
     authentication_classes = [authentication.APIKeyAuthentication]
     serializer_class = serializers.SessionCityPassCredentialSerializer
 
+    @extend_schema(
+        responses={
+            200: serializers.SessionResultSerializer,
+            401: serializers.SessionResultSerializer,
+        },
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
