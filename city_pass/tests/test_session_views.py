@@ -5,7 +5,6 @@ from django.test import TestCase, override_settings
 from freezegun import freeze_time
 
 from city_pass.models import AccessToken, RefreshToken, Session
-from main_application.settings import API_KEYS
 
 MOCK_API_KEY = "amsterdam"
 DATE_FORMAT = "%Y-%m-%d %H:%M"

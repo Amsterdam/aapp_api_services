@@ -134,10 +134,10 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         An incoming refresh token does not get invalidated immediatly,
         in order to allow a client to retry a refresh request in case they did not receive the result.
         All other refresh tokens related to the session get removed, should always be max 1 token.
-        New refresh and access token get generated and returned.
         The existing access token gets removed.
+        New refresh and access token get generated and returned.
 
-        Automic so if something goes wrong in the database, it will be fully reverted.
+        Wrapped in an automic transaction so if something goes wrong in the database, it can be fully reverted.
 
         Args:
             incoming_refresh_token (models.RefreshToken): token to set expiration and get related session from
