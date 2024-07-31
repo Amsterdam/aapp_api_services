@@ -1,7 +1,7 @@
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from city_pass.views import session_views
+from city_pass.views import data_views, session_views
 
 urlpatterns = [
     # drf-spectacular
@@ -11,6 +11,7 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
+    # session
     path("session/init", session_views.SessionInitView.as_view(), name="init-session"),
     path(
         "session/credentials",
@@ -22,4 +23,6 @@ urlpatterns = [
         session_views.SessionRefreshAccessView.as_view(),
         name="refresh-access",
     ),
+    # data
+    path("data/passes", data_views.PassesDataView.as_view(), name="passes-data"),
 ]

@@ -17,3 +17,7 @@ class SessionResultSerializer(serializers.Serializer):
 
 class SessionRefreshInSerializer(serializers.Serializer):
     refresh_token = serializers.CharField(required=True)
+
+
+class MijnAmsDataSerializer(serializers.Serializer):
+    pass

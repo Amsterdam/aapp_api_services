@@ -1,4 +1,3 @@
-from os import access
 from typing import Tuple
 
 from django.db import transaction
@@ -7,10 +6,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from city_pass import authentication, models, serializers
-
-
-def result_message(detail: str):
-    return {"detail": detail}
+from city_pass.views.generics import result_message
 
 
 class SessionInitView(generics.RetrieveAPIView):

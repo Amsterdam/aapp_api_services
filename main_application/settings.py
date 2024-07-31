@@ -173,12 +173,21 @@ API_KEYS = os.getenv("API_AUTH_TOKENS")
 if API_KEYS:
     API_KEYS = API_KEYS.split(",")
 
-ACCESS_TOKEN_TTL = int(os.getenv("ACCESS_TOKEN_TTL", 604800))  # default = 7 days
-REFRESH_TOKEN_TTL = int(os.getenv("REFRESH_TOKEN_TTL", 2629746))  # default = 1 month
+ACCESS_TOKEN_HEADER = "ACCESS_TOKEN"
+ACCESS_TOKEN_TTL = int(
+    os.getenv("CITY_PASS_ACCESS_TOKEN_TTL", 604800)
+)  # default = 7 days
+REFRESH_TOKEN_TTL = int(
+    os.getenv("CITY_PASS_REFRESH_TOKEN_TTL", 2629746)
+)  # default = 1 month
 TOKEN_TTLS = {
     "ACCESS_TOKEN": ACCESS_TOKEN_TTL,
     "REFRESH_TOKEN": REFRESH_TOKEN_TTL,
 }
 REFRESH_TOKEN_EXPIRATION_TIME = int(
-    os.getenv("REFRESH_TOKEN_EXPIRATION_TIME", 86400)
+    os.getenv("CITY_PASS_REFRESH_TOKEN_EXP_TIME", 86400)
 )  # default = 1 day
+
+MIJN_AMS_API_KEY = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
+MIJN_AMS_API_DOMAIN = os.getenv("CITY_PASS_MIJN_AMS_API_DOMAIN")
+MIJN_AMS_API_PATHS = {"PASSES": "/private/api/v1/services/amsapp/stadspas/passen/"}
