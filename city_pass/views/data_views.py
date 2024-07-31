@@ -18,10 +18,13 @@ class PassesDataView(generics.RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         session, _ = authentication.authenticate_access_token(request)
 
-        source_api_url = urljoin(
-            settings.MIJN_AMS_API_DOMAIN,
+        source_api_path = urljoin(
             settings.MIJN_AMS_API_PATHS["PASSES"],
             session.encrypted_adminstration_no,
+        )
+        source_api_url = urljoin(
+            settings.MIJN_AMS_API_DOMAIN,
+            source_api_path,
         )
         headers = {"x-api-key": settings.MIJN_AMS_API_KEY}
 
