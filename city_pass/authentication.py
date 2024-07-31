@@ -25,19 +25,32 @@ class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):
         return {
             "type": "apiKey",
             "in": "header",
-            "name": "X-API-KEY",
+            "name": settings.API_KEY_HEADER,
         }
 
 
-def authenticate_access_token(request: HttpRequest):
-    access_token = request.headers.get(settings.ACCESS_TOKEN_HEADER)
+class AccessTokenAuthentication(BaseAuthentication):
+    def authenticate(self, request: HttpRequest):
+        access_token = request.headers.get(settings.ACCESS_TOKEN_HEADER)
 
-    access_token_obj = AccessToken.objects.filter(token=access_token).first()
-    if not access_token_obj:
-        raise AuthenticationFailed("Access token is invalid")
-    if not access_token_obj.is_valid():
-        raise AuthenticationFailed("Access token has expired")
-    if not access_token_obj.session.encrypted_adminstration_no:
-        raise AuthenticationFailed("Session is not ready")
+        access_token_obj = AccessToken.objects.filter(token=access_token).first()
+        if not access_token_obj:
+            raise AuthenticationFailed("Access token is invalid")
+        elif not access_token_obj.is_valid():
+            raise AuthenticationFailed("Access token has expired")
+        elif not access_token_obj.session.encrypted_adminstration_no:
+            raise AuthenticationFailed("Session is not ready")
 
-    return (access_token_obj.session, access_token_obj)
+        return (access_token_obj.session, access_token_obj)
+
+
+class AccessTokenAuthenticationScheme(OpenApiAuthenticationExtension):
+    target_class = "city_pass.authentication.AccessTokenAuthentication"
+    name = "AccessTokenAuthentication"
+
+    def get_security_definition(self, auto_schema):
+        return {
+            "type": "accessToken",
+            "in": "header",
+            "name": settings.ACCESS_TOKEN_HEADER,
+        }

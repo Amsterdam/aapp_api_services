@@ -26,7 +26,8 @@ class PassesDataView(generics.RetrieveAPIView):
         },
     )
     def get(self, request, *args, **kwargs):
-        session, _ = authentication.authenticate_access_token(request)
+        token_authenticator = authentication.AccessTokenAuthentication()
+        session, _ = token_authenticator.authenticate(request)
 
         source_api_path = urljoin(
             settings.MIJN_AMS_API_PATHS["PASSES"],

@@ -168,12 +168,12 @@ LOGGING = {
 
 # City Pass settings
 
-API_KEY_HEADER = "X-API-KEY"
+API_KEY_HEADER = "X-Api-Key"
 API_KEYS = os.getenv("API_AUTH_TOKENS")
 if API_KEYS:
     API_KEYS = API_KEYS.split(",")
 
-ACCESS_TOKEN_HEADER = "ACCESS_TOKEN"
+ACCESS_TOKEN_HEADER = "Access-Token"
 ACCESS_TOKEN_TTL = int(
     os.getenv("CITY_PASS_ACCESS_TOKEN_TTL", 604800)
 )  # default = 7 days

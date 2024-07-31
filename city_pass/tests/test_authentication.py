@@ -1,13 +1,12 @@
 from datetime import datetime, timedelta
 
 from django.conf import settings
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, TestCase
 from freezegun import freeze_time
 from rest_framework.exceptions import AuthenticationFailed
 
-from city_pass.authentication import authenticate_access_token
+from city_pass.authentication import AccessTokenAuthentication
 from city_pass.models import AccessToken, Session
-from city_pass.tests.base_test import ONE_HOUR_IN_SECONDS
 from city_pass.tests.test_session_views import DATE_FORMAT
 
 
@@ -33,7 +32,8 @@ class TestAuthenicateAccessToken(TestCase):
             "/some-endpoint/", headers={self.header_name: access_token.token}
         )
 
-        result_session, result_token = authenticate_access_token(request)
+        token_authenticator = AccessTokenAuthentication()
+        result_session, result_token = token_authenticator.authenticate(request)
 
         self.assertEqual(result_session, access_token.session)
         self.assertEqual(result_token, access_token)
@@ -47,7 +47,8 @@ class TestAuthenicateAccessToken(TestCase):
         )
 
         with self.assertRaises(AuthenticationFailed):
-            authenticate_access_token(request)
+            token_authenticator = AccessTokenAuthentication()
+            token_authenticator.authenticate(request)
 
     def test_expired_access_token(self):
         """
@@ -68,7 +69,8 @@ class TestAuthenicateAccessToken(TestCase):
         )
         with freeze_time(token_authenticate_time):
             with self.assertRaises(AuthenticationFailed):
-                authenticate_access_token(request)
+                token_authenticator = AccessTokenAuthentication()
+                token_authenticator.authenticate(request)
 
     @freeze_time("2024-01-01 12:00")
     def test_unpopulated_session(self):
@@ -84,4 +86,5 @@ class TestAuthenicateAccessToken(TestCase):
         )
 
         with self.assertRaises(AuthenticationFailed):
-            authenticate_access_token(request)
+            token_authenticator = AccessTokenAuthentication()
+            token_authenticator.authenticate(request)

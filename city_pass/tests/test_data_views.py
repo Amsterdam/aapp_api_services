@@ -19,7 +19,7 @@ class TestPassesView(BaseCityPassTestCase):
         self.mock_session = MagicMock()
         self.mock_session.encrypted_adminstration_no = "mock_admin_no"
         self.patcher_authenticate = patch(
-            "city_pass.views.data_views.authentication.authenticate_access_token"
+            "city_pass.views.data_views.authentication.AccessTokenAuthentication.authenticate"
         )
         self.mock_authenticate = self.patcher_authenticate.start()
         self.mock_authenticate.return_value = (self.mock_session, None)
