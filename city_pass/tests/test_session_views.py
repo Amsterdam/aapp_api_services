@@ -5,10 +5,11 @@ from django.test import override_settings
 from freezegun import freeze_time
 
 from city_pass.models import AccessToken, RefreshToken, Session
-from city_pass.tests.base_test import BaseCityPassTestCase
-
-DATE_FORMAT = "%Y-%m-%d %H:%M"
-ONE_HOUR_IN_SECONDS = 3600
+from city_pass.tests.base_test import (
+    DATE_FORMAT,
+    ONE_HOUR_IN_SECONDS,
+    BaseCityPassTestCase,
+)
 
 
 class TestSessionInitView(BaseCityPassTestCase):
@@ -96,7 +97,7 @@ class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
     )
     def test_post_credentials_session_token_expired(self):
         session = Session.objects.create()
-        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
+        token_creation_time = datetime.strptime("2024-01-01 12:00", DATE_FORMAT)
         with freeze_time(token_creation_time):
             access_token = AccessToken(session=session)
             access_token.save()
@@ -165,7 +166,7 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
         }
     )
     def test_refresh_success(self):
-        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
+        token_creation_time = datetime.strptime("2024-01-01 12:00", DATE_FORMAT)
         with freeze_time(token_creation_time):
             session = Session.objects.create()
             old_access_token_obj = AccessToken(session=session)
@@ -253,7 +254,7 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
         self.assertEqual(result.status_code, 401)
 
     def test_expired_refresh_token(self):
-        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
+        token_creation_time = datetime.strptime("2024-01-01 12:00", DATE_FORMAT)
         with freeze_time(token_creation_time):
             session = Session.objects.create()
             access_token_obj = AccessToken(session=session)

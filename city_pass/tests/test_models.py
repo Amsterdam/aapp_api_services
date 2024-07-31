@@ -4,9 +4,7 @@ from django.test import TestCase, override_settings
 from freezegun import freeze_time
 
 from city_pass.models import AccessToken, RefreshToken, Session
-
-DATE_FORMAT = "%Y-%m-%d %H:%M"
-ONE_HOUR_IN_SECONDS = 3600
+from city_pass.tests.base_test import DATE_FORMAT, ONE_HOUR_IN_SECONDS
 
 
 class TestTokenModels(TestCase):

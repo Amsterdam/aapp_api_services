@@ -1,5 +1,7 @@
 from django.test import TestCase, override_settings
 
+DATE_FORMAT = "%Y-%m-%d %H:%M"
+ONE_HOUR_IN_SECONDS = 3600
 MOCK_API_KEY = "amsterdam"
 
 

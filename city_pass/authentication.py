@@ -1,5 +1,3 @@
-from os import access
-
 from django.conf import settings
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
@@ -34,7 +32,7 @@ class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):
 def authenticate_access_token(request: HttpRequest):
     access_token = request.headers.get(settings.ACCESS_TOKEN_HEADER)
 
-    access_token_obj = AccessToken.objects.filter(access_token).first()
+    access_token_obj = AccessToken.objects.filter(token=access_token).first()
     if not access_token_obj:
         raise AuthenticationFailed("Access token is invalid")
     if not access_token_obj.is_valid():
