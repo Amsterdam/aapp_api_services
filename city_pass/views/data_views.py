@@ -1,20 +1,30 @@
+import logging
 from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from city_pass import authentication
-from city_pass.views.generics import result_message
+from city_pass import authentication, serializers
+from city_pass.utils import detail_message
+
+logger = logging.getLogger(__name__)
 
 
 class PassesDataView(generics.RetrieveAPIView):
     authentication_classes = [
         authentication.APIKeyAuthentication,
     ]
-    serializer_class = None
 
+    @extend_schema(
+        responses={
+            200: serializers.MijnAmsPassDataSerializer(many=True),
+            403: serializers.DetailResultSerializer,
+            404: serializers.DetailResultSerializer,
+        },
+    )
     def get(self, request, *args, **kwargs):
         session, _ = authentication.authenticate_access_token(request)
 
@@ -28,20 +38,24 @@ class PassesDataView(generics.RetrieveAPIView):
         )
         headers = {"x-api-key": settings.MIJN_AMS_API_KEY}
 
-        result = requests.get(source_api_url, headers=headers)
-        # Status code is on 300 or 400 range
-        if 300 <= result.status_code < 500:
-            return Response(
-                # TODO: What to return here?
-                # Get data from response and pass through as data?
-                None,
-                status=result.status_code,
+        response = requests.get(source_api_url, headers=headers)
+        # Status code is in 400 range
+        if 400 <= response.status_code < 600:
+            logger.error(
+                f"Error occured during call to Mijn Amsterdam API: {response.data}"
             )
-        # Status code is on 500 range
-        elif 500 <= result.status_code < 600:
             return Response(
-                result_message("Source could not be reached by Mijn Amsterdam"),
+                detail_message(
+                    "Something went wrong during request to source data, see logs for more information"
+                ),
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        return Response(result.data, status=status.HTTP_200_OK)
+        response_content = response.data.get("content")
+        if not response_content:
+            return Response(
+                detail_message("Source data not in expected format"),
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response(response_content, status=status.HTTP_200_OK)

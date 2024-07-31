@@ -30,18 +30,59 @@ class TestPassesView(BaseCityPassTestCase):
     def test_get_passes_successful(self, mock_get):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        # TODO: add mock data
-        mock_response.data = None
+
+        source_content_data = [{"passNumber": 1}, {"passNumber": 2}]
+        mock_response.data = {"content": source_content_data, "status": "SUCCESS"}
         mock_get.return_value = mock_response
 
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.data, source_content_data)
 
-    @patch("city_pass.views.data_views.requests.get")
-    def test_502_from_source_returns_404_status(self, mock_get):
+    def assert_source_api_error_was_logged_and_404_returned(
+        self, mock_get, status_code, error_response
+    ):
         mock_response = MagicMock()
-        mock_response.status_code = 502
+        mock_response.status_code = status_code
+
+        mock_response.data = error_response
         mock_get.return_value = mock_response
 
-        result = self.client.get(self.api_url, headers=self.headers, follow=True)
+        with self.assertLogs("city_pass.views.data_views", level="ERROR") as cm:
+            result = self.client.get(self.api_url, headers=self.headers, follow=True)
+
+        expected_log_msg = str(error_response)
+        self.assertTrue(any(expected_log_msg in message for message in cm.output))
+
         self.assertEqual(result.status_code, 404)
+        self.assertContains(
+            result,
+            "Something went wrong during request to source data, see logs for more information",
+            status_code=404,
+        )
+
+    @patch("city_pass.views.data_views.requests.get")
+    def test_source_api_could_not_decrypt_admin_no(self, mock_get):
+        self.assert_source_api_error_was_logged_and_404_returned(
+            mock_get,
+            400,
+            {
+                "content": "string",
+                "code": 400,
+                "status": "ERROR",
+                "message": "Bad request: ApiError 005 - Could not decrypt url parameter administratienummerEncrypted'",
+            },
+        )
+
+    @patch("city_pass.views.data_views.requests.get")
+    def test_source_api_did_not_accept_api_key(self, mock_get):
+        self.assert_source_api_error_was_logged_and_404_returned(
+            mock_get,
+            401,
+            {
+                "content": "string",
+                "code": 401,
+                "status": "ERROR",
+                "message": "Api key ongeldig",
+            },
+        )
