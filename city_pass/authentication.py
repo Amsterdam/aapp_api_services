@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -18,6 +20,11 @@ class APIKeyAuthentication(BaseAuthentication):
 
 
 class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):
+    """
+    This class is specifically for drf-spectacular,
+    so that the API key authentication method will be shown under the Authorize button in Swagger
+    """
+
     target_class = "city_pass.authentication.APIKeyAuthentication"
     name = "APIKeyAuthentication"
 
@@ -44,13 +51,6 @@ class AccessTokenAuthentication(BaseAuthentication):
         return (access_token_obj.session, access_token_obj)
 
 
-class AccessTokenAuthenticationScheme(OpenApiAuthenticationExtension):
-    target_class = "city_pass.authentication.AccessTokenAuthentication"
-    name = "AccessTokenAuthentication"
-
-    def get_security_definition(self, auto_schema):
-        return {
-            "type": "accessToken",
-            "in": "header",
-            "name": settings.ACCESS_TOKEN_HEADER,
-        }
+access_token_header_param = OpenApiParameter(
+    settings.ACCESS_TOKEN_HEADER, OpenApiTypes.STR, OpenApiParameter.HEADER
+)

@@ -19,6 +19,9 @@ class PassesDataView(generics.RetrieveAPIView):
     ]
 
     @extend_schema(
+        parameters=[
+            authentication.access_token_header_param,
+        ],
         responses={
             200: serializers.MijnAmsPassDataSerializer(many=True),
             403: serializers.DetailResultSerializer,
@@ -38,9 +41,9 @@ class PassesDataView(generics.RetrieveAPIView):
             source_api_path,
         )
         headers = {"x-api-key": settings.MIJN_AMS_API_KEY}
-
         response = requests.get(source_api_url, headers=headers)
-        # Status code is in 400 range
+
+        # Status code is in 400 or 500 range
         if 400 <= response.status_code < 600:
             logger.error(
                 f"Error occured during call to Mijn Amsterdam API: {response.content}"
