@@ -57,6 +57,9 @@ class PassesDataView(generics.RetrieveAPIView):
 
         response_content = response.json().get("content")
         if not response_content:
+            logger.error(
+                f"No content found key in call to Mijn Amsterdam API: {response.content}"
+            )
             return Response(
                 detail_message("Source data not in expected format"),
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
