@@ -90,3 +90,28 @@ class TestPassesView(BaseCityPassTestCase):
                 "message": "Api key ongeldig",
             },
         )
+
+    @patch("city_pass.views.data_views.requests.get")
+    def test_content_is_empty_list(self, mock_get):
+        mock_response = Response()
+        mock_response.status_code = 200
+
+        mock_response._content = json.dumps(
+            {"content": [], "status": "SUCCESS"}
+        ).encode("utf-8")
+        mock_get.return_value = mock_response
+
+        result = self.client.get(self.api_url, headers=self.headers, follow=True)
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.data, [])
+
+    @patch("city_pass.views.data_views.requests.get")
+    def test_content_key_not_available(self, mock_get):
+        mock_response = Response()
+        mock_response.status_code = 200
+
+        mock_response._content = json.dumps({"status": "FOOBAR"}).encode("utf-8")
+        mock_get.return_value = mock_response
+
+        result = self.client.get(self.api_url, headers=self.headers, follow=True)
+        self.assertEqual(result.status_code, 503)

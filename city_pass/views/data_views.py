@@ -41,12 +41,12 @@ class PassesDataView(generics.RetrieveAPIView):
             source_api_path,
         )
         headers = {"x-api-key": settings.MIJN_AMS_API_KEY}
-        response = requests.get(source_api_url, headers=headers)
+        mijn_ams_response = requests.get(source_api_url, headers=headers)
 
         # Status code is in 400 or 500 range
-        if 400 <= response.status_code < 600:
+        if 400 <= mijn_ams_response.status_code < 600:
             logger.error(
-                f"Error occured during call to Mijn Amsterdam API: {response.content}"
+                f"Error occured during call to Mijn Amsterdam API: {mijn_ams_response.content=}"
             )
             return Response(
                 detail_message(
@@ -55,10 +55,10 @@ class PassesDataView(generics.RetrieveAPIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        response_content = response.json().get("content")
-        if not response_content:
+        response_content = mijn_ams_response.json().get("content")
+        if response_content is None:
             logger.error(
-                f"No content found key in call to Mijn Amsterdam API: {response.content}"
+                f"Expected content not found in call to Mijn Amsterdam API: {mijn_ams_response.content=}"
             )
             return Response(
                 detail_message("Source data not in expected format"),

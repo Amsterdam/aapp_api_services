@@ -33,7 +33,7 @@
                 // "city_pass.tests.test_session_views.TestSessionInitView",
                 // "city_pass.tests.test_session_views.TestSessionPostCityPassCredentialView",
                 // "city_pass.tests.test_session_views.TestSessionRefreshAccessView",
-                "city_pass.tests.test_data_views.TestPassesView.test_source_api_could_not_decrypt_admin_no",
+                "city_pass.tests.test_data_views.TestPassesView",
             ],
             "django": true,
             "console": "integratedTerminal",
