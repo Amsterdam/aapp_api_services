@@ -1,25 +1,18 @@
 from datetime import datetime, timedelta
 
 from django.conf import settings
-from django.test import TestCase, override_settings
+from django.test import override_settings
 from freezegun import freeze_time
 
 from city_pass.models import AccessToken, RefreshToken, Session
-
-MOCK_API_KEY = "amsterdam"
-DATE_FORMAT = "%Y-%m-%d %H:%M"
-ONE_HOUR_IN_SECONDS = 3600
-
-
-class BaseSessionViewTest(TestCase):
-    def setUp(self) -> None:
-        self.override = override_settings(API_KEYS=[MOCK_API_KEY])
-        self.override.enable()
-        self.addCleanup(self.override.disable)
-        self.headers = {"X-API-KEY": MOCK_API_KEY}
+from city_pass.tests.base_test import (
+    DATE_FORMAT,
+    ONE_HOUR_IN_SECONDS,
+    BaseCityPassTestCase,
+)
 
 
-class TestSessionInitView(BaseSessionViewTest):
+class TestSessionInitView(BaseCityPassTestCase):
     def setUp(self):
         super().setUp()
         self.api_url = "/city-pass/api/v1/session/init"
@@ -54,7 +47,7 @@ class TestSessionInitView(BaseSessionViewTest):
         self.assertEqual(result.status_code, 403)
 
 
-class TestSessionPostCityPassCredentialView(BaseSessionViewTest):
+class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
     def setUp(self):
         super().setUp()
         self.api_url = "/city-pass/api/v1/session/credentials"
@@ -104,7 +97,7 @@ class TestSessionPostCityPassCredentialView(BaseSessionViewTest):
     )
     def test_post_credentials_session_token_expired(self):
         session = Session.objects.create()
-        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
+        token_creation_time = datetime.strptime("2024-01-01 12:00", DATE_FORMAT)
         with freeze_time(token_creation_time):
             access_token = AccessToken(session=session)
             access_token.save()
@@ -162,7 +155,7 @@ class TestSessionPostCityPassCredentialView(BaseSessionViewTest):
         self.assertEqual(result.status_code, 400)
 
 
-class TestSessionRefreshAccessView(BaseSessionViewTest):
+class TestSessionRefreshAccessView(BaseCityPassTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.api_url = "/city-pass/api/v1/session/refresh"
@@ -173,7 +166,7 @@ class TestSessionRefreshAccessView(BaseSessionViewTest):
         }
     )
     def test_refresh_success(self):
-        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
+        token_creation_time = datetime.strptime("2024-01-01 12:00", DATE_FORMAT)
         with freeze_time(token_creation_time):
             session = Session.objects.create()
             old_access_token_obj = AccessToken(session=session)
@@ -261,7 +254,7 @@ class TestSessionRefreshAccessView(BaseSessionViewTest):
         self.assertEqual(result.status_code, 401)
 
     def test_expired_refresh_token(self):
-        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
+        token_creation_time = datetime.strptime("2024-01-01 12:00", DATE_FORMAT)
         with freeze_time(token_creation_time):
             session = Session.objects.create()
             access_token_obj = AccessToken(session=session)

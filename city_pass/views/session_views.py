@@ -1,4 +1,3 @@
-from os import access
 from typing import Tuple
 
 from django.db import transaction
@@ -7,10 +6,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from city_pass import authentication, models, serializers
-
-
-def result_message(detail: str):
-    return {"detail": detail}
+from city_pass.utils import detail_message
 
 
 class SessionInitView(generics.RetrieveAPIView):
@@ -20,7 +16,7 @@ class SessionInitView(generics.RetrieveAPIView):
     @extend_schema(
         responses={
             200: serializers.SessionTokensOutSerializer,
-            403: serializers.SessionResultSerializer,
+            403: serializers.DetailResultSerializer,
         },
     )
     def get(self, request, *args, **kwargs):
@@ -56,9 +52,9 @@ class SessionPostCredentialView(generics.CreateAPIView):
 
     @extend_schema(
         responses={
-            200: serializers.SessionResultSerializer,
-            401: serializers.SessionResultSerializer,
-            403: serializers.SessionResultSerializer,
+            200: serializers.DetailResultSerializer,
+            401: serializers.DetailResultSerializer,
+            403: serializers.DetailResultSerializer,
         },
     )
     def post(self, request, *args, **kwargs):
@@ -71,13 +67,13 @@ class SessionPostCredentialView(generics.CreateAPIView):
         ).first()
         if not access_token:
             return Response(
-                data=result_message("Session token is invalid"),
+                data=detail_message("Session token is invalid"),
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
         if not access_token.is_valid():
             return Response(
-                data=result_message("Session token has expired"),
+                data=detail_message("Session token has expired"),
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -86,7 +82,7 @@ class SessionPostCredentialView(generics.CreateAPIView):
         ]
         access_token.session.save()
 
-        return Response(data=result_message("Success"), status=status.HTTP_200_OK)
+        return Response(data=detail_message("Success"), status=status.HTTP_200_OK)
 
 
 class SessionRefreshAccessView(generics.CreateAPIView):
@@ -96,8 +92,8 @@ class SessionRefreshAccessView(generics.CreateAPIView):
     @extend_schema(
         responses={
             200: serializers.SessionTokensOutSerializer,
-            401: serializers.SessionResultSerializer,
-            403: serializers.SessionResultSerializer,
+            401: serializers.DetailResultSerializer,
+            403: serializers.DetailResultSerializer,
         }
     )
     def post(self, request, *args, **kwargs):
@@ -110,13 +106,13 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         ).first()
         if not refresh_token:
             return Response(
-                data=result_message("Refresh token is invalid"),
+                data=detail_message("Refresh token is invalid"),
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
         if not refresh_token.is_valid():
             return Response(
-                data=result_message("Refresh token has expired"),
+                data=detail_message("Refresh token has expired"),
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
