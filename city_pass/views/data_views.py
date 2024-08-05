@@ -43,7 +43,7 @@ class PassesDataView(generics.RetrieveAPIView):
         # Status code is in 400 range
         if 400 <= response.status_code < 600:
             logger.error(
-                f"Error occured during call to Mijn Amsterdam API: {response.data}"
+                f"Error occured during call to Mijn Amsterdam API: {response.content}"
             )
             return Response(
                 detail_message(
@@ -52,7 +52,7 @@ class PassesDataView(generics.RetrieveAPIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        response_content = response.data.get("content")
+        response_content = response.json().get("content")
         if not response_content:
             return Response(
                 detail_message("Source data not in expected format"),

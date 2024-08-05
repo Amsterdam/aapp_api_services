@@ -1,6 +1,8 @@
+import json
 from unittest.mock import MagicMock, patch
 
 from django.test import override_settings
+from requests import Response
 
 from city_pass.tests.base_test import BaseCityPassTestCase
 
@@ -28,11 +30,13 @@ class TestPassesView(BaseCityPassTestCase):
 
     @patch("city_pass.views.data_views.requests.get")
     def test_get_passes_successful(self, mock_get):
-        mock_response = MagicMock()
+        mock_response = Response()
         mock_response.status_code = 200
 
         source_content_data = [{"passNumber": 1}, {"passNumber": 2}]
-        mock_response.data = {"content": source_content_data, "status": "SUCCESS"}
+        mock_response._content = json.dumps(
+            {"content": source_content_data, "status": "SUCCESS"}
+        ).encode("utf-8")
         mock_get.return_value = mock_response
 
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
@@ -40,19 +44,19 @@ class TestPassesView(BaseCityPassTestCase):
         self.assertEqual(result.data, source_content_data)
 
     def assert_source_api_error_was_logged_and_404_returned(
-        self, mock_get, status_code, error_response
+        self, mock_get, status_code: int, error_response: dict
     ):
-        mock_response = MagicMock()
+        mock_response = Response()
         mock_response.status_code = status_code
 
-        mock_response.data = error_response
+        encoded_error_response = json.dumps(error_response).encode("utf-8")
+        mock_response._content = encoded_error_response
         mock_get.return_value = mock_response
 
         with self.assertLogs("city_pass.views.data_views", level="ERROR") as cm:
             result = self.client.get(self.api_url, headers=self.headers, follow=True)
 
-        expected_log_msg = str(error_response)
-        self.assertTrue(any(expected_log_msg in message for message in cm.output))
+        self.assertTrue(any(error_response["message"] in x for x in cm.output))
 
         self.assertEqual(result.status_code, 404)
         self.assertContains(
@@ -70,7 +74,7 @@ class TestPassesView(BaseCityPassTestCase):
                 "content": "string",
                 "code": 400,
                 "status": "ERROR",
-                "message": "Bad request: ApiError 005 - Could not decrypt url parameter administratienummerEncrypted'",
+                "message": "Bad request: ApiError 005 - Could not decrypt url parameter administratienummerEncrypted",
             },
         )
 
