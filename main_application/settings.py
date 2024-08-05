@@ -189,5 +189,5 @@ REFRESH_TOKEN_EXPIRATION_TIME = int(
 )  # default = 1 day
 
 MIJN_AMS_API_KEY = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
-MIJN_AMS_API_DOMAIN = os.getenv("CITY_PASS_MIJN_AMS_API_DOMAIN")
+MIJN_AMS_API_DOMAIN = os.getenv("MIJN_AMS_API_DOMAIN")
 MIJN_AMS_API_PATHS = {"PASSES": "/private/api/v1/services/amsapp/stadspas/passen/"}
