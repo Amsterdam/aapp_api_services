@@ -5,7 +5,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from city_pass import authentication, models, serializers
+from city_pass import models, serializers
 from city_pass.utils import detail_message
 
 

@@ -3,9 +3,6 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from city_pass.views import data_views, session_views
 
-# from rest_framework.permissions import AllowAny
-
-
 urlpatterns = [
     # drf-spectacular
     path(
