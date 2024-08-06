@@ -5,10 +5,16 @@ from city_pass.views import data_views, session_views
 
 urlpatterns = [
     # drf-spectacular
-    path("openapi/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "openapi/",
+        SpectacularAPIView.as_view(authentication_classes=[], permission_classes=[]),
+        name="schema",
+    ),
     path(
         "apidocs/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
+        SpectacularSwaggerView.as_view(
+            url_name="schema", authentication_classes=[], permission_classes=[]
+        ),
         name="swagger-ui",
     ),
     # session

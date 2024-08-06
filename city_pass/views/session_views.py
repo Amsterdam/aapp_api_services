@@ -5,12 +5,11 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from city_pass import authentication, models, serializers
+from city_pass import models, serializers
 from city_pass.utils import detail_message
 
 
 class SessionInitView(generics.RetrieveAPIView):
-    authentication_classes = [authentication.APIKeyAuthentication]
     serializer_class = serializers.SessionTokensOutSerializer
 
     @extend_schema(
@@ -47,7 +46,6 @@ class SessionInitView(generics.RetrieveAPIView):
 
 
 class SessionPostCredentialView(generics.CreateAPIView):
-    authentication_classes = [authentication.APIKeyAuthentication]
     serializer_class = serializers.SessionCredentialInSerializer
 
     @extend_schema(
@@ -86,7 +84,6 @@ class SessionPostCredentialView(generics.CreateAPIView):
 
 
 class SessionRefreshAccessView(generics.CreateAPIView):
-    authentication_classes = [authentication.APIKeyAuthentication]
     serializer_class = serializers.SessionRefreshInSerializer
 
     @extend_schema(

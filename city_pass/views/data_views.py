@@ -1,9 +1,11 @@
 import logging
+from abc import ABC, abstractmethod
 from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 
@@ -13,14 +15,25 @@ from city_pass.utils import detail_message
 logger = logging.getLogger(__name__)
 
 
-class PassesDataView(generics.RetrieveAPIView):
-    authentication_classes = [
-        authentication.APIKeyAuthentication,
-    ]
+class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
+    """
+    Abstract class that can be used for all calls to the Mijn Amsterdam Stadspas API.
+    Override the get_source_api_path function to specify which endpoint
+    with what path paramater should be called.
+    """
+
+    @abstractmethod
+    def get_source_api_path(self, request, session):
+        """
+        This method should be overridden by subclasses to customize the source API path.
+        """
+        pass
 
     @extend_schema(
         parameters=[
-            authentication.access_token_header_param,
+            OpenApiParameter(
+                settings.ACCESS_TOKEN_HEADER, OpenApiTypes.STR, OpenApiParameter.HEADER
+            ),
         ],
         responses={
             200: serializers.MijnAmsPassDataSerializer(many=True),
@@ -28,19 +41,14 @@ class PassesDataView(generics.RetrieveAPIView):
             404: serializers.DetailResultSerializer,
         },
     )
+    @authentication.authenticate_access_token
     def get(self, request, *args, **kwargs):
-        token_authenticator = authentication.AccessTokenAuthentication()
-        session, _ = token_authenticator.authenticate(request)
-
-        source_api_path = urljoin(
-            settings.MIJN_AMS_API_PATHS["PASSES"],
-            session.encrypted_adminstration_no,
-        )
+        source_api_path = self.get_source_api_path(request)
         source_api_url = urljoin(
             settings.MIJN_AMS_API_DOMAIN,
             source_api_path,
         )
-        headers = {"x-api-key": settings.MIJN_AMS_API_KEY}
+        headers = {settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY}
         mijn_ams_response = requests.get(source_api_url, headers=headers)
 
         # Status code is in 400 or 500 range
@@ -66,3 +74,12 @@ class PassesDataView(generics.RetrieveAPIView):
             )
 
         return Response(response_content, status=status.HTTP_200_OK)
+
+
+class PassesDataView(AbstractMijnAmsDataView):
+    def get_source_api_path(self, request):
+        session = request.user
+        return urljoin(
+            settings.MIJN_AMS_API_PATHS["PASSES"],
+            session.encrypted_adminstration_no,
+        )
