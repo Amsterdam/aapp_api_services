@@ -54,11 +54,17 @@ class AccessTokenAuthentication(BaseAuthentication):
 
 
 def authenticate_access_token(view_func):
+    """
+    Perform access token authentication
+    and bind resulting session to request.user variable.
+    """
+
     @wraps(view_func)
     def _wrapped_view(self, request, *args, **kwargs):
         token_authenticator = AccessTokenAuthentication()
         session, _ = token_authenticator.authenticate(request)
-        return view_func(self, request, session, *args, **kwargs)
+        request.user = session
+        return view_func(self, request, *args, **kwargs)
 
     return _wrapped_view
 

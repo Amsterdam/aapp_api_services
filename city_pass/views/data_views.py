@@ -4,7 +4,6 @@ from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
-from django.http import HttpRequest
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -15,11 +14,7 @@ from city_pass.utils import detail_message
 logger = logging.getLogger(__name__)
 
 
-class BaseMijnAmsDataView(generics.RetrieveAPIView, ABC):
-    authentication_classes = [
-        authentication.APIKeyAuthentication,
-    ]
-
+class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
     mijn_ams_api_path = None
 
     @extend_schema(
@@ -40,8 +35,8 @@ class BaseMijnAmsDataView(generics.RetrieveAPIView, ABC):
         pass
 
     @authentication.authenticate_access_token
-    def get(self, request: HttpRequest, session: models.Session, *args, **kwargs):
-        source_api_path = self.get_source_api_path(request, session)
+    def get(self, request, *args, **kwargs):
+        source_api_path = self.get_source_api_path(request)
         source_api_url = urljoin(
             settings.MIJN_AMS_API_DOMAIN,
             source_api_path,
@@ -74,9 +69,9 @@ class BaseMijnAmsDataView(generics.RetrieveAPIView, ABC):
         return Response(response_content, status=status.HTTP_200_OK)
 
 
-class PassesDataView(BaseMijnAmsDataView):
-    def get_source_api_path(self, request, session):
+class PassesDataView(AbstractMijnAmsDataView):
+    def get_source_api_path(self, request):
         return urljoin(
             settings.MIJN_AMS_API_PATHS["PASSES"],
-            session.encrypted_adminstration_no,
+            request.user.encrypted_adminstration_no,
         )
