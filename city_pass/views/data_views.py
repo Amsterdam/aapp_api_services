@@ -4,7 +4,8 @@ from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 
@@ -15,18 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
-    mijn_ams_api_path = None
+    """
+    Abstract class that can be used for all calls to the Mijn Amsterdam Stadspas API.
+    Override the get_source_api_path function to specify which endpoint
+    with what path paramater should be called.
+    """
 
-    @extend_schema(
-        parameters=[
-            authentication.access_token_header_param,
-        ],
-        responses={
-            200: serializers.MijnAmsPassDataSerializer(many=True),
-            403: serializers.DetailResultSerializer,
-            404: serializers.DetailResultSerializer,
-        },
-    )
     @abstractmethod
     def get_source_api_path(self, request, session):
         """
@@ -34,6 +29,18 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
         """
         pass
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                settings.ACCESS_TOKEN_HEADER, OpenApiTypes.STR, OpenApiParameter.HEADER
+            ),
+        ],
+        responses={
+            200: serializers.MijnAmsPassDataSerializer(many=True),
+            403: serializers.DetailResultSerializer,
+            404: serializers.DetailResultSerializer,
+        },
+    )
     @authentication.authenticate_access_token
     def get(self, request, *args, **kwargs):
         source_api_path = self.get_source_api_path(request)

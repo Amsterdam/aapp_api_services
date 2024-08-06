@@ -3,8 +3,6 @@ from functools import wraps
 from django.conf import settings
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -55,8 +53,8 @@ class AccessTokenAuthentication(BaseAuthentication):
 
 def authenticate_access_token(view_func):
     """
-    Perform access token authentication
-    and bind resulting session to request.user variable.
+    Wrapper function that performs access token authentication
+    and binds resulting session to request.user variable.
     """
 
     @wraps(view_func)
@@ -67,8 +65,3 @@ def authenticate_access_token(view_func):
         return view_func(self, request, *args, **kwargs)
 
     return _wrapped_view
-
-
-access_token_header_param = OpenApiParameter(
-    settings.ACCESS_TOKEN_HEADER, OpenApiTypes.STR, OpenApiParameter.HEADER
-)
