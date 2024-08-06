@@ -41,7 +41,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
             settings.MIJN_AMS_API_DOMAIN,
             source_api_path,
         )
-        headers = {"x-api-key": settings.MIJN_AMS_API_KEY}
+        headers = {settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY}
         mijn_ams_response = requests.get(source_api_url, headers=headers)
 
         # Status code is in 400 or 500 range
@@ -71,7 +71,8 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
 
 class PassesDataView(AbstractMijnAmsDataView):
     def get_source_api_path(self, request):
+        session = request.user
         return urljoin(
             settings.MIJN_AMS_API_PATHS["PASSES"],
-            request.user.encrypted_adminstration_no,
+            session.encrypted_adminstration_no,
         )
