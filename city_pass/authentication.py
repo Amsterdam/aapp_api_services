@@ -1,3 +1,5 @@
+from functools import wraps
+
 from django.conf import settings
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
@@ -49,6 +51,16 @@ class AccessTokenAuthentication(BaseAuthentication):
             raise AuthenticationFailed("Session is not ready")
 
         return (access_token_obj.session, access_token_obj)
+
+
+def authenticate_access_token(view_func):
+    @wraps(view_func)
+    def _wrapped_view(self, request, *args, **kwargs):
+        token_authenticator = AccessTokenAuthentication()
+        session, _ = token_authenticator.authenticate(request)
+        return view_func(self, request, session, *args, **kwargs)
+
+    return _wrapped_view
 
 
 access_token_header_param = OpenApiParameter(

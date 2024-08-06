@@ -1,22 +1,26 @@
 import logging
+from abc import ABC, abstractmethod
 from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
+from django.http import HttpRequest
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from city_pass import authentication, serializers
+from city_pass import authentication, models, serializers
 from city_pass.utils import detail_message
 
 logger = logging.getLogger(__name__)
 
 
-class PassesDataView(generics.RetrieveAPIView):
+class BaseMijnAmsDataView(generics.RetrieveAPIView, ABC):
     authentication_classes = [
         authentication.APIKeyAuthentication,
     ]
+
+    mijn_ams_api_path = None
 
     @extend_schema(
         parameters=[
@@ -28,14 +32,16 @@ class PassesDataView(generics.RetrieveAPIView):
             404: serializers.DetailResultSerializer,
         },
     )
-    def get(self, request, *args, **kwargs):
-        token_authenticator = authentication.AccessTokenAuthentication()
-        session, _ = token_authenticator.authenticate(request)
+    @abstractmethod
+    def get_source_api_path(self, request, session):
+        """
+        This method should be overridden by subclasses to customize the source API path.
+        """
+        pass
 
-        source_api_path = urljoin(
-            settings.MIJN_AMS_API_PATHS["PASSES"],
-            session.encrypted_adminstration_no,
-        )
+    @authentication.authenticate_access_token
+    def get(self, request: HttpRequest, session: models.Session, *args, **kwargs):
+        source_api_path = self.get_source_api_path(request, session)
         source_api_url = urljoin(
             settings.MIJN_AMS_API_DOMAIN,
             source_api_path,
@@ -66,3 +72,11 @@ class PassesDataView(generics.RetrieveAPIView):
             )
 
         return Response(response_content, status=status.HTTP_200_OK)
+
+
+class PassesDataView(BaseMijnAmsDataView):
+    def get_source_api_path(self, request, session):
+        return urljoin(
+            settings.MIJN_AMS_API_PATHS["PASSES"],
+            session.encrypted_adminstration_no,
+        )
