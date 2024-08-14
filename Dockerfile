@@ -17,11 +17,10 @@ RUN apk add --no-cache --virtual .build-deps build-base linux-headers \
     && apk add --no-cache \
     curl postgresql15-client
 
-COPY requirements.txt /app/
-COPY requirements_dev.txt /app/
+COPY requirements /app/requirements/
+RUN chmod 777 /app/requirements
 RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements_dev.txt
+RUN pip install --no-cache-dir -r /app/requirements/requirements.txt
 
 RUN addgroup -S app && adduser -S app -G app
 
@@ -34,8 +33,9 @@ USER app
 FROM app as dev
 
 USER root
+RUN pip install pip-tools
+RUN pip install --no-cache-dir -r /app/requirements/requirements_dev.txt
 WORKDIR /app
-USER app
 
 # Any process that requires to write in the home dir
 # we write to /tmp since we have no home dir

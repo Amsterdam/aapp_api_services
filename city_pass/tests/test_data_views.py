@@ -100,7 +100,7 @@ class TestPassesView(BaseCityPassTestCase):
 
         # Check if passNumber and transactionsKeyEncrypted were persisted
         pass_no_trans_key_dict = {
-            x.get("passNumber"): x.get("transactionsKeyEncrypted")
+            str(x.get("passNumber")): x.get("transactionsKeyEncrypted")
             for x in self.mock_response_data
         }
         for pass_data_dict in result.data:

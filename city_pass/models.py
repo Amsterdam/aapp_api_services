@@ -15,7 +15,7 @@ class PassData(models.Model):
         unique_together = ["pass_number", "session"]
 
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
-    pass_number = models.BigIntegerField(null=False)
+    pass_number = models.CharField(null=False)
     encrypted_transaction_key = models.CharField(null=False)
 
 

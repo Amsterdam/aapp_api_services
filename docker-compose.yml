@@ -1,5 +1,3 @@
-version: '3.7'
-
 x-app: &base-app
   build:
     context: .
@@ -49,6 +47,7 @@ services:
       - ./coverage:/app/tests
       - ./main_application:/app/main_application
       - ./city_pass:/app/city_pass
+      - ./requirements:/app/requirements
     environment:
       <<: *base-app-env
       SECRET_KEY: dev

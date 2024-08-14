@@ -86,8 +86,6 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
         source_api_path = self.get_source_api_path(request)
         source_api_url = urljoin(settings.MIJN_AMS_API_DOMAIN, source_api_path)
         headers = {settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY}
-        logger.info(f"Requesting data from Mijn Amsterdam API: {source_api_url}")
-        logger.debug(f"Headers: {headers}")
         try:
             mijn_ams_response = requests.get(source_api_url, headers=headers)
             mijn_ams_response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
