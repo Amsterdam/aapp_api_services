@@ -1,8 +1,8 @@
 django<5
 djangorestframework
 psycopg2-binary
-uWSGI
 drf_spectacular
+python-dotenv
 
 azure-identity
 opencensus-ext-django

@@ -4,9 +4,6 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=on
 
 WORKDIR /app
-
-COPY requirements.txt /app/
-COPY requirements_dev.txt /app/
 COPY manage.py /app/
 COPY uwsgi.ini /app/
 COPY main_application /app/main_application
@@ -18,19 +15,17 @@ ENV PYTHONPATH=/app/city_pass
 # Install dependencies
 RUN apk add --no-cache --virtual .build-deps build-base linux-headers \
     && apk add --no-cache \
-    # For building uWSGI binary
-    gcc libffi-dev musl-dev \
-    # For debugging
-    curl postgresql15-client \
-    #
-    && apk del .build-deps
+    curl postgresql15-client
 
+COPY requirements.txt /app/
+COPY requirements_dev.txt /app/
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements_dev.txt
-RUN addgroup -S app && adduser -S app -G app
-RUN python3 manage.py collectstatic --no-input
 
+RUN addgroup -S app && adduser -S app -G app
+
+RUN python3 manage.py collectstatic --no-input
 RUN mkdir /home/app/.azure
 RUN chown app:app /home/app/.azure
 USER app

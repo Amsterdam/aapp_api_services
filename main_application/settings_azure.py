@@ -9,12 +9,11 @@ if POSTGRES_HOST and "azure.com" in POSTGRES_HOST:
     # Replace password in DATABASES
     DATABASES["default"]["PASSWORD"] = POSTGRES_PASSWORD
 
-MIDDLEWARE.append("opencensus.ext.django.middleware.OpencensusMiddleware")
-
 APPLICATIONINSIGHTS_CONNECTION_STRING = os.getenv(
     "APPLICATIONINSIGHTS_CONNECTION_STRING"
 )
 if APPLICATIONINSIGHTS_CONNECTION_STRING:
+    MIDDLEWARE.append("opencensus.ext.django.middleware.OpencensusMiddleware")
     OPENCENSUS = {
         "TRACE": {
             "SAMPLER": "opencensus.trace.samplers.ProbabilitySampler(rate=1)",

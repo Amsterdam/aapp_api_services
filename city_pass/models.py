@@ -10,6 +10,15 @@ class Session(models.Model):
     encrypted_adminstration_no = models.CharField(null=True)
 
 
+class PassData(models.Model):
+    class Meta:
+        unique_together = ["pass_number", "session"]
+
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    pass_number = models.BigIntegerField(null=False)
+    encrypted_transaction_key = models.CharField(null=False)
+
+
 class AccessToken(models.Model):
     token = models.CharField(max_length=255, unique=True, null=False)
     created_at = models.DateTimeField(auto_now_add=True)

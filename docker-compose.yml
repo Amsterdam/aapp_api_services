@@ -11,6 +11,7 @@ x-app: &base-app
     POSTGRES_USER: dev
     POSTGRES_DB: dev
     POSTGRES_PORT: 5432
+    POSTGRES_HOST: db
   ports:
     - 8000:8000
   depends_on:
@@ -85,10 +86,5 @@ services:
       DJANGO_SETTINGS_MODULE: "main_application.settings_development"
       SECRET_KEY: bogus
       API_PORT: 8000
-      POSTGRES_PASSWORD: dev
-      POSTGRES_USER: dev
-      POSTGRES_DB: dev
-      POSTGRES_PORT: 5432
-      POSTGRES_HOST: db
       NO_COVERAGE: "true"
     command: python3 /app/manage.py test

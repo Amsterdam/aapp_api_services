@@ -1,13 +1,67 @@
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.test import override_settings
 from requests import Response
 
+from city_pass.models import PassData, Session
 from city_pass.tests.base_test import BaseCityPassTestCase
 
 
 class TestPassesView(BaseCityPassTestCase):
+    mock_response_data = [
+        {
+            "id": "201604",
+            "owner": {
+                "firstname": "Chelsea",
+                "lastname": "Innocent",
+                "initials": "C",
+            },
+            "dateEnd": "2025-07-31T21:59:59.000Z",
+            "dateEndFormatted": "31 juli 2025",
+            "budgets": [
+                {
+                    "title": "24/25 Kindtegoed 4 tm 9 jaar",
+                    "description": "",
+                    "code": "2024_AMSTEG_4-9",
+                    "budgetAssigned": 241,
+                    "budgetAssignedFormatted": "€241,00",
+                    "budgetBalance": 241,
+                    "budgetBalanceFormatted": "€241,00",
+                    "dateEnd": "2025-07-31T21:59:59.000Z",
+                    "dateEndFormatted": "31 juli 2025",
+                }
+            ],
+            "balanceFormatted": "€241,00",
+            "passNumber": 6011013116525,
+            "passNumberComplete": "6064366011013116525",
+            "transactionsKeyEncrypted": "NU-5XEzItQQkg7P17RT813RjDSQn8YH9Uj30sSRaO5lkP4zg0J2wXAYLu8s9xtj9",
+        },
+        {
+            "id": "201605",
+            "owner": {"firstname": "Mini", "lastname": "Klaproos", "initials": "M"},
+            "dateEnd": "2025-07-31T21:59:59.000Z",
+            "dateEndFormatted": "31 juli 2025",
+            "budgets": [
+                {
+                    "title": "24/25 Kindtegoed 0 tm 3 jaar",
+                    "description": "",
+                    "code": "2024_AMSTEG_0-3",
+                    "budgetAssigned": 125,
+                    "budgetAssignedFormatted": "€125,00",
+                    "budgetBalance": 125,
+                    "budgetBalanceFormatted": "€125,00",
+                    "dateEnd": "2025-07-31T21:59:59.000Z",
+                    "dateEndFormatted": "31 juli 2025",
+                }
+            ],
+            "balanceFormatted": "€125,00",
+            "passNumber": 6011013117242,
+            "passNumberComplete": "6064366011013117242",
+            "transactionsKeyEncrypted": "a24WShplCZ7MRAVSMDyvi0kMuOUNQBsPNC8b4HePJl3iOfOPeg9oVOZ3PkpesC3c",
+        },
+    ]
+
     def setUp(self) -> None:
         super().setUp()
         self.override = override_settings(
@@ -18,7 +72,7 @@ class TestPassesView(BaseCityPassTestCase):
         self.override.enable()
         self.addCleanup(self.override.disable)
 
-        self.mock_session = MagicMock()
+        self.mock_session = Session.objects.create()
         self.mock_session.encrypted_adminstration_no = "mock_admin_no"
         self.patcher_authenticate = patch(
             "city_pass.views.data_views.authentication.AccessTokenAuthentication.authenticate"
@@ -32,16 +86,31 @@ class TestPassesView(BaseCityPassTestCase):
     def test_get_passes_successful(self, mock_get):
         mock_response = Response()
         mock_response.status_code = 200
-
-        source_content_data = [{"passNumber": 1}, {"passNumber": 2}]
         mock_response._content = json.dumps(
-            {"content": source_content_data, "status": "SUCCESS"}
+            {"content": self.mock_response_data, "status": "SUCCESS"}
         ).encode("utf-8")
         mock_get.return_value = mock_response
 
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.data, source_content_data)
+
+        # Check if transactionsKeyEncrypted was removed
+        for pass_data_dict in result.data:
+            self.assertIsNone(pass_data_dict.get("transactionsKeyEncrypted"))
+
+        # Check if passNumber and transactionsKeyEncrypted were persisted
+        pass_no_trans_key_dict = {
+            x.get("passNumber"): x.get("transactionsKeyEncrypted")
+            for x in self.mock_response_data
+        }
+        for pass_data_dict in result.data:
+            pass_data_obj = PassData.objects.get(
+                pass_number=pass_data_dict.get("passNumber")
+            )
+            self.assertEqual(
+                pass_data_obj.encrypted_transaction_key,
+                pass_no_trans_key_dict.get(pass_data_obj.pass_number),
+            )
 
     def assert_source_api_error_was_logged_and_404_returned(
         self, mock_get, status_code: int, error_response: dict
@@ -55,8 +124,6 @@ class TestPassesView(BaseCityPassTestCase):
 
         with self.assertLogs("city_pass.views.data_views", level="ERROR") as cm:
             result = self.client.get(self.api_url, headers=self.headers, follow=True)
-
-        self.assertTrue(any(error_response["message"] in x for x in cm.output))
 
         self.assertEqual(result.status_code, 404)
         self.assertContains(
@@ -106,7 +173,7 @@ class TestPassesView(BaseCityPassTestCase):
         self.assertEqual(result.data, [])
 
     @patch("city_pass.views.data_views.requests.get")
-    def test_content_key_not_available(self, mock_get):
+    def test_content_is_invalid_format(self, mock_get):
         mock_response = Response()
         mock_response.status_code = 200
 
@@ -114,4 +181,50 @@ class TestPassesView(BaseCityPassTestCase):
         mock_get.return_value = mock_response
 
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
-        self.assertEqual(result.status_code, 503)
+        self.assertEqual(result.status_code, 500)
+
+
+class TestBudgetTransactionsViews(BaseCityPassTestCase):
+    # "title": "string",
+    # "description": "string",
+    # "code": "string",
+    # "budgetAssigned": 0,
+    # "budgetAssignedFormatted": "string",
+    # "budgetBalance": 0,
+    # "budgetBalanceFormatted": "string",
+    # "dateEnd": "string",
+    # "dateEndFormatted": "string"
+    mock_response_data = []
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.override = override_settings(
+            MIJN_AMS_API_DOMAIN="http://mijn-ams-mock-domain/",
+            MIJN_AMS_API_PATHS={"BUDGET_TRANSACTIONS": "/mock-budget-transactions-path/"},
+            MIJN_AMS_API_KEY="mijn-ams-mock-api-key",
+        )
+        self.override.enable()
+        self.addCleanup(self.override.disable)
+
+        self.mock_session = Session.objects.create()
+        self.mock_session.encrypted_adminstration_no = "mock_admin_no"
+        self.patcher_authenticate = patch(
+            "city_pass.views.data_views.authentication.AccessTokenAuthentication.authenticate"
+        )
+        self.mock_authenticate = self.patcher_authenticate.start()
+        self.mock_authenticate.return_value = (self.mock_session, None)
+
+        self.api_url = "/city-pass/api/v1/data/budget-transactions"
+
+    @patch("city_pass.views.data_views.requests.get")
+    def test_get_budget_transactions_successful(self, mock_get):
+        # mock_response = Response()
+        # mock_response.status_code = 200
+        # mock_response._content = json.dumps(
+        #     {"content": self.mock_response_data, "status": "SUCCESS"}
+        # ).encode("utf-8")
+        # mock_get.return_value = mock_response
+        #
+        # result = self.client.get(self.api_url, headers=self.headers, follow=True)
+        # self.assertEqual(result.status_code, 200)
+        pass

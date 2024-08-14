@@ -24,7 +24,7 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 ALLOWED_HOSTS = [
     "construction-work",  # Host within docker realm
@@ -34,6 +34,8 @@ ALLOWED_HOSTS = [
     "acc.app.amsterdam.nl",
     "app.amsterdam.nl",
 ]
+if DEBUG:
+    ALLOWED_HOSTS.append("127.0.0.1")
 
 
 # Application definition
@@ -161,10 +163,12 @@ LOGGING = {
                 "DJANGO_LOG_LEVEL", "ERROR" if "pytest" in sys.argv[0] else "INFO"
             ).upper(),
             "handlers": ["console"],
+            "propagate": False,
         },
         "city_pass": {
             "level": "DEBUG",
             "handlers": ["console"],
+            "propagate": False,
         },
     },
 }
@@ -194,4 +198,7 @@ REFRESH_TOKEN_EXPIRATION_TIME = int(
 MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
 MIJN_AMS_API_KEY = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
 MIJN_AMS_API_DOMAIN = os.getenv("MIJN_AMS_API_DOMAIN")
-MIJN_AMS_API_PATHS = {"PASSES": "/private/api/v1/services/amsapp/stadspas/passen/"}
+MIJN_AMS_API_PATHS = {
+    "PASSES": "/private/api/v1/services/amsapp/stadspas/passen/",
+    "BUDGET_TRANSACTIONS": "/private/api/v1/services/amsapp/stadspas/budget/transactions/",
+}

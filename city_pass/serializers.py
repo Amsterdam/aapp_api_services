@@ -20,15 +20,15 @@ class SessionRefreshInSerializer(serializers.Serializer):
 
 
 class MijnAmsPassOwnerSerializer(serializers.Serializer):
-    initials = serializers.CharField()
     firstname = serializers.CharField()
-    infix = serializers.CharField()
     lastname = serializers.CharField()
+    initials = serializers.CharField()
+    infix = serializers.CharField(required=False)
 
 
 class MijnAmsPassBudgetSerializer(serializers.Serializer):
     title = serializers.CharField()
-    description = serializers.CharField()
+    description = serializers.CharField(required=False, allow_blank=True)
     code = serializers.CharField()
     budgetAssigned = serializers.FloatField()
     budgetAssignedFormatted = serializers.CharField()

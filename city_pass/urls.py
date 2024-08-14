@@ -31,4 +31,9 @@ urlpatterns = [
     ),
     # data
     path("data/passes", data_views.PassesDataView.as_view(), name="passes-data"),
+    path(
+        "data/budget-transactions",
+        data_views.BudgetTransactionsView.as_view(),
+        name="budget-transactions",
+    ),
 ]
