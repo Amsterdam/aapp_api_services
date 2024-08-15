@@ -47,3 +47,10 @@ class MijnAmsPassDataSerializer(serializers.Serializer):
     dateEndFormatted = serializers.CharField()
     budgets = MijnAmsPassBudgetSerializer(many=True)
     balanceFormatted = serializers.CharField()
+
+class MijnAmsPassBudgetTransactionsSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    transactieDatum = serializers.DateTimeField()
+    bedrag = serializers.FloatField()
+    annulering = serializers.BooleanField()
+    geannuleerd = serializers.BooleanField()

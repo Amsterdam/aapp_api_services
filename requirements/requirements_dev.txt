@@ -4,10 +4,16 @@
 #
 #    pip-compile --allow-unsafe --output-file=requirements/requirements_dev.txt requirements/requirements_dev.in
 #
+asgiref==3.8.1
+    # via django
+django==5.1
+    # via model-bakery
 freezegun==1.5.1
     # via -r requirements/requirements_dev.in
 iniconfig==2.0.0
     # via pytest
+model-bakery==1.19.1
+    # via -r requirements/requirements_dev.in
 packaging==24.1
     # via pytest
 pluggy==1.5.0
@@ -22,3 +28,5 @@ python-dotenv==1.0.1
     # via -r requirements/requirements_dev.in
 six==1.16.0
     # via python-dateutil
+sqlparse==0.5.1
+    # via django

@@ -12,29 +12,26 @@ from rest_framework.response import Response
 from rest_framework.serializers import Serializer as DRFSerializer
 
 from city_pass import authentication, models, serializers
-from city_pass.serializers import MijnAmsPassBudgetSerializer
 
 logger = logging.getLogger(__name__)
+
+class MijnAMSRequestException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = 'Invalid request to source data'
+    default_code = 'request_error'
 
 class MijnAMSAPIException(APIException):
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = 'Something went wrong during request to source data, see logs for more information'
-    default_code = 'mijn_ams_api_error'
-
-
-class MijnAMSInvalidContentException(APIException):
-    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    default_detail = 'Invalid data received'
-    default_code = 'mijn_ams_no_content'
-
+    default_code = 'api_error'
 
 class MijnAMSInvalidDataException(APIException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = 'Received data not in expected format'
-    default_code = 'mijn_ams_invalid_data'
+    default_code = 'invalid_data'
 
 
-def extend_schema_with_error_responses(subclass_200_response):
+def extend_schema_with_error_responses(subclass_200_response, additional_params=None):
     """
     Helper function to merge base responses with subclass-specific responses.
     """
@@ -48,10 +45,12 @@ def extend_schema_with_error_responses(subclass_200_response):
             ),
         ],
         "responses": {
+            400: serializers.DetailResultSerializer,
             404: serializers.DetailResultSerializer,
             500: serializers.DetailResultSerializer,
         },
     }
+    schema["parameters"] += additional_params or []
     schema["responses"] = {200: subclass_200_response, **schema["responses"]}
     return extend_schema(**schema)
 
@@ -97,11 +96,11 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
             response_content = mijn_ams_response.json().get("content")
         except ValueError as e:
             logger.error(f"Invalid JSON received from Mijn Amsterdam API: {e}")
-            raise MijnAMSInvalidContentException()
+            raise MijnAMSInvalidDataException()
 
         if response_content is None:
             logger.error(f"No content received from Mijn Amsterdam API")
-            raise MijnAMSInvalidContentException()
+            raise MijnAMSInvalidDataException()
 
         return response_content
 
@@ -118,6 +117,7 @@ class PassesDataView(AbstractMijnAmsDataView):
 
     @extend_schema_with_error_responses(subclass_200_response=serializer_class(many=True))
     def get(self, request, *args, **kwargs) -> Response:
+        """ Endpoint to retrieve all passes for the current user """
         return super().get(request, *args, **kwargs)
 
     def get_source_api_path(self, request) -> str:
@@ -146,25 +146,43 @@ class PassesDataView(AbstractMijnAmsDataView):
 
 
 class BudgetTransactionsView(AbstractMijnAmsDataView):
-    serializer_class = MijnAmsPassBudgetSerializer
+    serializer_class = serializers.MijnAmsPassBudgetTransactionsSerializer
 
-    @extend_schema_with_error_responses(subclass_200_response=serializer_class(many=True))
+    @extend_schema_with_error_responses(
+        subclass_200_response=serializer_class(many=True),
+        additional_params=[OpenApiParameter(
+            name="passNumber",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Number of the pass',
+        )]
+    )
     def get(self, request, *args, **kwargs) -> Response:
+        """ Endpoint to retrieve all budget transactions for a specific pass """
         return super().get(request, *args, **kwargs)
 
     def get_source_api_path(self, request) -> str:
-        # TODO: read pass number & budget code from request query
-        # query_params = request.query_params
+        session = request.user
+        pass_number = request.query_params.get("passNumber")
+        if pass_number is None:
+            logger.error(f"Pass number not provided in query parameters")
+            raise MijnAMSRequestException("Pass number not provided in query parameters")
 
-        # TODO: find encrypted transaction key by pass number via session
-        # session: models.Session = request.user
-        # pass_data = session.passdata_set.objects.all()
-        # encrypted_transaction_key = None
+        try:
+            encrypted_transaction_key = models.PassData.objects.get(
+                session=session,
+                pass_number=pass_number,
+            ).encrypted_transaction_key
+        except models.PassData.DoesNotExist:
+            logger.error(f"Pass with pass number {pass_number} not found for user {session}")
+            raise MijnAMSAPIException()
 
-        # TODO: build source api path
-        # - include budget code as query param
-        # return urljoin(
-        #     settings.MIJN_AMS_API_PATHS["BUDGET_TRANSACTIONS"],
-        #     encrypted_transaction_key,
-        # )
-        pass
+        return urljoin(
+            settings.MIJN_AMS_API_PATHS["BUDGET_TRANSACTIONS"],
+            encrypted_transaction_key,
+        )
+
+    def get_response_content(self, request):
+        # TODO: Test data is not yet visible, so we mock the response data for now
+        from city_pass.tests.test_data_views import TestBudgetTransactionsViews
+        return TestBudgetTransactionsViews.mock_response_data

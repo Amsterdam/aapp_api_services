@@ -6,7 +6,7 @@ from requests import Response
 
 from city_pass.models import PassData, Session
 from city_pass.tests.base_test import BaseCityPassTestCase
-
+from model_bakery import baker
 
 class TestPassesView(BaseCityPassTestCase):
     mock_response_data = [
@@ -184,17 +184,31 @@ class TestPassesView(BaseCityPassTestCase):
         self.assertEqual(result.status_code, 500)
 
 
+@patch("city_pass.views.data_views.requests.get")
 class TestBudgetTransactionsViews(BaseCityPassTestCase):
-    # "title": "string",
-    # "description": "string",
-    # "code": "string",
-    # "budgetAssigned": 0,
-    # "budgetAssignedFormatted": "string",
-    # "budgetBalance": 0,
-    # "budgetBalanceFormatted": "string",
-    # "dateEnd": "string",
-    # "dateEndFormatted": "string"
-    mock_response_data = []
+    mock_response_data = [
+        {
+            "id": "201604",
+            "transactieDatum": "2025-07-31T21:59:59.000Z",
+            "bedrag": 241.0,
+            "annulering": False,
+            "geannuleerd": False,
+        },
+        {
+            "id": "201605",
+            "transactieDatum": "2025-08-02T23:34:51.000Z",
+            "bedrag": 125.0,
+            "annulering": False,
+            "geannuleerd": False,
+        },
+        {
+            "id": "201606",
+            "transactieDatum": "2025-08-02T14:54:15.000Z",
+            "bedrag": 145.0,
+            "annulering": False,
+            "geannuleerd": False,
+        },
+    ]
 
     def setUp(self) -> None:
         super().setUp()
@@ -216,15 +230,71 @@ class TestBudgetTransactionsViews(BaseCityPassTestCase):
 
         self.api_url = "/city-pass/api/v1/data/budget-transactions"
 
-    @patch("city_pass.views.data_views.requests.get")
+        self.pass_number = "6011013116525"
+        self.pass_data = baker.make(PassData, session=self.mock_session, pass_number=self.pass_number)
+
     def test_get_budget_transactions_successful(self, mock_get):
-        # mock_response = Response()
-        # mock_response.status_code = 200
-        # mock_response._content = json.dumps(
-        #     {"content": self.mock_response_data, "status": "SUCCESS"}
-        # ).encode("utf-8")
-        # mock_get.return_value = mock_response
-        #
-        # result = self.client.get(self.api_url, headers=self.headers, follow=True)
-        # self.assertEqual(result.status_code, 200)
-        pass
+        mock_response = Response()
+        mock_response.status_code = 200
+        mock_response._content = json.dumps(
+            {"content": self.mock_response_data, "status": "SUCCESS"}
+        ).encode("utf-8")
+        mock_get.return_value = mock_response
+
+        result = self.client.get(
+            self.api_url,
+            headers=self.headers,
+            query_params={"passNumber": self.pass_number},
+            follow=True
+        )
+        self.assertEqual(200, result.status_code)
+
+    # def test_get_budget_transactions_no_pass_number(self, _):
+    #     result = self.client.get(
+    #         self.api_url,
+    #         headers=self.headers,
+    #         follow=True
+    #     )
+    #     self.assertEqual(400, result.status_code)
+    #
+    # def test_get_budget_transactions_unknown_pass_number(self, _):
+    #     result = self.client.get(
+    #         self.api_url,
+    #         headers=self.headers,
+    #         query_params={"passNumber": "12345"},
+    #         follow=True
+    #     )
+    #     self.assertEqual(404, result.status_code)
+    #
+    # def test_content_is_empty_list(self, mock_get):
+    #     mock_response = Response()
+    #     mock_response.status_code = 200
+    #
+    #     mock_response._content = json.dumps(
+    #         {"content": [], "status": "SUCCESS"}
+    #     ).encode("utf-8")
+    #     mock_get.return_value = mock_response
+    #
+    #     result = self.client.get(
+    #         self.api_url,
+    #         headers=self.headers,
+    #         query_params={"passNumber": self.pass_number},
+    #         follow=True
+    #     )
+    #     self.assertEqual(200, result.status_code)
+    #     self.assertEqual(result.data, [])
+    #
+    # def test_content_is_invalid_format(self, mock_get):
+    #     mock_response = Response()
+    #     mock_response.status_code = 200
+    #
+    #     mock_response._content = json.dumps({"status": "FOOBAR"}).encode("utf-8")
+    #     mock_get.return_value = mock_response
+    #
+    #     result = self.client.get(
+    #         self.api_url,
+    #         headers=self.headers,
+    #         query_params={"passNumber": self.pass_number},
+    #         follow=True
+    #     )
+    #     self.assertEqual(500, result.status_code)
