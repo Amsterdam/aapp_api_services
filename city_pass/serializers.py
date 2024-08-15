@@ -50,7 +50,10 @@ class MijnAmsPassDataSerializer(serializers.Serializer):
 
 class MijnAmsPassBudgetTransactionsSerializer(serializers.Serializer):
     id = serializers.CharField()
-    transactieDatum = serializers.DateTimeField()
-    bedrag = serializers.FloatField()
-    annulering = serializers.BooleanField()
-    geannuleerd = serializers.BooleanField()
+    title = serializers.CharField()
+    amount = serializers.FloatField()
+    amountFormatted = serializers.CharField()
+    datePublished = serializers.CharField()
+    datePublishedFormatted = serializers.CharField()
+    budget = serializers.CharField()
+    budgetCode = serializers.CharField()

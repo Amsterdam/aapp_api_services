@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
+from django.urls import reverse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
@@ -41,7 +42,8 @@ def extend_schema_with_error_responses(subclass_200_response, additional_params=
                 name=settings.ACCESS_TOKEN_HEADER,
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.HEADER,
-                description='Access token for authentication'
+                description='Access token for authentication',
+                required=True,
             ),
         ],
         "responses": {
@@ -61,6 +63,10 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
     with what path parameter should be called.
     """
     serializer_class: DRFSerializer = serializers.DetailResultSerializer  # Must be overwritten in subclasses
+
+    def __init__(self):
+        super().__init__()
+        self.query_params = {}
 
     @abstractmethod
     def get_source_api_path(self, request) -> str:
@@ -86,7 +92,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
         source_api_url = urljoin(settings.MIJN_AMS_API_DOMAIN, source_api_path)
         headers = {settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY}
         try:
-            mijn_ams_response = requests.get(source_api_url, headers=headers)
+            mijn_ams_response = requests.get(source_api_url, headers=headers, params=self.query_params)
             mijn_ams_response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
         except requests.exceptions.RequestException as e:
             logger.error(f"Request to Mijn Amsterdam API failed: {e}")
@@ -100,7 +106,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
 
         if response_content is None:
             logger.error(f"No content received from Mijn Amsterdam API")
-            raise MijnAMSInvalidDataException()
+            raise MijnAMSInvalidDataException("No data found for this user")
 
         return response_content
 
@@ -108,7 +114,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
         output_serializer = self.get_serializer(data=response_content, many=True)
         if not output_serializer.is_valid():
             logger.error(f"Mijn Amsterdam API data not in expected format: {output_serializer.errors}")
-            raise MijnAMSInvalidDataException()
+            raise MijnAMSInvalidDataException("Received data not in expected format")
         return output_serializer
 
 
@@ -150,15 +156,26 @@ class BudgetTransactionsView(AbstractMijnAmsDataView):
 
     @extend_schema_with_error_responses(
         subclass_200_response=serializer_class(many=True),
-        additional_params=[OpenApiParameter(
-            name="passNumber",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description='Number of the pass',
-        )]
+        additional_params=[
+            OpenApiParameter(
+                name="passNumber",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description='Number of the pass',
+                required=True,
+            ),
+            OpenApiParameter(
+                name="budgetCode",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description='Budget code of the transaction',
+                required=False,
+            ),
+        ]
     )
     def get(self, request, *args, **kwargs) -> Response:
         """ Endpoint to retrieve all budget transactions for a specific pass """
+        self.query_params = {"budget_code": request.query_params.get("budgetCode")}
         return super().get(request, *args, **kwargs)
 
     def get_source_api_path(self, request) -> str:
@@ -175,7 +192,8 @@ class BudgetTransactionsView(AbstractMijnAmsDataView):
             ).encrypted_transaction_key
         except models.PassData.DoesNotExist:
             logger.error(f"Pass with pass number {pass_number} not found for user {session}")
-            raise MijnAMSAPIException()
+            url = reverse("passes-data")
+            raise MijnAMSAPIException(f"Pass with pass number {pass_number} not found. Please refresh the passes list with the [{url}] endpoint.")
 
         return urljoin(
             settings.MIJN_AMS_API_PATHS["BUDGET_TRANSACTIONS"],
@@ -184,5 +202,6 @@ class BudgetTransactionsView(AbstractMijnAmsDataView):
 
     def get_response_content(self, request):
         # TODO: Test data is not yet visible, so we mock the response data for now
+        _ = self.get_source_api_path(request)
         from city_pass.tests.test_data_views import TestBudgetTransactionsViews
         return TestBudgetTransactionsViews.mock_response_data
