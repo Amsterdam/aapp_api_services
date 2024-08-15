@@ -24,13 +24,13 @@ class MijnAMSAPIException(APIException):
 
 class MijnAMSInvalidContentException(APIException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    default_detail = 'Invalid data received from Mijn Amsterdam API'
+    default_detail = 'Invalid data received'
     default_code = 'mijn_ams_no_content'
 
 
 class MijnAMSInvalidDataException(APIException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    default_detail = 'Received data from Mijn Amsterdam API not in expected format'
+    default_detail = 'Received data not in expected format'
     default_code = 'mijn_ams_invalid_data'
 
 

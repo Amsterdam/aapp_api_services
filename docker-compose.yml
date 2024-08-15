@@ -63,11 +63,11 @@ services:
     image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images/city-pass}:${VERSION:-latest}
     environment:
       <<: *base-app-env
-    healthcheck:
-      test: curl -f http://localhost:8000/status/health
-      interval: 10s
-      timeout: 1s
-      retries: 5
+#    healthcheck:
+#      test: curl -f http://localhost:8000/status/health
+#      interval: 10s
+#      timeout: 1s
+#      retries: 5
     command: /app/deploy/docker-run.sh
 
   test:

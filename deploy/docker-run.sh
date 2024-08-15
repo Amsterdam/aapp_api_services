@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 set -u   # crash on missing env variables
 set -e   # stop on any error

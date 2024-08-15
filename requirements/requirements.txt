@@ -132,3 +132,5 @@ uritemplate==4.1.1
     # via drf-spectacular
 urllib3==2.2.2
     # via requests
+uwsgi==2.0.26
+    # via -r requirements/requirements.in
