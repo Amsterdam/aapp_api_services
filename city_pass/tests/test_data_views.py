@@ -189,24 +189,33 @@ class TestBudgetTransactionsViews(BaseCityPassTestCase):
     mock_response_data = [
         {
             "id": "201604",
-            "transactieDatum": "2025-07-31T21:59:59.000Z",
-            "bedrag": 241.0,
-            "annulering": False,
-            "geannuleerd": False,
+            "title": "Hema",
+            "amount": 9.95,
+            "amountFormatted": "€9,95",
+            "datePublished": "2025-07-31T21:59:59.000Z",
+            "datePublishedFormatted": "31 juli 2025",
+            "budget": "24/25 Kindtegoed 4 tm 9 jaar",
+            "budgetCode": "2024_AMSTEG_4-9",
         },
         {
             "id": "201605",
-            "transactieDatum": "2025-08-02T23:34:51.000Z",
-            "bedrag": 125.0,
-            "annulering": False,
-            "geannuleerd": False,
+            "title": "Aktiesport",
+            "amount": 4.95,
+            "amountFormatted": "€4,95",
+            "datePublished": "2025-07-31T21:59:59.000Z",
+            "datePublishedFormatted": "31 juli 2025",
+            "budget": "24/25 Kindtegoed 0 tm 3 jaar",
+            "budgetCode": "2024_AMSTEG_0-3",
         },
         {
             "id": "201606",
-            "transactieDatum": "2025-08-02T14:54:15.000Z",
-            "bedrag": 145.0,
-            "annulering": False,
-            "geannuleerd": False,
+            "title": "AFC Ijburg",
+            "amount": 182.95,
+            "amountFormatted": "€182,95",
+            "datePublished": "2025-07-28T21:59:59.000Z",
+            "datePublishedFormatted": "28 juli 2025",
+            "budget": "24/25 Kindtegoed 0 tm 3 jaar",
+            "budgetCode": "2024_AMSTEG_0-3",
         },
     ]
 
@@ -249,23 +258,23 @@ class TestBudgetTransactionsViews(BaseCityPassTestCase):
         )
         self.assertEqual(200, result.status_code)
 
-    # def test_get_budget_transactions_no_pass_number(self, _):
-    #     result = self.client.get(
-    #         self.api_url,
-    #         headers=self.headers,
-    #         follow=True
-    #     )
-    #     self.assertEqual(400, result.status_code)
-    #
-    # def test_get_budget_transactions_unknown_pass_number(self, _):
-    #     result = self.client.get(
-    #         self.api_url,
-    #         headers=self.headers,
-    #         query_params={"passNumber": "12345"},
-    #         follow=True
-    #     )
-    #     self.assertEqual(404, result.status_code)
-    #
+    def test_get_budget_transactions_no_pass_number(self, _):
+        result = self.client.get(
+            self.api_url,
+            headers=self.headers,
+            follow=True
+        )
+        self.assertEqual(400, result.status_code)
+
+    def test_get_budget_transactions_unknown_pass_number(self, _):
+        result = self.client.get(
+            self.api_url,
+            headers=self.headers,
+            query_params={"passNumber": "12345"},
+            follow=True
+        )
+        self.assertEqual(404, result.status_code)
+
     # def test_content_is_empty_list(self, mock_get):
     #     mock_response = Response()
     #     mock_response.status_code = 200
