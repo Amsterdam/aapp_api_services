@@ -6,13 +6,14 @@ import requests
 from django.conf import settings
 from django.urls import reverse
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
 from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer as DRFSerializer
 
 from city_pass import authentication, models, serializers
+from city_pass.views.extend_schema import extend_schema
 
 logger = logging.getLogger(__name__)
 
@@ -31,30 +32,6 @@ class MijnAMSInvalidDataException(APIException):
     default_detail = 'Received data not in expected format'
     default_code = 'invalid_data'
 
-
-def extend_schema_with_error_responses(subclass_200_response, additional_params=None):
-    """
-    Helper function to merge base responses with subclass-specific responses.
-    """
-    schema = {
-        "parameters": [
-            OpenApiParameter(
-                name=settings.ACCESS_TOKEN_HEADER,
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.HEADER,
-                description='Access token for authentication',
-                required=True,
-            ),
-        ],
-        "responses": {
-            400: serializers.DetailResultSerializer,
-            404: serializers.DetailResultSerializer,
-            500: serializers.DetailResultSerializer,
-        },
-    }
-    schema["parameters"] += additional_params or []
-    schema["responses"] = {200: subclass_200_response, **schema["responses"]}
-    return extend_schema(**schema)
 
 class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
     """
@@ -121,7 +98,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
 class PassesDataView(AbstractMijnAmsDataView):
     serializer_class = serializers.MijnAmsPassDataSerializer
 
-    @extend_schema_with_error_responses(subclass_200_response=serializer_class(many=True))
+    @extend_schema(success_response=serializer_class(many=True), error_response_codes=[400, 404, 500])
     def get(self, request, *args, **kwargs) -> Response:
         """ Endpoint to retrieve all passes for the current user """
         return super().get(request, *args, **kwargs)
@@ -154,8 +131,9 @@ class PassesDataView(AbstractMijnAmsDataView):
 class BudgetTransactionsView(AbstractMijnAmsDataView):
     serializer_class = serializers.MijnAmsPassBudgetTransactionsSerializer
 
-    @extend_schema_with_error_responses(
-        subclass_200_response=serializer_class(many=True),
+    @extend_schema(
+        success_response=serializer_class(many=True),
+        error_response_codes=[400, 404, 500],
         additional_params=[
             OpenApiParameter(
                 name="passNumber",
