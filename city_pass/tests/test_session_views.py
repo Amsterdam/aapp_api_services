@@ -158,7 +158,7 @@ class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
 
     def test_default_api_key_not_allowed(self):
         headers = self.headers
-        headers[settings.API_KEY_HEADER] = settings.API_AUTH_TOKENS
+        headers[settings.SESSION_CREDENTIALS_KEY_HEADER] = settings.API_AUTH_TOKENS
         result = self.client.post(
             self.api_url,
             headers=self.headers,
