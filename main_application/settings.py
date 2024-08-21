@@ -175,9 +175,10 @@ LOGGING = {
 # City Pass settings
 
 API_KEY_HEADER = "X-Api-Key"
-APP_API_KEYS = os.getenv("API_AUTH_TOKENS")
+API_AUTH_TOKENS = os.getenv("API_AUTH_TOKENS")
+MIJN_AMS_AUTH_TOKENS = os.getenv("MIJN_AMS_AUTH_TOKENS")
 SPECIFIC_API_KEYS = {
-    "/city-pass/api/v1/session/credentials": os.getenv("MIJN_AMSTERDAM_AUTH_TOKENS"),
+    "/city-pass/api/v1/session/credentials": MIJN_AMS_AUTH_TOKENS,
 }
 
 ACCESS_TOKEN_HEADER = "Access-Token"

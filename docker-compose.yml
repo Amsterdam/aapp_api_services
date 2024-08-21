@@ -86,4 +86,6 @@ services:
       SECRET_KEY: bogus
       API_PORT: 8000
       NO_COVERAGE: "true"
+      API_AUTH_TOKENS: insecure1,insecure2,insecure3
+      MIJN_AMS_AUTH_TOKENS: mijn-ams-1,mijn-ams-2
     command: python3 /app/manage.py test
