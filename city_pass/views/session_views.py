@@ -12,7 +12,7 @@ from city_pass.views.extend_schema import extend_schema
 class SessionInitView(generics.RetrieveAPIView):
     serializer_class = serializers.SessionTokensOutSerializer
 
-    @extend_schema(success_response=serializers.SessionTokensOutSerializer, error_response_codes=[403])
+    @extend_schema(success_response=serializers.SessionTokensOutSerializer, access_token=False, error_response_codes=[403])
     def get(self, request, *args, **kwargs):
         access_token_str, refresh_token_str = self.init_session()
         serializer = self.get_serializer(
@@ -43,7 +43,7 @@ class SessionInitView(generics.RetrieveAPIView):
 class SessionPostCredentialView(generics.CreateAPIView):
     serializer_class = serializers.SessionCredentialInSerializer
 
-    @extend_schema(success_response=serializers.DetailResultSerializer, error_response_codes=[401, 403])
+    @extend_schema(success_response=serializers.DetailResultSerializer, access_token=False, error_response_codes=[401, 403])
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -75,7 +75,7 @@ class SessionPostCredentialView(generics.CreateAPIView):
 class SessionRefreshAccessView(generics.CreateAPIView):
     serializer_class = serializers.SessionRefreshInSerializer
 
-    @extend_schema(success_response=serializers.SessionTokensOutSerializer, error_response_codes=[401, 403])
+    @extend_schema(success_response=serializers.SessionTokensOutSerializer, access_token=False, error_response_codes=[401, 403])
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
