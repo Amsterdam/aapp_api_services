@@ -9,40 +9,51 @@ from rest_framework.exceptions import AuthenticationFailed
 from city_pass.models import AccessToken
 
 
-class APIKeyAuthentication(BaseAuthentication):
+class AppAuthentication(BaseAuthentication):
+    tokens = None
+    api_key_header = None
     def authenticate(self, request: HttpRequest):
-        api_key = request.headers.get(settings.API_KEY_HEADER)
+        api_key = request.headers.get(self.api_key_header)
 
-        if api_key not in settings.API_AUTH_TOKENS.split(","):
-            raise AuthenticationFailed("Invalid API key")
+        if api_key not in self.tokens:
+            raise AuthenticationFailed(f"Invalid API key: {self.api_key_header}")
 
         return (None, None)
 
 
-class MijnAmsterdamAuthentication(BaseAuthentication):
-    def authenticate(self, request):
-        api_key = request.headers.get(settings.API_KEY_HEADER)
-
-        if api_key not in settings.MIJN_AMS_AUTH_TOKENS.split(","):
-            raise AuthenticationFailed("Invalid Specific API key")
+class APIKeyAuthentication(AppAuthentication):
+    tokens = settings.API_AUTH_TOKENS.split(",")
+    api_key_header = settings.API_KEY_HEADER
 
 
-class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):
+class SessionCredentialsKeyAuthentication(AppAuthentication):
+    tokens = settings.MIJN_AMS_AUTH_TOKENS.split(",")
+    api_key_header = settings.SESSION_CREDENTIALS_KEY_HEADER
+
+
+class AuthenticationScheme(OpenApiAuthenticationExtension):
     """
     This class is specifically for drf-spectacular,
     so that the API key authentication method will be shown under the Authorize button in Swagger
     """
-
-    target_class = "city_pass.authentication.APIKeyAuthentication"
-    name = "APIKeyAuthentication"
+    header_key = None
 
     def get_security_definition(self, auto_schema):
         return {
             "type": "apiKey",
             "in": "header",
-            "name": settings.API_KEY_HEADER,
+            "name": self.header_key,
         }
 
+class APIKeyAuthenticationScheme(AuthenticationScheme):
+    target_class = "city_pass.authentication.APIKeyAuthentication"
+    name = "APIKeyAuthentication"
+    header_key = settings.API_KEY_HEADER
+
+class SessionCredentialsKeyAuthenticationScheme(AuthenticationScheme):
+    target_class = "city_pass.authentication.SessionCredentialsKeyAuthentication"
+    name = "SessionCredentialsKeyAuthentication"
+    header_key = settings.SESSION_CREDENTIALS_KEY_HEADER
 
 class AccessTokenAuthentication(BaseAuthentication):
     def authenticate(self, request: HttpRequest):

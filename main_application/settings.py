@@ -81,6 +81,7 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "city_pass.authentication.APIKeyAuthentication",
+        "city_pass.authentication.SessionCredentialsKeyAuthentication",
     ],
 }
 
@@ -175,6 +176,7 @@ LOGGING = {
 
 API_KEY_HEADER = "X-Api-Key"
 API_AUTH_TOKENS = os.getenv("API_AUTH_TOKENS")
+SESSION_CREDENTIALS_KEY_HEADER = "X-Session-Credentials-Key"
 MIJN_AMS_AUTH_TOKENS = os.getenv("MIJN_AMS_AUTH_TOKENS")
 
 ACCESS_TOKEN_HEADER = "Access-Token"

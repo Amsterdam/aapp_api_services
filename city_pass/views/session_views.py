@@ -42,7 +42,7 @@ class SessionInitView(generics.RetrieveAPIView):
 
 class SessionPostCredentialView(generics.CreateAPIView):
     serializer_class = serializers.SessionCredentialInSerializer
-    authentication_classes = [authentication.MijnAmsterdamAuthentication]
+    authentication_classes = [authentication.SessionCredentialsKeyAuthentication]
 
     @extend_schema(success_response=serializers.DetailResultSerializer, access_token=False, error_response_codes=[401, 403])
     def post(self, request, *args, **kwargs):
