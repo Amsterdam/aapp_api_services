@@ -13,9 +13,7 @@ COPY /deploy /app/deploy
 ENV PYTHONPATH=/app/city_pass
 
 # Install dependencies
-RUN apk add --no-cache --virtual .build-deps build-base linux-headers \
-    && apk add --no-cache \
-    curl postgresql15-client
+RUN apk add --no-cache --virtual .build-deps build-base linux-headers
 
 COPY requirements /app/requirements/
 RUN chmod 777 /app/requirements
