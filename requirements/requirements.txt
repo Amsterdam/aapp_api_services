@@ -18,7 +18,7 @@ azure-identity==1.17.1
     # via
     #   -r requirements/requirements.in
     #   opencensus-ext-azure
-cachetools==5.4.0
+cachetools==5.5.0
     # via google-auth
 certifi==2024.7.4
     # via requests
@@ -45,7 +45,7 @@ drf-spectacular==0.27.2
     # via -r requirements/requirements.in
 google-api-core==2.19.1
     # via opencensus
-google-auth==2.33.0
+google-auth==2.34.0
     # via google-api-core
 googleapis-common-protos==1.63.2
     # via google-api-core
