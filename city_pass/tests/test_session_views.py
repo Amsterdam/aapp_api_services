@@ -14,9 +14,7 @@ from city_pass.tests.base_test import (
 
 
 class TestSessionInitView(BaseCityPassTestCase):
-    def setUp(self):
-        super().setUp()
-        self.api_url = "/city-pass/api/v1/session/init"
+    api_url = "/city-pass/api/v1/session/init"
 
     def test_session_init_success(self):
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
@@ -49,9 +47,7 @@ class TestSessionInitView(BaseCityPassTestCase):
 
 
 class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
-    def setUp(self):
-        super().setUp()
-        self.api_url = "/city-pass/api/v1/session/credentials"
+    api_url = "/city-pass/api/v1/session/credentials"
 
     def test_post_credentials_success(self):
         session = Session.objects.create()
@@ -157,9 +153,7 @@ class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
 
 
 class TestSessionRefreshAccessView(BaseCityPassTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-        self.api_url = "/city-pass/api/v1/session/refresh"
+    api_url = "/city-pass/api/v1/session/refresh"
 
     @override_settings(
         TOKEN_TTLS={
@@ -281,13 +275,7 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
 
 
 class TestSessionLogoutView(BaseCityPassTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-        self.api_url = "/city-pass/api/v1/session/logout"
-
-        self.session = baker.make(Session, encrypted_adminstration_no="foobar")
-        baker.make(AccessToken, session=self.session)
-        baker.make(RefreshToken, session=self.session)
+    api_url = "/city-pass/api/v1/session/logout"
 
     def test_logout_success(self):
         headers = {**self.headers, "Access-Token": self.session.accesstoken.token}

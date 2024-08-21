@@ -1,0 +1,85 @@
+passes = [
+	{
+		"id": "201604",
+		"owner": {
+			"firstname": "Chelsea",
+			"lastname": "Innocent",
+			"initials": "C",
+		},
+		"dateEnd": "2025-07-31T21:59:59.000Z",
+		"dateEndFormatted": "31 juli 2025",
+		"budgets": [
+			{
+				"title": "24/25 Kindtegoed 4 tm 9 jaar",
+				"description": "",
+				"code": "2024_AMSTEG_4-9",
+				"budgetAssigned": 241,
+				"budgetAssignedFormatted": "€241,00",
+				"budgetBalance": 241,
+				"budgetBalanceFormatted": "€241,00",
+				"dateEnd": "2025-07-31T21:59:59.000Z",
+				"dateEndFormatted": "31 juli 2025",
+			}
+		],
+		"balanceFormatted": "€241,00",
+		"passNumber": 6011013116525,
+		"passNumberComplete": "6064366011013116525",
+		"transactionsKeyEncrypted": "NU-5XEzItQQkg7P17RT813RjDSQn8YH9Uj30sSRaO5lkP4zg0J2wXAYLu8s9xtj9",
+	},
+	{
+		"id": "201605",
+		"owner": {"firstname": "Mini", "lastname": "Klaproos", "initials": "M"},
+		"dateEnd": "2025-07-31T21:59:59.000Z",
+		"dateEndFormatted": "31 juli 2025",
+		"budgets": [
+			{
+				"title": "24/25 Kindtegoed 0 tm 3 jaar",
+				"description": "",
+				"code": "2024_AMSTEG_0-3",
+				"budgetAssigned": 125,
+				"budgetAssignedFormatted": "€125,00",
+				"budgetBalance": 125,
+				"budgetBalanceFormatted": "€125,00",
+				"dateEnd": "2025-07-31T21:59:59.000Z",
+				"dateEndFormatted": "31 juli 2025",
+			}
+		],
+		"balanceFormatted": "€125,00",
+		"passNumber": 6011013117242,
+		"passNumberComplete": "6064366011013117242",
+		"transactionsKeyEncrypted": "a24WShplCZ7MRAVSMDyvi0kMuOUNQBsPNC8b4HePJl3iOfOPeg9oVOZ3PkpesC3c",
+	},
+]
+
+budget_transactions = [
+	{
+		"id": "201604",
+		"title": "Hema",
+		"amount": 9.95,
+		"amountFormatted": "€9,95",
+		"datePublished": "2025-07-31T21:59:59.000Z",
+		"datePublishedFormatted": "31 juli 2025",
+		"budget": "24/25 Kindtegoed 4 tm 9 jaar",
+		"budgetCode": "2024_AMSTEG_4-9",
+	},
+	{
+		"id": "201605",
+		"title": "Aktiesport",
+		"amount": 4.95,
+		"amountFormatted": "€4,95",
+		"datePublished": "2025-07-31T21:59:59.000Z",
+		"datePublishedFormatted": "31 juli 2025",
+		"budget": "24/25 Kindtegoed 0 tm 3 jaar",
+		"budgetCode": "2024_AMSTEG_0-3",
+	},
+	{
+		"id": "201606",
+		"title": "AFC Ijburg",
+		"amount": 182.95,
+		"amountFormatted": "€182,95",
+		"datePublished": "2025-07-28T21:59:59.000Z",
+		"datePublishedFormatted": "28 juli 2025",
+		"budget": "24/25 Kindtegoed 0 tm 3 jaar",
+		"budgetCode": "2024_AMSTEG_0-3",
+	},
+]

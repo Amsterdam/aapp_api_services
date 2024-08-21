@@ -181,5 +181,5 @@ class BudgetTransactionsView(AbstractMijnAmsDataView):
     def get_response_content(self, request):
         # TODO: Test data is not yet visible, so we mock the response data for now
         _ = self.get_source_api_path(request)
-        from city_pass.tests.test_data_views import TestBudgetTransactionsViews
-        return TestBudgetTransactionsViews.mock_response_data
+        from city_pass.tests import mock_data
+        return mock_data.budget_transactions
