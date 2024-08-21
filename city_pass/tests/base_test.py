@@ -2,7 +2,7 @@ from django.test import TestCase
 from model_bakery import baker
 
 from city_pass.models import Session, AccessToken, RefreshToken
-from main_application import settings
+from django.conf import settings
 
 DATE_FORMAT = "%Y-%m-%d %H:%M"
 ONE_HOUR_IN_SECONDS = 3600

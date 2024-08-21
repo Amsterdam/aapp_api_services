@@ -14,9 +14,6 @@ import os
 import sys
 from pathlib import Path
 
-from django.urls import reverse
-from django.utils.functional import lazy
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -60,7 +57,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "main_application.middleware.ApiKeyMiddleware",
 ]
 
 ROOT_URLCONF = "main_application.urls"
@@ -83,6 +79,9 @@ TEMPLATES = [
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "city_pass.authentication.APIKeyAuthentication",
+    ],
 }
 
 SPECTACULAR_SETTINGS = {
@@ -177,9 +176,6 @@ LOGGING = {
 API_KEY_HEADER = "X-Api-Key"
 API_AUTH_TOKENS = os.getenv("API_AUTH_TOKENS")
 MIJN_AMS_AUTH_TOKENS = os.getenv("MIJN_AMS_AUTH_TOKENS")
-SPECIFIC_API_KEYS = {
-    "/city-pass/api/v1/session/credentials": MIJN_AMS_AUTH_TOKENS,
-}
 
 ACCESS_TOKEN_HEADER = "Access-Token"
 ACCESS_TOKEN_TTL = int(

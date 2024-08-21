@@ -42,6 +42,7 @@ class SessionInitView(generics.RetrieveAPIView):
 
 class SessionPostCredentialView(generics.CreateAPIView):
     serializer_class = serializers.SessionCredentialInSerializer
+    authentication_classes = [authentication.MijnAmsterdamAuthentication]
 
     @extend_schema(success_response=serializers.DetailResultSerializer, access_token=False, error_response_codes=[401, 403])
     def post(self, request, *args, **kwargs):
@@ -143,7 +144,7 @@ class SessionRefreshAccessView(generics.CreateAPIView):
 
 
 class SessionLogoutView(generics.CreateAPIView):
-    @extend_schema(success_response=serializers.DetailResultSerializer,error_response_codes=[401, 403])
+    @extend_schema(success_response=serializers.DetailResultSerializer, error_response_codes=[401, 403])
     @authentication.authenticate_access_token
     def post(self, request, *args, **kwargs):
         session = request.user

@@ -51,8 +51,8 @@ class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        endpoint_api_keys = settings.SPECIFIC_API_KEYS.get(self.api_url)
-        self.headers[settings.API_KEY_HEADER] = endpoint_api_keys.split(",")[0]
+        mijn_ams_api_keys = settings.MIJN_AMS_AUTH_TOKENS
+        self.headers[settings.API_KEY_HEADER] = mijn_ams_api_keys.split(",")[0]
 
     def test_post_credentials_success(self):
         session = Session.objects.create()

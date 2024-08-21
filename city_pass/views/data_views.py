@@ -170,7 +170,7 @@ class BudgetTransactionsView(AbstractMijnAmsDataView):
             ).encrypted_transaction_key
         except models.PassData.DoesNotExist:
             logger.error(f"Pass with pass number {pass_number} not found for user {session}")
-            url = reverse("passes-data")
+            url = reverse("city-pass-data-passes")
             raise MijnAMSAPIException(f"Pass with pass number {pass_number} not found. Please refresh the passes list with the [{url}] endpoint.")
 
         return urljoin(

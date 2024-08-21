@@ -13,10 +13,18 @@ class APIKeyAuthentication(BaseAuthentication):
     def authenticate(self, request: HttpRequest):
         api_key = request.headers.get(settings.API_KEY_HEADER)
 
-        if api_key not in settings.API_KEYS:
+        if api_key not in settings.API_AUTH_TOKENS.split(","):
             raise AuthenticationFailed("Invalid API key")
 
         return (None, None)
+
+
+class MijnAmsterdamAuthentication(BaseAuthentication):
+    def authenticate(self, request):
+        api_key = request.headers.get(settings.API_KEY_HEADER)
+
+        if api_key not in settings.MIJN_AMS_AUTH_TOKENS.split(","):
+            raise AuthenticationFailed("Invalid Specific API key")
 
 
 class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):

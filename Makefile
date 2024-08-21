@@ -5,6 +5,7 @@ GID:=$(shell id --group)
 
 dc = docker-compose
 run = $(dc) run --rm -u ${UID}:${GID}
+manage = $(run) dev python manage.py
 
 REGISTRY ?= localhost:5000
 REPOSITORY ?= Amsterdam-App/aapp-construction-work
@@ -26,15 +27,15 @@ requirements:                       ## Upgrade requirements (in requirements.in)
 	$(run) dev pip-compile --upgrade --output-file requirements/requirements_dev.txt --allow-unsafe requirements/requirements_dev.in
 
 shell:
-	$(run) dev sh
+	$(manage) shell
 
 upgrade: requirements install       ## Run 'requirements' and 'install' targets
 
 migrations:
-	$(run) dev python manage.py makemigrations
+	$(manage) makemigrations
 
 migrate:
-	$(run) dev python manage.py migrate
+	$(manage) migrate
 
 build:
 	$(dc) build
@@ -46,7 +47,7 @@ app:
 	$(dc) up app
 
 test:
-	$(dc) run --rm -u ${UID}:${GID} test
+	$(run) test
 
 push:
 	$(dc) push
