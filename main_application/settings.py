@@ -24,7 +24,7 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 ALLOWED_HOSTS = [
     "construction-work",  # Host within docker realm
@@ -175,9 +175,9 @@ LOGGING = {
 # City Pass settings
 
 API_KEY_HEADER = "X-Api-Key"
-API_AUTH_TOKENS = os.getenv("API_AUTH_TOKENS")
+API_KEYS = os.getenv("API_AUTH_TOKENS")
 SESSION_CREDENTIALS_KEY_HEADER = "X-Session-Credentials-Key"
-MIJN_AMS_AUTH_TOKENS = os.getenv("MIJN_AMS_AUTH_TOKENS")
+MIJN_AMS_API_KEYS = os.getenv("MIJN_AMS_AUTH_TOKENS")
 
 ACCESS_TOKEN_HEADER = "Access-Token"
 ACCESS_TOKEN_TTL = int(

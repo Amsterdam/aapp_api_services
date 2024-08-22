@@ -10,24 +10,24 @@ from city_pass.models import AccessToken
 
 
 class AppAuthentication(BaseAuthentication):
-    tokens = None
+    api_keys = None
     api_key_header = None
     def authenticate(self, request: HttpRequest):
         api_key = request.headers.get(self.api_key_header)
 
-        if api_key not in self.tokens:
+        if key not in self.api_keys:
             raise AuthenticationFailed(f"Invalid API key: {self.api_key_header}")
 
         return (None, None)
 
 
 class APIKeyAuthentication(AppAuthentication):
-    tokens = settings.API_AUTH_TOKENS.split(",")
+    api_keys = settings.API_KEYS.split(",")
     api_key_header = settings.API_KEY_HEADER
 
 
 class SessionCredentialsKeyAuthentication(AppAuthentication):
-    tokens = settings.MIJN_AMS_AUTH_TOKENS.split(",")
+    api_keys = settings.MIJN_AMS_API_KEYS.split(",")
     api_key_header = settings.SESSION_CREDENTIALS_KEY_HEADER
 
 

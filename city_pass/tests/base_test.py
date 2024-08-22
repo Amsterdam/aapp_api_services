@@ -10,7 +10,7 @@ ONE_HOUR_IN_SECONDS = 3600
 
 class BaseCityPassTestCase(TestCase):
     def setUp(self) -> None:
-        self.headers = {settings.API_KEY_HEADER: settings.API_AUTH_TOKENS.split(",")[0]}
+        self.headers = {settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0]}
 
         self.session = baker.make(Session, encrypted_adminstration_no="foobar")
         baker.make(AccessToken, session=self.session)
