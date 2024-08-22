@@ -31,6 +31,11 @@ urlpatterns = [
         session_views.SessionLogoutView.as_view(),
         name="city-pass-session-logout",
     ),
+    path(
+        "session/logout",
+        session_views.SessionLogoutView.as_view(),
+        name="session-logout",
+    ),
     # data
     path(
         "data/passes", data_views.PassesDataView.as_view(),
