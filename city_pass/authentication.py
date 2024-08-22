@@ -13,9 +13,9 @@ class AppAuthentication(BaseAuthentication):
     api_keys = None
     api_key_header = None
     def authenticate(self, request: HttpRequest):
-        api_key = request.headers.get(self.api_key_header)
+        supplied_api_key = request.headers.get(self.api_key_header)
 
-        if key not in self.api_keys:
+        if supplied_api_key not in self.api_keys:
             raise AuthenticationFailed(f"Invalid API key: {self.api_key_header}")
 
         return (None, None)
