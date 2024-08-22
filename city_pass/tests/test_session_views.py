@@ -49,6 +49,11 @@ class TestSessionInitView(BaseCityPassTestCase):
 class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
     api_url = "/city-pass/api/v1/session/credentials"
 
+    def setUp(self) -> None:
+        super().setUp()
+        mijn_ams_api_keys = settings.MIJN_AMS_API_KEYS
+        self.headers[settings.SESSION_CREDENTIALS_KEY_HEADER] = mijn_ams_api_keys.split(",")[0]
+
     def test_post_credentials_success(self):
         session = Session.objects.create()
         access_token = AccessToken(session=session)
@@ -150,6 +155,17 @@ class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
             follow=True,
         )
         self.assertEqual(result.status_code, 400)
+
+    def test_default_api_key_not_allowed(self):
+        headers = self.headers
+        headers[settings.SESSION_CREDENTIALS_KEY_HEADER] = self.headers[settings.API_KEY_HEADER]
+        result = self.client.post(
+            self.api_url,
+            headers=self.headers,
+            content_type="application/json",
+            follow=True,
+        )
+        self.assertEqual(result.status_code, 403)
 
 
 class TestSessionRefreshAccessView(BaseCityPassTestCase):

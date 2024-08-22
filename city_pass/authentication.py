@@ -9,32 +9,51 @@ from rest_framework.exceptions import AuthenticationFailed
 from city_pass.models import AccessToken
 
 
-class APIKeyAuthentication(BaseAuthentication):
+class AppAuthentication(BaseAuthentication):
+    api_keys = None
+    api_key_header = None
     def authenticate(self, request: HttpRequest):
-        api_key = request.headers.get(settings.API_KEY_HEADER)
+        supplied_api_key = request.headers.get(self.api_key_header)
 
-        if api_key not in settings.API_KEYS:
-            raise AuthenticationFailed("Invalid API key")
+        if supplied_api_key not in self.api_keys:
+            raise AuthenticationFailed(f"Invalid API key: {self.api_key_header}")
 
         return (None, None)
 
 
-class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):
+class APIKeyAuthentication(AppAuthentication):
+    api_keys = settings.API_KEYS.split(",")
+    api_key_header = settings.API_KEY_HEADER
+
+
+class SessionCredentialsKeyAuthentication(AppAuthentication):
+    api_keys = settings.MIJN_AMS_API_KEYS.split(",")
+    api_key_header = settings.SESSION_CREDENTIALS_KEY_HEADER
+
+
+class AuthenticationScheme(OpenApiAuthenticationExtension):
     """
     This class is specifically for drf-spectacular,
     so that the API key authentication method will be shown under the Authorize button in Swagger
     """
-
-    target_class = "city_pass.authentication.APIKeyAuthentication"
-    name = "APIKeyAuthentication"
+    header_key = None
 
     def get_security_definition(self, auto_schema):
         return {
             "type": "apiKey",
             "in": "header",
-            "name": settings.API_KEY_HEADER,
+            "name": self.header_key,
         }
 
+class APIKeyAuthenticationScheme(AuthenticationScheme):
+    target_class = "city_pass.authentication.APIKeyAuthentication"
+    name = "APIKeyAuthentication"
+    header_key = settings.API_KEY_HEADER
+
+class SessionCredentialsKeyAuthenticationScheme(AuthenticationScheme):
+    target_class = "city_pass.authentication.SessionCredentialsKeyAuthentication"
+    name = "SessionCredentialsKeyAuthentication"
+    header_key = settings.SESSION_CREDENTIALS_KEY_HEADER
 
 class AccessTokenAuthentication(BaseAuthentication):
     def authenticate(self, request: HttpRequest):

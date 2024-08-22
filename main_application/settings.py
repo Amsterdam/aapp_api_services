@@ -34,8 +34,6 @@ ALLOWED_HOSTS = [
     "acc.app.amsterdam.nl",
     "app.amsterdam.nl",
 ]
-if DEBUG:
-    ALLOWED_HOSTS.append("127.0.0.1")
 
 
 # Application definition
@@ -83,6 +81,7 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "city_pass.authentication.APIKeyAuthentication",
+        "city_pass.authentication.SessionCredentialsKeyAuthentication",
     ],
 }
 
@@ -177,8 +176,8 @@ LOGGING = {
 
 API_KEY_HEADER = "X-Api-Key"
 API_KEYS = os.getenv("API_AUTH_TOKENS")
-if API_KEYS:
-    API_KEYS = API_KEYS.split(",")
+SESSION_CREDENTIALS_KEY_HEADER = "X-Session-Credentials-Key"
+MIJN_AMS_API_KEYS = os.getenv("MIJN_AMS_AUTH_TOKENS")
 
 ACCESS_TOKEN_HEADER = "Access-Token"
 ACCESS_TOKEN_TTL = int(

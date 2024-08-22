@@ -12,7 +12,7 @@ freezegun==1.5.1
     # via -r requirements/requirements_dev.in
 iniconfig==2.0.0
     # via pytest
-model-bakery==1.19.1
+model-bakery==1.19.4
     # via -r requirements/requirements_dev.in
 packaging==24.1
     # via pytest
