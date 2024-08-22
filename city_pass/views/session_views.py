@@ -1,23 +1,18 @@
 from typing import Tuple
 
 from django.db import transaction
-from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from city_pass import models, serializers
+from city_pass import models, serializers, authentication
 from city_pass.utils import detail_message
+from city_pass.views.extend_schema import extend_schema
 
 
 class SessionInitView(generics.RetrieveAPIView):
     serializer_class = serializers.SessionTokensOutSerializer
 
-    @extend_schema(
-        responses={
-            200: serializers.SessionTokensOutSerializer,
-            403: serializers.DetailResultSerializer,
-        },
-    )
+    @extend_schema(success_response=serializers.SessionTokensOutSerializer, access_token=False, error_response_codes=[403])
     def get(self, request, *args, **kwargs):
         access_token_str, refresh_token_str = self.init_session()
         serializer = self.get_serializer(
@@ -48,13 +43,7 @@ class SessionInitView(generics.RetrieveAPIView):
 class SessionPostCredentialView(generics.CreateAPIView):
     serializer_class = serializers.SessionCredentialInSerializer
 
-    @extend_schema(
-        responses={
-            200: serializers.DetailResultSerializer,
-            401: serializers.DetailResultSerializer,
-            403: serializers.DetailResultSerializer,
-        },
-    )
+    @extend_schema(success_response=serializers.DetailResultSerializer, access_token=False, error_response_codes=[401, 403])
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -86,13 +75,7 @@ class SessionPostCredentialView(generics.CreateAPIView):
 class SessionRefreshAccessView(generics.CreateAPIView):
     serializer_class = serializers.SessionRefreshInSerializer
 
-    @extend_schema(
-        responses={
-            200: serializers.SessionTokensOutSerializer,
-            401: serializers.DetailResultSerializer,
-            403: serializers.DetailResultSerializer,
-        }
-    )
+    @extend_schema(success_response=serializers.SessionTokensOutSerializer, access_token=False, error_response_codes=[401, 403])
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -157,3 +140,12 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         new_access_token.save()
 
         return new_access_token.token, new_refresh_token.token
+
+
+class SessionLogoutView(generics.CreateAPIView):
+    @extend_schema(success_response=serializers.DetailResultSerializer,error_response_codes=[401, 403])
+    @authentication.authenticate_access_token
+    def post(self, request, *args, **kwargs):
+        session = request.user
+        session.delete()
+        return Response(data=detail_message("Success"), status=status.HTTP_200_OK)
