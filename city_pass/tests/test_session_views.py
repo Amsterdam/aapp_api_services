@@ -17,7 +17,7 @@ class TestSessionInitView(BaseCityPassTestCase):
     api_url = "/city-pass/api/v1/session/init"
 
     def test_session_init_success(self):
-        result = self.client.get(self.api_url, headers=self.headers, follow=True)
+        result = self.client.post(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(result.status_code, 200)
 
         # Check if access token exists

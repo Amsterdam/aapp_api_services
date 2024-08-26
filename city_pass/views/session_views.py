@@ -9,11 +9,11 @@ from city_pass.utils import detail_message
 from city_pass.views.extend_schema import extend_schema
 
 
-class SessionInitView(generics.RetrieveAPIView):
+class SessionInitView(generics.CreateAPIView):
     serializer_class = serializers.SessionTokensOutSerializer
 
     @extend_schema(success_response=serializers.SessionTokensOutSerializer, access_token=False, error_response_codes=[403])
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         access_token_str, refresh_token_str = self.init_session()
         serializer = self.get_serializer(
             {"access_token": access_token_str, "refresh_token": refresh_token_str}
