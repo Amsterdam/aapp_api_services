@@ -1,12 +1,13 @@
 import json
 from unittest.mock import patch
 
+from model_bakery import baker
 from requests import Response
 
 from city_pass.models import PassData
 from city_pass.tests import mock_data
 from city_pass.tests.base_test import BaseCityPassTestCase
-from model_bakery import baker
+
 
 class TestPassesView(BaseCityPassTestCase):
     api_url = "/city-pass/api/v1/data/passes"
@@ -118,20 +119,26 @@ class TestPassesView(BaseCityPassTestCase):
 
 
 @patch("city_pass.views.data_views.requests.get")
-class TestBudgetTransactionsViews(BaseCityPassTestCase):
-    api_url = "/city-pass/api/v1/data/budget-transactions"
+class BaseAbstractTransactionsViews(BaseCityPassTestCase):
+    api_url = ""
+    mock_data = []
+    __test__ = (
+        False  # Skip this class in test discovery and only use it as a base class
+    )
 
     def setUp(self) -> None:
         super().setUp()
         self.headers = {**self.headers, "Access-Token": self.session.accesstoken.token}
         self.pass_number = "6011013116525"
-        self.pass_data = baker.make(PassData, session=self.session, pass_number=self.pass_number)
+        self.pass_data = baker.make(
+            PassData, session=self.session, pass_number=self.pass_number
+        )
 
-    def test_get_budget_transactions_successful(self, mock_get):
+    def test_get_transactions_successful(self, mock_get):
         mock_response = Response()
         mock_response.status_code = 200
         mock_response._content = json.dumps(
-            {"content": mock_data.budget_transactions, "status": "SUCCESS"}
+            {"content": self.mock_data, "status": "SUCCESS"}
         ).encode("utf-8")
         mock_get.return_value = mock_response
 
@@ -139,24 +146,20 @@ class TestBudgetTransactionsViews(BaseCityPassTestCase):
             self.api_url,
             headers=self.headers,
             query_params={"passNumber": self.pass_number},
-            follow=True
+            follow=True,
         )
         self.assertEqual(200, result.status_code)
 
-    def test_get_budget_transactions_no_pass_number(self, _):
-        result = self.client.get(
-            self.api_url,
-            headers=self.headers,
-            follow=True
-        )
+    def test_get_transactions_no_pass_number(self, _):
+        result = self.client.get(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(400, result.status_code)
 
-    def test_get_budget_transactions_unknown_pass_number(self, _):
+    def test_get_transactions_unknown_pass_number(self, _):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
             query_params={"passNumber": "12345"},
-            follow=True
+            follow=True,
         )
         self.assertEqual(404, result.status_code)
 
@@ -192,3 +195,15 @@ class TestBudgetTransactionsViews(BaseCityPassTestCase):
     #         follow=True
     #     )
     #     self.assertEqual(500, result.status_code)
+
+
+class TestBudgetTransactionsViews(BaseAbstractTransactionsViews):
+    api_url = "/city-pass/api/v1/data/budget-transactions"
+    mock_data = mock_data.budget_transactions
+    __test__ = True
+
+
+class TestAanbiedingTransactionsViews(BaseAbstractTransactionsViews):
+    api_url = "/city-pass/api/v1/data/aanbieding-transactions"
+    mock_data = mock_data.aanbieding_transactions
+    __test__ = True

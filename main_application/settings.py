@@ -200,4 +200,5 @@ MIJN_AMS_API_DOMAIN = os.getenv("MIJN_AMS_API_DOMAIN")
 MIJN_AMS_API_PATHS = {
     "PASSES": "/private/api/v1/services/amsapp/stadspas/passen/",
     "BUDGET_TRANSACTIONS": "/private/api/v1/services/amsapp/stadspas/budget/transactions/",
+    "AANBIEDING_TRANSACTIONS": "/private/api/v1/services/amsapp/stadspas/aanbiedingen/transactions/",
 }

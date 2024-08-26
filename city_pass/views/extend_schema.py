@@ -18,7 +18,8 @@ def extend_schema(success_response, error_response_codes, access_token=True, add
             description='Access token for authentication',
             required=True,
         )
-    ] if access_token else [] + (additional_params or [])
+    ] if access_token else []
+    parameters += additional_params or []
     error_responses = {code: serializers.DetailResultSerializer for code in error_response_codes}
     return extend_schema_drf(
         parameters=parameters,

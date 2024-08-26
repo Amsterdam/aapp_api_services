@@ -46,6 +46,11 @@ urlpatterns = [
         data_views.BudgetTransactionsView.as_view(),
         name="city-pass-data-budget-transactions",
     ),
+    path(
+        "data/aanbieding-transactions",
+        data_views.AanbiedingTransactionsView.as_view(),
+        name="city-pass-data-aanbieding-transactions",
+    ),
 ]
 
 if settings.DEBUG:

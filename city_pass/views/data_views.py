@@ -128,8 +128,34 @@ class PassesDataView(AbstractMijnAmsDataView):
         )
 
 
-class BudgetTransactionsView(AbstractMijnAmsDataView):
+
+class AbstractTransactionsView(AbstractMijnAmsDataView):
+    base_url: str = None
+
+    def get_source_api_path(self, request) -> str:
+        session = request.user
+        pass_number = request.query_params.get("passNumber")
+        if pass_number is None:
+            logger.error(f"Pass number not provided in query parameters")
+            raise MijnAMSRequestException("Pass number not provided in query parameters")
+
+        try:
+            encrypted_transaction_key = models.PassData.objects.get(
+                session=session,
+                pass_number=pass_number,
+            ).encrypted_transaction_key
+        except models.PassData.DoesNotExist:
+            logger.error(f"Pass with pass number {pass_number} not found for user {session}")
+            url = reverse("city-pass-data-passes")
+            raise MijnAMSAPIException(f"Pass with pass number {pass_number} not found. Please refresh the passes list with the [{url}] endpoint.")
+
+        return urljoin(
+            self.base_url,
+            encrypted_transaction_key,
+        )
+class BudgetTransactionsView(AbstractTransactionsView):
     serializer_class = serializers.MijnAmsPassBudgetTransactionsSerializer
+    base_url = settings.MIJN_AMS_API_PATHS["BUDGET_TRANSACTIONS"]
 
     @extend_schema(
         success_response=serializer_class(many=True),
@@ -156,30 +182,36 @@ class BudgetTransactionsView(AbstractMijnAmsDataView):
         self.query_params = {"budget_code": request.query_params.get("budgetCode")}
         return super().get(request, *args, **kwargs)
 
-    def get_source_api_path(self, request) -> str:
-        session = request.user
-        pass_number = request.query_params.get("passNumber")
-        if pass_number is None:
-            logger.error(f"Pass number not provided in query parameters")
-            raise MijnAMSRequestException("Pass number not provided in query parameters")
-
-        try:
-            encrypted_transaction_key = models.PassData.objects.get(
-                session=session,
-                pass_number=pass_number,
-            ).encrypted_transaction_key
-        except models.PassData.DoesNotExist:
-            logger.error(f"Pass with pass number {pass_number} not found for user {session}")
-            url = reverse("city-pass-data-passes")
-            raise MijnAMSAPIException(f"Pass with pass number {pass_number} not found. Please refresh the passes list with the [{url}] endpoint.")
-
-        return urljoin(
-            settings.MIJN_AMS_API_PATHS["BUDGET_TRANSACTIONS"],
-            encrypted_transaction_key,
-        )
-
     def get_response_content(self, request):
         # TODO: Test data is not yet visible, so we mock the response data for now
         _ = self.get_source_api_path(request)
         from city_pass.tests import mock_data
         return mock_data.budget_transactions
+
+
+class AanbiedingTransactionsView(AbstractTransactionsView):
+    serializer_class = serializers.MijnAmsPassAanbiedingTransactionsSerializer
+    base_url = settings.MIJN_AMS_API_PATHS["AANBIEDING_TRANSACTIONS"]
+
+    @extend_schema(
+        success_response=serializer_class(many=True),
+        error_response_codes=[400, 404, 500],
+        additional_params=[
+            OpenApiParameter(
+                name="passNumber",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description='Number of the pass',
+                required=True,
+            ),
+        ]
+    )
+    def get(self, request, *args, **kwargs) -> Response:
+        """ Endpoint to retrieve all aanbieding transactions for a specific pass """
+        return super().get(request, *args, **kwargs)
+
+    def get_response_content(self, request):
+        # TODO: Test data is not yet visible, so we mock the response data for now
+        _ = self.get_source_api_path(request)
+        from city_pass.tests import mock_data
+        return mock_data.aanbieding_transactions
