@@ -51,7 +51,7 @@ class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        mijn_ams_api_keys = settings.MIJN_AMS_API_KEYS
+        mijn_ams_api_keys = settings.MIJN_AMS_API_KEYS_OUTBOUND
         self.headers[settings.SESSION_CREDENTIALS_KEY_HEADER] = mijn_ams_api_keys.split(",")[0]
 
     def test_post_credentials_success(self):

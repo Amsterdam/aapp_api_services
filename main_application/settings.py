@@ -177,7 +177,7 @@ LOGGING = {
 API_KEY_HEADER = "X-Api-Key"
 API_KEYS = os.getenv("API_AUTH_TOKENS")
 SESSION_CREDENTIALS_KEY_HEADER = "X-Session-Credentials-Key"
-MIJN_AMS_API_KEYS = os.getenv("MIJN_AMS_AUTH_TOKENS")
+MIJN_AMS_API_KEYS_OUTBOUND = os.getenv("MIJN_AMS_AUTH_TOKENS")
 
 ACCESS_TOKEN_HEADER = "Access-Token"
 ACCESS_TOKEN_TTL = int(
@@ -195,7 +195,7 @@ REFRESH_TOKEN_EXPIRATION_TIME = int(
 )  # default = 1 day
 
 MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
-MIJN_AMS_API_KEY = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
+MIJN_AMS_API_KEY_INBOUND = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
 MIJN_AMS_API_DOMAIN = os.getenv("MIJN_AMS_API_DOMAIN")
 MIJN_AMS_API_PATHS = {
     "PASSES": "/private/api/v1/services/amsapp/stadspas/passen/",

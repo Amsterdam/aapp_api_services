@@ -27,7 +27,7 @@ class APIKeyAuthentication(AppAuthentication):
 
 
 class SessionCredentialsKeyAuthentication(AppAuthentication):
-    api_keys = settings.MIJN_AMS_API_KEYS.split(",")
+    api_keys = settings.MIJN_AMS_API_KEYS_OUTBOUND.split(",")
     api_key_header = settings.SESSION_CREDENTIALS_KEY_HEADER
 
 

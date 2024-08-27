@@ -40,6 +40,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
     with what path parameter should be called.
     """
     serializer_class: DRFSerializer = serializers.DetailResultSerializer  # Must be overwritten in subclasses
+    serializer_many = True
 
     def __init__(self):
         super().__init__()
@@ -67,7 +68,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
     def get_response_content(self, request):
         source_api_path = self.get_source_api_path(request)
         source_api_url = urljoin(settings.MIJN_AMS_API_DOMAIN, source_api_path)
-        headers = {settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY}
+        headers = {settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY_INBOUND}
         try:
             mijn_ams_response = requests.get(source_api_url, headers=headers, params=self.query_params)
             mijn_ams_response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
@@ -88,7 +89,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
         return response_content
 
     def serialize_response_content(self, response_content) -> DRFSerializer:
-        output_serializer = self.get_serializer(data=response_content, many=True)
+        output_serializer = self.get_serializer(data=response_content, many=self.serializer_many)
         if not output_serializer.is_valid():
             logger.error(f"Mijn Amsterdam API data not in expected format: {output_serializer.errors}")
             raise MijnAMSInvalidDataException("Received data not in expected format")
@@ -190,11 +191,12 @@ class BudgetTransactionsView(AbstractTransactionsView):
 
 
 class AanbiedingTransactionsView(AbstractTransactionsView):
-    serializer_class = serializers.MijnAmsPassAanbiedingTransactionsSerializer
+    serializer_class = serializers.MijnAmsPassAanbiedingSerializer
     base_url = settings.MIJN_AMS_API_PATHS["AANBIEDING_TRANSACTIONS"]
+    serializer_many = False
 
     @extend_schema(
-        success_response=serializer_class(many=True),
+        success_response=serializer_class,
         error_response_codes=[400, 404, 500],
         additional_params=[
             OpenApiParameter(

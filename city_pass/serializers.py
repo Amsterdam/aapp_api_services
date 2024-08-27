@@ -58,6 +58,7 @@ class MijnAmsPassBudgetTransactionsSerializer(serializers.Serializer):
     budget = serializers.CharField()
     budgetCode = serializers.CharField()
 
+
 class MijnAmsPassAanbiedingTransactionsSerializer(serializers.Serializer):
     id = serializers.CharField()
     title = serializers.CharField()
@@ -65,7 +66,11 @@ class MijnAmsPassAanbiedingTransactionsSerializer(serializers.Serializer):
     discountTitle = serializers.CharField()
     discountAmount = serializers.FloatField()
     discountAmountFormatted = serializers.CharField()
-    discountAmountTotal = serializers.FloatField()
-    discountAmountTotalFormatted = serializers.CharField()
     datePublished = serializers.CharField()
     datePublishedFormatted = serializers.CharField()
+
+
+class MijnAmsPassAanbiedingSerializer(serializers.Serializer):
+    discountAmountTotal = serializers.FloatField()
+    discountAmountTotalFormatted = serializers.CharField()
+    transactions = MijnAmsPassAanbiedingTransactionsSerializer(many=True)
