@@ -34,6 +34,7 @@ USER root
 RUN pip install pip-tools
 RUN pip install --no-cache-dir -r /app/requirements/requirements_dev.txt
 WORKDIR /app
+COPY pytest.ini .
 
 # Any process that requires to write in the home dir
 # we write to /tmp since we have no home dir

@@ -3,12 +3,11 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.test import RequestFactory, TestCase
 from freezegun import freeze_time
-from rest_framework.exceptions import AuthenticationFailed
 
 from city_pass.authentication import AccessTokenAuthentication
 from city_pass.models import AccessToken, Session
 from city_pass.tests.test_session_views import DATE_FORMAT
-
+from city_pass.exceptions import TokenInvalidException, TokenExpiredException, TokenNotReadyException
 
 class TestAuthenicateAccessToken(TestCase):
     def setUp(self):
@@ -46,7 +45,7 @@ class TestAuthenicateAccessToken(TestCase):
             "/some-endpoint/", headers={self.header_name: "invalid_token"}
         )
 
-        with self.assertRaises(AuthenticationFailed):
+        with self.assertRaises(TokenInvalidException):
             token_authenticator = AccessTokenAuthentication()
             token_authenticator.authenticate(request)
 
@@ -61,14 +60,14 @@ class TestAuthenicateAccessToken(TestCase):
             access_token.save()
 
         request = self.factory.get(
-            "/some-endpoint/", headers={self.header_name: "invalid_token"}
+            "/some-endpoint/", headers={self.header_name: access_token.token}
         )
 
         token_authenticate_time = token_creation_time + timedelta(
             seconds=settings.ACCESS_TOKEN_TTL
         )
         with freeze_time(token_authenticate_time):
-            with self.assertRaises(AuthenticationFailed):
+            with self.assertRaises(TokenExpiredException):
                 token_authenticator = AccessTokenAuthentication()
                 token_authenticator.authenticate(request)
 
@@ -85,6 +84,6 @@ class TestAuthenicateAccessToken(TestCase):
             "/some-endpoint/", headers={self.header_name: access_token.token}
         )
 
-        with self.assertRaises(AuthenticationFailed):
+        with self.assertRaises(TokenNotReadyException):
             token_authenticator = AccessTokenAuthentication()
             token_authenticator.authenticate(request)

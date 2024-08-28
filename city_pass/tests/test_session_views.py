@@ -43,7 +43,7 @@ class TestSessionInitView(BaseCityPassTestCase):
 
     def test_session_init_invalid_api_key(self):
         result = self.client.get(self.api_url, headers=None, follow=True)
-        self.assertEqual(result.status_code, 403)
+        self.assertEqual(result.status_code, 401)
 
 
 class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
@@ -90,7 +90,7 @@ class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
             follow=True,
         )
         self.assertEqual(result.status_code, 401)
-        self.assertContains(result, "invalid", status_code=401)
+        self.assertContains(result, "TOKEN_INVALID", status_code=401)
 
     @override_settings(
         TOKEN_TTLS={
@@ -165,7 +165,7 @@ class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
             content_type="application/json",
             follow=True,
         )
-        self.assertEqual(result.status_code, 403)
+        self.assertEqual(result.status_code, 401)
 
 
 class TestSessionRefreshAccessView(BaseCityPassTestCase):
@@ -314,7 +314,7 @@ class TestSessionLogoutView(BaseCityPassTestCase):
             content_type="application/json",
             follow=True,
         )
-        self.assertEqual(result.status_code, 403)
+        self.assertEqual(result.status_code, 401)
 
     def test_logout_without_session_token(self):
         result = self.client.post(
@@ -323,7 +323,7 @@ class TestSessionLogoutView(BaseCityPassTestCase):
             content_type="application/json",
             follow=True,
         )
-        self.assertEqual(result.status_code, 403)
+        self.assertEqual(result.status_code, 401)
 
     def test_other_sessions_unaffected(self):
         other_session_1 = baker.make(Session, encrypted_adminstration_no="barfoo")

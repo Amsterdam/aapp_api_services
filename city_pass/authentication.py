@@ -4,8 +4,8 @@ from django.conf import settings
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import BaseAuthentication
-from rest_framework.exceptions import AuthenticationFailed
 
+from city_pass.exceptions import ApiKeyInvalidException, TokenInvalidException, TokenExpiredException, TokenNotReadyException
 from city_pass.models import AccessToken
 
 
@@ -16,7 +16,7 @@ class AppAuthentication(BaseAuthentication):
         supplied_api_key = request.headers.get(self.api_key_header)
 
         if supplied_api_key not in self.api_keys:
-            raise AuthenticationFailed(f"Invalid API key: {self.api_key_header}")
+            raise ApiKeyInvalidException(f"Invalid API key: {self.api_key_header}")
 
         return (None, None)
 
@@ -61,11 +61,12 @@ class AccessTokenAuthentication(BaseAuthentication):
 
         access_token_obj = AccessToken.objects.filter(token=access_token).first()
         if not access_token_obj:
-            raise AuthenticationFailed("Access token is invalid")
+            raise TokenInvalidException()
         elif not access_token_obj.is_valid():
-            raise AuthenticationFailed("Access token has expired")
+            raise TokenExpiredException()
         elif not access_token_obj.session.encrypted_adminstration_no:
-            raise AuthenticationFailed("Session is not ready")
+            credentials_endpoint = reversed("city-pass-session-credentials")
+            raise TokenNotReadyException(f"Session not ready, please POST encrypted_administration_no to {credentials_endpoint}")
 
         return (access_token_obj.session, access_token_obj)
 

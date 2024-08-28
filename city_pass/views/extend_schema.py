@@ -1,27 +1,49 @@
+import hashlib
+
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, PolymorphicProxySerializer
 from drf_spectacular.utils import extend_schema as extend_schema_drf
+from rest_framework import serializers
+from collections import defaultdict
 
-from city_pass import serializers
+from city_pass.exceptions import TokenInvalidException, TokenExpiredException, TokenNotReadyException
+from city_pass.serializers.error_serializers import get_serializer
 
 
-def extend_schema(success_response, error_response_codes, access_token=True, additional_params=None):
+def extend_schema(success_response, exceptions=None, access_token=True, additional_params=None, **kwargs):
     """
-    Helper function to merge base responses with subclass-specific responses.
+    Helper function to extend the schema of a view.
     """
-    parameters = [
-        OpenApiParameter(
-            name=settings.ACCESS_TOKEN_HEADER,
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.HEADER,
-            description='Access token for authentication',
-            required=True,
-        )
-    ] if access_token else []
-    parameters += additional_params or []
-    error_responses = {code: serializers.DetailResultSerializer for code in error_response_codes}
+    parameters = additional_params or []
+    exceptions = exceptions or []
+    if access_token:
+        exceptions += [TokenInvalidException, TokenExpiredException, TokenNotReadyException]
+        parameters += [
+            OpenApiParameter(
+                name=settings.ACCESS_TOKEN_HEADER,
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                description='Access token for authentication',
+                required=True,
+            )
+        ]
+    error_response_serializers = get_error_response_serializers(exceptions)
+
     return extend_schema_drf(
         parameters=parameters,
-        responses={200: success_response, **error_responses}
+        responses={200: success_response, **error_response_serializers},
+        **kwargs
     )
+
+
+def get_error_response_serializers(exceptions):
+    exceptions_per_status = defaultdict(list)
+    for exception in exceptions or []:
+        exceptions_per_status[exception.status_code].append(exception)
+
+    error_response_serializers = {}
+    for status_code, exceptions in exceptions_per_status.items():
+        serializer = get_serializer(status_code=status_code, exceptions=exceptions)
+        error_response_serializers[status_code] = serializer
+    return error_response_serializers
