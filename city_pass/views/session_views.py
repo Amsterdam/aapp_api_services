@@ -4,12 +4,12 @@ from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from city_pass import models, authentication
-from city_pass.exceptions import TokenInvalidException, TokenExpiredException, ApiKeyInvalidException
+from city_pass import authentication, models
+from city_pass.exceptions import TokenExpiredException, TokenInvalidException
+from city_pass.serializers import session_serializers as serializers
 from city_pass.utils import detail_message
 from city_pass.views.extend_schema import extend_schema
 
-from city_pass.serializers import session_serializers as serializers
 
 class SessionInitView(generics.CreateAPIView):
     serializer_class = serializers.SessionTokensOutSerializer
@@ -18,7 +18,6 @@ class SessionInitView(generics.CreateAPIView):
         success_response=serializers.SessionTokensOutSerializer,
         request=None,
         access_token=False,
-        exceptions=[ApiKeyInvalidException],
     )
     def post(self, request, *args, **kwargs):
         access_token_str, refresh_token_str = self.init_session()
@@ -54,7 +53,7 @@ class SessionPostCredentialView(generics.CreateAPIView):
     @extend_schema(
         success_response=serializers.DetailResultSerializer,
         access_token=False,
-        exceptions=[ApiKeyInvalidException, TokenInvalidException, TokenExpiredException]
+        exceptions=[TokenInvalidException, TokenExpiredException],
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -83,7 +82,7 @@ class SessionRefreshAccessView(generics.CreateAPIView):
     @extend_schema(
         success_response=serializers.SessionTokensOutSerializer,
         access_token=False,
-        exceptions=[ApiKeyInvalidException, TokenInvalidException, TokenExpiredException]
+        exceptions=[TokenInvalidException, TokenExpiredException],
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -149,7 +148,6 @@ class SessionLogoutView(generics.CreateAPIView):
 
     @extend_schema(
         success_response=serializers.DetailResultSerializer,
-        exceptions=[ApiKeyInvalidException],
         request=None,
     )
     @authentication.authenticate_access_token

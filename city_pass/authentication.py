@@ -5,13 +5,19 @@ from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import BaseAuthentication
 
-from city_pass.exceptions import ApiKeyInvalidException, TokenInvalidException, TokenExpiredException, TokenNotReadyException
+from city_pass.exceptions import (
+    ApiKeyInvalidException,
+    TokenExpiredException,
+    TokenInvalidException,
+    TokenNotReadyException,
+)
 from city_pass.models import AccessToken
 
 
 class AppAuthentication(BaseAuthentication):
     api_keys = None
     api_key_header = None
+
     def authenticate(self, request: HttpRequest):
         supplied_api_key = request.headers.get(self.api_key_header)
 
@@ -36,6 +42,7 @@ class AuthenticationScheme(OpenApiAuthenticationExtension):
     This class is specifically for drf-spectacular,
     so that the API key authentication method will be shown under the Authorize button in Swagger
     """
+
     header_key = None
 
     def get_security_definition(self, auto_schema):
@@ -45,15 +52,18 @@ class AuthenticationScheme(OpenApiAuthenticationExtension):
             "name": self.header_key,
         }
 
+
 class APIKeyAuthenticationScheme(AuthenticationScheme):
     target_class = "city_pass.authentication.APIKeyAuthentication"
     name = "APIKeyAuthentication"
     header_key = settings.API_KEY_HEADER
 
+
 class SessionCredentialsKeyAuthenticationScheme(AuthenticationScheme):
     target_class = "city_pass.authentication.SessionCredentialsKeyAuthentication"
     name = "SessionCredentialsKeyAuthentication"
     header_key = settings.SESSION_CREDENTIALS_KEY_HEADER
+
 
 class AccessTokenAuthentication(BaseAuthentication):
     def authenticate(self, request: HttpRequest):
@@ -66,7 +76,9 @@ class AccessTokenAuthentication(BaseAuthentication):
             raise TokenExpiredException()
         elif not access_token_obj.session.encrypted_adminstration_no:
             credentials_endpoint = reversed("city-pass-session-credentials")
-            raise TokenNotReadyException(f"Session not ready, please POST encrypted_administration_no to {credentials_endpoint}")
+            raise TokenNotReadyException(
+                f"Session not ready, please POST encrypted_administration_no to {credentials_endpoint}"
+            )
 
         return (access_token_obj.session, access_token_obj)
 

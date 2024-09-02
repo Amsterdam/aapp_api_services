@@ -5,9 +5,14 @@ from django.test import RequestFactory, TestCase
 from freezegun import freeze_time
 
 from city_pass.authentication import AccessTokenAuthentication
+from city_pass.exceptions import (
+    TokenExpiredException,
+    TokenInvalidException,
+    TokenNotReadyException,
+)
 from city_pass.models import AccessToken, Session
 from city_pass.tests.test_session_views import DATE_FORMAT
-from city_pass.exceptions import TokenInvalidException, TokenExpiredException, TokenNotReadyException
+
 
 class TestAuthenicateAccessToken(TestCase):
     def setUp(self):

@@ -1,8 +1,8 @@
+from django.conf import settings
 from django.test import TestCase
 from model_bakery import baker
 
-from city_pass.models import Session, AccessToken, RefreshToken
-from django.conf import settings
+from city_pass.models import AccessToken, RefreshToken, Session
 
 DATE_FORMAT = "%Y-%m-%d %H:%M"
 ONE_HOUR_IN_SECONDS = 3600

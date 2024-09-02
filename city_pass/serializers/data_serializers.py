@@ -30,6 +30,7 @@ class MijnAmsPassDataSerializer(serializers.Serializer):
     budgets = MijnAmsPassBudgetSerializer(many=True)
     balanceFormatted = serializers.CharField()
 
+
 class MijnAmsPassBudgetTransactionsSerializer(serializers.Serializer):
     id = serializers.CharField()
     title = serializers.CharField()

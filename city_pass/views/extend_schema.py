@@ -1,30 +1,44 @@
-import hashlib
+from collections import defaultdict
 
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, PolymorphicProxySerializer
+from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema as extend_schema_drf
-from rest_framework import serializers
-from collections import defaultdict
 
-from city_pass.exceptions import TokenInvalidException, TokenExpiredException, TokenNotReadyException
+from city_pass.exceptions import (
+    ApiKeyInvalidException,
+    TokenExpiredException,
+    TokenInvalidException,
+    TokenNotReadyException,
+)
 from city_pass.serializers.error_serializers import get_serializer
 
 
-def extend_schema(success_response, exceptions=None, access_token=True, additional_params=None, **kwargs):
+def extend_schema(
+    success_response,
+    exceptions=None,
+    access_token=True,
+    additional_params=None,
+    **kwargs
+):
     """
     Helper function to extend the schema of a view.
     """
     parameters = additional_params or []
     exceptions = exceptions or []
+    exceptions += [ApiKeyInvalidException]
     if access_token:
-        exceptions += [TokenInvalidException, TokenExpiredException, TokenNotReadyException]
+        exceptions += [
+            TokenInvalidException,
+            TokenExpiredException,
+            TokenNotReadyException,
+        ]
         parameters += [
             OpenApiParameter(
                 name=settings.ACCESS_TOKEN_HEADER,
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.HEADER,
-                description='Access token for authentication',
+                description="Access token for authentication",
                 required=True,
             )
         ]

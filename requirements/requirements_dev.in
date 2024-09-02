@@ -1,4 +1,6 @@
-python-dotenv
 freezegun
 pytest-django
 model-bakery
+black
+isort
+autoflake

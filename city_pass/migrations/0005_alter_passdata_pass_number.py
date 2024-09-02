@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('city_pass', '0004_alter_passdata_unique_together'),
+        ("city_pass", "0004_alter_passdata_unique_together"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='passdata',
-            name='pass_number',
+            model_name="passdata",
+            name="pass_number",
             field=models.CharField(),
         ),
     ]

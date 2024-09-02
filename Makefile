@@ -46,7 +46,7 @@ dev:
 app:
 	$(dc) up app
 
-test:
+test: lint
 	$(run) test
 
 push:
@@ -54,3 +54,12 @@ push:
 
 clean:
 	$(dc) down -v --remove-orphans
+
+lintfix:                            ## Execute lint fixes
+	$(run) test black /app/city_pass
+	$(run) test autoflake /app/city_pass --recursive --in-place --remove-unused-variables --remove-all-unused-imports --quiet
+	$(run) test isort /app/city_pass
+
+lint:                               ## Execute lint checks
+	$(run) test autoflake /app/city_pass --check --recursive --quiet
+	$(run) test isort --diff --check /app/city_pass
