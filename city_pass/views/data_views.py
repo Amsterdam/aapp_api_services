@@ -190,7 +190,7 @@ class BudgetTransactionsView(AbstractTransactionsView):
     )
     def get(self, request, *args, **kwargs) -> Response:
         """Endpoint to retrieve all budget transactions for a specific pass"""
-        self.query_params = {"budget_code": request.query_params.get("budgetCode")}
+        self.query_params = {"budgetCode": request.query_params.get("budgetCode")}
         return super().get(request, *args, **kwargs)
 
 
