@@ -9,9 +9,9 @@ BASE_PATH = "city-pass/api/v1"
 urlpatterns = [
     # drf-spectacular
     path(
-        BASE_PATH + "/openapi",
+        BASE_PATH + "/openapi/",
         SpectacularAPIView.as_view(authentication_classes=[], permission_classes=[]),
-        name="schema",
+        name="city-pass-openapi-schema",
     ),
     # session
     path(
@@ -62,7 +62,7 @@ if settings.DEBUG:
         path(
             BASE_PATH + "/apidocs",
             SpectacularSwaggerView.as_view(
-                url_name="schema", authentication_classes=[], permission_classes=[]
+                url_name="city-pass-openapi-schema", authentication_classes=[], permission_classes=[]
             ),
             name="city-pass-swagger-ui",
         )
