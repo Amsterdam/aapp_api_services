@@ -18,7 +18,7 @@ from city_pass.exceptions import (
     MijnAMSRequestException,
 )
 from city_pass.serializers import data_serializers as serializers
-from city_pass.views.extend_schema import extend_schema
+from core.views.extend_schema import extend_schema
 
 logger = logging.getLogger(__name__)
 

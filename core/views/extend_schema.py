@@ -6,12 +6,12 @@ from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema as extend_schema_drf
 
 from city_pass.exceptions import (
-    ApiKeyInvalidException,
     TokenExpiredException,
     TokenInvalidException,
     TokenNotReadyException,
 )
-from city_pass.serializers.error_serializers import get_serializer
+from core.exceptions import ApiKeyInvalidException
+from core.serializers.error_serializers import get_serializer
 
 
 def extend_schema(

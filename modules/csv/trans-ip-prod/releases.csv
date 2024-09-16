@@ -1,0 +1,29 @@
+created|version|releaseNotes|published|unpublished|modified
+2023-03-16 10:40:37.428649+00|0.16.0|""|||
+2023-03-16 10:41:24.333105+00|0.17.0|""|||
+2023-03-16 10:41:33.94478+00|0.18.0|""|||
+2023-03-16 10:41:38.444537+00|0.19.0|""|||
+2023-03-16 10:41:42.412269+00|0.20.0|""|||
+2023-03-16 10:41:46.442189+00|0.21.0|""|||
+2023-03-16 10:41:50.728997+00|0.22.0|""|||
+2023-03-16 10:41:54.432171+00|0.23.0|""|||
+2023-03-16 10:41:59.239972+00|0.24.0|""|||
+2023-03-16 10:42:03.996938+00|0.25.0|""|||
+2023-03-16 10:42:07.908607+00|0.26.0|""|||
+2023-03-16 10:43:39.902606+00|0.27.0|27e release|||
+2023-03-16 10:44:28.879496+00|0.28.0|28e release|||
+2023-03-16 10:45:01.281765+00|0.29.0|29e release|||
+2023-03-16 10:45:23.148317+00|0.30.0|30e release|||
+2023-03-16 10:46:04.565144+00|0.31.0|31e release|2023-03-16||
+2023-04-04 14:17:50.462299+00|0.32.0|""|2023-04-04||
+2023-05-16 09:45:29.929529+00|0.33.0|Niet gepubliceerd (release in sprint 33 overgeslagen)|2023-05-16|2023-05-16|2023-05-16 09:45:38.277184+00
+2023-05-16 09:46:01.030437+00|0.34.0|Afvalwijzer doorontwikkeling; nu zijn alle functionaliteiten geïmplementeerd; Piwik Pro: analytics worden gemeten vanaf deze versie; De nieuwe domeinnaam (DNS) voor de endpoints wordt gebruikt; Diverse bug fixes en verbeteringen, in o.a. werkzaamheden en de adresinvoer.|2023-05-16||2023-05-17 13:51:17.022891+00
+2023-06-12 12:02:07.110057+00|0.35.0|- Datum nieuws bericht Lodewijk van Dyselbuurt klopt nu weer - Bugfix voor het modereren van geplaatste berichten - Bugfix voor die verouderde berichten in de tijdlijn liet zien - Bugfix voor incorrecte styling inline links in html content component - Afbeeldingen halen we nu op uit Iprox in plaats van onze eigen backend en de caching is verbeterd - Optimalisatie database voor projecten - Op het moment dat je geen OM/CA meer bent, dan verdwijnt nu de module 'plaats berichten' uit de app. Voorheen was dit niet het geval. - API request GET /project/manager is aangepast. Door extra data mee te geven aan dit endpoint wordt voorkomen dat er een extra, zware API call moet worden gedaan. Daardoor kan de code simpeler en hoeft er minder data te worden verstuurd. - De backend ‘backend’ is hernoemd naar z’n slug ‘construction-work’ - Performance van artikelen bij project is verbeterd. Voorheen openden projecten met veel nieuwsberichten langzaam. Dit is nu verholpen.|2023-06-12||2023-06-14 10:16:55.563849+00
+2023-06-14 11:30:33.571871+00|0.36.0|""|2023-06-28||2023-06-28 08:04:53.760158+00
+2023-06-28 10:28:11.561636+00|0.37.0|"Afvalwijzer: meerdere fracties combineren in één blokje en button toevoegen voor ophalen op afspraak. Afvalwijzer: ""maak afspraak"" button voor grof vuil geeft nu URL parameters mee zodat het adres is ingevuld in het achterliggende formulier. Afvalwijzer: bugs met coördinaten en containertype in kaarten opgelost. Afvalwijzer: wordt nu op Android devices in landscape mode correct in 2 kolommen weergegeven. Design/UX wijziging: links zijn niet meer vetgedrukt, wel onderstreept. Design/UX bug opgelost: correcte uitlijning lijst in HTML content. Werkzaamheden-bug opgelost: een nieuwsbericht toonde in bepaalde gevallen de verkeerde projecttitel. Werkzaamheden-bug opgelost: de lijst van projecten toonde soms dubbele of niet correcte projecten na het volgen van een project. Melding doen: een introductiepagina toegevoegd. Profiel-bug opgelost: de feedback-melding bij verwijderen van adres bleef te lang staan. Toegankelijkheid-bug opgelost: volgorde van voorlezen bij gebruik van screenreader was niet correct op schermen met meerdere kolommen."|2023-07-20||2023-07-20 12:12:39.531974+00
+2023-07-20 12:12:50.320889+00|0.38.0|"Weergave adres in ’Mijn Profiel‘ aangepast plus informatie over privacy van adres en locatie kan vinden. De oude adreszoeker API vervangen door de PDOK API van het kadaster. Bug: App crashte bij het gebruik van ""plaats berichten"". Wegwerkzaamheden is toegevoegd aan 'Nieuws'. Bug: Toestemming ontvangen push notificaties wordt gevraagd wanneer nodig. Bug: Op android notificatie permissies toegevoegd. Toegankelijkheid: ""Volgend"" knop heeft duidelijk voorleeslabel. Volgorde van labels aangepast."|2023-08-10||2023-08-10 10:28:36.361451+00
+2023-08-24 10:36:50.908406+00|0.39.0|""|||
+2023-10-03 09:47:32.6582+00|0.40.1|""|||
+2023-09-26 12:30:32.292875+00|0.40.0|""|2023-11-29||2023-11-29 10:02:55.631171+00
+2023-11-29 13:48:50.332808+00|0.41.0|""|||
+2023-12-20 13:09:32.542256+00|0.42.0|""|||

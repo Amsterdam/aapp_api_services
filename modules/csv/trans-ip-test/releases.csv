@@ -1,0 +1,27 @@
+created|version|releaseNotes|published|unpublished|modified
+2023-01-26 10:32:59.925+00|0.20.0|Second release|||
+2023-01-26 10:33:17.316+00|0.23.0|Third release|||
+2023-01-26 10:33:30.671+00|0.24.0|Fourth release|||
+2023-01-26 10:33:43.583+00|0.25.0|Fifth release|||
+2023-01-26 10:33:59.174+00|0.26.0|Sixth release|||
+2023-01-26 10:34:14.891+00|0.27.0|Seventh release|||
+2023-01-26 10:44:51.644849+00|0.28.0|Release 28|""|""|
+2023-01-26 10:55:23.296347+00|0.28.1|""|2023-01-11|2023-01-14|
+2023-01-26 13:16:50.42714+00|0.28.2|Hoera! Op 1 februari 2023 komt versie 0.28.2 van de Amsterdam App uit. Groetjes van Vincent.|2023-02-01||2023-02-01 12:00:06.036901+00
+2023-01-25 15:19:56.305+00|0.16.0|First release|||2023-02-06 14:42:28.942246+00
+2023-02-02 10:59:39.540575+00|0.0.1|""|""|""|
+2023-02-06 09:08:27.604099+00|0.29.0|""|||2023-02-07 16:11:30.794935+00
+2023-02-15 12:14:29.048821+00|0.30.0|""|||
+2023-02-24 16:55:49.576489+00|0.31.0|""|2023-02-23||2023-02-28 13:38:16.964787+00
+2023-04-04 11:07:19.145395+00|0.32.0|""|||
+2023-05-16 09:49:23.397173+00|0.33.0|Niet gepubliceerd (release in sprint 33 overgeslagen)|2023-05-16|2023-05-16|
+2023-05-16 09:49:34.625057+00|0.34.0|Afvalwijzer doorontwikkeling; nu zijn alle functionaliteiten geïmplementeerd; Piwik Pro: analytics worden gemeten vanaf deze versie; De nieuwe domeinnaam (DNS) voor de endpoints wordt gebruikt; Diverse bug fixes en verbeteringen, in o.a. werkzaamheden en de adresinvoer.|2023-05-16||2023-05-17 13:52:28.726902+00
+2023-06-12 12:01:23.584739+00|0.35.0|- Datum nieuws bericht Lodewijk van Dyselbuurt klopt nu weer - Bugfix voor het modereren van geplaatste berichten - Bugfix voor die verouderde berichten in de tijdlijn liet zien - Bugfix voor incorrecte styling inline links in html content component - Afbeeldingen halen we nu op uit Iprox in plaats van onze eigen backend en de caching is verbeterd - Optimalisatie database voor projecten - Op het moment dat je geen OM/CA meer bent, dan verdwijnt nu de module 'plaats berichten' uit de app. Voorheen was dit niet het geval. - API request GET /project/manager is aangepast. Door extra data mee te geven aan dit endpoint wordt voorkomen dat er een extra, zware API call moet worden gedaan. Daardoor kan de code simpeler en hoeft er minder data te worden verstuurd. - De backend ‘backend’ is hernoemd naar z’n slug ‘construction-work’ - Performance van artikelen bij project is verbeterd. Voorheen openden projecten met veel nieuwsberichten langzaam. Dit is nu verholpen.|2023-06-12||2023-06-14 10:17:38.022148+00
+2023-06-14 11:30:17.30599+00|0.36.0|""|||
+2023-06-28 10:27:49.514053+00|0.37.0|""|||
+2023-07-20 12:13:15.559407+00|0.38.0|""|||
+2023-08-24 10:36:21.138424+00|0.39.0|""|||
+2023-10-03 09:46:25.406037+00|0.40.1|""|||2023-10-17 08:56:28.780034+00
+2023-12-14 15:31:45.784161+00|0.42.0|""|||
+2023-09-26 12:29:29.844163+00|0.40.0|""|||2023-12-19 14:20:39.97342+00
+2023-11-30 08:20:44.623883+00|0.41.0|""|||2023-12-20 08:59:49.593322+00

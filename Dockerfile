@@ -48,3 +48,10 @@ COPY city_pass /app/city_pass
 FROM dev AS dev-city-pass
 COPY city_pass /app/city_pass
 CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
+
+FROM core AS app-modules
+COPY modules /app/modules
+
+FROM dev AS dev-modules
+COPY modules /app/modules
+CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]

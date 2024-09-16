@@ -7,8 +7,7 @@ from rest_framework.response import Response
 from city_pass import authentication, models
 from city_pass.exceptions import TokenExpiredException, TokenInvalidException
 from city_pass.serializers import session_serializers as serializers
-from city_pass.utils import detail_message
-from city_pass.views.extend_schema import extend_schema
+from core.views.extend_schema import extend_schema
 
 
 class SessionInitView(generics.CreateAPIView):
@@ -155,3 +154,7 @@ class SessionLogoutView(generics.CreateAPIView):
         session = request.user
         session.delete()
         return Response(data=detail_message("Success"), status=status.HTTP_200_OK)
+
+
+def detail_message(detail: str):
+    return {"detail": detail}
