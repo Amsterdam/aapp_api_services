@@ -1,7 +1,4 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -16,7 +13,7 @@
             "justMyCode": true,
             "env": {
                 "DEBUG": "true",
-                "DJANGO_SETTINGS_MODULE": "main_application.settings_development",
+                "DJANGO_SETTINGS_MODULE": "city_pass.settings.local",
             },
         },
         {
@@ -44,7 +41,7 @@
             "envFile": "${workspaceFolder}/env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}",
-                "DJANGO_SETTINGS_MODULE": "main_application.settings_development",
+                "DJANGO_SETTINGS_MODULE": "city_pass.settings.local",
                 "NO_COVERAGE": "true",
             },
         }

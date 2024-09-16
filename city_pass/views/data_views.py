@@ -111,6 +111,7 @@ class PassesDataView(AbstractMijnAmsDataView):
 
     def process_response_content(self, content, request) -> None:
         session = request.user
+        logger.info(f"Updating passes for user [{session}]")
         passes = [
             models.PassData(
                 session=session,

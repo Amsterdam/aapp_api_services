@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "main_application.settings_azure")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.base")
 
     # Always read environment variables via manage.py
     load_dotenv()

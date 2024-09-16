@@ -5,6 +5,6 @@ profile = "black"
 ignore_init_module_imports = true
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "main_application.settings"
+DJANGO_SETTINGS_MODULE = "core.settings.base"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 cache_dir = "/tmp/pytest_cache"

@@ -4,52 +4,54 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from city_pass.views import data_views, session_views
 
+BASE_PATH = "city-pass/api/v1"
+
 urlpatterns = [
     # drf-spectacular
     path(
-        "openapi/",
+        BASE_PATH + "/openapi",
         SpectacularAPIView.as_view(authentication_classes=[], permission_classes=[]),
         name="schema",
     ),
     # session
     path(
-        "session/init",
+        BASE_PATH + "/session/init",
         session_views.SessionInitView.as_view(),
         name="city-pass-session-init",
     ),
     path(
-        "session/credentials",
+        BASE_PATH + "/session/credentials",
         session_views.SessionPostCredentialView.as_view(),
         name="city-pass-session-credentials",
     ),
     path(
-        "session/refresh",
+        BASE_PATH + "/session/refresh",
         session_views.SessionRefreshAccessView.as_view(),
         name="city-pass-session-refresh",
     ),
     path(
-        "session/logout",
+        BASE_PATH + "/session/logout",
         session_views.SessionLogoutView.as_view(),
         name="city-pass-session-logout",
     ),
     path(
-        "session/logout",
+        BASE_PATH + "/session/logout",
         session_views.SessionLogoutView.as_view(),
         name="session-logout",
     ),
     # data
     path(
-        "data/passes",
+        BASE_PATH + "/data/passes",
         data_views.PassesDataView.as_view(),
         name="city-pass-data-passes",
     ),
     path(
-        "data/budget-transactions",
+        BASE_PATH + "/data/budget-transactions",
         data_views.BudgetTransactionsView.as_view(),
         name="city-pass-data-budget-transactions",
     ),
     path(
-        "data/aanbieding-transactions",
+        BASE_PATH + "/data/aanbieding-transactions",
         data_views.AanbiedingTransactionsView.as_view(),
         name="city-pass-data-aanbieding-transactions",
     ),
@@ -58,7 +60,7 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += [
         path(
-            "apidocs/",
+            BASE_PATH + "/apidocs",
             SpectacularSwaggerView.as_view(
                 url_name="schema", authentication_classes=[], permission_classes=[]
             ),

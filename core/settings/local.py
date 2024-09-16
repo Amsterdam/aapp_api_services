@@ -1,6 +1,6 @@
-from uuid import uuid4
+from .base import * # isort:skip
 
-from main_application.settings import *
+from uuid import uuid4
 
 SECRET_KEY = os.getenv("SECRET_KEY", str(uuid4()))
 

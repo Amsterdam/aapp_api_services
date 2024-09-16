@@ -6,5 +6,4 @@ drf_spectacular
 python-dotenv
 
 azure-identity
-opencensus-ext-django
-opencensus-ext-azure
+azure-monitor-opentelemetry

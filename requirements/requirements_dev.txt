@@ -12,7 +12,7 @@ black==24.8.0
     # via -r requirements/requirements_dev.in
 click==8.1.7
     # via black
-django==5.1
+django==5.1.1
     # via model-bakery
 freezegun==1.5.1
     # via -r requirements/requirements_dev.in
@@ -30,15 +30,15 @@ packaging==24.1
     #   pytest
 pathspec==0.12.1
     # via black
-platformdirs==4.2.2
+platformdirs==4.3.2
     # via black
 pluggy==1.5.0
     # via pytest
 pyflakes==3.2.0
     # via autoflake
-pytest==8.3.2
+pytest==8.3.3
     # via pytest-django
-pytest-django==4.8.0
+pytest-django==4.9.0
     # via -r requirements/requirements_dev.in
 python-dateutil==2.9.0.post0
     # via freezegun
