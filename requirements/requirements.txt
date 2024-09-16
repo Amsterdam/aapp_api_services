@@ -12,7 +12,7 @@ attrs==24.2.0
     # via
     #   jsonschema
     #   referencing
-azure-core==1.30.2
+azure-core==1.31.0
     # via
     #   azure-core-tracing-opentelemetry
     #   azure-identity
@@ -23,10 +23,12 @@ azure-core-tracing-opentelemetry==1.0.0b11
     # via azure-monitor-opentelemetry
 azure-identity==1.17.1
     # via -r requirements/requirements.in
-azure-monitor-opentelemetry==1.6.2
+azure-monitor-opentelemetry==1.6.1
     # via -r requirements/requirements.in
-azure-monitor-opentelemetry-exporter==1.0.0b29
-    # via azure-monitor-opentelemetry
+azure-monitor-opentelemetry-exporter==1.0.0b28
+    # via
+    #   -r requirements/requirements.in
+    #   azure-monitor-opentelemetry
 certifi==2024.8.30
     # via
     #   msrest
@@ -57,7 +59,7 @@ drf-spectacular==0.27.2
     # via -r requirements/requirements.in
 fixedint==0.1.6
     # via azure-monitor-opentelemetry-exporter
-idna==3.8
+idna==3.10
     # via requests
 importlib-metadata==8.4.0
     # via
@@ -208,7 +210,7 @@ typing-extensions==4.12.2
     #   opentelemetry-sdk
 uritemplate==4.1.1
     # via drf-spectacular
-urllib3==2.2.2
+urllib3==2.2.3
     # via requests
 uwsgi==2.0.26
     # via -r requirements/requirements.in
@@ -218,9 +220,9 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-urllib3
-zipp==3.20.1
+zipp==3.20.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==74.1.2
+setuptools==75.0.0
     # via opentelemetry-instrumentation

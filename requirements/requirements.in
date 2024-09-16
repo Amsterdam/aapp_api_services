@@ -6,4 +6,5 @@ drf_spectacular
 python-dotenv
 
 azure-identity
-azure-monitor-opentelemetry
+azure-monitor-opentelemetry==1.6.1 
+azure-monitor-opentelemetry-exporter==1.0.0b28
