@@ -14,8 +14,8 @@ urlpatterns = [
     path(
         BASE_PATH + "/waiting-times",
         contact_views.WaitingTimesView.as_view(),
-        name="waiting-times",
+        name="contact-waiting-times",
     ),
-    path(BASE_PATH + "/links", link_views.LinksView.as_view(), name="links"),
+    path(BASE_PATH + "/links", link_views.LinksView.as_view(), name="contact-links"),
 ]
 urlpatterns += get_swagger_paths(BASE_PATH)
