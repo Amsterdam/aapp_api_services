@@ -13,7 +13,7 @@
             "justMyCode": true,
             "env": {
                 "DEBUG": "true",
-                "DJANGO_SETTINGS_MODULE": "city_pass.settings.local",
+                "DJANGO_SETTINGS_MODULE": "contact.settings.local",
             },
         },
         {

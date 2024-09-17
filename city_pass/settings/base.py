@@ -23,8 +23,6 @@ LOGGING["loggers"]["city_pass"] = {
 
 # Custom settings
 
-API_KEY_HEADER = "X-Api-Key"
-API_KEYS = os.getenv("API_AUTH_TOKENS")
 SESSION_CREDENTIALS_KEY_HEADER = "X-Session-Credentials-Key"
 MIJN_AMS_API_KEYS_OUTBOUND = os.getenv("MIJN_AMS_AUTH_TOKENS")
 

@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
     "drf_spectacular",
 ]
 
@@ -167,3 +168,6 @@ LOGGING = {
         },
     },
 }
+
+API_KEY_HEADER = "X-Api-Key"
+API_KEYS = os.getenv("API_AUTH_TOKENS")

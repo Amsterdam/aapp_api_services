@@ -1,5 +1,3 @@
-from functools import wraps
-
 from django.conf import settings
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
@@ -45,6 +43,6 @@ class AuthenticationScheme(OpenApiAuthenticationExtension):
 
 
 class APIKeyAuthenticationScheme(AuthenticationScheme):
-    target_class = "city_pass.authentication.APIKeyAuthentication"
+    target_class = "core.authentication.APIKeyAuthentication"
     name = "APIKeyAuthentication"
     header_key = settings.API_KEY_HEADER
