@@ -42,10 +42,10 @@ ENV HOME=/tmp
 CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
 
 ### City Pass stages
-FROM core AS app-city-pass
+FROM core AS app-city_pass
 COPY city_pass /app/city_pass
 
-FROM dev AS dev-city-pass
+FROM dev AS dev-city_pass
 COPY city_pass /app/city_pass
 CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
 

@@ -5,15 +5,14 @@
 # endif
 # app-name = ${APP_NAME}
 
-app-name ?= city-pass
-app-name-snake = $(subst -,_,$(app-name))
+app-name ?= city_pass
 
 UID:=$(shell id --user)
 GID:=$(shell id --group)
 
-dc = docker compose
+dc = SERVICE_NAME=$(app-name) docker compose
 run = $(dc) run --rm -u ${UID}:${GID}
-manage = $(run) dev-$(app-name) python manage.py
+manage = $(run) dev python manage.py
 
 REGISTRY ?= localhost:5000
 REPOSITORY ?= Amsterdam-App/aapp-construction-work
@@ -31,8 +30,8 @@ install: pip-tools                  ## Install requirements and sync venv with e
 requirements:                       ## Upgrade requirements (in requirements.in) to latest versions and compile requirements.txt
 	# The --allow-unsafe flag should be used and will become the default behaviour of pip-compile in the future
 	# https://stackoverflow.com/questions/58843905
-	$(run) dev-$(app-name) pip-compile --upgrade --output-file requirements/requirements.txt --allow-unsafe requirements/requirements.in
-	$(run) dev-$(app-name) pip-compile --upgrade --output-file requirements/requirements_dev.txt --allow-unsafe requirements/requirements_dev.in
+	$(run) dev pip-compile --upgrade --output-file requirements/requirements.txt --allow-unsafe requirements/requirements.in
+	$(run) dev pip-compile --upgrade --output-file requirements/requirements_dev.txt --allow-unsafe requirements/requirements_dev.in
 
 shell:                              ## Start Django shell
 	$(manage) shell
@@ -46,22 +45,24 @@ migrate:                            ## Apply Django migrations to database
 	$(manage) migrate
 
 dev:                                ## Start Django app in development mode
-	$(run) --service-ports dev-$(app-name)
+	$(run) --service-ports dev
 
 lintfix:                            ## Execute lint fixes
-	$(run) test-$(app-name) black /app/$(app-name-snake)
-	$(run) test-$(app-name) autoflake /app/$(app-name-snake) --recursive --in-place --remove-unused-variables --remove-all-unused-imports --quiet
-	$(run) test-$(app-name) isort /app/$(app-name-snake)
+	$(run) test black /app/
+	$(run) test autoflake /app/ --recursive --in-place --remove-unused-variables --remove-all-unused-imports --quiet
+	$(run) test isort /app/
 
 lint:                               ## Execute lint checks
-	$(run) test-$(app-name) autoflake /app/$(app-name-snake) --check --recursive --quiet
-	$(run) test-$(app-name) isort --diff --check /app/$(app-name-snake)
+	$(run) test autoflake /app/ --check --recursive --quiet
+	$(run) test isort --diff --check /app/
 
-test: lint                          ## Run tests
-	$(run) test-$(app-name)
+run-test:                           ## Run tests
+	$(run) test
+
+test: run-test lint                 ## Run tests & lint checks
 
 app:                                ## Start Django app via uWSGI
-	$(dc) up app-$(app-name)
+	$(dc) up app
 
 build:                              ## Build images
 	$(dc) build
@@ -71,3 +72,6 @@ push:                               ## Push images to repository
 
 clean:                              ## Stop Docker container and remove orphans
 	$(dc) down -v --remove-orphans
+
+settings:                           ## Print Django settings
+	$(run) test python manage.py diffsettings

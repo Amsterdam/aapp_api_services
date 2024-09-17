@@ -10,6 +10,10 @@ x-app: &base-app
     POSTGRES_HOST: db
     API_AUTH_TOKENS: insecure1,insecure2,insecure3
     MIJN_AMS_AUTH_TOKENS: mijn-ams-1,mijn-ams-2
+  volumes:
+    - ./requirements:/app/requirements
+    - ./core:/app/core
+    - ./${SERVICE_NAME}:/app/${SERVICE_NAME}
   ports:
     - 8000:8000
   depends_on:
@@ -38,35 +42,33 @@ services:
       timeout: 5s
       retries: 5
 
-  dev-city-pass:
+  dev:
     <<: *base-app
     build:
       context: .
-      target: dev-city-pass
-    volumes:
-      - ./requirements:/app/requirements
+      target: dev-${SERVICE_NAME}
     environment:
       <<: *base-app-env
-      DJANGO_SETTINGS_MODULE: "city_pass.settings.local"
+      DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.local'
 
-  test-city-pass:
+  test:
     <<: *base-app
     build:
       context: .
-      target: dev-city-pass
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images/city-pass}:${VERSION:-latest}
+      target: dev-${SERVICE_NAME}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
-      DJANGO_SETTINGS_MODULE: "city_pass.settings.local"
+      DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.local'
     command: pytest
 
-  app-city-pass:
+  app:
     <<: *base-app
     build:
       context: .
-      target: app-city-pass
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images/city-pass}:${VERSION:-latest}
+      target: app-${SERVICE_NAME}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
-      DJANGO_SETTINGS_MODULE: "city_pass.settings.otap"
+      DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.otap'
     command: /app/deploy/docker-run.sh
