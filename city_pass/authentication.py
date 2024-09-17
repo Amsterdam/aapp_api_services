@@ -1,17 +1,17 @@
 from functools import wraps
 
+from django.conf import settings
+from django.http import HttpRequest
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
+from rest_framework.authentication import BaseAuthentication
+
 from city_pass.exceptions import (
     TokenExpiredException,
     TokenInvalidException,
     TokenNotReadyException,
 )
 from city_pass.models import AccessToken
-from django.conf import settings
-from django.http import HttpRequest
-
 from core.exceptions import ApiKeyInvalidException
-from drf_spectacular.extensions import OpenApiAuthenticationExtension
-from rest_framework.authentication import BaseAuthentication
 
 
 class AppAuthentication(BaseAuthentication):

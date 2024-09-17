@@ -4,12 +4,7 @@ from core.exceptions import ApiKeyInvalidException
 from core.serializers.error_serializers import get_error_response_serializers
 
 
-def extend_schema(
-    success_response,
-    exceptions=None,
-    additional_params=None,
-    **kwargs
-):
+def extend_schema(success_response, exceptions=None, additional_params=None, **kwargs):
     """
     Helper function to extend the schema of a view.
     """

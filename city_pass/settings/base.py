@@ -1,10 +1,10 @@
-from core.settings.base import * # isort:skip
+from core.settings.base import *  # isort:skip
 
 INSTALLED_APPS += [
     "city_pass.apps.CityPassConfig",
 ]
 
-ROOT_URLCONF = 'city_pass.urls'
+ROOT_URLCONF = "city_pass.urls"
 
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
     "city_pass.authentication.APIKeyAuthentication",
