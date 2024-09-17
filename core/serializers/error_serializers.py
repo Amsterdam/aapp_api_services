@@ -1,8 +1,21 @@
 import hashlib
+from collections import defaultdict
 
 from rest_framework import serializers
 
 SERIALIZERS = {}
+
+
+def get_error_response_serializers(exceptions):
+    exceptions_per_status = defaultdict(list)
+    for exception in exceptions or []:
+        exceptions_per_status[exception.status_code].append(exception)
+
+    error_response_serializers = {}
+    for status_code, exceptions in exceptions_per_status.items():
+        serializer = get_serializer(status_code=status_code, exceptions=exceptions)
+        error_response_serializers[status_code] = serializer
+    return error_response_serializers
 
 
 def get_serializer(status_code, exceptions):

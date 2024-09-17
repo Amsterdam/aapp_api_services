@@ -7,7 +7,7 @@ INSTALLED_APPS += [
 ROOT_URLCONF = 'city_pass.urls'
 
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
-    "core.authentication.APIKeyAuthentication",
+    "city_pass.authentication.APIKeyAuthentication",
     "city_pass.authentication.SessionCredentialsKeyAuthentication",
 ]
 

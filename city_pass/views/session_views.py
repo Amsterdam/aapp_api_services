@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from city_pass import authentication, models
 from city_pass.exceptions import TokenExpiredException, TokenInvalidException
 from city_pass.serializers import session_serializers as serializers
+from city_pass.views.extend_schema import extend_schema_with_access_token
 from core.views.extend_schema import extend_schema
 
 
@@ -16,7 +17,6 @@ class SessionInitView(generics.CreateAPIView):
     @extend_schema(
         success_response=serializers.SessionTokensOutSerializer,
         request=None,
-        access_token=False,
     )
     def post(self, request, *args, **kwargs):
         access_token_str, refresh_token_str = self.init_session()
@@ -51,7 +51,6 @@ class SessionPostCredentialView(generics.CreateAPIView):
 
     @extend_schema(
         success_response=serializers.DetailResultSerializer,
-        access_token=False,
         exceptions=[TokenInvalidException, TokenExpiredException],
     )
     def post(self, request, *args, **kwargs):
@@ -80,7 +79,6 @@ class SessionRefreshAccessView(generics.CreateAPIView):
 
     @extend_schema(
         success_response=serializers.SessionTokensOutSerializer,
-        access_token=False,
         exceptions=[TokenInvalidException, TokenExpiredException],
     )
     def post(self, request, *args, **kwargs):
@@ -145,7 +143,7 @@ class SessionRefreshAccessView(generics.CreateAPIView):
 class SessionLogoutView(generics.CreateAPIView):
     serializer_class = serializers.DetailResultSerializer
 
-    @extend_schema(
+    @extend_schema_with_access_token(
         success_response=serializers.DetailResultSerializer,
         request=None,
     )
