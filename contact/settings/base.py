@@ -1,10 +1,10 @@
-from core.settings.base import * # isort:skip
+from core.settings.base import *  # isort:skip
 
 INSTALLED_APPS += [
     "contact.apps.ContactConfig",
 ]
 
-ROOT_URLCONF = 'contact.urls'
+ROOT_URLCONF = "contact.urls"
 
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
     "core.authentication.APIKeyAuthentication",

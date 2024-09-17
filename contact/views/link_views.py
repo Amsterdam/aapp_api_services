@@ -1,7 +1,7 @@
 import logging
 
-from rest_framework.response import Response
 from rest_framework import generics, status
+from rest_framework.response import Response
 
 from contact.exceptions import LinkDataException
 from contact.serializers.links_serializers import LinksOutSerializer
@@ -10,13 +10,13 @@ from core.serializers.error_serializers import get_serializer
 logger = logging.getLogger(__name__)
 
 
-APP_LINKS={
+APP_LINKS = {
     "parking": "https://www.amsterdam.nl/parkeren/",
-    "parking_visitors" : "https://aanmeldenparkeren.amsterdam.nl/login",
-    "documents" : "https://www.amsterdam.nl/burgerzaken/akten-uittreksels/",
-    "relocation" : "https://www.amsterdam.nl/burgerzaken/verhuizing-doorgeven/",
-    "income_help" : "https://www.amsterdam.nl/werk-inkomen/hulp-bij-laag-inkomen/",
-    "citypass" : "https://www.amsterdam.nl/stadspas/",
+    "parking_visitors": "https://aanmeldenparkeren.amsterdam.nl/login",
+    "documents": "https://www.amsterdam.nl/burgerzaken/akten-uittreksels/",
+    "relocation": "https://www.amsterdam.nl/burgerzaken/verhuizing-doorgeven/",
+    "income_help": "https://www.amsterdam.nl/werk-inkomen/hulp-bij-laag-inkomen/",
+    "citypass": "https://www.amsterdam.nl/stadspas/",
     "cityPassRequest": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/HulpBijLaagInkomen.aspx",
     "cityPassChildBudget": "https://www.amsterdam.nl/stadspas/kindtegoed/",
     "cityPassUsage": "https://www.amsterdam.nl/stadspas/werkt-stadspas/",
@@ -32,7 +32,7 @@ APP_LINKS={
     "makeAppointMentWeesp": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/afspraakmakenweesp.aspx",
     "contactForm": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/Contactformulier.aspx",
     "feedbackForm": "https://formulier.amsterdam.nl/thema/burgerzaken/amsterdam-app/Uw-mening/",
-    "elections": "https://www.amsterdam.nl/verkiezingen/"
+    "elections": "https://www.amsterdam.nl/verkiezingen/",
 }
 
 
@@ -48,4 +48,3 @@ class LinksView(generics.RetrieveAPIView):
             raise LinkDataException()
 
         return Response(output_serializer.data, status=status.HTTP_200_OK)
-    
