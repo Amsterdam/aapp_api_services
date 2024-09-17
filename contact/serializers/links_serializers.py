@@ -1,0 +1,26 @@
+from rest_framework import serializers
+
+
+class LinksOutSerializer(serializers.Serializer):
+    parking = serializers.URLField()
+    parking_visitors = serializers.URLField()
+    documents = serializers.URLField()
+    relocation = serializers.URLField()
+    income_help = serializers.URLField()
+    citypass = serializers.URLField()
+    cityPassRequest = serializers.URLField()
+    cityPassChildBudget = serializers.URLField()
+    cityPassUsage = serializers.URLField()
+    acknowledgeChild = serializers.URLField()
+    birth = serializers.URLField()
+    immigration = serializers.URLField()
+    lifelessBirth = serializers.URLField()
+    marriage = serializers.URLField()
+    marriagePermission = serializers.URLField()
+    naturalisation = serializers.URLField()
+    passing = serializers.URLField()
+    passingForFuneralDirectors = serializers.URLField()
+    makeAppointMentWeesp = serializers.URLField()
+    contactForm = serializers.URLField()
+    feedbackForm = serializers.URLField()
+    elections = serializers.URLField()

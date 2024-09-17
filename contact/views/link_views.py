@@ -1,5 +1,14 @@
-from rest_framework.decorators import api_view
+import logging
+
 from rest_framework.response import Response
+from rest_framework import generics, status
+
+from contact.exceptions import LinkDataException
+from contact.serializers.links_serializers import LinksOutSerializer
+from core.serializers.error_serializers import get_serializer
+
+logger = logging.getLogger(__name__)
+
 
 APP_LINKS={
     "parking": "https://www.amsterdam.nl/parkeren/",
@@ -26,9 +35,17 @@ APP_LINKS={
     "elections": "https://www.amsterdam.nl/verkiezingen/"
 }
 
-@api_view(["GET"])
-def get_links(request):
-    """
-    Return the app links
-    """
-    return Response(APP_LINKS,status=200)
+
+class LinksView(generics.RetrieveAPIView):
+    serializer_class = LinksOutSerializer
+
+    def get(self, request, *args, **kwargs):
+        output_serializer = self.get_serializer(data=APP_LINKS)
+        if not output_serializer.is_valid():
+            logger.error(
+                f"Link data not in expected format: {output_serializer.errors}"
+            )
+            raise LinkDataException()
+
+        return Response(output_serializer.data, status=status.HTTP_200_OK)
+    
