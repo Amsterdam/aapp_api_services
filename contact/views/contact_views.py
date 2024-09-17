@@ -1,9 +1,14 @@
+import logging
+
 import requests
-from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework import generics, status
 from rest_framework.response import Response
 
+from contact.exceptions import CityOfficeDataException
 from contact.models import CityOffice, OpeningHours, OpeningHoursException
+from contact.serializers.contact_serializers import CityOfficeResultSerializer
+
+logger = logging.getLogger(__name__)
 
 
 def sort_list_of_dicts(items, key=None, sort_order="asc"):
@@ -45,38 +50,47 @@ def get_opening_hours(identifier):
     return {"regular": regular, "exceptions": exceptions}
 
 
-@api_view(["GET"])
-def city_offices(request):
-    """City offices api"""
-    offices = list(CityOffice.objects.all())
-    data = []
-    for office in offices:
-        opening_hours = get_opening_hours(office.identifier)
-        city_office = {
-            "identifier": office.identifier,
-            "title": office.title,
-            "image": office.images,
-            "address": {
-                "streetName": office.street_name,
-                "streetNumber": office.street_number,
-                "postalCode": office.postal_code,
-                "city": office.city,
-            },
-            "addressContent": office.address_content,
-            "coordinates": {"lat": office.lat, "lon": office.lon},
-            "directionsUrl": office.directions_url,
-            "appointment": office.appointment,
-            "visitingHoursContent": office.visiting_hours_content,
-            "visitingHours": opening_hours,
-            "order": office.order,
-        }
-        data.append(city_office)
+class CityOfficesView(generics.RetrieveAPIView):
+    queryset = CityOffice.objects.all()
+    serializer_class = CityOfficeResultSerializer
 
-    result = sort_list_of_dicts(data, key="order", sort_order="asc")
-    return Response({"status": True, "result": result})
+    def get(self, request, *args, **kwargs):
+        offices = self.get_queryset()
+        data = []
+        for office in offices:
+            opening_hours = get_opening_hours(office.identifier)
+            city_office = {
+                "identifier": office.identifier,
+                "title": office.title,
+                "image": office.images,
+                "address": {
+                    "streetName": office.street_name,
+                    "streetNumber": office.street_number,
+                    "postalCode": office.postal_code,
+                    "city": office.city,
+                },
+                "addressContent": office.address_content,
+                "coordinates": {"lat": office.lat, "lon": office.lon},
+                "directionsUrl": office.directions_url,
+                "appointment": office.appointment,
+                "visitingHoursContent": office.visiting_hours_content,
+                "visitingHours": opening_hours,
+                "order": office.order,
+            }
+            data.append(city_office)
+
+        result = sort_list_of_dicts(data, key="order", sort_order="asc")
+
+        output_serializer = self.get_serializer(data={"status": True, "result": result})
+        if not output_serializer.is_valid():
+            logger.error(
+                f"City office data not in expected format: {output_serializer.errors}"
+            )
+            raise CityOfficeDataException()
+
+        return Response(output_serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(["GET"])
 def waiting_times(request):
     """
     Redirect call to Amsterdam "wachtijden" API.

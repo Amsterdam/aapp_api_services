@@ -5,7 +5,6 @@ from rest_framework.response import Response
 
 from contact.exceptions import LinkDataException
 from contact.serializers.links_serializers import LinksOutSerializer
-from core.serializers.error_serializers import get_serializer
 
 logger = logging.getLogger(__name__)
 

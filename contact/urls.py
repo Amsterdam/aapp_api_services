@@ -8,7 +8,7 @@ BASE_PATH = "contact/api/v1"
 urlpatterns = [
     path(
         BASE_PATH + "/city-offices",
-        contact_views.city_offices,
+        contact_views.CityOfficesView.as_view(),
         name="contact-city-offices",
     ),
     path(BASE_PATH + "/links", link_views.LinksView.as_view(), name="contact-links"),

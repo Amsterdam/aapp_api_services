@@ -38,20 +38,20 @@ class CoordinatesSerializer(serializers.Serializer):
 class CityOfficeOutSerializer(serializers.Serializer):
     identifier = serializers.CharField()
     title = serializers.CharField()
-    image = serializers.JSONField()
-    address = AddressSerializer()
-    addressContent = serializers.JSONField()
-    coordinates = CoordinatesSerializer()
-    directionsUrl = serializers.URLField()
-    appointment = serializers.JSONField()
-    visitingHoursContent = serializers.CharField()
+    image = serializers.JSONField(allow_null=False)
+    address = AddressSerializer(allow_null=False)
+    addressContent = serializers.JSONField(allow_null=False)
+    coordinates = CoordinatesSerializer(allow_null=False)
+    directionsUrl = serializers.URLField(allow_null=False)
+    appointment = serializers.JSONField(allow_null=False)
+    visitingHoursContent = serializers.CharField(allow_null=False)
     visitingHours = OpeningHoursSerializer()
-    order = serializers.IntegerField()
+    order = serializers.IntegerField(allow_null=False)
 
 
 class CityOfficeResultSerializer(serializers.Serializer):
     status = serializers.BooleanField()
-    result = CityOfficeOutSerializer()
+    result = CityOfficeOutSerializer(many=True)
 
 
 class WaitingTimeOutSerializer(serializers.Serializer):
@@ -63,4 +63,4 @@ class WaitingTimeOutSerializer(serializers.Serializer):
 
 class WaitingTimeResultSerializer(serializers.Serializer):
     status = serializers.BooleanField()
-    result = WaitingTimeOutSerializer()
+    result = WaitingTimeOutSerializer(many=True)
