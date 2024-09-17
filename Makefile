@@ -1,22 +1,15 @@
 .PHONY: deploy requirements
 
-# ifndef APP_NAME
-# $(error APP_NAME is not set)
-# endif
-# app-name = ${APP_NAME}
-
-app-name ?= city_pass
+ifndef SERVICE_NAME
+$(error SERVICE_NAME is not set)
+endif
 
 UID:=$(shell id --user)
 GID:=$(shell id --group)
 
-dc = SERVICE_NAME=$(app-name) docker compose
+dc = SERVICE_NAME=${SERVICE_NAME} docker compose
 run = $(dc) run --rm -u ${UID}:${GID}
 manage = $(run) dev python manage.py
-
-REGISTRY ?= localhost:5000
-REPOSITORY ?= Amsterdam-App/aapp-construction-work
-VERSION ?= latest
 
 help:                               ## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
