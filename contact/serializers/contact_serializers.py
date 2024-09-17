@@ -14,8 +14,8 @@ class RegularOpeningHoursSerializer(serializers.Serializer):
 
 class ExceptionOpeningHoursSerializer(serializers.Serializer):
     date = serializers.DateField()
-    opening = OpeningTimeSerializer()
-    closing = OpeningTimeSerializer()
+    opening = OpeningTimeSerializer(required=False, allow_null=True)
+    closing = OpeningTimeSerializer(required=False, allow_null=True)
 
 
 class OpeningHoursSerializer(serializers.Serializer):
@@ -38,15 +38,15 @@ class CoordinatesSerializer(serializers.Serializer):
 class CityOfficeOutSerializer(serializers.Serializer):
     identifier = serializers.CharField()
     title = serializers.CharField()
-    image = serializers.JSONField(allow_null=False)
-    address = AddressSerializer(allow_null=False)
-    addressContent = serializers.JSONField(allow_null=False)
-    coordinates = CoordinatesSerializer(allow_null=False)
-    directionsUrl = serializers.URLField(allow_null=False)
-    appointment = serializers.JSONField(allow_null=False)
-    visitingHoursContent = serializers.CharField(allow_null=False)
+    image = serializers.JSONField(allow_null=True)
+    address = AddressSerializer(allow_null=True)
+    addressContent = serializers.JSONField(allow_null=True)
+    coordinates = CoordinatesSerializer(allow_null=True)
+    directionsUrl = serializers.URLField(allow_null=True)
+    appointment = serializers.JSONField(allow_null=True)
+    visitingHoursContent = serializers.CharField(allow_null=True)
     visitingHours = OpeningHoursSerializer()
-    order = serializers.IntegerField(allow_null=False)
+    order = serializers.IntegerField(allow_null=True)
 
 
 class CityOfficeResultSerializer(serializers.Serializer):
