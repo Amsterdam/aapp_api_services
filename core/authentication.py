@@ -1,16 +1,23 @@
+from abc import abstractmethod
+
 from django.conf import settings
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import BaseAuthentication
 
-from core.exceptions import (
-    ApiKeyInvalidException,
-)
+from core.exceptions import ApiKeyInvalidException
 
 
 class AppAuthentication(BaseAuthentication):
-    api_keys = None
-    api_key_header = None
+    @property
+    @abstractmethod
+    def api_keys(self):
+        pass
+
+    @property
+    @abstractmethod
+    def api_key_header(self):
+        pass
 
     def authenticate(self, request: HttpRequest):
         supplied_api_key = request.headers.get(self.api_key_header)
@@ -22,8 +29,13 @@ class AppAuthentication(BaseAuthentication):
 
 
 class APIKeyAuthentication(AppAuthentication):
-    api_keys = settings.API_KEYS.split(",")
-    api_key_header = settings.API_KEY_HEADER
+    @property
+    def api_keys(self):
+        return settings.API_KEYS.split(",")
+
+    @property
+    def api_key_header(self):
+        return settings.API_KEY_HEADER
 
 
 class AuthenticationScheme(OpenApiAuthenticationExtension):

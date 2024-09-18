@@ -5,8 +5,8 @@ from django.urls import reverse
 from rest_framework import status
 
 
+@override_settings(API_KEYS="test-api-key")
 class TestLinkView(TestCase):
-    @override_settings(API_KEYS="amsterdam")
     def test_load_data_get_data(self):
         url = reverse("contact-links")
         api_keys = settings.API_KEYS.split(",")
