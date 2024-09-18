@@ -1,20 +1,20 @@
 import datetime
 import os
 
-from django.conf import settings
 from django.core.management import call_command
-from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from contact.models import CityOffice, OpeningHours, OpeningHoursException
+from core.tests import BaseAPITestCase
 
 
-@override_settings(API_KEYS="test-api-key")
-class TestCityOfficeView(TestCase):
+class TestCityOfficeView(BaseAPITestCase):
     def setUp(self):
+        super().setUp()
+
         # Create test data using the provided address
         self.city_office = CityOffice.objects.create(
             identifier="stadsloket-centrum",
@@ -55,10 +55,6 @@ class TestCityOfficeView(TestCase):
 
         self.client = APIClient()
 
-        # Prepare API key for authentication
-        api_keys = settings.API_KEYS.split(",")
-        self.headers = {settings.API_KEY_HEADER: api_keys[0]}
-
     @override_settings(
         CSV_DIR=os.path.join(os.path.dirname(os.path.dirname(__file__)), "csv"),
     )
@@ -66,13 +62,13 @@ class TestCityOfficeView(TestCase):
         call_command("loaddata")
 
         url = reverse("contact-city-offices")
-        response = self.client.get(url, headers=self.headers)
+        response = self.client.get(url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_city_offices(self):
         url = reverse("contact-city-offices")
-        response = self.client.get(url, headers=self.headers)
+        response = self.client.get(url, headers=self.api_headers)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response_data = response.json()
 
@@ -130,7 +126,7 @@ class TestCityOfficeView(TestCase):
         CityOffice.objects.all().delete()
 
         url = reverse("contact-city-offices")
-        response = self.client.get(url, headers=self.headers)
+        response = self.client.get(url, headers=self.api_headers)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response_data = response.json()
 
