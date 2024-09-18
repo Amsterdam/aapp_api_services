@@ -10,10 +10,10 @@ from city_pass.exceptions import (
     TokenNotReadyException,
 )
 from city_pass.models import AccessToken
-from core.authentication import AppAuthentication, AuthenticationScheme
+from core.authentication import AbstractAppAuthentication, AuthenticationScheme
 
 
-class SessionCredentialsKeyAuthentication(AppAuthentication):
+class SessionCredentialsKeyAuthentication(AbstractAppAuthentication):
     @property
     def api_keys(self):
         return settings.MIJN_AMS_API_KEYS_OUTBOUND.split(",")
