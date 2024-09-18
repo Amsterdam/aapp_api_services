@@ -19,6 +19,7 @@ LOGGING["loggers"]["contact"] = {
 }
 
 CSV_DIR = os.getenv("CSV_DIR")
+
 WAITING_TIME_API = "https://wachttijdenamsterdam.nl/data/"
 
 CITY_OFFICE_LOOKUP_TABLE = {

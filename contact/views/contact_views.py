@@ -6,96 +6,26 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from contact.exceptions import (
-    CityOfficeDataException,
     WaitingTimeDataException,
     WaitingTimeSourceAvailablityException,
 )
-from contact.models import CityOffice, OpeningHours, OpeningHoursException
-from contact.serializers.contact_serializers import (
-    CityOfficeResultSerializer,
-    WaitingTimeResultSerializer,
-)
+from contact.models import CityOffice
+from contact.serializers.contact_serializers import CityOfficeResultSerializer
+from contact.serializers.waiting_time_serializers import WaitingTimeResultSerializer
 
 logger = logging.getLogger(__name__)
 
 
-def sort_list_of_dicts(items, key=None, sort_order="asc"):
-    """Sort list of dictionaries"""
-    if key is None:
-        return items
-
-    reverse = sort_order == "desc"
-
-    if reverse is True:
-        result = sorted(items, key=lambda x: (x[key] is not None, x[key]), reverse=True)
-    else:
-        result = sorted(items, key=lambda x: (x[key] is None, x[key]))
-    return result
-
-
-def get_opening_hours(identifier):
-    """Get opening hours"""
-    regular = [
-        {
-            "dayOfWeek": x.day_of_week,
-            "opening": {"hours": x.opens_hours, "minutes": x.opens_minutes},
-            "closing": {"hours": x.closes_hours, "minutes": x.closes_minutes},
-        }
-        for x in list(OpeningHours.objects.filter(city_office_id=identifier).all())
-    ]
-    exceptions = [
-        {
-            "date": x.date,
-            "opening": {"hours": x.opens_hours, "minutes": x.opens_minutes},
-            "closing": {"hours": x.closes_hours, "minutes": x.closes_minutes},
-        }
-        if x.opens_hours is not None
-        else {"date": x.date}
-        for x in list(
-            OpeningHoursException.objects.filter(city_office_id=identifier).all()
-        )
-    ]
-    return {"regular": regular, "exceptions": exceptions}
-
-
 class CityOfficesView(generics.RetrieveAPIView):
-    queryset = CityOffice.objects.all()
+    queryset = CityOffice.objects.all().order_by("order")
     serializer_class = CityOfficeResultSerializer
 
     def get(self, request, *args, **kwargs):
-        offices = self.get_queryset()
-        data = []
-        for office in offices:
-            opening_hours = get_opening_hours(office.identifier)
-            city_office = {
-                "identifier": office.identifier,
-                "title": office.title,
-                "image": office.images,
-                "address": {
-                    "streetName": office.street_name,
-                    "streetNumber": office.street_number,
-                    "postalCode": office.postal_code,
-                    "city": office.city,
-                },
-                "addressContent": office.address_content,
-                "coordinates": {"lat": office.lat, "lon": office.lon},
-                "directionsUrl": office.directions_url,
-                "appointment": office.appointment,
-                "visitingHoursContent": office.visiting_hours_content,
-                "visitingHours": opening_hours,
-                "order": office.order,
-            }
-            data.append(city_office)
-
-        result = sort_list_of_dicts(data, key="order", sort_order="asc")
-
-        output_serializer = self.get_serializer(data={"status": True, "result": result})
-        if not output_serializer.is_valid():
-            logger.error(
-                f"City office data not in expected format: {output_serializer.errors}"
-            )
-            raise CityOfficeDataException()
-
+        queryset = self.get_queryset().prefetch_related(
+            "openinghours_set", "openinghoursexception_set"
+        )
+        output_data = {"status": True, "result": queryset}
+        output_serializer = self.get_serializer(output_data)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
 
