@@ -1,10 +1,11 @@
-from .base import * # isort:skip
+from .base import *  # isort:skip
 
-from core.azure_util import Azure
 import logging
 
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+
+from core.azure_util import Azure
 
 azure = Azure()
 
@@ -29,6 +30,7 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
 
 def setup_opentelemetry(service_name):
     configure_azure_monitor(

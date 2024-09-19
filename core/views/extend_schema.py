@@ -1,15 +1,15 @@
 from collections import defaultdict
 
-from django.conf import settings
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter
-from drf_spectacular.utils import extend_schema as extend_schema_drf
-
 from city_pass.exceptions import (
     TokenExpiredException,
     TokenInvalidException,
     TokenNotReadyException,
 )
+from django.conf import settings
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter
+from drf_spectacular.utils import extend_schema as extend_schema_drf
+
 from core.exceptions import ApiKeyInvalidException
 from core.serializers.error_serializers import get_serializer
 

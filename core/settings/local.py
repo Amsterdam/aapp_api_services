@@ -1,4 +1,4 @@
-from .base import * # isort:skip
+from .base import *  # isort:skip
 
 from uuid import uuid4
 
