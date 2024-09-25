@@ -6,8 +6,9 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from contact.exceptions import (
+    FailedDependencyException,
     WaitingTimeDataException,
-    WaitingTimeSourceAvailabilityException, FailedDependencyException,
+    WaitingTimeSourceAvailabilityException,
 )
 from contact.models import CityOffice
 from contact.serializers.contact_serializers import CityOfficeResultSerializer
