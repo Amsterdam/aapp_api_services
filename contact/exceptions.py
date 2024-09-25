@@ -9,12 +9,6 @@ class LinkDataException(BaseApiException):
     default_code = "LINK_DATA_FORMAT_ERROR"
 
 
-class CityOfficeDataException(BaseApiException):
-    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    default_detail = "City office data not in expected format"
-    default_code = "CITY_OFFICE_DATA_FORMAT_ERROR"
-
-
 class WaitingTimeDataException(BaseApiException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = "Waiting time data not in expected format"

@@ -56,3 +56,10 @@ COPY modules /app/modules
 FROM dev AS dev-modules
 COPY modules /app/modules
 CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
+
+FROM core AS app-contact
+COPY contact /app/contact
+
+FROM dev AS dev-contact
+COPY contact /app/contact
+CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]

@@ -5,7 +5,6 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 def get_swagger_paths(base_path):
     urlpatterns = [
-        # drf-spectacular
         path(
             base_path + "/openapi/",
             SpectacularAPIView.as_view(
