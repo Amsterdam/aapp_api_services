@@ -142,12 +142,12 @@ class ReleaseDetailView(generics.RetrieveUpdateDestroyAPIView):
         return release
 
     def get_authenticators(self):
-        if self.request.method == "GET":
+        if getattr(self.request, 'method', None) == "GET":
             return []  # Disable authentication for GET requests
         return super().get_authenticators()
 
     def get_permissions(self):
-        if self.request.method == "GET":
+        if getattr(self.request, 'method', None) == "GET":
             return [permissions.AllowAny()]  # Allow any user for GET requests
         return super().get_permissions()
 
