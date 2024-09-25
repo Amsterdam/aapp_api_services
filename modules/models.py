@@ -47,10 +47,6 @@ class AppRelease(models.Model):
     published = models.DateTimeField(null=True)
     unpublished = models.DateTimeField(null=True)
     deprecated = models.DateTimeField(null=True)
-    # same as unsupported
-    # TODO: support extra field for deprecation of app release
-    # See PBI #86863 for info about implementation
-    # deprecated = models.DateTimeField(null=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     module_order = ArrayField(
@@ -68,7 +64,7 @@ class AppRelease(models.Model):
 
         # Check if slugs in module_order are unique
         if len(set(self.module_order)) != len(self.module_order):
-            raise ValidationError(f"Slugs in module_order are not unique")
+            raise ValidationError("Slugs in module_order are not unique")
 
         return super().save(*args, **kwargs)
 

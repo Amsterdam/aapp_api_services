@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from contact.exceptions import (
     CityOfficeDataException,
     WaitingTimeDataException,
-    WaitingTimeSourceAvailablityException,
+    WaitingTimeSourceAvailabilityException, FailedDependencyException,
 )
 from contact.models import CityOffice, OpeningHours, OpeningHoursException
 from contact.serializers.contact_serializers import (
@@ -114,13 +114,10 @@ class WaitingTimesView(generics.RetrieveAPIView):
             logger.error(
                 f"Waiting time API not available [{settings.WAITING_TIME_API=}, error={e}]"
             )
-            raise WaitingTimeSourceAvailablityException()
+            raise WaitingTimeSourceAvailabilityException()
 
         if waiting_times_result.status_code != 200:
-            logger.error(
-                f"Waiting time API not available [{settings.WAITING_TIME_API=}, status_code={waiting_times_result.status_code}]"
-            )
-            raise WaitingTimeSourceAvailablityException()
+            raise FailedDependencyException()
 
         waiting_times_json = waiting_times_result.json()
 

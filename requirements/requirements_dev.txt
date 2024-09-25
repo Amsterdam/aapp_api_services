@@ -6,14 +6,14 @@
 #
 asgiref==3.8.1
     # via django
-autoflake==2.3.1
-    # via -r requirements/requirements_dev.in
 black==24.8.0
     # via -r requirements/requirements_dev.in
 click==8.1.7
     # via black
-django==5.1.1
-    # via model-bakery
+django==4.2.16
+    # via
+    #   -r requirements/requirements_dev.in
+    #   model-bakery
 freezegun==1.5.1
     # via -r requirements/requirements_dev.in
 iniconfig==2.0.0
@@ -30,18 +30,18 @@ packaging==24.1
     #   pytest
 pathspec==0.12.1
     # via black
-platformdirs==4.3.3
+platformdirs==4.3.6
     # via black
 pluggy==1.5.0
     # via pytest
-pyflakes==3.2.0
-    # via autoflake
 pytest==8.3.3
     # via pytest-django
 pytest-django==4.9.0
     # via -r requirements/requirements_dev.in
 python-dateutil==2.9.0.post0
     # via freezegun
+ruff==0.6.7
+    # via -r requirements/requirements_dev.in
 six==1.16.0
     # via python-dateutil
 sqlparse==0.5.1

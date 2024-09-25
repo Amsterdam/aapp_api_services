@@ -16,7 +16,7 @@ class TokenInvalidException(BaseApiException):
 
 
 class TokenNotReadyException(BaseApiException):
-    status_code = status.HTTP_401_UNAUTHORIZED
+    status_code = status.HTTP_412_PRECONDITION_FAILED
     default_detail = "Token not ready"
     default_code = "TOKEN_NOT_READY"
 
@@ -28,7 +28,7 @@ class MijnAMSRequestException(BaseApiException):
 
 
 class MijnAMSAPIException(BaseApiException):
-    status_code = status.HTTP_404_NOT_FOUND
+    status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Something went wrong during request to source data, see logs for more information"
     default_code = "API_ERROR"
 

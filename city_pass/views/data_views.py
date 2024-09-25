@@ -74,8 +74,8 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
             raise MijnAMSInvalidDataException()
 
         if response_content is None:
-            logger.error(f"No content received from Mijn Amsterdam API")
-            raise MijnAMSInvalidDataException("No data found for this user")
+            logger.error("No content received from Mijn Amsterdam API")
+            raise MijnAMSAPIException("No data found for this user")
 
         return response_content
 
@@ -136,7 +136,7 @@ class AbstractTransactionsView(AbstractMijnAmsDataView):
         session = request.user
         pass_number = request.query_params.get("passNumber")
         if pass_number is None:
-            logger.error(f"Pass number not provided in query parameters")
+            logger.error("Pass number not provided in query parameters")
             raise MijnAMSRequestException(
                 "Pass number not provided in query parameters"
             )

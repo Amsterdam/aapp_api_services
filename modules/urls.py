@@ -1,59 +1,85 @@
-""" Routes configuration
-"""
-from django.urls import path, re_path
-from django.views.decorators.csrf import csrf_exempt
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
-from rest_framework import permissions
+from django.conf import settings
+from django.urls import path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from modules.views import views_modules
-
-schema_view = get_schema_view(
-    openapi.Info(
-        title="Amsterdam APP Module: Modules",
-        default_version="v1",
-        description="API backend server for: Modules",
-    ),
-    public=True,
-    permission_classes=([permissions.AllowAny]),
+from modules.views.module_version_views import (
+    ModuleVersionCreateView,
+    ModuleVersionDetailView,
+    ModuleVersionStatusView,
 )
+from modules.views.module_views import ModuleCreateView, ModuleDetailView
+from modules.views.modules_views import (
+    ModulesAvailableForReleaseView,
+    ModulesLatestView,
+)
+from modules.views.release_views import ReleaseCreateView, ReleaseDetailView
+from modules.views.releases_views import GetReleasesView
 
-""" Base path: /modules/api/v1
-"""
+BASE_PATH = "modules/api/v1/"
 
 urlpatterns = [
-    # Swagger (drf-yasg framework)
-    re_path(
-        r"^swagger(?P<format>\.json|\.yaml)$",
-        schema_view.without_ui(cache_timeout=0),
-        name="schema-json",
-    ),
-    re_path(
-        r"^apidocs/$",
-        schema_view.with_ui("swagger", cache_timeout=0),
-        name="schema-swagger-ui",
-    ),
-    re_path(
-        r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
-    ),
-    # End-points from https://amsterdam-app.stoplight.io/docs/amsterdam-app/
+    # drf-spectacular
     path(
-        "module/<str:slug>/version/<str:version>/status",
-        csrf_exempt(views_modules.module_version_status),
+        BASE_PATH + "openapi/",
+        SpectacularAPIView.as_view(authentication_classes=[], permission_classes=[]),
+        name="module-openapi-schema",
+    ),
+    # module version
+    path(
+        BASE_PATH + "module/<str:slug>/version/<str:version>/status",
+        ModuleVersionStatusView.as_view(),
     ),
     path(
-        "module/<str:slug>/version/<str:version>",
-        csrf_exempt(views_modules.module_version),
+        BASE_PATH + "module/<str:slug>/version/<str:version>",
+        ModuleVersionDetailView.as_view(),
     ),
-    path("module/<str:slug>/version", csrf_exempt(views_modules.module_version_post)),
-    path("module", csrf_exempt(views_modules.module_post)),
-    path("module/<str:slug>", csrf_exempt(views_modules.module)),
-    path("modules/latest", csrf_exempt(views_modules.modules_latest)),
+    # module
     path(
-        "modules/available-for-release/<str:release_version>",
-        csrf_exempt(views_modules.modules_available_for_release),
+        BASE_PATH + "module/<str:slug>/version",
+        ModuleVersionCreateView.as_view(),
     ),
-    path("release", csrf_exempt(views_modules.release_post)),
-    path("release/<str:version>", csrf_exempt(views_modules.release)),
-    path("releases", csrf_exempt(views_modules.get_releases)),
+    path(
+        BASE_PATH + "module",
+        ModuleCreateView.as_view(),
+    ),
+    path(
+        BASE_PATH + "module/<str:slug>",
+        ModuleDetailView.as_view(),
+    ),
+    # modules
+    path(
+        BASE_PATH + "modules/latest",
+        ModulesLatestView.as_view(),
+    ),
+    path(
+        BASE_PATH + "modules/available-for-release/<str:release_version>",
+        ModulesAvailableForReleaseView.as_view(),
+    ),
+    # release
+    path(
+        BASE_PATH + "release",
+        ReleaseCreateView.as_view(),
+    ),
+    path(
+        BASE_PATH + "release/<str:version>",
+        ReleaseDetailView.as_view(),
+    ),
+    # releases
+    path(
+        BASE_PATH + "releases",
+        GetReleasesView.as_view(),
+    ),
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        path(
+            BASE_PATH + "apidocs/",
+            SpectacularSwaggerView.as_view(
+                url_name="module-openapi-schema",
+                authentication_classes=[],
+                permission_classes=[],
+            ),
+            name="module-swagger-ui",
+        )
+    ]

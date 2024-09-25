@@ -25,7 +25,7 @@ class Command(BaseCommand):
             CityOffice.objects.all().delete()
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Removed all existing data (to make space to new data)!"
+                    "Removed all existing data (to make space to new data)!"
                 )
             )
 

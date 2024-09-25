@@ -23,7 +23,7 @@ def main():
         ) from exc
 
     # Give developer easy access to API docs
-    print("API documentation: http://127.0.0.1:8000/city-pass/api/v1/apidocs")
+    print("API documentation: http://127.0.0.1:8000/<service_name>/api/v1/apidocs")
 
     execute_from_command_line(sys.argv)
 

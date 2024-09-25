@@ -13,6 +13,8 @@ attrs==24.2.0
     # via
     #   jsonschema
     #   referencing
+azure-ad-verify-token==0.4.0
+    # via -r requirements/requirements.in
 azure-core==1.31.0
     # via
     #   azure-core-tracing-opentelemetry
@@ -22,7 +24,7 @@ azure-core==1.31.0
     #   msrest
 azure-core-tracing-opentelemetry==1.0.0b11
     # via azure-monitor-opentelemetry
-azure-identity==1.17.1
+azure-identity==1.18.0
     # via -r requirements/requirements.in
 azure-monitor-opentelemetry==1.6.1
     # via -r requirements/requirements.in
@@ -40,6 +42,7 @@ charset-normalizer==3.3.2
     # via requests
 cryptography==43.0.1
     # via
+    #   azure-ad-verify-token
     #   azure-identity
     #   msal
     #   pyjwt
@@ -197,6 +200,7 @@ pycparser==2.22
     # via cffi
 pyjwt[crypto]==2.9.0
     # via
+    #   azure-ad-verify-token
     #   djangorestframework-simplejwt
     #   msal
 python-dotenv==1.0.1
@@ -213,6 +217,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.3
     # via
+    #   azure-ad-verify-token
     #   azure-core
     #   msal
     #   msrest
@@ -240,7 +245,7 @@ uritemplate==4.1.1
     #   drf-yasg
 urllib3==2.2.3
     # via requests
-uwsgi==2.0.26
+uwsgi==2.0.27
     # via -r requirements/requirements.in
 wrapt==1.16.0
     # via

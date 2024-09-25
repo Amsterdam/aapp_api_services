@@ -3,9 +3,7 @@ from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import BaseAuthentication
 
-from core.exceptions import (
-    ApiKeyInvalidException,
-)
+from core.exceptions import ApiKeyInvalidException
 
 
 class AppAuthentication(BaseAuthentication):

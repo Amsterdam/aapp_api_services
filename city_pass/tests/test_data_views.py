@@ -56,7 +56,7 @@ class TestPassesView(BaseCityPassTestCase):
         mock_response._content = encoded_error_response
         mock_get.return_value = mock_response
 
-        with self.assertLogs("city_pass.views.data_views", level="ERROR") as cm:
+        with self.assertLogs("city_pass.views.data_views", level="ERROR"):
             result = self.client.get(self.api_url, headers=self.headers, follow=True)
 
         self.assertEqual(result.status_code, 404)
@@ -145,7 +145,7 @@ class BaseAbstractTransactionsViews(BaseCityPassTestCase):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
-            query_params={"passNumber": self.pass_number},
+            data={"passNumber": self.pass_number},
             follow=True,
         )
         self.assertEqual(200, result.status_code)
@@ -158,7 +158,7 @@ class BaseAbstractTransactionsViews(BaseCityPassTestCase):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
-            query_params={"passNumber": "12345"},
+            data={"passNumber": "12345"},
             follow=True,
         )
         self.assertEqual(404, result.status_code)
@@ -173,7 +173,7 @@ class BaseAbstractTransactionsViews(BaseCityPassTestCase):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
-            query_params={"passNumber": self.pass_number},
+            data={"passNumber": self.pass_number},
             follow=True,
         )
         self.assertEqual(500, result.status_code)
@@ -197,7 +197,7 @@ class TestBudgetTransactionsViews(BaseAbstractTransactionsViews):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
-            query_params={"passNumber": self.pass_number},
+            data={"passNumber": self.pass_number},
             follow=True,
         )
         self.assertEqual(200, result.status_code)
@@ -227,7 +227,7 @@ class TestAanbiedingTransactionsViews(BaseAbstractTransactionsViews):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
-            query_params={"passNumber": self.pass_number},
+            data={"passNumber": self.pass_number},
             follow=True,
         )
         self.assertEqual(200, result.status_code)

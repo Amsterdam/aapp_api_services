@@ -1,6 +1,7 @@
+django<5
 freezegun
 pytest-django
 model-bakery
 black
 isort
-autoflake
+ruff

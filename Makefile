@@ -18,7 +18,8 @@ pip-tools:
 	pip install pip-tools
 
 install: pip-tools                  ## Install requirements and sync venv with expected state as defined in requirements.txt
-	pip-sync requirements/requirements_dev.txt
+	pip install -r requirements/requirements.txt
+	pip install -r requirements/requirements_dev.txt
 
 requirements:                       ## Upgrade requirements (in requirements.in) to latest versions and compile requirements.txt
 	# The --allow-unsafe flag should be used and will become the default behaviour of pip-compile in the future
@@ -42,11 +43,11 @@ dev:                                ## Start Django app in development mode
 
 lintfix:                            ## Execute lint fixes
 	$(run) test black /app/
-	$(run) test autoflake /app/ --recursive --in-place --remove-unused-variables --remove-all-unused-imports --quiet
+	$(run) test ruff check /app/ --no-show-fixes --fix
 	$(run) test isort /app/
 
 lint:                               ## Execute lint checks
-	$(run) test autoflake /app/ --check --recursive --quiet
+	$(run) test ruff check /app/ --no-show-fixes
 	$(run) test isort --diff --check /app/
 
 run-test:                           ## Run tests

@@ -1,8 +1,8 @@
 import csv
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from django.conf import settings
 from modules.models import AppRelease, Module, ModuleVersion, ReleaseModuleStatus
 
 
@@ -28,7 +28,7 @@ class Command(BaseCommand):
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Removed all existing data (to make space to new data)!"
+                    "Removed all existing data (to make space to new data)!"
                 )
             )
 

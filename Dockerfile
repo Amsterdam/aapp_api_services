@@ -10,14 +10,15 @@ RUN apk add --no-cache --virtual .build-deps build-base linux-headers
 
 COPY requirements/requirements.txt /app/requirements/
 RUN chmod 777 /app/requirements
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip dos2unix
 RUN pip install --no-cache-dir -r /app/requirements/requirements.txt
 
 RUN addgroup -S app && adduser -S app -G app
 
 COPY manage.py /app/
+RUN dos2unix /app/manage.py
 COPY uwsgi.ini /app/
-COPY core /app/core
+COPY /core /app/core
 COPY /deploy /app/deploy
 
 RUN python3 manage.py collectstatic --no-input
