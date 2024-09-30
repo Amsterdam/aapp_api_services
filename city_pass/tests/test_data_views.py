@@ -46,7 +46,7 @@ class TestPassesView(BaseCityPassTestCase):
                 pass_no_trans_key_dict.get(pass_data_obj.pass_number),
             )
 
-    def assert_source_api_error_was_logged_and_404_returned(
+    def assert_source_api_error_was_logged_and_400_returned(
         self, mock_get, status_code: int, error_response: dict
     ):
         mock_response = Response()
@@ -56,19 +56,19 @@ class TestPassesView(BaseCityPassTestCase):
         mock_response._content = encoded_error_response
         mock_get.return_value = mock_response
 
-        with self.assertLogs("city_pass.views.data_views", level="ERROR") as cm:
+        with self.assertLogs("city_pass.views.data_views", level="ERROR"):
             result = self.client.get(self.api_url, headers=self.headers, follow=True)
 
-        self.assertEqual(result.status_code, 404)
+        self.assertEqual(result.status_code, 400)
         self.assertContains(
             result,
             "Something went wrong during request to source data, see logs for more information",
-            status_code=404,
+            status_code=400,
         )
 
     @patch("city_pass.views.data_views.requests.get")
     def test_source_api_could_not_decrypt_admin_no(self, mock_get):
-        self.assert_source_api_error_was_logged_and_404_returned(
+        self.assert_source_api_error_was_logged_and_400_returned(
             mock_get,
             400,
             {
@@ -81,7 +81,7 @@ class TestPassesView(BaseCityPassTestCase):
 
     @patch("city_pass.views.data_views.requests.get")
     def test_source_api_did_not_accept_api_key(self, mock_get):
-        self.assert_source_api_error_was_logged_and_404_returned(
+        self.assert_source_api_error_was_logged_and_400_returned(
             mock_get,
             401,
             {
@@ -115,7 +115,7 @@ class TestPassesView(BaseCityPassTestCase):
         mock_get.return_value = mock_response
 
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
-        self.assertEqual(result.status_code, 500)
+        self.assertEqual(result.status_code, 400)
 
 
 @patch("city_pass.views.data_views.requests.get")
@@ -145,7 +145,7 @@ class BaseAbstractTransactionsViews(BaseCityPassTestCase):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
-            query_params={"passNumber": self.pass_number},
+            data={"passNumber": self.pass_number},
             follow=True,
         )
         self.assertEqual(200, result.status_code)
@@ -158,10 +158,10 @@ class BaseAbstractTransactionsViews(BaseCityPassTestCase):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
-            query_params={"passNumber": "12345"},
+            data={"passNumber": "12345"},
             follow=True,
         )
-        self.assertEqual(404, result.status_code)
+        self.assertEqual(400, result.status_code)
 
     def test_content_is_invalid_format(self, mock_get):
         mock_response = Response()
@@ -173,10 +173,10 @@ class BaseAbstractTransactionsViews(BaseCityPassTestCase):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
-            query_params={"passNumber": self.pass_number},
+            data={"passNumber": self.pass_number},
             follow=True,
         )
-        self.assertEqual(500, result.status_code)
+        self.assertEqual(400, result.status_code)
 
 
 class TestBudgetTransactionsViews(BaseAbstractTransactionsViews):
@@ -197,7 +197,7 @@ class TestBudgetTransactionsViews(BaseAbstractTransactionsViews):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
-            query_params={"passNumber": self.pass_number},
+            data={"passNumber": self.pass_number},
             follow=True,
         )
         self.assertEqual(200, result.status_code)
@@ -227,7 +227,7 @@ class TestAanbiedingTransactionsViews(BaseAbstractTransactionsViews):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
-            query_params={"passNumber": self.pass_number},
+            data={"passNumber": self.pass_number},
             follow=True,
         )
         self.assertEqual(200, result.status_code)

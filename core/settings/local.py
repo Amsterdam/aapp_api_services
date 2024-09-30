@@ -1,5 +1,4 @@
-from .base import * # isort:skip
-
+import os
 from uuid import uuid4
 
 SECRET_KEY = os.getenv("SECRET_KEY", str(uuid4()))

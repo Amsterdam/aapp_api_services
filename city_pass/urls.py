@@ -62,7 +62,9 @@ if settings.DEBUG:
         path(
             BASE_PATH + "/apidocs",
             SpectacularSwaggerView.as_view(
-                url_name="city-pass-openapi-schema", authentication_classes=[], permission_classes=[]
+                url_name="city-pass-openapi-schema",
+                authentication_classes=[],
+                permission_classes=[],
             ),
             name="city-pass-swagger-ui",
         )

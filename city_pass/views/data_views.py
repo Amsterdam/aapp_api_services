@@ -18,7 +18,7 @@ from city_pass.exceptions import (
     MijnAMSRequestException,
 )
 from city_pass.serializers import data_serializers as serializers
-from city_pass.views.extend_schema import extend_schema
+from city_pass.views.extend_schema import extend_schema_with_access_token
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +74,8 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
             raise MijnAMSInvalidDataException()
 
         if response_content is None:
-            logger.error(f"No content received from Mijn Amsterdam API")
-            raise MijnAMSInvalidDataException("No data found for this user")
+            logger.error("No content received from Mijn Amsterdam API")
+            raise MijnAMSAPIException("No data found for this user")
 
         return response_content
 
@@ -94,7 +94,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
 class PassesDataView(AbstractMijnAmsDataView):
     serializer_class = serializers.MijnAmsPassDataSerializer
 
-    @extend_schema(
+    @extend_schema_with_access_token(
         success_response=serializer_class(many=True),
         exceptions=[MijnAMSAPIException, MijnAMSInvalidDataException],
     )
@@ -136,7 +136,7 @@ class AbstractTransactionsView(AbstractMijnAmsDataView):
         session = request.user
         pass_number = request.query_params.get("passNumber")
         if pass_number is None:
-            logger.error(f"Pass number not provided in query parameters")
+            logger.error("Pass number not provided in query parameters")
             raise MijnAMSRequestException(
                 "Pass number not provided in query parameters"
             )
@@ -165,7 +165,7 @@ class BudgetTransactionsView(AbstractTransactionsView):
     serializer_class = serializers.MijnAmsPassBudgetTransactionsSerializer
     base_url = settings.MIJN_AMS_API_PATHS["BUDGET_TRANSACTIONS"]
 
-    @extend_schema(
+    @extend_schema_with_access_token(
         success_response=serializer_class(many=True),
         exceptions=[
             MijnAMSAPIException,
@@ -200,7 +200,7 @@ class AanbiedingTransactionsView(AbstractTransactionsView):
     base_url = settings.MIJN_AMS_API_PATHS["AANBIEDING_TRANSACTIONS"]
     serializer_many = False
 
-    @extend_schema(
+    @extend_schema_with_access_token(
         success_response=serializer_class,
         exceptions=[
             MijnAMSAPIException,

@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
     "drf_spectacular",
 ]
 
@@ -98,17 +99,16 @@ DATABASES = {
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
-
+TIME_ZONE = "Europe/Amsterdam"
 USE_I18N = True
-
+USE_L10N = True
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = "/construction-work/static/"
+STATIC_URL = "/construction-work/static/"  # TODO: Change this to the correct path
 STATICFILES_DIR = []
 STATIC_ROOT = "{base_dir}/static".format(base_dir=BASE_DIR)
 
@@ -167,3 +167,6 @@ LOGGING = {
         },
     },
 }
+
+API_KEY_HEADER = "X-Api-Key"
+API_KEYS = os.getenv("API_AUTH_TOKENS")

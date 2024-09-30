@@ -7,11 +7,14 @@
 asgiref==3.8.1
     # via
     #   django
+    #   django-cors-headers
     #   opentelemetry-instrumentation-asgi
 attrs==24.2.0
     # via
     #   jsonschema
     #   referencing
+azure-ad-verify-token==0.4.0
+    # via -r requirements/requirements.in
 azure-core==1.31.0
     # via
     #   azure-core-tracing-opentelemetry
@@ -21,7 +24,7 @@ azure-core==1.31.0
     #   msrest
 azure-core-tracing-opentelemetry==1.0.0b11
     # via azure-monitor-opentelemetry
-azure-identity==1.17.1
+azure-identity==1.18.0
     # via -r requirements/requirements.in
 azure-monitor-opentelemetry==1.6.1
     # via -r requirements/requirements.in
@@ -39,6 +42,7 @@ charset-normalizer==3.3.2
     # via requests
 cryptography==43.0.1
     # via
+    #   azure-ad-verify-token
     #   azure-identity
     #   msal
     #   pyjwt
@@ -49,13 +53,26 @@ deprecated==1.2.14
 django==4.2.16
     # via
     #   -r requirements/requirements.in
+    #   django-cors-headers
     #   djangorestframework
+    #   djangorestframework-simplejwt
     #   drf-spectacular
+    #   drf-yasg
+django-cors-headers==4.4.0
+    # via -r requirements/requirements.in
+django-nose==1.4.7
+    # via -r requirements/requirements.in
 djangorestframework==3.15.2
     # via
     #   -r requirements/requirements.in
+    #   djangorestframework-simplejwt
     #   drf-spectacular
+    #   drf-yasg
+djangorestframework-simplejwt==5.3.1
+    # via -r requirements/requirements.in
 drf-spectacular==0.27.2
+    # via -r requirements/requirements.in
+drf-yasg==1.21.7
     # via -r requirements/requirements.in
 fixedint==0.1.6
     # via azure-monitor-opentelemetry-exporter
@@ -66,7 +83,9 @@ importlib-metadata==8.4.0
     #   opentelemetry-api
     #   opentelemetry-instrumentation-flask
 inflection==0.5.1
-    # via drf-spectacular
+    # via
+    #   drf-spectacular
+    #   drf-yasg
 isodate==0.6.1
     # via msrest
 jsonschema==4.23.0
@@ -81,6 +100,8 @@ msal-extensions==1.2.0
     # via azure-identity
 msrest==0.7.1
     # via azure-monitor-opentelemetry-exporter
+nose==1.3.7
+    # via django-nose
 oauthlib==3.2.2
     # via requests-oauthlib
 opentelemetry-api==1.27.0
@@ -164,7 +185,11 @@ opentelemetry-util-http==0.48b0
     #   opentelemetry-instrumentation-urllib3
     #   opentelemetry-instrumentation-wsgi
 packaging==24.1
-    # via opentelemetry-instrumentation-flask
+    # via
+    #   drf-yasg
+    #   opentelemetry-instrumentation-flask
+pkcs7==0.1.2
+    # via -r requirements/requirements.in
 portalocker==2.10.1
     # via msal-extensions
 psutil==5.9.8
@@ -175,18 +200,24 @@ pycparser==2.22
     # via cffi
 pyjwt[crypto]==2.9.0
     # via
+    #   azure-ad-verify-token
+    #   djangorestframework-simplejwt
     #   msal
-    #   pyjwt
 python-dotenv==1.0.1
     # via -r requirements/requirements.in
+pytz==2024.2
+    # via drf-yasg
 pyyaml==6.0.2
-    # via drf-spectacular
+    # via
+    #   drf-spectacular
+    #   drf-yasg
 referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
 requests==2.32.3
     # via
+    #   azure-ad-verify-token
     #   azure-core
     #   msal
     #   msrest
@@ -209,10 +240,12 @@ typing-extensions==4.12.2
     #   azure-identity
     #   opentelemetry-sdk
 uritemplate==4.1.1
-    # via drf-spectacular
+    # via
+    #   drf-spectacular
+    #   drf-yasg
 urllib3==2.2.3
     # via requests
-uwsgi==2.0.26
+uwsgi==2.0.27
     # via -r requirements/requirements.in
 wrapt==1.16.0
     # via
@@ -224,5 +257,5 @@ zipp==3.20.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==75.0.0
+setuptools==75.1.0
     # via opentelemetry-instrumentation
