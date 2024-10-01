@@ -1,248 +1,180 @@
-from datetime import datetime, timedelta
-from math import ceil
+import datetime
+from datetime import timedelta
 
 from django.conf import settings
-from django.db.models import DateTimeField, Max, Value
+from django.db.models import Case, DateTimeField, Max, Prefetch, Value, When
 from django.db.models.functions import Coalesce, Greatest
-from rest_framework import generics, status
+from django.utils import timezone
+from rest_framework import generics
+from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
 
 from construction_work.models import Article, Device, Project, WarningMessage
+from construction_work.pagination import CustomPagination
 from construction_work.serializers import ProjectExtendedSerializer
-from construction_work.utils import address_to_gps, create_id_dict, get_distance
+from construction_work.services.geocoding import geocode_address
+from construction_work.utils.geo_utils import calculate_distance
 
 
-def sort_projects_by_news_pub_dates(projects_qs):
-    return (
-        projects_qs.filter(active=True)
-        .filter(hidden=False)
-        .annotate(
-            latest_article_pub_date=Coalesce(
-                Max("article__publication_date"),
-                Value("1970-01-01"),
-                output_field=DateTimeField(),
-            )
+def calculate_distance_from_project(project: Project, lat, lon):
+    """Calculate the distance between given coordinates and project coordinates."""
+    given_coords = (float(lat), float(lon))
+
+    if project.coordinates is not None:
+        project_coords = (
+            project.coordinates.get("lat"),
+            project.coordinates.get("lon"),
         )
-        .annotate(
-            latest_warning_pub_date=Coalesce(
-                Max("warningmessage__publication_date"),
-                Value("1970-01-01"),
-                output_field=DateTimeField(),
-            )
-        )
-        .annotate(
-            latest_pub_date=Greatest(
-                "latest_article_pub_date", "latest_warning_pub_date"
-            )
-        )
-        .order_by("-latest_pub_date")
-    )
+    else:
+        project_coords = (None, None)
 
-
-def create_project_news_lookup(projects: list[Project], article_max_age):
-    """Create lookup table to quickly find articles by project id"""
-    # Prefetch articles and warning messages within date range
-    datetime_now = datetime.now().astimezone()
-    start_date = datetime_now - timedelta(days=int(article_max_age))
-    end_date = datetime_now
-
-    # Setup lookup table
-    project_news_mapping = {x.pk: [] for x in projects}
-
-    def pre_fetch_news(model, project_id_key):
-        pre_fetched_qs = model.objects.filter(
-            publication_date__range=[start_date, end_date]
-        ).values("id", "modification_date", project_id_key)
-        pre_fetched = list(pre_fetched_qs)
-
-        # Remap articles to lookup table with project id as key
-        for obj in pre_fetched:
-            # Keep in sync with ArticleMinimalSerializer
-            news_dict = {
-                "meta_id": create_id_dict(model, obj["id"]),
-                "modification_date": str(obj["modification_date"]),
-            }
-            if obj[project_id_key] in [x.pk for x in projects]:
-                project_news_mapping[obj[project_id_key]].append(news_dict)
-
-    pre_fetch_news(Article, "projects")
-    pre_fetch_news(WarningMessage, "project")
-
-    return project_news_mapping
-
-
-def _paginate_data(request, data: list) -> dict:
-    """Create pagination of data"""
-    page = int(request.GET.get("page", 1)) - 1
-    page_size = int(request.GET.get("page_size", 10))
-
-    # Get uri from request
-    absolute_uri = request.build_absolute_uri()
-    uri = absolute_uri.split("?")[0]
-
-    # NOTE: check if pagination does not return double results
-    # might be an index + 1 issue?
-    start_index = page * page_size
-    stop_index = page * page_size + page_size
-    paginated_result = data[start_index:stop_index]
-    pages = int(ceil(len(data) / float(page_size)))
-
-    pagination = {
-        "number": page + 1,
-        "size": page_size,
-        "totalElements": len(data),
-        "totalPages": pages,
-    }
-
-    # Get query parameters from request
-    query_params = dict(request.query_params)
-    query_params.pop("page", None)
-    query_params.pop("page_size", None)
-
-    query_params_str = ""
-    for k, v in query_params.items():
-        param_str = f"&{k}={v[0]}"
-        query_params_str += param_str
-
-    # Add link without pagination
-    links = {"self": {"href": f"{uri}?{query_params_str}"}}
-
-    # Add next page link, if available
-    if pagination["number"] < pagination["totalPages"]:
-        next_page = str(pagination["number"] + 1)
-        links["next"] = {
-            "href": f"{uri}?page={next_page}&page_size={page_size}{query_params_str}"
-        }
-
-    # Add previous page link, if available
-    if pagination["number"] > 1:
-        previous_page = str(pagination["number"] - 1)
-        links["previous"] = {
-            "href": f"{uri}?page={previous_page}&page_size={page_size}{query_params_str}"
-        }
-
-    return {
-        "result": paginated_result,
-        "page": pagination,
-        "_links": links,
-    }
-
-
-def _projects(request):
-    """Get a list of all projects in specific order"""
-
-    device_id = request.headers.get(settings.HEADER_DEVICE_ID, None)
-    if device_id is None:
-        return Response(
-            data="Invalid header(s). See /api/v1/apidocs for more information",
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    lat = request.GET.get("lat", None)
-    lon = request.GET.get("lon", None)
-    address = request.GET.get("address", None)
-
-    # NOTE: is 3 days too little, users will miss many article updates
-    article_max_age = int(
-        request.GET.get(settings.ARTICLE_MAX_AGE_PARAM, 3)
-    )  # Max days since publication date
-
-    # NOTE: cache should be rebuild when any parameter is changed
-    # currently only device id is used as cache key
-    # @memoize
-    def _fetch_projects(_device_id, _article_max_age, _lat, _lon, _address):
-        # Convert address into GPS data. Note: This should never happen, the device should already
-        if _address is not None and (_lat is None or _lon is None):
-            _lat, _lon = address_to_gps(_address)
-
-        device = Device.objects.filter(device_id=_device_id).first()
-
-        # Sort followed projects by project with most recent article and warnings,
-        projects_followed_by_device_qs = None
-        if device:
-            projects_followed_by_device_qs = sort_projects_by_news_pub_dates(
-                device.followed_projects
-            )
-        projects_followed_by_device = list(
-            projects_followed_by_device_qs if projects_followed_by_device_qs else []
-        )
-
-        def calculate_distance(project: Project, _lat, _lon):
-            given_cords = (float(_lat), float(_lon))
-
-            if project.coordinates is not None:
-                project_cords = (
-                    project.coordinates.get("lat"),
-                    project.coordinates.get("lon"),
-                )
-            else:
-                project_cords = (None, None)
-
-            meter = get_distance(given_cords, project_cords)
-            if meter is None:
-                return float("inf")
-            return meter
-
-        # Get all projects not followed by device
-        all_other_projects_qs = None
-        if projects_followed_by_device_qs:
-            all_other_projects_qs = (
-                Project.objects.filter(active=True)
-                .filter(hidden=False)
-                .exclude(pk__in=projects_followed_by_device_qs)
-            )
-        else:
-            all_other_projects_qs = (
-                Project.objects.filter(active=True).filter(hidden=False).all()
-            )
-        # If lat and lon are known:
-        # Sort remaining projects by distance from given coordinates
-        if _lat is not None and _lon is not None:
-            all_other_projects = sorted(
-                all_other_projects_qs,
-                key=lambda project: calculate_distance(project, _lat, _lon),
-            )
-        # If lat and lon are not known:
-        # Sort projects by most recent article,
-        # adding old date for projects without articles
-
-        else:
-            all_other_projects_qs = sort_projects_by_news_pub_dates(
-                all_other_projects_qs
-            )
-            all_other_projects = list(all_other_projects_qs)
-
-        # Combine followed and all other projects in a single list
-        all_projects = []
-        all_projects.extend(projects_followed_by_device)
-        all_projects.extend(all_other_projects)
-
-        project_news_mapping = create_project_news_lookup(
-            all_projects, _article_max_age
-        )
-
-        context = {
-            "lat": _lat,
-            "lon": _lon,
-            "project_news_mapping": project_news_mapping,
-            "followed_projects": projects_followed_by_device,
-        }
-        serializer = ProjectExtendedSerializer(
-            instance=all_projects, many=True, context=context
-        )
-        return serializer.data
-
-    # Create context for project list serializer
-    serialized_data = _fetch_projects(device_id, article_max_age, lat, lon, address)
-
-    # Paginate and return data
-    paginated_data = _paginate_data(request, serialized_data)
-    return Response(
-        data=paginated_data, status=status.HTTP_200_OK, content_type="application/json"
-    )
+    meter = calculate_distance(given_coords, project_coords)
+    return meter if meter is not None else float("inf")
 
 
 class ProjectsListView(generics.RetrieveAPIView):
+    serializer_class = ProjectExtendedSerializer
+    pagination_class = CustomPagination  # Ensure you have your custom pagination class
+
     def get(self, request, *args, **kwargs):
-        """Get a list of all projects in specific order"""
-        return _projects(request)
+        queryset = self.get_queryset()
+        context = self.get_serializer_context()
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True, context=context)
+            return self.get_paginated_response(serializer.data)
+        else:
+            serializer = self.get_serializer(queryset, many=True, context=context)
+            return Response({"result": serializer.data})
+
+    def get_queryset(self):
+        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
+        if not device_id:
+            raise ParseError(
+                "Invalid header(s). See /api/v1/apidocs for more information"
+            )
+
+        lat = self.request.GET.get("lat")
+        lon = self.request.GET.get("lon")
+        address = self.request.GET.get("address")
+
+        article_max_age = self.request.GET.get(settings.ARTICLE_MAX_AGE_PARAM, 3)
+        try:
+            article_max_age = int(article_max_age)
+        except ValueError:
+            raise ParseError(f"Invalid {settings.ARTICLE_MAX_AGE_PARAM} parameter")
+
+        if address and (lat is None or lon is None):
+            lat, lon = geocode_address(address)
+
+        device = Device.objects.filter(device_id=device_id).first()
+
+        # Projects followed by the device
+        if device:
+            followed_projects_qs = device.followed_projects.filter(
+                active=True, hidden=False
+            )
+            followed_projects_qs = self.annotate_latest_pub_date(followed_projects_qs)
+            followed_projects = list(followed_projects_qs.order_by("-latest_pub_date"))
+        else:
+            followed_projects = []
+
+        # Other projects
+        if lat and lon:
+            try:
+                float(lat)
+                float(lon)
+            except ValueError:
+                raise ParseError("Invalid latitude or longitude")
+
+            other_projects_qs = Project.objects.filter(
+                active=True, hidden=False
+            ).exclude(pk__in=[p.pk for p in followed_projects])
+            other_projects = list(other_projects_qs)
+            other_projects.sort(
+                key=lambda p: calculate_distance_from_project(p, lat, lon)
+            )
+        else:
+            other_projects_qs = Project.objects.filter(
+                active=True, hidden=False
+            ).exclude(pk__in=[p.pk for p in followed_projects])
+            other_projects_qs = self.annotate_latest_pub_date(other_projects_qs)
+            other_projects = list(other_projects_qs.order_by("-latest_pub_date"))
+
+        # Combine followed and other projects
+        all_projects = followed_projects + other_projects
+
+        # Prefetch recent articles and warnings
+        project_ids = [p.pk for p in all_projects]
+        now = timezone.now()
+        start_date = now - timedelta(days=article_max_age)
+
+        recent_articles_prefetch = Prefetch(
+            "article_set",
+            queryset=Article.objects.filter(
+                publication_date__range=[start_date, now]
+            ).only("id", "modification_date"),
+            to_attr="recent_articles",
+        )
+
+        recent_warnings_prefetch = Prefetch(
+            "warningmessage_set",
+            queryset=WarningMessage.objects.filter(
+                publication_date__range=[start_date, now]
+            ).only("id", "modification_date"),
+            to_attr="recent_warnings",
+        )
+
+        if project_ids:
+            # Construct preserved_order only if there are projects
+            preserved_order = Case(
+                *[When(pk=pk, then=pos) for pos, pk in enumerate(project_ids)]
+            )
+            queryset = (
+                Project.objects.filter(pk__in=project_ids)
+                .annotate(ordering=preserved_order)
+                .order_by("ordering")
+                .prefetch_related(recent_articles_prefetch, recent_warnings_prefetch)
+            )
+        else:
+            # Return an empty queryset
+            queryset = Project.objects.none()
+
+        # Store additional context data
+        self.lat = lat
+        self.lon = lon
+        self.followed_projects_ids = [p.pk for p in followed_projects]
+        return queryset
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            {
+                "lat": self.lat,
+                "lon": self.lon,
+                "followed_projects_ids": self.followed_projects_ids,
+            }
+        )
+        return context
+
+    def annotate_latest_pub_date(self, queryset):
+        """Annotate queryset with the latest publication date of articles and warnings."""
+        default_date = datetime.datetime(1970, 1, 1, tzinfo=timezone.utc)
+        return queryset.annotate(
+            latest_article_pub_date=Coalesce(
+                Max("article__publication_date"),
+                Value(default_date, output_field=DateTimeField()),
+                output_field=DateTimeField(),
+            ),
+            latest_warning_pub_date=Coalesce(
+                Max("warningmessage__publication_date"),
+                Value(default_date, output_field=DateTimeField()),
+                output_field=DateTimeField(),
+            ),
+            latest_pub_date=Greatest(
+                "latest_article_pub_date",
+                "latest_warning_pub_date",
+                output_field=DateTimeField(),
+            ),
+        )

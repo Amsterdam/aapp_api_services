@@ -4,7 +4,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
-from construction_work.utils import create_id_dict
+from construction_work.utils.model_utils import create_id_dict
 from construction_work.validators import AmsterdamEmailValidator
 
 
@@ -79,7 +79,7 @@ class Article(models.Model):
 
     def get_id_dict(self):
         """Get id dict"""
-        return create_id_dict(type(self), self.pk)
+        return create_id_dict(self)
 
 
 class ProjectManager(models.Model):
@@ -145,7 +145,7 @@ class WarningMessage(models.Model):
 
     def get_id_dict(self):
         """Get id dict"""
-        return create_id_dict(type(self), self.pk)
+        return create_id_dict(self)
 
 
 class Image(models.Model):
