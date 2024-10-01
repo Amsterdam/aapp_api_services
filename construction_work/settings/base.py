@@ -13,3 +13,5 @@ LOGGING["loggers"]["construction_work"] = {
     "handlers": ["console"],
     "propagate": False,
 }
+
+DEFAULT_WARNING_MESSAGE_EMAIL = "redactieprojecten@amsterdam.nl"
