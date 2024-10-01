@@ -15,3 +15,9 @@ LOGGING["loggers"]["construction_work"] = {
 }
 
 DEFAULT_WARNING_MESSAGE_EMAIL = "redactieprojecten@amsterdam.nl"
+
+HEADER_DEVICE_ID = "DeviceId"
+
+ARTICLE_MAX_AGE_PARAM = "article_max_age"
+
+ADDRESS_TO_GPS_API = "https://api.data.amsterdam.nl/atlas/search/adres/?q="
