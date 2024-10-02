@@ -57,9 +57,7 @@ class ProjectsListView(generics.RetrieveAPIView):
     def get_queryset(self):
         device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
         if not device_id:
-            raise ParseError(
-                "Invalid header(s). See /api/v1/apidocs for more information"
-            )
+            raise ParseError(f"Missing header: {settings.HEADER_DEVICE_ID}")
 
         lat = self.request.GET.get("lat")
         lon = self.request.GET.get("lon")
@@ -69,7 +67,7 @@ class ProjectsListView(generics.RetrieveAPIView):
         try:
             article_max_age = int(article_max_age)
         except ValueError:
-            raise ParseError(f"Invalid {settings.ARTICLE_MAX_AGE_PARAM} parameter")
+            raise ParseError(f"Invalid parameter: {settings.ARTICLE_MAX_AGE_PARAM}")
 
         if address and (lat is None or lon is None):
             lat, lon = geocode_address(address)
@@ -104,7 +102,7 @@ class ProjectsListView(generics.RetrieveAPIView):
                 lat = float(lat)
                 lon = float(lon)
             except ValueError:
-                raise ParseError("Invalid latitude or longitude")
+                raise ParseError(f"Invalid latitude or longitude: {lat=}, {lon=}")
 
             # Extract latitude and longitude from JSONField 'coordinates'
             projects_qs = projects_qs.annotate(
