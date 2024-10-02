@@ -17,7 +17,7 @@ from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
 from rest_framework import generics, status
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.response import Response
 
 from construction_work.models import Article, Device, Project, WarningMessage
@@ -200,62 +200,60 @@ class ProjectListView(generics.RetrieveAPIView):
 
 
 class ProjectDetailsView(generics.RetrieveAPIView):
-    def get(self, request, *args, **kwargs):
-        device_id = request.META.get("HTTP_DEVICEID", None)
-        if device_id is None:
-            return Response(
-                f"Missing header: {settings.HEADER_DEVICE_ID}",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+    serializer_class = ProjectExtendedWithFollowersSerializer
 
-        project_id = request.GET.get("id", None)
-        if project_id is None:
-            return Response(f"Missing project id", status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
+        if not device_id:
+            raise ParseError(f"Missing header: {settings.HEADER_DEVICE_ID}")
 
-        article_max_age = request.GET.get(settings.ARTICLE_MAX_AGE_PARAM, None)
-        if article_max_age is not None and article_max_age.isdigit() is False:
-            return Response(
-                f"Invalid parameter: {settings.ARTICLE_MAX_AGE_PARAM}",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        project_id = self.request.query_params.get("id")
+        if not project_id:
+            raise ParseError("Missing project id")
 
-        if article_max_age is None:
-            article_max_age = settings.DEFAULT_ARTICLE_MAX_AGE
-        else:
+        queryset = Project.objects.filter(pk=project_id, active=True)
+        if not queryset.exists():
+            raise NotFound("No record found")
+
+        return queryset
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        obj = queryset.first()
+        return obj
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+
+        article_max_age = self.request.query_params.get(
+            settings.ARTICLE_MAX_AGE_PARAM, settings.DEFAULT_ARTICLE_MAX_AGE
+        )
+        try:
             article_max_age = int(article_max_age)
+        except ValueError:
+            raise ParseError(f"Invalid parameter: {settings.ARTICLE_MAX_AGE_PARAM}")
 
-        lat = request.GET.get("lat", None)
-        lon = request.GET.get("lon", None)
-        address = request.GET.get("address", None)  # akkerstraat%2014 -> akkerstraat 14
-        if address is not None:
+        lat = self.request.query_params.get("lat")
+        lon = self.request.query_params.get("lon")
+        address = self.request.query_params.get("address")
+        if address and (not lat or not lon):
             lat, lon = geocode_address(address)
 
-        project_obj = Project.objects.filter(pk=project_id, active=True).first()
-        if project_obj is None:
-            return Response(
-                "No record found",
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
+        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
         device = Device.objects.filter(device_id=device_id).first()
-        context = {
-            "lat": lat,
-            "lon": lon,
-            "article_max_age": article_max_age,
-            "followed_projects": device.followed_projects.all() if device else None,
-            "media_url": get_media_url(request),
-        }
-        project_serializer = ProjectExtendedWithFollowersSerializer(
-            instance=project_obj,
-            partial=True,
-            data={},
-            context=context,
+        followed_projects_ids = (
+            list(device.followed_projects.values_list("pk", flat=True))
+            if device
+            else []
         )
 
-        # Validation is required to get data from serializer
-        if not project_serializer.is_valid():
-            return Response(
-                project_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        return Response(data=project_serializer.data, status=status.HTTP_200_OK)
+        context.update(
+            {
+                "lat": lat,
+                "lon": lon,
+                "article_max_age": article_max_age,
+                "followed_projects_ids": followed_projects_ids,
+                "media_url": get_media_url(self.request),
+            }
+        )
+        return context

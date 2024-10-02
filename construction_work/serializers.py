@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import serializers
 
 from construction_work.models import (
@@ -9,10 +12,7 @@ from construction_work.models import (
     WarningMessage,
 )
 from construction_work.utils.geo_utils import calculate_distance
-from construction_work.utils.model_utils import (
-    create_id_dict,
-    get_recent_articles_and_warnings_of_project,
-)
+from construction_work.utils.model_utils import create_id_dict
 
 
 class ProjectExtendedSerializer(serializers.ModelSerializer):
@@ -108,46 +108,11 @@ class ImagePublicSerializer(serializers.ModelSerializer):
 
     def get_uri(self, obj: Image):
         """Get URI"""
-        media_url: str = self.context.get("media_url")
+        media_url: str = self.context.get("media_url", "")
         media_url = media_url.rstrip("/")
-        if media_url is None:
+        if not media_url:
             return None
         return f"{media_url}/{obj.image.name}"
-
-
-class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
-    """Project details serializer"""
-
-    followers = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Project
-        exclude = ["hidden"]
-
-    def get_field_names(self, *args, **kwargs):
-        """Get field names"""
-        field_names = self.context.get("fields", None)
-        if field_names:
-            return field_names
-        return super().get_field_names(*args, **kwargs)
-
-    def get_followers(self, obj: Project) -> int:
-        """Get amount of followers of project"""
-        return obj.device_set.count()
-
-    def get_recent_articles(self, obj: Project) -> list:
-        """Get recent articles"""
-        article_max_age = self.context.get("article_max_age")
-        media_url = self.context.get("media_url")
-        return get_recent_articles_and_warnings_of_project(
-            obj,
-            article_max_age,
-            ArticleSerializer,
-            WarningMessageForManagementSerializer,
-            context={
-                "media_url": media_url,
-            },
-        )
 
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -160,40 +125,29 @@ class ArticleSerializer(serializers.ModelSerializer):
         exclude = ["type"]
 
     def get_meta_id(self, obj: Article) -> dict:
-        return obj.get_id_dict()
+        return create_id_dict(obj)
 
 
-class WarningMessageMetaIdSerializer(serializers.ModelSerializer):
-    """Waring message serializer with meta id field"""
-
-    meta_id = serializers.SerializerMethodField()
-
-    class Meta:
-        model = WarningMessage
-        fields = "__all__"
-
-    def get_meta_id(self, obj: WarningMessage) -> dict:
-        return obj.get_id_dict()
-
-
-class WarningMessageWithImagesSerializer(WarningMessageMetaIdSerializer):
+class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
     """Warning message with images serializer"""
 
+    meta_id = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
 
     class Meta:
         model = WarningMessage
         exclude = ["project_manager"]
 
+    def get_meta_id(self, obj: WarningMessage) -> dict:
+        return create_id_dict(obj)
+
     def get_images(self, obj: WarningMessage):
         """Get images"""
-        media_url = self.context.get("media_url")
-        warning_images = obj.warningimage_set.all()
-
+        media_url = self.context.get("media_url", "")
         images = []
-        for warning_image in warning_images:
+        for warning_image in obj.warningimage_set.all():
             image_serializer = ImagePublicSerializer(
-                instance=warning_image.images.all(),
+                warning_image.images.all(),
                 many=True,
                 context={"media_url": media_url},
             )
@@ -208,7 +162,6 @@ class WarningMessageWithImagesSerializer(WarningMessageMetaIdSerializer):
                 "aspect_ratio": first_image.aspect_ratio,
             }
             images.append(image)
-
         return images
 
 
@@ -228,42 +181,87 @@ class WarningMessageForManagementSerializer(WarningMessageWithImagesSerializer):
 
     def get_is_pushed(self, obj: WarningMessage) -> bool:
         """Has the warning been pushed (before)"""
-        if Notification.objects.filter(warning=obj).exists():
-            return True
-        return False
+        return Notification.objects.filter(warning=obj).exists()
 
 
-class WarningMessageWithImagesSerializer(WarningMessageMetaIdSerializer):
-    """Warning message with images serializer"""
+class ProjectExtendedWithFollowersSerializer(serializers.ModelSerializer):
+    """Project details serializer"""
 
-    images = serializers.SerializerMethodField()
+    followers = serializers.SerializerMethodField()
+    recent_articles = serializers.SerializerMethodField()
+    meter = serializers.SerializerMethodField()
+    followed = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
-        model = WarningMessage
-        exclude = ["project_manager"]
+        model = Project
+        exclude = ["hidden"]
 
-    def get_images(self, obj: WarningMessage):
-        """Get images"""
-        media_url = self.context.get("media_url")
-        warning_images = obj.warningimage_set.all()
+    def get_followers(self, obj: Project) -> int:
+        """Get amount of followers of project"""
+        return obj.device_set.count()
 
-        images = []
-        for warning_image in warning_images:
-            image_serializer = ImagePublicSerializer(
-                instance=warning_image.images.all(),
-                many=True,
-                context={"media_url": media_url},
+    def get_recent_articles(self, obj: Project) -> list:
+        """Get recent articles and warnings"""
+        article_max_age = self.context.get("article_max_age", 3)
+        media_url = self.context.get("media_url", "")
+        start_date = timezone.now() - timedelta(days=article_max_age)
+
+        # Get recent articles
+        recent_articles = obj.article_set.filter(
+            publication_date__gte=start_date
+        ).order_by("-publication_date")
+        article_serializer = ArticleSerializer(
+            recent_articles, many=True, context={"media_url": media_url}
+        )
+
+        # Get recent warnings
+        recent_warnings = obj.warningmessage_set.filter(
+            publication_date__gte=start_date
+        ).order_by("-publication_date")
+        warning_serializer = WarningMessageForManagementSerializer(
+            recent_warnings, many=True, context={"media_url": media_url}
+        )
+
+        # Combine articles and warnings
+        all_items = article_serializer.data + warning_serializer.data
+        # Sort combined list by modification_date descending
+        all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
+        return all_items
+
+    def get_meter(self, obj: Project) -> int:
+        """Calculate distance from given coordinates to project coordinates"""
+        lat = self.context.get("lat")
+        lon = self.context.get("lon")
+        if not lat or not lon or not obj.coordinates:
+            return None
+
+        cords_1 = (float(lat), float(lon))
+        project_coordinates = obj.coordinates
+        cords_2 = (project_coordinates.get("lat"), project_coordinates.get("lon"))
+        if None in cords_2 or (cords_2 == (0, 0)):
+            return None
+        return calculate_distance(cords_1, cords_2)
+
+    def get_followed(self, obj: Project) -> bool:
+        """Check if project is being followed by given device"""
+        followed_projects_ids = self.context.get("followed_projects_ids", [])
+        return obj.pk in followed_projects_ids
+
+    def get_image(self, obj: Project):
+        """Get main image or first image from image list"""
+        media_url = self.context.get("media_url", "").rstrip("/")
+        if obj.image:
+            # If obj.image is a single image instance
+            serializer = ImagePublicSerializer(
+                obj.image, context={"media_url": media_url}
             )
-            sources = image_serializer.data
-
-            first_image = warning_image.images.first()
-            image = {
-                "main": warning_image.is_main,
-                "sources": sources,
-                "landscape": bool(first_image.width > first_image.height),
-                "alternativeText": first_image.description,
-                "aspect_ratio": first_image.aspect_ratio,
-            }
-            images.append(image)
-
-        return images
+            return serializer.data
+        elif obj.images:
+            # If obj.images is a list of images
+            first_image = obj.images[0]
+            serializer = ImagePublicSerializer(
+                first_image, context={"media_url": media_url}
+            )
+            return serializer.data
+        return None
