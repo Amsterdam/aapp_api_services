@@ -2,12 +2,22 @@ import datetime
 from datetime import timedelta
 
 from django.conf import settings
-from django.db.models import Case, DateTimeField, Max, Prefetch, Value, When
-from django.db.models.functions import Coalesce, Greatest
+from django.db.models import (
+    BooleanField,
+    DateTimeField,
+    Exists,
+    F,
+    FloatField,
+    Max,
+    OuterRef,
+    Prefetch,
+    Value,
+)
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
 from rest_framework import generics
 from rest_framework.exceptions import ParseError
-from rest_framework.response import Response
 
 from construction_work.models import Article, Device, Project, WarningMessage
 from construction_work.pagination import CustomPagination
@@ -34,19 +44,15 @@ def calculate_distance_from_project(project: Project, lat, lon):
 
 class ProjectsListView(generics.RetrieveAPIView):
     serializer_class = ProjectExtendedSerializer
-    pagination_class = CustomPagination  # Ensure you have your custom pagination class
+    pagination_class = CustomPagination
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         context = self.get_serializer_context()
 
         page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True, context=context)
-            return self.get_paginated_response(serializer.data)
-        else:
-            serializer = self.get_serializer(queryset, many=True, context=context)
-            return Response({"result": serializer.data})
+        serializer = self.get_serializer(page, many=True, context=context)
+        return self.get_paginated_response(serializer.data)
 
     def get_queryset(self):
         device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
@@ -70,43 +76,64 @@ class ProjectsListView(generics.RetrieveAPIView):
 
         device = Device.objects.filter(device_id=device_id).first()
 
-        # Projects followed by the device
+        # Start with all active, non-hidden projects
+        projects_qs = Project.objects.filter(active=True, hidden=False)
+
+        # Annotate projects with whether they are followed by the device
         if device:
-            followed_projects_qs = device.followed_projects.filter(
+            # Use Exists subquery to annotate is_followed
+            followed_projects = device.followed_projects.filter(
                 active=True, hidden=False
             )
-            followed_projects_qs = self.annotate_latest_pub_date(followed_projects_qs)
-            followed_projects = list(followed_projects_qs.order_by("-latest_pub_date"))
+            projects_qs = projects_qs.annotate(
+                is_followed=Exists(followed_projects.filter(pk=OuterRef("pk")))
+            )
+            self.followed_projects_ids = list(
+                followed_projects.values_list("pk", flat=True)
+            )
         else:
-            followed_projects = []
+            # Annotate all projects as not followed
+            projects_qs = projects_qs.annotate(
+                is_followed=Value(False, output_field=BooleanField())
+            )
+            self.followed_projects_ids = []
 
-        # Other projects
+        # Annotate and order projects based on provided latitude and longitude
         if lat and lon:
             try:
-                float(lat)
-                float(lon)
+                lat = float(lat)
+                lon = float(lon)
             except ValueError:
                 raise ParseError("Invalid latitude or longitude")
 
-            other_projects_qs = Project.objects.filter(
-                active=True, hidden=False
-            ).exclude(pk__in=[p.pk for p in followed_projects])
-            other_projects = list(other_projects_qs)
-            other_projects.sort(
-                key=lambda p: calculate_distance_from_project(p, lat, lon)
+            # Extract latitude and longitude from JSONField 'coordinates'
+            projects_qs = projects_qs.annotate(
+                coord_lat=Cast(KeyTextTransform("lat", "coordinates"), FloatField()),
+                coord_lon=Cast(KeyTextTransform("lon", "coordinates"), FloatField()),
             )
-        else:
-            other_projects_qs = Project.objects.filter(
-                active=True, hidden=False
-            ).exclude(pk__in=[p.pk for p in followed_projects])
-            other_projects_qs = self.annotate_latest_pub_date(other_projects_qs)
-            other_projects = list(other_projects_qs.order_by("-latest_pub_date"))
 
-        # Combine followed and other projects
-        all_projects = followed_projects + other_projects
+            # Calculate approximate distance (squared difference)
+            # The calculated distance is not perfect,
+            # since this method treats the Earth as a flat plane.
+            # But this form of calculation is far less expensive.
+            # When sorting, the order of distances remains the same,
+            # whether you use the squared distance or the actual distance.
+            projects_qs = projects_qs.annotate(
+                lat_diff=F("coord_lat") - lat,
+                lon_diff=F("coord_lon") - lon,
+            ).annotate(
+                distance=F("lat_diff") * F("lat_diff") + F("lon_diff") * F("lon_diff")
+            )
+
+            # Order projects by is_followed and distance
+            projects_qs = projects_qs.order_by("-is_followed", "distance")
+        else:
+            # Annotate projects with latest publication date
+            projects_qs = self.annotate_latest_pub_date(projects_qs)
+            # Order projects by is_followed and latest_pub_date
+            projects_qs = projects_qs.order_by("-is_followed", "-latest_pub_date")
 
         # Prefetch recent articles and warnings
-        project_ids = [p.pk for p in all_projects]
         now = timezone.now()
         start_date = now - timedelta(days=article_max_age)
 
@@ -126,25 +153,14 @@ class ProjectsListView(generics.RetrieveAPIView):
             to_attr="recent_warnings",
         )
 
-        if project_ids:
-            # Construct preserved_order only if there are projects
-            preserved_order = Case(
-                *[When(pk=pk, then=pos) for pos, pk in enumerate(project_ids)]
-            )
-            queryset = (
-                Project.objects.filter(pk__in=project_ids)
-                .annotate(ordering=preserved_order)
-                .order_by("ordering")
-                .prefetch_related(recent_articles_prefetch, recent_warnings_prefetch)
-            )
-        else:
-            # Return an empty queryset
-            queryset = Project.objects.none()
+        queryset = projects_qs.prefetch_related(
+            recent_articles_prefetch, recent_warnings_prefetch
+        )
 
         # Store additional context data
         self.lat = lat
         self.lon = lon
-        self.followed_projects_ids = [p.pk for p in followed_projects]
+
         return queryset
 
     def get_serializer_context(self):
