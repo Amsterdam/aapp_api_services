@@ -48,17 +48,9 @@ def calculate_distance_from_project(project: Project, lat, lon):
     return meter if meter is not None else float("inf")
 
 
-class ProjectListView(generics.RetrieveAPIView):
+class ProjectListView(generics.ListAPIView):
     serializer_class = ProjectExtendedSerializer
     pagination_class = CustomPagination
-
-    def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        context = self.get_serializer_context()
-
-        page = self.paginate_queryset(queryset)
-        serializer = self.get_serializer(page, many=True, context=context)
-        return self.get_paginated_response(serializer.data)
 
     def get_queryset(self):
         device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
@@ -171,9 +163,9 @@ class ProjectListView(generics.RetrieveAPIView):
         context = super().get_serializer_context()
         context.update(
             {
-                "lat": self.lat,
-                "lon": self.lon,
-                "followed_projects_ids": self.followed_projects_ids,
+                "lat": getattr(self, "lat", None),
+                "lon": getattr(self, "lon", None),
+                "followed_projects_ids": getattr(self, "followed_projects_ids", []),
             }
         )
         return context
