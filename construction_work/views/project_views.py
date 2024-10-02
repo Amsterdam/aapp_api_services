@@ -413,9 +413,9 @@ class FollowProjectView(views.APIView):
         return Response(data="Subscription removed", status=status.HTTP_200_OK)
 
 
-class FollowedProjectsWithArticlesView(views.APIView):
+class FollowedProjectsArticlesView(views.APIView):
     """
-    API view to get followed projects with articles
+    API view to get articles per followed projects
     """
 
     def get(self, request, *args, **kwargs):

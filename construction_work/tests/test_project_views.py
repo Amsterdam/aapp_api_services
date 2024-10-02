@@ -359,7 +359,7 @@ class TestProjectDetailsView(BaseTestProjectView):
     def setUp(self):
         super().setUp()
 
-        self.api_url = reverse("project-details")
+        self.api_url = reverse("get-project")
 
     def test_method_not_allowed(self):
         """Test http method not allowed"""
@@ -670,7 +670,7 @@ class TestFollowProjectView(BaseTestProjectView):
         self.assertEqual(0, len(device.followed_projects.all()))
 
 
-class TestFollowedProjectsWithArticlesView(BaseTestProjectView):
+class TestFollowedProjectsArticlesView(BaseTestProjectView):
     def setUp(self):
         super().setUp()
 
@@ -860,7 +860,7 @@ class TestArticleDetailView(BaseTestProjectView):
     def setUp(self):
         """Setup test db"""
         super().setUp()
-        self.api_url = reverse("article-details")
+        self.api_url = reverse("get-article")
 
         projects = []
         for project_data in mock_data.projects:
@@ -939,7 +939,7 @@ class TestWarningMessageDetailView(BaseTestProjectView):
     def setUp(self) -> None:
         super().setUp()
 
-        self.api_url = reverse("warning-details")
+        self.api_url = reverse("get-warning")
 
         for project in mock_data.projects:
             Project.objects.create(**project)
