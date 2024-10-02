@@ -534,3 +534,129 @@ class TestProjectSearchView(BaseTestProjectView):
         response = self.client.get(self.api_url, query, **self.api_headers)
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertNotIn(new_project.title, res_titles)
+
+
+class TestFollowProjectView(BaseTestProjectView):
+    def setUp(self):
+        super().setUp()
+
+        self.api_url = reverse("follow-project")
+
+        for project in mock_data.projects:
+            Project.objects.create(**project)
+
+    def test_missing_device_id(self):
+        """Test missing device id"""
+        project = Project.objects.first()
+        foreign_id = project.foreign_id
+
+        data = {"foreign_id": foreign_id}
+        response = self.client.post(self.api_url, data, **self.api_headers)
+        self.assertEqual(response.status_code, 400)
+
+    def test_missing_foreign_id(self):
+        """Test missing foreign id"""
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = "foobar"
+        data = {}
+        response = self.client.post(self.api_url, data, **self.api_headers)
+        self.assertEqual(response.status_code, 400)
+
+    def test_project_does_not_exist(self):
+        """Test call but project does not exist"""
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = "foobar"
+        data = {"id": 9999}
+        response = self.client.post(self.api_url, data, **self.api_headers)
+        self.assertEqual(response.status_code, 404)
+
+    def test_existing_device_follows_existing_project(self):
+        """Test new device follows existing project"""
+        project = Project.objects.first()
+        project_id = project.pk
+
+        # Setup device and follow project
+        device_id = "foobar"
+        device = Device(device_id=device_id)
+        device.save()
+
+        # Perform API call and check status
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device_id
+        data = {"id": project_id}
+        response = self.client.post(self.api_url, data, **self.api_headers)
+        self.assertEqual(response.status_code, 200)
+
+        # Device should now exist with followed project
+        device: Device = Device.objects.filter(device_id=device_id).first()
+        self.assertIsNotNone(device)
+        self.assertIn(project, device.followed_projects.all())
+
+    def test_new_device_follows_existing_project(self):
+        """Test new device follows existing project"""
+        project = Project.objects.first()
+        project_id = project.pk
+
+        # Test if device did not yet exist
+        new_device_id = "foobar"
+        device: Device = Device.objects.filter(device_id=new_device_id).first()
+        self.assertIsNone(device)
+
+        # Perform API call and check status
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = new_device_id
+        data = {"id": project_id}
+        response = self.client.post(self.api_url, data, **self.api_headers)
+        self.assertEqual(response.status_code, 200)
+
+        # Device should now exist with followed project
+        device: Device = Device.objects.filter(device_id=new_device_id).first()
+        self.assertIsNotNone(device)
+        self.assertIn(project, device.followed_projects.all())
+
+    def test_existing_device_unfollows_existing_project(self):
+        """Test unfollow existing project with existing device"""
+        # Setup device and follow project
+        device_id = "foobar"
+        project = Project.objects.first()
+        project_id = project.pk
+        device = Device(device_id=device_id)
+        device.save()
+        device.followed_projects.add(project)
+
+        # Perform API call and check status
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device_id
+        data = {"id": project_id}
+        response = self.client.delete(self.api_url, data=data, **self.api_headers)
+        self.assertEqual(response.status_code, 200)
+
+        # Project should not be part of device followed projects
+        self.assertNotIn(project, device.followed_projects.all())
+
+    def test_unfollow_not_existing_project(self):
+        """Test unfollowing not existing project"""
+        # Setup device and follow project
+        device_id = "foobar"
+        device = Device(device_id=device_id)
+        device.save()
+
+        # Perform API call and check status
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device_id
+        data = {"id": 9999}
+        response = self.client.delete(self.api_url, data=data, **self.api_headers)
+        self.assertEqual(response.status_code, 404)
+
+    def test_unfollow_project_that_device_is_not_following(self):
+        """Test unfollow existing project with existing device"""
+        # Setup device and follow project
+        project = Project.objects.first()
+        project_id = project.pk
+
+        device_id = "foobar"
+        device = Device(device_id=device_id)
+        device.save()
+
+        # Perform API call and check status
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device_id
+        data = {"id": project_id}
+        response = self.client.delete(self.api_url, data=data, **self.api_headers)
+        self.assertEqual(response.status_code, 200)
+
+        # Device should have no followed projects
+        self.assertEqual(0, len(device.followed_projects.all()))

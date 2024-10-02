@@ -20,4 +20,9 @@ urlpatterns = [
         project_views.ProjectSearchView.as_view(),
         name="project-search",
     ),
+    path(
+        BASE_PATH + "/projects/follow",
+        project_views.FollowProjectView.as_view(),
+        name="follow-project",
+    ),
 ]

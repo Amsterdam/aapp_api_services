@@ -18,9 +18,15 @@ from django.db.models import (
 from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
-from rest_framework import generics
+from rest_framework import generics, status, views
 from rest_framework.exceptions import NotFound, ParseError
+from rest_framework.response import Response
 
+from construction_work.exceptions import (
+    InvalidArticleMaxAgeParam,
+    MissingDeviceIdHeader,
+    MissingProjectIdParam,
+)
 from construction_work.models import Article, Device, Project, WarningMessage
 from construction_work.pagination import CustomPagination
 from construction_work.serializers import (
@@ -55,7 +61,7 @@ class ProjectListView(generics.ListAPIView):
     def get_queryset(self):
         device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
         if not device_id:
-            raise ParseError(f"Missing header: {settings.HEADER_DEVICE_ID}")
+            raise MissingDeviceIdHeader
 
         lat = self.request.GET.get("lat")
         lon = self.request.GET.get("lon")
@@ -65,7 +71,7 @@ class ProjectListView(generics.ListAPIView):
         try:
             article_max_age = int(article_max_age)
         except ValueError:
-            raise ParseError(f"Invalid parameter: {settings.ARTICLE_MAX_AGE_PARAM}")
+            raise InvalidArticleMaxAgeParam
 
         if address and (lat is None or lon is None):
             lat, lon = geocode_address(address)
@@ -198,7 +204,7 @@ class ProjectDetailsView(generics.RetrieveAPIView):
     def get_queryset(self):
         device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
         if not device_id:
-            raise ParseError(f"Missing header: {settings.HEADER_DEVICE_ID}")
+            raise MissingDeviceIdHeader
 
         project_id = self.request.query_params.get("id")
         if not project_id:
@@ -224,7 +230,7 @@ class ProjectDetailsView(generics.RetrieveAPIView):
         try:
             article_max_age = int(article_max_age)
         except ValueError:
-            raise ParseError(f"Invalid parameter: {settings.ARTICLE_MAX_AGE_PARAM}")
+            raise InvalidArticleMaxAgeParam
 
         lat = self.request.query_params.get("lat")
         lon = self.request.query_params.get("lon")
@@ -325,7 +331,7 @@ class ProjectSearchView(generics.ListAPIView):
         try:
             article_max_age = int(article_max_age)
         except ValueError:
-            raise ParseError(f"Invalid parameter: {settings.ARTICLE_MAX_AGE_PARAM}")
+            raise InvalidArticleMaxAgeParam
 
         context.update(
             {
@@ -344,3 +350,59 @@ class ProjectSearchView(generics.ListAPIView):
             fields = return_fields.split(",")
             kwargs["fields"] = fields
         return serializer_class(*args, **kwargs)
+
+
+class FollowProjectView(views.APIView):
+    """
+    API view to subscribe or unsubscribe from a project.
+    """
+
+    def post(self, request, *args, **kwargs):
+        """
+        Subscribe to a project.
+        """
+        device_id = request.headers.get(settings.HEADER_DEVICE_ID)
+        if not device_id:
+            raise MissingDeviceIdHeader
+
+        project_id = request.data.get("id")
+        if not project_id:
+            raise MissingProjectIdParam
+
+        try:
+            project = Project.objects.get(pk=project_id)
+        except Project.DoesNotExist:
+            raise NotFound("Project not found")
+
+        device, _ = Device.objects.get_or_create(device_id=device_id)
+        device.followed_projects.add(project)
+        device.save()
+
+        return Response(data="Subscription added", status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Unsubscribe from a project.
+        """
+        device_id = request.headers.get(settings.HEADER_DEVICE_ID)
+        if not device_id:
+            raise MissingDeviceIdHeader
+
+        project_id = request.data.get("id")
+        if not project_id:
+            raise MissingProjectIdParam
+
+        try:
+            project = Project.objects.get(pk=project_id)
+        except Project.DoesNotExist:
+            raise NotFound("Project not found")
+
+        try:
+            device = Device.objects.get(device_id=device_id)
+        except Device.DoesNotExist:
+            raise NotFound("Device not found")
+
+        device.followed_projects.remove(project)
+        device.save()
+
+        return Response(data="Subscription removed", status=status.HTTP_200_OK)
