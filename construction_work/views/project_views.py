@@ -24,15 +24,19 @@ from rest_framework.response import Response
 
 from construction_work.exceptions import (
     InvalidArticleMaxAgeParam,
+    MissingArticleIdParam,
     MissingDeviceIdHeader,
     MissingProjectIdParam,
+    MissingWarningMessageIdParam,
 )
 from construction_work.models import Article, Device, Project, WarningMessage
 from construction_work.pagination import CustomPagination
 from construction_work.serializers import (
+    ArticleSerializer,
     ProjectExtendedSerializer,
     ProjectExtendedWithFollowersSerializer,
     ProjectFollowedArticlesSerializer,
+    WarningMessageWithImagesSerializer,
 )
 from construction_work.services.geocoding import geocode_address
 from construction_work.utils.geo_utils import calculate_distance
@@ -445,3 +449,33 @@ class FollowedProjectsWithArticlesView(views.APIView):
         result = {item["project_id"]: item["recent_articles"] for item in data}
 
         return Response(data=result, status=status.HTTP_200_OK)
+
+
+class ArticleDetailView(generics.RetrieveAPIView):
+    serializer_class = ArticleSerializer
+    queryset = Article.objects.filter(active=True)
+
+    def get_object(self):
+        article_id = self.request.query_params.get("id")
+        if not article_id:
+            raise MissingArticleIdParam
+        try:
+            article = self.get_queryset().get(pk=article_id)
+        except Article.DoesNotExist:
+            raise NotFound("Article not found")
+        return article
+
+
+class WarningMessageDetailView(generics.RetrieveAPIView):
+    serializer_class = WarningMessageWithImagesSerializer
+    queryset = WarningMessage.objects.filter(project__active=True)
+
+    def get_object(self):
+        message_id = self.request.GET.get("id", None)
+        if not message_id:
+            raise MissingWarningMessageIdParam
+        try:
+            message = self.get_queryset().get(pk=message_id)
+        except WarningMessage.DoesNotExist:
+            raise NotFound("Warning message not found")
+        return message

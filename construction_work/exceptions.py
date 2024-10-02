@@ -16,6 +16,18 @@ class MissingProjectIdParam(BaseApiException):
     default_code = "MISSING_PARAM_PROJECT_ID"
 
 
+class MissingArticleIdParam(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Missing article id query parameter"
+    default_code = "MISSING_PARAM_ARTICLE_ID"
+
+
+class MissingWarningMessageIdParam(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Missing warning message id query parameter"
+    default_code = "MISSING_PARAM_WARNING_MESSAGE_ID"
+
+
 class InvalidArticleMaxAgeParam(BaseApiException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = f"Invalid parameter: {settings.ARTICLE_MAX_AGE_PARAM}"

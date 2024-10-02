@@ -101,3 +101,14 @@ warning_message = {
     "publication_date": "2023-10-10",
     "modification_date": "2023-10-11",
 }
+
+project_managers = [
+    {
+        "name": "mock0",
+        "email": "mock0@amsterdam.nl",
+    },
+    {
+        "name": "mock1",
+        "email": "mock1@amsterdam.nl",
+    },
+]

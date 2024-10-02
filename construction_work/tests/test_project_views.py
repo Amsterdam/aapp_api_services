@@ -6,7 +6,13 @@ from django.db import DEFAULT_DB_ALIAS, connections
 from django.urls import reverse
 from freezegun import freeze_time
 
-from construction_work.models import Article, Device, Project, WarningMessage
+from construction_work.models import (
+    Article,
+    Device,
+    Project,
+    ProjectManager,
+    WarningMessage,
+)
 from construction_work.tests import mock_data
 from construction_work.utils.date_utils import translate_timezone as tt
 from core.tests import BaseAPITestCase
@@ -848,3 +854,178 @@ class TestFollowedProjectsWithArticlesView(BaseTestProjectView):
             ],
         }
         self.assertDictEqual(response, expected_result)
+
+
+class TestArticleDetailView(BaseTestProjectView):
+    def setUp(self):
+        """Setup test db"""
+        super().setUp()
+        self.api_url = reverse("article-details")
+
+        projects = []
+        for project_data in mock_data.projects:
+            project = Project.objects.create(**project_data)
+            projects.append(project)
+
+        articles = []
+        for article_data in mock_data.articles:
+            article = Article.objects.create(**article_data)
+            articles.append(article)
+
+        articles[0].projects.add(projects[0])
+        articles[0].publication_date = "2023-01-01T12:00:00+00:00"
+        articles[0].save()
+
+        articles[1].projects.add(projects[1])
+        articles[1].publication_date = "2023-01-01T11:00:00+00:00"
+        articles[1].save()
+
+    def test_get_single_article(self):
+        """Test retrieving single article"""
+        article = Article.objects.first()
+        result = self.client.get(
+            self.api_url, {"id": article.pk}, headers=self.api_headers
+        )
+        self.assertEqual(result.status_code, 200)
+
+        target_tzinfo_creation = datetime.fromisoformat(
+            result.data["creation_date"]
+        ).tzinfo
+        target_tzinfo_last_seen = datetime.fromisoformat(
+            result.data["last_seen"]
+        ).tzinfo
+
+        expected_data = {
+            "id": article.pk,
+            "meta_id": {
+                "id": article.pk,
+                "type": "article",
+            },
+            "foreign_id": article.foreign_id,
+            "active": article.active,
+            "last_seen": tt(str(article.last_seen), target_tzinfo_last_seen),
+            "title": article.title,
+            "intro": article.intro,
+            "body": article.body,
+            "image": article.image,
+            "url": article.url,
+            "creation_date": tt(str(article.creation_date), target_tzinfo_creation),
+            "modification_date": tt(
+                str(article.modification_date), target_tzinfo_creation
+            ),
+            "publication_date": tt(
+                str(article.publication_date), target_tzinfo_creation
+            ),
+            "expiration_date": tt(str(article.expiration_date), target_tzinfo_creation),
+            "projects": [x.pk for x in article.projects.all()],
+        }
+        result_dict = json.loads(result.content)
+        self.assertDictEqual(result_dict, expected_data)
+
+    def test_missing_article_id(self):
+        """Test calling API without article id param"""
+        result = self.client.get(
+            self.api_url, {"foobar": "foobar"}, headers=self.api_headers
+        )
+        self.assertEqual(result.status_code, 400)
+
+    def test_article_not_found(self):
+        """Test requesting article id which does not exist"""
+        result = self.client.get(self.api_url, {"id": 9999}, headers=self.api_headers)
+        self.assertEqual(result.status_code, 404)
+
+
+class TestWarningMessageDetailView(BaseTestProjectView):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.api_url = reverse("warning-details")
+
+        for project in mock_data.projects:
+            Project.objects.create(**project)
+
+        for project_manager in mock_data.project_managers:
+            ProjectManager.objects.create(**project_manager)
+
+    def create_message_from_data(self, data) -> WarningMessage:
+        """Create message from data"""
+        project_obj = Project.objects.filter(
+            foreign_id=data.get("project_foreign_id")
+        ).first()
+        project_obj.save()
+
+        project_manager = ProjectManager.objects.filter(
+            email=data.get("project_manager_email")
+        ).first()
+        project_manager.projects.add(project_obj)
+
+        new_message = WarningMessage(
+            title=data.get("title"),
+            body=data.get("body"),
+            project=project_obj,
+            project_manager=project_manager,
+        )
+        new_message.save()
+        return new_message
+
+    def test_get_warning_message_success(self):
+        """Tet get warning message"""
+        data = {
+            "title": "foobar title",
+            "body": "foobar body",
+            "project_foreign_id": 2048,
+            "project_manager_email": "mock0@amsterdam.nl",
+        }
+        new_message = self.create_message_from_data(data)
+
+        result = self.client.get(
+            f"{self.api_url}?id={new_message.pk}", **self.api_headers
+        )
+        self.assertEqual(result.status_code, 200)
+
+        target_dt = datetime.fromisoformat(result.data["publication_date"])
+
+        expected_result = {
+            "id": new_message.pk,
+            "images": [],
+            "title": "foobar title",
+            "body": "foobar body",
+            "project": new_message.project.pk,
+            "publication_date": tt(str(new_message.publication_date), target_dt.tzinfo),
+            "modification_date": tt(
+                str(new_message.modification_date), target_dt.tzinfo
+            ),
+            "author_email": "mock0@amsterdam.nl",
+            "meta_id": {"id": new_message.pk, "type": "warning"},
+        }
+        self.assertDictEqual(result.data, expected_result)
+
+    def test_get_warning_message_inactive_project(self):
+        """Tet get warning message"""
+        data = {
+            "title": "foobar title",
+            "body": "foobar body",
+            "project_foreign_id": 2048,
+            "project_manager_email": "mock0@amsterdam.nl",
+        }
+
+        new_message = self.create_message_from_data(data)
+
+        # Deactivate the project
+        project_obj = Project.objects.filter(foreign_id=2048).first()
+        project_obj.deactivate()
+
+        result = self.client.get(
+            f"{self.api_url}?id={new_message.pk}", **self.api_headers
+        )
+        self.assertEqual(result.status_code, 404)
+
+    def test_get_warning_message_no_identifier(self):
+        """Test get waring message without identifier"""
+        result = self.client.get(f"{self.api_url}", **self.api_headers)
+        self.assertEqual(result.status_code, 400)
+
+    def test_get_warning_message_invalid_id(self):
+        """Test get warning message with invalid identifier"""
+        result = self.client.get(f"{self.api_url}?id=9999", **self.api_headers)
+        self.assertEqual(result.status_code, 404)

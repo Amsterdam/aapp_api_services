@@ -30,4 +30,14 @@ urlpatterns = [
         project_views.FollowedProjectsWithArticlesView.as_view(),
         name="followed-projects-with-articles",
     ),
+    path(
+        BASE_PATH + "/projects/news",
+        project_views.ArticleDetailView.as_view(),
+        name="article-details",
+    ),
+    path(
+        BASE_PATH + "/projects/warning",
+        project_views.WarningMessageDetailView.as_view(),
+        name="warning-details",
+    ),
 ]
