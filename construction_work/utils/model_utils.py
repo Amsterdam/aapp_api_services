@@ -21,7 +21,7 @@ def create_id_dict(model_instance) -> Dict[str, str]:
     else:
         type_name = model_instance.__class__.__name__.lower()
 
-    return {"id": str(model_instance.pk), "type": type_name}
+    return {"id": model_instance.pk, "type": type_name}
 
 
 def get_start_end_date_for_max_age(max_age: int):

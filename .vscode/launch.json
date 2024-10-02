@@ -23,17 +23,9 @@
             "program": "${workspaceFolder}/manage.py",
             "args": [
                 "test",
-                // "city_pass.tests.test_models",
-                // "city_pass.tests.test_authentication",
-                // "city_pass.tests.test_models.TestTokenModels.test_refresh_token_is_expired",
-                // "city_pass.tests.test_session_views",
-                // "city_pass.tests.test_session_views.TestSessionInitView",
-                // "city_pass.tests.test_session_views.TestSessionPostCityPassCredentialView",
-                // "city_pass.tests.test_session_views.TestSessionRefreshAccessView",
-                // "city_pass.tests.test_data_views.TestPassesView",
-                // "city_pass.tests.test_data_views.TestBudgetTransactionsViews.test_get_budget_transactions_successful",
-                // "contact.tests.test_contact_views.TestCityOfficeView.test_load_data_get_data"
-                "construction_work.tests.test_project_views.TestFollowProjectView.test_unfollow_not_existing_project"
+                // "city_pass.tests",
+                // "contact.tests"
+                "construction_work.tests.test_project_views.TestFollowedProjectsWithArticlesView.test_get_recent_articles"
             ],
             "django": true,
             "console": "integratedTerminal",

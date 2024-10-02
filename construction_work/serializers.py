@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -229,9 +230,7 @@ class ProjectExtendedWithFollowersSerializer(serializers.ModelSerializer):
         start_date = timezone.now() - timedelta(days=article_max_age)
 
         # Get recent articles
-        recent_articles = obj.article_set.filter(
-            publication_date__gte=start_date
-        ).order_by("-publication_date")
+        recent_articles = obj.article_set.filter(publication_date__gte=start_date)
         article_serializer = ArticleSerializer(
             recent_articles, many=True, context={"media_url": media_url}
         )
@@ -239,7 +238,7 @@ class ProjectExtendedWithFollowersSerializer(serializers.ModelSerializer):
         # Get recent warnings
         recent_warnings = obj.warningmessage_set.filter(
             publication_date__gte=start_date
-        ).order_by("-publication_date")
+        )
         warning_serializer = WarningMessageForManagementSerializer(
             recent_warnings, many=True, context={"media_url": media_url}
         )
@@ -286,3 +285,62 @@ class ProjectExtendedWithFollowersSerializer(serializers.ModelSerializer):
             )
             return serializer.data
         return None
+
+
+class ArticleMinimalSerializer(ArticleSerializer):
+    """Article serializer with minimal data"""
+
+    class Meta:
+        model = Article
+        fields = ["meta_id", "modification_date"]
+
+
+class WarningMessageMetaIdSerializer(serializers.ModelSerializer):
+    """Waring message serializer with meta id field"""
+
+    meta_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WarningMessage
+        fields = "__all__"
+
+    def get_meta_id(self, obj: WarningMessage) -> dict:
+        return obj.get_id_dict()
+
+
+class WarningMessageMinimalSerializer(WarningMessageMetaIdSerializer):
+    """Warning message serializer with minimal data"""
+
+    class Meta:
+        model = WarningMessage
+        fields = ["meta_id", "modification_date"]
+
+
+class ProjectFollowedArticlesSerializer(serializers.ModelSerializer):
+    project_id = serializers.IntegerField(source="pk")
+    recent_articles = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project
+        fields = ["project_id", "recent_articles"]
+
+    def get_recent_articles(self, obj: Project) -> list:
+        article_max_age = self.context.get(settings.ARTICLE_MAX_AGE_PARAM, 3)
+        now = timezone.now()
+        start_date = now - timedelta(days=article_max_age)
+
+        # Get recent articles
+        recent_articles = obj.article_set.filter(publication_date__gte=start_date)
+        article_serializer = ArticleMinimalSerializer(recent_articles, many=True)
+
+        # Get recent warnings
+        recent_warnings = obj.warningmessage_set.filter(
+            publication_date__gte=start_date
+        )
+        warning_serializer = WarningMessageMinimalSerializer(recent_warnings, many=True)
+
+        # Combine articles and warnings
+        all_items = article_serializer.data + warning_serializer.data
+        # Sort combined list by modification_date descending
+        all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
+        return all_items

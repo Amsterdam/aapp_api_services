@@ -25,4 +25,9 @@ urlpatterns = [
         project_views.FollowProjectView.as_view(),
         name="follow-project",
     ),
+    path(
+        BASE_PATH + "/projects/followed/articles",
+        project_views.FollowedProjectsWithArticlesView.as_view(),
+        name="followed-projects-with-articles",
+    ),
 ]

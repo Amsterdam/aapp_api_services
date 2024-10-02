@@ -32,6 +32,7 @@ from construction_work.pagination import CustomPagination
 from construction_work.serializers import (
     ProjectExtendedSerializer,
     ProjectExtendedWithFollowersSerializer,
+    ProjectFollowedArticlesSerializer,
 )
 from construction_work.services.geocoding import geocode_address
 from construction_work.utils.geo_utils import calculate_distance
@@ -406,3 +407,41 @@ class FollowProjectView(views.APIView):
         device.save()
 
         return Response(data="Subscription removed", status=status.HTTP_200_OK)
+
+
+class FollowedProjectsWithArticlesView(views.APIView):
+    """
+    API view to get followed projects with articles
+    """
+
+    def get(self, request, *args, **kwargs):
+        device_id = request.headers.get(settings.HEADER_DEVICE_ID)
+        if not device_id:
+            raise MissingDeviceIdHeader
+
+        device = Device.objects.filter(device_id=device_id).first()
+        if not device:
+            # Return empty dictionary if device not found
+            return Response(data={}, status=status.HTTP_200_OK)
+
+        article_max_age = request.query_params.get(
+            settings.ARTICLE_MAX_AGE_PARAM, settings.DEFAULT_ARTICLE_MAX_AGE
+        )
+        try:
+            article_max_age = int(article_max_age)
+        except ValueError:
+            raise InvalidArticleMaxAgeParam
+
+        followed_projects = device.followed_projects.filter(hidden=False)
+
+        # Use the serializer to serialize the projects and their recent articles
+        serializer = ProjectFollowedArticlesSerializer(
+            followed_projects, many=True, context={"article_max_age": article_max_age}
+        )
+
+        data = serializer.data
+
+        # Transform the list into a dictionary mapping project_id to recent_articles
+        result = {item["project_id"]: item["recent_articles"] for item in data}
+
+        return Response(data=result, status=status.HTTP_200_OK)

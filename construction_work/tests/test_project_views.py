@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from django.conf import settings
 from django.db import DEFAULT_DB_ALIAS, connections
@@ -7,6 +8,7 @@ from freezegun import freeze_time
 
 from construction_work.models import Article, Device, Project, WarningMessage
 from construction_work.tests import mock_data
+from construction_work.utils.date_utils import translate_timezone as tt
 from core.tests import BaseAPITestCase
 
 
@@ -660,3 +662,189 @@ class TestFollowProjectView(BaseTestProjectView):
 
         # Device should have no followed projects
         self.assertEqual(0, len(device.followed_projects.all()))
+
+
+class TestFollowedProjectsWithArticlesView(BaseTestProjectView):
+    def setUp(self):
+        super().setUp()
+
+        self.api_url = reverse("followed-projects-with-articles")
+
+    def test_missing_device_id(self):
+        """Test missing device id"""
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = None
+        response = self.client.get(self.api_url, **self.api_headers)
+        self.assertEqual(response.status_code, 400)
+
+    def test_device_does_not_exist(self):
+        """Test device does not exist"""
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = "foobar"
+        response = self.client.get(self.api_url, **self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {})
+
+    def test_device_follows_hidden_project(self):
+        project_data = mock_data.projects[0].copy()
+        project_data["hidden"] = True
+        hidden_project = Project.objects.create(**project_data)
+
+        article_data = mock_data.articles[0].copy()
+        article = Article.objects.create(**article_data)
+        article.projects.add(hidden_project)
+
+        device = Device.objects.create(**mock_data.devices[0].copy())
+        device.followed_projects.add(hidden_project)
+
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device.device_id
+
+        response = self.client.get(self.api_url, **self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {})
+
+    @freeze_time("2023-01-10")
+    def test_get_recent_articles(self):
+        """Test get recent articles"""
+        # Project with TWO recent articles
+        project_1, article_1 = self.create_project_and_article(
+            10, "2023-01-08T12:00:00+00:00"
+        )
+        warning_1 = self.add_warning_to_project(project_1, "2023-01-08T12:00:00+00:00")
+        article_2 = self.add_article_to_project(
+            project_1, 12, "2023-01-08T12:00:00+00:00"
+        )
+
+        # Project with ONE recent article
+        project_2, article_3 = self.create_project_and_article(
+            20, "2023-01-05T12:00:00+00:00"
+        )
+        article_4 = self.add_article_to_project(
+            project_2, 22, "2023-01-07T12:00:00+00:00"
+        )
+
+        # Project with NO recent articles
+        project_3, article_5 = self.create_project_and_article(
+            30, "2023-01-01T12:00:00+00:00"
+        )
+        article_6 = self.add_article_to_project(
+            project_3, 32, "2023-01-01T12:00:00+00:00"
+        )
+
+        # Create device and follow all projects
+        device = Device.objects.create(**mock_data.devices[0].copy())
+        device.followed_projects.set([project_1, project_2, project_3])
+
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device.device_id
+
+        def assert_total_returned_articles(max_age=0):
+            params = {"article_max_age": max_age}
+            _response = self.client.get(self.api_url, params, **self.api_headers).json()
+
+            _total_returned_articles = 0
+            for key in _response:
+                article_count = len(_response[key])
+                _total_returned_articles += article_count
+
+            return _total_returned_articles, _response
+
+        total_returned_articles, response = assert_total_returned_articles(max_age=3)
+        self.assertEqual(total_returned_articles, 4)
+
+        target_tzinfo = datetime.fromisoformat(
+            response[str(project_1.pk)][0]["modification_date"]
+        ).tzinfo
+
+        expected_result = {
+            str(project_1.pk): [
+                {
+                    "meta_id": {
+                        "id": article_1.pk,
+                        "type": "article",
+                    },
+                    "modification_date": tt(
+                        str(article_1.modification_date), target_tzinfo
+                    ),
+                },
+                {
+                    "meta_id": {
+                        "id": article_2.pk,
+                        "type": "article",
+                    },
+                    "modification_date": tt(
+                        str(article_2.modification_date), target_tzinfo
+                    ),
+                },
+                {
+                    "meta_id": {
+                        "id": warning_1.pk,
+                        "type": "warning",
+                    },
+                    "modification_date": tt(
+                        str(warning_1.modification_date), target_tzinfo
+                    ),
+                },
+            ],
+            str(project_2.pk): [
+                {
+                    "meta_id": {"id": article_4.pk, "type": "article"},
+                    "modification_date": tt(
+                        str(article_4.modification_date), target_tzinfo
+                    ),
+                }
+            ],
+            str(project_3.pk): [],
+        }
+        self.assertDictEqual(response, expected_result)
+
+        total_returned_articles, response = assert_total_returned_articles(max_age=10)
+        self.assertEqual(total_returned_articles, 7)
+        expected_result = {
+            str(project_1.pk): [
+                {
+                    "meta_id": {"id": article_1.pk, "type": "article"},
+                    "modification_date": tt(
+                        str(article_1.modification_date), target_tzinfo
+                    ),
+                },
+                {
+                    "meta_id": {"id": article_2.pk, "type": "article"},
+                    "modification_date": tt(
+                        str(article_2.modification_date), target_tzinfo
+                    ),
+                },
+                {
+                    "meta_id": {"id": warning_1.pk, "type": "warning"},
+                    "modification_date": tt(
+                        str(warning_1.modification_date), target_tzinfo
+                    ),
+                },
+            ],
+            str(project_2.pk): [
+                {
+                    "meta_id": {"id": article_3.pk, "type": "article"},
+                    "modification_date": tt(
+                        str(article_3.modification_date), target_tzinfo
+                    ),
+                },
+                {
+                    "meta_id": {"id": article_4.pk, "type": "article"},
+                    "modification_date": tt(
+                        str(article_4.modification_date), target_tzinfo
+                    ),
+                },
+            ],
+            str(project_3.pk): [
+                {
+                    "meta_id": {"id": article_5.pk, "type": "article"},
+                    "modification_date": tt(
+                        str(article_5.modification_date), target_tzinfo
+                    ),
+                },
+                {
+                    "meta_id": {"id": article_6.pk, "type": "article"},
+                    "modification_date": tt(
+                        str(article_6.modification_date), target_tzinfo
+                    ),
+                },
+            ],
+        }
+        self.assertDictEqual(response, expected_result)
