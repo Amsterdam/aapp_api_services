@@ -2,6 +2,8 @@ import datetime
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.postgres.lookups import Unaccent
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.db.models import (
     BooleanField,
     DateTimeField,
@@ -16,9 +18,8 @@ from django.db.models import (
 from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
-from rest_framework import generics, status
+from rest_framework import generics
 from rest_framework.exceptions import NotFound, ParseError
-from rest_framework.response import Response
 
 from construction_work.models import Article, Device, Project, WarningMessage
 from construction_work.pagination import CustomPagination
@@ -257,3 +258,97 @@ class ProjectDetailsView(generics.RetrieveAPIView):
             }
         )
         return context
+
+
+class ProjectSearchView(generics.ListAPIView):
+    serializer_class = ProjectExtendedSerializer
+    pagination_class = CustomPagination  # Use your custom pagination class
+
+    def get_queryset(self):
+        text = self.request.query_params.get("text")
+        query_fields = self.request.query_params.get("query_fields")
+        return_fields = self.request.query_params.get("fields")
+
+        if not text or len(text) < settings.MIN_SEARCH_QUERY_LENGTH:
+            raise ParseError(
+                f"Search text must be at least {settings.MIN_SEARCH_QUERY_LENGTH} characters long."
+            )
+
+        if not query_fields:
+            raise ParseError("Query fields are required.")
+
+        # Validate query fields
+        model_fields = [
+            field.name for field in Project._meta.get_fields() if not field.is_relation
+        ]
+        query_fields_list = query_fields.split(",")
+        for field in query_fields_list:
+            if field not in model_fields:
+                raise ParseError(
+                    f"Field '{field}' is not a valid field in Project model."
+                )
+
+        # Validate return fields if provided
+        return_fields_list = None
+        if return_fields:
+            return_fields_list = return_fields.split(",")
+            for field in return_fields_list:
+                if field not in model_fields:
+                    raise ParseError(
+                        f"Field '{field}' is not a valid field in Project model."
+                    )
+
+        # Build search vector with unaccent function
+        vector = SearchVector(*[Unaccent(F(field)) for field in query_fields_list])
+
+        # Build search query
+        search_query = SearchQuery(text, search_type="plain")
+
+        queryset = (
+            Project.objects.annotate(
+                search=vector, rank=SearchRank(vector, search_query)
+            )
+            .filter(search=search_query, active=True, hidden=False)
+            .order_by("-rank")
+        )
+
+        # Optimize the queryset to only include necessary fields
+        if return_fields_list:
+            queryset = queryset.only(*return_fields_list)
+
+        return queryset
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        lat = self.request.query_params.get("lat")
+        lon = self.request.query_params.get("lon")
+        address = self.request.query_params.get("address")
+
+        if address and (not lat or not lon):
+            lat, lon = geocode_address(address)
+
+        article_max_age = self.request.query_params.get(
+            settings.ARTICLE_MAX_AGE_PARAM, 3
+        )
+        try:
+            article_max_age = int(article_max_age)
+        except ValueError:
+            raise ParseError(f"Invalid parameter: {settings.ARTICLE_MAX_AGE_PARAM}")
+
+        context.update(
+            {
+                "lat": lat,
+                "lon": lon,
+                "article_max_age": article_max_age,
+            }
+        )
+        return context
+
+    def get_serializer(self, *args, **kwargs):
+        serializer_class = self.get_serializer_class()
+        kwargs.setdefault("context", self.get_serializer_context())
+        return_fields = self.request.query_params.get("fields")
+        if return_fields:
+            fields = return_fields.split(",")
+            kwargs["fields"] = fields
+        return serializer_class(*args, **kwargs)

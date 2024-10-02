@@ -23,3 +23,5 @@ ARTICLE_MAX_AGE_PARAM = "article_max_age"
 DEFAULT_WARNING_MESSAGE_EMAIL = "redactieprojecten@amsterdam.nl"
 
 ADDRESS_TO_GPS_API = "https://api.data.amsterdam.nl/atlas/search/adres/?q="
+
+MIN_SEARCH_QUERY_LENGTH = 3

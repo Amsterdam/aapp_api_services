@@ -15,4 +15,9 @@ urlpatterns = [
         project_views.ProjectDetailsView.as_view(),
         name="project-details",
     ),
+    path(
+        BASE_PATH + "/projects/search",
+        project_views.ProjectSearchView.as_view(),
+        name="project-search",
+    ),
 ]

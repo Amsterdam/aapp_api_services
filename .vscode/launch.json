@@ -33,7 +33,7 @@
                 // "city_pass.tests.test_data_views.TestPassesView",
                 // "city_pass.tests.test_data_views.TestBudgetTransactionsViews.test_get_budget_transactions_successful",
                 // "contact.tests.test_contact_views.TestCityOfficeView.test_load_data_get_data"
-                "construction_work.tests.test_project_views.TestProjectDetailsView.test_get_project_details"
+                "construction_work.tests.test_project_views"
             ],
             "django": true,
             "console": "integratedTerminal",

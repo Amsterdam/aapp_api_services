@@ -28,13 +28,20 @@ class BaseTestProjectView(BaseAPITestCase):
         cursor.execute("CREATE EXTENSION pg_trgm")
         cursor.execute("CREATE EXTENSION unaccent")
 
+    def tearDown(self) -> None:
+        super().tearDown()
+
+        Project.objects.all().delete()
+        Article.objects.all().delete()
+        WarningMessage.objects.all().delete()
+
     def create_project_and_article(self, project_foreign_id, pub_date):
         """Create project and article"""
-        project_data = mock_data.projects[0]
+        project_data = mock_data.projects[0].copy()
         project_data["foreign_id"] = project_foreign_id
         project = Project.objects.create(**project_data)
 
-        article_data = mock_data.articles[0]
+        article_data = mock_data.articles[0].copy()
         article_data["foreign_id"] = project_foreign_id + 1
         article_data["publication_date"] = pub_date
         article = Article.objects.create(**article_data)
@@ -44,11 +51,11 @@ class BaseTestProjectView(BaseAPITestCase):
 
     def create_project_and_warning(self, project_foreign_id, pub_date):
         """Create project and warning"""
-        project_data = mock_data.projects[0]
+        project_data = mock_data.projects[0].copy()
         project_data["foreign_id"] = project_foreign_id
         project = Project.objects.create(**project_data)
 
-        warning_data = mock_data.warning_message
+        warning_data = mock_data.warning_message.copy()
         warning_data["project"] = project
         warning = WarningMessage.objects.create(**warning_data)
         warning.publication_date = pub_date
@@ -58,7 +65,7 @@ class BaseTestProjectView(BaseAPITestCase):
 
     def add_article_to_project(self, project: Project, foreign_id, pub_date):
         """Add article to projects"""
-        article_data = mock_data.articles[0]
+        article_data = mock_data.articles[0].copy()
         article_data["foreign_id"] = foreign_id
         article_data["publication_date"] = pub_date
         article = Article.objects.create(**article_data)
@@ -67,7 +74,7 @@ class BaseTestProjectView(BaseAPITestCase):
 
     def add_warning_to_project(self, project: Project, pub_date):
         """Add warning to project"""
-        warning_data = mock_data.warning_message
+        warning_data = mock_data.warning_message.copy()
         warning_data["project"] = project
         warning = WarningMessage.objects.create(**warning_data)
         warning.publication_date = pub_date
@@ -114,7 +121,7 @@ class TestProjectListView(BaseTestProjectView):
         self.add_warning_to_project(project_4, "2023-01-01T12:30:00+00:00")
 
         # Create device and follow all projects
-        device = Device.objects.create(**mock_data.devices[0])
+        device = Device.objects.create(**mock_data.devices[0].copy())
         if device_follows_projects:
             device.followed_projects.set([project_1, project_2, project_3, project_4])
 
@@ -151,12 +158,12 @@ class TestProjectListView(BaseTestProjectView):
         self.add_article_to_project(project_1, 12, "2023-01-01T12:20:00+00:00")
 
         # Create project without articles
-        project_data = mock_data.projects[0]
+        project_data = mock_data.projects[0].copy()
         project_data["foreign_id"] = 20
         project_2 = Project.objects.create(**project_data)
 
         # Create device and follow all projects (if requested)
-        device = Device.objects.create(**mock_data.devices[0])
+        device = Device.objects.create(**mock_data.devices[0].copy())
         if device_follows_projects:
             device.followed_projects.set([project_1, project_2])
 
@@ -230,7 +237,7 @@ class TestProjectListView(BaseTestProjectView):
         project_3.save()
 
         # Create device, but don't follow any projects
-        device = Device.objects.create(**mock_data.devices[0])
+        device = Device.objects.create(**mock_data.devices[0].copy())
 
         # Perform request
         self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device.device_id
@@ -253,12 +260,12 @@ class TestProjectListView(BaseTestProjectView):
         """Test pagination"""
         # Create a total of 10 projects
         for i in range(1, 10 + 1):
-            project_data = mock_data.projects[0]
+            project_data = mock_data.projects[0].copy()
             project_data["foreign_id"] = i * 10
             Project.objects.create(**project_data)
         self.assertEqual(len(Project.objects.all()), 10)
 
-        device = Device.objects.create(**mock_data.devices[0])
+        device = Device.objects.create(**mock_data.devices[0].copy())
         self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device.device_id
 
         # With page size of 4, 4 projects should be returned
@@ -299,7 +306,7 @@ class TestProjectListView(BaseTestProjectView):
             get_header_name(settings.HEADER_DEVICE_ID)
         ] = my_device.device_id
 
-        unfollowed_project_data = mock_data.projects[0]
+        unfollowed_project_data = mock_data.projects[0].copy()
         unfollowed_project_data["title"] = "this_unfollowed_project_will_be_deactivated"
         unfollowed_project_data["foreign_id"] = 888
 
@@ -308,7 +315,7 @@ class TestProjectListView(BaseTestProjectView):
         unfollowed_project.active = True
         unfollowed_project.save()
 
-        followed_project_data = mock_data.projects[0]
+        followed_project_data = mock_data.projects[0].copy()
         followed_project_data["title"] = "this_followed_project_will_be_deactivated"
         followed_project_data["foreign_id"] = 999
 
@@ -359,7 +366,6 @@ class TestProjectDetailsView(BaseTestProjectView):
         response = self.client.get(self.api_url, **self.api_headers)
 
         self.assertEqual(response.status_code, 400)
-        # self.assertEqual(response.json(), messages.invalid_headers)
 
     def test_missing_project_id(self):
         """Test call without project id"""
@@ -372,7 +378,6 @@ class TestProjectDetailsView(BaseTestProjectView):
         response = self.client.get(self.api_url, params, **self.api_headers)
 
         self.assertEqual(response.status_code, 400)
-        # self.assertEqual(response.json(), messages.invalid_query)
 
     def test_project_does_not_exists(self):
         """Test call when project does not exist"""
@@ -390,7 +395,7 @@ class TestProjectDetailsView(BaseTestProjectView):
 
     def test_get_project_details(self):
         """Test getting project details"""
-        project = Project.objects.create(**mock_data.projects[0])
+        project = Project.objects.create(**mock_data.projects[0].copy())
 
         new_device_id = "new_foobar_device"
         self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = new_device_id
@@ -405,3 +410,127 @@ class TestProjectDetailsView(BaseTestProjectView):
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.json())
         self.assertEqual(response.json()["id"], project.pk)
+
+
+class TestProjectSearchView(BaseTestProjectView):
+    """Test searching text in project model"""
+
+    def setUp(self):
+        super().setUp()
+        self.api_url = reverse("project-search")
+
+        for project in mock_data.projects:
+            Project.objects.create(**project)
+
+    def test_no_text(self):
+        """Test search without a string"""
+        query = {
+            "query_fields": "title,subtitle",
+            "fields": "title,subtitle",
+            "page_size": 1,
+            "page": 1,
+        }
+        response = self.client.get(self.api_url, query, **self.api_headers)
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_text_to_short(self):
+        """Test for text lower than minimal length"""
+        query = {
+            "text": "x" * (settings.MIN_SEARCH_QUERY_LENGTH - 1),
+            "query_fields": "title,subtitle",
+            "fields": "title,subtitle",
+            "page_size": 1,
+            "page": 1,
+        }
+        response = self.client.get(self.api_url, query, **self.api_headers)
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_search_in_field_not_part_of_model(self):
+        """Test search in field that is not part of the project model"""
+        query = {
+            "text": "title",
+            "query_fields": "foobar",
+            "fields": "title,subtitle",
+            "page_size": 1,
+            "page": 1,
+        }
+        response = self.client.get(self.api_url, query, **self.api_headers)
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_invalid_model_return_field(self):
+        """Test request return fields that are not part of the model"""
+        query = {
+            "text": "title",
+            "query_fields": "title,subtitle",
+            "fields": "foobar",
+            "page_size": 1,
+            "page": 1,
+        }
+        response = self.client.get(self.api_url, query, **self.api_headers)
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_search_project_and_follow_links(self):
+        """Test search for projects"""
+        search_text = "title"
+        query = {
+            "text": search_text,
+            "query_fields": "title,subtitle",
+            "fields": "title,subtitle",
+            "page_size": 1,
+            "page": 1,
+        }
+        response = self.client.get(self.api_url, query, **self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["result"]), 1)
+
+        project_data = response.json()["result"][0]
+        self.assertTrue(search_text in project_data["title"])
+
+        next_page = response.json()["_links"]["next"]["href"]
+
+        # Go to next page, and check results
+        response = self.client.get(next_page, **self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["result"]), 1)
+
+        project_data = response.json()["result"][0]
+        self.assertTrue(search_text in project_data["title"])
+
+    def test_get_only_active_projects(self):
+        """Check if only active projects are returned"""
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = "foobar"
+
+        project_data = mock_data.projects[0].copy()
+        project_data["title"] = "this_project_will_be_deactivated"
+        project_data["foreign_id"] = 999
+
+        # First create new project that is active
+        new_project = Project.objects.create(**project_data)
+        new_project.active = True
+        new_project.save()
+
+        # This active project should be returned
+        query = {
+            "text": new_project.title,
+            "query_fields": "title",
+            "fields": "title",
+            "page_size": 1,
+            "page": 1,
+        }
+        response = self.client.get(self.api_url, query, **self.api_headers)
+        res_titles = [x.get("title") for x in response.data["result"]]
+        self.assertIn(new_project.title, res_titles)
+
+        # Then deactivate this project
+        new_project.deactivate()
+
+        # The project should not be returned now
+        response = self.client.get(self.api_url, query, **self.api_headers)
+        res_titles = [x.get("title") for x in response.data["result"]]
+        self.assertNotIn(new_project.title, res_titles)

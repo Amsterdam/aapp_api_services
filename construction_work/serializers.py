@@ -15,7 +15,28 @@ from construction_work.utils.geo_utils import calculate_distance
 from construction_work.utils.model_utils import create_id_dict
 
 
-class ProjectExtendedSerializer(serializers.ModelSerializer):
+class DynamicFieldsModelSerializer(serializers.ModelSerializer):
+    """
+    A ModelSerializer that takes an additional `fields` argument that
+    controls which fields should be displayed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        # Don't pass the 'fields' arg up to the superclass
+        fields = kwargs.pop("fields", None)
+
+        # Instantiate the superclass normally
+        super(DynamicFieldsModelSerializer, self).__init__(*args, **kwargs)
+
+        if fields is not None:
+            # Drop any fields that are not specified in the `fields` argument.
+            allowed = set(fields)
+            existing = set(self.fields)
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
+
+
+class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
     """Project list serializer"""
 
     meter = serializers.SerializerMethodField()
