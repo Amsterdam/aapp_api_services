@@ -16,14 +16,19 @@ from django.db.models import (
 from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.exceptions import ParseError
+from rest_framework.response import Response
 
 from construction_work.models import Article, Device, Project, WarningMessage
 from construction_work.pagination import CustomPagination
-from construction_work.serializers import ProjectExtendedSerializer
+from construction_work.serializers import (
+    ProjectExtendedSerializer,
+    ProjectExtendedWithFollowersSerializer,
+)
 from construction_work.services.geocoding import geocode_address
 from construction_work.utils.geo_utils import calculate_distance
+from construction_work.utils.url_utils import get_media_url
 
 
 def calculate_distance_from_project(project: Project, lat, lon):
@@ -42,7 +47,7 @@ def calculate_distance_from_project(project: Project, lat, lon):
     return meter if meter is not None else float("inf")
 
 
-class ProjectsListView(generics.RetrieveAPIView):
+class ProjectListView(generics.RetrieveAPIView):
     serializer_class = ProjectExtendedSerializer
     pagination_class = CustomPagination
 
@@ -192,3 +197,65 @@ class ProjectsListView(generics.RetrieveAPIView):
                 output_field=DateTimeField(),
             ),
         )
+
+
+class ProjectDetailsView(generics.RetrieveAPIView):
+    def get(self, request, *args, **kwargs):
+        device_id = request.META.get("HTTP_DEVICEID", None)
+        if device_id is None:
+            return Response(
+                f"Missing header: {settings.HEADER_DEVICE_ID}",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        project_id = request.GET.get("id", None)
+        if project_id is None:
+            return Response(f"Missing project id", status=status.HTTP_400_BAD_REQUEST)
+
+        article_max_age = request.GET.get(settings.ARTICLE_MAX_AGE_PARAM, None)
+        if article_max_age is not None and article_max_age.isdigit() is False:
+            return Response(
+                f"Invalid parameter: {settings.ARTICLE_MAX_AGE_PARAM}",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if article_max_age is None:
+            article_max_age = settings.DEFAULT_ARTICLE_MAX_AGE
+        else:
+            article_max_age = int(article_max_age)
+
+        lat = request.GET.get("lat", None)
+        lon = request.GET.get("lon", None)
+        address = request.GET.get("address", None)  # akkerstraat%2014 -> akkerstraat 14
+        if address is not None:
+            lat, lon = geocode_address(address)
+
+        project_obj = Project.objects.filter(pk=project_id, active=True).first()
+        if project_obj is None:
+            return Response(
+                "No record found",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        device = Device.objects.filter(device_id=device_id).first()
+        context = {
+            "lat": lat,
+            "lon": lon,
+            "article_max_age": article_max_age,
+            "followed_projects": device.followed_projects.all() if device else None,
+            "media_url": get_media_url(request),
+        }
+        project_serializer = ProjectExtendedWithFollowersSerializer(
+            instance=project_obj,
+            partial=True,
+            data={},
+            context=context,
+        )
+
+        # Validation is required to get data from serializer
+        if not project_serializer.is_valid():
+            return Response(
+                project_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(data=project_serializer.data, status=status.HTTP_200_OK)

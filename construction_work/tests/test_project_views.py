@@ -14,7 +14,7 @@ def get_header_name(header_name: str) -> str:
     return f"HTTP_{header_name.upper().replace('-', '_')}"
 
 
-class BaseTestApi(BaseAPITestCase):
+class BaseTestProjectView(BaseAPITestCase):
     """Abstract base class for API tests"""
 
     def setUp(self):
@@ -76,12 +76,12 @@ class BaseTestApi(BaseAPITestCase):
         return warning
 
 
-class TestProjectListView(BaseTestApi):
+class TestProjectListView(BaseTestProjectView):
     """Tests for getting all projects via API"""
 
     def setUp(self):
         super().setUp()
-        self.api_url = reverse("projects-list")
+        self.api_url = reverse("project-list")
 
     def tearDown(self) -> None:
         Project.objects.all().delete()
@@ -338,3 +338,70 @@ class TestProjectListView(BaseTestApi):
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertNotIn(unfollowed_project.title, res_titles)
         self.assertNotIn(followed_project.title, res_titles)
+
+
+class TestProjectDetailsView(BaseTestProjectView):
+    def setUp(self):
+        super().setUp()
+
+        self.api_url = reverse("project-details")
+
+    def test_method_not_allowed(self):
+        """Test http method not allowed"""
+        response = self.client.post(self.api_url)
+        result = json.loads(response.content)
+
+        self.assertEqual(response.status_code, 405)
+        self.assertDictEqual(result, {"detail": 'Method "POST" not allowed.'})
+
+    def test_missing_device_id(self):
+        """Test call without device id"""
+        response = self.client.get(self.api_url, **self.api_headers)
+
+        self.assertEqual(response.status_code, 400)
+        # self.assertEqual(response.json(), messages.invalid_headers)
+
+    def test_missing_project_id(self):
+        """Test call without project id"""
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = "foobar"
+        params = {
+            "lat": 52.379158791458494,
+            "lon": 4.899904339167326,
+            "article_max_age": 10,
+        }
+        response = self.client.get(self.api_url, params, **self.api_headers)
+
+        self.assertEqual(response.status_code, 400)
+        # self.assertEqual(response.json(), messages.invalid_query)
+
+    def test_project_does_not_exists(self):
+        """Test call when project does not exist"""
+        new_device_id = "new_foobar_device"
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = new_device_id
+        params = {
+            "id": 9999,
+            "lat": 52.379158791458494,
+            "lon": 4.899904339167326,
+            "article_max_age": 10,
+        }
+        response = self.client.get(self.api_url, params, **self.api_headers)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_project_details(self):
+        """Test getting project details"""
+        project = Project.objects.create(**mock_data.projects[0])
+
+        new_device_id = "new_foobar_device"
+        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = new_device_id
+        params = {
+            "id": project.pk,
+            "lat": 52.379158791458494,
+            "lon": 4.899904339167326,
+            "article_max_age": 10,
+        }
+        response = self.client.get(self.api_url, params, **self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.json())
+        self.assertEqual(response.json()["id"], project.pk)
