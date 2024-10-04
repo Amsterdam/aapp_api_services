@@ -248,7 +248,7 @@ class ProjectDetailsView(generics.RetrieveAPIView):
 
 class ProjectSearchView(generics.ListAPIView):
     serializer_class = ProjectExtendedSerializer
-    pagination_class = CustomPagination  # Use your custom pagination class
+    pagination_class = CustomPagination
 
     def get_queryset(self):
         text = self.request.query_params.get("text")
