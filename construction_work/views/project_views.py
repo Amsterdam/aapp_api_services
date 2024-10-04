@@ -421,15 +421,14 @@ class FollowedProjectsArticlesView(views.APIView):
 
         followed_projects = device.followed_projects.filter(hidden=False)
 
-        # Use the serializer to serialize the projects and their recent articles
         serializer = ProjectFollowedArticlesSerializer(
             followed_projects, many=True, context={"article_max_age": article_max_age}
         )
 
-        data = serializer.data
-
         # Transform the list into a dictionary mapping project_id to recent_articles
-        result = {item["project_id"]: item["recent_articles"] for item in data}
+        result = {
+            item["project_id"]: item["recent_articles"] for item in serializer.data
+        }
 
         return Response(data=result, status=status.HTTP_200_OK)
 
