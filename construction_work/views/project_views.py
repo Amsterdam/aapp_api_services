@@ -39,24 +39,7 @@ from construction_work.serializers import (
     WarningMessageWithImagesSerializer,
 )
 from construction_work.services.geocoding import geocode_address
-from construction_work.utils.geo_utils import calculate_distance
 from construction_work.utils.url_utils import get_media_url
-
-
-def calculate_distance_from_project(project: Project, lat, lon):
-    """Calculate the distance between given coordinates and project coordinates."""
-    given_coords = (float(lat), float(lon))
-
-    if project.coordinates is not None:
-        project_coords = (
-            project.coordinates.get("lat"),
-            project.coordinates.get("lon"),
-        )
-    else:
-        project_coords = (None, None)
-
-    meter = calculate_distance(given_coords, project_coords)
-    return meter if meter is not None else float("inf")
 
 
 class ProjectListView(generics.ListAPIView):
