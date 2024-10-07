@@ -284,15 +284,14 @@ class ProjectSearchView(generics.ListAPIView):
                         f"Field '{field}' is not a valid field in Project model."
                     )
 
-        # Build search vector with unaccent function
-        vector = SearchVector(*[Unaccent(F(field)) for field in query_fields_list])
-
-        # Build search query
+        search_vector = SearchVector(
+            *[Unaccent(F(field)) for field in query_fields_list]
+        )
         search_query = SearchQuery(text, search_type="plain")
 
         queryset = (
             Project.objects.annotate(
-                search=vector, rank=SearchRank(vector, search_query)
+                search=search_vector, rank=SearchRank(search_vector, search_query)
             )
             .filter(search=search_query, active=True, hidden=False)
             .order_by("-rank")
