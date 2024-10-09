@@ -11,10 +11,11 @@ class OpeningTimeSerializer(serializers.Serializer):
 class RegularOpeningHoursSerializer(serializers.ModelSerializer):
     opening = serializers.SerializerMethodField()
     closing = serializers.SerializerMethodField()
+    dayOfWeek = serializers.JSONField(source="day_of_week")
 
     class Meta:
         model = OpeningHours
-        fields = ("day_of_week", "opening", "closing")
+        fields = ("dayOfWeek", "opening", "closing")
 
     def get_opening(self, obj):
         return {"hours": obj.opens_hours, "minutes": obj.opens_minutes}
@@ -68,7 +69,7 @@ class CityOfficeSerializer(serializers.ModelSerializer):
     visitingHoursContent = serializers.CharField(
         source="visiting_hours_content", allow_null=True
     )
-    images = serializers.JSONField()
+    image = serializers.JSONField(source="images")
     appointment = serializers.JSONField()
 
     class Meta:
@@ -76,7 +77,7 @@ class CityOfficeSerializer(serializers.ModelSerializer):
         fields = (
             "identifier",
             "title",
-            "images",
+            "image",
             "address",
             "addressContent",
             "coordinates",

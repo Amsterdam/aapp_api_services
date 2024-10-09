@@ -83,7 +83,7 @@ class TestCityOfficeView(BaseAPITestCase):
         office_data = result[0]
         self.assertEqual(office_data["identifier"], "stadsloket-centrum")
         self.assertEqual(office_data["title"], "Stadsloket Centrum")
-        self.assertEqual(office_data["images"], {"image1": "url1", "image2": "url2"})
+        self.assertEqual(office_data["image"], {"image1": "url1", "image2": "url2"})
         self.assertEqual(office_data["address"]["streetName"], "Amstel")
         self.assertEqual(office_data["address"]["streetNumber"], "1")
         self.assertEqual(office_data["address"]["postalCode"], "1011 PN")
@@ -108,7 +108,7 @@ class TestCityOfficeView(BaseAPITestCase):
         self.assertIsInstance(regular_hours, list)
         self.assertEqual(len(regular_hours), 1)
         regular_hour = regular_hours[0]
-        self.assertEqual(regular_hour["day_of_week"], 1)
+        self.assertEqual(regular_hour["dayOfWeek"], 1)
         self.assertEqual(regular_hour["opening"], {"hours": 9, "minutes": 0})
         self.assertEqual(regular_hour["closing"], {"hours": 17, "minutes": 0})
 
