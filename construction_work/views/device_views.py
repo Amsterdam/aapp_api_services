@@ -1,7 +1,7 @@
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status, views
+from rest_framework import generics, status
 from rest_framework.response import Response
 
 from construction_work.exceptions import MissingDeviceIdHeader
@@ -12,7 +12,7 @@ from construction_work.serializers import (
 )
 
 
-class DeviceRegisterView(views.APIView):
+class DeviceRegisterView(generics.GenericAPIView):
     """
     API view to register or unregister a device.
     """

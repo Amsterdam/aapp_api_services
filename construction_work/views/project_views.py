@@ -20,7 +20,7 @@ from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import generics, status, views
+from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.response import Response
 
@@ -402,7 +402,7 @@ class ProjectDetailsView(generics.RetrieveAPIView):
         return context
 
 
-class FollowProjectView(views.APIView):
+class FollowProjectView(generics.GenericAPIView):
     """
     API view to subscribe or unsubscribe from a project.
     """
@@ -481,7 +481,7 @@ class FollowProjectView(views.APIView):
         return Response(data="Subscription removed", status=status.HTTP_200_OK)
 
 
-class FollowedProjectsArticlesView(views.APIView):
+class FollowedProjectsArticlesView(generics.GenericAPIView):
     """
     API view to get articles per followed projects
     """
@@ -589,7 +589,7 @@ class WarningMessageDetailView(generics.RetrieveAPIView):
         return message
 
 
-class ArticleListView(views.APIView):
+class ArticleListView(generics.GenericAPIView):
     """
     API view to get articles and warnings, optionally filtered by project IDs.
     """
