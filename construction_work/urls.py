@@ -1,8 +1,9 @@
 from django.urls import path
 
 from construction_work.views import project_views
+from core.urls import get_swagger_paths
 
-BASE_PATH = "construction_work/api/v1"
+BASE_PATH = "construction-work/api/v1"
 
 urlpatterns = [
     path(
@@ -40,4 +41,10 @@ urlpatterns = [
         project_views.WarningMessageDetailView.as_view(),
         name="get-warning",
     ),
+    path(
+        BASE_PATH + "/articles",
+        project_views.ArticleListView.as_view(),
+        name="article-list",
+    ),
 ]
+urlpatterns += get_swagger_paths(BASE_PATH)

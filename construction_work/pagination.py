@@ -20,7 +20,7 @@ class CustomPagination(PageNumberPagination):
 
         # Build base URI without pagination parameters
         base_uri = request.build_absolute_uri(request.path)
-        query_params = request.GET.copy()
+        query_params = request.query_params.copy()
         query_params.pop(self.page_query_param, None)
         query_params.pop(self.page_size_query_param, None)
         base_query_string = urlencode(query_params, doseq=True)

@@ -112,3 +112,27 @@ project_managers = [
         "email": "mock1@amsterdam.nl",
     },
 ]
+
+images = [
+    {
+        "image": None,
+        "description": "square image",
+        "width": 10,
+        "height": 10,
+        "aspect_ratio": 1,
+    },
+    {
+        "image": None,
+        "description": "landscape image",
+        "width": 100,
+        "height": 10,
+        "aspect_ratio": 0.1,
+    },
+    {
+        "image": None,
+        "description": "portrait image",
+        "width": 10,
+        "height": 100,
+        "aspect_ratio": 10,
+    },
+]

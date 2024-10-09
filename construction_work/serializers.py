@@ -344,3 +344,66 @@ class ProjectFollowedArticlesSerializer(serializers.ModelSerializer):
         # Sort combined list by modification_date descending
         all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
         return all_items
+
+
+class ArticleListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Article model in list view.
+    """
+
+    meta_id = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+    publication_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Article
+        fields = ["meta_id", "images", "title", "publication_date"]
+
+    def get_meta_id(self, obj):
+        return create_id_dict(obj)
+
+    def get_images(self, obj):
+        images = []
+        if obj.image:
+            images.append(obj.image)
+        return images
+
+    # NOTE: somehow, somewhere the datetime object is translated to string
+    def get_publication_date(self, obj):
+        return obj.publication_date
+
+
+class WarningMessageListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for WarningMessage model in list view.
+    """
+
+    meta_id = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+    title = serializers.CharField()
+    publication_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WarningMessage
+        fields = ["meta_id", "images", "title", "publication_date"]
+
+    def get_meta_id(self, obj):
+        return create_id_dict(obj)
+
+    def get_images(self, obj):
+        images = []
+        warning_images = obj.warningimage_set.prefetch_related("images")
+        for warning_image in warning_images:
+            image_serializer = ImagePublicSerializer(
+                warning_image.images.all(), many=True, context=self.context
+            )
+            images.append({"id": warning_image.pk, "sources": image_serializer.data})
+        return images
+
+    # NOTE: somehow, somewhere the datetime object is translated to string
+    def get_publication_date(self, obj):
+        return obj.publication_date
+
+
+class FollowProjectPostDeleteSerializer(serializers.Serializer):
+    id = serializers.IntegerField()

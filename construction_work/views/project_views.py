@@ -18,6 +18,8 @@ from django.db.models import (
 from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status, views
 from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.response import Response
@@ -32,10 +34,13 @@ from construction_work.exceptions import (
 from construction_work.models import Article, Device, Project, WarningMessage
 from construction_work.pagination import CustomPagination
 from construction_work.serializers import (
+    ArticleListSerializer,
     ArticleSerializer,
+    FollowProjectPostDeleteSerializer,
     ProjectExtendedSerializer,
     ProjectExtendedWithFollowersSerializer,
     ProjectFollowedArticlesSerializer,
+    WarningMessageListSerializer,
     WarningMessageWithImagesSerializer,
 )
 from construction_work.services.geocoding import geocode_address
@@ -46,16 +51,34 @@ class ProjectListView(generics.ListAPIView):
     serializer_class = ProjectExtendedSerializer
     pagination_class = CustomPagination
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                settings.HEADER_DEVICE_ID,
+                OpenApiTypes.STR,
+                OpenApiParameter.HEADER,
+                required=True,
+            ),
+            OpenApiParameter("lat", OpenApiTypes.STR, OpenApiParameter.QUERY),
+            OpenApiParameter("lon", OpenApiTypes.STR, OpenApiParameter.QUERY),
+            OpenApiParameter("address", OpenApiTypes.STR, OpenApiParameter.QUERY),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
         device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
         if not device_id:
             raise MissingDeviceIdHeader
 
-        lat = self.request.GET.get("lat")
-        lon = self.request.GET.get("lon")
-        address = self.request.GET.get("address")
+        lat = self.request.query_params.get("lat")
+        lon = self.request.query_params.get("lon")
+        address = self.request.query_params.get("address")
 
-        article_max_age = self.request.GET.get(settings.ARTICLE_MAX_AGE_PARAM, 3)
+        article_max_age = self.request.query_params.get(
+            settings.ARTICLE_MAX_AGE_PARAM, 3
+        )
         try:
             article_max_age = int(article_max_age)
         except ValueError:
@@ -189,6 +212,26 @@ class ProjectListView(generics.ListAPIView):
 class ProjectDetailsView(generics.RetrieveAPIView):
     serializer_class = ProjectExtendedWithFollowersSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                settings.HEADER_DEVICE_ID,
+                OpenApiTypes.STR,
+                OpenApiParameter.HEADER,
+                required=True,
+            ),
+            OpenApiParameter(
+                "id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                required=True,
+                description="Project id",
+            ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
         device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
         if not device_id:
@@ -249,6 +292,25 @@ class ProjectDetailsView(generics.RetrieveAPIView):
 class ProjectSearchView(generics.ListAPIView):
     serializer_class = ProjectExtendedSerializer
     pagination_class = CustomPagination
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "text", OpenApiTypes.STR, OpenApiParameter.QUERY, required=True
+            ),
+            OpenApiParameter(
+                "query_fields", OpenApiTypes.STR, OpenApiParameter.QUERY, required=True
+            ),
+            OpenApiParameter(
+                "fields", OpenApiTypes.STR, OpenApiParameter.QUERY, required=True
+            ),
+            OpenApiParameter("lat", OpenApiTypes.STR, OpenApiParameter.QUERY),
+            OpenApiParameter("lon", OpenApiTypes.STR, OpenApiParameter.QUERY),
+            OpenApiParameter("address", OpenApiTypes.STR, OpenApiParameter.QUERY),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
         text = self.request.query_params.get("text")
@@ -344,6 +406,17 @@ class FollowProjectView(views.APIView):
     API view to subscribe or unsubscribe from a project.
     """
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                settings.HEADER_DEVICE_ID,
+                OpenApiTypes.STR,
+                OpenApiParameter.HEADER,
+                required=True,
+            ),
+        ],
+        request=FollowProjectPostDeleteSerializer,
+    )
     def post(self, request, *args, **kwargs):
         """
         Subscribe to a project.
@@ -352,12 +425,11 @@ class FollowProjectView(views.APIView):
         if not device_id:
             raise MissingDeviceIdHeader
 
-        project_id = request.data.get("id")
-        if not project_id:
-            raise MissingProjectIdParam
+        serializer = FollowProjectPostDeleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         try:
-            project = Project.objects.get(pk=project_id)
+            project = Project.objects.get(pk=serializer.validated_data["id"])
         except Project.DoesNotExist:
             raise NotFound("Project not found")
 
@@ -367,6 +439,20 @@ class FollowProjectView(views.APIView):
 
         return Response(data="Subscription added", status=status.HTTP_200_OK)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                settings.HEADER_DEVICE_ID,
+                OpenApiTypes.STR,
+                OpenApiParameter.HEADER,
+                required=True,
+            ),
+        ],
+        description="""
+        This endpoint expects a body to be present with a project id defined as 'id'.
+        But OpenAPI and therefor DRF spectacular does not support request body for DELETE.
+        """,
+    )
     def delete(self, request, *args, **kwargs):
         """
         Unsubscribe from a project.
@@ -375,12 +461,11 @@ class FollowProjectView(views.APIView):
         if not device_id:
             raise MissingDeviceIdHeader
 
-        project_id = request.data.get("id")
-        if not project_id:
-            raise MissingProjectIdParam
+        serializer = FollowProjectPostDeleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         try:
-            project = Project.objects.get(pk=project_id)
+            project = Project.objects.get(pk=serializer.validated_data["id"])
         except Project.DoesNotExist:
             raise NotFound("Project not found")
 
@@ -400,6 +485,19 @@ class FollowedProjectsArticlesView(views.APIView):
     API view to get articles per followed projects
     """
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                settings.HEADER_DEVICE_ID,
+                OpenApiTypes.STR,
+                OpenApiParameter.HEADER,
+                required=True,
+            ),
+            OpenApiParameter(
+                settings.ARTICLE_MAX_AGE_PARAM, OpenApiTypes.STR, OpenApiParameter.QUERY
+            ),
+        ]
+    )
     def get(self, request, *args, **kwargs):
         device_id = request.headers.get(settings.HEADER_DEVICE_ID)
         if not device_id:
@@ -436,6 +534,20 @@ class ArticleDetailView(generics.RetrieveAPIView):
     serializer_class = ArticleSerializer
     queryset = Article.objects.filter(active=True)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "id",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                required=True,
+                description="Article id",
+            ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     def get_object(self):
         article_id = self.request.query_params.get("id")
         if not article_id:
@@ -451,8 +563,22 @@ class WarningMessageDetailView(generics.RetrieveAPIView):
     serializer_class = WarningMessageWithImagesSerializer
     queryset = WarningMessage.objects.filter(project__active=True)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "id",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                required=True,
+                description="Warning id",
+            ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     def get_object(self):
-        message_id = self.request.GET.get("id", None)
+        message_id = self.request.query_params.get("id", None)
         if not message_id:
             raise MissingWarningMessageIdParam
         try:
@@ -460,3 +586,100 @@ class WarningMessageDetailView(generics.RetrieveAPIView):
         except WarningMessage.DoesNotExist:
             raise NotFound("Warning message not found")
         return message
+
+
+class ArticleListView(views.APIView):
+    """
+    API view to get articles and warnings, optionally filtered by project IDs.
+    """
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "project_ids",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                required=True,
+                description="Project ids, comma seperated",
+            ),
+            OpenApiParameter("sort_by", OpenApiTypes.STR, OpenApiParameter.QUERY),
+            OpenApiParameter("sort_order", OpenApiTypes.STR, OpenApiParameter.QUERY),
+            OpenApiParameter("limit", OpenApiTypes.STR, OpenApiParameter.QUERY),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        # Handle 'project_ids' parameter
+        project_ids_param = request.query_params.get("project_ids")
+        project_ids = []
+        if project_ids_param:
+            project_ids = project_ids_param.split(",")
+            if not all(pid.isdigit() for pid in project_ids):
+                raise ParseError(
+                    "Invalid 'project_ids' parameter. IDs must be integers."
+                )
+            project_ids = [int(pid) for pid in project_ids]
+
+        # Handle 'sort_by' and 'sort_order' parameters
+        sort_by = request.query_params.get("sort_by", "publication_date")
+        sort_order = request.query_params.get("sort_order", "desc")
+        if sort_order not in ["asc", "desc"]:
+            raise ParseError("Invalid 'sort_order' parameter. Must be 'asc' or 'desc'.")
+
+        # Handle 'limit' parameter
+        limit_param = request.query_params.get("limit", "0")
+        if not limit_param.isdigit():
+            raise ParseError(
+                "Invalid 'limit' parameter. Must be a non-negative integer."
+            )
+        limit = int(limit_param)
+        if limit < 0:
+            raise ParseError("'limit' parameter must be non-negative.")
+
+        # Collect articles
+        articles_qs = Article.objects.filter(active=True)
+        if project_ids:
+            articles_qs = articles_qs.filter(projects__id__in=project_ids)
+        articles_qs = articles_qs.only("id", "title", "publication_date", "image")
+
+        # Collect warnings
+        warnings_qs = WarningMessage.objects.filter(project__active=True)
+        if project_ids:
+            warnings_qs = warnings_qs.filter(project__id__in=project_ids)
+        warnings_qs = warnings_qs.prefetch_related("warningimage_set__images")
+
+        # Serialize articles and warnings
+        articles_serializer = ArticleListSerializer(articles_qs, many=True)
+        warnings_serializer = WarningMessageListSerializer(
+            warnings_qs, many=True, context={"media_url": get_media_url(request)}
+        )
+
+        # Combine articles and warnings
+        all_news = articles_serializer.data + warnings_serializer.data
+
+        # Determine available sort keys dynamically
+        available_sort_keys = []
+        if all_news:
+            # Collect keys from all items to handle cases where items have different keys
+            all_keys = set()
+            for item in all_news:
+                all_keys.update(item.keys())
+            available_sort_keys = list(all_keys)
+
+        if available_sort_keys and sort_by not in available_sort_keys:
+            raise ParseError(
+                f"Invalid 'sort_by' parameter. Available options are {available_sort_keys}."
+            )
+
+        # Sort combined list
+        try:
+            all_news.sort(
+                key=lambda x: x.get(sort_by, ""), reverse=sort_order == "desc"
+            )
+        except TypeError as e:
+            raise ParseError(f"Unable to sort by '{sort_by}': {str(e)}")
+
+        # Apply limit if specified
+        if limit > 0:
+            all_news = all_news[:limit]
+
+        return Response(all_news, status=status.HTTP_200_OK)

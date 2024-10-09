@@ -13,7 +13,7 @@
             "justMyCode": true,
             "env": {
                 "DEBUG": "true",
-                "DJANGO_SETTINGS_MODULE": "contact.settings.local",
+                "DJANGO_SETTINGS_MODULE": "construction_work.settings.local",
             },
         },
         {
@@ -25,7 +25,7 @@
                 "test",
                 // "city_pass.tests",
                 // "contact.tests"
-                "construction_work.tests.test_project_views.TestFollowedProjectsWithArticlesView.test_get_recent_articles"
+                "construction_work.tests.test_project_views.TestArticleListView.test_invalid_sort_key_but_no_news"
             ],
             "django": true,
             "console": "integratedTerminal",
