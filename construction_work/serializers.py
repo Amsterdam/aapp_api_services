@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from construction_work.models import (
