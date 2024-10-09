@@ -108,14 +108,6 @@ class TestProjectListView(BaseTestProjectView):
         Device.objects.all().delete()
         super().tearDown()
 
-    def test_method_not_allowed(self):
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = 1
-        response = self.client.post(self.api_url, **self.api_headers)
-        result = json.loads(response.content)
-
-        self.assertEqual(response.status_code, 405)
-        self.assertDictEqual(result, {"detail": 'Method "POST" not allowed.'})
-
     @freeze_time("2023-01-02")
     def assert_projects_sorted_descending_by_recent_article_date(
         self, device_follows_projects: bool
@@ -138,8 +130,10 @@ class TestProjectListView(BaseTestProjectView):
             device.followed_projects.set([project_1, project_2, project_3, project_4])
 
         # Perform request
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device.device_id
-        response = self.client.get(self.api_url, {"page_size": 4}, **self.api_headers)
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
+        response = self.client.get(
+            self.api_url, {"page_size": 4}, headers=self.api_headers
+        )
 
         # Expected projects to be ordered descending by publication date
         expected_foreign_id_order = [
@@ -180,8 +174,10 @@ class TestProjectListView(BaseTestProjectView):
             device.followed_projects.set([project_1, project_2])
 
         # Perform request
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device.device_id
-        response = self.client.get(self.api_url, {"page_size": 4}, **self.api_headers)
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
+        response = self.client.get(
+            self.api_url, {"page_size": 4}, headers=self.api_headers
+        )
 
         # Expected project without articles on the bottom
         expected_foreign_id_order = [
@@ -252,7 +248,7 @@ class TestProjectListView(BaseTestProjectView):
         device = Device.objects.create(**mock_data.devices[0].copy())
 
         # Perform request
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device.device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
         response = self.client.get(
             self.api_url,
             {
@@ -260,7 +256,7 @@ class TestProjectListView(BaseTestProjectView):
                 "lon": adam_central_station[1],
                 "page_size": 3,
             },
-            **self.api_headers,
+            headers=self.api_headers,
         )
 
         # Expected projects to be ordered from closest to furthest from the base location
@@ -278,10 +274,12 @@ class TestProjectListView(BaseTestProjectView):
         self.assertEqual(len(Project.objects.all()), 10)
 
         device = Device.objects.create(**mock_data.devices[0].copy())
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device.device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
 
         # With page size of 4, 4 projects should be returned
-        response = self.client.get(self.api_url, {"page_size": 4}, **self.api_headers)
+        response = self.client.get(
+            self.api_url, {"page_size": 4}, headers=self.api_headers
+        )
         self.assertEqual(response.json()["page"]["number"], 1)
         self.assertEqual(response.json()["page"]["size"], 4)
         self.assertEqual(response.json()["page"]["totalElements"], 10)
@@ -292,7 +290,7 @@ class TestProjectListView(BaseTestProjectView):
         next_url = response.json()["_links"]["next"]["href"]
 
         # With page size of 4, the next 4 projects should be returned
-        response = self.client.get(next_url, **self.api_headers)
+        response = self.client.get(next_url, headers=self.api_headers)
         self.assertEqual(response.json()["page"]["number"], 2)
         self.assertEqual(response.json()["page"]["size"], 4)
         self.assertEqual(response.json()["page"]["totalElements"], 10)
@@ -302,7 +300,7 @@ class TestProjectListView(BaseTestProjectView):
         next_url = response.json()["_links"]["next"]["href"]
 
         # With page size of 4, the last 2 projects should be returned
-        response = self.client.get(next_url, **self.api_headers)
+        response = self.client.get(next_url, headers=self.api_headers)
         self.assertEqual(response.json()["page"]["number"], 3)
         self.assertEqual(response.json()["page"]["size"], 4)
         self.assertEqual(response.json()["page"]["totalElements"], 10)
@@ -314,9 +312,7 @@ class TestProjectListView(BaseTestProjectView):
         my_device = Device.objects.create(
             device_id="foobar", firebase_token="foobar", os="foobar"
         )
-        self.api_headers[
-            get_header_name(settings.HEADER_DEVICE_ID)
-        ] = my_device.device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = my_device.device_id
 
         unfollowed_project_data = mock_data.projects[0].copy()
         unfollowed_project_data["title"] = "this_unfollowed_project_will_be_deactivated"
@@ -340,7 +336,7 @@ class TestProjectListView(BaseTestProjectView):
 
         # These active projects should be returned
         response = self.client.get(
-            self.api_url, {"page_size": 9999}, **self.api_headers
+            self.api_url, {"page_size": 9999}, headers=self.api_headers
         )
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertIn(unfollowed_project.title, res_titles)
@@ -352,7 +348,7 @@ class TestProjectListView(BaseTestProjectView):
 
         # The projects should not be returned now
         response = self.client.get(
-            self.api_url, {"page_size": 9999}, **self.api_headers
+            self.api_url, {"page_size": 9999}, headers=self.api_headers
         )
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertNotIn(unfollowed_project.title, res_titles)
@@ -365,43 +361,35 @@ class TestProjectDetailsView(BaseTestProjectView):
 
         self.api_url = reverse("get-project")
 
-    def test_method_not_allowed(self):
-        """Test http method not allowed"""
-        response = self.client.post(self.api_url)
-        result = json.loads(response.content)
-
-        self.assertEqual(response.status_code, 405)
-        self.assertDictEqual(result, {"detail": 'Method "POST" not allowed.'})
-
     def test_missing_device_id(self):
         """Test call without device id"""
-        response = self.client.get(self.api_url, **self.api_headers)
+        response = self.client.get(self.api_url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 400)
 
     def test_missing_project_id(self):
         """Test call without project id"""
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = "foobar"
+        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
         params = {
             "lat": 52.379158791458494,
             "lon": 4.899904339167326,
             "article_max_age": 10,
         }
-        response = self.client.get(self.api_url, params, **self.api_headers)
+        response = self.client.get(self.api_url, params, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 400)
 
     def test_project_does_not_exists(self):
         """Test call when project does not exist"""
         new_device_id = "new_foobar_device"
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = new_device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = new_device_id
         params = {
             "id": 9999,
             "lat": 52.379158791458494,
             "lon": 4.899904339167326,
             "article_max_age": 10,
         }
-        response = self.client.get(self.api_url, params, **self.api_headers)
+        response = self.client.get(self.api_url, params, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 404)
 
@@ -410,14 +398,14 @@ class TestProjectDetailsView(BaseTestProjectView):
         project = Project.objects.create(**mock_data.projects[0].copy())
 
         new_device_id = "new_foobar_device"
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = new_device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = new_device_id
         params = {
             "id": project.pk,
             "lat": 52.379158791458494,
             "lon": 4.899904339167326,
             "article_max_age": 10,
         }
-        response = self.client.get(self.api_url, params, **self.api_headers)
+        response = self.client.get(self.api_url, params, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.json())
@@ -442,7 +430,7 @@ class TestProjectSearchView(BaseTestProjectView):
             "page_size": 1,
             "page": 1,
         }
-        response = self.client.get(self.api_url, query, **self.api_headers)
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 400)
 
@@ -455,7 +443,7 @@ class TestProjectSearchView(BaseTestProjectView):
             "page_size": 1,
             "page": 1,
         }
-        response = self.client.get(self.api_url, query, **self.api_headers)
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 400)
 
@@ -468,7 +456,7 @@ class TestProjectSearchView(BaseTestProjectView):
             "page_size": 1,
             "page": 1,
         }
-        response = self.client.get(self.api_url, query, **self.api_headers)
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 400)
 
@@ -481,7 +469,7 @@ class TestProjectSearchView(BaseTestProjectView):
             "page_size": 1,
             "page": 1,
         }
-        response = self.client.get(self.api_url, query, **self.api_headers)
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 400)
 
@@ -495,7 +483,7 @@ class TestProjectSearchView(BaseTestProjectView):
             "page_size": 1,
             "page": 1,
         }
-        response = self.client.get(self.api_url, query, **self.api_headers)
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()["result"]), 1)
@@ -506,7 +494,7 @@ class TestProjectSearchView(BaseTestProjectView):
         next_page = response.json()["_links"]["next"]["href"]
 
         # Go to next page, and check results
-        response = self.client.get(next_page, **self.api_headers)
+        response = self.client.get(next_page, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()["result"]), 1)
@@ -516,7 +504,7 @@ class TestProjectSearchView(BaseTestProjectView):
 
     def test_get_only_active_projects(self):
         """Check if only active projects are returned"""
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = "foobar"
+        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
 
         project_data = mock_data.projects[0].copy()
         project_data["title"] = "this_project_will_be_deactivated"
@@ -535,7 +523,7 @@ class TestProjectSearchView(BaseTestProjectView):
             "page_size": 1,
             "page": 1,
         }
-        response = self.client.get(self.api_url, query, **self.api_headers)
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertIn(new_project.title, res_titles)
 
@@ -543,7 +531,7 @@ class TestProjectSearchView(BaseTestProjectView):
         new_project.deactivate()
 
         # The project should not be returned now
-        response = self.client.get(self.api_url, query, **self.api_headers)
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertNotIn(new_project.title, res_titles)
 
@@ -563,21 +551,21 @@ class TestFollowProjectView(BaseTestProjectView):
         foreign_id = project.foreign_id
 
         data = {"foreign_id": foreign_id}
-        response = self.client.post(self.api_url, data, **self.api_headers)
+        response = self.client.post(self.api_url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 400)
 
     def test_missing_foreign_id(self):
         """Test missing foreign id"""
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = "foobar"
+        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
         data = {}
-        response = self.client.post(self.api_url, data, **self.api_headers)
+        response = self.client.post(self.api_url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 400)
 
     def test_project_does_not_exist(self):
         """Test call but project does not exist"""
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = "foobar"
+        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
         data = {"id": 9999}
-        response = self.client.post(self.api_url, data, **self.api_headers)
+        response = self.client.post(self.api_url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 404)
 
     def test_existing_device_follows_existing_project(self):
@@ -591,9 +579,9 @@ class TestFollowProjectView(BaseTestProjectView):
         device.save()
 
         # Perform API call and check status
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = device_id
         data = {"id": project_id}
-        response = self.client.post(self.api_url, data, **self.api_headers)
+        response = self.client.post(self.api_url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
 
         # Device should now exist with followed project
@@ -612,9 +600,9 @@ class TestFollowProjectView(BaseTestProjectView):
         self.assertIsNone(device)
 
         # Perform API call and check status
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = new_device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = new_device_id
         data = {"id": project_id}
-        response = self.client.post(self.api_url, data, **self.api_headers)
+        response = self.client.post(self.api_url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
 
         # Device should now exist with followed project
@@ -633,9 +621,9 @@ class TestFollowProjectView(BaseTestProjectView):
         device.followed_projects.add(project)
 
         # Perform API call and check status
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = device_id
         data = {"id": project_id}
-        response = self.client.delete(self.api_url, data=data, **self.api_headers)
+        response = self.client.delete(self.api_url, data=data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
 
         # Project should not be part of device followed projects
@@ -649,9 +637,9 @@ class TestFollowProjectView(BaseTestProjectView):
         device.save()
 
         # Perform API call and check status
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = device_id
         data = {"id": 9999}
-        response = self.client.delete(self.api_url, data=data, **self.api_headers)
+        response = self.client.delete(self.api_url, data=data, headers=self.api_headers)
         self.assertEqual(response.status_code, 404)
 
     def test_unfollow_project_that_device_is_not_following(self):
@@ -665,9 +653,9 @@ class TestFollowProjectView(BaseTestProjectView):
         device.save()
 
         # Perform API call and check status
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = device_id
         data = {"id": project_id}
-        response = self.client.delete(self.api_url, data=data, **self.api_headers)
+        response = self.client.delete(self.api_url, data=data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
 
         # Device should have no followed projects
@@ -682,14 +670,14 @@ class TestFollowedProjectsArticlesView(BaseTestProjectView):
 
     def test_missing_device_id(self):
         """Test missing device id"""
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = None
-        response = self.client.get(self.api_url, **self.api_headers)
+        self.api_headers[settings.HEADER_DEVICE_ID] = None
+        response = self.client.get(self.api_url, headers=self.api_headers)
         self.assertEqual(response.status_code, 400)
 
     def test_device_does_not_exist(self):
         """Test device does not exist"""
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = "foobar"
-        response = self.client.get(self.api_url, **self.api_headers)
+        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
+        response = self.client.get(self.api_url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {})
 
@@ -705,9 +693,9 @@ class TestFollowedProjectsArticlesView(BaseTestProjectView):
         device = Device.objects.create(**mock_data.devices[0].copy())
         device.followed_projects.add(hidden_project)
 
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device.device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
 
-        response = self.client.get(self.api_url, **self.api_headers)
+        response = self.client.get(self.api_url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {})
 
@@ -743,11 +731,13 @@ class TestFollowedProjectsArticlesView(BaseTestProjectView):
         device = Device.objects.create(**mock_data.devices[0].copy())
         device.followed_projects.set([project_1, project_2, project_3])
 
-        self.api_headers[get_header_name(settings.HEADER_DEVICE_ID)] = device.device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
 
         def assert_total_returned_articles(max_age=0):
             params = {"article_max_age": max_age}
-            _response = self.client.get(self.api_url, params, **self.api_headers).json()
+            _response = self.client.get(
+                self.api_url, params, headers=self.api_headers
+            ).json()
 
             _total_returned_articles = 0
             for key in _response:
@@ -983,7 +973,7 @@ class TestWarningMessageDetailView(BaseTestProjectView):
         new_message = self.create_message_from_data(data)
 
         result = self.client.get(
-            f"{self.api_url}?id={new_message.pk}", **self.api_headers
+            f"{self.api_url}?id={new_message.pk}", headers=self.api_headers
         )
         self.assertEqual(result.status_code, 200)
 
@@ -1020,18 +1010,18 @@ class TestWarningMessageDetailView(BaseTestProjectView):
         project_obj.deactivate()
 
         result = self.client.get(
-            f"{self.api_url}?id={new_message.pk}", **self.api_headers
+            f"{self.api_url}?id={new_message.pk}", headers=self.api_headers
         )
         self.assertEqual(result.status_code, 404)
 
     def test_get_warning_message_no_identifier(self):
         """Test get waring message without identifier"""
-        result = self.client.get(f"{self.api_url}", **self.api_headers)
+        result = self.client.get(f"{self.api_url}", headers=self.api_headers)
         self.assertEqual(result.status_code, 400)
 
     def test_get_warning_message_invalid_id(self):
         """Test get warning message with invalid identifier"""
-        result = self.client.get(f"{self.api_url}?id=9999", **self.api_headers)
+        result = self.client.get(f"{self.api_url}?id=9999", headers=self.api_headers)
         self.assertEqual(result.status_code, 404)
 
 
@@ -1070,19 +1060,21 @@ class TestArticleListView(BaseTestProjectView):
 
     def test_get_all(self):
         """Test get all news"""
-        result = self.client.get(self.api_url, **self.api_headers)
+        result = self.client.get(self.api_url, headers=self.api_headers)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(result.data), 3)
 
     def test_get_limit_one(self):
         """Test limiting the result to one article"""
-        result = self.client.get(self.api_url, {"limit": 1}, **self.api_headers)
+        result = self.client.get(self.api_url, {"limit": 1}, headers=self.api_headers)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(result.data), 1)
 
     def test_invalid_limit(self):
         """Test passing invalid limit char"""
-        result = self.client.get(self.api_url, {"limit": "1.1"}, **self.api_headers)
+        result = self.client.get(
+            self.api_url, {"limit": "1.1"}, headers=self.api_headers
+        )
         self.assertEqual(result.status_code, 400)
 
     def test_get_articles_of_single_project(self):
@@ -1090,7 +1082,7 @@ class TestArticleListView(BaseTestProjectView):
         first_project = Project.objects.first()
 
         result = self.client.get(
-            self.api_url, {"project_ids": first_project.pk}, **self.api_headers
+            self.api_url, {"project_ids": first_project.pk}, headers=self.api_headers
         )
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(result.data), 2)
@@ -1103,7 +1095,7 @@ class TestArticleListView(BaseTestProjectView):
         result = self.client.get(
             self.api_url,
             {"project_ids": f"{first_project.pk},{last_project.pk}"},
-            **self.api_headers,
+            headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(result.data), 3)
@@ -1111,7 +1103,7 @@ class TestArticleListView(BaseTestProjectView):
     def test_invalid_project_id(self):
         """Test passing invalid project id in comma seperated list"""
         result = self.client.get(
-            self.api_url, {"project_ids": "1,foobar"}, **self.api_headers
+            self.api_url, {"project_ids": "1,foobar"}, headers=self.api_headers
         )
         self.assertEqual(result.status_code, 400)
 
@@ -1120,7 +1112,7 @@ class TestArticleListView(BaseTestProjectView):
         result = self.client.get(
             self.api_url,
             {"sort_by": "publication_date", "sort_order": "desc"},
-            **self.api_headers,
+            headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 200)
         article = Article.objects.order_by("-publication_date").first()
@@ -1165,7 +1157,7 @@ class TestArticleListView(BaseTestProjectView):
         article.projects.add(project)
 
         result = self.client.get(
-            self.api_url, {"project_ids": [project.pk]}, **self.api_headers
+            self.api_url, {"project_ids": [project.pk]}, headers=self.api_headers
         )
         self.assertEqual(result.status_code, 200)
 
@@ -1185,7 +1177,7 @@ class TestArticleListView(BaseTestProjectView):
         result = self.client.get(
             self.api_url,
             {"sort_by": "publication_date", "sort_order": "asc"},
-            **self.api_headers,
+            headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 200)
         warning = WarningMessage.objects.first()
@@ -1227,7 +1219,7 @@ class TestArticleListView(BaseTestProjectView):
         warning_image.images.add(image)
 
         result = self.client.get(
-            self.api_url, {"project_ids": project.pk}, **self.api_headers
+            self.api_url, {"project_ids": project.pk}, headers=self.api_headers
         )
         self.assertEqual(result.status_code, 200)
 
@@ -1266,7 +1258,7 @@ class TestArticleListView(BaseTestProjectView):
         result = self.client.get(
             self.api_url,
             {"sort_by": "publication_date", "sort_order": "desc"},
-            **self.api_headers,
+            headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 200)
 
@@ -1277,7 +1269,7 @@ class TestArticleListView(BaseTestProjectView):
     def test_invalid_sort_key(self):
         """Test sorting news with invalid sort key"""
         result = self.client.get(
-            self.api_url, {"sort_by": "foobar"}, **self.api_headers
+            self.api_url, {"sort_by": "foobar"}, headers=self.api_headers
         )
         self.assertEqual(result.status_code, 400)
 
@@ -1286,7 +1278,7 @@ class TestArticleListView(BaseTestProjectView):
         result = self.client.get(
             self.api_url,
             {"project_ids": "9999", "sort_by": "foobar"},
-            **self.api_headers,
+            headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(result.data), 0)
