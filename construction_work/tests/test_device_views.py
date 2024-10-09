@@ -2,7 +2,6 @@ from django.conf import settings
 from django.urls import reverse
 
 from construction_work.models import Device
-from construction_work.tests.test_project_views import get_header_name
 from core.tests import BaseAPITestCase
 
 

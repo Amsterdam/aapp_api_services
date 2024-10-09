@@ -22,10 +22,6 @@ from construction_work.utils.test_utils import create_image_file
 from core.tests import BaseAPITestCase
 
 
-def get_header_name(header_name: str) -> str:
-    return f"HTTP_{header_name.upper().replace('-', '_')}"
-
-
 class BaseTestProjectView(BaseAPITestCase):
     """Abstract base class for API tests"""
 
