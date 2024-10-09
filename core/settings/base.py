@@ -168,5 +168,11 @@ LOGGING = {
     },
 }
 
+default_app_logging = {
+    "level": "DEBUG",
+    "handlers": ["console"],
+    "propagate": False,
+}
+
 API_KEY_HEADER = "X-Api-Key"
 API_KEYS = os.getenv("API_AUTH_TOKENS")

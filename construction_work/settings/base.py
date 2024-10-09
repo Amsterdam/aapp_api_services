@@ -6,13 +6,13 @@ INSTALLED_APPS += [
 
 ROOT_URLCONF = "construction_work.urls"
 
+REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
+    "core.authentication.APIKeyAuthentication",
+]
+
 SPECTACULAR_SETTINGS["TITLE"] = "Construction Work API"
 
-LOGGING["loggers"]["construction_work"] = {
-    "level": "DEBUG",
-    "handlers": ["console"],
-    "propagate": False,
-}
+LOGGING["loggers"]["construction_work"] = default_app_logging
 
 HEADER_DEVICE_ID = "DeviceId"
 

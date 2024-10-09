@@ -15,11 +15,7 @@ SPECTACULAR_SETTINGS["TITLE"] = "City Pass API"
 
 # STATIC_URL = ???
 
-LOGGING["loggers"]["city_pass"] = {
-    "level": "DEBUG",
-    "handlers": ["console"],
-    "propagate": False,
-}
+LOGGING["loggers"]["city_pass"] = default_app_logging
 
 # Custom settings
 
