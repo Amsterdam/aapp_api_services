@@ -28,7 +28,6 @@ from construction_work.exceptions import (
     InvalidArticleMaxAgeParam,
     MissingArticleIdParam,
     MissingDeviceIdHeader,
-    MissingProjectIdParam,
     MissingWarningMessageIdParam,
 )
 from construction_work.models import Article, Device, Project, WarningMessage

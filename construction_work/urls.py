@@ -1,6 +1,6 @@
 from django.urls import path
 
-from construction_work.views import project_views
+from construction_work.views import device_views, project_views
 from core.urls import get_swagger_paths
 
 BASE_PATH = "construction-work/api/v1"
@@ -45,6 +45,11 @@ urlpatterns = [
         BASE_PATH + "/articles",
         project_views.ArticleListView.as_view(),
         name="article-list",
+    ),
+    path(
+        BASE_PATH + "/device/register",
+        device_views.DeviceRegisterView.as_view(),
+        name="register-device",
     ),
 ]
 urlpatterns += get_swagger_paths(BASE_PATH)

@@ -25,7 +25,7 @@
                 "test",
                 // "city_pass.tests",
                 // "contact.tests"
-                "construction_work.tests.test_project_views.TestArticleListView.test_invalid_sort_key_but_no_news"
+                "construction_work.tests.test_device_views.TestDeviceRegisterView.test_registration_ok"
             ],
             "django": true,
             "console": "integratedTerminal",

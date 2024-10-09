@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from construction_work.models import (
     Article,
+    Device,
     Image,
     Notification,
     Project,
@@ -407,3 +408,14 @@ class WarningMessageListSerializer(serializers.ModelSerializer):
 
 class FollowProjectPostDeleteSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+
+
+class DeviceRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Device
+        fields = "__all__"
+
+
+class DeviceRegisterPostSwaggerSerializer(serializers.Serializer):
+    firebase_token = serializers.CharField()
+    os = serializers.CharField()
