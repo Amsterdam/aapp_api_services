@@ -104,7 +104,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        exclude = ["id", "type"]
+        exclude = ["type"]
 
     @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj: Article) -> dict:
@@ -438,6 +438,10 @@ class DeviceRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
         fields = "__all__"
+        extra_kwargs = {
+            "os": {"required": True, "allow_blank": False},
+            "firebase_token": {"required": True, "allow_blank": False},
+        }
 
 
 class DeviceRegisterPostSwaggerSerializer(serializers.Serializer):
