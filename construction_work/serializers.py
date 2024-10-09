@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 from rest_framework import serializers
 
 from construction_work.models import (
@@ -19,6 +20,7 @@ from construction_work.utils.model_utils import create_id_dict
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
     """
+    Special ModelSerializer used for enabling the search function.
     A ModelSerializer that takes an additional `fields` argument that
     controls which fields should be displayed.
     """
@@ -36,6 +38,85 @@ class DynamicFieldsModelSerializer(serializers.ModelSerializer):
             existing = set(self.fields)
             for field_name in existing - allowed:
                 self.fields.pop(field_name)
+
+
+class IproxImageSourceSerializer(serializers.Serializer):
+    uri = serializers.CharField()
+    width = serializers.IntegerField()
+    height = serializers.IntegerField()
+
+
+class IproxImageSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    sources = IproxImageSourceSerializer(many=True)
+    aspectRatio = serializers.FloatField()
+    alternativeText = serializers.CharField()
+
+
+class IproxSectionBodySerializer(serializers.Serializer):
+    title = serializers.CharField()
+    body = serializers.CharField()
+
+
+class IproxSectionsSerializer(serializers.Serializer):
+    what = IproxSectionBodySerializer()
+    when = IproxSectionBodySerializer()
+    where = IproxSectionBodySerializer()
+    work = IproxSectionBodySerializer()
+    contact = IproxSectionBodySerializer()
+
+
+class IproxContactsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    email = serializers.CharField()
+    phone = serializers.CharField()
+    position = serializers.CharField()
+
+
+class IproxTimelineItemSerializer(serializers.Serializer):
+    body = serializers.CharField()
+    items = serializers.ListField()
+    title = serializers.CharField()
+    collapsed = serializers.BooleanField()
+
+
+class IproxTimelineSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    intro = serializers.CharField()
+    items = IproxTimelineItemSerializer(many=True)
+
+
+class MetaIdSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    type = serializers.CharField()
+
+
+class RecentArticlesIdDateSerializer(serializers.Serializer):
+    meta_id = MetaIdSerializer()
+    modification_date = serializers.DateTimeField()
+
+
+class ArticleSerializer(serializers.ModelSerializer):
+    """Article serializer"""
+
+    meta_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Article
+        exclude = ["id", "type"]
+
+    @extend_schema_field(MetaIdSerializer)
+    def get_meta_id(self, obj: Article) -> dict:
+        return create_id_dict(obj)
+
+
+class ArticleMinimalSerializer(ArticleSerializer):
+    """Article serializer with minimal data"""
+
+    class Meta:
+        model = Article
+        fields = ["meta_id", "modification_date"]
 
 
 class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
@@ -77,12 +158,10 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
 
     def get_followed(self, obj: Project) -> bool:
         """Check if project is being followed by given device"""
-        followed_projects_ids = self.context.get("followed_projects_ids")
-        if followed_projects_ids is None:
-            return False
-
+        followed_projects_ids = self.context.get("followed_projects_ids", [])
         return obj.pk in followed_projects_ids
 
+    @extend_schema_field(RecentArticlesIdDateSerializer)
     def get_recent_articles(self, obj: Project) -> list:
         """Get recent articles and warnings"""
         recent_news = []
@@ -103,6 +182,7 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
 
         return recent_news
 
+    @extend_schema_field(IproxImageSerializer)
     def get_image(self, obj: Project):
         """Get main image or first image from image list"""
         if obj.image:
@@ -110,6 +190,52 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
         if obj.images:
             return obj.images[0]
         return {}
+
+
+class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
+    """Project details serializer"""
+
+    followers = serializers.SerializerMethodField()
+    recent_articles = serializers.SerializerMethodField()
+    meter = serializers.SerializerMethodField()
+    followed = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project
+        exclude = ["hidden"]
+
+    def get_followers(self, obj: Project) -> int:
+        """Get amount of followers of project"""
+        return obj.device_set.count()
+
+    @extend_schema_field(ArticleSerializer)
+    def get_recent_articles(self, obj: Project) -> list:
+        """Get recent articles and warnings"""
+        article_max_age = self.context.get("article_max_age", 3)
+        media_url = self.context.get("media_url", "")
+        start_date = timezone.now() - timedelta(days=article_max_age)
+
+        # Get recent articles
+        recent_articles = obj.article_set.filter(publication_date__gte=start_date)
+        article_serializer = ArticleSerializer(
+            recent_articles,
+            many=True,
+        )
+
+        # Get recent warnings
+        recent_warnings = obj.warningmessage_set.filter(
+            publication_date__gte=start_date
+        )
+        warning_serializer = WarningMessageForManagementSerializer(
+            recent_warnings, many=True, context={"media_url": media_url}
+        )
+
+        # Combine articles and warnings
+        all_items = article_serializer.data + warning_serializer.data
+        # Sort combined list by modification_date descending
+        all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
+        return all_items
 
 
 class ProjectManagerNameEmailSerializer(serializers.ModelSerializer):
@@ -136,19 +262,6 @@ class ImagePublicSerializer(serializers.ModelSerializer):
         if not media_url:
             return None
         return f"{media_url}/{obj.image.name}"
-
-
-class ArticleSerializer(serializers.ModelSerializer):
-    """Article serializer"""
-
-    meta_id = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Article
-        exclude = ["type"]
-
-    def get_meta_id(self, obj: Article) -> dict:
-        return create_id_dict(obj)
 
 
 class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
@@ -205,95 +318,6 @@ class WarningMessageForManagementSerializer(WarningMessageWithImagesSerializer):
     def get_is_pushed(self, obj: WarningMessage) -> bool:
         """Has the warning been pushed (before)"""
         return Notification.objects.filter(warning=obj).exists()
-
-
-class ProjectExtendedWithFollowersSerializer(serializers.ModelSerializer):
-    """Project details serializer"""
-
-    followers = serializers.SerializerMethodField()
-    recent_articles = serializers.SerializerMethodField()
-    meter = serializers.SerializerMethodField()
-    followed = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Project
-        exclude = ["hidden"]
-
-    def get_followers(self, obj: Project) -> int:
-        """Get amount of followers of project"""
-        return obj.device_set.count()
-
-    def get_recent_articles(self, obj: Project) -> list:
-        """Get recent articles and warnings"""
-        article_max_age = self.context.get("article_max_age", 3)
-        media_url = self.context.get("media_url", "")
-        start_date = timezone.now() - timedelta(days=article_max_age)
-
-        # Get recent articles
-        recent_articles = obj.article_set.filter(publication_date__gte=start_date)
-        article_serializer = ArticleSerializer(
-            recent_articles, many=True, context={"media_url": media_url}
-        )
-
-        # Get recent warnings
-        recent_warnings = obj.warningmessage_set.filter(
-            publication_date__gte=start_date
-        )
-        warning_serializer = WarningMessageForManagementSerializer(
-            recent_warnings, many=True, context={"media_url": media_url}
-        )
-
-        # Combine articles and warnings
-        all_items = article_serializer.data + warning_serializer.data
-        # Sort combined list by modification_date descending
-        all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
-        return all_items
-
-    def get_meter(self, obj: Project) -> int:
-        """Calculate distance from given coordinates to project coordinates"""
-        lat = self.context.get("lat")
-        lon = self.context.get("lon")
-        if not lat or not lon or not obj.coordinates:
-            return None
-
-        cords_1 = (float(lat), float(lon))
-        project_coordinates = obj.coordinates
-        cords_2 = (project_coordinates.get("lat"), project_coordinates.get("lon"))
-        if None in cords_2 or (cords_2 == (0, 0)):
-            return None
-        return calculate_distance(cords_1, cords_2)
-
-    def get_followed(self, obj: Project) -> bool:
-        """Check if project is being followed by given device"""
-        followed_projects_ids = self.context.get("followed_projects_ids", [])
-        return obj.pk in followed_projects_ids
-
-    def get_image(self, obj: Project):
-        """Get main image or first image from image list"""
-        media_url = self.context.get("media_url", "").rstrip("/")
-        if obj.image:
-            # If obj.image is a single image instance
-            serializer = ImagePublicSerializer(
-                obj.image, context={"media_url": media_url}
-            )
-            return serializer.data
-        elif obj.images:
-            # If obj.images is a list of images
-            first_image = obj.images[0]
-            serializer = ImagePublicSerializer(
-                first_image, context={"media_url": media_url}
-            )
-            return serializer.data
-        return None
-
-
-class ArticleMinimalSerializer(ArticleSerializer):
-    """Article serializer with minimal data"""
-
-    class Meta:
-        model = Article
-        fields = ["meta_id", "modification_date"]
 
 
 class WarningMessageMetaIdSerializer(serializers.ModelSerializer):

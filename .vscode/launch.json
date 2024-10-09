@@ -23,9 +23,9 @@
             "program": "${workspaceFolder}/manage.py",
             "args": [
                 "test",
-                // "city_pass.tests",
+                // "city_pass.tests"
+                // "construction_work.tests"
                 // "contact.tests"
-                "construction_work.tests.test_device_views.TestDeviceRegisterView.test_registration_ok"
             ],
             "django": true,
             "console": "integratedTerminal",

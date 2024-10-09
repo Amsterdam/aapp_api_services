@@ -1,4 +1,3 @@
-from math import ceil
 from urllib.parse import urlencode
 
 from rest_framework.pagination import PageNumberPagination
@@ -61,3 +60,55 @@ class CustomPagination(PageNumberPagination):
                 "_links": links,
             }
         )
+
+    def get_paginated_response_schema(self, schema):
+        return {
+            "type": "object",
+            "properties": {
+                "result": schema,
+                "page": {
+                    "type": "object",
+                    "properties": {
+                        "number": {"type": "integer", "example": 2},
+                        "size": {"type": "integer", "example": 10},
+                        "totalElements": {"type": "integer", "example": 33},
+                        "totalPages": {"type": "integer", "example": 4},
+                    },
+                },
+                "_links": {
+                    "type": "object",
+                    "properties": {
+                        "self": {
+                            "type": "object",
+                            "properties": {
+                                "href": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "example": "http://api.example.com/projects?page=2&page_size=10",
+                                }
+                            },
+                        },
+                        "next": {
+                            "type": "object",
+                            "properties": {
+                                "href": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "example": "http://api.example.com/projects?page=3&page_size=10",
+                                }
+                            },
+                        },
+                        "previous": {
+                            "type": "object",
+                            "properties": {
+                                "href": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "example": "http://api.example.com/projects?page=1&page_size=10",
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }

@@ -61,7 +61,8 @@ class ProjectListView(generics.ListAPIView):
             OpenApiParameter("lat", OpenApiTypes.STR, OpenApiParameter.QUERY),
             OpenApiParameter("lon", OpenApiTypes.STR, OpenApiParameter.QUERY),
             OpenApiParameter("address", OpenApiTypes.STR, OpenApiParameter.QUERY),
-        ]
+        ],
+        responses=ProjectExtendedSerializer,
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -208,86 +209,6 @@ class ProjectListView(generics.ListAPIView):
         )
 
 
-class ProjectDetailsView(generics.RetrieveAPIView):
-    serializer_class = ProjectExtendedWithFollowersSerializer
-
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                settings.HEADER_DEVICE_ID,
-                OpenApiTypes.STR,
-                OpenApiParameter.HEADER,
-                required=True,
-            ),
-            OpenApiParameter(
-                "id",
-                OpenApiTypes.INT,
-                OpenApiParameter.QUERY,
-                required=True,
-                description="Project id",
-            ),
-        ]
-    )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-
-    def get_queryset(self):
-        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
-        if not device_id:
-            raise MissingDeviceIdHeader
-
-        project_id = self.request.query_params.get("id")
-        if not project_id:
-            raise ParseError("Missing project id")
-
-        queryset = Project.objects.filter(pk=project_id, active=True)
-        if not queryset.exists():
-            raise NotFound("No record found")
-
-        return queryset
-
-    def get_object(self):
-        queryset = self.get_queryset()
-        obj = queryset.first()
-        return obj
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-
-        article_max_age = self.request.query_params.get(
-            settings.ARTICLE_MAX_AGE_PARAM, settings.DEFAULT_ARTICLE_MAX_AGE
-        )
-        try:
-            article_max_age = int(article_max_age)
-        except ValueError:
-            raise InvalidArticleMaxAgeParam
-
-        lat = self.request.query_params.get("lat")
-        lon = self.request.query_params.get("lon")
-        address = self.request.query_params.get("address")
-        if address and (not lat or not lon):
-            lat, lon = geocode_address(address)
-
-        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
-        device = Device.objects.filter(device_id=device_id).first()
-        followed_projects_ids = (
-            list(device.followed_projects.values_list("pk", flat=True))
-            if device
-            else []
-        )
-
-        context.update(
-            {
-                "lat": lat,
-                "lon": lon,
-                "article_max_age": article_max_age,
-                "followed_projects_ids": followed_projects_ids,
-                "media_url": get_media_url(self.request),
-            }
-        )
-        return context
-
-
 class ProjectSearchView(generics.ListAPIView):
     serializer_class = ProjectExtendedSerializer
     pagination_class = CustomPagination
@@ -306,7 +227,8 @@ class ProjectSearchView(generics.ListAPIView):
             OpenApiParameter("lat", OpenApiTypes.STR, OpenApiParameter.QUERY),
             OpenApiParameter("lon", OpenApiTypes.STR, OpenApiParameter.QUERY),
             OpenApiParameter("address", OpenApiTypes.STR, OpenApiParameter.QUERY),
-        ]
+        ],
+        responses=ProjectExtendedSerializer,
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -398,6 +320,86 @@ class ProjectSearchView(generics.ListAPIView):
             fields = return_fields.split(",")
             kwargs["fields"] = fields
         return serializer_class(*args, **kwargs)
+
+
+class ProjectDetailsView(generics.RetrieveAPIView):
+    serializer_class = ProjectExtendedWithFollowersSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                settings.HEADER_DEVICE_ID,
+                OpenApiTypes.STR,
+                OpenApiParameter.HEADER,
+                required=True,
+            ),
+            OpenApiParameter(
+                "id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                required=True,
+                description="Project id",
+            ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
+        if not device_id:
+            raise MissingDeviceIdHeader
+
+        project_id = self.request.query_params.get("id")
+        if not project_id:
+            raise ParseError("Missing project id")
+
+        queryset = Project.objects.filter(pk=project_id, active=True)
+        if not queryset.exists():
+            raise NotFound("No record found")
+
+        return queryset
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        obj = queryset.first()
+        return obj
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+
+        article_max_age = self.request.query_params.get(
+            settings.ARTICLE_MAX_AGE_PARAM, settings.DEFAULT_ARTICLE_MAX_AGE
+        )
+        try:
+            article_max_age = int(article_max_age)
+        except ValueError:
+            raise InvalidArticleMaxAgeParam
+
+        lat = self.request.query_params.get("lat")
+        lon = self.request.query_params.get("lon")
+        address = self.request.query_params.get("address")
+        if address and (not lat or not lon):
+            lat, lon = geocode_address(address)
+
+        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
+        device = Device.objects.filter(device_id=device_id).first()
+        followed_projects_ids = (
+            list(device.followed_projects.values_list("pk", flat=True))
+            if device
+            else []
+        )
+
+        context.update(
+            {
+                "lat": lat,
+                "lon": lon,
+                "article_max_age": article_max_age,
+                "followed_projects_ids": followed_projects_ids,
+                "media_url": get_media_url(self.request),
+            }
+        )
+        return context
 
 
 class FollowProjectView(views.APIView):
