@@ -6,13 +6,16 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from construction_work.models import (
-    Article,
-    Device,
     Image,
     Notification,
     Project,
     ProjectManager,
     WarningMessage,
+)
+from construction_work.serializers.article_serializers import (
+    ArticleMinimalSerializer,
+    ArticleSerializer,
+    RecentArticlesIdDateSerializer,
 )
 from construction_work.utils.geo_utils import calculate_distance
 from construction_work.utils.model_utils import create_id_dict
@@ -51,72 +54,6 @@ class IproxImageSerializer(serializers.Serializer):
     sources = IproxImageSourceSerializer(many=True)
     aspectRatio = serializers.FloatField()
     alternativeText = serializers.CharField()
-
-
-class IproxSectionBodySerializer(serializers.Serializer):
-    title = serializers.CharField()
-    body = serializers.CharField()
-
-
-class IproxSectionsSerializer(serializers.Serializer):
-    what = IproxSectionBodySerializer()
-    when = IproxSectionBodySerializer()
-    where = IproxSectionBodySerializer()
-    work = IproxSectionBodySerializer()
-    contact = IproxSectionBodySerializer()
-
-
-class IproxContactsSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-    email = serializers.CharField()
-    phone = serializers.CharField()
-    position = serializers.CharField()
-
-
-class IproxTimelineItemSerializer(serializers.Serializer):
-    body = serializers.CharField()
-    items = serializers.ListField()
-    title = serializers.CharField()
-    collapsed = serializers.BooleanField()
-
-
-class IproxTimelineSerializer(serializers.Serializer):
-    title = serializers.CharField()
-    intro = serializers.CharField()
-    items = IproxTimelineItemSerializer(many=True)
-
-
-class MetaIdSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    type = serializers.CharField()
-
-
-class RecentArticlesIdDateSerializer(serializers.Serializer):
-    meta_id = MetaIdSerializer()
-    modification_date = serializers.DateTimeField()
-
-
-class ArticleSerializer(serializers.ModelSerializer):
-    """Article serializer"""
-
-    meta_id = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Article
-        exclude = ["type"]
-
-    @extend_schema_field(MetaIdSerializer)
-    def get_meta_id(self, obj: Article) -> dict:
-        return create_id_dict(obj)
-
-
-class ArticleMinimalSerializer(ArticleSerializer):
-    """Article serializer with minimal data"""
-
-    class Meta:
-        model = Article
-        fields = ["meta_id", "modification_date"]
 
 
 class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
@@ -371,31 +308,8 @@ class ProjectFollowedArticlesSerializer(serializers.ModelSerializer):
         return all_items
 
 
-class ArticleListSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Article model in list view.
-    """
-
-    meta_id = serializers.SerializerMethodField()
-    images = serializers.SerializerMethodField()
-    publication_date = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Article
-        fields = ["meta_id", "images", "title", "publication_date"]
-
-    def get_meta_id(self, obj):
-        return create_id_dict(obj)
-
-    def get_images(self, obj):
-        images = []
-        if obj.image:
-            images.append(obj.image)
-        return images
-
-    # NOTE: somehow, somewhere the datetime object is translated to string
-    def get_publication_date(self, obj):
-        return obj.publication_date
+class FollowProjectPostDeleteSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
 
 
 class WarningMessageListSerializer(serializers.ModelSerializer):
@@ -428,22 +342,3 @@ class WarningMessageListSerializer(serializers.ModelSerializer):
     # NOTE: somehow, somewhere the datetime object is translated to string
     def get_publication_date(self, obj):
         return obj.publication_date
-
-
-class FollowProjectPostDeleteSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-
-
-class DeviceRegistrationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Device
-        fields = "__all__"
-        extra_kwargs = {
-            "os": {"required": True, "allow_blank": False},
-            "firebase_token": {"required": True, "allow_blank": False},
-        }
-
-
-class DeviceRegisterPostSwaggerSerializer(serializers.Serializer):
-    firebase_token = serializers.CharField()
-    os = serializers.CharField()

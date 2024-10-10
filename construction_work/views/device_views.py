@@ -1,15 +1,17 @@
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
 from rest_framework.response import Response
 
 from construction_work.exceptions import MissingDeviceIdHeader
 from construction_work.models import Device
-from construction_work.serializers import (
+from construction_work.serializers.device_serializers import (
     DeviceRegisterPostSwaggerSerializer,
     DeviceRegistrationSerializer,
 )
+from core.exceptions import InputDataException
+from core.views.extend_schema import extend_schema
 
 
 class DeviceRegisterView(generics.GenericAPIView):
@@ -18,7 +20,9 @@ class DeviceRegisterView(generics.GenericAPIView):
     """
 
     @extend_schema(
-        parameters=[
+        request=DeviceRegisterPostSwaggerSerializer,
+        success_response=DeviceRegistrationSerializer,
+        additional_params=[
             OpenApiParameter(
                 settings.HEADER_DEVICE_ID,
                 OpenApiTypes.STR,
@@ -26,7 +30,7 @@ class DeviceRegisterView(generics.GenericAPIView):
                 required=True,
             )
         ],
-        request=DeviceRegisterPostSwaggerSerializer,
+        exceptions=[MissingDeviceIdHeader, InputDataException],
     )
     def post(self, request, *args, **kwargs):
         """
@@ -52,14 +56,16 @@ class DeviceRegisterView(generics.GenericAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        parameters=[
+        additional_params=[
             OpenApiParameter(
                 settings.HEADER_DEVICE_ID,
                 OpenApiTypes.STR,
                 OpenApiParameter.HEADER,
                 required=True,
             )
-        ]
+        ],
+        exceptions=[MissingDeviceIdHeader],
+        success_response={200: None},
     )
     def delete(self, request, *args, **kwargs):
         """

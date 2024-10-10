@@ -4,11 +4,10 @@ from rest_framework.response import Response
 
 from core.views.extend_schema import extend_schema
 from modules.exceptions import (
-    InputDataException,
     ModuleNotFoundException,
     ModuleProtectedException,
-    NoInputDataException,
 )
+from core.exceptions import InputDataException, NoInputDataException
 from modules.models import Module
 from modules.serializers.module_serializers import (
     ModuleSerializer,

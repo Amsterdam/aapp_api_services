@@ -3,18 +3,6 @@ from rest_framework import status
 from core.exceptions import BaseApiException
 
 
-class InputDataException(BaseApiException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "Incorrect request body"
-    default_code = "INPUT_DATA"
-
-
-class NoInputDataException(BaseApiException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "No input data"
-    default_code = "NO_INPUT_DATA"
-
-
 class IncorrectVersionException(BaseApiException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Incorrect request version formatting"

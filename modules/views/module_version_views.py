@@ -6,11 +6,11 @@ from rest_framework.response import Response
 from core.views.extend_schema import extend_schema
 from modules.exceptions import (
     IncorrectVersionException,
-    InputDataException,
     ModuleAlreadyExistsException,
     ModuleNotFoundException,
     ModuleProtectedException,
 )
+from core.exceptions import InputDataException
 from modules.models import Module, ModuleVersion, ReleaseModuleStatus
 from modules.serializers.module_version_serializers import (
     ModuleVersionSerializer,
