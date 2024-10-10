@@ -27,5 +27,3 @@ def get_swagger_paths(base_path):
             ),
         ]
     return urlpatterns
-
-# I am adding a comment to test the validation pipeline trigger

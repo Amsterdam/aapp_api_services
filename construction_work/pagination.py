@@ -22,11 +22,6 @@ class CustomPagination(PageNumberPagination):
         query_params = request.query_params.copy()
         query_params.pop(self.page_query_param, None)
         query_params.pop(self.page_size_query_param, None)
-        base_query_string = urlencode(query_params, doseq=True)
-        if base_query_string:
-            base_url = f"{base_uri}?{base_query_string}"
-        else:
-            base_url = base_uri
 
         # Construct pagination links
         links = {"self": {"href": request.build_absolute_uri()}}

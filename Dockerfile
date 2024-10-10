@@ -63,3 +63,10 @@ COPY contact /app/contact
 FROM dev AS dev-contact
 COPY contact /app/contact
 CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
+
+FROM core AS app-construction_work
+COPY construction_work /app/construction_work
+
+FROM dev AS dev-construction_work
+COPY construction_work /app/construction_work
+CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]

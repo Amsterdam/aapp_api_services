@@ -14,6 +14,10 @@ drf-yasg
 pkcs7
 djangorestframework-simplejwt
 
+# Construction work
+geopy
+pillow
+
 # Azure
 azure-ad-verify-token
 azure-identity

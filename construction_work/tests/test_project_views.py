@@ -1231,7 +1231,7 @@ class TestArticleListView(BaseTestProjectView):
                     "id": warning_image.pk,
                     "sources": [
                         {
-                            "uri": f"http://testserver/construction-work/media/images/image.jpg",
+                            "uri": "http://testserver/construction-work/media/images/image.jpg",
                             "width": image.width,
                             "height": image.height,
                         }

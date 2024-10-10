@@ -25,6 +25,6 @@ def calculate_distance(
     except ValueError as e:
         logging.error(f"Invalid coordinates provided: {e}")
         return None
-    except Exception as e:
+    except Exception:
         logging.exception("An unexpected error occurred while calculating distance.")
         return None

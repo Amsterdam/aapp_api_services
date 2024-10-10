@@ -6,7 +6,7 @@
 #
 asgiref==3.8.1
     # via django
-black==24.8.0
+black==24.10.0
     # via -r requirements/requirements_dev.in
 click==8.1.7
     # via black
@@ -20,7 +20,7 @@ iniconfig==2.0.0
     # via pytest
 isort==5.13.2
     # via -r requirements/requirements_dev.in
-model-bakery==1.19.5
+model-bakery==1.20.0
     # via -r requirements/requirements_dev.in
 mypy-extensions==1.0.0
     # via black
@@ -40,7 +40,7 @@ pytest-django==4.9.0
     # via -r requirements/requirements_dev.in
 python-dateutil==2.9.0.post0
     # via freezegun
-ruff==0.6.7
+ruff==0.6.9
     # via -r requirements/requirements_dev.in
 six==1.16.0
     # via python-dateutil
