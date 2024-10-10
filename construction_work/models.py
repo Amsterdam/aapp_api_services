@@ -40,9 +40,10 @@ class Project(models.Model):
     class Meta:
         ordering = ["title"]
 
-    def save(self, *args, **kwargs):
-        self.active = True
-        self.last_seen = timezone.now()
+    def save(self, update_active=True, *args, **kwargs):
+        if update_active:
+            self.active = True
+            self.last_seen = timezone.now()
         super(Project, self).save(*args, **kwargs)
 
     def deactivate(self, *args, **kwargs):
