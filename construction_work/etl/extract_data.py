@@ -1,16 +1,16 @@
 """ Fetch all project and article data from IPROX via its API
     See README.md for more info regarding the IPROX API
 """
+
 import asyncio
 from datetime import datetime
+from logging import getLogger
 from urllib.parse import urljoin
 
 import aiohttp
-from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
-
 from django.conf import settings
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-from logging import getLogger
 logger = getLogger(__name__)
 
 
@@ -38,8 +38,12 @@ def get_iprox_items_data(url, item_ids):
     urls = [urljoin(url, str(item)) for item in item_ids]
     logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
     upsert_item_data = asyncio.run(async_fetch(urls))
-    upsert_item_data = [item for item in upsert_item_data if item]  # Take out None values
-    logger.info(f"Finished async fetch. Successfully collected {len(upsert_item_data)} items")
+    upsert_item_data = [
+        item for item in upsert_item_data if item
+    ]  # Take out None values
+    logger.info(
+        f"Finished async fetch. Successfully collected {len(upsert_item_data)} items"
+    )
     return upsert_item_data
 
 
@@ -57,21 +61,23 @@ async def fetch_with_sem(sem, session, url):
     async with sem:
         try:
             return await fetch(session, url)
-        except:
+        except Exception:
             logger.error(f"Failed to fetch {url}")
 
 
 @retry(
     stop=stop_after_attempt(3),  # Retry up to 3 times
-    wait=wait_fixed(2),          # Wait 2 seconds between retries
-    retry=retry_if_exception_type(FetchError)  # Retry only on custom exceptions
+    wait=wait_fixed(2),  # Wait 2 seconds between retries
+    retry=retry_if_exception_type(FetchError),  # Retry only on custom exceptions
 )
 async def fetch(session, url):
     """Fetch a single URL with a retry mechanism."""
     try:
         async with session.get(url) as response:
             if response.status != 200:
-                raise FetchError(f"Failed to fetch {url}, status code: {response.status}")
+                raise FetchError(
+                    f"Failed to fetch {url}, status code: {response.status}"
+                )
             return await response.json()
     except aiohttp.ClientError as e:
         raise FetchError(f"Failed to fetch {url}: {str(e)}") from e

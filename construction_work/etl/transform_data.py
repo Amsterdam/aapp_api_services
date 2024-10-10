@@ -35,6 +35,7 @@ def _images(images_set):
         images_set[idx] = _image(images_set[idx])
     return images_set
 
+
 def _image(image_set):
     """Rename url to uri"""
     for idx, _ in enumerate(image_set.get("sources", [])):

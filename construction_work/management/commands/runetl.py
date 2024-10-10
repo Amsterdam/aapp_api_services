@@ -1,11 +1,11 @@
+from urllib.parse import urljoin
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from construction_work.etl.update_data import extract_transform_load, garbage_collector
-import construction_work.etl.transform_data as transform
 import construction_work.etl.load_data as load
-
-from urllib.parse import urljoin
+import construction_work.etl.transform_data as transform
+from construction_work.etl.update_data import extract_transform_load, garbage_collector
 
 IPROX_URL = urljoin(settings.IPROX_SERVER, "appidt/construction-work/")
 IPROX_PROJECTS_URL = urljoin(IPROX_URL, "projects/")
@@ -13,7 +13,8 @@ IPROX_ARTICLES_URL = urljoin(IPROX_URL, "articles/")
 
 
 class Command(BaseCommand):
-    """ Upsert construction work projects and articles """
+    """Upsert construction work projects and articles"""
+
     help = "Upsert construction work projects and articles"
 
     def handle(self, *args, **kwargs):
