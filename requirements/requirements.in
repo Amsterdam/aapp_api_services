@@ -18,6 +18,10 @@ djangorestframework-simplejwt
 geopy
 pillow
 
+# Construction work ETL
+aiohttp
+tenacity
+
 # Azure
 azure-ad-verify-token
 azure-identity

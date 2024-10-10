@@ -69,3 +69,6 @@ clean:                              ## Stop Docker container and remove orphans
 
 settings:                           ## Print Django settings
 	$(run) test python manage.py diffsettings
+
+run_etl:
+	$(manage) runetl

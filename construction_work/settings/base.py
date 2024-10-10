@@ -25,3 +25,7 @@ DEFAULT_WARNING_MESSAGE_EMAIL = "redactieprojecten@amsterdam.nl"
 ADDRESS_TO_GPS_API = "https://api.data.amsterdam.nl/atlas/search/adres/?q="
 
 MIN_SEARCH_QUERY_LENGTH = 3
+
+IPROX_SERVER = os.getenv("IPROX_SERVER", "https://www.amsterdam.nl/")
+EPOCH = "1970-01-01 00:00:00"
+DATE_FORMAT_IPROX = "%Y-%m-%dT%H:%M:%S%z"
