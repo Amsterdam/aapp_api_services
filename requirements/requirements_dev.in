@@ -5,3 +5,7 @@ model-bakery
 black
 isort
 ruff
+
+# Construction Work ETL async tests
+aioresponses
+pytest-asyncio

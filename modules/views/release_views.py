@@ -5,13 +5,13 @@ from rest_framework.response import Response
 
 from core.views.extend_schema import extend_schema
 from modules.exceptions import (
-    InputDataException,
     ModuleAlreadyExistsException,
     ModuleNotFoundException,
     ReleaseAlreadyExistsException,
     ReleaseNotFoundException,
     ReleaseProtectedException,
 )
+from core.exceptions import InputDataException
 from modules.generic_functions.get_versions import VersionQueries
 from modules.models import AppRelease, ModuleVersion, ReleaseModuleStatus
 from modules.serializers.release_serializers import (

@@ -1,20 +1,46 @@
-# Introduction
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project.
+# How To
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+## Initialize a new API app
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests.
+Start a new app using this Django command:
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better.
+    django-admin startapp our_new_app
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+Add settings file structure to new app:
+
+    settings
+    ├── __init__.py
+    ├── base.py
+    ├── local.py
+    └── otap.py
+
+`base.py` should contain at least:
+
+    from core.settings.base import *  # isort:skip
+
+    INSTALLED_APPS += [
+        "our_new_app.apps.OurNewAppConfig",
+    ]
+
+    ROOT_URLCONF = "our_new_app.urls"
+
+    SPECTACULAR_SETTINGS["TITLE"] = "New App API"
+
+    LOGGING["loggers"]["our_new_app"] = {
+        "level": "DEBUG",
+        "handlers": ["console"],
+        "propagate": False,
+    }
+
+`local.py` should contain at least:
+
+    from .base import *  # isort:skip
+    from core.settings.local import *  # isort:skip
+
+
+`otap.py` should contain at least:
+
+    from .base import *  # isort:skip
+    from core.settings.otap import *  # isort:skip
+
+    setup_opentelemetry(service_name="our-new-app")

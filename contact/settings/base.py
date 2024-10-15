@@ -12,11 +12,7 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
 
 SPECTACULAR_SETTINGS["TITLE"] = "Contact API"
 
-LOGGING["loggers"]["contact"] = {
-    "level": "DEBUG",
-    "handlers": ["console"],
-    "propagate": False,
-}
+LOGGING["loggers"]["contact"] = default_app_logging
 
 CSV_DIR = os.getenv("CSV_DIR")
 
