@@ -95,7 +95,7 @@ class TestProjectListView(BaseTestProjectView):
 
     def setUp(self):
         super().setUp()
-        self.api_url = reverse("construction-work-project-list")
+        self.api_url = reverse("construction-work:project-list")
 
     def tearDown(self) -> None:
         Project.objects.all().delete()
@@ -354,7 +354,7 @@ class TestProjectDetailsView(BaseTestProjectView):
     def setUp(self):
         super().setUp()
 
-        self.api_url = reverse("construction-work-get-project")
+        self.api_url = reverse("construction-work:get-project")
 
     def test_missing_device_id(self):
         """Test call without device id"""
@@ -412,7 +412,7 @@ class TestProjectSearchView(BaseTestProjectView):
 
     def setUp(self):
         super().setUp()
-        self.api_url = reverse("construction-work-project-search")
+        self.api_url = reverse("construction-work:project-search")
 
         for project in mock_data.projects:
             Project.objects.create(**project)
@@ -535,7 +535,7 @@ class TestFollowProjectView(BaseTestProjectView):
     def setUp(self):
         super().setUp()
 
-        self.api_url = reverse("construction-work-follow-project")
+        self.api_url = reverse("construction-work:follow-project")
 
         for project in mock_data.projects:
             Project.objects.create(**project)
@@ -661,7 +661,7 @@ class TestFollowedProjectsArticlesView(BaseTestProjectView):
     def setUp(self):
         super().setUp()
 
-        self.api_url = reverse("followed-projects-with-articles")
+        self.api_url = reverse("construction-work:followed-projects-with-articles")
 
     def test_missing_device_id(self):
         """Test missing device id"""
@@ -849,7 +849,7 @@ class TestWarningMessageDetailView(BaseTestProjectView):
     def setUp(self) -> None:
         super().setUp()
 
-        self.api_url = reverse("construction-work-get-warning")
+        self.api_url = reverse("construction-work:get-warning")
 
         for project in mock_data.projects:
             Project.objects.create(**project)
@@ -948,7 +948,7 @@ class TestArticleListView(BaseTestProjectView):
     def setUp(self):
         """Setup test db"""
         super().setUp()
-        self.api_url = reverse("construction-work-article-list")
+        self.api_url = reverse("construction-work:article-list")
 
         projects = []
         for project_data in mock_data.projects:

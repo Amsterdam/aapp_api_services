@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 
 import construction_work.views.article_view
 from construction_work.views import device_views, project_views
@@ -6,54 +6,62 @@ from core.urls import get_swagger_paths
 
 BASE_PATH = "construction-work/api/v1"
 
-urlpatterns = [
+_urlpatterns = [
     # projects
     path(
-        BASE_PATH + "/projects",
+        "projects",
         project_views.ProjectListView.as_view(),
-        name="construction-work-project-list",
+        name="project-list",
     ),
     path(
-        BASE_PATH + "/projects/details",
+        "projects/details",
         project_views.ProjectDetailsView.as_view(),
-        name="construction-work-get-project",
+        name="get-project",
     ),
     path(
-        BASE_PATH + "/projects/search",
+        "projects/search",
         project_views.ProjectSearchView.as_view(),
-        name="construction-work-project-search",
+        name="project-search",
     ),
     path(
-        BASE_PATH + "/projects/follow",
+        "projects/follow",
         project_views.FollowProjectView.as_view(),
-        name="construction-work-follow-project",
+        name="follow-project",
     ),
     path(
-        BASE_PATH + "/projects/followed/articles",
+        "projects/followed/articles",
         project_views.FollowedProjectsArticlesView.as_view(),
         name="followed-projects-with-articles",
     ),
     path(
-        BASE_PATH + "/projects/news",
+        "projects/news",
         project_views.ArticleDetailView.as_view(),
-        name="construction-work-get-article",
+        name="get-article",
     ),
     path(
-        BASE_PATH + "/projects/warning",
+        "projects/warning",
         project_views.WarningMessageDetailView.as_view(),
-        name="construction-work-get-warning",
+        name="get-warning",
     ),
     # articles
     path(
-        BASE_PATH + "/articles",
+        "articles",
         construction_work.views.article_view.ArticleListView.as_view(),
-        name="construction-work-article-list",
+        name="article-list",
     ),
     # devices
     path(
-        BASE_PATH + "/device/register",
+        "device/register",
         device_views.DeviceRegisterView.as_view(),
-        name="construction-work-register-device",
+        name="register-device",
     ),
 ]
+
+urlpatterns = [
+    path(
+        BASE_PATH,
+        include((_urlpatterns, "construction_work"), namespace="construction-work"),
+    ),
+]
+
 urlpatterns += get_swagger_paths(BASE_PATH)

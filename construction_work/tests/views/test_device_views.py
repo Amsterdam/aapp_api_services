@@ -8,7 +8,7 @@ from core.tests import BaseAPITestCase
 class TestDeviceRegisterView(BaseAPITestCase):
     def setUp(self):
         super().setUp()
-        self.api_url = reverse("construction-work-register-device")
+        self.api_url = reverse("construction-work:register-device")
 
     def test_registration_ok(self):
         """Test registering a new device"""

@@ -13,7 +13,7 @@ class TestArticleDetailView(BaseAPITestCase):
     def setUp(self):
         """Setup test db"""
         super().setUp()
-        self.api_url = reverse("construction-work-get-article")
+        self.api_url = reverse("construction-work:get-article")
 
         projects = []
         for project_data in mock_data.projects:
