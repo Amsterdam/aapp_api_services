@@ -24,7 +24,7 @@
             "args": [
                 "test",
                 // "city_pass.tests"
-                // "construction_work.tests"
+                "construction_work.tests.test_authentication.TestEntraIDAuthentication.test_publisher_cannot_access_editor_view"
                 // "contact.tests"
             ],
             "django": true,
