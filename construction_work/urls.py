@@ -57,12 +57,12 @@ _urlpatterns = [
     ),
     # manage
     path(
-        "manage/projects",
+        "manage/publishers",
         manage_views.PublisherListCreateView.as_view(),
         name="manage-publisher-list-create",
     ),
     path(
-        "manage/projects/<int:pk>",
+        "manage/publishers/<int:pk>",
         manage_views.PublisherDetailView.as_view(),
         name="manage-publisher-read-update-delete",
     ),
