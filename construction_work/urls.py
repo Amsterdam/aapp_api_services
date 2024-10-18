@@ -81,6 +81,11 @@ _urlpatterns = [
         manage_views.ProjectListForManageView.as_view(),
         name="manage-project-list",
     ),
+    path(
+        "manage/projects/<int:pk>",
+        manage_views.ProjectDetailsForManageView.as_view(),
+        name="manage-project-details",
+    ),
 ]
 
 urlpatterns = [

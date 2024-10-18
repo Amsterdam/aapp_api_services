@@ -471,7 +471,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
         self.assertEqual(result.status_code, 404)
 
 
-class TestManageProjectListView(BaseTestManageView):
+class TestProjectListForManageView(BaseTestManageView):
     def setUp(self) -> None:
         super().setUp()
 
@@ -549,3 +549,49 @@ class TestManageProjectListView(BaseTestManageView):
 
         result = self.client.get(self.api_url, headers=self.api_headers)
         self.assertEqual(result.status_code, 403)
+
+
+class TestProjectDetailsForManageView(BaseTestManageView):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.api_url_str = "construction-work:manage-project-details"
+
+    def test_get_project_details_success(self):
+        self.update_headers_with_editor_data()
+
+        project = Project.objects.create(**mock_data.projects[0])
+
+        manager1 = ProjectManager.objects.create(email="editor@amsterdam.nl")
+        manager1.projects.add(project)
+        manager1.save()
+
+        manager2 = ProjectManager.objects.create(email="publisher@amsterdam.nl")
+        manager2.projects.add(project)
+        manager2.save()
+
+        warning_data = mock_data.warning_message.copy()
+        warning_data["project_id"] = project.pk
+
+        warning1 = WarningMessage.objects.create(**warning_data)
+        warning2 = WarningMessage.objects.create(**warning_data)
+
+        result = self.client.get(
+            reverse(self.api_url_str, kwargs={"pk": project.pk}),
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 200)
+
+        manager_emails = [x.get("email") for x in result.data.get("publishers")]
+        self.assertListEqual(manager_emails, [manager1.email, manager2.email])
+
+        warning_ids = [x.get("id") for x in result.data.get("warnings")]
+        self.assertListEqual(warning_ids, [warning1.pk, warning2.pk])
+
+    def test_project_id_does_not_exist(self):
+        self.update_headers_with_editor_data()
+
+        result = self.client.get(
+            reverse(self.api_url_str, kwargs={"pk": 9999}), headers=self.api_headers
+        )
+        self.assertEqual(result.status_code, 404)

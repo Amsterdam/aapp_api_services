@@ -19,6 +19,7 @@ from construction_work.permissions import (
     IsPublisherOnlyReadOwnProjects,
 )
 from construction_work.serializers.project_serializers import (
+    ProjectDetailsForManagementSerializer,
     ProjectListForManageSerializer,
     ProjectManagerCreateResultSerializer,
     ProjectManagerNameEmailSerializer,
@@ -28,6 +29,8 @@ from construction_work.utils.auth_utils import (
     get_manager_type,
     get_project_manager_from_token,
 )
+from construction_work.utils.query_utils import get_warningimage_width_height_prefetch
+from construction_work.utils.url_utils import get_media_url
 
 
 class PublisherListCreateView(generics.ListCreateAPIView):
@@ -166,17 +169,37 @@ class ProjectListForManageView(generics.ListAPIView):
             Prefetch(
                 "warningmessage_set",
                 queryset=WarningMessage.objects.prefetch_related(
-                    Prefetch(
-                        "warningimage_set",
-                        queryset=WarningImage.objects.prefetch_related(
-                            Prefetch(
-                                "images", queryset=Image.objects.only("width", "height")
-                            )
-                        ),
-                    )
+                    get_warningimage_width_height_prefetch()
                 ),
             ),
             Prefetch("article_set"),
         )
 
         return projects
+
+
+class ProjectDetailsForManageView(generics.RetrieveAPIView):
+    """
+    Retrieve project details for management.
+    """
+
+    serializer_class = ProjectDetailsForManagementSerializer
+    authentication_classes = [EntraIDAuthentication]
+    permission_classes = [IsPublisherOnlyReadOwnProjects]
+
+    def get_queryset(self):
+        return Project.objects.filter(active=True)
+
+    def get_object(self):
+        obj = super().get_object()
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            {
+                "media_url": get_media_url(self.request),
+            }
+        )
+        return context

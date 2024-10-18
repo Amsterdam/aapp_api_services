@@ -19,6 +19,10 @@ from construction_work.serializers.article_serializers import (
 )
 from construction_work.utils.geo_utils import calculate_distance
 from construction_work.utils.model_utils import create_id_dict
+from construction_work.utils.query_utils import (
+    get_recent_articles_of_project,
+    get_recent_warnings_of_project,
+)
 
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
@@ -206,6 +210,47 @@ class ProjectListForManageSerializer(ProjectExtendedWithFollowersSerializer):
     def get_article_count(self, obj: Project) -> int:
         article_count = obj.article_set.count()
         return article_count
+
+
+class ProjectDetailsForManagementSerializer(ProjectListForManageSerializer):
+    """Project details for warning management"""
+
+    warnings = serializers.SerializerMethodField()
+    articles = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project
+        fields = [
+            "id",
+            "foreign_id",
+            "url",
+            "title",
+            "subtitle",
+            "creation_date",
+            "image",
+            "publishers",
+            "warnings",
+            "articles",
+            "followers",
+        ]
+
+    def get_warnings(self, obj: Project) -> list:
+        media_url = self.context.get("media_url")
+        article_max_age = self.context.get("article_max_age", 10000)
+        warnings = get_recent_warnings_of_project(
+            obj,
+            article_max_age,
+            WarningMessageForManagementSerializer,
+            context={"media_url": media_url},
+        )
+        return warnings
+
+    def get_articles(self, obj: Project) -> list:
+        article_max_age = self.context.get("article_max_age", 10000)
+        articles = get_recent_articles_of_project(
+            obj, article_max_age, ArticleSerializer
+        )
+        return articles
 
 
 class ProjectManagerNameEmailSerializer(serializers.ModelSerializer):
