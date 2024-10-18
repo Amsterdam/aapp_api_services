@@ -6,13 +6,7 @@ from rest_framework.response import Response
 
 from construction_work.authentication import EntraIDAuthentication
 from construction_work.exceptions import MissingProjectIdBody
-from construction_work.models import (
-    Image,
-    Project,
-    ProjectManager,
-    WarningImage,
-    WarningMessage,
-)
+from construction_work.models import Project, ProjectManager, WarningMessage
 from construction_work.permissions import (
     IsEditor,
     IsPublisherOnlyReadOwnData,
