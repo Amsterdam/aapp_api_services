@@ -469,3 +469,83 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 404)
+
+
+class TestManageProjectListView(BaseTestManageView):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.api_url = reverse("construction-work:manage-project-list")
+
+    def assert_get_all_projects(self):
+        project1 = Project.objects.create(**mock_data.projects[0])
+        project2 = Project.objects.create(**mock_data.projects[1])
+
+        result = self.client.get(self.api_url, headers=self.api_headers)
+        self.assertEqual(result.status_code, 200)
+
+        project_ids = [x["id"] for x in result.data]
+        self.assertListEqual(project_ids, [project1.pk, project2.pk])
+
+    def test_get_all_projects_as_editor(self):
+        self.update_headers_with_editor_data()
+
+        self.assert_get_all_projects()
+
+    def test_get_all_projects_as_editor_publisher(self):
+        self.update_headers_with_editor_publisher_data()
+
+        self.assert_get_all_projects()
+
+    def test_project_article_warning_count(self):
+        self.update_headers_with_editor_data()
+
+        project = Project.objects.create(**mock_data.projects[0])
+
+        warning_data = mock_data.warning_message.copy()
+        warning_data["project_id"] = project.pk
+
+        warnings = [
+            WarningMessage.objects.create(**warning_data),
+            WarningMessage.objects.create(**warning_data),
+            WarningMessage.objects.create(**warning_data),
+        ]
+
+        for article_data in mock_data.articles:
+            article = Article.objects.create(**article_data)
+            article.projects.add(project)
+
+        result = self.client.get(self.api_url, headers=self.api_headers)
+        self.assertEqual(result.status_code, 200)
+
+        relevant_project = next(
+            (d for d in result.data if d.get("id") == project.pk), None
+        )
+
+        self.assertEqual(relevant_project["warning_count"], len(warnings))
+        self.assertEqual(relevant_project["article_count"], len(mock_data.articles))
+
+    def test_get_projects_related_to_publisher(self):
+        publisher = ProjectManager.objects.create(email="publisher@amsterdam.nl")
+
+        project_related = Project.objects.create(**mock_data.projects[0])
+
+        publisher.projects.add(project_related)
+        publisher.save()
+
+        project_unrelated = Project.objects.create(**mock_data.projects[1])
+
+        self.update_headers_with_publisher_data(publisher.email)
+
+        result = self.client.get(self.api_url, headers=self.api_headers)
+        self.assertEqual(result.status_code, 200)
+
+        project_ids = [x["id"] for x in result.data]
+        self.assertListEqual(project_ids, [project_related.pk])
+        self.assertTrue(project_unrelated.pk not in project_ids)
+
+    def test_get_projects_with_unkown_publisher(self):
+        self.update_headers_with_publisher_data("foobar@amsterdam.nl")
+
+        result = self.client.get(self.api_url, headers=self.api_headers)
+        self.assertEqual(result.status_code, 403)

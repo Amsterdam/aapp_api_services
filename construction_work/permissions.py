@@ -18,7 +18,7 @@ class IsEditor(BasePermission):
 
 class IsPublisher(BasePermission):
     """
-    Allows access only to users with editor role.
+    Allows access to editors and publishers.
     """
 
     def has_permission(self, request, view):
@@ -26,9 +26,10 @@ class IsPublisher(BasePermission):
         return manager_type.is_publisher() or manager_type.is_editor()
 
 
-class IsPublisherOrReadOwnData(IsPublisher):
+class IsPublisherOnlyReadOwnData(IsPublisher):
     """
-    Allows access to editors and publishers. Publishers can only read their own data.
+    Allows access to editors and publishers.
+    Publishers can only read their own data.
     """
 
     def has_object_permission(self, request, view, obj):
@@ -39,5 +40,25 @@ class IsPublisherOrReadOwnData(IsPublisher):
             # Publishers can only access their own data
             self_publisher = get_project_manager_from_token(request.auth)
             return obj == self_publisher
+        else:
+            return False  # Unauthorized
+
+
+class IsPublisherOnlyReadOwnProjects(IsPublisher):
+    """
+    Allows access to editors and publishers.
+    Publishers can only read their own data.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        manager_type = get_manager_type(request.auth)
+        if manager_type.is_editor():
+            return True  # Editors have full access
+        elif manager_type.is_publisher():
+            # Publishers can only access their own projects
+            publisher = get_project_manager_from_token(request.auth)
+            if not publisher:
+                return False
+            return publisher.projects.filter(pk=obj.pk).exists()
         else:
             return False  # Unauthorized

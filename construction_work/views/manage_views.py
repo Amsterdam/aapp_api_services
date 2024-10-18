@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
@@ -5,9 +6,20 @@ from rest_framework.response import Response
 
 from construction_work.authentication import EntraIDAuthentication
 from construction_work.exceptions import MissingProjectIdBody
-from construction_work.models import Project, ProjectManager
-from construction_work.permissions import IsEditor, IsPublisherOrReadOwnData
+from construction_work.models import (
+    Image,
+    Project,
+    ProjectManager,
+    WarningImage,
+    WarningMessage,
+)
+from construction_work.permissions import (
+    IsEditor,
+    IsPublisherOnlyReadOwnData,
+    IsPublisherOnlyReadOwnProjects,
+)
 from construction_work.serializers.project_serializers import (
+    ProjectListForManageSerializer,
     ProjectManagerCreateResultSerializer,
     ProjectManagerNameEmailSerializer,
     ProjectManagerWithProjectsSerializer,
@@ -60,7 +72,7 @@ class PublisherDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_permissions(self):
         if self.request.method == "GET":
-            permission_classes = [IsPublisherOrReadOwnData]
+            permission_classes = [IsPublisherOnlyReadOwnData]
         elif self.request.method in ["PATCH", "DELETE"]:
             permission_classes = [IsEditor]
         else:
@@ -121,3 +133,50 @@ class PublisherUnassignProjectView(generics.GenericAPIView):
         return Response(
             data="Publisher unassigned from project", status=status.HTTP_200_OK
         )
+
+
+class ProjectListForManageView(generics.ListAPIView):
+    """
+    Return list of all projects, limit to own projects if request is from publisher.
+    """
+
+    serializer_class = ProjectListForManageSerializer
+    authentication_classes = [EntraIDAuthentication]
+    permission_classes = [IsPublisherOnlyReadOwnProjects]
+
+    def get_queryset(self):
+        token_data = self.request.auth
+        manager_type = get_manager_type(token_data)
+
+        if manager_type.is_editor():
+            projects = Project.objects.all()
+        elif manager_type.is_publisher():
+            publisher = get_project_manager_from_token(token_data)
+            if not publisher:
+                raise PermissionDenied("Publisher not known")
+            projects = publisher.projects.all()
+        else:
+            projects = Project.objects.none()
+
+        projects = projects.prefetch_related(
+            Prefetch(
+                "projectmanager_set",
+                queryset=ProjectManager.objects.only("name", "email"),
+            ),
+            Prefetch(
+                "warningmessage_set",
+                queryset=WarningMessage.objects.prefetch_related(
+                    Prefetch(
+                        "warningimage_set",
+                        queryset=WarningImage.objects.prefetch_related(
+                            Prefetch(
+                                "images", queryset=Image.objects.only("width", "height")
+                            )
+                        ),
+                    )
+                ),
+            ),
+            Prefetch("article_set"),
+        )
+
+        return projects

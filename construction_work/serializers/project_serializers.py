@@ -175,6 +175,39 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
         return all_items
 
 
+class ProjectListForManageSerializer(ProjectExtendedWithFollowersSerializer):
+    publishers = serializers.SerializerMethodField()
+    warning_count = serializers.SerializerMethodField()
+    article_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project
+        fields = [
+            "id",
+            "foreign_id",
+            "title",
+            "subtitle",
+            "image",
+            "creation_date",
+            "publishers",
+            "warning_count",
+            "article_count",
+        ]
+
+    def get_publishers(self, obj: Project) -> list:
+        managers = obj.projectmanager_set.all()
+        serializer = ProjectManagerNameEmailSerializer(instance=managers, many=True)
+        return serializer.data
+
+    def get_warning_count(self, obj: Project) -> int:
+        warning_count = obj.warningmessage_set.count()
+        return warning_count
+
+    def get_article_count(self, obj: Project) -> int:
+        article_count = obj.article_set.count()
+        return article_count
+
+
 class ProjectManagerNameEmailSerializer(serializers.ModelSerializer):
     """Project manager serializer"""
 

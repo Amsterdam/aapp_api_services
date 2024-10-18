@@ -76,6 +76,11 @@ _urlpatterns = [
         manage_views.PublisherUnassignProjectView.as_view(),
         name="manage-publisher-unassign-project",
     ),
+    path(
+        "manage/projects",
+        manage_views.ProjectListForManageView.as_view(),
+        name="manage-project-list",
+    ),
 ]
 
 urlpatterns = [
