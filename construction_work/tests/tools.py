@@ -26,30 +26,6 @@ def apply_signing_key_patch(test_case: TestCase) -> None:
     return patcher
 
 
-def apply_firebase_patches(test_case: TestCase) -> list:
-    settings.FIREBASE_CREDENTIALS = "{}"
-
-    cert_patcher = patch(
-        "construction_work.push_notifications.send_notification.credentials.Certificate"
-    )
-    test_case.mock_cert = cert_patcher.start()
-    test_case.mock_cert.return_value = None
-
-    init_patcher = patch(
-        "construction_work.push_notifications.send_notification.firebase_admin.initialize_app"
-    )
-    test_case.mock_init = init_patcher.start()
-    test_case.mock_init.return_value = None
-
-    app_patcher = patch(
-        "construction_work.push_notifications.send_notification.firebase_admin.get_app"
-    )
-    test_case.mock_app = app_patcher.start()
-    test_case.mock_app.return_value = None
-
-    return cert_patcher, init_patcher, app_patcher
-
-
 def create_jwt_token(
     groups: list[str] = [],
     scope="Modules.Edit",

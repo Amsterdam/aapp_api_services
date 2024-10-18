@@ -1,10 +1,10 @@
 from django.urls import include, path
 
 import construction_work.views.article_view
-from construction_work.views import device_views, project_views
+from construction_work.views import device_views, manage_views, project_views
 from core.urls import get_swagger_paths
 
-BASE_PATH = "construction-work/api/v1"
+BASE_PATH = "construction-work/api/v1/"
 
 _urlpatterns = [
     # projects
@@ -54,6 +54,17 @@ _urlpatterns = [
         "device/register",
         device_views.DeviceRegisterView.as_view(),
         name="register-device",
+    ),
+    # manage
+    path(
+        "manage/projects",
+        manage_views.PublisherListCreateView.as_view(),
+        name="manage-publisher-list-create",
+    ),
+    path(
+        "manage/projects/<int:pk>",
+        manage_views.PublisherDetailView.as_view(),
+        name="manage-publisher-read-update-delete",
     ),
 ]
 

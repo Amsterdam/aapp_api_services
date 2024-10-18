@@ -183,6 +183,27 @@ class ProjectManagerNameEmailSerializer(serializers.ModelSerializer):
         fields = ["name", "email"]
 
 
+class ProjectManagerCreateResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectManager
+        fields = ["id", "name", "email"]
+
+
+class ProjectManagerWithProjectsSerializer(serializers.ModelSerializer):
+    """Project managers serializer"""
+
+    projects = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectManager
+        fields = "__all__"
+
+    def get_projects(self, obj: ProjectManager) -> list:
+        """Get projects"""
+        project_ids = [project.id for project in obj.projects.all()]
+        return project_ids
+
+
 class ImagePublicSerializer(serializers.ModelSerializer):
     """Image public serializer"""
 
