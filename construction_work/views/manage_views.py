@@ -1,9 +1,11 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from construction_work.authentication import EntraIDAuthentication
-from construction_work.models import ProjectManager
+from construction_work.exceptions import MissingProjectIdBody
+from construction_work.models import Project, ProjectManager
 from construction_work.permissions import IsEditor, IsPublisherOrReadOwnData
 from construction_work.serializers.project_serializers import (
     ProjectManagerCreateResultSerializer,
@@ -83,3 +85,39 @@ class PublisherDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(data="Object removed", status=status.HTTP_200_OK)
+
+
+class PublisherAssignProjectView(generics.GenericAPIView):
+    """
+    Assign a project to a publisher.
+    """
+
+    authentication_classes = [EntraIDAuthentication]
+    permission_classes = [IsEditor]
+
+    def post(self, request, pk, *args, **kwargs):
+        publisher = get_object_or_404(ProjectManager, pk=pk)
+        project_id = request.data.get("project_id")
+        if not project_id:
+            raise MissingProjectIdBody
+
+        project = get_object_or_404(Project, pk=project_id)
+        publisher.projects.add(project)
+        return Response(data="Publisher assigned to project", status=status.HTTP_200_OK)
+
+
+class PublisherUnassignProjectView(generics.GenericAPIView):
+    """
+    Unassign a project from a publisher.
+    """
+
+    authentication_classes = [EntraIDAuthentication]
+    permission_classes = [IsEditor]
+
+    def delete(self, request, pk, project_id, *args, **kwargs):
+        publisher = get_object_or_404(ProjectManager, pk=pk)
+        project = get_object_or_404(Project, pk=project_id)
+        publisher.projects.remove(project)
+        return Response(
+            data="Publisher unassigned from project", status=status.HTTP_200_OK
+        )

@@ -24,7 +24,7 @@
             "args": [
                 "test",
                 // "city_pass.tests"
-                "construction_work.tests.views.test_manage_views.TestManagePublisherCRUDViews.test_update_publisher"
+                "construction_work.tests.views.test_manage_views.TestManagePublisherCRUDViews.test_assign_publisher_to_project"
                 // "contact.tests"
             ],
             "django": true,

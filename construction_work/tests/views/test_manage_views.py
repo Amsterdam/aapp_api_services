@@ -71,6 +71,10 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
         self.api_url_detail_str = (
             "construction-work:manage-publisher-read-update-delete"
         )
+        self.api_url_assign_str = "construction-work:manage-publisher-assign-project"
+        self.api_url_unassign_str = (
+            "construction-work:manage-publisher-unassign-project"
+        )
 
     def test_get_all_publishers(self):
         publisher1 = ProjectManager.objects.create(email="publisher1@amsterdam.nl")
@@ -360,112 +364,108 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
         )
         self.assertEqual(result.status_code, 404)
 
-    # def test_assign_publisher_to_project(self):
-    #     project = Project.objects.create(**mock_data.projects[0])
-    #     publisher = ProjectManager.objects.create(
-    #         name="foobar", email="publisher@amsterdam.nl"
-    #     )
+    def test_assign_publisher_to_project(self):
+        project = Project.objects.create(**mock_data.projects[0])
+        publisher = ProjectManager.objects.create(
+            name="foobar", email="publisher@amsterdam.nl"
+        )
 
-    #     self.update_headers_with_editor_data()
-    #     result = self.client.post(
-    #         f"{reverse(self.api_url_detail_str, args=[publisher.pk])}/projects",
-    #         data={"project_id": project.pk},
-    #         headers=self.api_headers,
-    #         content_type="application/json",
-    #     )
-    #     self.assertEqual(result.status_code, 200)
+        self.update_headers_with_editor_data()
+        result = self.client.post(
+            f"{reverse(self.api_url_assign_str, kwargs={'pk': publisher.pk})}",
+            data={"project_id": project.pk},
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 200)
 
-    #     publisher.refresh_from_db()
-    #     self.assertTrue(project in publisher.projects.all())
+        publisher.refresh_from_db()
+        self.assertTrue(project in publisher.projects.all())
 
-    # def test_assign_publisher_to_project_as_publisher(self):
-    #     self.update_headers_with_publisher_data()
-    #     result = self.client.post(
-    #         f"{self.api_url_detail_str}/9999/projects",
-    #         data={"project_id": 9999},
-    #         headers=self.api_headers,
-    #         content_type="application/json",
-    #     )
-    #     self.assertEqual(result.status_code, 403)
+    def test_assign_publisher_to_project_as_publisher(self):
+        self.update_headers_with_publisher_data()
+        result = self.client.post(
+            f"{reverse(self.api_url_assign_str, kwargs={'pk': 9999})}",
+            data={"project_id": 9999},
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 403)
 
-    # def test_test_assign_unknown_publisher_to_project(self):
-    #     project = Project.objects.create(**mock_data.projects[0])
+    def test_test_assign_unknown_publisher_to_project(self):
+        project = Project.objects.create(**mock_data.projects[0])
 
-    #     self.update_headers_with_editor_data()
-    #     result = self.client.post(
-    #         f"{self.api_url_detail_str}/9999/projects",
-    #         data={"project_id": project.pk},
-    #         headers=self.api_headers,
-    #         content_type="application/json",
-    #     )
-    #     self.assertEqual(result.status_code, 404)
+        self.update_headers_with_editor_data()
+        result = self.client.post(
+            f"{reverse(self.api_url_assign_str, kwargs={'pk': 9999})}",
+            data={"project_id": project.pk},
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 404)
 
-    # def test_test_assign_publisher_to_unknown_project(self):
-    #     publisher = ProjectManager.objects.create(
-    #         name="foobar", email="publisher@amsterdam.nl"
-    #     )
+    def test_test_assign_publisher_to_unknown_project(self):
+        publisher = ProjectManager.objects.create(
+            name="foobar", email="publisher@amsterdam.nl"
+        )
 
-    #     self.update_headers_with_editor_data()
-    #     result = self.client.post(
-    #         f"{reverse(self.api_url_detail_str, args=[publisher.pk])}/projects",
-    #         data={"project_id": 9999},
-    #         headers=self.api_headers,
-    #         content_type="application/json",
-    #     )
-    #     self.assertEqual(result.status_code, 404)
+        self.update_headers_with_editor_data()
+        result = self.client.post(
+            f"{reverse(self.api_url_assign_str, kwargs={'pk': publisher.pk})}",
+            data={"project_id": 9999},
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 404)
 
-    # def test_unassign_publisher_from_project(self):
-    #     project, publisher = self.create_project_and_publisher()
+    def test_unassign_publisher_from_project(self):
+        project, publisher = self.create_project_and_publisher()
 
-    #     self.update_headers_with_editor_data()
-    #     result = self.client.delete(
-    #         f"{reverse(self.api_url_detail_str, args=[publisher.pk])}/projects/{project.pk}",
-    #         headers=self.api_headers,
-    #     )
-    #     self.assertEqual(result.status_code, 200)
+        self.update_headers_with_editor_data()
+        result = self.client.delete(
+            f"{reverse(self.api_url_unassign_str, kwargs={'pk': publisher.pk, 'project_id': project.pk})}",
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 200)
 
-    #     publisher.refresh_from_db()
-    #     self.assertFalse(project in publisher.projects.all())
+        publisher.refresh_from_db()
+        self.assertFalse(project in publisher.projects.all())
 
-    # def test_unassign_publisher_to_project_as_publisher(self):
-    #     self.update_headers_with_publisher_data()
-    #     result = self.client.delete(
-    #         f"{self.api_url_detail_str}/9999/projects/9999",
-    #         headers=self.api_headers,
-    #     )
-    #     self.assertEqual(result.status_code, 403)
+    def test_unassign_publisher_to_project_as_publisher(self):
+        self.update_headers_with_publisher_data()
+        result = self.client.delete(
+            f"{reverse(self.api_url_unassign_str, kwargs={'pk': 9999, 'project_id': 9999})}",
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 403)
 
-    # def test_unassign_publisher_from_project_that_were_not_linked(self):
-    #     project = Project.objects.create(**mock_data.projects[0])
-    #     publisher = ProjectManager.objects.create(
-    #         name="foobar", email="publisher@amsterdam.nl"
-    #     )
-    #     self.update_headers_with_editor_data()
-    #     result = self.client.delete(
-    #         f"{reverse(self.api_url_detail_str, args=[publisher.pk])}/projects/{project.pk}",
-    #         headers=self.api_headers,
-    #     )
-    #     self.assertEqual(result.status_code, 200)
+    def test_unassign_publisher_from_project_that_were_not_linked(self):
+        project = Project.objects.create(**mock_data.projects[0])
+        publisher = ProjectManager.objects.create(
+            name="foobar", email="publisher@amsterdam.nl"
+        )
+        self.update_headers_with_editor_data()
+        result = self.client.delete(
+            f"{reverse(self.api_url_unassign_str, kwargs={'pk': publisher.pk, 'project_id': project.pk})}",
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 200)
 
-    #     publisher.refresh_from_db()
-    #     self.assertFalse(project in publisher.projects.all())
+        publisher.refresh_from_db()
+        self.assertFalse(project in publisher.projects.all())
 
-    # def test_unassign_unknown_publisher_from_project(self):
-    #     project = Project.objects.create(**mock_data.projects[0])
-    #     self.update_headers_with_editor_data()
-    #     result = self.client.delete(
-    #         f"{self.api_url_detail_str}/9999/projects/{project.pk}",
-    #         headers=self.api_headers,
-    #     )
-    #     self.assertEqual(result.status_code, 404)
+    def test_unassign_unknown_publisher_from_project(self):
+        project = Project.objects.create(**mock_data.projects[0])
+        self.update_headers_with_editor_data()
+        result = self.client.delete(
+            f"{reverse(self.api_url_unassign_str, kwargs={'pk': 9999, 'project_id': project.pk})}",
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 404)
 
-    # def test_unassign_publisher_from_unknown_project(self):
-    #     publisher = ProjectManager.objects.create(
-    #         name="foobar", email="publisher@amsterdam.nl"
-    #     )
-    #     self.update_headers_with_editor_data()
-    #     result = self.client.delete(
-    #         f"{reverse(self.api_url_detail_str, args=[publisher.pk])}/projects/9999",
-    #         headers=self.api_headers,
-    #     )
-    #     self.assertEqual(result.status_code, 404)
+    def test_unassign_publisher_from_unknown_project(self):
+        publisher = ProjectManager.objects.create(
+            name="foobar", email="publisher@amsterdam.nl"
+        )
+        self.update_headers_with_editor_data()
+        result = self.client.delete(
+            f"{reverse(self.api_url_unassign_str, kwargs={'pk': publisher.pk, 'project_id': 9999})}",
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 404)
