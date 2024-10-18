@@ -62,19 +62,10 @@ class BaseTestManageView(BaseAPITestCase):
         return project, publisher
 
 
-class TestManagePublisherCRUDViews(BaseTestManageView):
+class TestPublisherListCreateView(BaseTestManageView):
     def setUp(self) -> None:
         super().setUp()
-        self.api_url_list_create = reverse(
-            "construction-work:manage-publisher-list-create"
-        )
-        self.api_url_detail_str = (
-            "construction-work:manage-publisher-read-update-delete"
-        )
-        self.api_url_assign_str = "construction-work:manage-publisher-assign-project"
-        self.api_url_unassign_str = (
-            "construction-work:manage-publisher-unassign-project"
-        )
+        self.api_url = reverse("construction-work:manage-publisher-list-create")
 
     def test_get_all_publishers(self):
         publisher1 = ProjectManager.objects.create(email="publisher1@amsterdam.nl")
@@ -82,7 +73,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
         publisher3 = ProjectManager.objects.create(email="publisher3@amsterdam.nl")
 
         self.update_headers_with_editor_data()
-        result = self.client.get(self.api_url_list_create, headers=self.api_headers)
+        result = self.client.get(self.api_url, headers=self.api_headers)
         self.assertEqual(result.status_code, 200)
 
         res_pub_emails = [x["email"] for x in result.data]
@@ -92,8 +83,102 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
 
     def test_get_all_publishers_as_publisher(self):
         self.update_headers_with_publisher_data()
-        result = self.client.get(self.api_url_list_create, headers=self.api_headers)
+        result = self.client.get(self.api_url, headers=self.api_headers)
         self.assertEqual(result.status_code, 403)
+
+    def test_create_publisher(self):
+        publisher_data = {
+            "name": "Foobar Publisher",
+            "email": "publisher.foobar@amsterdam.nl",
+        }
+
+        self.update_headers_with_editor_data()
+        result = self.client.post(
+            self.api_url, data=publisher_data, headers=self.api_headers
+        )
+        self.assertEqual(result.status_code, 200)
+
+        new_publisher = ProjectManager.objects.filter(
+            email=publisher_data["email"]
+        ).first()
+        self.assertIsNotNone(new_publisher)
+
+    def test_create_publisher_as_publisher(self):
+        self.update_headers_with_publisher_data()
+
+        publisher_data = {
+            "name": "Foobar Publisher",
+        }
+        result = self.client.post(
+            self.api_url,
+            data=publisher_data,
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 403)
+
+        should_not_exist_publisher = ProjectManager.objects.filter(
+            name=publisher_data["name"]
+        ).first()
+        self.assertIsNone(should_not_exist_publisher)
+
+    def test_create_publisher_missing_data(self):
+        self.update_headers_with_editor_data()
+
+        publisher_data = {
+            "name": "Foobar Publisher",
+        }
+        result = self.client.post(
+            self.api_url,
+            data=publisher_data,
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 400)
+
+        should_not_exist_publisher = ProjectManager.objects.filter(
+            name=publisher_data["name"]
+        ).first()
+        self.assertIsNone(should_not_exist_publisher)
+
+        publisher_data = {
+            "email": "publisher.foobar@amsterdam.nl",
+        }
+        result = self.client.post(
+            self.api_url, data=publisher_data, headers=self.api_headers
+        )
+        self.assertEqual(result.status_code, 400)
+
+        should_not_exist_publisher = ProjectManager.objects.filter(
+            email=publisher_data["email"]
+        ).first()
+        self.assertIsNone(should_not_exist_publisher)
+
+    def test_create_publisher_non_unique_email(self):
+        email_address = "unique@amsterdam.nl"
+        ProjectManager.objects.create(name="Some Publisher", email=email_address)
+
+        publisher_data = {
+            "name": "Other Publisher",
+            "email": email_address,
+        }
+
+        self.update_headers_with_editor_data()
+        result = self.client.post(
+            self.api_url, data=publisher_data, headers=self.api_headers
+        )
+        self.assertEqual(result.status_code, 400)
+
+        publisher_count = (
+            ProjectManager.objects.filter(email=email_address).all().count()
+        )
+        self.assertEqual(publisher_count, 1)
+
+
+class TestPublisherDetailView(BaseTestManageView):
+    def setUp(self) -> None:
+        super().setUp()
+        self.api_url_str = "construction-work:manage-publisher-read-update-delete"
 
     def test_get_publisher(self):
         publisher = ProjectManager.objects.create(
@@ -103,7 +188,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
 
         self.update_headers_with_editor_data()
         result = self.client.get(
-            reverse(self.api_url_detail_str, args=[publisher.pk]),
+            reverse(self.api_url_str, args=[publisher.pk]),
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 200)
@@ -124,7 +209,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
         self.update_headers_with_publisher_data(email=publisher.email)
 
         result = self.client.get(
-            reverse(self.api_url_detail_str, args=[publisher.pk]),
+            reverse(self.api_url_str, args=[publisher.pk]),
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 200)
@@ -150,7 +235,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
 
         self.update_headers_with_publisher_data(email=publisher1.email)
         result = self.client.get(
-            reverse(self.api_url_detail_str, args=[publisher2.pk]),
+            reverse(self.api_url_str, args=[publisher2.pk]),
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 403)
@@ -169,7 +254,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
             publisher_email=editor_publisher.email
         )
         result = self.client.get(
-            reverse(self.api_url_detail_str, args=[publisher.pk]),
+            reverse(self.api_url_str, args=[publisher.pk]),
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 200)
@@ -177,97 +262,9 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
     def test_get_unknown_publisher(self):
         self.update_headers_with_editor_data()
         result = self.client.get(
-            reverse(self.api_url_detail_str, args=[9999]), headers=self.api_headers
+            reverse(self.api_url_str, args=[9999]), headers=self.api_headers
         )
         self.assertEqual(result.status_code, 404)
-
-    def test_create_publisher(self):
-        publisher_data = {
-            "name": "Foobar Publisher",
-            "email": "publisher.foobar@amsterdam.nl",
-        }
-
-        self.update_headers_with_editor_data()
-        result = self.client.post(
-            self.api_url_list_create, data=publisher_data, headers=self.api_headers
-        )
-        self.assertEqual(result.status_code, 200)
-
-        new_publisher = ProjectManager.objects.filter(
-            email=publisher_data["email"]
-        ).first()
-        self.assertIsNotNone(new_publisher)
-
-    def test_create_publisher_as_publisher(self):
-        self.update_headers_with_publisher_data()
-
-        publisher_data = {
-            "name": "Foobar Publisher",
-        }
-        result = self.client.post(
-            self.api_url_list_create,
-            data=publisher_data,
-            headers=self.api_headers,
-            content_type="application/json",
-        )
-        self.assertEqual(result.status_code, 403)
-
-        should_not_exist_publisher = ProjectManager.objects.filter(
-            name=publisher_data["name"]
-        ).first()
-        self.assertIsNone(should_not_exist_publisher)
-
-    def test_create_publisher_missing_data(self):
-        self.update_headers_with_editor_data()
-
-        publisher_data = {
-            "name": "Foobar Publisher",
-        }
-        result = self.client.post(
-            self.api_url_list_create,
-            data=publisher_data,
-            headers=self.api_headers,
-            content_type="application/json",
-        )
-        self.assertEqual(result.status_code, 400)
-
-        should_not_exist_publisher = ProjectManager.objects.filter(
-            name=publisher_data["name"]
-        ).first()
-        self.assertIsNone(should_not_exist_publisher)
-
-        publisher_data = {
-            "email": "publisher.foobar@amsterdam.nl",
-        }
-        result = self.client.post(
-            self.api_url_list_create, data=publisher_data, headers=self.api_headers
-        )
-        self.assertEqual(result.status_code, 400)
-
-        should_not_exist_publisher = ProjectManager.objects.filter(
-            email=publisher_data["email"]
-        ).first()
-        self.assertIsNone(should_not_exist_publisher)
-
-    def test_create_publisher_non_unique_email(self):
-        email_address = "unique@amsterdam.nl"
-        ProjectManager.objects.create(name="Some Publisher", email=email_address)
-
-        publisher_data = {
-            "name": "Other Publisher",
-            "email": email_address,
-        }
-
-        self.update_headers_with_editor_data()
-        result = self.client.post(
-            self.api_url_list_create, data=publisher_data, headers=self.api_headers
-        )
-        self.assertEqual(result.status_code, 400)
-
-        publisher_count = (
-            ProjectManager.objects.filter(email=email_address).all().count()
-        )
-        self.assertEqual(publisher_count, 1)
 
     def test_update_publisher(self):
         publisher = ProjectManager.objects.create(
@@ -281,7 +278,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
 
         self.update_headers_with_editor_data()
         result = self.client.patch(
-            reverse(self.api_url_detail_str, args=[publisher.pk]),
+            reverse(self.api_url_str, args=[publisher.pk]),
             data=updated_publisher_data,
             headers=self.api_headers,
         )
@@ -294,7 +291,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
     def test_update_publisher_as_publisher(self):
         self.update_headers_with_publisher_data()
         result = self.client.patch(
-            reverse(self.api_url_detail_str, args=[9999]),
+            reverse(self.api_url_str, args=[9999]),
             data={},
             headers=self.api_headers,
             content_type="application/json",
@@ -313,7 +310,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
 
         self.update_headers_with_editor_data()
         result = self.client.patch(
-            reverse(self.api_url_detail_str, args=[publisher.pk]),
+            reverse(self.api_url_str, args=[publisher.pk]),
             data=updated_publisher_data,
             headers=self.api_headers,
             content_type="application/json",
@@ -326,7 +323,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
     def test_update_publisher_that_does_not_exist(self):
         self.update_headers_with_editor_data()
         result = self.client.patch(
-            reverse(self.api_url_detail_str, args=[9999]),
+            reverse(self.api_url_str, args=[9999]),
             data={},
             headers=self.api_headers,
             content_type="application/json",
@@ -340,7 +337,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
 
         self.update_headers_with_editor_data()
         result = self.client.delete(
-            reverse(self.api_url_detail_str, args=[publisher.pk]),
+            reverse(self.api_url_str, args=[publisher.pk]),
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 200)
@@ -351,7 +348,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
     def test_remove_publisher_as_publisher(self):
         self.update_headers_with_publisher_data()
         result = self.client.delete(
-            reverse(self.api_url_detail_str, args=[9999]),
+            reverse(self.api_url_str, args=[9999]),
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 403)
@@ -359,10 +356,16 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
     def test_remove_publisher_that_does_not_exist(self):
         self.update_headers_with_editor_data()
         result = self.client.delete(
-            reverse(self.api_url_detail_str, args=[9999]),
+            reverse(self.api_url_str, args=[9999]),
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 404)
+
+
+class TestPublisherAssignProjectView(BaseTestManageView):
+    def setUp(self) -> None:
+        super().setUp()
+        self.api_url_str = "construction-work:manage-publisher-assign-project"
 
     def test_assign_publisher_to_project(self):
         project = Project.objects.create(**mock_data.projects[0])
@@ -372,7 +375,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
 
         self.update_headers_with_editor_data()
         result = self.client.post(
-            reverse(self.api_url_assign_str, kwargs={"pk": publisher.pk}),
+            reverse(self.api_url_str, kwargs={"pk": publisher.pk}),
             data={"project_id": project.pk},
             headers=self.api_headers,
         )
@@ -384,35 +387,41 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
     def test_assign_publisher_to_project_as_publisher(self):
         self.update_headers_with_publisher_data()
         result = self.client.post(
-            reverse(self.api_url_assign_str, kwargs={"pk": 9999}),
+            reverse(self.api_url_str, kwargs={"pk": 9999}),
             data={"project_id": 9999},
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 403)
 
-    def test_test_assign_unknown_publisher_to_project(self):
+    def test_assign_unknown_publisher_to_project(self):
         project = Project.objects.create(**mock_data.projects[0])
 
         self.update_headers_with_editor_data()
         result = self.client.post(
-            reverse(self.api_url_assign_str, kwargs={"pk": 9999}),
+            reverse(self.api_url_str, kwargs={"pk": 9999}),
             data={"project_id": project.pk},
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 404)
 
-    def test_test_assign_publisher_to_unknown_project(self):
+    def test_assign_publisher_to_unknown_project(self):
         publisher = ProjectManager.objects.create(
             name="foobar", email="publisher@amsterdam.nl"
         )
 
         self.update_headers_with_editor_data()
         result = self.client.post(
-            reverse(self.api_url_assign_str, kwargs={"pk": publisher.pk}),
+            reverse(self.api_url_str, kwargs={"pk": publisher.pk}),
             data={"project_id": 9999},
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 404)
+
+
+class TestPublisherUnassignProjectView(BaseTestManageView):
+    def setUp(self) -> None:
+        super().setUp()
+        self.api_url_str = "construction-work:manage-publisher-unassign-project"
 
     def test_unassign_publisher_from_project(self):
         project, publisher = self.create_project_and_publisher()
@@ -420,7 +429,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
         self.update_headers_with_editor_data()
         result = self.client.delete(
             reverse(
-                self.api_url_unassign_str,
+                self.api_url_str,
                 kwargs={"pk": publisher.pk, "project_id": project.pk},
             ),
             headers=self.api_headers,
@@ -433,7 +442,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
     def test_unassign_publisher_to_project_as_publisher(self):
         self.update_headers_with_publisher_data()
         result = self.client.delete(
-            reverse(self.api_url_unassign_str, kwargs={"pk": 9999, "project_id": 9999}),
+            reverse(self.api_url_str, kwargs={"pk": 9999, "project_id": 9999}),
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 403)
@@ -446,7 +455,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
         self.update_headers_with_editor_data()
         result = self.client.delete(
             reverse(
-                self.api_url_unassign_str,
+                self.api_url_str,
                 kwargs={"pk": publisher.pk, "project_id": project.pk},
             ),
             headers=self.api_headers,
@@ -460,9 +469,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
         project = Project.objects.create(**mock_data.projects[0])
         self.update_headers_with_editor_data()
         result = self.client.delete(
-            reverse(
-                self.api_url_unassign_str, kwargs={"pk": 9999, "project_id": project.pk}
-            ),
+            reverse(self.api_url_str, kwargs={"pk": 9999, "project_id": project.pk}),
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 404)
@@ -474,7 +481,7 @@ class TestManagePublisherCRUDViews(BaseTestManageView):
         self.update_headers_with_editor_data()
         result = self.client.delete(
             reverse(
-                self.api_url_unassign_str,
+                self.api_url_str,
                 kwargs={"pk": publisher.pk, "project_id": 9999},
             ),
             headers=self.api_headers,
