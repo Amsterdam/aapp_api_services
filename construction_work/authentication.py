@@ -1,7 +1,9 @@
+import keyword
 import logging
 
 import jwt
-from django.conf import Settings, settings
+from django.conf import settings
+from drf_spectacular.authentication import TokenScheme
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
@@ -20,12 +22,14 @@ class EntraIDAuthentication(BaseAuthentication):
     Based on the offical documenation: https://www.django-rest-framework.org/api-guide/authentication/
     """
 
+    keyword = "Bearer"
+
     def authenticate(self, request):
         bearer_token = request.headers.get("Authorization")
         if not bearer_token:
             raise AuthenticationFailed("Missing header")
 
-        if not bearer_token.startswith("Bearer "):
+        if not bearer_token.startswith(f"{self.keyword} "):
             raise AuthenticationFailed("Missing bearer token")
 
         token = bearer_token.split(" ")[1]
@@ -51,7 +55,7 @@ class EntraIDAuthentication(BaseAuthentication):
     def _get_signing_key(self, token):
         from jwt import PyJWKClient
 
-        jwks_client = PyJWKClient(Settings.ENTRA_ID_JWKS_URI)
+        jwks_client = PyJWKClient(settings.ENTRA_ID_JWKS_URI)
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         return signing_key.key
 
@@ -77,3 +81,8 @@ class EntraIDAuthentication(BaseAuthentication):
 
     def _validate_scope(self, data):
         return data.get("scp") == "Modules.Edit"
+
+
+class EntraIDAuthenticationScheme(TokenScheme):
+    target_class = "construction_work.authentication.EntraIDAuthentication"
+    name = "EntraIDAuthentication"
