@@ -1,4 +1,3 @@
-import jwt
 from django.conf import settings
 from django.test import TestCase
 from rest_framework import status
@@ -110,14 +109,12 @@ class TestEntraIDAuthentication(TestCase):
         response = TestView.as_view()(request)
         self.assertEqual(response.status_code, 403)
 
-    def test_token_decode_error(self):
+    def test_error_on_get_signing_key(self):
         """
-        Test that a token decode error results in AuthenticationFailed.
+        Test that error on get signing key results in AuthenticationFailed.
         """
         # Simulate DecodeError in _get_signing_key
-        self.mock_get_signing_key.side_effect = jwt.exceptions.DecodeError(
-            "Mocked error!"
-        )
+        self.mock_get_signing_key.side_effect = Exception("Mocked error!")
 
         class TestView(APIView):
             authentication_classes = [EntraIDAuthentication]

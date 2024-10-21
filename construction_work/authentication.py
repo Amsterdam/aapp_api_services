@@ -35,22 +35,19 @@ class EntraIDAuthentication(BaseAuthentication):
         token = bearer_token.split(" ")[1]
         try:
             signing_key = self._get_signing_key(token)
-            is_valid_token, token_data = self._validate_token_data(signing_key, token)
-            if not is_valid_token:
-                logger.warning(f"Invalid token: {token_data=}]")
-                raise AuthenticationFailed("Invalid token")
-
-            if not self._validate_scope(token_data):
-                raise PermissionDenied("Insufficient scope")
-
-            return (None, token_data)
-
-        except jwt.exceptions.DecodeError as error:
-            logger.warning(f"Error decoding token: {error}")
-            raise AuthenticationFailed("Invalid token")
         except Exception as error:
             logger.warning(f"Authentication error: {error}")
             raise AuthenticationFailed("Authentication failed")
+
+        is_valid_token, token_data = self._validate_token_data(signing_key, token)
+        if not is_valid_token:
+            logger.warning(f"Invalid token: {token_data=}]")
+            raise AuthenticationFailed("Invalid token")
+
+        if not self._validate_scope(token_data):
+            raise PermissionDenied("Insufficient scope")
+
+        return (None, token_data)
 
     def _get_signing_key(self, token):
         from jwt import PyJWKClient
