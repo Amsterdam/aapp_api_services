@@ -34,6 +34,7 @@ from construction_work.models import Article, Device, Project, WarningMessage
 from construction_work.pagination import CustomPagination
 from construction_work.serializers.article_serializers import ArticleSerializer
 from construction_work.serializers.project_serializers import (
+    FollowedProjectsArticlesResponse,
     FollowProjectPostDeleteSerializer,
     ProjectExtendedSerializer,
     ProjectExtendedWithFollowersSerializer,
@@ -509,6 +510,21 @@ class FollowedProjectsArticlesView(generics.GenericAPIView):
             ),
         ],
         exceptions=[MissingDeviceIdHeader, InvalidArticleMaxAgeParam],
+        # TODO: generate correct response example
+        # success_response=OpenApiResponse(
+        #     examples={
+        #         "1": [
+        #             {
+        #                 "meta_id": {"type": "article", "id": 1},
+        #                 "modification_date": "2023-08-21T11:07:00+02:00",
+        #             },
+        #             {
+        #                 "meta_id": {"type": "warning", "id": 2},
+        #                 "modification_date": "2023-08-23T16:28:00+02:00",
+        #             },
+        #         ],
+        #     },
+        # ),
     )
     def get(self, request, *args, **kwargs):
         device_id = request.headers.get(settings.HEADER_DEVICE_ID)
