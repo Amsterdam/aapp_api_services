@@ -24,6 +24,7 @@ passes = [
         "balanceFormatted": "€241,00",
         "passNumber": 6011013116525,
         "passNumberComplete": "6064366011013116525",
+        "securityCode": "1234",
         "transactionsKeyEncrypted": "NU-5XEzItQQkg7P17RT813RjDSQn8YH9Uj30sSRaO5lkP4zg0J2wXAYLu8s9xtj9",
     },
     {
@@ -47,6 +48,7 @@ passes = [
         "balanceFormatted": "€125,00",
         "passNumber": 6011013117242,
         "passNumberComplete": "6064366011013117242",
+        "securityCode": "1234",
         "transactionsKeyEncrypted": "a24WShplCZ7MRAVSMDyvi0kMuOUNQBsPNC8b4HePJl3iOfOPeg9oVOZ3PkpesC3c",
     },
 ]
