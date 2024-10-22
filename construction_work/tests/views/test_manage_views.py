@@ -1,9 +1,29 @@
+import base64
+import json
+from unittest.mock import patch
+
 from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 
-from construction_work.models import Article, Project, ProjectManager, WarningMessage
+from construction_work.models import (
+    Article,
+    Device,
+    Image,
+    Notification,
+    Project,
+    ProjectManager,
+    WarningImage,
+    WarningMessage,
+)
 from construction_work.tests import mock_data
-from construction_work.tests.tools import apply_signing_key_patch, create_jwt_token
+from construction_work.utils.test_utils import (
+    MockFirebaseSendMulticast,
+    apply_firebase_patches,
+    apply_signing_key_patch,
+    create_image_file,
+    create_jwt_token,
+)
 from core.tests import BaseAPITestCase
 
 
@@ -613,3 +633,312 @@ class TestProjectDetailsForManageView(BaseTestManageView):
             reverse(self.api_url_str, kwargs={"pk": 9999}), headers=self.api_headers
         )
         self.assertEqual(result.status_code, 404)
+
+
+@override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
+class TestWarningMessageDetailView(BaseTestManageView):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.applied_patches = apply_firebase_patches(cls)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        for patch in cls.applied_patches:
+            patch.stop()
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.api_url_str = "construction-work:manage-warning-read-update-delete"
+
+    @staticmethod
+    def create_image_data(image_path):
+        with open(image_path, "rb") as image_file:
+            image_data = base64.b64encode(image_file.read()).decode("utf-8")
+        return image_data
+
+    def create_warning(self, project, publisher):
+        warning_data = mock_data.warning_message.copy()
+        warning_data["project"] = project
+        warning_data["project_manager"] = publisher
+        return WarningMessage.objects.create(**warning_data)
+
+    def test_get_warning(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        warning = self.create_warning(project, publisher)
+        result = self.client.get(
+            reverse(self.api_url_str, kwargs={"pk": warning.pk}),
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 200)
+
+    def test_get_warning_with_images(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        warning = self.create_warning(project, publisher)
+        images = []
+        for image_data in mock_data.images:
+            image_data["image"] = create_image_file(
+                "./construction_work/tests/image_data/small_image.png"
+            )
+            image = Image.objects.create(**image_data)
+            images.append(image)
+
+        warning_image = WarningImage.objects.create(
+            warning=warning,
+            is_main=True,
+        )
+        warning_image.images.set(images)
+
+        result = self.client.get(
+            reverse(self.api_url_str, kwargs={"pk": warning.pk}),
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 200)
+
+        image_in_result = result.data["images"][0]
+        self.assertIsNotNone(image_in_result.get("alternativeText"))
+
+    def test_get_unknown_warning(self):
+        _, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        result = self.client.get(
+            reverse(self.api_url_str, kwargs={"pk": 9999}), headers=self.api_headers
+        )
+        self.assertEqual(result.status_code, 404)
+
+    def assert_update_warning_successfully(self, project, publisher):
+        warning = self.create_warning(project, publisher)
+        new_data = {
+            "title": "new warning title",
+            "body": "new warning body",
+            "send_push_notification": False,
+        }
+        result = self.client.patch(
+            reverse(self.api_url_str, kwargs={"pk": warning.pk}),
+            data=json.dumps(new_data),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 200)
+        # Test if values returned contain updated data
+        self.assertEqual(result.data["title"], new_data["title"])
+        self.assertEqual(result.data["body"], new_data["body"])
+
+        # Test if object was actually updated in database
+        warning.refresh_from_db()
+        self.assertEqual(warning.title, new_data["title"])
+        self.assertEqual(warning.body, new_data["body"])
+
+    def test_update_warning_title_and_body_success(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        self.assert_update_warning_successfully(project, publisher)
+
+    def test_update_unknown_warning(self):
+        _, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        result = self.client.patch(
+            reverse(self.api_url_str, kwargs={"pk": 9999}), headers=self.api_headers
+        )
+        self.assertEqual(result.status_code, 404)
+
+    def test_update_warning_unrelated_to_publisher(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        # Remove relation to project from publisher
+        publisher.projects.remove(project)
+
+        warning = self.create_warning(project, publisher)
+        new_data = {
+            "title": "new warning title",
+            "body": "new warning body",
+            "send_push_notification": False,
+        }
+        result = self.client.patch(
+            reverse(self.api_url_str, kwargs={"pk": warning.pk}),
+            data=new_data,
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 403)
+
+    def test_update_warning_by_editor(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_editor_data()
+
+        self.assert_update_warning_successfully(project, publisher)
+
+    def test_update_warning_replace_image(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_editor_data()
+
+        warning = self.create_warning(project, publisher)
+        images = []
+        for image_data in mock_data.images:
+            image_data["image"] = create_image_file(
+                "./construction_work/tests/image_data/small_image.png"
+            )
+            image = Image.objects.create(**image_data)
+            images.append(image)
+
+        original_warning_image = WarningImage.objects.create(
+            warning=warning,
+            is_main=True,
+        )
+        original_warning_image.images.set(images)
+
+        image_path = "./construction_work/tests/image_data/small_image.png"
+        image_data = self.create_image_data(image_path)
+
+        new_data = {
+            "title": warning.title,
+            "body": warning.body,
+            "image": {
+                "main": True,
+                "data": image_data,
+            },
+            "send_push_notification": False,
+        }
+
+        result = self.client.patch(
+            reverse(self.api_url_str, kwargs={"pk": warning.pk}),
+            data=json.dumps(new_data),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 200)
+
+        # Check if original warning image was removed,
+        original_warning_image = WarningImage.objects.filter(
+            pk=original_warning_image.pk
+        ).first()
+        self.assertIsNone(original_warning_image)
+        # and new image is created
+        new_warning_image = WarningImage.objects.filter(warning=warning).first()
+        self.assertIsNotNone(new_warning_image)
+        # and a warning only has a single image
+        image_count = WarningImage.objects.filter(warning=warning).all().count()
+        self.assertEqual(image_count, 1)
+
+    @patch(
+        "construction_work.services.push_notifications.messaging.send_each_for_multicast",
+    )
+    def test_update_warning_send_push_ok(self, send_multicast):
+        send_multicast.return_value = MockFirebaseSendMulticast(1)
+
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        # Add follower of project, so notification will be sent
+        device_data = mock_data.devices[0].copy()
+        new_device = Device.objects.create(**device_data)
+        new_device.followed_projects.add(project)
+
+        warning = self.create_warning(project, publisher)
+        new_data = {
+            "title": warning.title,
+            "body": warning.body,
+            "send_push_notification": True,
+        }
+        result = self.client.patch(
+            reverse(self.api_url_str, kwargs={"pk": warning.pk}),
+            data=json.dumps(new_data),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 200)
+
+        self.assertTrue(result.data.get("push_ok"))
+        self.assertIsNotNone(result.data.get("push_message"))
+        self.assertTrue(result.data.get("is_pushed"))
+
+        # Check if new notification was created
+        new_notification = Notification.objects.filter(warning=warning).first()
+        self.assertIsNotNone(new_notification)
+
+    def test_update_warning_send_notification_not_allowed(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        warning = self.create_warning(project, publisher)
+        Notification.objects.create(
+            title=warning.title,
+            body=warning.body,
+            warning=warning,
+        )
+
+        new_data = {
+            "title": warning.title,
+            "body": warning.body,
+            "send_push_notification": True,
+        }
+        result = self.client.patch(
+            reverse(self.api_url_str, kwargs={"pk": warning.pk}),
+            data=json.dumps(new_data),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 200)
+
+        self.assertTrue(result.data.get("push_ok"))
+        self.assertIsNotNone(result.data.get("push_message"))
+        self.assertTrue(result.data.get("is_pushed"))
+
+        # Check if only a single notification exists
+        all_notifications = Notification.objects.filter(warning=warning).all()
+        self.assertEqual(len(all_notifications), 1)
+
+    def assert_remove_warning_successfully(self, project, publisher):
+        warning = self.create_warning(project, publisher)
+        result = self.client.delete(
+            reverse(self.api_url_str, kwargs={"pk": warning.pk}),
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 200)
+
+        deleted_warning = WarningMessage.objects.filter(pk=warning.pk).first()
+        self.assertIsNone(deleted_warning)
+
+    def test_remove_warning_success(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        self.assert_remove_warning_successfully(project, publisher)
+
+    def test_remove_unkown_warning(self):
+        _, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        result = self.client.delete(
+            reverse(self.api_url_str, kwargs={"pk": 9999}), headers=self.api_headers
+        )
+        self.assertEqual(result.status_code, 404)
+
+    def test_remove_warning_unrelated_to_publisher(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        # Remove relation to project from publisher
+        publisher.projects.remove(project)
+
+        warning = self.create_warning(project, publisher)
+        result = self.client.delete(
+            reverse(self.api_url_str, kwargs={"pk": warning.pk}),
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 403)
+
+    def test_remove_warning_by_editor(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_editor_data()
+
+        self.assert_remove_warning_successfully(project, publisher)

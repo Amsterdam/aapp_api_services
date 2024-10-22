@@ -6,19 +6,30 @@ from rest_framework.response import Response
 
 from construction_work.authentication import EntraIDAuthentication
 from construction_work.exceptions import MissingProjectIdBody
-from construction_work.models import Project, ProjectManager, WarningMessage
+from construction_work.models import (
+    Project,
+    ProjectManager,
+    WarningImage,
+    WarningMessage,
+)
 from construction_work.permissions import (
     IsEditor,
+    IsPublisher,
     IsPublisherOnlyReadOwnData,
-    IsPublisherOnlyReadOwnProjects,
+    IsPublisherOnlyUpdateOwnWarning,
 )
 from construction_work.serializers.project_serializers import (
+    ImageCreateSerializer,
     ProjectDetailsForManagementSerializer,
     ProjectListForManageSerializer,
     ProjectManagerCreateResultSerializer,
     ProjectManagerNameEmailSerializer,
     ProjectManagerWithProjectsSerializer,
+    WarningMessageCreateUpdateSerializer,
+    WarningMessageForManagementSerializer,
+    WarningMessageWithNotificationResultSerializer,
 )
+from construction_work.services.push_notifications import trigger_push_notification
 from construction_work.utils.auth_utils import (
     get_manager_type,
     get_project_manager_from_token,
@@ -139,7 +150,7 @@ class ProjectListForManageView(generics.ListAPIView):
 
     serializer_class = ProjectListForManageSerializer
     authentication_classes = [EntraIDAuthentication]
-    permission_classes = [IsPublisherOnlyReadOwnProjects]
+    permission_classes = [IsPublisherOnlyUpdateOwnWarning]
 
     def get_queryset(self):
         token_data = self.request.auth
@@ -179,7 +190,7 @@ class ProjectDetailsForManageView(generics.RetrieveAPIView):
 
     serializer_class = ProjectDetailsForManagementSerializer
     authentication_classes = [EntraIDAuthentication]
-    permission_classes = [IsPublisherOnlyReadOwnProjects]
+    permission_classes = [IsPublisherOnlyUpdateOwnWarning]
 
     def get_queryset(self):
         return Project.objects.filter(active=True)
@@ -197,3 +208,95 @@ class ProjectDetailsForManageView(generics.RetrieveAPIView):
             }
         )
         return context
+
+
+class WarningMessageDetailView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes = [EntraIDAuthentication]
+    serializer_class = WarningMessageForManagementSerializer
+
+    def get_queryset(self):
+        # Prefetch related data
+        return WarningMessage.objects.prefetch_related(
+            get_warningimage_width_height_prefetch()
+        )
+
+    def get_object(self):
+        obj = super().get_object()
+
+        # Validate manager-project relationship
+        token_data = self.request.auth
+        manager_type = get_manager_type(token_data)
+
+        if manager_type.is_publisher():
+            manager = get_project_manager_from_token(token_data)
+            if not manager:
+                raise PermissionDenied("Publisher not known")
+            if obj.project not in manager.projects.all():
+                raise PermissionDenied("Publisher cannot access this warning")
+
+        return obj
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            permission_classes = [IsPublisher]
+        elif self.request.method in ["PATCH", "DELETE"]:
+            permission_classes = [IsPublisherOnlyUpdateOwnWarning]
+        else:
+            permission_classes = []
+        return [permission() for permission in permission_classes]
+
+    def update(self, request, *args, **kwargs):
+        warning = self.get_object()
+
+        # Update the warning message
+        serializer = WarningMessageCreateUpdateSerializer(
+            instance=warning,
+            data=request.data,
+            context={
+                "project": warning.project,
+                "project_manager": warning.project_manager,
+            },
+            partial=True,  # Allow partial updates
+        )
+        serializer.is_valid(raise_exception=True)
+        warning = serializer.save()
+
+        # Handle image data if provided
+        image_data = request.data.get("image")
+        if image_data:
+            image_serializer = ImageCreateSerializer(data=image_data)
+            image_serializer.is_valid(raise_exception=True)
+
+            # Delete existing images
+            warning.warningimage_set.all().delete()
+
+            # Save new images
+            new_image_ids = image_serializer.save()
+            warning_image = WarningImage.objects.create(
+                warning=warning,
+                is_main=image_serializer.validated_data["main"],
+            )
+            warning_image.images.set(new_image_ids)
+
+        # Handle push notification
+        send_push_notification = serializer.validated_data.get("send_push_notification")
+        push_ok = False
+        push_message = None
+        if send_push_notification:
+            push_ok, push_message = trigger_push_notification(warning)
+
+        # Return the updated warning with notification result
+        return_serializer = WarningMessageWithNotificationResultSerializer(
+            instance=warning,
+            context={
+                "push_ok": push_ok,
+                "push_message": push_message,
+                "media_url": get_media_url(request),
+            },
+        )
+        return Response(return_serializer.data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        warning = self.get_object()
+        warning.delete()
+        return Response(data="Warning message removed", status=status.HTTP_200_OK)

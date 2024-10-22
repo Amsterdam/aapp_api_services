@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from construction_work.authentication import EntraIDAuthentication
 from construction_work.permissions import IsEditor, IsPublisher
-from construction_work.tests.tools import apply_signing_key_patch, create_jwt_token
+from construction_work.utils.test_utils import apply_signing_key_patch, create_jwt_token
 
 
 class TestEntraIDAuthentication(TestCase):

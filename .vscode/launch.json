@@ -24,7 +24,7 @@
             "args": [
                 "test",
                 // "city_pass.tests"
-                "construction_work.tests.test_authentication.TestEntraIDAuthentication.test_error_on_get_signing_key"
+                "construction_work.tests.views.test_manage_views.TestWarningMessageDetailView.test_update_warning_send_push_ok"
                 // "contact.tests"
             ],
             "django": true,
