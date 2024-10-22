@@ -1,3 +1,6 @@
+import logging
+
+from django.db import transaction
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
@@ -36,6 +39,8 @@ from construction_work.utils.auth_utils import (
 )
 from construction_work.utils.query_utils import get_warningimage_width_height_prefetch
 from construction_work.utils.url_utils import get_media_url
+
+logger = logging.getLogger(__name__)
 
 
 class PublisherListCreateView(generics.ListCreateAPIView):
@@ -208,6 +213,97 @@ class ProjectDetailsForManageView(generics.RetrieveAPIView):
             }
         )
         return context
+
+
+class WarningMessageCreateView(generics.CreateAPIView):
+    """
+    Create a new warning message for a project.
+    """
+
+    authentication_classes = [EntraIDAuthentication]
+    permission_classes = [IsPublisher]
+    serializer_class = WarningMessageWithNotificationResultSerializer
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        token_data = request.auth
+        manager_type = get_manager_type(token_data)
+
+        # Determine project_manager
+        if manager_type.is_editor():
+            project_manager = ProjectManager.objects.filter(
+                email=token_data.get("upn")
+            ).first()
+            if not project_manager:
+                name_in_token = (
+                    f"{token_data.get('given_name')} {token_data.get('family_name')}"
+                )
+                project_manager = ProjectManager.objects.create(
+                    name=name_in_token,
+                    email=token_data.get("upn"),
+                )
+        else:
+            project_manager = get_project_manager_from_token(token_data)
+            if not project_manager:
+                logger.warning("Publisher not known")
+                raise PermissionDenied("Publisher not known")
+
+        # Get project by id
+        project_id = self.kwargs.get("pk")
+        project = get_object_or_404(Project, pk=project_id)
+
+        # Check if project_manager is related to project
+        if project not in project_manager.projects.all():
+            if manager_type.is_editor():
+                project_manager.projects.add(project)
+            else:
+                logger.warning("Publisher not related to project")
+                raise PermissionDenied("Publisher not related to project")
+
+        # Validate warning message data
+        create_message_serializer = WarningMessageCreateUpdateSerializer(
+            data=request.data,
+            context={
+                "project": project,
+                "project_manager": project_manager,
+            },
+        )
+        create_message_serializer.is_valid(raise_exception=True)
+        new_warning = create_message_serializer.save()
+
+        # Handle image data if provided
+        image_data = request.data.get("image")
+        if image_data:
+            image_serializer = ImageCreateSerializer(data=image_data)
+            image_serializer.is_valid(raise_exception=True)
+
+            # Create WarningImage and associate images
+            new_image_ids = image_serializer.save()
+            warning_image = WarningImage.objects.create(
+                warning=new_warning,
+                is_main=image_serializer.validated_data["main"],
+            )
+            warning_image.images.set(new_image_ids)
+
+        # Handle push notification
+        send_push_notification = create_message_serializer.validated_data.get(
+            "send_push_notification"
+        )
+        push_ok = False
+        push_message = None
+        if send_push_notification:
+            push_ok, push_message = trigger_push_notification(new_warning)
+
+        # Return the created warning with notification result
+        return_serializer = WarningMessageWithNotificationResultSerializer(
+            instance=new_warning,
+            context={
+                "push_ok": push_ok,
+                "push_message": push_message,
+                "media_url": get_media_url(request),
+            },
+        )
+        return Response(return_serializer.data, status=status.HTTP_200_OK)
 
 
 class WarningMessageDetailView(generics.RetrieveUpdateDestroyAPIView):

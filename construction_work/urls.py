@@ -87,6 +87,11 @@ _urlpatterns = [
         name="manage-project-details",
     ),
     path(
+        "manage/projects/<int:pk>/warnings",
+        manage_views.WarningMessageCreateView.as_view(),
+        name="manage-warning-create",
+    ),
+    path(
         "manage/warnings/<int:pk>",
         manage_views.WarningMessageDetailView.as_view(),
         name="manage-warning-read-update-delete",

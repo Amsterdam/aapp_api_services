@@ -636,7 +636,7 @@ class TestProjectDetailsForManageView(BaseTestManageView):
 
 
 @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
-class TestWarningMessageDetailView(BaseTestManageView):
+class TestWarningMessageCRUDBaseView(BaseTestManageView):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -648,15 +648,250 @@ class TestWarningMessageDetailView(BaseTestManageView):
         for patch in cls.applied_patches:
             patch.stop()
 
-    def setUp(self) -> None:
-        super().setUp()
-        self.api_url_str = "construction-work:manage-warning-read-update-delete"
-
     @staticmethod
     def create_image_data(image_path):
         with open(image_path, "rb") as image_file:
             image_data = base64.b64encode(image_file.read()).decode("utf-8")
         return image_data
+
+
+class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.api_url_str = "construction-work:manage-warning-create"
+
+    def test_create_warning_with_image_without_push_notification(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        image_path = "./construction_work/tests/image_data/small_image.png"
+        image_data = self.create_image_data(image_path)
+
+        request_data = {
+            "title": "title of new warning",
+            "body": "body of new warning",
+            "image": {
+                "main": True,
+                "data": image_data,
+            },
+            "send_push_notification": False,
+        }
+        result = self.client.post(
+            reverse(self.api_url_str, kwargs={"pk": project.pk}),
+            data=json.dumps(request_data),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 200)
+
+        self.assertFalse(result.data.get("push_ok"))
+        self.assertIsNone(result.data.get("push_message"))
+        self.assertFalse(result.data.get("is_pushed"))
+
+        new_warning_id = result.data.get("id")
+        new_warning = WarningMessage.objects.filter(pk=new_warning_id).first()
+        self.assertIsNotNone(new_warning)
+
+        new_warning_image = WarningImage.objects.filter(warning=new_warning).first()
+        self.assertIsNotNone(new_warning_image)
+
+        image_count = WarningImage.objects.filter(warning=new_warning).all().count()
+        self.assertEqual(image_count, 1)
+
+    def test_create_warning_without_image(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        request_data = {
+            "title": "title of new warning",
+            "body": "body of new warning",
+            "send_push_notification": False,
+        }
+        result = self.client.post(
+            reverse(self.api_url_str, kwargs={"pk": project.pk}),
+            data=json.dumps(request_data),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 200)
+
+        new_warning_id = result.data.get("id")
+        new_warning = WarningMessage.objects.filter(pk=new_warning_id).first()
+        self.assertIsNotNone(new_warning)
+
+        new_warning_image = WarningImage.objects.filter(warning=new_warning).first()
+        self.assertIsNone(new_warning_image)
+
+    def test_create_warning_as_editor(self):
+        """
+        When editor creates warning, they are automatically linked
+        as project manager to related project.
+        """
+        project_data = mock_data.projects[0].copy()
+        project = Project.objects.create(**project_data)
+
+        editor_email = "editor@amsterdam.nl"
+        editor_first_name = "Foo"
+        editor_last_name = "Bar"
+        self.update_headers_with_editor_data(
+            email=editor_email, first_name=editor_first_name, last_name=editor_last_name
+        )
+        request_data = {
+            "title": "title of new warning",
+            "body": "body of new warning",
+            "send_push_notification": False,
+        }
+
+        # Check that editor is not yet known as project manager
+        project_manager = ProjectManager.objects.filter(email=editor_email).first()
+        self.assertIsNone(project_manager)
+
+        result = self.client.post(
+            reverse(self.api_url_str, kwargs={"pk": project.pk}),
+            data=json.dumps(request_data),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 200)
+
+        # Test if warning was created
+        new_warning_id = result.data.get("id")
+        new_warning = WarningMessage.objects.filter(pk=new_warning_id).first()
+        self.assertIsNotNone(new_warning)
+
+        # Test if editor is now a project manager and linked to project
+        project_manager = ProjectManager.objects.filter(email=editor_email).first()
+        self.assertIsNotNone(project_manager)
+        self.assertEqual(
+            project_manager.name, f"{editor_first_name} {editor_last_name}"
+        )
+
+        # Test if editor is linked to project that warning was created for
+        self.assertTrue(project in project_manager.projects.all())
+
+    def test_create_warning_as_unknown_publisher(self):
+        self.update_headers_with_publisher_data("foobar@amsterdam.nl")
+        result = self.client.post(
+            reverse(self.api_url_str, kwargs={"pk": 1}),
+            data={},
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 403)
+
+    def test_create_warning_for_unknown_project(self):
+        _, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        unknown_project_id = 9999
+        result = self.client.post(
+            reverse(self.api_url_str, kwargs={"pk": unknown_project_id}),
+            data={},
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 404)
+
+    def test_publisher_not_related_to_project(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        # Decouple publisher from project
+        publisher.projects.remove(project)
+        publisher.save()
+
+        result = self.client.post(
+            reverse(self.api_url_str, kwargs={"pk": project.pk}),
+            data={},
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 403)
+
+    def test_incorrect_boolean_value(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        request_data = {
+            "title": "title of new warning",
+            "body": "body of new warning",
+            "send_push_notification": "foobar",
+        }
+        result = self.client.post(
+            reverse(self.api_url_str, kwargs={"pk": project.pk}),
+            data=request_data,
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 400)
+
+    def test_create_warning_missing_data(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        request_data = {
+            "title": "title of new warning",
+            # missing body value
+        }
+        result = self.client.post(
+            reverse(self.api_url_str, kwargs={"pk": project.pk}),
+            data=request_data,
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 400)
+
+        request_data = {
+            # missing title value
+            "body": "body of new warning",
+        }
+        result = self.client.post(
+            reverse(self.api_url_str, kwargs={"pk": project.pk}),
+            data=request_data,
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 400)
+
+    @patch(
+        "construction_work.services.push_notifications.messaging.send_each_for_multicast",
+    )
+    def test_create_warning_with_push_notification(self, send_multicast):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        request_data = {
+            "title": "title of new warning",
+            "body": "body of new warning",
+            "send_push_notification": True,
+        }
+
+        # Add follower of project, so notification will be sent
+        device_data = mock_data.devices[0].copy()
+        new_device = Device.objects.create(**device_data)
+        new_device.followed_projects.add(project)
+
+        send_multicast.return_value = MockFirebaseSendMulticast(5)
+        result = self.client.post(
+            reverse(self.api_url_str, kwargs={"pk": project.pk}),
+            data=request_data,
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 200)
+
+        self.assertTrue(result.data.get("push_ok"))
+        self.assertIsNotNone(result.data.get("push_message"))
+        self.assertTrue(result.data.get("is_pushed"))
+
+        new_warning_id = result.data.get("id")
+        new_warning = WarningMessage.objects.filter(pk=new_warning_id).first()
+        self.assertIsNotNone(new_warning)
+
+        # When push notification is successful
+        # a notification object should have been created
+        new_notification = Notification.objects.filter(warning=new_warning).first()
+        self.assertIsNotNone(new_notification)
+
+
+class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
+    def setUp(self) -> None:
+        super().setUp()
+        self.api_url_str = "construction-work:manage-warning-read-update-delete"
 
     def create_warning(self, project, publisher):
         warning_data = mock_data.warning_message.copy()
