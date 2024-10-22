@@ -29,6 +29,7 @@ class MijnAmsPassDataSerializer(serializers.Serializer):
     dateEndFormatted = serializers.CharField()
     budgets = MijnAmsPassBudgetSerializer(many=True)
     balanceFormatted = serializers.CharField()
+    securityCode = serializers.CharField(allow_null=True)
 
 
 class MijnAmsPassBudgetTransactionsSerializer(serializers.Serializer):
