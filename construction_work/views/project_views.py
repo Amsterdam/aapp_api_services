@@ -19,7 +19,7 @@ from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.response import Response
@@ -509,21 +509,24 @@ class FollowedProjectsArticlesView(generics.GenericAPIView):
             ),
         ],
         exceptions=[MissingDeviceIdHeader, InvalidArticleMaxAgeParam],
-        # TODO: generate correct response example
-        # success_response=OpenApiResponse(
-        #     examples={
-        #         "1": [
-        #             {
-        #                 "meta_id": {"type": "article", "id": 1},
-        #                 "modification_date": "2023-08-21T11:07:00+02:00",
-        #             },
-        #             {
-        #                 "meta_id": {"type": "warning", "id": 2},
-        #                 "modification_date": "2023-08-23T16:28:00+02:00",
-        #             },
-        #         ],
-        #     },
-        # ),
+        success_response=ProjectFollowedArticlesSerializer,
+        examples=[
+            OpenApiExample(
+                name="Example 1",
+                value={
+                    "1": [
+                        {
+                            "meta_id": {"type": "article", "id": 1},
+                            "modification_date": "2023-08-21T11:07:00+02:00",
+                        },
+                        {
+                            "meta_id": {"type": "warning", "id": 2},
+                            "modification_date": "2023-08-23T16:28:00+02:00",
+                        },
+                    ],
+                },
+            )
+        ],
     )
     def get(self, request, *args, **kwargs):
         device_id = request.headers.get(settings.HEADER_DEVICE_ID)
