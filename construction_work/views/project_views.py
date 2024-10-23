@@ -575,6 +575,7 @@ class ArticleDetailView(generics.RetrieveAPIView):
             ),
         ],
         exceptions=[MissingArticleIdParam, NotFound],
+        success_response=ArticleSerializer,
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -605,6 +606,7 @@ class WarningMessageDetailView(generics.RetrieveAPIView):
             ),
         ],
         exceptions=[MissingWarningMessageIdParam, NotFound],
+        success_response=WarningMessageWithImagesSerializer,
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
