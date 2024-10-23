@@ -1,3 +1,4 @@
+import base64
 from io import BytesIO
 from typing import List, Tuple
 
@@ -28,3 +29,9 @@ def scale_image(image_file) -> List[Tuple[str, BytesIO]]:
         scaled_images.append((key, img_io))
 
     return scaled_images
+
+
+def create_image_data(image_path):
+    with open(image_path, "rb") as image_file:
+        image_data = base64.b64encode(image_file.read()).decode("utf-8")
+    return image_data

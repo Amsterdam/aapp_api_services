@@ -8,17 +8,6 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
-
-def create_image_file(image_path):
-    with open(image_path, "rb") as image_file:
-        image_file = SimpleUploadedFile(
-            name="image.jpg",
-            content=image_file.read(),
-            content_type="image/jpeg",
-        )
-    return image_file
-
-
 mock_private_key = rsa.generate_private_key(
     public_exponent=65537, key_size=2048, backend=default_backend()
 )

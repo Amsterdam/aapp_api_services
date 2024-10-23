@@ -281,7 +281,6 @@ class WarningMessageCreateView(generics.CreateAPIView):
             new_image_ids = image_serializer.save()
             warning_image = WarningImage.objects.create(
                 warning=new_warning,
-                is_main=image_serializer.validated_data["main"],
             )
             warning_image.images.set(new_image_ids)
 
@@ -370,7 +369,6 @@ class WarningMessageDetailView(generics.RetrieveUpdateDestroyAPIView):
             new_image_ids = image_serializer.save()
             warning_image = WarningImage.objects.create(
                 warning=warning,
-                is_main=image_serializer.validated_data["main"],
             )
             warning_image.images.set(new_image_ids)
 

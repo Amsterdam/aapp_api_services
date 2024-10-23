@@ -1,6 +1,6 @@
-import base64
 import json
 from unittest.mock import patch
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.test import override_settings
@@ -17,6 +17,7 @@ from construction_work.models import (
     WarningMessage,
 )
 from construction_work.tests import mock_data
+from construction_work.utils.image_utils import create_image_data
 from construction_work.utils.test_utils import (
     MockFirebaseSendMulticast,
     apply_firebase_patches,
@@ -648,12 +649,6 @@ class TestWarningMessageCRUDBaseView(BaseTestManageView):
         for patch in cls.applied_patches:
             patch.stop()
 
-    @staticmethod
-    def create_image_data(image_path):
-        with open(image_path, "rb") as image_file:
-            image_data = base64.b64encode(image_file.read()).decode("utf-8")
-        return image_data
-
 
 class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
     def setUp(self) -> None:
@@ -666,7 +661,7 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         self.update_headers_with_publisher_data(publisher.email)
 
         image_path = "./construction_work/tests/image_data/small_image.png"
-        image_data = self.create_image_data(image_path)
+        image_data = create_image_data(image_path)
 
         request_data = {
             "title": "title of new warning",
@@ -698,6 +693,19 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
 
         image_count = WarningImage.objects.filter(warning=new_warning).all().count()
         self.assertEqual(image_count, 1)
+
+        get_waring_url = reverse("construction-work:get-warning")
+        query_params = {"id": new_warning_id}
+        get_url_with_params = f"{get_waring_url}?{urlencode(query_params)}"
+
+        api_keys = settings.API_KEYS.split(",")
+        get_headers = {settings.API_KEY_HEADER: api_keys[0]}
+
+        get_response = self.client.get(
+            get_url_with_params,
+            headers=get_headers,
+        )
+        self.assertEqual(get_response.status_code, 200)
 
     def test_create_warning_without_image(self):
         project, publisher = self.create_project_and_publisher()
@@ -1032,7 +1040,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         original_warning_image.images.set(images)
 
         image_path = "./construction_work/tests/image_data/small_image.png"
-        image_data = self.create_image_data(image_path)
+        image_data = create_image_data(image_path)
 
         new_data = {
             "title": warning.title,

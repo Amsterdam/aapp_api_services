@@ -560,15 +560,7 @@ class WarningMessageWithNotificationResultSerializer(
 
 class ImageCreateSerializer(serializers.Serializer):
     data = serializers.CharField(required=True)
-    main = serializers.BooleanField(required=True)
     description = serializers.CharField(required=False)
-
-    def validate_main(self, value):
-        try:
-            is_main = string_to_bool(value)
-            return is_main
-        except ValueError as e:
-            return serializers.ValidationError(str(e))
 
     def validate_data(self, value):
         try:
