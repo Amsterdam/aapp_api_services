@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from construction_work.models import Article
+from construction_work.serializers.iprox_serializer import IproxImageSerializer
 from construction_work.utils.model_utils import create_id_dict
 
 
@@ -14,6 +15,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     """Article serializer"""
 
     meta_id = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -22,6 +24,14 @@ class ArticleSerializer(serializers.ModelSerializer):
     @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj: Article) -> dict:
         return create_id_dict(obj)
+
+    @extend_schema_field(IproxImageSerializer)
+    def get_image(self, obj: Article) -> dict:
+        """
+        This method is only here to specify the serializer,
+        so the example in Swagger is generated correctly.
+        """
+        return obj.image
 
 
 class ArticleMinimalSerializer(ArticleSerializer):

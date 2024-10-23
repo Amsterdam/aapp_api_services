@@ -20,6 +20,13 @@ from construction_work.serializers.article_serializers import (
     ArticleSerializer,
     RecentArticlesIdDateSerializer,
 )
+from construction_work.serializers.iprox_serializer import (
+    IproxCoordinatesSerializer,
+    IproxImageSerializer,
+    IproxProjectContactSerializer,
+    IproxProjectSectionsSerializer,
+    IproxProjectTimelineSerializer,
+)
 from construction_work.utils import whatimage
 from construction_work.utils.bool_utils import string_to_bool
 from construction_work.utils.geo_utils import calculate_distance
@@ -53,19 +60,6 @@ class DynamicFieldsModelSerializer(serializers.ModelSerializer):
                 self.fields.pop(field_name)
 
 
-class IproxImageSourceSerializer(serializers.Serializer):
-    uri = serializers.CharField()
-    width = serializers.IntegerField()
-    height = serializers.IntegerField()
-
-
-class IproxImageSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    sources = IproxImageSourceSerializer(many=True)
-    aspectRatio = serializers.FloatField()
-    alternativeText = serializers.CharField()
-
-
 class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
     """Project list serializer"""
 
@@ -73,6 +67,13 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
     followed = serializers.SerializerMethodField()
     recent_articles = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+
+    # These fields are only used for correct OpenAPI example generation
+    sections = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
+    contacts = serializers.SerializerMethodField()
+    timeline = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -84,6 +85,11 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
             "followed",
             "meter",
             "recent_articles",
+            "sections",
+            "coordinates",
+            "contacts",
+            "timeline",
+            "images",
         ]
 
     def get_meter(self, obj: Project) -> int:
@@ -137,6 +143,46 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
         if obj.images:
             return obj.images[0]
         return {}
+
+    @extend_schema_field(IproxProjectSectionsSerializer)
+    def get_sections(self, obj):
+        """
+        This method is only here to specify the serializer,
+        so the example in Swagger is generated correctly.
+        """
+        return obj.sections
+
+    @extend_schema_field(IproxCoordinatesSerializer)
+    def get_coordinates(self, obj):
+        """
+        This method is only here to specify the serializer,
+        so the example in Swagger is generated correctly.
+        """
+        return obj.coordinates
+
+    @extend_schema_field(IproxProjectContactSerializer(many=True))
+    def get_contacts(self, obj):
+        """
+        This method is only here to specify the serializer,
+        so the example in Swagger is generated correctly.
+        """
+        return obj.contacts
+
+    @extend_schema_field(IproxProjectTimelineSerializer)
+    def get_timeline(self, obj):
+        """
+        This method is only here to specify the serializer,
+        so the example in Swagger is generated correctly.
+        """
+        return obj.timeline
+
+    @extend_schema_field(IproxImageSerializer(many=True))
+    def get_images(self, obj):
+        """
+        This method is only here to specify the serializer,
+        so the example in Swagger is generated correctly.
+        """
+        return obj.images
 
 
 class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):

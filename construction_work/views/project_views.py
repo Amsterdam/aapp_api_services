@@ -34,7 +34,6 @@ from construction_work.models import Article, Device, Project, WarningMessage
 from construction_work.pagination import CustomPagination
 from construction_work.serializers.article_serializers import ArticleSerializer
 from construction_work.serializers.project_serializers import (
-    FollowedProjectsArticlesResponse,
     FollowProjectPostDeleteSerializer,
     ProjectExtendedSerializer,
     ProjectExtendedWithFollowersSerializer,
