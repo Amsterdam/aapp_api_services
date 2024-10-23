@@ -1,7 +1,11 @@
 from django.urls import include, path
 
-import construction_work.views.article_view
-from construction_work.views import device_views, manage_views, project_views
+from construction_work.views import (
+    article_view,
+    device_views,
+    manage_views,
+    project_views,
+)
 from core.urls import get_swagger_paths
 
 BASE_PATH = "construction-work/api/v1/"
@@ -46,7 +50,7 @@ _urlpatterns = [
     # articles
     path(
         "articles",
-        construction_work.views.article_view.ArticleListView.as_view(),
+        article_view.ArticleListView.as_view(),
         name="article-list",
     ),
     # devices

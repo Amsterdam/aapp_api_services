@@ -20,6 +20,7 @@ from construction_work.serializers.article_serializers import (
     ArticleSerializer,
     RecentArticlesIdDateSerializer,
 )
+from construction_work.serializers.general_serializers import MetaIdSerializer
 from construction_work.serializers.iprox_serializer import (
     IproxCoordinatesSerializer,
     IproxImageSerializer,
@@ -289,9 +290,11 @@ class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
         model = WarningMessage
         exclude = ["project_manager"]
 
+    @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj: WarningMessage) -> dict:
         return create_id_dict(obj)
 
+    @extend_schema_field(IproxImageSerializer(many=True))
     def get_images(self, obj: WarningMessage):
         """Get images"""
         media_url = self.context.get("media_url", "")
@@ -306,11 +309,11 @@ class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
 
             first_image = warning_image.images.first()
             image = {
-                "main": warning_image.is_main,
+                "id": warning_image.pk,
                 "sources": sources,
                 "landscape": bool(first_image.width > first_image.height),
                 "alternativeText": first_image.description,
-                "aspect_ratio": first_image.aspect_ratio,
+                "aspectRatio": first_image.aspect_ratio,
             }
             images.append(image)
         return images
@@ -326,6 +329,7 @@ class WarningMessageForManagementSerializer(WarningMessageWithImagesSerializer):
         model = WarningMessage
         exclude = ["project_manager", "author_email"]
 
+    @extend_schema_field(ProjectManagerNameEmailSerializer)
     def get_publisher(self, obj: WarningMessage):
         serializer = ProjectManagerNameEmailSerializer(obj.project_manager)
         return serializer.data
@@ -420,6 +424,7 @@ class WarningMessageMetaIdSerializer(serializers.ModelSerializer):
         model = WarningMessage
         fields = "__all__"
 
+    @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj: WarningMessage) -> dict:
         return obj.get_id_dict()
 
@@ -486,6 +491,7 @@ class WarningMessageListSerializer(serializers.ModelSerializer):
         model = WarningMessage
         fields = ["meta_id", "images", "title", "publication_date"]
 
+    @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj):
         return create_id_dict(obj)
 

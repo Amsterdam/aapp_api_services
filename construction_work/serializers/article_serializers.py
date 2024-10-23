@@ -2,13 +2,9 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from construction_work.models import Article
+from construction_work.serializers.general_serializers import MetaIdSerializer
 from construction_work.serializers.iprox_serializer import IproxImageSerializer
 from construction_work.utils.model_utils import create_id_dict
-
-
-class MetaIdSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    type = serializers.CharField()
 
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -60,6 +56,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
         model = Article
         fields = ["meta_id", "images", "title", "publication_date"]
 
+    @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj):
         return create_id_dict(obj)
 
