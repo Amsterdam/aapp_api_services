@@ -10,7 +10,7 @@ RESOLUTIONS = {
     "large": (1280, 720),
 }
 
-SCALLED_IMAGE_FORMAT = "JPEG"
+SCALED_IMAGE_FORMAT = "JPEG"
 
 
 def scale_image(image_file) -> List[Tuple[str, BytesIO]]:
@@ -24,7 +24,7 @@ def scale_image(image_file) -> List[Tuple[str, BytesIO]]:
 
         img_io = BytesIO()
         pil_image_resized = pil_image_resized.convert("RGB")
-        pil_image_resized.save(img_io, format=SCALLED_IMAGE_FORMAT)
+        pil_image_resized.save(img_io, format=SCALED_IMAGE_FORMAT)
         img_io.seek(0)
         scaled_images.append((key, img_io))
 

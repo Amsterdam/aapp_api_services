@@ -3,6 +3,7 @@ import logging
 from django.db import transaction
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiExample
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -39,6 +40,7 @@ from construction_work.utils.auth_utils import (
 )
 from construction_work.utils.query_utils import get_warningimage_width_height_prefetch
 from construction_work.utils.url_utils import get_media_url
+from core.views.extend_schema import extend_schema
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +62,8 @@ class PublisherListCreateView(generics.ListCreateAPIView):
             # Use this serializer for listing project managers
             return ProjectManagerWithProjectsSerializer
 
-    def create(self, request, *args, **kwargs):
+    @extend_schema(success_response=ProjectManagerCreateResultSerializer)
+    def post(self, request, *args, **kwargs):
         """
         Create a new project manager.
         """
@@ -72,6 +75,10 @@ class PublisherListCreateView(generics.ListCreateAPIView):
         # Serialize the created project manager with a different serializer
         result_serializer = ProjectManagerCreateResultSerializer(project_manager)
         return Response(result_serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(success_response=ProjectManagerWithProjectsSerializer)
+    def get(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class PublisherDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -106,7 +113,11 @@ class PublisherDetailView(generics.RetrieveUpdateDestroyAPIView):
                     raise PermissionDenied("Publisher can only access self")
         return obj
 
-    def destroy(self, request, *args, **kwargs):
+    @extend_schema(
+        success_response=str,
+        examples=[OpenApiExample("Example 1", value="Object removed")],
+    )
+    def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(data="Object removed", status=status.HTTP_200_OK)
@@ -120,6 +131,10 @@ class PublisherAssignProjectView(generics.GenericAPIView):
     authentication_classes = [EntraIDAuthentication]
     permission_classes = [IsEditor]
 
+    @extend_schema(
+        success_response=str,
+        examples=[OpenApiExample("Example 1", value="Publisher assigned to project")],
+    )
     def post(self, request, pk, *args, **kwargs):
         publisher = get_object_or_404(ProjectManager, pk=pk)
         project_id = request.data.get("project_id")
@@ -139,6 +154,12 @@ class PublisherUnassignProjectView(generics.GenericAPIView):
     authentication_classes = [EntraIDAuthentication]
     permission_classes = [IsEditor]
 
+    @extend_schema(
+        success_response=str,
+        examples=[
+            OpenApiExample("Example 1", value="Publisher unassigned from project")
+        ],
+    )
     def delete(self, request, pk, project_id, *args, **kwargs):
         publisher = get_object_or_404(ProjectManager, pk=pk)
         project = get_object_or_404(Project, pk=project_id)
@@ -340,7 +361,8 @@ class WarningMessageDetailView(generics.RetrieveUpdateDestroyAPIView):
             permission_classes = []
         return [permission() for permission in permission_classes]
 
-    def update(self, request, *args, **kwargs):
+    @extend_schema(success_response=WarningMessageWithNotificationResultSerializer)
+    def partial_update(self, request, *args, **kwargs):
         warning = self.get_object()
 
         # Update the warning message
@@ -390,7 +412,11 @@ class WarningMessageDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
         return Response(return_serializer.data, status=status.HTTP_200_OK)
 
-    def destroy(self, request, *args, **kwargs):
+    @extend_schema(
+        success_response=str,
+        examples=[OpenApiExample("Example 1", value="Warning message removed")],
+    )
+    def delete(self, request, *args, **kwargs):
         warning = self.get_object()
         warning.delete()
         return Response(data="Warning message removed", status=status.HTTP_200_OK)

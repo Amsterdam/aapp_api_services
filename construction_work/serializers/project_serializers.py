@@ -31,7 +31,7 @@ from construction_work.serializers.iprox_serializer import (
 from construction_work.utils import whatimage
 from construction_work.utils.bool_utils import string_to_bool
 from construction_work.utils.geo_utils import calculate_distance
-from construction_work.utils.image_utils import SCALLED_IMAGE_FORMAT, scale_image
+from construction_work.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
 from construction_work.utils.model_utils import create_id_dict
 from construction_work.utils.query_utils import (
     get_recent_articles_of_project,
@@ -584,7 +584,7 @@ class ImageCreateSerializer(serializers.Serializer):
             image_obj = Image(description=description)
             image_content = ContentFile(img_io.read())
             image_obj.image.save(
-                f"{new_file_name}_{size}.{SCALLED_IMAGE_FORMAT.lower()}", image_content
+                f"{new_file_name}_{size}.{SCALED_IMAGE_FORMAT.lower()}", image_content
             )
             image_obj.save()
 

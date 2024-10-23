@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -60,6 +62,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
     def get_meta_id(self, obj):
         return create_id_dict(obj)
 
+    @extend_schema_field(IproxImageSerializer(many=True))
     def get_images(self, obj):
         images = []
         if obj.image:
@@ -67,5 +70,5 @@ class ArticleListSerializer(serializers.ModelSerializer):
         return images
 
     # NOTE: somehow, somewhere the datetime object is translated to string
-    def get_publication_date(self, obj):
+    def get_publication_date(self, obj) -> datetime:
         return obj.publication_date

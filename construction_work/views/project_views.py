@@ -426,6 +426,8 @@ class FollowProjectView(generics.GenericAPIView):
             ),
         ],
         exceptions=[MissingDeviceIdHeader, NotFound],
+        success_response=str,
+        examples=[OpenApiExample("Example 1", value="Subscription added")],
     )
     def post(self, request, *args, **kwargs):
         """
@@ -459,6 +461,8 @@ class FollowProjectView(generics.GenericAPIView):
             ),
         ],
         exceptions=[MissingDeviceIdHeader, NotFound],
+        success_response=str,
+        examples=[OpenApiExample("Example 1", value="Subscription removed")],
         description="""
         This endpoint expects a body to be present with a project id defined as 'id'.
         But OpenAPI and therefor DRF spectacular does not support request body for DELETE.
