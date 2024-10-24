@@ -22,8 +22,8 @@ from construction_work.permissions import (
     IsPublisherOnlyReadOwnData,
     IsPublisherOnlyUpdateOwnWarning,
 )
+from construction_work.serializers.image_serializer import ImageCreateSerializer
 from construction_work.serializers.project_serializers import (
-    ImageCreateSerializer,
     ProjectDetailsForManagementSerializer,
     ProjectListForManageSerializer,
     ProjectManagerCreateResultSerializer,
