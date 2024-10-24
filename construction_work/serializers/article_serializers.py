@@ -1,19 +1,19 @@
+from datetime import datetime
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from construction_work.models import Article
+from construction_work.serializers.general_serializers import MetaIdSerializer
+from construction_work.serializers.iprox_serializer import IproxImageSerializer
 from construction_work.utils.model_utils import create_id_dict
-
-
-class MetaIdSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    type = serializers.CharField()
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     """Article serializer"""
 
     meta_id = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -22,6 +22,14 @@ class ArticleSerializer(serializers.ModelSerializer):
     @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj: Article) -> dict:
         return create_id_dict(obj)
+
+    @extend_schema_field(IproxImageSerializer)
+    def get_image(self, obj: Article) -> dict:
+        """
+        This method is only here to specify the serializer,
+        so the example in Swagger is generated correctly.
+        """
+        return obj.image
 
 
 class ArticleMinimalSerializer(ArticleSerializer):
@@ -50,9 +58,11 @@ class ArticleListSerializer(serializers.ModelSerializer):
         model = Article
         fields = ["meta_id", "images", "title", "publication_date"]
 
+    @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj):
         return create_id_dict(obj)
 
+    @extend_schema_field(IproxImageSerializer(many=True))
     def get_images(self, obj):
         images = []
         if obj.image:
@@ -60,5 +70,5 @@ class ArticleListSerializer(serializers.ModelSerializer):
         return images
 
     # NOTE: somehow, somewhere the datetime object is translated to string
-    def get_publication_date(self, obj):
+    def get_publication_date(self, obj) -> datetime:
         return obj.publication_date

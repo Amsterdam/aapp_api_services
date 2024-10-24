@@ -27,4 +27,4 @@ def create_id_dict(model_instance) -> Dict[str, str]:
 def get_start_end_date_for_max_age(max_age: int):
     datetime_now = datetime.now().astimezone()
     start_date = datetime_now - timedelta(days=max_age)
-    return start_date
+    return start_date, datetime_now

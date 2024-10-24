@@ -4,7 +4,7 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from core.views.extend_schema import extend_schema
+from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 from modules.models import Module, ModuleVersion, ReleaseModuleStatus
 from modules.serializers.module_version_serializers import ModuleVersionSerializer
 from modules.views.utils import version_number_as_list

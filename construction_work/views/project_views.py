@@ -19,7 +19,7 @@ from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.response import Response
@@ -42,7 +42,7 @@ from construction_work.serializers.project_serializers import (
 )
 from construction_work.services.geocoding import geocode_address
 from construction_work.utils.url_utils import get_media_url
-from core.views.extend_schema import extend_schema
+from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 
 
 class ProjectListView(generics.ListAPIView):
@@ -426,6 +426,8 @@ class FollowProjectView(generics.GenericAPIView):
             ),
         ],
         exceptions=[MissingDeviceIdHeader, NotFound],
+        success_response=str,
+        examples=[OpenApiExample("Example 1", value="Subscription added")],
     )
     def post(self, request, *args, **kwargs):
         """
@@ -459,6 +461,8 @@ class FollowProjectView(generics.GenericAPIView):
             ),
         ],
         exceptions=[MissingDeviceIdHeader, NotFound],
+        success_response=str,
+        examples=[OpenApiExample("Example 1", value="Subscription removed")],
         description="""
         This endpoint expects a body to be present with a project id defined as 'id'.
         But OpenAPI and therefor DRF spectacular does not support request body for DELETE.
@@ -509,6 +513,24 @@ class FollowedProjectsArticlesView(generics.GenericAPIView):
             ),
         ],
         exceptions=[MissingDeviceIdHeader, InvalidArticleMaxAgeParam],
+        success_response=ProjectFollowedArticlesSerializer,
+        examples=[
+            OpenApiExample(
+                name="Example 1",
+                value={
+                    "1": [
+                        {
+                            "meta_id": {"type": "article", "id": 1},
+                            "modification_date": "2023-08-21T11:07:00+02:00",
+                        },
+                        {
+                            "meta_id": {"type": "warning", "id": 2},
+                            "modification_date": "2023-08-23T16:28:00+02:00",
+                        },
+                    ],
+                },
+            )
+        ],
     )
     def get(self, request, *args, **kwargs):
         device_id = request.headers.get(settings.HEADER_DEVICE_ID)
@@ -557,6 +579,7 @@ class ArticleDetailView(generics.RetrieveAPIView):
             ),
         ],
         exceptions=[MissingArticleIdParam, NotFound],
+        success_response=ArticleSerializer,
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -587,6 +610,7 @@ class WarningMessageDetailView(generics.RetrieveAPIView):
             ),
         ],
         exceptions=[MissingWarningMessageIdParam, NotFound],
+        success_response=WarningMessageWithImagesSerializer,
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)

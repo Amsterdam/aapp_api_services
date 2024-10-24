@@ -8,7 +8,7 @@ from city_pass import authentication, models
 from city_pass.exceptions import TokenExpiredException, TokenInvalidException
 from city_pass.serializers import session_serializers as serializers
 from city_pass.views.extend_schema import extend_schema_with_access_token
-from core.views.extend_schema import extend_schema
+from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 
 
 class SessionInitView(generics.CreateAPIView):

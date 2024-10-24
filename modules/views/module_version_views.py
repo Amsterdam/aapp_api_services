@@ -3,14 +3,14 @@ import re
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from core.views.extend_schema import extend_schema
+from core.exceptions import InputDataException
+from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 from modules.exceptions import (
     IncorrectVersionException,
     ModuleAlreadyExistsException,
     ModuleNotFoundException,
     ModuleProtectedException,
 )
-from core.exceptions import InputDataException
 from modules.models import Module, ModuleVersion, ReleaseModuleStatus
 from modules.serializers.module_version_serializers import (
     ModuleVersionSerializer,

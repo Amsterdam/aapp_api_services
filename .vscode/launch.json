@@ -24,7 +24,7 @@
             "args": [
                 "test",
                 // "city_pass.tests"
-                // "construction_work.tests"
+                "construction_work.tests.views.test_project_views.TestWarningMessageDetailView.test_get_warning_message_with_image"
                 // "contact.tests"
             ],
             "django": true,

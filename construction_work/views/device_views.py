@@ -11,7 +11,7 @@ from construction_work.serializers.device_serializers import (
     DeviceRegistrationSerializer,
 )
 from core.exceptions import InputDataException
-from core.views.extend_schema import extend_schema
+from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 
 
 class DeviceRegisterView(generics.GenericAPIView):

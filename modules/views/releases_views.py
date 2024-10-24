@@ -3,7 +3,7 @@ import logging
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from core.views.extend_schema import extend_schema
+from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 from modules.models import AppRelease
 from modules.serializers.release_serializers import AppReleaseSerializer
 from modules.views.utils import version_number_as_list

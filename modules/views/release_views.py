@@ -3,7 +3,8 @@ import logging
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
-from core.views.extend_schema import extend_schema
+from core.exceptions import InputDataException
+from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 from modules.exceptions import (
     ModuleAlreadyExistsException,
     ModuleNotFoundException,
@@ -11,7 +12,6 @@ from modules.exceptions import (
     ReleaseNotFoundException,
     ReleaseProtectedException,
 )
-from core.exceptions import InputDataException
 from modules.generic_functions.get_versions import VersionQueries
 from modules.models import AppRelease, ModuleVersion, ReleaseModuleStatus
 from modules.serializers.release_serializers import (
@@ -142,12 +142,12 @@ class ReleaseDetailView(generics.RetrieveUpdateDestroyAPIView):
         return release
 
     def get_authenticators(self):
-        if getattr(self.request, 'method', None) == "GET":
+        if getattr(self.request, "method", None) == "GET":
             return []  # Disable authentication for GET requests
         return super().get_authenticators()
 
     def get_permissions(self):
-        if getattr(self.request, 'method', None) == "GET":
+        if getattr(self.request, "method", None) == "GET":
             return [permissions.AllowAny()]  # Allow any user for GET requests
         return super().get_permissions()
 

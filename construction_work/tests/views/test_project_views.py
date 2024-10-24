@@ -21,6 +21,7 @@ from construction_work.utils.test_utils import create_image_file
 from core.tests import BaseAPITestCase
 
 
+@override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
 class BaseTestProjectView(BaseAPITestCase):
     """Abstract base class for API tests"""
 
@@ -95,7 +96,7 @@ class TestProjectListView(BaseTestProjectView):
 
     def setUp(self):
         super().setUp()
-        self.api_url = reverse("construction-work-project-list")
+        self.api_url = reverse("construction-work:project-list")
 
     def tearDown(self) -> None:
         Project.objects.all().delete()
@@ -354,7 +355,7 @@ class TestProjectDetailsView(BaseTestProjectView):
     def setUp(self):
         super().setUp()
 
-        self.api_url = reverse("construction-work-get-project")
+        self.api_url = reverse("construction-work:get-project")
 
     def test_missing_device_id(self):
         """Test call without device id"""
@@ -412,7 +413,7 @@ class TestProjectSearchView(BaseTestProjectView):
 
     def setUp(self):
         super().setUp()
-        self.api_url = reverse("construction-work-project-search")
+        self.api_url = reverse("construction-work:project-search")
 
         for project in mock_data.projects:
             Project.objects.create(**project)
@@ -535,7 +536,7 @@ class TestFollowProjectView(BaseTestProjectView):
     def setUp(self):
         super().setUp()
 
-        self.api_url = reverse("construction-work-follow-project")
+        self.api_url = reverse("construction-work:follow-project")
 
         for project in mock_data.projects:
             Project.objects.create(**project)
@@ -661,7 +662,7 @@ class TestFollowedProjectsArticlesView(BaseTestProjectView):
     def setUp(self):
         super().setUp()
 
-        self.api_url = reverse("followed-projects-with-articles")
+        self.api_url = reverse("construction-work:followed-projects-with-articles")
 
     def test_missing_device_id(self):
         """Test missing device id"""
@@ -849,7 +850,7 @@ class TestWarningMessageDetailView(BaseTestProjectView):
     def setUp(self) -> None:
         super().setUp()
 
-        self.api_url = reverse("construction-work-get-warning")
+        self.api_url = reverse("construction-work:get-warning")
 
         for project in mock_data.projects:
             Project.objects.create(**project)
@@ -910,6 +911,59 @@ class TestWarningMessageDetailView(BaseTestProjectView):
         }
         self.assertDictEqual(result.data, expected_result)
 
+    def test_get_warning_message_with_image(self):
+        data = {
+            "title": "foobar title",
+            "body": "foobar body",
+            "project_foreign_id": 2048,
+            "project_manager_email": "mock0@amsterdam.nl",
+        }
+        new_warning_message = self.create_message_from_data(data)
+
+        warning_image_data = {
+            "warning_id": new_warning_message.pk,
+            "is_main": True,
+        }
+        warning_image = WarningImage.objects.create(**warning_image_data)
+
+        image_data = mock_data.images[0].copy()
+        image_data["image"] = create_image_file(
+            "./construction_work/tests/image_data/small_image.png"
+        )
+        image = Image.objects.create(**image_data)
+        warning_image.images.add(image)
+
+        result = self.client.get(
+            f"{self.api_url}?id={new_warning_message.pk}", headers=self.api_headers
+        )
+        self.assertEqual(result.status_code, 200)
+
+        target_dt = datetime.fromisoformat(result.data["publication_date"])
+        expected_result = {
+            "id": new_warning_message.pk,
+            "images": [
+                {
+                    "id": image.pk,
+                    "sources": [{"uri": None, "width": 10, "height": 10}],
+                    "landscape": False,
+                    "alternativeText": "square image",
+                    "aspectRatio": 1.0,
+                }
+            ],
+            "title": "foobar title",
+            "body": "foobar body",
+            "project": new_warning_message.project.pk,
+            "publication_date": tt(
+                str(new_warning_message.publication_date), target_dt.tzinfo
+            ),
+            "modification_date": tt(
+                str(new_warning_message.modification_date), target_dt.tzinfo
+            ),
+            "author_email": "mock0@amsterdam.nl",
+            "meta_id": {"id": new_warning_message.pk, "type": "warning"},
+        }
+        self.assertDictEqual(result.json(), expected_result)
+
     def test_get_warning_message_inactive_project(self):
         """Tet get warning message"""
         data = {
@@ -941,14 +995,13 @@ class TestWarningMessageDetailView(BaseTestProjectView):
         self.assertEqual(result.status_code, 404)
 
 
-@override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
 class TestArticleListView(BaseTestProjectView):
     """Test multiple articles view"""
 
     def setUp(self):
         """Setup test db"""
         super().setUp()
-        self.api_url = reverse("construction-work-article-list")
+        self.api_url = reverse("construction-work:article-list")
 
         projects = []
         for project_data in mock_data.projects:

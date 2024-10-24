@@ -29,3 +29,13 @@ MIN_SEARCH_QUERY_LENGTH = 3
 IPROX_SERVER = os.getenv("IPROX_SERVER", "https://www.amsterdam.nl/")
 EPOCH = "1970-01-01 00:00:00"
 DATE_FORMAT_IPROX = "%Y-%m-%dT%H:%M:%S%z"
+
+ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
+
+ENTRA_TENANT_ID = os.getenv("TENANT_ID")
+ENTRA_CLIENT_ID = os.getenv("CLIENT_ID")
+
+EDITOR_GROUP_ID = os.getenv("EDITOR_GROUP_ID")
+PUBLISHER_GROUP_ID = os.getenv("PUBLISHER_GROUP_ID")
+
+FIREBASE_CREDENTIALS = os.getenv("FIREBASE_JSON")
