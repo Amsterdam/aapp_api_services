@@ -11,26 +11,34 @@ from core.urls import get_swagger_paths
 BASE_PATH = "construction-work/api/v1/"
 
 _urlpatterns = [
-    # projects
+    # project lists
     path(
         "projects",
         project_views.ProjectListView.as_view(),
         name="project-list",
     ),
     path(
-        "projects/details",
-        project_views.ProjectDetailsView.as_view(),
-        name="get-project",
-    ),
-    path(
         "projects/search",
         project_views.ProjectSearchView.as_view(),
         name="project-search",
     ),
+    # project details
+    path(
+        "projects/details",
+        project_views.ProjectDetailsView.as_view(),
+        name="get-project",
+    ),
+    # project actions
     path(
         "projects/follow",
         project_views.FollowProjectView.as_view(),
         name="follow-project",
+    ),
+    # news (articles & warnings)
+    path(
+        "articles",
+        article_view.ArticleListView.as_view(),
+        name="article-list",
     ),
     path(
         "projects/followed/articles",
@@ -47,19 +55,13 @@ _urlpatterns = [
         project_views.WarningMessageDetailView.as_view(),
         name="get-warning",
     ),
-    # articles
-    path(
-        "articles",
-        article_view.ArticleListView.as_view(),
-        name="article-list",
-    ),
     # devices
     path(
         "device/register",
         device_views.DeviceRegisterView.as_view(),
         name="register-device",
     ),
-    # manage
+    # manage publishers
     path(
         "manage/publishers",
         manage_views.PublisherListCreateView.as_view(),
@@ -80,6 +82,7 @@ _urlpatterns = [
         manage_views.PublisherUnassignProjectView.as_view(),
         name="manage-publisher-unassign-project",
     ),
+    # manage projects
     path(
         "manage/projects",
         manage_views.ProjectListForManageView.as_view(),
@@ -90,6 +93,7 @@ _urlpatterns = [
         manage_views.ProjectDetailsForManageView.as_view(),
         name="manage-project-details",
     ),
+    # manage warnings
     path(
         "manage/projects/<int:pk>/warnings",
         manage_views.WarningMessageCreateView.as_view(),
