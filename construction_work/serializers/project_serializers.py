@@ -415,26 +415,18 @@ class ImagePublicSerializer(serializers.ModelSerializer):
         return f"{media_url}/{obj.image.name}"
 
 
-class WarningMessageMetaIdSerializer(serializers.ModelSerializer):
+class WarningMessageMinimalSerializer(serializers.ModelSerializer):
     """Waring message serializer with meta id field"""
 
     meta_id = serializers.SerializerMethodField()
 
     class Meta:
         model = WarningMessage
-        fields = "__all__"
+        fields = ["meta_id", "modification_date"]
 
     @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj: WarningMessage) -> dict:
         return obj.get_id_dict()
-
-
-class WarningMessageMinimalSerializer(WarningMessageMetaIdSerializer):
-    """Warning message serializer with minimal data"""
-
-    class Meta:
-        model = WarningMessage
-        fields = ["meta_id", "modification_date"]
 
 
 class ProjectFollowedArticlesSerializer(serializers.ModelSerializer):
@@ -466,11 +458,6 @@ class ProjectFollowedArticlesSerializer(serializers.ModelSerializer):
         # Sort combined list by modification_date descending
         all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
         return all_items
-
-
-class FollowedProjectsArticlesResponse(serializers.Serializer):
-    id = serializers.IntegerField()
-    recent_articles = ArticleMinimalSerializer(many=True)
 
 
 class FollowProjectPostDeleteSerializer(serializers.Serializer):
