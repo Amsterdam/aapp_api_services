@@ -646,8 +646,8 @@ class TestWarningMessageCRUDBaseView(BaseTestManageView):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        for patch in cls.applied_patches:
-            patch.stop()
+        for p in cls.applied_patches:
+            p.stop()
 
 
 class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):

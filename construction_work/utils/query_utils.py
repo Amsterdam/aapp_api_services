@@ -26,7 +26,7 @@ def get_recent_warnings_of_project(
     project: Project,
     article_max_age: int,
     warning_serializer_class: Type[ModelSerializer],
-    context: dict = {},
+    context: dict = None,
 ) -> list:
     """Get articles for a single project limited to max age"""
     start_date, end_date = get_start_end_date_for_max_age(article_max_age)

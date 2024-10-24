@@ -27,7 +27,7 @@ def apply_signing_key_patch(test_case: TestCase) -> None:
 
 
 def create_jwt_token(
-    groups: list[str] = [],
+    groups: list[str] = None,
     scope="Modules.Edit",
     email: str = None,
     first_name: str = None,
