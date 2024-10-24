@@ -10,7 +10,7 @@ from construction_work.serializers.project_serializers import (
     WarningMessageListSerializer,
 )
 from construction_work.utils.url_utils import get_media_url
-from core.views.extend_schema import extend_schema
+from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 
 
 class ArticleListView(generics.GenericAPIView):

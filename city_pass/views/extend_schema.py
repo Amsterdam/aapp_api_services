@@ -7,7 +7,7 @@ from city_pass.exceptions import (
     TokenInvalidException,
     TokenNotReadyException,
 )
-from core.views.extend_schema import extend_schema
+from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 
 
 def extend_schema_with_access_token(

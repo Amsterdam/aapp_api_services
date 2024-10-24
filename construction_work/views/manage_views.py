@@ -38,14 +38,17 @@ from construction_work.utils.auth_utils import (
     get_manager_type,
     get_project_manager_from_token,
 )
+from construction_work.utils.drf_spectacular_utils import AutoExtendSchemaMixin
+from construction_work.utils.drf_spectacular_utils import (
+    extend_schema_for_entra as extend_schema,
+)
 from construction_work.utils.query_utils import get_warningimage_width_height_prefetch
 from construction_work.utils.url_utils import get_media_url
-from core.views.extend_schema import extend_schema
 
 logger = logging.getLogger(__name__)
 
 
-class PublisherListCreateView(generics.ListCreateAPIView):
+class PublisherListCreateView(AutoExtendSchemaMixin, generics.ListCreateAPIView):
     """
     API view to list all project managers or create a new one.
     """
@@ -78,10 +81,10 @@ class PublisherListCreateView(generics.ListCreateAPIView):
 
     @extend_schema(success_response=ProjectManagerWithProjectsSerializer)
     def get(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
 
-class PublisherDetailView(generics.RetrieveUpdateDestroyAPIView):
+class PublisherDetailView(AutoExtendSchemaMixin, generics.RetrieveUpdateDestroyAPIView):
     """
     API view to retrieve, update, or delete a ProjectManager (Publisher).
     """
@@ -123,7 +126,7 @@ class PublisherDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Response(data="Object removed", status=status.HTTP_200_OK)
 
 
-class PublisherAssignProjectView(generics.GenericAPIView):
+class PublisherAssignProjectView(AutoExtendSchemaMixin, generics.GenericAPIView):
     """
     Assign a project to a publisher.
     """
@@ -146,7 +149,7 @@ class PublisherAssignProjectView(generics.GenericAPIView):
         return Response(data="Publisher assigned to project", status=status.HTTP_200_OK)
 
 
-class PublisherUnassignProjectView(generics.GenericAPIView):
+class PublisherUnassignProjectView(AutoExtendSchemaMixin, generics.GenericAPIView):
     """
     Unassign a project from a publisher.
     """
@@ -169,7 +172,7 @@ class PublisherUnassignProjectView(generics.GenericAPIView):
         )
 
 
-class ProjectListForManageView(generics.ListAPIView):
+class ProjectListForManageView(AutoExtendSchemaMixin, generics.ListAPIView):
     """
     Return list of all projects, limit to own projects if request is from publisher.
     """
@@ -209,7 +212,7 @@ class ProjectListForManageView(generics.ListAPIView):
         return projects
 
 
-class ProjectDetailsForManageView(generics.RetrieveAPIView):
+class ProjectDetailsForManageView(AutoExtendSchemaMixin, generics.RetrieveAPIView):
     """
     Retrieve project details for management.
     """
@@ -236,7 +239,7 @@ class ProjectDetailsForManageView(generics.RetrieveAPIView):
         return context
 
 
-class WarningMessageCreateView(generics.CreateAPIView):
+class WarningMessageCreateView(AutoExtendSchemaMixin, generics.CreateAPIView):
     """
     Create a new warning message for a project.
     """
@@ -326,7 +329,9 @@ class WarningMessageCreateView(generics.CreateAPIView):
         return Response(return_serializer.data, status=status.HTTP_200_OK)
 
 
-class WarningMessageDetailView(generics.RetrieveUpdateDestroyAPIView):
+class WarningMessageDetailView(
+    AutoExtendSchemaMixin, generics.RetrieveUpdateDestroyAPIView
+):
     authentication_classes = [EntraIDAuthentication]
     serializer_class = WarningMessageForManagementSerializer
 

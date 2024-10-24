@@ -1,4 +1,3 @@
-import keyword
 import logging
 
 import jwt
