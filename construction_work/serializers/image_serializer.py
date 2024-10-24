@@ -9,6 +9,24 @@ from construction_work.utils import whatimage
 from construction_work.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
 
 
+class ImagePublicSerializer(serializers.ModelSerializer):
+    """Image public serializer"""
+
+    uri = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Image
+        fields = ["uri", "width", "height"]
+
+    def get_uri(self, obj: Image) -> str:
+        """Get URI"""
+        media_url: str = self.context.get("media_url", "")
+        media_url = media_url.rstrip("/")
+        if not media_url:
+            return None
+        return f"{media_url}/{obj.image.name}"
+
+
 class ImageCreateSerializer(serializers.Serializer):
     data = serializers.CharField(required=True)
     description = serializers.CharField(required=False)

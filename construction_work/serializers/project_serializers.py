@@ -6,7 +6,6 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from construction_work.models import (
-    Image,
     Notification,
     Project,
     ProjectManager,
@@ -18,6 +17,7 @@ from construction_work.serializers.article_serializers import (
     RecentArticlesIdDateSerializer,
 )
 from construction_work.serializers.general_serializers import MetaIdSerializer
+from construction_work.serializers.image_serializer import ImagePublicSerializer
 from construction_work.serializers.iprox_serializer import (
     IproxCoordinatesSerializer,
     IproxImageSerializer,
@@ -390,24 +390,6 @@ class ProjectManagerWithProjectsSerializer(serializers.ModelSerializer):
         """Get projects"""
         project_ids = [project.id for project in obj.projects.all()]
         return project_ids
-
-
-class ImagePublicSerializer(serializers.ModelSerializer):
-    """Image public serializer"""
-
-    uri = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Image
-        fields = ["uri", "width", "height"]
-
-    def get_uri(self, obj: Image) -> str:
-        """Get URI"""
-        media_url: str = self.context.get("media_url", "")
-        media_url = media_url.rstrip("/")
-        if not media_url:
-            return None
-        return f"{media_url}/{obj.image.name}"
 
 
 class WarningMessageMinimalSerializer(serializers.ModelSerializer):
