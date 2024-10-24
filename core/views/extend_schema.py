@@ -40,8 +40,10 @@ def custom_extend_schema(
     )
 
     def decorator(func):
+        """
+        Sets marker attribute to indicate the function has been decorated
+        """
         decorated_func = base_decorator(func)
-        # Set the marker attribute to indicate the function has been decorated
         setattr(decorated_func, "_schema_extended", True)
         return decorated_func
 

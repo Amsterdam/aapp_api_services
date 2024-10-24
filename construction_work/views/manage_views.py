@@ -38,8 +38,8 @@ from construction_work.utils.auth_utils import (
     get_manager_type,
     get_project_manager_from_token,
 )
-from construction_work.utils.drf_spectacular_utils import AutoExtendSchemaMixin
-from construction_work.utils.drf_spectacular_utils import (
+from construction_work.utils.openapi_utils import AutoExtendSchemaMixin
+from construction_work.utils.openapi_utils import (
     extend_schema_for_entra as extend_schema,
 )
 from construction_work.utils.query_utils import get_warningimage_width_height_prefetch
