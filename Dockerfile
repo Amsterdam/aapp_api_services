@@ -50,6 +50,7 @@ FROM dev AS dev-city_pass
 COPY city_pass /app/city_pass
 CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
 
+### Modules stages
 FROM core AS app-modules
 COPY modules /app/modules
 
@@ -57,6 +58,7 @@ FROM dev AS dev-modules
 COPY modules /app/modules
 CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
 
+### Contact stages
 FROM core AS app-contact
 COPY contact /app/contact
 
@@ -64,9 +66,18 @@ FROM dev AS dev-contact
 COPY contact /app/contact
 CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
 
+### Construction Work stages
 FROM core AS app-construction_work
 COPY construction_work /app/construction_work
 
 FROM dev AS dev-construction_work
 COPY construction_work /app/construction_work
+CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
+
+### Bridge stages
+FROM core AS app-bridge
+COPY bridge /app/bridge
+
+FROM dev AS dev-bridge
+COPY bridge /app/bridge
 CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
