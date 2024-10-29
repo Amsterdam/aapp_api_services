@@ -8,7 +8,8 @@ from construction_work.views import (
 )
 from core.urls import get_swagger_paths
 
-BASE_PATH = "construction-work/api/v1/"
+BASE_PATH = "construction-work/api/v1"
+
 
 _urlpatterns = [
     # project lists
@@ -108,8 +109,8 @@ _urlpatterns = [
 
 urlpatterns = [
     path(
-        BASE_PATH,
-        include((_urlpatterns, "construction_work"), namespace="construction-work"),
+        BASE_PATH + "/",
+        include((_urlpatterns, "construction-work"), namespace="construction-work"),
     ),
 ]
 

@@ -1,18 +1,11 @@
-from django.conf import settings
 from django.urls import path
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from city_pass.views import data_views, session_views
+from core.urls import get_swagger_paths
 
 BASE_PATH = "city-pass/api/v1"
 
 urlpatterns = [
-    # drf-spectacular
-    path(
-        BASE_PATH + "/openapi/",
-        SpectacularAPIView.as_view(authentication_classes=[], permission_classes=[]),
-        name="city-pass-openapi-schema",
-    ),
     # session
     path(
         BASE_PATH + "/session/init",
@@ -57,15 +50,4 @@ urlpatterns = [
     ),
 ]
 
-if settings.DEBUG:
-    urlpatterns += [
-        path(
-            BASE_PATH + "/apidocs",
-            SpectacularSwaggerView.as_view(
-                url_name="city-pass-openapi-schema",
-                authentication_classes=[],
-                permission_classes=[],
-            ),
-            name="city-pass-swagger-ui",
-        )
-    ]
+urlpatterns += get_swagger_paths(BASE_PATH)
