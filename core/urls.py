@@ -4,26 +4,27 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 
 def get_swagger_paths(base_path):
+    service_name = base_path.split("/")[0]
     urlpatterns = [
         path(
-            base_path + "/openapi",
+            base_path + "/openapi/",
             SpectacularAPIView.as_view(
                 authentication_classes=[], permission_classes=[]
             ),
-            name="openapi-schema",
+            name=f"{service_name}-openapi-schema",
         ),
     ]
 
     if settings.DEBUG:
         urlpatterns += [
             path(
-                base_path + "/apidocs",
+                base_path + "/apidocs/",
                 SpectacularSwaggerView.as_view(
-                    url_name="openapi-schema",
+                    url_name=f"{service_name}-openapi-schema",
                     authentication_classes=[],
                     permission_classes=[],
                 ),
-                name="swagger-ui",
+                name=f"{service_name}-swagger-ui",
             ),
         ]
     return urlpatterns
