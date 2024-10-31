@@ -1,7 +1,8 @@
-from bridge.views import WasteGuideView, AddressSearchView
 from django.conf import settings
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+from bridge.views import AddressSearchView, WasteGuideView
 
 urlpatterns = [
     # drf-spectacular
