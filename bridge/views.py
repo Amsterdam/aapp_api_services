@@ -24,10 +24,18 @@ class WasteGuideView(View):
 class AddressSearchView(View):
     def dispatch(self, request, *args, **kwargs):
         url = settings.ADDRESS_SEARCH_URL
+
+        # Since the query params are repetitive, we need to construct the list ourselves to avoid losing duplicate keys
+        params = []
+        for key, values in request.GET.lists():
+            for value in values:
+                params.append((key, value))
+
         response = requests.request(
             method=request.method,
             url=url,
-            params=request.GET,
+            params=params,
+            headers={"Referer": "app.amsterdam.nl"}
         )
         return HttpResponse(
             response.content,
