@@ -170,7 +170,7 @@ class Image(models.Model):
 class WarningImage(models.Model):
     """Warning image db model"""
 
-    warning = models.ForeignKey(WarningMessage, on_delete=models.CASCADE)
+    warning = models.ForeignKey(WarningMessage, on_delete=models.CASCADE, null=True)
     is_main = models.BooleanField(default=False)
     images = models.ManyToManyField(Image)
 

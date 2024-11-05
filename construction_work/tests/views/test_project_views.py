@@ -1,6 +1,9 @@
+import pathlib
 from datetime import datetime
+from os.path import join
 
 from django.conf import settings
+from django.core.management import call_command
 from django.db import DEFAULT_DB_ALIAS, connections
 from django.test import override_settings
 from django.urls import reverse
@@ -19,6 +22,8 @@ from construction_work.tests import mock_data
 from construction_work.utils.date_utils import translate_timezone as tt
 from construction_work.utils.test_utils import create_image_file
 from core.tests import BaseAPITestCase
+
+ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
 
 @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
@@ -849,6 +854,7 @@ class TestFollowedProjectsArticlesView(BaseTestProjectView):
 class TestWarningMessageDetailView(BaseTestProjectView):
     def setUp(self) -> None:
         super().setUp()
+        call_command("flush", verbosity=0, interactive=False)
 
         self.api_url = reverse("construction-work:get-warning")
 
@@ -927,9 +933,10 @@ class TestWarningMessageDetailView(BaseTestProjectView):
         warning_image = WarningImage.objects.create(**warning_image_data)
 
         image_data = mock_data.images[0].copy()
-        image_data["image"] = create_image_file(
-            "./construction_work/tests/image_data/small_image.png"
+        image_path = join(
+            ROOT_DIR, "construction_work/tests/image_data/small_image.png"
         )
+        image_data["image"] = create_image_file(image_path)
         image = Image.objects.create(**image_data)
         warning_image.images.add(image)
 
@@ -1182,7 +1189,7 @@ class TestArticleListView(BaseTestProjectView):
 
         image_data = mock_data.images[0].copy()
         image_data["image"] = create_image_file(
-            "./construction_work/tests/image_data/small_image.png"
+            join(ROOT_DIR, "construction_work/tests/image_data/small_image.png")
         )
         image = Image.objects.create(**image_data)
         warning_image.images.add(image)

@@ -1,4 +1,6 @@
 import json
+import pathlib
+from os.path import join
 from unittest.mock import patch
 from urllib.parse import urlencode
 
@@ -26,6 +28,8 @@ from construction_work.utils.test_utils import (
     create_jwt_token,
 )
 from core.tests import BaseAPITestCase
+
+ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
 
 class BaseTestManageView(BaseAPITestCase):
@@ -660,7 +664,9 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         project, publisher = self.create_project_and_publisher()
         self.update_headers_with_publisher_data(publisher.email)
 
-        image_path = "./construction_work/tests/image_data/small_image.png"
+        image_path = join(
+            ROOT_DIR, "construction_work/tests/image_data/small_image.png"
+        )
         image_data = create_image_data(image_path)
 
         request_data = {
@@ -925,9 +931,10 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         warning = self.create_warning(project, publisher)
         images = []
         for image_data in mock_data.images:
-            image_data["image"] = create_image_file(
-                "./construction_work/tests/image_data/small_image.png"
+            image_path = join(
+                ROOT_DIR, "construction_work/tests/image_data/small_image.png"
             )
+            image_data["image"] = create_image_file(image_path)
             image = Image.objects.create(**image_data)
             images.append(image)
 
@@ -1027,9 +1034,10 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         warning = self.create_warning(project, publisher)
         images = []
         for image_data in mock_data.images:
-            image_data["image"] = create_image_file(
-                "./construction_work/tests/image_data/small_image.png"
+            image_path = join(
+                ROOT_DIR, "construction_work/tests/image_data/small_image.png"
             )
+            image_data["image"] = create_image_file(image_path)
             image = Image.objects.create(**image_data)
             images.append(image)
 
@@ -1039,7 +1047,9 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         )
         original_warning_image.images.set(images)
 
-        image_path = "./construction_work/tests/image_data/small_image.png"
+        image_path = join(
+            ROOT_DIR, "construction_work/tests/image_data/small_image.png"
+        )
         image_data = create_image_data(image_path)
 
         new_data = {

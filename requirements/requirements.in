@@ -22,6 +22,9 @@ pillow
 aiohttp
 tenacity
 
+# Notifications
+firebase_admin
+
 # Azure
 azure-ad-verify-token
 azure-identity

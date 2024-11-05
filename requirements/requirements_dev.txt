@@ -26,7 +26,7 @@ django==4.2.16
     #   model-bakery
 freezegun==1.5.1
     # via -r requirements/requirements_dev.in
-frozenlist==1.4.1
+frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
@@ -66,11 +66,11 @@ pytest-django==4.9.0
     # via -r requirements/requirements_dev.in
 python-dateutil==2.9.0.post0
     # via freezegun
-ruff==0.6.9
+ruff==0.7.2
     # via -r requirements/requirements_dev.in
 six==1.16.0
     # via python-dateutil
 sqlparse==0.5.1
     # via django
-yarl==1.14.0
+yarl==1.17.1
     # via aiohttp
