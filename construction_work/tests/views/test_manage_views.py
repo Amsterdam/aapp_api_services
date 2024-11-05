@@ -706,7 +706,6 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
 
         api_keys = settings.API_KEYS.split(",")
         get_headers = {settings.API_KEY_HEADER: api_keys[0]}
-
         get_response = self.client.get(
             get_url_with_params,
             headers=get_headers,
