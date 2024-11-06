@@ -25,7 +25,7 @@ _urlpatterns = [
     ),
     # project details
     path(
-        "projects/details",
+        "project/details",
         project_views.ProjectDetailsView.as_view(),
         name="get-project",
     ),
@@ -47,12 +47,12 @@ _urlpatterns = [
         name="followed-projects-with-articles",
     ),
     path(
-        "projects/news",
+        "project/news",
         project_views.ArticleDetailView.as_view(),
         name="get-article",
     ),
     path(
-        "projects/warning",
+        "project/warning",
         project_views.WarningMessageDetailView.as_view(),
         name="get-warning",
     ),
