@@ -20,4 +20,4 @@ urlpatterns = [
     ),
 ]
 
-urlpatterns += get_swagger_paths(BASE_PATH + "/")
+urlpatterns += get_swagger_paths(BASE_PATH)
