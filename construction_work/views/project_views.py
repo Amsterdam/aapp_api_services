@@ -271,7 +271,10 @@ class ProjectSearchView(generics.ListAPIView):
         search_vector = SearchVector(
             *[Unaccent(F(field)) for field in query_fields_list]
         )
-        search_query = SearchQuery(text, search_type="plain")
+
+        terms = text.split()
+        query_string = " & ".join(f"{term}:*" for term in terms)
+        search_query = SearchQuery(query_string, search_type="raw")
 
         queryset = (
             Project.objects.annotate(

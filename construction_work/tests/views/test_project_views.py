@@ -474,6 +474,28 @@ class TestProjectSearchView(BaseTestProjectView):
 
         self.assertEqual(response.status_code, 400)
 
+    def assert_project_is_found(self, search_term):
+        query = {
+            "text": search_term,
+            "query_fields": "title,subtitle",
+            "fields": "title,subtitle",
+            "page_size": 1,
+            "page": 1,
+        }
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["result"]), 1)
+
+    def test_search_project(self):
+        self.assert_project_is_found("title first project")
+        self.assert_project_is_found("title")
+        self.assert_project_is_found("first")
+        self.assert_project_is_found("project")
+        self.assert_project_is_found("tit")
+        self.assert_project_is_found("tit fir")
+        self.assert_project_is_found("tit fir pro")
+        self.assert_project_is_found("pro tit fir")
+
     def test_search_project_and_follow_links(self):
         """Test search for projects"""
         search_text = "title"

@@ -24,9 +24,9 @@
             "args": [
                 "test",
                 // "city_pass.tests"
-                // "construction_work.tests"
+                "construction_work.tests.views.test_project_views.TestProjectSearchView.test_search_project"
                 // "contact.tests"
-                "notification.tests.views.test_notification_views.TestNotificationInitView.test_init_notification_success"
+                // "notification.tests.views.test_notification_views.TestNotificationInitView.test_init_notification_success"
                 // "notification.tests.views.test_client_views.TestClientRegisterView.test_registration_ok",
             ],
             "django": true,
@@ -37,7 +37,7 @@
             "envFile": "${workspaceFolder}/env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}",
-                "DJANGO_SETTINGS_MODULE": "notification.settings.local",
+                "DJANGO_SETTINGS_MODULE": "construction_work.settings.local",
                 "NO_COVERAGE": "true",
             },
         }
