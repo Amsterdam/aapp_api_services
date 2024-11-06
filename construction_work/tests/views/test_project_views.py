@@ -21,13 +21,13 @@ from construction_work.models import (
 from construction_work.tests import mock_data
 from construction_work.utils.date_utils import translate_timezone as tt
 from construction_work.utils.test_utils import create_image_file
-from core.tests import BaseAPITestCase
+from core.tests import BasicAPITestCase
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
 
 @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
-class BaseTestProjectView(BaseAPITestCase):
+class BaseTestProjectView(BasicAPITestCase):
     """Abstract base class for API tests"""
 
     def setUp(self):

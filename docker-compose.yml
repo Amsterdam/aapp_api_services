@@ -56,7 +56,7 @@ services:
     build:
       context: .
       target: dev-${SERVICE_NAME}
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}${SERVICE_NAME}:${VERSION:-latest}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/dev-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.local'
@@ -67,7 +67,7 @@ services:
     build:
       context: .
       target: app-${SERVICE_NAME}
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/${SERVICE_NAME}:${VERSION:-latest}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.otap'

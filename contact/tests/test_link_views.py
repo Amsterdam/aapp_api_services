@@ -1,10 +1,10 @@
 from django.urls import reverse
 from rest_framework import status
 
-from core.tests import BaseAPITestCase
+from core.tests import BasicAPITestCase
 
 
-class TestLinkView(BaseAPITestCase):
+class TestLinkView(BasicAPITestCase):
     def test_load_data_get_data(self):
         url = reverse("contact-links")
         response = self.client.get(url, headers=self.api_headers)

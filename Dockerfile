@@ -81,3 +81,11 @@ COPY bridge /app/bridge
 FROM dev AS dev-bridge
 COPY bridge /app/bridge
 CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]
+
+### Notification stages
+FROM core AS app-notification
+COPY notification /app/notification
+
+FROM dev AS dev-notification
+COPY notification /app/notification
+CMD ["./manage.py", "runserver", "--noreload", "0.0.0.0:8000"]

@@ -6,10 +6,10 @@ from django.urls import reverse
 from construction_work.models import Article, Project
 from construction_work.tests import mock_data
 from construction_work.utils.date_utils import translate_timezone as tt
-from core.tests import BaseAPITestCase
+from core.tests import BasicAPITestCase
 
 
-class TestArticleDetailView(BaseAPITestCase):
+class TestArticleDetailView(BasicAPITestCase):
     def setUp(self):
         """Setup test db"""
         super().setUp()

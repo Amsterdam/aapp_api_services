@@ -8,10 +8,10 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from contact.models import CityOffice, OpeningHours, OpeningHoursException
-from core.tests import BaseAPITestCase
+from core.tests import BasicAPITestCase
 
 
-class TestCityOfficeView(BaseAPITestCase):
+class TestCityOfficeView(BasicAPITestCase):
     def setUp(self):
         super().setUp()
 

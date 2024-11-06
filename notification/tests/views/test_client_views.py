@@ -1,19 +1,19 @@
 from django.conf import settings
 from django.urls import reverse
 
-from construction_work.models import Device
 from core.tests import BasicAPITestCase
+from notification.models import Client
 
 
-class TestDeviceRegisterView(BasicAPITestCase):
+class TestClientRegisterView(BasicAPITestCase):
     def setUp(self):
         super().setUp()
-        self.api_url = reverse("construction-work:register-device")
+        self.api_url = reverse("notification-register-client")
 
     def test_registration_ok(self):
-        """Test registering a new device"""
+        """Test registering a new client"""
         data = {"firebase_token": "foobar_token", "os": "ios"}
-        self.api_headers[settings.HEADER_DEVICE_ID] = "0"
+        self.api_headers[settings.HEADER_CLIENT_ID] = "0"
         first_result = self.client.post(self.api_url, data, headers=self.api_headers)
 
         self.assertEqual(first_result.status_code, 200)
@@ -32,30 +32,30 @@ class TestDeviceRegisterView(BasicAPITestCase):
         self.assertEqual(second_result.data.get("os"), data.get("os"))
 
         # Assert only one record in db
-        devices_with_token = list(
-            Device.objects.filter(firebase_token__isnull=False).all()
+        clients_with_token = list(
+            Client.objects.filter(firebase_token__isnull=False).all()
         )
-        self.assertEqual(len(devices_with_token), 1)
+        self.assertEqual(len(clients_with_token), 1)
 
     def test_delete_registration(self):
-        """Test removing a device registration"""
-        new_device = Device(
-            device_id="foobar_device", firebase_token="foobar_token", os="os"
+        """Test removing a client registration"""
+        new_client = Client(
+            external_id="foobar_client", firebase_token="foobar_token", os="os"
         )
-        new_device.save()
+        new_client.save()
 
         # Delete registration
-        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar_device"
+        self.api_headers[settings.HEADER_CLIENT_ID] = "foobar_client"
         first_result = self.client.delete(self.api_url, headers=self.api_headers)
 
         self.assertEqual(first_result.status_code, 200)
         self.assertEqual(first_result.data, "Registration removed")
 
         # Expect no records in db
-        devices_with_token = list(
-            Device.objects.filter(firebase_token__isnull=False).all()
+        clients_with_token = list(
+            Client.objects.filter(firebase_token__isnull=False).all()
         )
-        self.assertEqual(len(devices_with_token), 0)
+        self.assertEqual(len(clients_with_token), 0)
 
         # Silently discard not existing registration delete
         second_result = self.client.delete(self.api_url, headers=self.api_headers)
@@ -63,8 +63,8 @@ class TestDeviceRegisterView(BasicAPITestCase):
         self.assertEqual(second_result.status_code, 200)
         self.assertEqual(second_result.data, "Registration removed")
 
-    def test_delete_no_device(self):
-        self.api_headers[settings.HEADER_DEVICE_ID] = "non-existing-device-id"
+    def test_delete_no_client(self):
+        self.api_headers[settings.HEADER_CLIENT_ID] = "non-existing-client-id"
         first_result = self.client.delete(self.api_url, headers=self.api_headers)
 
         self.assertEqual(first_result.status_code, 200)
@@ -72,7 +72,7 @@ class TestDeviceRegisterView(BasicAPITestCase):
     def test_missing_os_missing(self):
         """Test if missing OS is detected"""
         data = {"firebase_token": "0"}
-        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
+        self.api_headers[settings.HEADER_CLIENT_ID] = "foobar"
         result = self.client.post(self.api_url, data, headers=self.api_headers)
 
         self.assertEqual(result.status_code, 400)
@@ -80,12 +80,12 @@ class TestDeviceRegisterView(BasicAPITestCase):
     def test_missing_firebase_token(self):
         """Test is missing token is detected"""
         data = {"os": "ios"}
-        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
+        self.api_headers[settings.HEADER_CLIENT_ID] = "foobar"
         result = self.client.post(self.api_url, data, headers=self.api_headers)
 
         self.assertEqual(result.status_code, 400)
 
-    def test_missing_device_id(self):
+    def test_missing_client_id(self):
         """Test if missing identifier is detected"""
         data = {"firebase_token": "0", "os": "ios"}
         result = self.client.post(self.api_url, data, headers=self.api_headers)

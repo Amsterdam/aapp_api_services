@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
+from rest_framework.test import APITestCase
 
 from construction_work.models import (
     Article,
@@ -27,12 +28,11 @@ from construction_work.utils.test_utils import (
     create_image_file,
     create_jwt_token,
 )
-from core.tests import BaseAPITestCase
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
 
-class BaseTestManageView(BaseAPITestCase):
+class BaseTestManageView(APITestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
