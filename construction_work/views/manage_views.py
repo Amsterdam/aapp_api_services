@@ -357,6 +357,15 @@ class WarningMessageDetailView(
 
         return obj
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            {
+                "media_url": get_media_url(self.request),
+            }
+        )
+        return context
+
     def get_permissions(self):
         if self.request.method == "GET":
             permission_classes = [IsPublisher]

@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import (
     BooleanField,
+    CharField,
     DateTimeField,
     Exists,
     F,
@@ -12,6 +13,7 @@ from django.db.models import (
     Max,
     OuterRef,
     Prefetch,
+    TextField,
     Value,
 )
 from django.db.models.fields.json import KeyTextTransform
@@ -258,13 +260,18 @@ class ProjectSearchView(generics.ListAPIView):
                 )
 
         # Validate return fields if provided
+        text_fields = [
+            field.name
+            for field in Project._meta.get_fields()
+            if isinstance(field, (CharField, TextField))
+        ]
         return_fields_list = None
         if return_fields:
             return_fields_list = return_fields.split(",")
             for field in return_fields_list:
-                if field not in model_fields:
+                if field not in text_fields:
                     raise ParseError(
-                        f"Field '{field}' is not a valid field in Project model."
+                        f"Field '{field}' is not a text field in Project model."
                     )
 
         similarities = [TrigramSimilarity(field, text) for field in query_fields_list]

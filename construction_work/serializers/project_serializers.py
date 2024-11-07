@@ -64,13 +64,6 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
     recent_articles = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
 
-    # These fields are only used for correct OpenAPI example generation
-    sections = serializers.SerializerMethodField()
-    coordinates = serializers.SerializerMethodField()
-    contacts = serializers.SerializerMethodField()
-    timeline = serializers.SerializerMethodField()
-    images = serializers.SerializerMethodField()
-
     class Meta:
         model = Project
         fields = [
@@ -81,11 +74,6 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
             "followed",
             "meter",
             "recent_articles",
-            "sections",
-            "coordinates",
-            "contacts",
-            "timeline",
-            "images",
         ]
 
     def get_meter(self, obj: Project) -> int:
@@ -140,6 +128,59 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
             return obj.images[0]
         return {}
 
+
+class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
+    """Project details serializer"""
+
+    followers = serializers.SerializerMethodField()
+    recent_articles = serializers.SerializerMethodField()
+    meter = serializers.SerializerMethodField()
+    followed = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+
+    # These fields are only used for correct OpenAPI example generation
+    sections = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
+    contacts = serializers.SerializerMethodField()
+    timeline = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project
+        exclude = ["hidden"]
+
+    def get_followers(self, obj: Project) -> int:
+        """Get amount of followers of project"""
+        return obj.device_set.count()
+
+    @extend_schema_field(ArticleSerializer)
+    def get_recent_articles(self, obj: Project) -> list:
+        """Get recent articles and warnings"""
+        article_max_age = self.context.get("article_max_age", 3)
+        media_url = self.context.get("media_url", "")
+        start_date = timezone.now() - timedelta(days=article_max_age)
+
+        # Get recent articles
+        recent_articles = obj.article_set.filter(publication_date__gte=start_date)
+        article_serializer = ArticleSerializer(
+            recent_articles,
+            many=True,
+        )
+
+        # Get recent warnings
+        recent_warnings = obj.warningmessage_set.filter(
+            publication_date__gte=start_date
+        )
+        warning_serializer = WarningMessageForManagementSerializer(
+            recent_warnings, many=True, context={"media_url": media_url}
+        )
+
+        # Combine articles and warnings
+        all_items = article_serializer.data + warning_serializer.data
+        # Sort combined list by modification_date descending
+        all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
+        return all_items
+
     @extend_schema_field(IproxProjectSectionsSerializer)
     def get_sections(self, obj):
         """
@@ -179,52 +220,6 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
         so the example in Swagger is generated correctly.
         """
         return obj.images
-
-
-class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
-    """Project details serializer"""
-
-    followers = serializers.SerializerMethodField()
-    recent_articles = serializers.SerializerMethodField()
-    meter = serializers.SerializerMethodField()
-    followed = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Project
-        exclude = ["hidden"]
-
-    def get_followers(self, obj: Project) -> int:
-        """Get amount of followers of project"""
-        return obj.device_set.count()
-
-    @extend_schema_field(ArticleSerializer)
-    def get_recent_articles(self, obj: Project) -> list:
-        """Get recent articles and warnings"""
-        article_max_age = self.context.get("article_max_age", 3)
-        media_url = self.context.get("media_url", "")
-        start_date = timezone.now() - timedelta(days=article_max_age)
-
-        # Get recent articles
-        recent_articles = obj.article_set.filter(publication_date__gte=start_date)
-        article_serializer = ArticleSerializer(
-            recent_articles,
-            many=True,
-        )
-
-        # Get recent warnings
-        recent_warnings = obj.warningmessage_set.filter(
-            publication_date__gte=start_date
-        )
-        warning_serializer = WarningMessageForManagementSerializer(
-            recent_warnings, many=True, context={"media_url": media_url}
-        )
-
-        # Combine articles and warnings
-        all_items = article_serializer.data + warning_serializer.data
-        # Sort combined list by modification_date descending
-        all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
-        return all_items
 
 
 class ProjectManagerNameEmailSerializer(serializers.ModelSerializer):

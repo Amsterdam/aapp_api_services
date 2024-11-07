@@ -26,3 +26,6 @@ __blobstorage*
 
 # Static files
 static
+
+# Pytest
+pytest.ini

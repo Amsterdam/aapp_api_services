@@ -951,6 +951,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
 
         image_in_result = result.data["images"][0]
         self.assertIsNotNone(image_in_result.get("alternativeText"))
+        self.assertIsNotNone(image_in_result["sources"][0].get("uri"))
 
     def test_get_unknown_warning(self):
         _, publisher = self.create_project_and_publisher()

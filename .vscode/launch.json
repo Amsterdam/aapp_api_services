@@ -13,7 +13,7 @@
             "justMyCode": true,
             "env": {
                 "DEBUG": "true",
-                "DJANGO_SETTINGS_MODULE": "notification.settings.local",
+                "DJANGO_SETTINGS_MODULE": "construction_work.settings.local",
             },
         },
         {
@@ -24,7 +24,7 @@
             "args": [
                 "test",
                 // "city_pass.tests"
-                "construction_work.tests.views.test_project_views.TestProjectSearchView.test_search_project"
+                "construction_work.tests.views.test_manage_views.TestWarningMessageDetailView.test_get_warning_with_images"
                 // "contact.tests"
                 // "notification.tests.views.test_notification_views.TestNotificationInitView.test_init_notification_success"
                 // "notification.tests.views.test_client_views.TestClientRegisterView.test_registration_ok",
