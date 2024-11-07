@@ -961,7 +961,6 @@ class TestWarningMessageDetailView(BaseTestProjectView):
 
         warning_image_data = {
             "warning_id": new_warning_message.pk,
-            "is_main": True,
         }
         warning_image = WarningImage.objects.create(**warning_image_data)
 
@@ -987,7 +986,6 @@ class TestWarningMessageDetailView(BaseTestProjectView):
                     "sources": [{"uri": None, "width": 10, "height": 10}],
                     "landscape": False,
                     "alternativeText": "square image",
-                    "aspectRatio": 1.0,
                 }
             ],
             "title": "foobar title",
@@ -1216,7 +1214,6 @@ class TestArticleListView(BaseTestProjectView):
 
         warning_image_data = {
             "warning_id": warning.pk,
-            "is_main": True,
         }
         warning_image = WarningImage.objects.create(**warning_image_data)
 

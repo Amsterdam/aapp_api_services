@@ -3,7 +3,7 @@ import logging
 from django.db import transaction
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiExample
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -29,6 +29,8 @@ from construction_work.serializers.project_serializers import (
     ProjectManagerCreateResultSerializer,
     ProjectManagerNameEmailSerializer,
     ProjectManagerWithProjectsSerializer,
+    PublisherAssignProjectSerializer,
+    WarningImageSerializer,
     WarningMessageCreateUpdateSerializer,
     WarningMessageForManagementSerializer,
     WarningMessageWithNotificationResultSerializer,
@@ -133,14 +135,25 @@ class PublisherAssignProjectView(AutoExtendSchemaMixin, generics.GenericAPIView)
 
     authentication_classes = [EntraIDAuthentication]
     permission_classes = [IsEditor]
+    serializer_class = PublisherAssignProjectSerializer
 
     @extend_schema(
-        success_response=str,
-        examples=[OpenApiExample("Example 1", value="Publisher assigned to project")],
+        request=PublisherAssignProjectSerializer,
+        success_response=OpenApiResponse(
+            description="Publisher assigned to project",
+            response=str,
+            examples=[
+                OpenApiExample("Example 1", value="Publisher assigned to project")
+            ],
+        ),
     )
     def post(self, request, pk, *args, **kwargs):
         publisher = get_object_or_404(ProjectManager, pk=pk)
-        project_id = request.data.get("project_id")
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        project_id = serializer.validated_data["project_id"]
         if not project_id:
             raise MissingProjectIdBody
 
@@ -336,7 +349,6 @@ class WarningMessageDetailView(
     serializer_class = WarningMessageForManagementSerializer
 
     def get_queryset(self):
-        # Prefetch related data
         return WarningMessage.objects.prefetch_related(
             get_warningimage_width_height_prefetch()
         )
@@ -375,7 +387,10 @@ class WarningMessageDetailView(
             permission_classes = []
         return [permission() for permission in permission_classes]
 
-    @extend_schema(success_response=WarningMessageWithNotificationResultSerializer)
+    @extend_schema(
+        request=WarningMessageCreateUpdateSerializer,
+        success_response=WarningMessageWithNotificationResultSerializer,
+    )
     def partial_update(self, request, *args, **kwargs):
         warning = self.get_object()
 
@@ -391,22 +406,6 @@ class WarningMessageDetailView(
         )
         serializer.is_valid(raise_exception=True)
         warning = serializer.save()
-
-        # Handle image data if provided
-        image_data = request.data.get("image")
-        if image_data:
-            image_serializer = ImageCreateSerializer(data=image_data)
-            image_serializer.is_valid(raise_exception=True)
-
-            # Delete existing images
-            warning.warningimage_set.all().delete()
-
-            # Save new images
-            new_image_ids = image_serializer.save()
-            warning_image = WarningImage.objects.create(
-                warning=warning,
-            )
-            warning_image.images.set(new_image_ids)
 
         # Handle push notification
         send_push_notification = serializer.validated_data.get("send_push_notification")
@@ -434,3 +433,27 @@ class WarningMessageDetailView(
         warning = self.get_object()
         warning.delete()
         return Response(data="Warning message removed", status=status.HTTP_200_OK)
+
+
+class ImageUploadView(generics.GenericAPIView):
+    authentication_classes = [EntraIDAuthentication]
+    serializer_class = ImageCreateSerializer
+
+    def post(self, request, *args, **kwargs):
+        project_manager = get_project_manager_from_token(self.request.auth)
+        if project_manager is None:
+            return Response(
+                data="Publisher not known", status=status.HTTP_403_FORBIDDEN
+            )
+
+        image_serializer = self.get_serializer(data=request.data)
+        image_serializer.is_valid(raise_exception=True)
+        image_ids = image_serializer.save()
+
+        warning_image_serializer = WarningImageSerializer(data={"images": image_ids})
+        warning_image_serializer.is_valid(raise_exception=True)
+        warning_image = warning_image_serializer.save()
+
+        return Response(
+            {"warning_image_id": warning_image.pk}, status=status.HTTP_201_CREATED
+        )

@@ -154,7 +154,6 @@ class Image(models.Model):
     description = models.CharField(max_length=1000, blank=True, null=True, default=None)
     width = models.IntegerField()
     height = models.IntegerField()
-    aspect_ratio = models.FloatField(blank=False)
 
     def save(self, *args, **kwargs):
         if not self.image:
@@ -162,7 +161,6 @@ class Image(models.Model):
 
         self.width = self.image.width
         self.height = self.image.height
-        self.aspect_ratio = self.width / self.height
 
         super().save(*args, **kwargs)
 
@@ -171,7 +169,6 @@ class WarningImage(models.Model):
     """Warning image db model"""
 
     warning = models.ForeignKey(WarningMessage, on_delete=models.CASCADE, null=True)
-    is_main = models.BooleanField(default=False)
     images = models.ManyToManyField(Image)
 
 

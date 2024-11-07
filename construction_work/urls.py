@@ -105,6 +105,7 @@ _urlpatterns = [
         manage_views.WarningMessageDetailView.as_view(),
         name="manage-warning-read-update-delete",
     ),
+    path("warning-image", manage_views.ImageUploadView.as_view(), name="image-upload"),
 ]
 
 urlpatterns = [

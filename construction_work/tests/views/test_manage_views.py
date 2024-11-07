@@ -20,7 +20,6 @@ from construction_work.models import (
     WarningMessage,
 )
 from construction_work.tests import mock_data
-from construction_work.utils.image_utils import create_image_data
 from construction_work.utils.test_utils import (
     MockFirebaseSendMulticast,
     apply_firebase_patches,
@@ -653,6 +652,14 @@ class TestWarningMessageCRUDBaseView(BaseTestManageView):
         for p in cls.applied_patches:
             p.stop()
 
+    def create_warning_image(self, image_file):
+        new_image = Image(image=image_file, description="foobar")
+        new_image.save()
+        new_warning_image = WarningImage()
+        new_warning_image.save()
+        new_warning_image.images.add(new_image)
+        return new_warning_image
+
 
 class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
     def setUp(self) -> None:
@@ -667,14 +674,16 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         image_path = join(
             ROOT_DIR, "construction_work/tests/image_data/small_image.png"
         )
-        image_data = create_image_data(image_path)
+        image_file = create_image_file(image_path)
+
+        new_warning_image = self.create_warning_image(image_file)
 
         request_data = {
             "title": "title of new warning",
             "body": "body of new warning",
-            "image": {
-                "main": True,
-                "data": image_data,
+            "warning_image": {
+                "id": new_warning_image.pk,
+                "description": "this should be ignored",
             },
             "send_push_notification": False,
         }
@@ -939,7 +948,6 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
 
         warning_image = WarningImage.objects.create(
             warning=warning,
-            is_main=True,
         )
         warning_image.images.set(images)
 
@@ -1027,10 +1035,52 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
 
         self.assert_update_warning_successfully(project, publisher)
 
+    def test_update_warning_delete_image(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        # Setup existing warning message with image
+        warning = self.create_warning(project, publisher)
+
+        images = []
+        for image_data in mock_data.images:
+            image_data["image"] = create_image_file(
+                "./construction_work/tests/image_data/small_image.png"
+            )
+            image = Image.objects.create(**image_data)
+            images.append(image)
+
+        original_warning_image = WarningImage.objects.create(
+            warning=warning,
+        )
+        original_warning_image.images.set(images)
+
+        # PATCH warning message
+        new_data = {
+            "title": warning.title,
+            "body": warning.body,
+            "send_push_notification": False,
+        }
+        result = self.client.patch(
+            reverse(self.api_url_str, kwargs={"pk": warning.pk}),
+            data=json.dumps(new_data),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(result.status_code, 200)
+
+        # Check if original warning image does not point to the warning anymore
+        original_warning_image = WarningImage.objects.get(pk=original_warning_image.pk)
+        self.assertEquals(original_warning_image.warning, None)
+        # and no image is linked to the warning
+        new_warning_image = WarningImage.objects.filter(warning=warning).first()
+        self.assertIsNone(new_warning_image)
+
     def test_update_warning_replace_image(self):
         project, publisher = self.create_project_and_publisher()
-        self.update_headers_with_editor_data()
+        self.update_headers_with_publisher_data(publisher.email)
 
+        # Setup existing warning message with image
         warning = self.create_warning(project, publisher)
         images = []
         for image_data in mock_data.images:
@@ -1043,21 +1093,21 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
 
         original_warning_image = WarningImage.objects.create(
             warning=warning,
-            is_main=True,
         )
         original_warning_image.images.set(images)
 
         image_path = join(
             ROOT_DIR, "construction_work/tests/image_data/small_image.png"
         )
-        image_data = create_image_data(image_path)
+        image_file = create_image_file(image_path)
+        new_warning_image = self.create_warning_image(image_file)
 
         new_data = {
             "title": warning.title,
             "body": warning.body,
-            "image": {
-                "main": True,
-                "data": image_data,
+            "warning_image": {
+                "id": new_warning_image.pk,
+                "description": "new image description",
             },
             "send_push_notification": False,
         }
@@ -1074,10 +1124,13 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         original_warning_image = WarningImage.objects.filter(
             pk=original_warning_image.pk
         ).first()
-        self.assertIsNone(original_warning_image)
+        self.assertEquals(original_warning_image.warning, None)
         # and new image is created
         new_warning_image = WarningImage.objects.filter(warning=warning).first()
         self.assertIsNotNone(new_warning_image)
+        # and description is updated
+        first_image = Image.objects.get(pk=new_warning_image.images.first().pk)
+        self.assertEqual(first_image.description, "new image description")
         # and a warning only has a single image
         image_count = WarningImage.objects.filter(warning=warning).all().count()
         self.assertEqual(image_count, 1)
@@ -1195,3 +1248,58 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         self.update_headers_with_editor_data()
 
         self.assert_remove_warning_successfully(project, publisher)
+
+
+class TestImageUploadView(TestWarningMessageCRUDBaseView):
+    def setUp(self):
+        super().setUp()
+        self.api_url = reverse("construction-work:image-upload")
+        file = open("./construction_work/tests/image_data/small_image.png", "rb")
+        self.valid_image_data = {"image": file}
+        self.invalid_image_data = {"image": ""}
+        _, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+    def test_upload_image_success(self):
+        """
+        Test that a POST request with valid data successfully uploads an image.
+        """
+        response = self.client.post(
+            self.api_url,
+            headers=self.api_headers,
+            data=self.valid_image_data,
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertIn("warning_image_id", response.data)
+        self.assertTrue(
+            WarningImage.objects.filter(pk=response.data["warning_image_id"]).exists()
+        )
+
+    def test_upload_image_invalid_data(self):
+        """
+        Test that a POST request with invalid data returns a 400 Bad Request.
+        """
+        response = self.client.post(
+            self.api_url,
+            headers=self.api_headers,
+            data=self.invalid_image_data,
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_upload_image_method_not_allowed(self):
+        """
+        Test that a GET request to the endpoint returns a 405 Method Not Allowed.
+        """
+        response = self.client.get(self.api_url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 405)
+
+    def test_upload_image_missing_fields(self):
+        """
+        Test that a POST request with missing required fields returns a 400 Bad Request.
+        """
+        response = self.client.post(
+            self.api_url, headers=self.api_headers, data={}, format="multipart"
+        )
+        self.assertEqual(response.status_code, 400)

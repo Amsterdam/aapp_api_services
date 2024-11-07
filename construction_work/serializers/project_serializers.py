@@ -9,6 +9,7 @@ from construction_work.models import (
     Notification,
     Project,
     ProjectManager,
+    WarningImage,
     WarningMessage,
 )
 from construction_work.serializers.article_serializers import (
@@ -303,7 +304,6 @@ class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
                 "sources": sources,
                 "landscape": bool(first_image.width > first_image.height),
                 "alternativeText": first_image.description,
-                "aspectRatio": first_image.aspect_ratio,
             }
             images.append(image)
         return images
@@ -469,11 +469,17 @@ class WarningMessageListSerializer(serializers.ModelSerializer):
         return obj.publication_date
 
 
+class WarningImageCreateUpdateSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    description = serializers.CharField()
+
+
 class WarningMessageCreateUpdateSerializer(serializers.Serializer):
     """Validate incoming warning message serializer"""
 
     title = serializers.CharField(required=True)
     body = serializers.CharField(required=True)
+    warning_image = WarningImageCreateUpdateSerializer(required=False)
     send_push_notification = serializers.BooleanField(required=True)
 
     def validate_send_push_notification(self, value):
@@ -484,17 +490,37 @@ class WarningMessageCreateUpdateSerializer(serializers.Serializer):
             return serializers.ValidationError(str(e))
 
     def create(self, validated_data):
-        return WarningMessage.objects.create(
+        new_warning = WarningMessage.objects.create(
             title=validated_data.get("title"),
             body=validated_data.get("body"),
             project=self.context.get("project"),
             project_manager=self.context.get("project_manager"),
         )
 
+        if validated_data.get("warning_image"):
+            warning_image = WarningImage.objects.get(
+                id=validated_data["warning_image"]["id"]
+            )
+            new_warning.warningimage_set.add(warning_image)
+
+        return new_warning
+
     def update(self, instance: WarningMessage, validated_data):
         instance.title = validated_data.get("title", instance.title)
         instance.body = validated_data.get("body", instance.body)
         instance.save()
+
+        instance.warningimage_set.update(warning=None)
+        if validated_data.get("warning_image"):
+            warning_image = WarningImage.objects.get(
+                id=validated_data["warning_image"]["id"]
+            )
+            warning_image.images.all().update(
+                description=validated_data["warning_image"]["description"]
+            )
+            warning_image.warning = instance
+            warning_image.save()
+
         return instance
 
 
@@ -515,3 +541,15 @@ class WarningMessageWithNotificationResultSerializer(
     def get_push_message(self, _) -> str:
         """Why was push request (not) ok"""
         return self.context.get("push_message")
+
+
+class WarningImageSerializer(serializers.ModelSerializer):
+    """Warning image serializer"""
+
+    class Meta:
+        model = WarningImage
+        fields = "__all__"
+
+
+class PublisherAssignProjectSerializer(serializers.Serializer):
+    project_id = serializers.IntegerField()
