@@ -474,7 +474,7 @@ class TestProjectSearchView(BaseTestProjectView):
 
         self.assertEqual(response.status_code, 400)
 
-    def assert_project_is_found(self, search_term):
+    def assert_projects_found(self, search_term, projects_found=1):
         query = {
             "text": search_term,
             "query_fields": "title,subtitle",
@@ -484,19 +484,28 @@ class TestProjectSearchView(BaseTestProjectView):
         }
         response = self.client.get(self.api_url, query, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()["result"]), 1)
+        self.assertEqual(len(response.json()["result"]), projects_found)
 
     def test_search_project(self):
-        self.assert_project_is_found("title first project")
-        self.assert_project_is_found("title")
-        self.assert_project_is_found("first")
-        self.assert_project_is_found("project")
-        self.assert_project_is_found("tit")
-        self.assert_project_is_found("tit fir")
-        self.assert_project_is_found("tit fir pro")
-        self.assert_project_is_found("pro tit fir")
-        self.assert_project_is_found("tle")
-        self.assert_project_is_found("tle ject")
+        self.assert_projects_found("title first project")
+        # search for full words
+        self.assert_projects_found("title")
+        self.assert_projects_found("first")
+        self.assert_projects_found("project")
+        # search for part of words
+        self.assert_projects_found("tit")
+        self.assert_projects_found("tit fir")
+        self.assert_projects_found("tit fir pro")
+        self.assert_projects_found("pro tit fir")
+        self.assert_projects_found("tle")
+        self.assert_projects_found("tle ject")
+        # search with small typos
+        self.assert_projects_found("titel")
+        self.assert_projects_found("pjorect")
+        self.assert_projects_found("fisrt pjorect")
+
+    def test_use_nonsense_search_term(self):
+        self.assert_projects_found("foobar", 0)
 
     def test_search_project_and_follow_links(self):
         """Test search for projects"""

@@ -279,7 +279,7 @@ class ProjectSearchView(generics.ListAPIView):
         if similarity:
             queryset = (
                 Project.objects.annotate(similarity=similarity)
-                .filter(similarity__gt=0.0, active=True, hidden=False)
+                .filter(similarity__gt=0.1, active=True, hidden=False)
                 .order_by("-similarity")
             )
 
