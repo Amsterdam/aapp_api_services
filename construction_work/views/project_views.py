@@ -2,8 +2,7 @@ import datetime
 from datetime import timedelta
 
 from django.conf import settings
-from django.contrib.postgres.lookups import Unaccent
-from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import (
     BooleanField,
     DateTimeField,
@@ -268,21 +267,21 @@ class ProjectSearchView(generics.ListAPIView):
                         f"Field '{field}' is not a valid field in Project model."
                     )
 
-        search_vector = SearchVector(
-            *[Unaccent(F(field)) for field in query_fields_list]
-        )
+        similarities = [TrigramSimilarity(field, text) for field in query_fields_list]
 
-        terms = text.split()
-        query_string = " & ".join(f"{term}:*" for term in terms)
-        search_query = SearchQuery(query_string, search_type="raw")
+        # Start off with empty queryset
+        queryset = Project.objects.none()
 
-        queryset = (
-            Project.objects.annotate(
-                search=search_vector, rank=SearchRank(search_vector, search_query)
+        similarity = similarities[0]
+        if len(similarities) > 1:
+            similarity = Greatest(*similarities)
+
+        if similarity:
+            queryset = (
+                Project.objects.annotate(similarity=similarity)
+                .filter(similarity__gt=0.0, active=True, hidden=False)
+                .order_by("-similarity")
             )
-            .filter(search=search_query, active=True, hidden=False)
-            .order_by("-rank")
-        )
 
         # Optimize the queryset to only include necessary fields
         if return_fields_list:

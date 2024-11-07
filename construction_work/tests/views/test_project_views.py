@@ -495,6 +495,8 @@ class TestProjectSearchView(BaseTestProjectView):
         self.assert_project_is_found("tit fir")
         self.assert_project_is_found("tit fir pro")
         self.assert_project_is_found("pro tit fir")
+        self.assert_project_is_found("tle")
+        self.assert_project_is_found("tle ject")
 
     def test_search_project_and_follow_links(self):
         """Test search for projects"""
