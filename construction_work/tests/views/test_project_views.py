@@ -569,6 +569,22 @@ class TestProjectSearchView(BaseTestProjectView):
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertNotIn(new_project.title, res_titles)
 
+    def test_search_non_text_query_fields(self):
+        """Test search for projects"""
+        search_text = "title"
+        query = {
+            "text": search_text,
+            "query_fields": "id,image,title,subtitle",
+            "fields": "title,subtitle",
+            "page_size": 1,
+            "page": 1,
+        }
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()["result"]
+        self.assertEqual(len(result), 1)
+
 
 class TestFollowProjectView(BaseTestProjectView):
     def setUp(self):
