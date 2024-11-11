@@ -99,22 +99,25 @@ def trigger_push_notification(warning: WarningMessage) -> Tuple[bool, str]:
     First return variable tells if pushing was ok, so no issues
     Second return variable tells why pusing was or wasn't ok
     """
-    relevant_data_for_logs = (
-        f"{warning.title=}, {warning.project.pk=}, {warning.project_manager.email=}"
-    )
+    relevant_data_for_logs = {
+        "warning_title": warning.title,
+        "warning_project_pk": warning.project.pk,
+    }
+    if warning.project_manager is not None:
+        relevant_data_for_logs["warning_project_manager_email"] = warning.project_manager.email
 
     # Check if notification was already sent for this warning
     # Only relevent when updating a existing warning
     if Notification.objects.filter(warning=warning).exists():
         info_message = "Notification already sent for this warning"
-        logger.info(f"{info_message} [{relevant_data_for_logs}]")
+        logger.info(info_message, extra=relevant_data_for_logs)
         return True, info_message
 
     try:
         notification_service = NotificationService(warning)
     except Exception as e:
         error_message = str(e)
-        logger.error(f"{error_message} [{relevant_data_for_logs}]")
+        logger.error(error_message, extra=relevant_data_for_logs)
         return False, error_message
 
     setup_success = notification_service.collect_tokens()
@@ -124,7 +127,7 @@ def trigger_push_notification(warning: WarningMessage) -> Tuple[bool, str]:
         info_message = """No notification will be sent, \
             since no firebase tokens were retrieved from related devices \
             or no related devices were found"""
-        logger.info(f"{info_message} [{relevant_data_for_logs}]")
+        logger.info(info_message, extra=relevant_data_for_logs)
         # Its okay that no firebase tokens were found
         return True, info_message
 
@@ -135,14 +138,14 @@ def trigger_push_notification(warning: WarningMessage) -> Tuple[bool, str]:
         success_rate_str = f"{success_count}/{total_count}"
         if success_count < total_count:
             final_message = f"Sending notification failed for some tokens, success rate: {success_rate_str}"
-            logger.warning(f"{final_message} [{relevant_data_for_logs}]")
+            logger.warning(final_message, extra=relevant_data_for_logs)
         else:
             final_message = f"Sending notifications to all tokens successful, success rate: {success_rate_str}"
-            logger.info(f"{final_message} [{relevant_data_for_logs}]")
+            logger.info(final_message, extra=relevant_data_for_logs)
 
         return True, final_message
     # Firebase is external dependency so might throw exception for some reason
     except Exception as e:
         error_message = str(e)
-        logger.error(f"{error_message} [{relevant_data_for_logs}]")
+        logger.error(error_message, extra=relevant_data_for_logs)
         return False, error_message
