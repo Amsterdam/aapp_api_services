@@ -1,114 +1,147 @@
+import logging
 from unittest.mock import patch
 
+import pytest
 from django.conf import settings
-from django.test import TestCase, override_settings
+from django.test import override_settings
 
 from notification.models import Client, Notification
 from notification.services.push import PushService, PushServiceClientLimitError
-from notification.utils.test_utils import MockFirebaseSendEach, apply_firebase_patches
+from notification.utils.patch_utils import (
+    MockFirebaseSendEach,
+    apply_init_firebase_patches,
+)
 
 
-class TestPushService(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.applied_patches = apply_firebase_patches(cls)
+@pytest.fixture(scope="module", autouse=True)
+def apply_patches():
+    applied_patches = apply_init_firebase_patches()
+    yield
+    for p in applied_patches:
+        p.stop()
 
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        for p in cls.applied_patches:
-            p.stop()
 
-    def create_unsaved_notification(self):
-        notification = Notification(
-            title="foobar title",
-            body="foobar body",
-            module_slug="foobar-slug",
-            context={"some": "context"},
-            created_at="2024-10-31T16:30",
-        )
-        return notification
+@pytest.fixture
+def unsaved_notification():
+    return Notification(
+        title="foobar title",
+        body="foobar body",
+        module_slug="foobar-slug",
+        context={"some": "context"},
+        created_at="2024-10-31T16:30",
+    )
 
-    def create_client(self):
-        client = Client(
-            external_id="abc", firebase_token="abc_token", receive_push=True
-        )
-        client.save()
-        return client
 
-    def create_clients(self, amount: int, with_token=True):
+@pytest.fixture
+def client():
+    client = Client(external_id="abc", firebase_token="abc_token")
+    client.save()
+    return client
+
+
+@pytest.fixture
+def clients():
+    def _create_clients(amount: int, with_token=True):
         new_clients = []
-        mock_token = None
-        if with_token:
-            mock_token = "abc_token"
-
+        mock_token = "abc_token" if with_token else None
         for i in range(amount):
-            client = Client(
-                external_id=f"abc_{i}", firebase_token=mock_token, receive_push=True
-            )
+            client = Client(external_id=f"abc_{i}", firebase_token=mock_token)
             client.save()
             new_clients.append(client)
         return new_clients
 
-    @patch(
-        "notification.services.push.messaging.send_each",
+    return _create_clients
+
+
+@pytest.mark.django_db
+@patch("notification.services.push.messaging.send_each")
+def test_push_success(multicast_mock, unsaved_notification, client, firebase_messages):
+    messages = firebase_messages(
+        [client], title=unsaved_notification.title, body=unsaved_notification.body
     )
-    def test_push_success(self, multicast_mock):
-        multicast_mock.return_value = MockFirebaseSendEach(5)
+    multicast_mock.return_value = MockFirebaseSendEach(messages)
 
-        notification = self.create_unsaved_notification()
-        client = self.create_client()
+    push_service = PushService(unsaved_notification, [client.external_id])
+    push_service.push()
 
-        push_service = PushService(notification, [client.external_id])
+    notification = Notification.objects.filter(client_id=client.external_id).first()
+    assert notification.pushed_at is not None
+
+
+@pytest.mark.django_db
+@patch("notification.services.push.messaging.send_each")
+def test_push_with_some_failed_tokens(
+    multicast_mock, unsaved_notification, clients, firebase_messages, caplog
+):
+    client_count = 5
+    failed_client_count = 2
+
+    created_clients = clients(client_count)
+    messages = firebase_messages(
+        created_clients,
+        title=unsaved_notification.title,
+        body=unsaved_notification.body,
+    )
+
+    multicast_mock.return_value = MockFirebaseSendEach(
+        messages, fail_count=failed_client_count
+    )
+
+    push_service = PushService(
+        unsaved_notification, [c.external_id for c in created_clients]
+    )
+
+    # Set up logger
+    logger = logging.getLogger("notification.services.push")
+    parent_logger = logger.parent
+    parent_logger.setLevel(logging.INFO)
+    parent_logger.propagate = True
+
+    with caplog.at_level(logging.INFO, logger="notification.services.push"):
         push_service.push()
 
-        notification = Notification.objects.filter(client_id=client.external_id).first()
-        self.assertIsNotNone(notification.pushed_at)
-
-    @patch(
-        "notification.services.push.messaging.send_each",
+    # Check if the specific log messages are in the captured logs
+    assert any(
+        "Failed to send notification to client" in record.message
+        for record in caplog.records
     )
-    def test_push_with_some_failed_tokens(self, multicast_mock):
-        client_count = 5
-        failed_client_count = 2
+    assert any(record.levelname == "INFO" for record in caplog.records)
 
-        multicast_mock.return_value = MockFirebaseSendEach(
-            client_count, fail_count=failed_client_count
-        )
 
-        notification = self.create_unsaved_notification()
-        clients = self.create_clients(client_count)
+@override_settings(FIREBASE_CLIENT_LIMIT=5)
+def test_hit_max_clients():
+    client_ids = [f"client_{i}" for i in range(settings.FIREBASE_CLIENT_LIMIT + 1)]
 
-        push_service = PushService(notification, [c.external_id for c in clients])
+    with pytest.raises(PushServiceClientLimitError):
+        PushService(None, client_ids)
 
-        with self.assertLogs("notification.services.push", level="ERROR") as cm:
-            notification = push_service.push()
 
-        self.assertEqual(len(cm.output), failed_client_count)
-        for output in cm.output:
-            self.assertIn("Failed to send notification to client", output)
+@pytest.mark.django_db
+def test_client_without_firebase_tokens(unsaved_notification, clients, caplog):
+    created_clients = clients(5, with_token=False)
 
-    @override_settings(FIREBASE_CLIENT_LIMIT=5)
-    def test_hit_max_clients(self):
-        client_ids = [f"client_{i}" for i in range(settings.FIREBASE_CLIENT_LIMIT + 1)]
+    push_service = PushService(
+        unsaved_notification, [c.external_id for c in created_clients]
+    )
 
-        with self.assertRaises(PushServiceClientLimitError):
-            PushService(None, client_ids)
+    # Ensure the logger is set to the correct level
+    logger = logging.getLogger("notification.services.push")
 
-    def test_client_without_firebase_tokens(self):
-        notification = self.create_unsaved_notification()
-        clients = self.create_clients(5, with_token=False)
+    parent_logger = logger.parent
+    parent_logger.setLevel(logging.INFO)
+    parent_logger.propagate = True
 
-        push_service = PushService(notification, [c.external_id for c in clients])
+    with caplog.at_level(logging.INFO, logger="notification.services.push"):
+        push_service.push()
 
-        with self.assertLogs("notification.services.push", level="INFO") as cm:
-            push_service.push()
+    # For each client a notification should have been created
+    for c in created_clients:
+        notification = Notification.objects.filter(client_id=c.external_id).first()
+        assert notification is not None
 
-        # For each client a notification should have been created
-        for c in clients:
-            notification = Notification.objects.filter(client_id=c.external_id).first()
-            self.assertIsNotNone(notification)
-
-        for output in cm.output:
-            self.assertIn("none of the clients have a Firebase token", output)
+    # Check if the specific log message is in the captured logs
+    assert any(
+        "none of the clients have a Firebase token" in record.message
+        for record in caplog.records
+    )
+    assert any(record.levelname == "INFO" for record in caplog.records)

@@ -1,13 +1,19 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 
+from core.serializers.error_serializers import get_error_response_serializers
+from notification.exceptions import PushServiceError
 from notification.models import Notification
 from notification.serializers import (
     NotificationCreateSerializer,
     NotificationResultSerializer,
 )
 from notification.services.push import PushService
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationInitView(generics.CreateAPIView):
@@ -23,23 +29,25 @@ class NotificationInitView(generics.CreateAPIView):
     authentication_classes = []
     serializer_class = NotificationCreateSerializer
 
-    @extend_schema(responses={200: NotificationResultSerializer})
+    @extend_schema(
+        responses={
+            200: NotificationResultSerializer,
+            **get_error_response_serializers([PushServiceError]),
+        },
+    )
     def post(self, request, *args, **kwargs):
-        # NOTE: Construction work should add this data as context_json:
-        # {
-        #     "linkSourceid": str(warning.pk),
-        #     "type": "ProjectWarningCreatedByProjectManager",
-        # }
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Use serializer data to initialize, but not save, notification
         client_ids = serializer.validated_data.pop("client_ids")
         notification = Notification(**serializer.validated_data)
 
-        push_service = PushService(notification, client_ids)
-        push_service.push()
+        try:
+            push_service = PushService(notification, client_ids)
+            push_service.push()
+        except Exception:
+            logger.error("Failed to push notification", exc_info=True)
+            raise PushServiceError("Failed to push notification")
 
-        # Reinitalize the serializer with notification instance
         serializer = self.get_serializer(notification)
         return Response(serializer.data, status=status.HTTP_200_OK)

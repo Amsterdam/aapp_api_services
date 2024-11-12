@@ -82,3 +82,42 @@ class EntraIDAuthentication(BaseAuthentication):
 class EntraIDAuthenticationScheme(TokenScheme):
     target_class = "construction_work.authentication.EntraIDAuthentication"
     name = "EntraIDAuthentication"
+
+
+class MockEntraIDAuthentication(BaseAuthentication):
+    """
+    Returns static token data with editor group rights.
+    Can be used when developing app locally by setting MOCK_ENTRA_AUTH.
+
+    Usage:
+    1. Set the environment variable `MOCK_ENTRA_AUTH` to `True` in your local settings.
+    2. Ensure that `EDITOR_GROUP_ID` is set to a valid group ID for testing.
+    3. The mock authentication will return a static token with editor rights,
+       allowing you to test authentication-dependent features without a real token.
+    """
+
+    keyword = "Bearer"
+
+    def authenticate(self, _):
+        from construction_work.models import ProjectManager
+
+        first_name = "Mock"
+        last_name = "User"
+        email = "mock.user@amsterdam.nl"
+
+        token_data = {
+            "aud": f"api://{settings.ENTRA_CLIENT_ID}",
+            "iss": f"https://sts.windows.net/{settings.ENTRA_TENANT_ID}/",
+            "groups": [settings.EDITOR_GROUP_ID],
+            "scp": "Modules.Edit",
+            "upn": email,
+            "family_name": last_name,
+            "given_name": first_name,
+        }
+
+        ProjectManager.objects.get_or_create(
+            name=f"{first_name} {last_name}",
+            email=email,
+        )
+
+        return (None, token_data)

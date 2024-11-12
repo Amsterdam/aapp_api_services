@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import urljoin
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -176,3 +177,8 @@ default_app_logging = {
 
 API_KEY_HEADER = "X-Api-Key"
 API_KEYS = os.getenv("API_AUTH_TOKENS")
+
+NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://notification:8000")
+NOTIFICATION_ENDPOINTS = {
+    "INIT_NOTIFICATION": urljoin(NOTIFICATION_API, "/internal/api/v1/notification"),
+}

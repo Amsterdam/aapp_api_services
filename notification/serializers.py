@@ -25,6 +25,11 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
             )
         return client_ids
 
+    def validate_context(self, context):
+        if not isinstance(context, dict):
+            raise serializers.ValidationError("Context must be a dictionary")
+        return context
+
     def to_representation(self, instance):
         return NotificationResultSerializer(context=self.context).to_representation(
             instance

@@ -6,7 +6,6 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from construction_work.models import (
-    Notification,
     Project,
     ProjectManager,
     WarningImage,
@@ -313,7 +312,6 @@ class WarningMessageForManagementSerializer(WarningMessageWithImagesSerializer):
     """Warning message serializer for management interface"""
 
     publisher = serializers.SerializerMethodField()
-    is_pushed = serializers.SerializerMethodField()
 
     class Meta:
         model = WarningMessage
@@ -323,10 +321,6 @@ class WarningMessageForManagementSerializer(WarningMessageWithImagesSerializer):
     def get_publisher(self, obj: WarningMessage):
         serializer = ProjectManagerNameEmailSerializer(obj.project_manager)
         return serializer.data
-
-    def get_is_pushed(self, obj: WarningMessage) -> bool:
-        """Has the warning been pushed (before)"""
-        return Notification.objects.filter(warning=obj).exists()
 
 
 class ProjectDetailsForManagementSerializer(ProjectListForManageSerializer):
@@ -527,16 +521,16 @@ class WarningMessageCreateUpdateSerializer(serializers.Serializer):
 class WarningMessageWithNotificationResultSerializer(
     WarningMessageForManagementSerializer
 ):
-    push_ok = serializers.SerializerMethodField()
+    push_code = serializers.SerializerMethodField()
     push_message = serializers.SerializerMethodField()
 
     class Meta:
         model = WarningMessage
         exclude = ["project_manager", "author_email"]
 
-    def get_push_ok(self, _) -> bool:
-        """Was push request ok"""
-        return self.context.get("push_ok")
+    def get_push_code(self, _) -> bool:
+        """Push request status code"""
+        return self.context.get("push_code")
 
     def get_push_message(self, _) -> str:
         """Why was push request (not) ok"""

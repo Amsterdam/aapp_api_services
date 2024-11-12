@@ -1,11 +1,6 @@
 from django.urls import include, path
 
-from construction_work.views import (
-    article_view,
-    device_views,
-    manage_views,
-    project_views,
-)
+from construction_work.views import article_view, manage_views, project_views
 from core.urls import get_swagger_paths
 
 BASE_PATH = "construction-work/api/v1"
@@ -55,12 +50,6 @@ _urlpatterns = [
         "project/warning",
         project_views.WarningMessageDetailView.as_view(),
         name="get-warning",
-    ),
-    # devices
-    path(
-        "device/register",
-        device_views.DeviceRegisterView.as_view(),
-        name="register-device",
     ),
     # manage publishers
     path(

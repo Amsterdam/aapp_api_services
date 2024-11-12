@@ -428,7 +428,7 @@ class FollowProjectView(generics.GenericAPIView):
         ],
         exceptions=[MissingDeviceIdHeader, NotFound],
         success_response=str,
-        examples=[OpenApiExample("Example 1", value="Subscription added")],
+        # examples=[OpenApiExample("Example 1", value="Subscription added")],
     )
     def post(self, request, *args, **kwargs):
         """

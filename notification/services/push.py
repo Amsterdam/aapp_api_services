@@ -88,7 +88,6 @@ class PushService:
 
         clients = Client.objects.filter(
             external_id__in=self.client_ids,
-            receive_push=True,
             firebase_token__isnull=False,
         ).all()
 
