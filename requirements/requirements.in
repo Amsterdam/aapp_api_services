@@ -26,6 +26,7 @@ tenacity
 firebase_admin
 
 # Azure
+django-storages[azure]
 azure-ad-verify-token
 azure-identity
 azure-monitor-opentelemetry==1.6.1 
