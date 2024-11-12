@@ -6,7 +6,7 @@ from django.urls import reverse
 from construction_work.models import Article, Project
 from construction_work.tests import mock_data
 from construction_work.utils.date_utils import translate_timezone as tt
-from core.tests import BasicAPITestCase
+from core.tests.test_authentication import BasicAPITestCase
 
 
 class TestArticleDetailView(BasicAPITestCase):

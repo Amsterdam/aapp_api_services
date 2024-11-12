@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from contact.models import CityOffice, OpeningHours, OpeningHoursException
-from core.tests import BasicAPITestCase
+from core.tests.test_authentication import BasicAPITestCase
 
 
 class TestCityOfficeView(BasicAPITestCase):
