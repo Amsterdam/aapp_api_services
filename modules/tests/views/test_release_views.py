@@ -13,7 +13,7 @@ class TestReleaseViews(TestCaseWithAuth):
     def test_release_get_200(self):
         """Test get release existing"""
         response = self.client.get(
-            "/modules/api/v1/release/0.0.1",
+            "/modules/api/v1/release/0.0.1/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
             accept="application/json",
@@ -72,7 +72,7 @@ class TestReleaseViews(TestCaseWithAuth):
     def test_release_get_404(self):
         """Test get release not existing"""
         response = self.client.get(
-            "/modules/api/v1/release/10.0.0",
+            "/modules/api/v1/release/10.0.0/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
             accept="application/json",
@@ -83,7 +83,7 @@ class TestReleaseViews(TestCaseWithAuth):
         """Test get release not existing"""
         AppRelease.objects.filter().delete()
         response = self.client.get(
-            "/modules/api/v1/release/latest",
+            "/modules/api/v1/release/latest/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
             accept="application/json",
@@ -98,7 +98,7 @@ class TestReleaseViews(TestCaseWithAuth):
         _module.save()
 
         response = self.client.get(
-            "/modules/api/v1/release/0.0.1",
+            "/modules/api/v1/release/0.0.1/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
             accept="application/json",
@@ -157,7 +157,7 @@ class TestReleaseViews(TestCaseWithAuth):
     def test_release_get_latest_200(self):
         """Test get release existing"""
         response = self.client.get(
-            "/modules/api/v1/release/latest",
+            "/modules/api/v1/release/latest/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
             accept="application/json",
@@ -200,7 +200,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "modules": [{"moduleSlug": "slug0", "version": "1.2.3", "status": 0}],
         }
         response = self.client.post(
-            "/modules/api/v1/release",
+            "/modules/api/v1/release/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -242,7 +242,7 @@ class TestReleaseViews(TestCaseWithAuth):
         """test release pot missing keys"""
         data = {}
         response = self.client.post(
-            "/modules/api/v1/release",
+            "/modules/api/v1/release/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -260,7 +260,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "modules": None,
         }
         response = self.client.post(
-            "/modules/api/v1/release",
+            "/modules/api/v1/release/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -272,7 +272,7 @@ class TestReleaseViews(TestCaseWithAuth):
         """test release pot missing keys"""
         data = {"version": "", "releaseNotes": None, "modules": []}
         response = self.client.post(
-            "/modules/api/v1/release",
+            "/modules/api/v1/release/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -292,7 +292,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "modules": [],
         }
         response = self.client.post(
-            "/modules/api/v1/release",
+            "/modules/api/v1/release/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -312,7 +312,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "modules": [{"moduleSlug": "bogus", "version": "0.0.0", "status": 0}],
         }
         response = self.client.post(
-            "/modules/api/v1/release",
+            "/modules/api/v1/release/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -338,7 +338,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "modules": [{"moduleSlug": "slug0", "version": "1.2.3", "status": 1}],
         }
         response = self.client.patch(
-            f"/modules/api/v1/release/{new_version}",
+            f"/modules/api/v1/release/{new_version}/",
             data=update_data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -417,7 +417,7 @@ class TestReleaseViews(TestCaseWithAuth):
             ],
         }
         response = self.client.patch(
-            f"/modules/api/v1/release/{release_version}",
+            f"/modules/api/v1/release/{release_version}/",
             data=update_data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -468,7 +468,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "modules": [{"moduleSlug": "bogus", "version": "0.0.0", "status": 0}],
         }
         response = self.client.patch(
-            "/modules/api/v1/release/0.0.0",
+            "/modules/api/v1/release/0.0.0/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -496,7 +496,7 @@ class TestReleaseViews(TestCaseWithAuth):
 
         AppRelease.objects.create(**_release)
         response = self.client.patch(
-            "/modules/api/v1/release/12.0.0",
+            "/modules/api/v1/release/12.0.0/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -510,7 +510,7 @@ class TestReleaseViews(TestCaseWithAuth):
         release = AppRelease.objects.create(version=release_version, module_order=[])
 
         response = self.client.delete(
-            f"/modules/api/v1/release/{release_version}",
+            f"/modules/api/v1/release/{release_version}/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -531,7 +531,7 @@ class TestReleaseViews(TestCaseWithAuth):
         """test delete release 403"""
         release_version = "0.0.1"
         response = self.client.delete(
-            f"/modules/api/v1/release/{release_version}",
+            f"/modules/api/v1/release/{release_version}/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -546,7 +546,7 @@ class TestReleaseViews(TestCaseWithAuth):
         """test delete release 404"""
         release_version = "10.0.0"
         response = self.client.delete(
-            f"/modules/api/v1/release/{release_version}",
+            f"/modules/api/v1/release/{release_version}/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -556,7 +556,7 @@ class TestReleaseViews(TestCaseWithAuth):
     def test_releases_get(self):
         """test releases"""
         response = self.client.get(
-            "/modules/api/v1/releases",
+            "/modules/api/v1/releases/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -712,7 +712,7 @@ class TestReleaseViews(TestCaseWithAuth):
         AppRelease.objects.create(**data_v15)
 
         response = self.client.get(
-            "/modules/api/v1/release/14.0.0",
+            "/modules/api/v1/release/14.0.0/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -763,7 +763,7 @@ class TestReleaseViews(TestCaseWithAuth):
         AppRelease.objects.create(**data_v15)
 
         response = response = self.client.get(
-            "/modules/api/v1/release/14.0.0",
+            "/modules/api/v1/release/14.0.0/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -813,7 +813,7 @@ class TestReleaseViews(TestCaseWithAuth):
         AppRelease.objects.create(**data_v15)
 
         response = response = self.client.get(
-            "/modules/api/v1/release/14.0.0",
+            "/modules/api/v1/release/14.0.0/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -864,7 +864,7 @@ class TestReleaseViews(TestCaseWithAuth):
         AppRelease.objects.create(**data_v15)
 
         response = response = self.client.get(
-            "/modules/api/v1/release/14.0.0",
+            "/modules/api/v1/release/14.0.0/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -915,7 +915,7 @@ class TestReleaseViews(TestCaseWithAuth):
         AppRelease.objects.create(**data_v15)
 
         response = self.client.get(
-            "/modules/api/v1/release/14.0.0",
+            "/modules/api/v1/release/14.0.0/",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -959,7 +959,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "modules": [{"moduleSlug": "slug0", "version": "1.2.3", "status": 1}],
         }
         response = self.client.patch(
-            f"/modules/api/v1/release/{new_version}",
+            f"/modules/api/v1/release/{new_version}/",
             data=update_data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -993,7 +993,7 @@ class TestReleaseViews(TestCaseWithAuth):
         }
 
         response = self.client.post(
-            "/modules/api/v1/release",
+            "/modules/api/v1/release/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",

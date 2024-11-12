@@ -14,7 +14,7 @@ from city_pass.tests.base_test import (
 
 
 class TestSessionInitView(BaseCityPassTestCase):
-    api_url = "/city-pass/api/v1/session/init"
+    api_url = "/city-pass/api/v1/session/init/"
 
     def test_session_init_success(self):
         result = self.client.post(self.api_url, headers=self.headers, follow=True)
@@ -47,7 +47,7 @@ class TestSessionInitView(BaseCityPassTestCase):
 
 
 class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
-    api_url = "/city-pass/api/v1/session/credentials"
+    api_url = "/city-pass/api/v1/session/credentials/"
 
     def setUp(self) -> None:
         super().setUp()
@@ -173,7 +173,7 @@ class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
 
 
 class TestSessionRefreshAccessView(BaseCityPassTestCase):
-    api_url = "/city-pass/api/v1/session/refresh"
+    api_url = "/city-pass/api/v1/session/refresh/"
 
     @override_settings(
         TOKEN_TTLS={
@@ -295,7 +295,7 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
 
 
 class TestSessionLogoutView(BaseCityPassTestCase):
-    api_url = "/city-pass/api/v1/session/logout"
+    api_url = "/city-pass/api/v1/session/logout/"
 
     def test_logout_success(self):
         headers = {**self.headers, "Access-Token": self.session.accesstoken.token}

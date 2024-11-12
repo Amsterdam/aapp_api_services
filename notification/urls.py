@@ -8,12 +8,12 @@ BASE_PATH_INTERNAL = "internal/api/v1"
 
 urlpatterns = [
     path(
-        BASE_PATH + "/client/register",
+        BASE_PATH + "/client/register/",
         client_views.ClientRegisterView.as_view(),
         name="notification-register-client",
     ),
     path(
-        BASE_PATH_INTERNAL + "/notification",
+        BASE_PATH_INTERNAL + "/notification/",
         notification_views.NotificationInitView.as_view(),
         name="notification-create-notification",
     ),

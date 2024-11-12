@@ -6,7 +6,7 @@ from modules.tests.setup import TestCaseWithAuth
 
 class ModuleEndpointTestCase(TestCaseWithAuth):
     def setUp(self):
-        self.url = "/modules/api/v1/module"
+        self.url = "/modules/api/v1/module/"
         super().setUp()
 
     def test_valid_token(self):
@@ -78,7 +78,7 @@ class ModuleEndpointTestCase(TestCaseWithAuth):
         """
         data = {"slug": "something"}
         response = self.client.get(
-            "/modules/api/v1/release/0.0.1",
+            "/modules/api/v1/release/0.0.1/",
             HTTP_AUTHORIZATION=None,
             data=data,
             content_type="application/json",
