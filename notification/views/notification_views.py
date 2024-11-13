@@ -1,53 +1,91 @@
 import logging
 
-from drf_spectacular.utils import extend_schema
-from rest_framework import generics, status
+from django.conf import settings
+from drf_spectacular.utils import inline_serializer
+from rest_framework import generics
+from rest_framework.exceptions import ValidationError
+from rest_framework.fields import CharField
 from rest_framework.response import Response
 
-from core.serializers.error_serializers import get_error_response_serializers
-from notification.exceptions import PushServiceError
+from notification.exceptions import MissingClientIdHeader
 from notification.models import Notification
-from notification.serializers import (
-    NotificationCreateSerializer,
+from notification.serializers.notification_serializers import (
     NotificationResultSerializer,
+    NotificationUpdateSerializer,
 )
-from notification.services.push import PushService
+from notification.views.extend_schema import extend_schema_for_client_id
 
 logger = logging.getLogger(__name__)
 
 
-class NotificationInitView(generics.CreateAPIView):
-    """
-    Endpoint to initialize a new notification.
-    The supplied notification data does not represent a final notification object one-to-one.
-    The data will be passed to the push service which takes over from that point.
+class NotificationListView(generics.ListAPIView):
+    """List all notifications for a client_id."""
 
-    Returns:
-        Response: notification data as posted with auto set fields
-    """
+    serializer_class = NotificationResultSerializer
 
-    authentication_classes = []
-    serializer_class = NotificationCreateSerializer
+    def get_queryset(self):
+        client_id = self.request.headers.get(settings.HEADER_CLIENT_ID)
+        if not client_id:
+            raise MissingClientIdHeader
+        return Notification.objects.filter(client_id=client_id)
 
-    @extend_schema(
-        responses={
-            200: NotificationResultSerializer,
-            **get_error_response_serializers([PushServiceError]),
-        },
+    @extend_schema_for_client_id(
+        success_response=NotificationResultSerializer,
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class NotificationMarkAllReadView(generics.UpdateAPIView):
+    """Update all notification for a client_id to status "is_read" = true."""
+
+    http_method_names = ["post"]
+
+    @extend_schema_for_client_id(
+        success_response=inline_serializer(
+            name="MarkAllAsReadResponse", fields={"detail": CharField()}
+        )
     )
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        client_id = self.request.headers.get(settings.HEADER_CLIENT_ID)
+        if not client_id:
+            raise MissingClientIdHeader
+
+        # Perform the bulk update
+        updated_count = Notification.objects.filter(
+            client_id=client_id, is_read=False
+        ).update(is_read=True)
+        return Response({"detail": f"{updated_count} notifications marked as read."})
+
+
+class NotificationDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = NotificationResultSerializer
+    lookup_url_kwarg = "notification_id"
+    lookup_field = "id"
+    http_method_names = ["get", "patch"]
+
+    def get_queryset(self):
+        client_id = self.request.headers.get(settings.HEADER_CLIENT_ID)
+        if not client_id:
+            raise MissingClientIdHeader
+        return Notification.objects.filter(client_id=client_id)
+
+    @extend_schema_for_client_id(
+        success_response=NotificationResultSerializer,
+    )
+    def get(self, request, *args, **kwargs):
+        """Retrieve a single notification."""
+        return super().get(request, *args, **kwargs)
+
+    @extend_schema_for_client_id(
+        request=NotificationUpdateSerializer,
+        success_response=NotificationResultSerializer,
+        exceptions=[ValidationError],
+    )
+    def patch(self, request, *args, **kwargs):
+        """Update a single notification to status "is_read" = true."""
+        instance = self.get_object()
+        serializer = NotificationUpdateSerializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        client_ids = serializer.validated_data.pop("client_ids")
-        notification = Notification(**serializer.validated_data)
-
-        try:
-            push_service = PushService(notification, client_ids)
-            push_service.push()
-        except Exception:
-            logger.error("Failed to push notification", exc_info=True)
-            raise PushServiceError("Failed to push notification")
-
-        serializer = self.get_serializer(notification)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer.save()
+        return Response(serializer.data)

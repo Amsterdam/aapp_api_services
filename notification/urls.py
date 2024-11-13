@@ -1,7 +1,11 @@
 from django.urls import path
 
 from core.urls import get_swagger_paths
-from notification.views import client_views, notification_views
+from notification.views import (
+    client_views,
+    notification_internal_views,
+    notification_views,
+)
 
 BASE_PATH = "notification/api/v1"
 BASE_PATH_INTERNAL = "internal/api/v1"
@@ -14,8 +18,23 @@ urlpatterns = [
     ),
     path(
         BASE_PATH_INTERNAL + "/notification/",
-        notification_views.NotificationInitView.as_view(),
+        notification_internal_views.NotificationInitView.as_view(),
         name="notification-create-notification",
+    ),
+    path(
+        BASE_PATH + "/notifications/<uuid:notification_id>",
+        notification_views.NotificationDetailView.as_view(),
+        name="notification-detail-notification",
+    ),
+    path(
+        BASE_PATH + "/notifications/",
+        notification_views.NotificationListView.as_view(),
+        name="notification-list-notifications",
+    ),
+    path(
+        BASE_PATH + "/notifications/mark_all_read/",
+        notification_views.NotificationMarkAllReadView.as_view(),
+        name="notification-read-notifications",
     ),
 ]
 

@@ -8,16 +8,17 @@ def extend_schema_for_api_key(
     success_response=None, exceptions=None, additional_params=None, **kwargs
 ):
     return custom_extend_schema(
-        ApiKeyInvalidException,
-        success_response,
-        exceptions,
-        additional_params,
+        default_exceptions=[ApiKeyInvalidException],
+        success_response=success_response,
+        exceptions=exceptions,
+        additional_params=additional_params,
         **kwargs
     )
 
 
 def custom_extend_schema(
-    default_exception,
+    *,
+    default_exceptions,
     success_response=None,
     exceptions=None,
     additional_params=None,
@@ -29,7 +30,7 @@ def custom_extend_schema(
     """
     parameters = additional_params or []
     exceptions = exceptions or []
-    exceptions += [default_exception]
+    exceptions += default_exceptions
 
     error_response_serializers = get_error_response_serializers(exceptions)
 

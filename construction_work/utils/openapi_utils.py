@@ -7,9 +7,12 @@ def extend_schema_for_entra(
     success_response=None, exceptions=None, additional_params=None, **kwargs
 ):
     return custom_extend_schema(
-        PermissionDenied, success_response, exceptions, additional_params, **kwargs
+        default_exceptions=[PermissionDenied],
+        success_response=success_response,
+        exceptions=exceptions,
+        additional_params=additional_params,
+        **kwargs
     )
-
 
 class AutoExtendSchemaMixin:
     """

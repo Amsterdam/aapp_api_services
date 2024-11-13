@@ -1,17 +1,15 @@
 from django.conf import settings
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
 from rest_framework.response import Response
 
 from core.exceptions import InputDataException
-from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 from notification.exceptions import MissingClientIdHeader
 from notification.models import Client
-from notification.serializers import (
+from notification.serializers.client_serializers import (
     ClientRegisterPostSwaggerSerializer,
     ClientRegisterSerializer,
 )
+from notification.views.extend_schema import extend_schema_for_client_id
 
 
 class ClientRegisterView(generics.GenericAPIView):
@@ -19,18 +17,10 @@ class ClientRegisterView(generics.GenericAPIView):
     API view to register or unregister a client.
     """
 
-    @extend_schema(
+    @extend_schema_for_client_id(
         request=ClientRegisterPostSwaggerSerializer,
         success_response=ClientRegisterSerializer,
-        additional_params=[
-            OpenApiParameter(
-                settings.HEADER_CLIENT_ID,
-                OpenApiTypes.STR,
-                OpenApiParameter.HEADER,
-                required=True,
-            )
-        ],
-        exceptions=[MissingClientIdHeader, InputDataException],
+        exceptions=[InputDataException],
     )
     def post(self, request, *args, **kwargs):
         """
@@ -55,16 +45,7 @@ class ClientRegisterView(generics.GenericAPIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(
-        additional_params=[
-            OpenApiParameter(
-                settings.HEADER_CLIENT_ID,
-                OpenApiTypes.STR,
-                OpenApiParameter.HEADER,
-                required=True,
-            )
-        ],
-        exceptions=[MissingClientIdHeader],
+    @extend_schema_for_client_id(
         success_response={200: None},
     )
     def delete(self, request, *args, **kwargs):

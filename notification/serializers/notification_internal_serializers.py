@@ -1,13 +1,10 @@
 from django.conf import settings
 from rest_framework import serializers
 
-from notification.models import Client, Notification
-
-
-class NotificationResultSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Notification
-        fields = ["title", "body", "module_slug", "context", "created_at", "is_read"]
+from notification.models import Notification
+from notification.serializers.notification_serializers import (
+    NotificationResultSerializer,
+)
 
 
 class NotificationCreateSerializer(serializers.ModelSerializer):
@@ -34,18 +31,3 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
         return NotificationResultSerializer(context=self.context).to_representation(
             instance
         )
-
-
-class ClientRegisterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Client
-        fields = "__all__"
-        extra_kwargs = {
-            "os": {"required": True, "allow_blank": False},
-            "firebase_token": {"required": True, "allow_blank": False},
-        }
-
-
-class ClientRegisterPostSwaggerSerializer(serializers.Serializer):
-    firebase_token = serializers.CharField()
-    os = serializers.CharField()

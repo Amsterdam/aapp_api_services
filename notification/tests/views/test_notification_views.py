@@ -1,75 +1,182 @@
-import json
-from unittest.mock import patch
-
-import pytest
-from django.conf import settings
-from django.test import override_settings
 from django.urls import reverse
+from model_bakery import baker
+from rest_framework import status
+from rest_framework.test import APIClient
 
-from notification.models import Client
-from notification.utils.patch_utils import (
-    MockFirebaseSendEach,
-    apply_init_firebase_patches,
-)
-
-
-@pytest.fixture(scope="module", autouse=True)
-def apply_patches():
-    applied_patches = apply_init_firebase_patches()
-    yield
-    for p in applied_patches:
-        p.stop()
+from core.tests.test_authentication import BasicAPITestCase
+from notification.models import Notification
 
 
-@pytest.fixture
-def api_url():
-    return reverse("notification-create-notification")
+class NotificationBaseTests(BasicAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.client = APIClient()
+        self.client_id = "123"
+        self.headers_with_client_id = {"ClientId": self.client_id, **self.api_headers}
 
 
-@pytest.mark.django_db
-@patch("notification.services.push.messaging.send_each")
-def test_init_notification_success(
-    multicast_mock, api_client, api_url, firebase_messages
-):
-    client = Client(external_id="abc", firebase_token="abc_token")
-    client.save()
+class NotificationListViewTests(NotificationBaseTests):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("notification-list-notifications")
 
-    data = {
-        "title": "foobar title",
-        "body": "foobar body",
-        "module_slug": "foobar module slug",
-        "context": {"foo": "bar"},
-        "created_at": "2024-10-31T15:00:00",
-        "client_ids": [client.external_id, "def", "ghi"],
-    }
+    def test_list_notifications(self):
+        baker.make(Notification, client_id=self.client_id)
+        baker.make(Notification, client_id="234")
 
-    messages = firebase_messages([client], title=data["title"], body=data["body"])
-    multicast_mock.return_value = MockFirebaseSendEach(messages)
+        response = self.client.get(self.url, headers=self.headers_with_client_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            len(response.data), 1
+        )  # Only notifications for client_id "123" should be returned
+        self.assertIn("title", response.data[0])
+        self.assertIn("body", response.data[0])
+        self.assertIn("module_slug", response.data[0])
 
-    result = api_client.post(
-        api_url,
-        data=json.dumps(data),
-        content_type="application/json",
-    )
-    assert result.status_code == 200
+    def test_list_notifications_missing_client_id(self):
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertContains(
+            response,
+            "Missing header: ClientId",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
 
-@override_settings(MAX_CLIENTS_PER_REQUEST=5)
-def test_too_many_clients(api_client, api_url):
-    data = {
-        "title": "foobar",
-        "body": "something",
-        "context_json": {"foo": "bar"},
-        "created_at": "2024-10-31T15:00:00",
-        "client_ids": [
-            f"client_{i}" for i in range(settings.MAX_CLIENTS_PER_REQUEST + 1)
-        ],
-    }
+class NotificationReadViewTests(NotificationBaseTests):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("notification-read-notifications")
 
-    result = api_client.post(
-        api_url,
-        data=json.dumps(data),
-        content_type="application/json",
-    )
-    assert result.status_code == 400
-    assert "Too many client ids" in result.content.decode()
+    def test_mark_all_as_read(self):
+        notification = baker.make(Notification, client_id=self.client_id, is_read=False)
+
+        response = self.client.post(self.url, headers=self.headers_with_client_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        notification.refresh_from_db()
+        self.assertTrue(notification.is_read)
+        self.assertIn("1 notifications marked as read.", response.data["detail"])
+
+    def test_mark_all_as_read_5(self):
+        [
+            baker.make(Notification, client_id=self.client_id, is_read=False)
+            for _ in range(5)
+        ]
+
+        response = self.client.post(self.url, headers=self.headers_with_client_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("5 notifications marked as read.", response.data["detail"])
+
+    def test_mark_unread_as_read(self):
+        [
+            baker.make(Notification, client_id=self.client_id, is_read=False)
+            for _ in range(4)
+        ]
+        [
+            baker.make(Notification, client_id=self.client_id, is_read=True)
+            for _ in range(3)
+        ]
+
+        response = self.client.post(self.url, headers=self.headers_with_client_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("4 notifications marked as read.", response.data["detail"])
+
+    def test_mark_only_client_as_read(self):
+        [
+            baker.make(Notification, client_id=self.client_id, is_read=False)
+            for _ in range(2)
+        ]
+        [baker.make(Notification, client_id="foobar", is_read=False) for _ in range(8)]
+
+        response = self.client.post(self.url, headers=self.headers_with_client_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("2 notifications marked as read.", response.data["detail"])
+
+    def test_mark_all_as_read_missing_client_id(self):
+        response = self.client.post(self.url, headers=self.api_headers)
+        self.assertContains(
+            response,
+            "Missing header: ClientId",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class NotificationDetailViewTests(NotificationBaseTests):
+    def setUp(self):
+        super().setUp()
+        self.notification = baker.make(
+            Notification, client_id=self.client_id, is_read=False
+        )
+        self.url = reverse(
+            "notification-detail-notification",
+            kwargs={"notification_id": self.notification.id},
+        )
+
+    def test_get_notification_detail(self):
+        response = self.client.get(self.url, headers=self.headers_with_client_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], str(self.notification.id))
+        self.assertIn("title", response.data)
+        self.assertIn("body", response.data)
+        self.assertIn("module_slug", response.data)
+
+    def test_update_notification_status(self):
+        response = self.client.patch(
+            self.url,
+            data={"is_read": True},
+            format="json",
+            headers=self.headers_with_client_id,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.notification.refresh_from_db()
+        self.assertTrue(self.notification.is_read)
+
+    def test_get_notification_status_wrong_client_id(self):
+        headers = {"ClientId": "Foobar", **self.api_headers}
+        response = self.client.get(self.url, headers=headers)
+        self.assertContains(
+            response,
+            "No Notification matches the given query.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_update_notification_status_wrong_client_id(self):
+        headers = {"ClientId": "Foobar", **self.api_headers}
+        response = self.client.patch(
+            self.url, data={"is_read": True}, format="json", headers=headers
+        )
+        self.assertContains(
+            response,
+            "No Notification matches the given query.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_update_notification_title(self):
+        old_title = self.notification.title
+        response = self.client.patch(
+            self.url,
+            data={"is_read": False, "title": "foobar"},
+            format="json",
+            headers=self.headers_with_client_id,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.notification.refresh_from_db()
+        self.assertEqual(
+            self.notification.title, old_title
+        )  # Title should not be updated
+        self.assertFalse(self.notification.is_read)
+
+    def test_get_notification_detail_missing_client_id(self):
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertContains(
+            response,
+            "Missing header: ClientId",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_update_notification_detail_missing_client_id(self):
+        response = self.client.patch(self.url, headers=self.api_headers)
+        self.assertContains(
+            response,
+            "Missing header: ClientId",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
