@@ -35,7 +35,7 @@ from construction_work.serializers.project_serializers import (
     WarningMessageForManagementSerializer,
     WarningMessageWithNotificationResultSerializer,
 )
-from construction_work.services.push_notifications import trigger_push_notification
+from construction_work.services.notification import call_notification_service
 from construction_work.utils.auth_utils import (
     get_manager_type,
     get_project_manager_from_token,
@@ -259,7 +259,7 @@ class WarningMessageCreateView(AutoExtendSchemaMixin, generics.CreateAPIView):
 
     authentication_classes = [EntraIDAuthentication]
     permission_classes = [IsPublisher]
-    serializer_class = WarningMessageWithNotificationResultSerializer
+    serializer_class = WarningMessageCreateUpdateSerializer
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):
@@ -298,7 +298,7 @@ class WarningMessageCreateView(AutoExtendSchemaMixin, generics.CreateAPIView):
                 raise PermissionDenied("Publisher not related to project")
 
         # Validate warning message data
-        create_message_serializer = WarningMessageCreateUpdateSerializer(
+        create_message_serializer = self.get_serializer(
             data=request.data,
             context={
                 "project": project,
@@ -325,16 +325,16 @@ class WarningMessageCreateView(AutoExtendSchemaMixin, generics.CreateAPIView):
         send_push_notification = create_message_serializer.validated_data.get(
             "send_push_notification"
         )
-        push_ok = False
+        push_code = False
         push_message = None
         if send_push_notification:
-            push_ok, push_message = trigger_push_notification(new_warning)
+            push_code, push_message = call_notification_service(new_warning)
 
         # Return the created warning with notification result
         return_serializer = WarningMessageWithNotificationResultSerializer(
             instance=new_warning,
             context={
-                "push_ok": push_ok,
+                "push_code": push_code,
                 "push_message": push_message,
                 "media_url": get_media_url(request),
             },
@@ -408,17 +408,17 @@ class WarningMessageDetailView(
         warning = serializer.save()
 
         # Handle push notification
-        send_push_notification = serializer.validated_data.get("send_push_notification")
-        push_ok = False
+        push_code = None
         push_message = None
-        if send_push_notification:
-            push_ok, push_message = trigger_push_notification(warning)
+        send_push_notification = serializer.validated_data.get("send_push_notification")
+        if send_push_notification and not warning.notification_sent:
+            push_code, push_message = call_notification_service(warning)
 
         # Return the updated warning with notification result
         return_serializer = WarningMessageWithNotificationResultSerializer(
             instance=warning,
             context={
-                "push_ok": push_ok,
+                "push_code": push_code,
                 "push_message": push_message,
                 "media_url": get_media_url(request),
             },

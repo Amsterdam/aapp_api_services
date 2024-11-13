@@ -13,16 +13,14 @@ from construction_work.models import (
     Article,
     Device,
     Image,
-    Notification,
     Project,
     ProjectManager,
     WarningImage,
     WarningMessage,
 )
 from construction_work.tests import mock_data
-from construction_work.utils.test_utils import (
-    MockFirebaseSendMulticast,
-    apply_firebase_patches,
+from construction_work.utils.patch_utils import (
+    MockNotificationResponse,
     apply_signing_key_patch,
     create_image_file,
     create_jwt_token,
@@ -641,17 +639,6 @@ class TestProjectDetailsForManageView(BaseTestManageView):
 
 @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
 class TestWarningMessageCRUDBaseView(BaseTestManageView):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.applied_patches = apply_firebase_patches(cls)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        for p in cls.applied_patches:
-            p.stop()
-
     def create_warning_image(self, image_file):
         new_image = Image(image=image_file, description="foobar")
         new_image.save()
@@ -697,7 +684,6 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
 
         self.assertFalse(result.data.get("push_ok"))
         self.assertIsNone(result.data.get("push_message"))
-        self.assertFalse(result.data.get("is_pushed"))
 
         new_warning_id = result.data.get("id")
         new_warning = WarningMessage.objects.filter(pk=new_warning_id).first()
@@ -871,9 +857,9 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         self.assertEqual(result.status_code, 400)
 
     @patch(
-        "construction_work.services.push_notifications.messaging.send_each_for_multicast",
+        "construction_work.services.notification.requests.post",
     )
-    def test_create_warning_with_push_notification(self, send_multicast):
+    def test_create_warning_with_push_notification(self, post_notification):
         project, publisher = self.create_project_and_publisher()
         self.update_headers_with_publisher_data(publisher.email)
 
@@ -888,26 +874,22 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         new_device = Device.objects.create(**device_data)
         new_device.followed_projects.add(project)
 
-        send_multicast.return_value = MockFirebaseSendMulticast(5)
+        post_notification.return_value = MockNotificationResponse(
+            title=request_data["title"], body=request_data["body"]
+        )
+
         result = self.client.post(
             reverse(self.api_url_str, kwargs={"pk": project.pk}),
             data=request_data,
             headers=self.api_headers,
         )
         self.assertEqual(result.status_code, 200)
-
-        self.assertTrue(result.data.get("push_ok"))
         self.assertIsNotNone(result.data.get("push_message"))
-        self.assertTrue(result.data.get("is_pushed"))
 
         new_warning_id = result.data.get("id")
         new_warning = WarningMessage.objects.filter(pk=new_warning_id).first()
         self.assertIsNotNone(new_warning)
-
-        # When push notification is successful
-        # a notification object should have been created
-        new_notification = Notification.objects.filter(warning=new_warning).first()
-        self.assertIsNotNone(new_notification)
+        self.assertTrue(new_warning.notification_sent)
 
 
 class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
@@ -1136,11 +1118,9 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         self.assertEqual(image_count, 1)
 
     @patch(
-        "construction_work.services.push_notifications.messaging.send_each_for_multicast",
+        "construction_work.services.notification.requests.post",
     )
-    def test_update_warning_send_push_ok(self, send_multicast):
-        send_multicast.return_value = MockFirebaseSendMulticast(1)
-
+    def test_update_warning_send_push_ok(self, post_notification):
         project, publisher = self.create_project_and_publisher()
         self.update_headers_with_publisher_data(publisher.email)
 
@@ -1155,6 +1135,11 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
             "body": warning.body,
             "send_push_notification": True,
         }
+
+        post_notification.return_value = MockNotificationResponse(
+            warning_id=warning.pk, title=new_data["title"], body=new_data["body"]
+        )
+
         result = self.client.patch(
             reverse(self.api_url_str, kwargs={"pk": warning.pk}),
             data=json.dumps(new_data),
@@ -1162,25 +1147,18 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
             content_type="application/json",
         )
         self.assertEqual(result.status_code, 200)
-
-        self.assertTrue(result.data.get("push_ok"))
         self.assertIsNotNone(result.data.get("push_message"))
-        self.assertTrue(result.data.get("is_pushed"))
 
-        # Check if new notification was created
-        new_notification = Notification.objects.filter(warning=warning).first()
-        self.assertIsNotNone(new_notification)
+        warning.refresh_from_db()
+        self.assertTrue(warning.notification_sent)
 
     def test_update_warning_send_notification_not_allowed(self):
         project, publisher = self.create_project_and_publisher()
         self.update_headers_with_publisher_data(publisher.email)
 
         warning = self.create_warning(project, publisher)
-        Notification.objects.create(
-            title=warning.title,
-            body=warning.body,
-            warning=warning,
-        )
+        warning.notification_sent = True
+        warning.save()
 
         new_data = {
             "title": warning.title,
@@ -1194,14 +1172,8 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
             content_type="application/json",
         )
         self.assertEqual(result.status_code, 200)
-
-        self.assertTrue(result.data.get("push_ok"))
-        self.assertIsNotNone(result.data.get("push_message"))
-        self.assertTrue(result.data.get("is_pushed"))
-
-        # Check if only a single notification exists
-        all_notifications = Notification.objects.filter(warning=warning).all()
-        self.assertEqual(len(all_notifications), 1)
+        self.assertIsNone(result.data.get("push_code"))
+        self.assertIsNone(result.data.get("push_message"))
 
     def assert_remove_warning_successfully(self, project, publisher):
         warning = self.create_warning(project, publisher)

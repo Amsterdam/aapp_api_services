@@ -32,7 +32,7 @@ class TestModuleVersionStatusView(TestCaseWithAuth):
 
         patch_data = [{"status": 1, "releases": [release_version_0_0_1]}]
         response = self.client.patch(
-            f"/modules/api/v1/module/{module_slug}/version/{module_version}/status",
+            f"/modules/api/v1/module/{module_slug}/version/{module_version}/status/",
             data=patch_data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -56,7 +56,7 @@ class TestModuleVersionStatusView(TestCaseWithAuth):
         """Test /api/v1/module/{slug}/version/{version}/status 404"""
         data = []
         response = self.client.patch(
-            "/modules/api/v1/module/bogus/version/0.0.0/status",
+            "/modules/api/v1/module/bogus/version/0.0.0/status/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -69,7 +69,7 @@ class TestModuleVersionStatusView(TestCaseWithAuth):
         """Test /api/v1/module/{slug}/version/{version}/status 400"""
         data = [{"status": 1, "releases": ["1.0.0"]}]
         response = self.client.patch(
-            "/modules/api/v1/module/slug0/version/1.2.3/status",
+            "/modules/api/v1/module/slug0/version/1.2.3/status/",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",

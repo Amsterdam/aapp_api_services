@@ -1,12 +1,15 @@
-from unittest.mock import patch
+import uuid
+from unittest.mock import MagicMock, patch
 
 import jwt
+import requests
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.utils import timezone
 
 mock_private_key = rsa.generate_private_key(
     public_exponent=65537, key_size=2048, backend=default_backend()
@@ -55,49 +58,36 @@ def create_image_file(image_path):
     return image_file
 
 
-def apply_firebase_patches(test_case: TestCase) -> list:
-    settings.FIREBASE_CREDENTIALS = "{}"
+class MockNotificationResponse:
+    def __init__(self, title, body, warning_id=1, status_code=200):
+        self.warning_id = warning_id
+        self.title = title
+        self.body = body
+        self.status_code = status_code
 
-    cert_patcher = patch(
-        "construction_work.services.push_notifications.credentials.Certificate"
-    )
-    test_case.mock_cert = cert_patcher.start()
-    test_case.mock_cert.return_value = None
+    def get_response(self):
+        mock_response = MagicMock()
+        mock_response.json = self.json
+        mock_response.status_code = self.status_code
+        mock_response.raise_for_status = self.raise_for_status
+        return mock_response
 
-    init_patcher = patch(
-        "construction_work.services.push_notifications.firebase_admin.initialize_app"
-    )
-    test_case.mock_init = init_patcher.start()
-    test_case.mock_init.return_value = None
+    def json(self):
+        return {
+            "push_message": {
+                "title": self.title,
+                "body": self.body,
+                "module_slug": "construction-work",
+                "context": {
+                    "linkSourceid": self.warning_id,
+                    "type": "ProjectWarningCreatedByProjectManager",
+                    "notificationId": str(uuid.uuid4()),
+                },
+                "created_at": timezone.now().isoformat(),
+                "is_read": False,
+            }
+        }
 
-    app_patcher = patch(
-        "construction_work.services.push_notifications.firebase_admin.get_app"
-    )
-    test_case.mock_app = app_patcher.start()
-    test_case.mock_app.return_value = None
-
-    return cert_patcher, init_patcher, app_patcher
-
-
-class MockFirebaseError(Exception):
-    pass
-
-
-class MockFirebaseMulticastResponse:
-    def __init__(self, success=True):
-        self.success = success
-
-
-class MockFirebaseSendMulticast:
-    def __init__(self, response_count: int, fail_count: int = 0):
-        if fail_count > response_count:
-            raise MockFirebaseError("Fail count can not be higher then response count")
-
-        self.failure_count = fail_count
-        self.responses: list[MockFirebaseMulticastResponse] = []
-        for _ in range(0, response_count):
-            self.responses.append(MockFirebaseMulticastResponse())
-
-        failed_responses = self.responses[0:fail_count]
-        for x in failed_responses:
-            x.success = False
+    def raise_for_status(self):
+        if not (200 <= self.status_code < 300):
+            raise requests.exceptions.HTTPError(f"{self.status_code} Error")

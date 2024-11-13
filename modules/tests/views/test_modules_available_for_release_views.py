@@ -8,7 +8,7 @@ class TestModulesAvailableForReleaseView(TestCaseWithAuth):
     def test_modules_available_for_release_1(self):
         """Test modules available for release"""
         response = self.client.get(
-            "/modules/api/v1/modules/available-for-release/0.0.0",
+            "/modules/api/v1/modules/available-for-release/0.0.0/",
             HTTP_AUTHORIZATION=self.jwt_token,
         )
         self.assertEqual(response.status_code, 200)
@@ -65,7 +65,7 @@ class TestModulesAvailableForReleaseView(TestCaseWithAuth):
     def test_modules_available_for_release_2(self):
         """Test modules available for release"""
         response = self.client.get(
-            "/modules/api/v1/modules/available-for-release/0.0.1",
+            "/modules/api/v1/modules/available-for-release/0.0.1/",
             HTTP_AUTHORIZATION=self.jwt_token,
         )
         self.assertEqual(response.status_code, 200)
@@ -167,7 +167,7 @@ class TestModulesAvailableForReleaseView(TestCaseWithAuth):
 
         # Get available module versions for the "current" release
         response = self.client.get(
-            f"/modules/api/v1/modules/available-for-release/{release_2_0.version}",
+            f"/modules/api/v1/modules/available-for-release/{release_2_0.version}/",
             HTTP_AUTHORIZATION=self.jwt_token,
         )
         self.assertEqual(response.status_code, 200)

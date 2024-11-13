@@ -1,6 +1,8 @@
 django<5
 freezegun
 pytest-django
+pytest-dotenv
+pytest-env
 model-bakery
 black
 isort

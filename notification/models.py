@@ -13,7 +13,6 @@ class Client(models.Model):
     external_id = models.CharField(max_length=1000, unique=True)
     os = models.CharField()
     firebase_token = models.CharField(max_length=1000, null=True)
-    receive_push = models.BooleanField(default=False)
 
 
 class Notification(models.Model):

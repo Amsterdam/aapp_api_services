@@ -20,8 +20,8 @@ from construction_work.models import (
 )
 from construction_work.tests import mock_data
 from construction_work.utils.date_utils import translate_timezone as tt
-from construction_work.utils.test_utils import create_image_file
-from core.tests import BasicAPITestCase
+from construction_work.utils.patch_utils import create_image_file
+from core.tests.test_authentication import BasicAPITestCase
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
@@ -569,6 +569,22 @@ class TestProjectSearchView(BaseTestProjectView):
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertNotIn(new_project.title, res_titles)
 
+    def test_search_non_text_query_fields(self):
+        """Test search for projects"""
+        search_text = "title"
+        query = {
+            "text": search_text,
+            "query_fields": "id,image,title,subtitle",
+            "fields": "title,subtitle",
+            "page_size": 1,
+            "page": 1,
+        }
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()["result"]
+        self.assertEqual(len(result), 1)
+
 
 class TestFollowProjectView(BaseTestProjectView):
     def setUp(self):
@@ -919,7 +935,7 @@ class TestWarningMessageDetailView(BaseTestProjectView):
         return new_message
 
     def test_get_warning_message_success(self):
-        """Tet get warning message"""
+        """Test get warning message"""
         data = {
             "title": "foobar title",
             "body": "foobar body",
@@ -947,10 +963,12 @@ class TestWarningMessageDetailView(BaseTestProjectView):
             ),
             "author_email": "mock0@amsterdam.nl",
             "meta_id": {"id": new_message.pk, "type": "warning"},
+            "notification_sent": False,
         }
         self.assertDictEqual(result.data, expected_result)
 
     def test_get_warning_message_with_image(self):
+        """Test get warning message with image"""
         data = {
             "title": "foobar title",
             "body": "foobar body",
@@ -999,6 +1017,7 @@ class TestWarningMessageDetailView(BaseTestProjectView):
             ),
             "author_email": "mock0@amsterdam.nl",
             "meta_id": {"id": new_warning_message.pk, "type": "warning"},
+            "notification_sent": False,
         }
         self.assertDictEqual(result.json(), expected_result)
 

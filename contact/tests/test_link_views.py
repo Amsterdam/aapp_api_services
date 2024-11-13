@@ -1,7 +1,7 @@
 from django.urls import reverse
 from rest_framework import status
 
-from core.tests import BasicAPITestCase
+from core.tests.test_authentication import BasicAPITestCase
 
 
 class TestLinkView(BasicAPITestCase):

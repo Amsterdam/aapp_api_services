@@ -244,44 +244,14 @@ class ProjectSearchView(generics.ListAPIView):
             raise ParseError(
                 f"Search text must be at least {settings.MIN_SEARCH_QUERY_LENGTH} characters long."
             )
+        self.validate_fields(query_fields, return_fields)
+        similarities = self.get_similarities(query_fields, text)
 
-        if not query_fields:
-            raise ParseError("Query fields are required.")
-
-        # Validate query fields
-        model_fields = [
-            field.name for field in Project._meta.get_fields() if not field.is_relation
-        ]
-        query_fields_list = query_fields.split(",")
-        for field in query_fields_list:
-            if field not in model_fields:
-                raise ParseError(
-                    f"Field '{field}' is not a valid field in Project model."
-                )
-
-        # Validate return fields if provided
-        text_fields = [
-            field.name
-            for field in Project._meta.get_fields()
-            if isinstance(field, (CharField, TextField))
-        ]
-        return_fields_list = None
-        if return_fields:
-            return_fields_list = return_fields.split(",")
-            for field in return_fields_list:
-                if field not in text_fields:
-                    raise ParseError(
-                        f"Field '{field}' is not a text field in Project model."
-                    )
-
-        similarities = [TrigramSimilarity(field, text) for field in query_fields_list]
-
-        # Start off with empty queryset
         queryset = Project.objects.none()
-
-        similarity = similarities[0]
         if len(similarities) > 1:
             similarity = Greatest(*similarities)
+        else:
+            similarity = similarities[0]
 
         if similarity:
             queryset = (
@@ -290,11 +260,33 @@ class ProjectSearchView(generics.ListAPIView):
                 .order_by("-similarity")
             )
 
-        # Optimize the queryset to only include necessary fields
+        # Only include necessary fields
+        return_fields_list = return_fields.split(",")
         if return_fields_list:
             queryset = queryset.only(*return_fields_list)
-
         return queryset
+
+    def validate_fields(self, query_fields, return_fields):
+        if not query_fields:
+            raise ParseError("Query fields are required.")
+        model_fields = [field.name for field in Project._meta.get_fields() if not field.is_relation]
+        non_model_query_fields = [field for field in query_fields.split(",") if field not in model_fields]
+        non_model_return_fields = [field for field in return_fields.split(",") if field not in model_fields]
+        if non_model_query_fields or non_model_return_fields:
+            raise ParseError(
+                f"Field(s) '{', '.join(non_model_query_fields + non_model_return_fields)}' are not valid fields in Project model."
+            )
+        return model_fields
+
+    def get_similarities(self, query_fields, text):
+        text_fields = [
+            field.name
+            for field in Project._meta.get_fields()
+            if isinstance(field, (CharField, TextField))
+        ]
+        query_fields_list = [f for f in query_fields.split(",") if f in text_fields]
+        similarities = [TrigramSimilarity(field, text) for field in query_fields_list]
+        return similarities
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -436,7 +428,7 @@ class FollowProjectView(generics.GenericAPIView):
         ],
         exceptions=[MissingDeviceIdHeader, NotFound],
         success_response=str,
-        examples=[OpenApiExample("Example 1", value="Subscription added")],
+        # examples=[OpenApiExample("Example 1", value="Subscription added")],
     )
     def post(self, request, *args, **kwargs):
         """

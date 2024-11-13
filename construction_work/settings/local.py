@@ -6,3 +6,10 @@ from core.settings.local import *  # isort:skip
 
 EDITOR_GROUP_ID = os.getenv("EDITOR_GROUP_ID", "editor-group-id-for-testing")
 PUBLISHER_GROUP_ID = os.getenv("PUBLISHER_GROUP_ID", "publisher-group-id-for-testing")
+
+MOCK_ENTRA_AUTH = os.getenv("MOCK_ENTRA_AUTH", "true").lower() == "true"
+
+if MOCK_ENTRA_AUTH:
+    from construction_work import authentication
+
+    authentication.EntraIDAuthentication = authentication.MockEntraIDAuthentication
