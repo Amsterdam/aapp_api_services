@@ -20,6 +20,7 @@ from construction_work.permissions import (
     IsEditor,
     IsPublisher,
     IsPublisherOnlyReadOwnData,
+    IsPublisherOnlyReadOwnProject,
     IsPublisherOnlyUpdateOwnWarning,
 )
 from construction_work.serializers.image_serializer import ImageCreateSerializer
@@ -192,7 +193,6 @@ class ProjectListForManageView(AutoExtendSchemaMixin, generics.ListAPIView):
 
     serializer_class = ProjectListForManageSerializer
     authentication_classes = [EntraIDAuthentication]
-    permission_classes = [IsPublisherOnlyUpdateOwnWarning]
 
     def get_queryset(self):
         token_data = self.request.auth
@@ -232,15 +232,10 @@ class ProjectDetailsForManageView(AutoExtendSchemaMixin, generics.RetrieveAPIVie
 
     serializer_class = ProjectDetailsForManagementSerializer
     authentication_classes = [EntraIDAuthentication]
-    permission_classes = [IsPublisherOnlyUpdateOwnWarning]
+    permission_classes = [IsPublisherOnlyReadOwnProject]
 
     def get_queryset(self):
         return Project.objects.filter(active=True)
-
-    def get_object(self):
-        obj = super().get_object()
-        self.check_object_permissions(self.request, obj)
-        return obj
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
