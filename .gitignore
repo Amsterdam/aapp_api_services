@@ -12,6 +12,7 @@ __pycache__/
 
 # Python virtual environments
 venv/
+.venv/
 
 # Environment files (e.g., DB passwords, sensitive data)
 env/

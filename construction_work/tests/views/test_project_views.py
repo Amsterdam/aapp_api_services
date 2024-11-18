@@ -1001,7 +1001,13 @@ class TestWarningMessageDetailView(BaseTestProjectView):
             "images": [
                 {
                     "id": image.pk,
-                    "sources": [{"uri": None, "width": 10, "height": 10}],
+                    "sources": [
+                        {
+                            "uri": "http://testserver/construction-work/media/images/image.jpg",
+                            "width": 10,
+                            "height": 10,
+                        }
+                    ],
                     "landscape": False,
                     "alternativeText": "square image",
                 }
