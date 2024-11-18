@@ -638,6 +638,16 @@ class TestProjectDetailsForManageView(BaseTestManageView):
         )
         self.assertEqual(result.status_code, 404)
 
+    def test_get_assigned_project_as_publisher(self):
+        project, publisher = self.create_project_and_publisher()
+        self.update_headers_with_publisher_data(publisher.email)
+
+        result = self.client.get(
+            reverse(self.api_url_str, kwargs={"pk": project.pk}),
+            headers=self.api_headers,
+        )
+        self.assertEqual(result.status_code, 200)
+
 
 @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
 class TestWarningMessageCRUDBaseView(BaseTestManageView):

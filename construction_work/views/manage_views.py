@@ -192,7 +192,6 @@ class ProjectListForManageView(AutoExtendSchemaMixin, generics.ListAPIView):
 
     serializer_class = ProjectListForManageSerializer
     authentication_classes = [EntraIDAuthentication]
-    permission_classes = [IsPublisherOnlyUpdateOwnWarning]
 
     def get_queryset(self):
         token_data = self.request.auth
@@ -232,7 +231,6 @@ class ProjectDetailsForManageView(AutoExtendSchemaMixin, generics.RetrieveAPIVie
 
     serializer_class = ProjectDetailsForManagementSerializer
     authentication_classes = [EntraIDAuthentication]
-    permission_classes = [IsPublisherOnlyUpdateOwnWarning]
 
     def get_queryset(self):
         return Project.objects.filter(active=True)
