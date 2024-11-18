@@ -269,9 +269,15 @@ class ProjectSearchView(generics.ListAPIView):
     def validate_fields(self, query_fields, return_fields):
         if not query_fields:
             raise ParseError("Query fields are required.")
-        model_fields = [field.name for field in Project._meta.get_fields() if not field.is_relation]
-        non_model_query_fields = [field for field in query_fields.split(",") if field not in model_fields]
-        non_model_return_fields = [field for field in return_fields.split(",") if field not in model_fields]
+        model_fields = [
+            field.name for field in Project._meta.get_fields() if not field.is_relation
+        ]
+        non_model_query_fields = [
+            field for field in query_fields.split(",") if field not in model_fields
+        ]
+        non_model_return_fields = [
+            field for field in return_fields.split(",") if field not in model_fields
+        ]
         if non_model_query_fields or non_model_return_fields:
             raise ParseError(
                 f"Field(s) '{', '.join(non_model_query_fields + non_model_return_fields)}' are not valid fields in Project model."
@@ -625,3 +631,12 @@ class WarningMessageDetailView(generics.RetrieveAPIView):
         except WarningMessage.DoesNotExist:
             raise NotFound("Warning message not found")
         return message
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(
+            {
+                "media_url": get_media_url(self.request),
+            }
+        )
+        return context
