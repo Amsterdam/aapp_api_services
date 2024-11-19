@@ -28,6 +28,7 @@ firebase_admin
 # Azure
 django-storages[azure]
 azure-ad-verify-token
+azure-core
 azure-identity
-azure-monitor-opentelemetry==1.6.1 
-azure-monitor-opentelemetry-exporter==1.0.0b28
+azure-monitor-opentelemetry
+azure-monitor-opentelemetry-exporter
