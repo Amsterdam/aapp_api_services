@@ -148,11 +148,11 @@ LOGGING = {
         },
         "azure.core.pipeline.policies.http_logging_policy": {
             "handlers": ["console"],
-            "level": "ERROR",  # Set to INFO to log what is being logged by OpenTelemetry
+            "level": "INFO",  # Set to INFO to log what is being logged by OpenTelemetry
         },
         "azure.monitor.opentelemetry.exporter.export._base": {
             "handlers": ["console"],
-            "level": "ERROR",  # Set to INFO to log what is being logged by OpenTelemetry
+            "level": "INFO",  # Set to INFO to log what is being logged by OpenTelemetry
         },
         "opentelemetry.attributes": {
             "handlers": ["console"],
@@ -162,6 +162,10 @@ LOGGING = {
             "level": "ERROR",
             "propagate": False,
         },
+        "azure.identity._internal.get_token_mixin": {
+            "handlers": ["console"],
+            "level": "WARNING",
+        },  # suppress "WorkloadIdentityCredential.get_token succeeded" message
         "django": {
             "level": "INFO",
             "handlers": ["console"],
