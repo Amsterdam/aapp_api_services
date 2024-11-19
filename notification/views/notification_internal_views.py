@@ -8,11 +8,9 @@ from rest_framework.response import Response
 from core.serializers.error_serializers import get_error_response_serializers
 from notification.exceptions import PushServiceError
 from notification.models import Notification
-from notification.serializers.notification_internal_serializers import (
-    NotificationCreateSerializer,
-)
 from notification.serializers.notification_serializers import (
-    NotificationResultSerializer,
+    NotificationCreateResponseSerializer,
+    NotificationCreateSerializer,
 )
 from notification.services.push import PushService
 
@@ -36,7 +34,7 @@ class NotificationInitView(generics.CreateAPIView):
 
     @extend_schema(
         responses={
-            200: NotificationResultSerializer,
+            201: NotificationCreateResponseSerializer,
             **get_error_response_serializers([PushServiceError, ValidationError]),
         },
     )
@@ -49,10 +47,9 @@ class NotificationInitView(generics.CreateAPIView):
 
         try:
             push_service = PushService(notification, client_ids)
-            push_service.push()
+            response_data = push_service.push()
         except Exception:
             logger.error("Failed to push notification", exc_info=True)
             raise PushServiceError("Failed to push notification")
 
-        serializer = self.get_serializer(notification)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(response_data, status=status.HTTP_201_CREATED)

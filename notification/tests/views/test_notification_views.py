@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from core.tests.test_authentication import BasicAPITestCase
-from notification.models import Notification
+from notification.models import Client, Notification
 
 
 class NotificationBaseTests(BasicAPITestCase):
@@ -21,8 +21,9 @@ class NotificationListViewTests(NotificationBaseTests):
         self.url = reverse("notification-list-notifications")
 
     def test_list_notifications(self):
-        baker.make(Notification, client_id=self.client_id)
-        baker.make(Notification, client_id="234")
+        client_1 = baker.make(Client, external_id=self.client_id)
+        baker.make(Notification, client=client_1)
+        baker.make(Notification, client=baker.make(Client))
 
         response = self.client.get(self.url, headers=self.headers_with_client_id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -45,10 +46,11 @@ class NotificationListViewTests(NotificationBaseTests):
 class NotificationReadViewTests(NotificationBaseTests):
     def setUp(self):
         super().setUp()
+        self.test_client = baker.make(Client, external_id=self.client_id)
         self.url = reverse("notification-read-notifications")
 
     def test_mark_all_as_read(self):
-        notification = baker.make(Notification, client_id=self.client_id, is_read=False)
+        notification = baker.make(Notification, client=self.test_client, is_read=False)
 
         response = self.client.post(self.url, headers=self.headers_with_client_id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -58,7 +60,7 @@ class NotificationReadViewTests(NotificationBaseTests):
 
     def test_mark_all_as_read_5(self):
         [
-            baker.make(Notification, client_id=self.client_id, is_read=False)
+            baker.make(Notification, client=self.test_client, is_read=False)
             for _ in range(5)
         ]
 
@@ -68,11 +70,11 @@ class NotificationReadViewTests(NotificationBaseTests):
 
     def test_mark_unread_as_read(self):
         [
-            baker.make(Notification, client_id=self.client_id, is_read=False)
+            baker.make(Notification, client=self.test_client, is_read=False)
             for _ in range(4)
         ]
         [
-            baker.make(Notification, client_id=self.client_id, is_read=True)
+            baker.make(Notification, client=self.test_client, is_read=True)
             for _ in range(3)
         ]
 
@@ -82,10 +84,13 @@ class NotificationReadViewTests(NotificationBaseTests):
 
     def test_mark_only_client_as_read(self):
         [
-            baker.make(Notification, client_id=self.client_id, is_read=False)
+            baker.make(Notification, client=self.test_client, is_read=False)
             for _ in range(2)
         ]
-        [baker.make(Notification, client_id="foobar", is_read=False) for _ in range(8)]
+        [
+            baker.make(Notification, client=baker.make(Client), is_read=False)
+            for _ in range(8)
+        ]
 
         response = self.client.post(self.url, headers=self.headers_with_client_id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -104,7 +109,7 @@ class NotificationDetailViewTests(NotificationBaseTests):
     def setUp(self):
         super().setUp()
         self.notification = baker.make(
-            Notification, client_id=self.client_id, is_read=False
+            Notification, client=baker.make(Client, external_id="123"), is_read=False
         )
         self.url = reverse(
             "notification-detail-notification",

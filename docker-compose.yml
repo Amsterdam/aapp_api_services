@@ -19,19 +19,15 @@ x-app: &base-app
       condition: service_healthy
 
 volumes:
-  db_data:
   cache:
 
 services:
   db:
-    image: postgres:15
+    image: timescale/timescaledb-ha:pg15
     environment:
       POSTGRES_DB: dev
       POSTGRES_USER: dev
       POSTGRES_PASSWORD: dev
-      PGDATA: /data
-    volumes:
-      - db_data:/data
     ports:
       - "5435:5432"
     healthcheck:

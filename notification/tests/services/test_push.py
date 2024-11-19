@@ -64,7 +64,9 @@ def test_push_success(multicast_mock, unsaved_notification, client, firebase_mes
     push_service = PushService(unsaved_notification, [client.external_id])
     push_service.push()
 
-    notification = Notification.objects.filter(client_id=client.external_id).first()
+    notification = Notification.objects.filter(
+        client__external_id=client.external_id
+    ).first()
     assert notification.pushed_at is not None
 
 
@@ -98,14 +100,15 @@ def test_push_with_some_failed_tokens(
     parent_logger.propagate = True
 
     with caplog.at_level(logging.INFO, logger="notification.services.push"):
-        push_service.push()
+        result = push_service.push()
 
     # Check if the specific log messages are in the captured logs
     assert any(
         "Failed to send notification to client" in record.message
         for record in caplog.records
     )
-    assert any(record.levelname == "INFO" for record in caplog.records)
+    assert Notification.objects.count() == client_count
+    assert result["failed_token_count"] == failed_client_count
 
 
 @override_settings(FIREBASE_CLIENT_LIMIT=5)
@@ -119,10 +122,9 @@ def test_hit_max_clients():
 @pytest.mark.django_db
 def test_client_without_firebase_tokens(unsaved_notification, clients, caplog):
     created_clients = clients(5, with_token=False)
+    client_ids = [c.external_id for c in created_clients]
 
-    push_service = PushService(
-        unsaved_notification, [c.external_id for c in created_clients]
-    )
+    push_service = PushService(unsaved_notification, client_ids)
 
     # Ensure the logger is set to the correct level
     logger = logging.getLogger("notification.services.push")
@@ -132,11 +134,13 @@ def test_client_without_firebase_tokens(unsaved_notification, clients, caplog):
     parent_logger.propagate = True
 
     with caplog.at_level(logging.INFO, logger="notification.services.push"):
-        push_service.push()
+        result = push_service.push()
 
     # For each client a notification should have been created
     for c in created_clients:
-        notification = Notification.objects.filter(client_id=c.external_id).first()
+        notification = Notification.objects.filter(
+            client__external_id=c.external_id
+        ).first()
         assert notification is not None
 
     # Check if the specific log message is in the captured logs
@@ -144,4 +148,6 @@ def test_client_without_firebase_tokens(unsaved_notification, clients, caplog):
         "none of the clients have a Firebase token" in record.message
         for record in caplog.records
     )
-    assert any(record.levelname == "INFO" for record in caplog.records)
+    assert Notification.objects.count() == len(created_clients)
+    assert result["total_token_count"] == 0
+    assert result["failed_token_count"] == 0

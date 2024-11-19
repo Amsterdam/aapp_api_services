@@ -34,7 +34,7 @@ class Notification(models.Model):
     body = models.CharField(max_length=1000)
     module_slug = models.CharField()
     context = models.JSONField()
-    client_id = models.CharField(null=True)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
     created_at = models.DateTimeField()
     pushed_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)

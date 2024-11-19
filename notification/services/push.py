@@ -54,11 +54,17 @@ class PushService:
         self.source_notification = source_notification
         self.source_notification.id = None
 
-    def push(self) -> None:
-        notifications = self.create_notifications()
-        self.push_messages(notifications)
+    def push(self) -> dict:
+        clients = Client.objects.filter(external_id__in=self.client_ids).all()
+        notifications = self.create_notifications(clients)
+        response_data = self.push_messages(notifications, clients)
+        response_data["total_client_count"] = len(self.client_ids)
+        response_data["missing_client_ids"] = list(
+            set(self.client_ids) - set([c.external_id for c in clients])
+        )
+        return response_data
 
-    def create_notifications(self) -> dict[str, Notification]:
+    def create_notifications(self, clients: list[Client]) -> dict[str, Notification]:
         """
         The supplied source_notification will be duplicated for every client.
 
@@ -66,16 +72,15 @@ class PushService:
             list[Notification]: newly created notification objects
         """
         new_notifications = {}
-
-        for c_id in self.client_ids:
+        for c in clients:
             new_notification: Notification = copy.copy(self.source_notification)
-            new_notification.client_id = c_id
-            new_notifications[c_id] = new_notification
+            new_notification.client = c
+            new_notifications[c.external_id] = new_notification
 
         Notification.objects.bulk_create(new_notifications.values())
         return new_notifications
 
-    def push_messages(self, notifications: dict[str, Notification]) -> None:
+    def push_messages(self, notifications: dict[str, Notification], clients) -> dict:
         """
         Forwards notification to Firebase, to be pushed to clients.
 
@@ -86,22 +91,22 @@ class PushService:
             notifications (list[Notification]): notifications used for Firebase message data
         """
 
-        clients = Client.objects.filter(
-            external_id__in=self.client_ids,
-            firebase_token__isnull=False,
-        ).all()
-
-        if not clients:
+        clients_with_token = [c for c in clients if c.firebase_token]
+        if not clients_with_token:
             logger.info(
                 "Notification(s) created, but none of the clients have a Firebase token",
                 extra={
                     "total_client_count": len(self.client_ids),
                 },
             )
-            return
+            return {
+                "total_create_count": len(clients),
+                "total_token_count": 0,
+                "failed_token_count": 0,
+            }
 
         firebase_messages = []
-        for client in clients:
+        for client in clients_with_token:
             notification_obj = notifications[client.external_id]
             message = self._define_firebase_message(client, notification_obj)
             firebase_messages.append(message)
@@ -111,14 +116,11 @@ class PushService:
         if batch_response.failure_count > 0:
             failed_tokens = self._log_failures(batch_response, firebase_messages)
 
-        logger.info(
-            "Notification(s) pushed to Firebase!",
-            extra={
-                "total_client_count": len(self.client_ids),
-                "total_token_count": len(firebase_messages),
-                "failed_token_count": len(failed_tokens),
-            },
-        )
+        return {
+            "total_create_count": len(clients),
+            "total_token_count": len(clients_with_token),
+            "failed_token_count": len(failed_tokens),
+        }
 
     def _define_firebase_message(
         self, client: Client, notification_obj: Notification

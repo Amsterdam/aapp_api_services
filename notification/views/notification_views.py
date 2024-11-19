@@ -27,7 +27,7 @@ class NotificationListView(generics.ListAPIView):
         client_id = self.request.headers.get(settings.HEADER_CLIENT_ID)
         if not client_id:
             raise MissingClientIdHeader
-        return Notification.objects.filter(client_id=client_id)
+        return Notification.objects.filter(client__external_id=client_id)
 
     @extend_schema_for_client_id(
         success_response=NotificationResultSerializer,
@@ -53,7 +53,7 @@ class NotificationMarkAllReadView(generics.UpdateAPIView):
 
         # Perform the bulk update
         updated_count = Notification.objects.filter(
-            client_id=client_id, is_read=False
+            client__external_id=client_id, is_read=False
         ).update(is_read=True)
         return Response({"detail": f"{updated_count} notifications marked as read."})
 
@@ -68,7 +68,7 @@ class NotificationDetailView(generics.RetrieveUpdateAPIView):
         client_id = self.request.headers.get(settings.HEADER_CLIENT_ID)
         if not client_id:
             raise MissingClientIdHeader
-        return Notification.objects.filter(client_id=client_id)
+        return Notification.objects.filter(client__external_id=client_id)
 
     @extend_schema_for_client_id(
         success_response=NotificationResultSerializer,

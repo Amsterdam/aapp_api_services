@@ -51,7 +51,16 @@ def test_init_notification_success(
         data=json.dumps(data),
         content_type="application/json",
     )
-    assert result.status_code == 200
+    assert result.status_code == 201
+    response = result.json()
+    response["missing_client_ids"].sort()
+    assert response == {
+        "total_client_count": 3,
+        "total_create_count": 1,
+        "total_token_count": 1,
+        "failed_token_count": 0,
+        "missing_client_ids": ["def", "ghi"],
+    }
 
 
 @override_settings(MAX_CLIENTS_PER_REQUEST=5)
