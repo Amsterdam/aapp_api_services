@@ -291,7 +291,14 @@ class ProjectSearchView(generics.ListAPIView):
             if isinstance(field, (CharField, TextField))
         ]
         query_fields_list = [f for f in query_fields.split(",") if f in text_fields]
-        similarities = [TrigramSimilarity(field, text) for field in query_fields_list]
+
+        similarities = []
+        for field in query_fields_list:
+            similarity = TrigramSimilarity(field, text)
+            if field == "title":
+                similarity = similarity * 2
+            similarities.append(similarity)
+
         return similarities
 
     def get_serializer_context(self):

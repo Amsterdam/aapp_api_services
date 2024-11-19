@@ -507,6 +507,38 @@ class TestProjectSearchView(BaseTestProjectView):
     def test_use_nonsense_search_term(self):
         self.assert_projects_found("foobar", 0)
 
+    def test_title_query_field_is_given_priority(self):
+        """Test that matches in title field are prioritized over other fields"""
+        Project.objects.all().delete()
+        # Create projects with search term in different fields
+        project1 = Project.objects.create(
+            foreign_id=1,
+            title="something else",
+            subtitle="search_term is in the beginning of this subtitle",
+        )
+        project2 = Project.objects.create(
+            foreign_id=2,
+            title="this sentence will and with an embedded_search_term",
+            subtitle="something else",
+        )
+
+        # Search across both title and subtitle fields
+        query = {
+            "text": "search_term",
+            "query_fields": "title,subtitle",
+            "fields": "id,title,subtitle",
+            "page_size": 10,
+        }
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        results = response.json()["result"]
+
+        # Project with match in title should appear first
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0]["id"], project2.pk)
+        self.assertEqual(results[1]["id"], project1.pk)
+
     def test_search_project_and_follow_links(self):
         """Test search for projects"""
         search_text = "title"
