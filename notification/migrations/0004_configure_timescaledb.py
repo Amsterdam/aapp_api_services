@@ -28,8 +28,4 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             "ALTER TABLE public.notification_notification ADD CONSTRAINT notification_notification_pkey PRIMARY KEY (id, created_at, client_id)"
         ),
-        # Remove records after 30 days
-        migrations.RunSQL(
-            "SELECT add_retention_policy('notification_notification', INTERVAL '30 days');"
-        ),
     ]
