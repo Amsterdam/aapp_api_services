@@ -26,3 +26,5 @@ LOGGING["loggers"]["modules"] = {
     "handlers": ["console"],
     "propagate": False,
 }
+
+STATIC_URL = "/modules/static/"

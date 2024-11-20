@@ -39,3 +39,5 @@ PUBLISHER_GROUP_ID = os.getenv("PUBLISHER_GROUP_ID")
 FIREBASE_CREDENTIALS = os.getenv("FIREBASE_JSON")
 
 MOCK_ENTRA_AUTH = False
+
+STATIC_URL = "/construction-work/static/"

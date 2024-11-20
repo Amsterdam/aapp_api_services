@@ -110,7 +110,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = "{base_dir}/static/".format(base_dir=BASE_DIR)
+STATIC_URL = "/construction-work/static/"  # Placeholder for the actual URL
 STATICFILES_DIR = []
 STATIC_ROOT = "{base_dir}/static/".format(base_dir=BASE_DIR)
 HEADER_DEVICE_ID = "DeviceId"

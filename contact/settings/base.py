@@ -27,3 +27,5 @@ CITY_OFFICE_LOOKUP_TABLE = {
     10: "b887a4d081821c4245c02f07e2de3290",  # Zuid
     11: "d338d28f8e6132ea2cfcf3e61785454c",  # Zuidoost
 }
+
+STATIC_URL = "/contact/static/"
