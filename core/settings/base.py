@@ -110,9 +110,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = "/construction-work/static/"  # TODO: Change this to the correct path
+STATIC_URL = "{base_dir}/static".format(base_dir=BASE_DIR)
 STATICFILES_DIR = []
 STATIC_ROOT = "{base_dir}/static".format(base_dir=BASE_DIR)
+HEADER_DEVICE_ID = "DeviceId"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

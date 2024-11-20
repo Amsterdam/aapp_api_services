@@ -28,7 +28,6 @@ from rest_framework.response import Response
 from construction_work.exceptions import (
     InvalidArticleMaxAgeParam,
     MissingArticleIdParam,
-    MissingDeviceIdHeader,
     MissingWarningMessageIdParam,
 )
 from construction_work.models import Article, Device, Project, WarningMessage
@@ -43,6 +42,7 @@ from construction_work.serializers.project_serializers import (
 )
 from construction_work.services.geocoding import geocode_address
 from construction_work.utils.url_utils import get_media_url
+from core.exceptions import MissingDeviceIdHeader
 from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 
 

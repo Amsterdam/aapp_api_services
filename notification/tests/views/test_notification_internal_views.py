@@ -6,7 +6,7 @@ from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 
-from notification.models import Client
+from notification.models import Device
 from notification.utils.patch_utils import (
     MockFirebaseSendEach,
     apply_init_firebase_patches,
@@ -31,8 +31,8 @@ def api_url():
 def test_init_notification_success(
     multicast_mock, api_client, api_url, firebase_messages
 ):
-    client = Client(external_id="abc", firebase_token="abc_token")
-    client.save()
+    device = Device(external_id="abc", firebase_token="abc_token")
+    device.save()
 
     data = {
         "title": "foobar title",
@@ -40,10 +40,10 @@ def test_init_notification_success(
         "module_slug": "foobar module slug",
         "context": {"foo": "bar"},
         "created_at": "2024-10-31T15:00:00",
-        "client_ids": [client.external_id, "def", "ghi"],
+        "device_ids": [device.external_id, "def", "ghi"],
     }
 
-    messages = firebase_messages([client], title=data["title"], body=data["body"])
+    messages = firebase_messages([device], title=data["title"], body=data["body"])
     multicast_mock.return_value = MockFirebaseSendEach(messages)
 
     result = api_client.post(
@@ -53,25 +53,25 @@ def test_init_notification_success(
     )
     assert result.status_code == 201
     response = result.json()
-    response["missing_client_ids"].sort()
+    response["missing_device_ids"].sort()
     assert response == {
-        "total_client_count": 3,
+        "total_device_count": 3,
         "total_create_count": 1,
         "total_token_count": 1,
         "failed_token_count": 0,
-        "missing_client_ids": ["def", "ghi"],
+        "missing_device_ids": ["def", "ghi"],
     }
 
 
-@override_settings(MAX_CLIENTS_PER_REQUEST=5)
-def test_too_many_clients(api_client, api_url):
+@override_settings(MAX_DEVICES_PER_REQUEST=5)
+def test_too_many_devices(api_client, api_url):
     data = {
         "title": "foobar",
         "body": "something",
         "context_json": {"foo": "bar"},
         "created_at": "2024-10-31T15:00:00",
-        "client_ids": [
-            f"client_{i}" for i in range(settings.MAX_CLIENTS_PER_REQUEST + 1)
+        "device_ids": [
+            f"device_{i}" for i in range(settings.MAX_DEVICES_PER_REQUEST + 1)
         ],
     }
 
@@ -81,4 +81,4 @@ def test_too_many_clients(api_client, api_url):
         content_type="application/json",
     )
     assert result.status_code == 400
-    assert "Too many client ids" in result.content.decode()
+    assert "Too many device ids" in result.content.decode()

@@ -20,19 +20,19 @@ class NotificationResultSerializer(serializers.ModelSerializer):
 
 
 class NotificationCreateSerializer(serializers.ModelSerializer):
-    client_ids = serializers.ListField(child=serializers.CharField(), write_only=True)
+    device_ids = serializers.ListField(child=serializers.CharField(), write_only=True)
 
     class Meta:
         model = Notification
-        fields = ["title", "body", "module_slug", "context", "created_at", "client_ids"]
+        fields = ["title", "body", "module_slug", "context", "created_at", "device_ids"]
 
-    def validate_client_ids(self, client_ids):
-        max_clients = settings.MAX_CLIENTS_PER_REQUEST
-        if len(client_ids) > settings.MAX_CLIENTS_PER_REQUEST:
+    def validate_device_ids(self, device_ids):
+        max_devices = settings.MAX_DEVICES_PER_REQUEST
+        if len(device_ids) > settings.MAX_DEVICES_PER_REQUEST:
             raise serializers.ValidationError(
-                f"Too many client ids [{len(client_ids)=}, {max_clients=}]"
+                f"Too many device ids [{len(device_ids)=}, {max_devices=}]"
             )
-        return client_ids
+        return device_ids
 
     def validate_context(self, context):
         if not isinstance(context, dict):
@@ -41,11 +41,11 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
 
 
 class NotificationCreateResponseSerializer(serializers.Serializer):
-    total_client_count = serializers.IntegerField()
+    total_device_count = serializers.IntegerField()
     total_create_count = serializers.IntegerField()
     total_token_count = serializers.IntegerField()
     failed_token_count = serializers.IntegerField()
-    missing_client_ids = serializers.ListField(
+    missing_device_ids = serializers.ListField(
         child=serializers.CharField(), allow_empty=True
     )
 

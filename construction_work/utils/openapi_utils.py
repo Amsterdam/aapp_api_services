@@ -14,6 +14,7 @@ def extend_schema_for_entra(
         **kwargs
     )
 
+
 class AutoExtendSchemaMixin:
     """
     Auto decorate HTTP methods with extend_schema_for_entra using the serializer_class.

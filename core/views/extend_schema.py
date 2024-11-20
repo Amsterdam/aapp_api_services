@@ -1,19 +1,10 @@
+from django.conf import settings
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema as default_extend_schema
 
-from core.exceptions import ApiKeyInvalidException
+from core.exceptions import ApiKeyInvalidException, MissingDeviceIdHeader
 from core.serializers.error_serializers import get_error_response_serializers
-
-
-def extend_schema_for_api_key(
-    success_response=None, exceptions=None, additional_params=None, **kwargs
-):
-    return custom_extend_schema(
-        default_exceptions=[ApiKeyInvalidException],
-        success_response=success_response,
-        exceptions=exceptions,
-        additional_params=additional_params,
-        **kwargs
-    )
 
 
 def custom_extend_schema(
@@ -49,3 +40,35 @@ def custom_extend_schema(
         return decorated_func
 
     return decorator
+
+
+def extend_schema_for_api_key(
+    success_response=None, exceptions=None, additional_params=None, **kwargs
+):
+    return custom_extend_schema(
+        default_exceptions=[ApiKeyInvalidException],
+        success_response=success_response,
+        exceptions=exceptions,
+        additional_params=additional_params,
+        **kwargs
+    )
+
+
+def extend_schema_for_device_id(
+    success_response=None, exceptions=None, additional_params=None, **kwargs
+):
+    device_id_param = OpenApiParameter(
+        settings.HEADER_DEVICE_ID,
+        OpenApiTypes.STR,
+        OpenApiParameter.HEADER,
+        required=True,
+    )
+    params = additional_params or []
+    params.append(device_id_param)
+    return custom_extend_schema(
+        default_exceptions=[ApiKeyInvalidException, MissingDeviceIdHeader],
+        success_response=success_response,
+        exceptions=exceptions,
+        additional_params=params,
+        **kwargs
+    )

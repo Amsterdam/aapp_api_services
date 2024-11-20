@@ -14,8 +14,6 @@ SPECTACULAR_SETTINGS["TITLE"] = "Construction Work API"
 
 LOGGING["loggers"]["construction_work"] = default_app_logging
 
-HEADER_DEVICE_ID = "DeviceId"
-
 DEFAULT_ARTICLE_MAX_AGE = 60
 
 ARTICLE_MAX_AGE_PARAM = "article_max_age"

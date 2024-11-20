@@ -42,11 +42,11 @@ class NotificationInitView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        client_ids = serializer.validated_data.pop("client_ids")
+        device_ids = serializer.validated_data.pop("device_ids")
         notification = Notification(**serializer.validated_data)
 
         try:
-            push_service = PushService(notification, client_ids)
+            push_service = PushService(notification, device_ids)
             response_data = push_service.push()
         except Exception:
             logger.error("Failed to push notification", exc_info=True)

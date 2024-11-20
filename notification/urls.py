@@ -2,7 +2,7 @@ from django.urls import path
 
 from core.urls import get_swagger_paths
 from notification.views import (
-    client_views,
+    device_views,
     notification_internal_views,
     notification_views,
 )
@@ -12,9 +12,9 @@ BASE_PATH_INTERNAL = "internal/api/v1"
 
 urlpatterns = [
     path(
-        BASE_PATH + "/client/register",
-        client_views.ClientRegisterView.as_view(),
-        name="notification-register-client",
+        BASE_PATH + "/device/register",
+        device_views.DeviceRegisterView.as_view(),
+        name="notification-register-device",
     ),
     path(
         BASE_PATH_INTERNAL + "/notification",

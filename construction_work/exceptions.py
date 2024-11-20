@@ -4,12 +4,6 @@ from rest_framework import status
 from core.exceptions import BaseApiException
 
 
-class MissingDeviceIdHeader(BaseApiException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = f"Missing header: {settings.HEADER_DEVICE_ID}"
-    default_code = "MISSING_DEVICE_ID"
-
-
 class MissingArticleIdParam(BaseApiException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Missing article id query parameter"

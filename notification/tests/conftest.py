@@ -10,13 +10,13 @@ def api_client():
 
 @pytest.fixture
 def firebase_messages():
-    def _create_messages(created_clients, title="test title", body="test body"):
+    def _create_messages(created_devices, title="test title", body="test body"):
         messages = []
-        for client in created_clients:
+        for device in created_devices:
             firebase_message = messaging.Message(
                 data={},
                 notification=messaging.Notification(title=title, body=body),
-                token=client.firebase_token,
+                token=device.firebase_token,
             )
             messages.append(firebase_message)
         return messages

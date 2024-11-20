@@ -1,11 +1,11 @@
 from rest_framework import serializers
 
-from notification.models import Client
+from notification.models import Device
 
 
-class ClientRegisterSerializer(serializers.ModelSerializer):
+class DeviceRegisterSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Client
+        model = Device
         fields = "__all__"
         extra_kwargs = {
             "os": {"required": True, "allow_blank": False},
@@ -13,6 +13,6 @@ class ClientRegisterSerializer(serializers.ModelSerializer):
         }
 
 
-class ClientRegisterPostSwaggerSerializer(serializers.Serializer):
+class DeviceRegisterPostSwaggerSerializer(serializers.Serializer):
     firebase_token = serializers.CharField()
     os = serializers.CharField()
