@@ -19,7 +19,7 @@ class TestModuleViews(TestCaseWithAuth):
         ModuleVersion.objects.create(**module_version_data)
 
         response = self.client.get(
-            f"/modules/api/v1/module/{module_slug}/", HTTP_AUTHORIZATION=self.jwt_token
+            f"/modules/api/v1/module/{module_slug}", HTTP_AUTHORIZATION=self.jwt_token
         )
         expected_result = {
             "slug": "slug0",
@@ -58,7 +58,7 @@ class TestModuleViews(TestCaseWithAuth):
     def test_module_slug_bogus(self):
         """get module by slug and version (exists)"""
         response = self.client.get(
-            "/modules/api/v1/module/bogus/", HTTP_AUTHORIZATION=self.jwt_token
+            "/modules/api/v1/module/bogus", HTTP_AUTHORIZATION=self.jwt_token
         )
         error_code = "MODULE_NOT_FOUND"
         self.assertContains(response, error_code, status_code=404)
@@ -68,7 +68,7 @@ class TestModuleViews(TestCaseWithAuth):
         new_slug = "new"
         data = {"slug": new_slug, "status": 1}
         response = self.client.post(
-            "/modules/api/v1/module/",
+            "/modules/api/v1/module",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -84,7 +84,7 @@ class TestModuleViews(TestCaseWithAuth):
         """test incorrect request body"""
         data = {}
         response = self.client.post(
-            "/modules/api/v1/module/",
+            "/modules/api/v1/module",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -96,7 +96,7 @@ class TestModuleViews(TestCaseWithAuth):
         """test integrity error"""
         data = {"slug": "slug0", "status": 1}
         response = self.client.post(
-            "/modules/api/v1/module/",
+            "/modules/api/v1/module",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -112,7 +112,7 @@ class TestModuleViews(TestCaseWithAuth):
         updated_status = 0
         data = {"status": updated_status}
         response = self.client.patch(
-            f"/modules/api/v1/module/{slug}/",
+            f"/modules/api/v1/module/{slug}",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -129,7 +129,7 @@ class TestModuleViews(TestCaseWithAuth):
         """test incorrect request body"""
         data = {}
         response = self.client.patch(
-            "/modules/api/v1/module/slug0/",
+            "/modules/api/v1/module/slug0",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -140,7 +140,7 @@ class TestModuleViews(TestCaseWithAuth):
         """test patch but module not found"""
         data = {"status": 1}
         response = self.client.patch(
-            "/modules/api/v1/module/bogus/",
+            "/modules/api/v1/module/bogus",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -152,7 +152,7 @@ class TestModuleViews(TestCaseWithAuth):
         """test delete model in use"""
         slug = "slug0"
         response = self.client.delete(
-            f"/modules/api/v1/module/{slug}/",
+            f"/modules/api/v1/module/{slug}",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -166,7 +166,7 @@ class TestModuleViews(TestCaseWithAuth):
         Module.objects.create(**data)
 
         response = self.client.delete(
-            f"/modules/api/v1/module/{new_slug}/",
+            f"/modules/api/v1/module/{new_slug}",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -179,7 +179,7 @@ class TestModuleViews(TestCaseWithAuth):
     def test_modules_latest(self):
         """test modules/latest"""
         response = self.client.get(
-            "/modules/api/v1/modules/latest/",
+            "/modules/api/v1/modules/latest",
             HTTP_AUTHORIZATION=self.jwt_token,
         )
         self.assertEqual(response.status_code, 200)

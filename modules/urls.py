@@ -26,47 +26,47 @@ urlpatterns = [
     ),
     # module version
     path(
-        BASE_PATH + "module/<str:slug>/version/<str:version>/status/",
+        BASE_PATH + "module/<str:slug>/version/<str:version>/status",
         ModuleVersionStatusView.as_view(),
     ),
     path(
-        BASE_PATH + "module/<str:slug>/version/<str:version>/",
+        BASE_PATH + "module/<str:slug>/version/<str:version>",
         ModuleVersionDetailView.as_view(),
     ),
     # module
     path(
-        BASE_PATH + "module/<str:slug>/version/",
+        BASE_PATH + "module/<str:slug>/version",
         ModuleVersionCreateView.as_view(),
     ),
     path(
-        BASE_PATH + "module/",
+        BASE_PATH + "module",
         ModuleCreateView.as_view(),
     ),
     path(
-        BASE_PATH + "module/<str:slug>/",
+        BASE_PATH + "module/<str:slug>",
         ModuleDetailView.as_view(),
     ),
     # modules
     path(
-        BASE_PATH + "modules/latest/",
+        BASE_PATH + "modules/latest",
         ModulesLatestView.as_view(),
     ),
     path(
-        BASE_PATH + "modules/available-for-release/<str:release_version>/",
+        BASE_PATH + "modules/available-for-release/<str:release_version>",
         ModulesAvailableForReleaseView.as_view(),
     ),
     # release
     path(
-        BASE_PATH + "release/",
+        BASE_PATH + "release",
         ReleaseCreateView.as_view(),
     ),
     path(
-        BASE_PATH + "release/<str:version>/",
+        BASE_PATH + "release/<str:version>",
         ReleaseDetailView.as_view(),
     ),
     # releases
     path(
-        BASE_PATH + "releases/",
+        BASE_PATH + "releases",
         GetReleasesView.as_view(),
     ),
 ]

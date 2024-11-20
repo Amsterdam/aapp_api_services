@@ -12,12 +12,12 @@ BASE_PATH_INTERNAL = "internal/api/v1"
 
 urlpatterns = [
     path(
-        BASE_PATH + "/client/register/",
+        BASE_PATH + "/client/register",
         client_views.ClientRegisterView.as_view(),
         name="notification-register-client",
     ),
     path(
-        BASE_PATH_INTERNAL + "/notification/",
+        BASE_PATH_INTERNAL + "/notification",
         notification_internal_views.NotificationInitView.as_view(),
         name="notification-create-notification",
     ),
@@ -27,12 +27,12 @@ urlpatterns = [
         name="notification-detail-notification",
     ),
     path(
-        BASE_PATH + "/notifications/",
+        BASE_PATH + "/notifications",
         notification_views.NotificationListView.as_view(),
         name="notification-list-notifications",
     ),
     path(
-        BASE_PATH + "/notifications/mark_all_read/",
+        BASE_PATH + "/notifications/mark_all_read",
         notification_views.NotificationMarkAllReadView.as_view(),
         name="notification-read-notifications",
     ),

@@ -148,11 +148,11 @@ LOGGING = {
         },
         "azure.core.pipeline.policies.http_logging_policy": {
             "handlers": ["console"],
-            "level": "INFO",  # Set to INFO to log what is being logged by OpenTelemetry
+            "level": "ERROR",  # Set to INFO to log what is being logged by OpenTelemetry
         },
         "azure.monitor.opentelemetry.exporter.export._base": {
             "handlers": ["console"],
-            "level": "INFO",  # Set to INFO to log what is being logged by OpenTelemetry
+            "level": "ERROR",  # Set to INFO to log what is being logged by OpenTelemetry
         },
         "opentelemetry.attributes": {
             "handlers": ["console"],

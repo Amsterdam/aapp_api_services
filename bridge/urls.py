@@ -13,13 +13,13 @@ urlpatterns = [
     ),
     # afvalwijzer
     path(
-        "waste-guide/api/v1/search/",
+        "waste-guide/api/v1/search",
         WasteGuideView.as_view(),
         name="waste-guide-search",
     ),
     # Adres zoeker
     path(
-        "address/api/v1/free/",
+        "address/api/v1/free",
         AddressSearchView.as_view(),
         name="address-search",
     ),

@@ -25,7 +25,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
         self.assertIsNone(module_version)
 
         response = self.client.post(
-            f"/modules/api/v1/module/{module_slug}/version/",
+            f"/modules/api/v1/module/{module_slug}/version",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -42,7 +42,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
         """test incorrect request body"""
         data = {}
         response = self.client.post(
-            "/modules/api/v1/module/string/version/",
+            "/modules/api/v1/module/string/version",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -60,7 +60,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
             "icon": "icon",
         }
         response = self.client.post(
-            "/modules/api/v1/module/slug0/version/",
+            "/modules/api/v1/module/slug0/version",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -78,7 +78,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
             "icon": "icon",
         }
         response = self.client.post(
-            "/modules/api/v1/module/bogus/version/",
+            "/modules/api/v1/module/bogus/version",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -96,7 +96,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
             "icon": "icon",
         }
         response = self.client.post(
-            "/modules/api/v1/module/slug0/version/",
+            "/modules/api/v1/module/slug0/version",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -114,7 +114,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
             "icon": "icon",
         }
         response = self.client.post(
-            "/modules/api/v1/module/slug0/version/",
+            "/modules/api/v1/module/slug0/version",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -139,7 +139,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
         updated_version = "4.6.7"
         data = {"version": updated_version}
         response = self.client.patch(
-            "/modules/api/v1/module/slug10/version/9.9.9/",
+            "/modules/api/v1/module/slug10/version/9.9.9",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -163,7 +163,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
         """test incorrect request body"""
         data = {"moduleSlug": "slug0", "version": "3.4.5"}
         response = self.client.patch(
-            "/modules/api/v1/module/slug0/version/1.2.3/",
+            "/modules/api/v1/module/slug0/version/1.2.3",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -176,7 +176,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
         """test incorrect request body"""
         data = {}
         response = self.client.patch(
-            "/modules/api/v1/module/slug0/version/3.4.5/",
+            "/modules/api/v1/module/slug0/version/3.4.5",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -188,7 +188,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
         """test incorrect request body"""
         data = {"version": "3.4.5a"}
         response = self.client.patch(
-            "/modules/api/v1/module/slug0/version/1.2.3/",
+            "/modules/api/v1/module/slug0/version/1.2.3",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -200,7 +200,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
         """test incorrect request body"""
         data = {"version": "10.11.12"}
         response = self.client.patch(
-            "/modules/api/v1/module/slug0/version/1.2.3/",
+            "/modules/api/v1/module/slug0/version/1.2.3",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -212,7 +212,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
         """test incorrect request body"""
         data = {"description": "test"}
         response = self.client.patch(
-            "/modules/api/v1/module/slug0/version/1.2.3/",
+            "/modules/api/v1/module/slug0/version/1.2.3",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -240,7 +240,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
         }
         ModuleVersion.objects.create(**_module_version)
         response = self.client.patch(
-            "/modules/api/v1/module/slug0/version/9.9.9/",
+            "/modules/api/v1/module/slug0/version/9.9.9",
             data=data,
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
@@ -266,7 +266,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
         module_version.save()
 
         response = self.client.delete(
-            f"/modules/api/v1/module/{slug}/version/{version}/",
+            f"/modules/api/v1/module/{slug}/version/{version}",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -280,7 +280,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
     def test_module_slug_version_delete_not_found(self):
         """test incorrect request body"""
         response = self.client.delete(
-            "/modules/api/v1/module/slug0/version/4.5.6/",
+            "/modules/api/v1/module/slug0/version/4.5.6",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -290,7 +290,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
     def test_module_slug_version_delete_in_use(self):
         """test incorrect request body"""
         response = self.client.delete(
-            "/modules/api/v1/module/slug0/version/1.2.3/",
+            "/modules/api/v1/module/slug0/version/1.2.3",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
         )
@@ -300,7 +300,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
     def test_module_version_get_exist(self):
         """get module by slug and version (exists)"""
         response = self.client.get(
-            "/modules/api/v1/module/slug0/version/1.2.3/",
+            "/modules/api/v1/module/slug0/version/1.2.3",
             HTTP_AUTHORIZATION=self.jwt_token,
         )
         expected_result = {
@@ -317,7 +317,7 @@ class TestModuleVersionViews(TestCaseWithAuth):
     def test_module_version_get_does_not_exist(self):
         """get module by slug and version (does not exist)"""
         response = self.client.get(
-            "/modules/api/v1/module/bogus0/version/0.0.0/",
+            "/modules/api/v1/module/bogus0/version/0.0.0",
             HTTP_AUTHORIZATION=self.jwt_token,
         )
         expected_result = "MODULE_NOT_FOUND"

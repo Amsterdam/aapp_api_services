@@ -18,6 +18,8 @@ LOGGING["loggers"]["notification"] = {
     "propagate": False,
 }
 
+APPEND_SLASH = True
+
 HEADER_CLIENT_ID = "ClientId"
 
 # This is equal to the maximum tokens Firebase will accept:
