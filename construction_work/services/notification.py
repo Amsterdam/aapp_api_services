@@ -32,8 +32,8 @@ def call_notification_service(warning: WarningMessage) -> tuple[int, dict]:
     )
 
     request_data = {
-        "title": warning.title,
-        "body": warning.body,
+        "title": warning.project.title,
+        "body": warning.title,
         "module_slug": settings.MODULE_SLUG,
         "context": {
             "linkSourceid": str(warning.pk),
