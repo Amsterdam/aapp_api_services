@@ -1,5 +1,6 @@
 from core.settings.base import *  # isort:skip
 
+MODULE_SLUG = "modules"
 INSTALLED_APPS += [
     "modules.apps.ModulesConfig",
 ]

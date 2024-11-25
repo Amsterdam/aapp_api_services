@@ -25,7 +25,7 @@ def call_notification_service(warning: WarningMessage) -> tuple[int, dict]:
     Raises:
         NotificationServiceError: If the notification service request fails
     """
-    client_ids = list(
+    device_ids = list(
         warning.project.device_set.exclude(device_id=None).values_list(
             "device_id", flat=True
         )
@@ -34,13 +34,13 @@ def call_notification_service(warning: WarningMessage) -> tuple[int, dict]:
     request_data = {
         "title": warning.title,
         "body": warning.body,
-        "module_slug": "construction-work",
+        "module_slug": settings.MODULE_SLUG,
         "context": {
             "linkSourceid": str(warning.pk),
             "type": "ProjectWarningCreatedByProjectManager",
         },
         "created_at": timezone.now().isoformat(),
-        "client_ids": client_ids,
+        "device_ids": device_ids,
     }
 
     api_url = settings.NOTIFICATION_ENDPOINTS["INIT_NOTIFICATION"]

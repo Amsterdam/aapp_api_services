@@ -1,5 +1,6 @@
 from core.settings.base import *  # isort:skip
 
+MODULE_SLUG = "bridge"
 INSTALLED_APPS += [
     "bridge.apps.BridgeConfig",
 ]

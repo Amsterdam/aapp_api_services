@@ -1,5 +1,6 @@
 from core.settings.base import *  # isort:skip
 
+MODULE_SLUG = "construction-work"
 INSTALLED_APPS += [
     "construction_work.apps.ConstructionWorkConfig",
 ]

@@ -1,5 +1,6 @@
 from core.settings.base import *  # isort:skip
 
+MODULE_SLUG = "city-pass"
 INSTALLED_APPS += [
     "city_pass.apps.CityPassConfig",
 ]

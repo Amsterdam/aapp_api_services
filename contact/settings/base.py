@@ -1,5 +1,6 @@
 from core.settings.base import *  # isort:skip
 
+MODULE_SLUG = "contact"
 INSTALLED_APPS += [
     "contact.apps.ContactConfig",
 ]
