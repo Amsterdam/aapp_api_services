@@ -590,6 +590,30 @@ class TestProjectListForManageView(BaseTestManageView):
         result = self.client.get(self.api_url, headers=self.api_headers)
         self.assertEqual(result.status_code, 403)
 
+    def test_get_projects_with_related_publishers_name_and_emails(self):
+        project = Project.objects.create(**mock_data.projects[0])
+        manager1 = ProjectManager.objects.create(
+            name="Publisher 1", email="publisher1@amsterdam.nl"
+        )
+        manager1.projects.add(project)
+        manager2 = ProjectManager.objects.create(
+            name="Publisher 2", email="publisher2@amsterdam.nl"
+        )
+        manager2.projects.add(project)
+
+        self.update_headers_with_editor_data()
+        result = self.client.get(self.api_url, headers=self.api_headers)
+        self.assertEqual(result.status_code, 200)
+
+        project_data = next((d for d in result.data if d.get("id") == project.pk), None)
+        self.assertEqual(
+            project_data["publishers"],
+            [
+                {"name": manager1.name, "email": manager1.email},
+                {"name": manager2.name, "email": manager2.email},
+            ],
+        )
+
 
 class TestProjectDetailsForManageView(BaseTestManageView):
     def setUp(self) -> None:

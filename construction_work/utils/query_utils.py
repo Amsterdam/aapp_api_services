@@ -1,6 +1,7 @@
 from typing import Type
 
 from django.db.models import Prefetch
+from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
 from construction_work.models import Image, Project, WarningImage
@@ -46,4 +47,31 @@ def get_warningimage_width_height_prefetch():
         queryset=WarningImage.objects.prefetch_related(
             Prefetch("images", queryset=Image.objects.only("width", "height"))
         ),
+    )
+
+
+def get_model_fields_from_serializer(serializer_class):
+    """
+    Get all model fields from a serializer, excluding SerializerMethodFields.
+    Always includes the 'id' field for prefetch operations.
+
+    Args:
+        serializer_class: The serializer class to inspect
+
+    Returns:
+        set: Set of field names to be used with .only()
+    """
+    # Get fields from serializer's Meta class
+    serializer_fields = serializer_class.Meta.fields
+
+    # Get all SerializerMethodField names from the serializer
+    method_fields = {
+        field_name
+        for field_name, field in serializer_class._declared_fields.items()
+        if isinstance(field, serializers.SerializerMethodField)
+    }
+
+    # Always include 'id' field for prefetch to work
+    return {"id"}.union(
+        field for field in serializer_fields if field not in method_fields
     )

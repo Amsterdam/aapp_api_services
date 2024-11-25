@@ -45,7 +45,10 @@ from construction_work.utils.openapi_utils import AutoExtendSchemaMixin
 from construction_work.utils.openapi_utils import (
     extend_schema_for_entra as extend_schema,
 )
-from construction_work.utils.query_utils import get_warningimage_width_height_prefetch
+from construction_work.utils.query_utils import (
+    get_model_fields_from_serializer,
+    get_warningimage_width_height_prefetch,
+)
 from construction_work.utils.url_utils import get_media_url
 
 logger = logging.getLogger(__name__)
@@ -198,13 +201,15 @@ class ProjectListForManageView(AutoExtendSchemaMixin, generics.ListAPIView):
         token_data = self.request.auth
         manager_type = get_manager_type(token_data)
 
+        model_fields = get_model_fields_from_serializer(self.serializer_class)
+
         if manager_type.is_editor():
-            projects = Project.objects.all()
+            projects = Project.objects.only(*model_fields)
         elif manager_type.is_publisher():
             publisher = get_project_manager_from_token(token_data)
             if not publisher:
                 raise PermissionDenied("Publisher not known")
-            projects = publisher.projects.all()
+            projects = publisher.projects.only(*model_fields)
         else:
             projects = Project.objects.none()
 
