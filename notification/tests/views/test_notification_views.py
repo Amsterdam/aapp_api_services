@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from django.urls import reverse
+from django.utils import timezone
 from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -41,6 +44,34 @@ class NotificationListViewTests(NotificationBaseTests):
             "Missing header: DeviceId",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+
+    def test_list_notifications_order_by_created_at(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        notification_1 = baker.make(
+            Notification,
+            title="oldest",
+            device=device_1,
+            created_at=timezone.now() - timedelta(days=3),
+        )
+        notification_2 = baker.make(
+            Notification,
+            title="middle",
+            device=device_1,
+            created_at=timezone.now() - timedelta(days=2),
+        )
+        notification_3 = baker.make(
+            Notification,
+            title="newest",
+            device=device_1,
+            created_at=timezone.now() - timedelta(days=1),
+        )
+
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual(response.data[0]["id"], str(notification_3.id))
+        self.assertEqual(response.data[1]["id"], str(notification_2.id))
+        self.assertEqual(response.data[2]["id"], str(notification_1.id))
 
 
 class NotificationReadViewTests(NotificationBaseTests):

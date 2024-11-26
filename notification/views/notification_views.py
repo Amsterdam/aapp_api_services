@@ -27,7 +27,9 @@ class NotificationListView(generics.ListAPIView):
         device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
         if not device_id:
             raise MissingDeviceIdHeader
-        return Notification.objects.filter(device__external_id=device_id)
+        return Notification.objects.filter(device__external_id=device_id).order_by(
+            "-created_at"
+        )
 
     @extend_schema_for_device_id(
         success_response=NotificationResultSerializer,
