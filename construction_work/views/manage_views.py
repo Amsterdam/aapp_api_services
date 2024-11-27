@@ -455,5 +455,5 @@ class ImageUploadView(generics.GenericAPIView):
         warning_image = warning_image_serializer.save()
 
         return Response(
-            {"warning_image_id": warning_image.pk}, status=status.HTTP_201_CREATED
+            {"warning_image_id": warning_image.pk}, status=status.HTTP_200_OK
         )

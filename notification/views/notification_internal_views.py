@@ -27,9 +27,7 @@ class NotificationInitView(generics.CreateAPIView):
         Response: notification data as posted with auto set fields
     """
 
-    authentication_classes = (
-        []
-    )  # No authentication or API key required. Endpoint is not exposed to the public.
+    authentication_classes = []  # No authentication or API key required. Endpoint is not exposed to the public.
     serializer_class = NotificationCreateSerializer
 
     @extend_schema(
@@ -52,4 +50,4 @@ class NotificationInitView(generics.CreateAPIView):
             logger.error("Failed to push notification", exc_info=True)
             raise PushServiceError("Failed to push notification")
 
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        return Response(response_data, status=status.HTTP_200_OK)

@@ -51,7 +51,7 @@ def test_init_notification_success(
         data=json.dumps(data),
         content_type="application/json",
     )
-    assert result.status_code == 201
+    assert result.status_code == 200
     response = result.json()
     response["missing_device_ids"].sort()
     assert response == {

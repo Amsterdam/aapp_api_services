@@ -1288,7 +1288,7 @@ class TestImageUploadView(TestWarningMessageCRUDBaseView):
             data=self.valid_image_data,
             format="multipart",
         )
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
         self.assertIn("warning_image_id", response.data)
         self.assertTrue(
             WarningImage.objects.filter(pk=response.data["warning_image_id"]).exists()
