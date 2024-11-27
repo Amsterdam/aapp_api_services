@@ -55,13 +55,20 @@ class PushService:
         self.source_notification.id = None
 
     def push(self) -> dict:
-        devices = Device.objects.filter(external_id__in=self.device_ids).all()
-        notifications = self.create_notifications(devices)
-        response_data = self.push_messages(notifications, devices)
-        response_data["total_device_count"] = len(self.device_ids)
-        response_data["missing_device_ids"] = list(
-            set(self.device_ids) - set([c.external_id for c in devices])
+        known_devices = Device.objects.filter(external_id__in=self.device_ids).all()
+        known_device_ids = [device.external_id for device in known_devices]
+
+        unknown_device_ids = set(self.device_ids) - set(known_device_ids)
+        new_devices = Device.objects.bulk_create(
+            Device(external_id=device_id) for device_id in unknown_device_ids
         )
+
+        all_devices = list(known_devices) + new_devices
+        notifications = self.create_notifications(all_devices)
+        response_data = self.push_messages(notifications, known_devices)
+
+        response_data["total_device_count"] = len(self.device_ids)
+        response_data["unknown_device_count"] = len(unknown_device_ids)
         return response_data
 
     def create_notifications(self, devices: list[Device]) -> dict[str, Notification]:
@@ -100,8 +107,7 @@ class PushService:
                 },
             )
             return {
-                "total_create_count": len(devices),
-                "total_token_count": 0,
+                "devices_with_token_count": 0,
                 "failed_token_count": 0,
             }
 
@@ -117,8 +123,7 @@ class PushService:
             failed_tokens = self._log_failures(batch_response, firebase_messages)
 
         return {
-            "total_create_count": len(devices),
-            "total_token_count": len(devices_with_token),
+            "devices_with_token_count": len(devices_with_token),
             "failed_token_count": len(failed_tokens),
         }
 

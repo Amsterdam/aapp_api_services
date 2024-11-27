@@ -53,13 +53,11 @@ def test_init_notification_success(
     )
     assert result.status_code == 200
     response = result.json()
-    response["missing_device_ids"].sort()
     assert response == {
-        "total_device_count": 3,
-        "total_create_count": 1,
-        "total_token_count": 1,
+        "devices_with_token_count": 1,
         "failed_token_count": 0,
-        "missing_device_ids": ["def", "ghi"],
+        "total_device_count": 3,
+        "unknown_device_count": 2,
     }
 
 

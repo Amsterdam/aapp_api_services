@@ -41,10 +41,10 @@ def device():
 
 @pytest.fixture
 def devices():
-    def _create_devices(amount: int, with_token=True):
+    def _create_devices(amount: int, with_token=True, start_id=0):
         new_devices = []
         mock_token = "abc_token" if with_token else None
-        for i in range(amount):
+        for i in range(start_id, start_id + amount):
             device = Device(external_id=f"abc_{i}", firebase_token=mock_token)
             device.save()
             new_devices.append(device)
@@ -149,5 +149,81 @@ def test_device_without_firebase_tokens(unsaved_notification, devices, caplog):
         for record in caplog.records
     )
     assert Notification.objects.count() == len(created_devices)
-    assert result["total_token_count"] == 0
-    assert result["failed_token_count"] == 0
+    assert result == {
+        "devices_with_token_count": 0,
+        "failed_token_count": 0,
+        "total_device_count": 5,
+        "unknown_device_count": 0,
+    }
+
+
+@pytest.mark.django_db
+def test_notifications_created_for_unregistered_device(unsaved_notification):
+    device_ids = ["unregistered_device_id"]
+    push_service = PushService(unsaved_notification, device_ids)
+    push_service.push()
+
+    notification = Notification.objects.filter(
+        device__external_id=device_ids[0]
+    ).first()
+    assert notification is not None
+
+
+@pytest.mark.django_db
+@patch("notification.services.push.messaging.send_each")
+def test_notifications_created_for_unknown_devices(
+    multicast_mock, firebase_messages, devices, unsaved_notification
+):
+    devices_with_token = devices(3, with_token=True)
+
+    messages = firebase_messages(
+        devices_with_token,
+        title=unsaved_notification.title,
+        body=unsaved_notification.body,
+    )
+    multicast_mock.return_value = MockFirebaseSendEach(messages)
+
+    unknown_device_ids = ["unknown_1", "unknown_2", "unknown_3"]
+    all_device_ids = [
+        known_device.external_id for known_device in devices_with_token
+    ] + unknown_device_ids
+
+    push_service = PushService(unsaved_notification, all_device_ids)
+    push_service.push()
+
+    notifications = Notification.objects.filter(
+        device__external_id__in=unknown_device_ids
+    ).all()
+    assert len(notifications) == len(unknown_device_ids)
+
+
+@pytest.mark.django_db
+@patch("notification.services.push.messaging.send_each")
+def test_response_data_counts_for_devices(
+    multicast_mock, firebase_messages, devices, unsaved_notification
+):
+    devices_with_token = devices(3, with_token=True)
+    devices_without_token = devices(
+        3, with_token=False, start_id=len(devices_with_token)
+    )
+    known_devices = devices_with_token + devices_without_token
+
+    messages = firebase_messages(
+        known_devices, title=unsaved_notification.title, body=unsaved_notification.body
+    )
+    multicast_mock.return_value = MockFirebaseSendEach(messages, fail_count=1)
+
+    unknown_device_ids = ["unknown_1", "unknown_2", "unknown_3"]
+    all_device_ids = [
+        known_device.external_id for known_device in known_devices
+    ] + unknown_device_ids
+
+    push_service = PushService(unsaved_notification, all_device_ids)
+    response_data = push_service.push()
+
+    assert response_data == {
+        "devices_with_token_count": len(devices_with_token),
+        "failed_token_count": 1,
+        "total_device_count": len(all_device_ids),
+        "unknown_device_count": len(unknown_device_ids),
+    }
