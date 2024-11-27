@@ -45,6 +45,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "core.middleware.db_retry_on_timeout.DatabaseRetryMiddleware",
+    "core.middleware.no_cache.NoCacheMiddleware",
 ]
 
 TEMPLATES = [
