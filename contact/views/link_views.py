@@ -15,6 +15,7 @@ APP_LINKS = {
     "documents": "https://www.amsterdam.nl/burgerzaken/akten-uittreksels/",
     "relocation": "https://www.amsterdam.nl/burgerzaken/verhuizing-doorgeven/",
     "income_help": "https://www.amsterdam.nl/werk-inkomen/hulp-bij-laag-inkomen/",
+    "chatPrivacy": "https://www.amsterdam.nl/privacy/specifieke/privacyverklaringen-burgerzaken-contact/klantcontact/",
     "citypass": "https://www.amsterdam.nl/stadspas/",
     "cityPassRequest": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/HulpBijLaagInkomen.aspx",
     "cityPassChildBudget": "https://www.amsterdam.nl/stadspas/kindtegoed/",
