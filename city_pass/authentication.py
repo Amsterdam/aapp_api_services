@@ -45,19 +45,3 @@ class AccessTokenAuthentication(BaseAuthentication):
             )
 
         return (access_token_obj.session, access_token_obj)
-
-
-def authenticate_access_token(view_func):
-    """
-    Wrapper function that performs access token authentication
-    and binds resulting session to request.user variable.
-    """
-
-    @wraps(view_func)
-    def _wrapped_view(self, request, *args, **kwargs):
-        token_authenticator = AccessTokenAuthentication()
-        session, _ = token_authenticator.authenticate(request)
-        request.user = session
-        return view_func(self, request, *args, **kwargs)
-
-    return _wrapped_view
