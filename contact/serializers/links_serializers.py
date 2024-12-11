@@ -7,6 +7,7 @@ class LinksOutSerializer(serializers.Serializer):
     documents = serializers.URLField()
     relocation = serializers.URLField()
     income_help = serializers.URLField()
+    chatPrivacy = serializers.URLField()
     citypass = serializers.URLField()
     cityPassRequest = serializers.URLField()
     cityPassChildBudget = serializers.URLField()
