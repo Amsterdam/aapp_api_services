@@ -45,7 +45,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "core.middleware.db_retry_on_timeout.DatabaseRetryMiddleware",
-    "core.middleware.no_cache.NoCacheMiddleware",
+    "core.middleware.set_headers.DefaultHeadersMiddleware",
 ]
 
 TEMPLATES = [
@@ -107,7 +107,7 @@ TIME_ZONE = "Europe/Amsterdam"
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-
+DEFAULT_CHARSET = "utf-8"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
