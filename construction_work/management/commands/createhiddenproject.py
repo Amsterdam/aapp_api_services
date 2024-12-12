@@ -13,7 +13,8 @@ class Command(BaseCommand):
             foreign_id=0,
             hidden=True,
             title="Test project voor team communicare",
-            coordinates={"lat": 52.370216, "lon": 4.895168},
+            coordinates_lat=52.370216,
+            coordinates_lon=4.895168,
             url="https://app.amsterdam.nl",
             publication_date="2021-01-01T00:00:00Z",
         )
