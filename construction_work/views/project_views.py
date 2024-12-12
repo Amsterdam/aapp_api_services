@@ -9,15 +9,13 @@ from django.db.models import (
     DateTimeField,
     Exists,
     F,
-    FloatField,
     Max,
     OuterRef,
     Prefetch,
     TextField,
     Value,
 )
-from django.db.models.fields.json import KeyTextTransform
-from django.db.models.functions import Cast, Coalesce, Greatest
+from django.db.models.functions import Coalesce, Greatest
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter
@@ -30,7 +28,9 @@ from construction_work.exceptions import (
     MissingArticleIdParam,
     MissingWarningMessageIdParam,
 )
-from construction_work.models import Article, Device, Project, WarningMessage
+from construction_work.models.article_models import Article
+from construction_work.models.manage_models import Device, WarningMessage
+from construction_work.models.project_models import Project
 from construction_work.pagination import CustomPagination
 from construction_work.serializers.article_serializers import ArticleSerializer
 from construction_work.serializers.project_serializers import (
@@ -120,12 +120,6 @@ class ProjectListView(generics.ListAPIView):
             except ValueError:
                 raise ParseError(f"Invalid latitude or longitude: {lat=}, {lon=}")
 
-            # Extract latitude and longitude from JSONField 'coordinates'
-            projects_qs = projects_qs.annotate(
-                coord_lat=Cast(KeyTextTransform("lat", "coordinates"), FloatField()),
-                coord_lon=Cast(KeyTextTransform("lon", "coordinates"), FloatField()),
-            )
-
             # Calculate approximate distance (squared difference)
             # The calculated distance is not perfect,
             # since this method treats the Earth as a flat plane.
@@ -133,8 +127,8 @@ class ProjectListView(generics.ListAPIView):
             # When sorting, the order of distances remains the same,
             # whether you use the squared distance or the actual distance.
             projects_qs = projects_qs.annotate(
-                lat_diff=F("coord_lat") - lat,
-                lon_diff=F("coord_lon") - lon,
+                lat_diff=F("coordinates_lat") - lat,
+                lon_diff=F("coordinates_lon") - lon,
             ).annotate(
                 distance=F("lat_diff") * F("lat_diff") + F("lon_diff") * F("lon_diff")
             )

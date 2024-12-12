@@ -9,15 +9,15 @@ from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from construction_work.models import (
-    Article,
+from construction_work.models.article_models import Article
+from construction_work.models.manage_models import (
     Device,
     Image,
-    Project,
     ProjectManager,
     WarningImage,
     WarningMessage,
 )
+from construction_work.models.project_models import Project
 from construction_work.tests import mock_data
 from construction_work.utils.patch_utils import (
     MockNotificationResponse,

@@ -76,3 +76,8 @@ services:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.otap'
     command: /app/deploy/docker-run.sh
+
+  openapi-diff:
+    image: openapitools/openapi-diff:latest
+    volumes:
+      - ./${SERVICE_NAME}:/specs:ro

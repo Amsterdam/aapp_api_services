@@ -1,21 +1,21 @@
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 
-from construction_work.models import Project
-
-ONE_YEAR_AGO = one_year_ago = timezone.now() - timezone.timedelta(days=365)
+from construction_work.models.project_models import Project
 
 
 class Command(BaseCommand):
-    """Remove old devices"""
+    """Create hidden project"""
 
-    help = "Remove old devices"
+    help = "Create hidden project "
 
     def handle(self, *args, **options):
         hidden_project, created = Project.objects.get_or_create(
             foreign_id=0,
             hidden=True,
             title="Test project voor team communicare",
+            coordinates={"lat": 52.370216, "lon": 4.895168},
+            url="https://app.amsterdam.nl",
+            publication_date="2021-01-01T00:00:00Z",
         )
         if created:
             self.stdout.write(

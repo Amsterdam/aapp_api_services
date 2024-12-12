@@ -32,3 +32,6 @@ static
 # Pytest
 pytest.ini
 .pytest_cache/
+
+# Spectacular
+openapi-schema.yaml

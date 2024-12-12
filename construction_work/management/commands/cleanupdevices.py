@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from construction_work.models import Device
+from construction_work.models.manage_models import Device
 
 ONE_YEAR_AGO = one_year_ago = timezone.now() - timezone.timedelta(days=365)
 

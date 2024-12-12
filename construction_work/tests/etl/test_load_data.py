@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.utils import timezone
+from model_bakery import baker
 
 from construction_work.etl.load_data import (
     articles,
@@ -7,7 +8,8 @@ from construction_work.etl.load_data import (
     get_project_object,
     projects,
 )
-from construction_work.models import Article, Project
+from construction_work.models.article_models import Article
+from construction_work.models.project_models import Project
 
 
 class LoadDataTestCase(TestCase):
@@ -17,14 +19,58 @@ class LoadDataTestCase(TestCase):
             {
                 "id": 1,
                 "title": "Project 1",
+                "sections": {
+                    "what": [
+                        {
+                            "body": "Het park Gaasperplas",
+                            "links": [
+                                {
+                                    "url": "http://www.amsterdam.nl/",
+                                    "label": "Bekijk wat we gaan doen",
+                                }
+                            ],
+                            "title": None,
+                        }
+                    ],
+                    "when": [],
+                    "work": [],
+                    "where": [{"body": "De Gaasperplas", "links": [], "title": "Waar"}],
+                    "contact": [{"body": None, "links": [], "title": "Contact"}],
+                },
+                "contacts": [
+                    {
+                        "id": 1,
+                        "name": "Jan",
+                        "email": "jan@amsterdam.nl",
+                        "phone": None,
+                        "position": "Omgevingsmanager",
+                    }
+                ],
                 "subtitle": "Subtitle 1",
-                "sections": ["Section A"],
-                "contacts": ["Contact A"],
-                "timeline": ["2021-01-01", "2021-06-30"],
-                "image": "image_url_1",
-                "images": ["image1_url"],
+                "timeline": {
+                    "items": [
+                        {
+                            "body": "Cruquiusgebied verandere",
+                            "items": [],
+                            "title": "2008",
+                            "collapsed": True,
+                        },
+                        {
+                            "body": "Bouw woningen",
+                            "items": [],
+                            "title": "2011",
+                            "collapsed": True,
+                        },
+                    ],
+                    "title": "Wanneer",
+                },
                 "url": "http://example.com/project/1",
-                "coordinates": [10.0, 20.0],
+                "image": {
+                    "id": 236,
+                    "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
+                    "aspectRatio": 2,
+                },
+                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
                 "created": timezone.now(),
                 "modified": timezone.now(),
                 "publicationDate": timezone.now(),
@@ -34,13 +80,30 @@ class LoadDataTestCase(TestCase):
                 "id": 2,
                 "title": "Project 2",
                 "subtitle": "Subtitle 2",
-                "sections": ["Section B"],
-                "contacts": ["Contact B"],
-                "timeline": ["2021-07-01", "2021-12-31"],
-                "image": "image_url_2",
-                "images": ["image2_url"],
+                "timeline": {
+                    "items": [
+                        {
+                            "body": "Cruquiusgebied verandere",
+                            "items": [],
+                            "title": "2008",
+                            "collapsed": True,
+                        },
+                        {
+                            "body": "Bouw woningen",
+                            "items": [],
+                            "title": "2011",
+                            "collapsed": True,
+                        },
+                    ],
+                    "title": "Wanneer",
+                },
+                "image": {
+                    "id": 238,
+                    "sources": [{"uri": "image2.jpg", "width": 940, "height": 415}],
+                    "aspectRatio": 2,
+                },
                 "url": "http://example.com/project/2",
-                "coordinates": [30.0, 40.0],
+                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
                 "created": timezone.now(),
                 "modified": timezone.now(),
                 "publicationDate": timezone.now(),
@@ -59,24 +122,7 @@ class LoadDataTestCase(TestCase):
     def test_projects_update_conflict(self):
         """Test that projects function updates existing Project instances on conflict."""
         # Create an initial project
-        initial_project = Project.objects.create(
-            foreign_id=1,
-            title="Initial Title",
-            subtitle="Initial Subtitle",
-            sections=["Initial Section"],
-            contacts=["Initial Contact"],
-            timeline=["2020-01-01", "2020-12-31"],
-            image="initial_image_url",
-            images=["initial_image1_url"],
-            url="http://example.com/project/1",
-            coordinates=[0.0, 0.0],
-            creation_date=timezone.now(),
-            modification_date=timezone.now(),
-            publication_date=timezone.now(),
-            expiration_date=None,
-            last_seen=timezone.now(),
-            active=True,
-        )
+        initial_project = baker.make(Project, foreign_id=1)
 
         # New data with the same foreign_id
         project_data = [
@@ -84,13 +130,48 @@ class LoadDataTestCase(TestCase):
                 "id": 1,
                 "title": "Updated Title",
                 "subtitle": "Updated Subtitle",
-                "sections": ["Updated Section"],
-                "contacts": ["Updated Contact"],
-                "timeline": ["2021-01-01", "2021-12-31"],
-                "image": "updated_image_url",
-                "images": ["updated_image1_url"],
+                "sections": {
+                    "what": [
+                        {
+                            "body": "Het park Gaasperplas",
+                            "links": [
+                                {
+                                    "url": "http://www.amsterdam.nl/",
+                                    "label": "Bekijk wat we gaan doen",
+                                }
+                            ],
+                            "title": None,
+                        }
+                    ],
+                    "when": [],
+                    "work": [],
+                    "where": [{"body": "De Gaasperplas", "links": [], "title": "Waar"}],
+                    "contact": [{"body": None, "links": [], "title": "Contact"}],
+                },
+                "timeline": {
+                    "items": [
+                        {
+                            "body": "Cruquiusgebied verandere",
+                            "items": [],
+                            "title": "2008",
+                            "collapsed": True,
+                        },
+                        {
+                            "body": "Bouw woningen",
+                            "items": [],
+                            "title": "2011",
+                            "collapsed": True,
+                        },
+                    ],
+                    "title": "Wanneer",
+                },
+                "image": {
+                    "id": 236,
+                    "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
+                    "aspectRatio": 2,
+                },
                 "url": "http://example.com/project/1",
-                "coordinates": [10.0, 20.0],
+                "coordinates": {"lat": 10, "lon": 20},
                 "created": initial_project.creation_date,
                 "modified": timezone.now(),
                 "publicationDate": timezone.now(),
@@ -104,12 +185,11 @@ class LoadDataTestCase(TestCase):
         updated_project = Project.objects.get(foreign_id=1)
         self.assertEqual(updated_project.title, "Updated Title")
         self.assertEqual(updated_project.subtitle, "Updated Subtitle")
-        self.assertEqual(updated_project.sections, ["Updated Section"])
-        self.assertEqual(updated_project.contacts, ["Updated Contact"])
-        self.assertEqual(updated_project.timeline, ["2021-01-01", "2021-12-31"])
-        self.assertEqual(updated_project.image, "updated_image_url")
-        self.assertEqual(updated_project.images, ["updated_image1_url"])
-        self.assertEqual(updated_project.coordinates, [10.0, 20.0])
+        self.assertEqual(updated_project.sections.count(), 3)
+        self.assertEqual(updated_project.timeline_items.count(), 2)
+        self.assertEqual(updated_project.image.id, 236)
+        self.assertEqual(updated_project.coordinates_lat, 10.0)
+        self.assertEqual(updated_project.coordinates_lon, 20.0)
 
     def test_get_project_object(self):
         """Test that get_project_object creates a Project instance with correct attributes."""
@@ -117,13 +197,57 @@ class LoadDataTestCase(TestCase):
             "id": 1,
             "title": "Test Project",
             "subtitle": "A test project",
-            "sections": ["Section 1", "Section 2"],
-            "contacts": ["Contact 1"],
-            "timeline": ["2021-01-01", "2021-12-31"],
-            "image": "image_url",
-            "images": ["image1_url", "image2_url"],
+            "sections": {
+                "what": [
+                    {
+                        "body": "Het park Gaasperplas",
+                        "links": [
+                            {
+                                "url": "http://www.amsterdam.nl/",
+                                "label": "Bekijk wat we gaan doen",
+                            }
+                        ],
+                        "title": None,
+                    }
+                ],
+                "when": [],
+                "work": [],
+                "where": [{"body": "De Gaasperplas", "links": [], "title": "Waar"}],
+                "contact": [{"body": None, "links": [], "title": "Contact"}],
+            },
+            "contacts": [
+                {
+                    "id": 1,
+                    "name": "Jan",
+                    "email": "jan@amsterdam.nl",
+                    "phone": None,
+                    "position": "Omgevingsmanager",
+                }
+            ],
+            "timeline": {
+                "items": [
+                    {
+                        "body": "Cruquiusgebied verandere",
+                        "items": [],
+                        "title": "2008",
+                        "collapsed": True,
+                    },
+                    {
+                        "body": "Bouw woningen",
+                        "items": [],
+                        "title": "2011",
+                        "collapsed": True,
+                    },
+                ],
+                "title": "Wanneer",
+            },
+            "image": {
+                "id": 236,
+                "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
+                "aspectRatio": 2,
+            },
             "url": "http://example.com/project/1",
-            "coordinates": [12.34, 56.78],
+            "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
             "created": timezone.now(),
             "modified": timezone.now(),
             "publicationDate": timezone.now(),
@@ -133,13 +257,9 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(project.foreign_id, data["id"])
         self.assertEqual(project.title, data["title"])
         self.assertEqual(project.subtitle, data["subtitle"])
-        self.assertEqual(project.sections, data["sections"])
-        self.assertEqual(project.contacts, data["contacts"])
-        self.assertEqual(project.timeline, data["timeline"])
-        self.assertEqual(project.image, data["image"])
-        self.assertEqual(project.images, data["images"])
         self.assertEqual(project.url, data["url"])
-        self.assertEqual(project.coordinates, data["coordinates"])
+        self.assertEqual(project.coordinates_lat, data["coordinates"]["lat"])
+        self.assertEqual(project.coordinates_lon, data["coordinates"]["lon"])
         self.assertEqual(project.creation_date, data["created"])
         self.assertEqual(project.modification_date, data["modified"])
         self.assertEqual(project.publication_date, data["publicationDate"])
@@ -149,43 +269,8 @@ class LoadDataTestCase(TestCase):
 
     def test_articles(self):
         """Test that articles function correctly creates or updates Article instances and their relationships."""
-        project1 = Project.objects.create(
-            foreign_id=1,
-            title="Project 1",
-            subtitle="Subtitle 1",
-            sections=["Section A"],
-            contacts=["Contact A"],
-            timeline=["2021-01-01", "2021-06-30"],
-            image="image_url_1",
-            images=["image1_url"],
-            url="http://example.com/project/1",
-            coordinates=[10.0, 20.0],
-            creation_date=timezone.now(),
-            modification_date=timezone.now(),
-            publication_date=timezone.now(),
-            expiration_date=None,
-            last_seen=timezone.now(),
-            active=True,
-        )
-
-        project2 = Project.objects.create(
-            foreign_id=2,
-            title="Project 2",
-            subtitle="Subtitle 2",
-            sections=["Section B"],
-            contacts=["Contact B"],
-            timeline=["2021-07-01", "2021-12-31"],
-            image="image_url_2",
-            images=["image2_url"],
-            url="http://example.com/project/2",
-            coordinates=[30.0, 40.0],
-            creation_date=timezone.now(),
-            modification_date=timezone.now(),
-            publication_date=timezone.now(),
-            expiration_date=None,
-            last_seen=timezone.now(),
-            active=True,
-        )
+        project1 = baker.make(Project, foreign_id=1)
+        project2 = baker.make(Project, foreign_id=2)
 
         article_data = [
             {
@@ -193,7 +278,6 @@ class LoadDataTestCase(TestCase):
                 "title": "Article 1",
                 "intro": "Intro 1",
                 "body": "Body 1",
-                "image": "article_image_url_1",
                 "type": "announcement",
                 "url": "http://example.com/article/100",
                 "created": timezone.now(),
@@ -207,7 +291,6 @@ class LoadDataTestCase(TestCase):
                 "title": "Article 2",
                 "intro": "Intro 2",
                 "body": "Body 2",
-                "image": "article_image_url_2",
                 "type": "update",
                 "url": "http://example.com/article/101",
                 "created": timezone.now(),
@@ -233,40 +316,8 @@ class LoadDataTestCase(TestCase):
 
     def test_articles_update_conflict(self):
         """Test that articles function updates existing Article instances on conflict."""
-        # Create an initial article
-        initial_article = Article.objects.create(
-            foreign_id=100,
-            title="Initial Article Title",
-            intro="Initial Intro",
-            body="Initial Body",
-            image="initial_article_image_url",
-            type="news",
-            url="http://example.com/article/100",
-            creation_date=timezone.now(),
-            modification_date=timezone.now(),
-            publication_date=timezone.now(),
-            expiration_date=None,
-        )
-
-        # Create projects
-        project1 = Project.objects.create(
-            foreign_id=1,
-            title="Project 1",
-            subtitle="Subtitle 1",
-            sections=["Section A"],
-            contacts=["Contact A"],
-            timeline=["2021-01-01", "2021-06-30"],
-            image="image_url_1",
-            images=["image1_url"],
-            url="http://example.com/project/1",
-            coordinates=[10.0, 20.0],
-            creation_date=timezone.now(),
-            modification_date=timezone.now(),
-            publication_date=timezone.now(),
-            expiration_date=None,
-            last_seen=timezone.now(),
-            active=True,
-        )
+        article100 = baker.make(Article, id=100)
+        project1 = baker.make(Project, foreign_id=1)
 
         # New data with the same foreign_id
         article_data = [
@@ -275,14 +326,18 @@ class LoadDataTestCase(TestCase):
                 "title": "Updated Article Title",
                 "intro": "Updated Intro",
                 "body": "Updated Body",
-                "image": "updated_article_image_url",
                 "type": "announcement",
                 "url": "http://example.com/article/100",
-                "created": initial_article.creation_date,
+                "created": article100.creation_date,
                 "modified": timezone.now(),
                 "publicationDate": timezone.now(),
                 "expirationDate": None,
                 "projectIds": [1],
+                "image": {
+                    "id": 23626572,
+                    "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
+                    "aspectRatio": 2,
+                },
             },
         ]
 
@@ -293,7 +348,7 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(updated_article.title, "Updated Article Title")
         self.assertEqual(updated_article.intro, "Updated Intro")
         self.assertEqual(updated_article.body, "Updated Body")
-        self.assertEqual(updated_article.image, "updated_article_image_url")
+        self.assertEqual(updated_article.image.id, 23626572)
         self.assertEqual(updated_article.type, "announcement")
         self.assertEqual(set(updated_article.projects.all()), {project1})
 
@@ -305,7 +360,6 @@ class LoadDataTestCase(TestCase):
                 "title": "Article with Missing Project",
                 "intro": "Intro",
                 "body": "Body",
-                "image": "image_url",
                 "type": "news",
                 "url": "http://example.com/article/200",
                 "created": timezone.now(),
@@ -330,20 +384,23 @@ class LoadDataTestCase(TestCase):
             "title": "Article Title",
             "intro": "Article Intro",
             "body": "Article Body",
-            "image": "article_image_url",
             "type": "news",
             "url": "http://example.com/article/100",
             "created": timezone.now(),
             "modified": timezone.now(),
             "publicationDate": timezone.now(),
             "expirationDate": None,
+            "image": {
+                "id": 23626572,
+                "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
+                "aspectRatio": 2,
+            },
         }
         article = get_article_object(data)
         self.assertEqual(article.foreign_id, data["id"])
         self.assertEqual(article.title, data["title"])
         self.assertEqual(article.intro, data["intro"])
         self.assertEqual(article.body, data["body"])
-        self.assertEqual(article.image, data["image"])
         self.assertEqual(article.type, data["type"])
         self.assertEqual(article.url, data["url"])
         self.assertEqual(article.creation_date, data["created"])

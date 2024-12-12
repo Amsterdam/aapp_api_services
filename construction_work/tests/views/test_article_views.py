@@ -2,8 +2,10 @@ import json
 from datetime import datetime
 
 from django.urls import reverse
+from model_bakery import baker
 
-from construction_work.models import Article, Project
+from construction_work.models.article_models import Article, ArticleImage
+from construction_work.models.project_models import Project
 from construction_work.tests import mock_data
 from construction_work.utils.date_utils import translate_timezone as tt
 from core.tests.test_authentication import BasicAPITestCase
@@ -33,6 +35,8 @@ class TestArticleDetailView(BasicAPITestCase):
         articles[1].publication_date = "2023-01-01T11:00:00+00:00"
         articles[1].save()
 
+        baker.make(ArticleImage, id=1, parent=articles[0])
+
     def test_get_single_article(self):
         """Test retrieving single article"""
         article = Article.objects.first()
@@ -60,7 +64,12 @@ class TestArticleDetailView(BasicAPITestCase):
             "title": article.title,
             "intro": article.intro,
             "body": article.body,
-            "image": article.image,
+            "image": {
+                "id": article.image.id,
+                "aspectRatio": article.image.aspectRatio,
+                "alternativeText": article.image.alternativeText,
+                "sources": [],
+            },
             "url": article.url,
             "creation_date": tt(str(article.creation_date), target_tzinfo_creation),
             "modification_date": tt(

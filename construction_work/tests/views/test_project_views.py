@@ -8,16 +8,21 @@ from django.db import DEFAULT_DB_ALIAS, connections
 from django.test import override_settings
 from django.urls import reverse
 from freezegun import freeze_time
+from model_bakery import baker
 
-from construction_work.models import (
+from construction_work.models.article_models import (
     Article,
+    ArticleImage,
+    ArticleImageSource,
+)
+from construction_work.models.manage_models import (
     Device,
     Image,
-    Project,
     ProjectManager,
     WarningImage,
     WarningMessage,
 )
+from construction_work.models.project_models import Project
 from construction_work.tests import mock_data
 from construction_work.utils.date_utils import translate_timezone as tt
 from construction_work.utils.patch_utils import create_image_file
@@ -225,24 +230,18 @@ class TestProjectListView(BaseTestProjectView):
         van_gogh_museum_adam = (52.358155575937595, 4.8811891932042055)
 
         project_1, _ = self.create_project_and_article(10, "2023-01-01T12:00:00+00:00")
-        project_1.coordinates = {
-            "lat": van_gogh_museum_adam[0],
-            "lon": van_gogh_museum_adam[1],
-        }
+        project_1.coordinates_lat = van_gogh_museum_adam[0]
+        project_1.coordinates_lon = van_gogh_museum_adam[1]
         project_1.save()
 
         project_2, _ = self.create_project_and_article(20, "2023-01-01T12:15:00+00:00")
-        project_2.coordinates = {
-            "lat": royal_palace_adam[0],
-            "lon": royal_palace_adam[1],
-        }
+        project_2.coordinates_lat = royal_palace_adam[0]
+        project_2.coordinates_lon = royal_palace_adam[1]
         project_2.save()
 
         project_3, _ = self.create_project_and_article(30, "2023-01-01T12:30:00+00:00")
-        project_3.coordinates = {
-            "lat": rijks_museam_adam[0],
-            "lon": rijks_museam_adam[1],
-        }
+        project_3.coordinates_lat = rijks_museam_adam[0]
+        project_3.coordinates_lon = rijks_museam_adam[1]
         project_3.save()
 
         # Create device, but don't follow any projects
@@ -601,12 +600,12 @@ class TestProjectSearchView(BaseTestProjectView):
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertNotIn(new_project.title, res_titles)
 
-    def test_search_non_text_query_fields(self):
+    def test_search_text_query_fields(self):
         """Test search for projects"""
         search_text = "title"
         query = {
             "text": search_text,
-            "query_fields": "id,image,title,subtitle",
+            "query_fields": "id,title,subtitle",
             "fields": "title,subtitle",
             "page_size": 1,
             "page": 1,
@@ -1198,19 +1197,25 @@ class TestArticleListView(BaseTestProjectView):
             "id": 123,
             "sources": [
                 {
-                    "url": "/foo/bar.png",
+                    "uri": "/foo/bar.png",
                     "width": 100,
                     "height": 50,
                 },
             ],
-            "aspectRatio": 2,
+            "aspectRatio": 2.0,
             "alternativeText": None,
         }
 
         article_data = mock_data.articles[0].copy()
         article_data["foreign_id"] = 9999
-        article_data["image"] = image_data
-        article: Article = Article.objects.create(**article_data)
+        article = Article.objects.create(**article_data)
+        image = baker.make(
+            ArticleImage, parent=article, alternativeText=None, aspectRatio=2.0, id=123
+        )
+        baker.make(
+            ArticleImageSource, image=image, height=50, uri="/foo/bar.png", width=100
+        )
+
         # Refresh from db to create datetime objects from datetime strings
         article.refresh_from_db()
 

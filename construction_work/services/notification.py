@@ -4,7 +4,7 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 
-from construction_work.models import WarningMessage
+from construction_work.models.manage_models import WarningMessage
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,8 @@ from rest_framework import generics, status
 from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
 
-from construction_work.models import Article, WarningMessage
+from construction_work.models.article_models import Article
+from construction_work.models.manage_models import WarningMessage
 from construction_work.serializers.article_serializers import ArticleListSerializer
 from construction_work.serializers.project_serializers import (
     WarningMessageListSerializer,

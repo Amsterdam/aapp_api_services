@@ -2,6 +2,7 @@ from unittest import mock
 
 from django.test import TestCase
 from django.utils import timezone
+from model_bakery import baker
 
 from construction_work.etl.update_data import (
     _cleanup_inactive_projects,
@@ -10,7 +11,8 @@ from construction_work.etl.update_data import (
     extract_transform_load,
     garbage_collector,
 )
-from construction_work.models import Article, Project
+from construction_work.models.article_models import Article
+from construction_work.models.project_models import Project
 
 
 def mock_get_all_iprox_items(url):
@@ -104,8 +106,8 @@ class GarbageCollectorTestCase(TestCase):
             hidden=True,  # Should not be deactivated or deleted
             last_seen=timezone.now(),
         )
-        self.article1 = Article.objects.create(foreign_id=1, title="Article 1")
-        self.article2 = Article.objects.create(foreign_id=2, title="Article 2")
+        self.article1 = baker.make(Article, foreign_id=1, title="Article 1")
+        self.article2 = baker.make(Article, foreign_id=2, title="Article 2")
 
     def test_garbage_collector(self):
         found_projects = [self.project1.foreign_id]  # Only project1 is found

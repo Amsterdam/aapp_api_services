@@ -2,85 +2,10 @@ from django.conf import settings
 from django.db import IntegrityError, models
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
-from django.utils import timezone
 
+from construction_work.models.project_models import Project
 from construction_work.utils.model_utils import create_id_dict
 from construction_work.validators import AmsterdamEmailValidator
-
-
-class Project(models.Model):
-    """Projects db model"""
-
-    foreign_id = models.BigIntegerField(blank=False, unique=True, null=False)
-
-    active = models.BooleanField(default=True, blank=True)
-    last_seen = models.DateTimeField(blank=True, null=False)
-    hidden = models.BooleanField(default=False, blank=True)
-
-    title = models.CharField(
-        max_length=1000, blank=True, null=True, default="", db_index=True
-    )
-    subtitle = models.CharField(max_length=1000, blank=True, null=True, db_index=True)
-    coordinates = models.JSONField(blank=True, null=True, default=None)
-    sections = models.JSONField(blank=True, null=True, default=dict)
-    contacts = models.JSONField(blank=True, null=True, default=list)
-    timeline = models.JSONField(blank=True, null=True, default=dict)
-    image = models.JSONField(blank=True, null=True, default=dict)
-    images = models.JSONField(blank=True, null=True, default=list)
-    url = models.URLField(max_length=2048, blank=True, null=True)
-    creation_date = models.DateTimeField(
-        default=timezone.now
-    )  # If no date is provided use the current date
-    modification_date = models.DateTimeField(
-        default=timezone.now
-    )  # If no date is provided use the current date
-    publication_date = models.DateTimeField(default=None, null=True)
-    expiration_date = models.DateTimeField(default=None, null=True)
-
-    class Meta:
-        ordering = ["title"]
-
-    def save(self, update_active=True, *args, **kwargs):
-        if update_active:
-            self.active = True
-            self.last_seen = timezone.now()
-        super(Project, self).save(*args, **kwargs)
-
-    def deactivate(self, *args, **kwargs):
-        """Deactivate & save"""
-        self.active = False
-        super(Project, self).save(*args, **kwargs)
-
-
-class Article(models.Model):
-    """Article db model"""
-
-    foreign_id = models.BigIntegerField(blank=False, null=False, unique=True)
-
-    active = models.BooleanField(default=True)
-    last_seen = models.DateTimeField(auto_now=True)
-
-    title = models.CharField(
-        max_length=1000, blank=True, null=True, default="", db_index=True
-    )
-    intro = models.TextField(blank=True, null=True, default=None)
-    body = models.TextField(blank=True, null=True, default=None)
-    image = models.JSONField(blank=True, null=True, default=None)
-    type = models.CharField(max_length=30, blank=True, null=True, default=None)
-    projects = models.ManyToManyField(Project, blank=False)
-    url = models.URLField(max_length=2048, blank=True, null=True)
-    creation_date = models.DateTimeField(
-        default=timezone.now
-    )  # If no date is provided use the current date
-    modification_date = models.DateTimeField(
-        default=timezone.now
-    )  # If no date is provided use the current date
-    publication_date = models.DateTimeField(default=None, null=True)
-    expiration_date = models.DateTimeField(default=None, null=True)
-
-    def get_id_dict(self):
-        """Get id dict"""
-        return create_id_dict(self)
 
 
 class ProjectManager(models.Model):

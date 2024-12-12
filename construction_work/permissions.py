@@ -1,6 +1,7 @@
 from rest_framework.permissions import BasePermission
 
-from construction_work.models import Project, ProjectManager, WarningMessage
+from construction_work.models.manage_models import ProjectManager, WarningMessage
+from construction_work.models.project_models import Project
 from construction_work.utils.auth_utils import (
     get_manager_type,
     get_project_manager_from_token,

@@ -1,7 +1,7 @@
 from django.conf import settings
 
 from construction_work.enums import ManagerType
-from construction_work.models import ProjectManager
+from construction_work.models.manage_models import ProjectManager
 
 
 def get_manager_type(token_data) -> ManagerType:

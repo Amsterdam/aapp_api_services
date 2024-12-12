@@ -3,6 +3,7 @@
 ifndef SERVICE_NAME
 $(error SERVICE_NAME is not set)
 endif
+export SERVICE_NAME_HYPHEN=$(subst _,-,$(SERVICE_NAME))
 
 UID:=$(shell id --user)
 GID:=$(shell id --group)
@@ -72,3 +73,9 @@ settings:                           ## Print Django settings
 
 run_etl:
 	$(manage) runetl
+
+spectacular:
+	$(manage) spectacular --file /app/${SERVICE_NAME}/openapi-schema.yaml
+
+openapi-diff: spectacular
+	$(run) openapi-diff https://acc.app.amsterdam.nl/$(SERVICE_NAME_HYPHEN)/api/v1/openapi/ /specs/openapi-schema.yaml

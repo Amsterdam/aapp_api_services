@@ -9,7 +9,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from construction_work.etl.extract_data import get_all_iprox_items, get_iprox_items_data
-from construction_work.models import Article, Project
+from construction_work.models.article_models import Article
+from construction_work.models.project_models import Project
 
 logger = getLogger(__name__)
 

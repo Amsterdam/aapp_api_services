@@ -10,12 +10,12 @@ from rest_framework.response import Response
 
 from construction_work.authentication import EntraIDAuthentication
 from construction_work.exceptions import MissingProjectIdBody
-from construction_work.models import (
-    Project,
+from construction_work.models.manage_models import (
     ProjectManager,
     WarningImage,
     WarningMessage,
 )
+from construction_work.models.project_models import Project
 from construction_work.permissions import (
     IsEditor,
     IsPublisher,

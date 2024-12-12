@@ -21,6 +21,7 @@ class IproxProjectSectionLinkSerializer(serializers.Serializer):
 
 class IproxProjectSectionSerializer(serializers.Serializer):
     body = serializers.CharField()
+    title = serializers.CharField()
     links = IproxProjectSectionLinkSerializer(many=True)
 
 
@@ -36,21 +37,22 @@ class IproxCoordinatesSerializer(serializers.Serializer):
     lon = serializers.FloatField()
 
 
+class RecursiveField(serializers.Field):
+    def to_representation(self, value):
+        serializer = IproxProjectTimelineItemSerializer(
+            value, many=True, context=self.context
+        )
+        return serializer.data
+
+
 class IproxProjectTimelineItemSerializer(serializers.Serializer):
     title = serializers.CharField()
     body = serializers.CharField()
     collapsed = serializers.BooleanField()
+    items = serializers.ListField(child=RecursiveField())
 
 
 class IproxProjectTimelineSerializer(serializers.Serializer):
     title = serializers.CharField()
     intro = serializers.CharField()
     items = IproxProjectTimelineItemSerializer(many=True)
-
-
-class IproxProjectContactSerializer(serializers.Serializer):
-    id = serializers.FloatField()
-    name = serializers.CharField()
-    email = serializers.CharField()
-    phone = serializers.CharField()
-    position = serializers.CharField()

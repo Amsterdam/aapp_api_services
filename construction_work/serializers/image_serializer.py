@@ -3,7 +3,7 @@ import uuid
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
-from construction_work.models import Image
+from construction_work.models.manage_models import Image
 from construction_work.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
 
 

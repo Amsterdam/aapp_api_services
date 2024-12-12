@@ -7,31 +7,36 @@ from logging import getLogger
 from django.db import transaction
 from django.utils import timezone
 
-from construction_work.models import Article, Project
+from construction_work.models.article_models import (
+    Article,
+    ArticleImage,
+    ArticleImageSource,
+)
+from construction_work.models.project_models import (
+    Project,
+    ProjectContact,
+    ProjectImage,
+    ProjectImageSource,
+    ProjectSection,
+    ProjectSectionUrl,
+    ProjectTimelineItem,
+)
 
 logger = getLogger(__name__)
 
 
 def projects(project_data):
-    projects = []
-    for item in project_data:
-        project_object = get_project_object(item)
-        projects.append(project_object)
-
+    projects_list = [get_project_object(data) for data in project_data]
     Project.objects.bulk_create(
-        projects,
+        projects_list,
         update_conflicts=True,
         unique_fields=["foreign_id"],
         update_fields=[
             "title",
             "subtitle",
-            "sections",
-            "contacts",
-            "timeline",
-            "image",
-            "images",
             "url",
-            "coordinates",
+            "coordinates_lat",
+            "coordinates_lon",
             "creation_date",
             "modification_date",
             "publication_date",
@@ -41,19 +46,76 @@ def projects(project_data):
         ],
     )
 
+    project_objects = Project.objects.all()
+    projects_dict = {project.foreign_id: project for project in project_objects}
+    contacts, images, image_sources, timelines, sections, section_urls = (
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+    )
+    for data in project_data:
+        project = projects_dict.get(data.get("id"))
+
+        contacts += get_contacts(data, project)
+
+        new_images, new_image_sources = get_image(
+            data,
+            project,
+            image_class=ProjectImage,
+            image_source_class=ProjectImageSource,
+        )
+        images += new_images
+        image_sources += new_image_sources
+
+        timelines += get_timeline(data, project)
+
+        new_sections, new_section_urls = get_sections(data, project)
+        sections += new_sections
+        section_urls += new_section_urls
+
+    with transaction.atomic():
+        ProjectContact.objects.all().delete()
+        ProjectContact.objects.bulk_create(contacts)
+
+    with transaction.atomic():
+        ProjectImage.objects.all().delete()
+        ProjectImage.objects.bulk_create(images)
+        ProjectImageSource.objects.bulk_create(image_sources)
+
+    with transaction.atomic():
+        ProjectTimelineItem.objects.all().delete()
+        parent_ids = {}
+        for tl in timelines:
+            parent_ids[tl.id] = tl.parent_id
+            tl.parent_id = None
+
+        ProjectTimelineItem.objects.bulk_create(timelines)
+
+        for tl in timelines:
+            tl.parent_id = parent_ids.get(tl.id)
+        ProjectTimelineItem.objects.bulk_update(timelines, ["parent_id"])
+
+    with transaction.atomic():
+        ProjectSection.objects.all().delete()
+        ProjectSection.objects.bulk_create(sections)
+        ProjectSectionUrl.objects.bulk_create(section_urls)
+
 
 def get_project_object(data):
+    timeline_data = data.get("timeline") or {}
+    coordinates_data = data.get("coordinates") or {}
     project = Project(
-        title=data.get("title", ""),
-        subtitle=data.get("subtitle", ""),
-        sections=data.get("sections"),
-        contacts=data.get("contacts"),
-        timeline=data.get("timeline"),
-        image=data.get("image"),
-        images=data.get("images"),
-        url=data.get("url"),
         foreign_id=data.get("id"),
-        coordinates=data.get("coordinates"),
+        title=data.get("title"),
+        subtitle=data.get("subtitle"),
+        timeline_title=timeline_data.get("title"),
+        timeline_intro=timeline_data.get("intro"),
+        coordinates_lat=coordinates_data.get("lat"),
+        coordinates_lon=coordinates_data.get("lon"),
+        url=data.get("url"),
         creation_date=data.get("created"),
         modification_date=data.get("modified"),
         publication_date=data.get("publicationDate"),
@@ -62,6 +124,53 @@ def get_project_object(data):
         active=True,
     )
     return project
+
+
+def get_contacts(data, project):
+    if not data.get("contacts"):
+        return []
+    return [ProjectContact(project=project, **c) for c in data.get("contacts")]
+
+
+def get_timeline(data, project):
+    timeline_data = data.get("timeline") or {}
+    if not timeline_data.get("items"):
+        return []
+    items = []
+    for item in timeline_data.get("items"):
+        items += get_timeline_items(item, project=project)
+    return items
+
+
+def get_timeline_items(timeline_data, project=None, parent=None):
+    parent = ProjectTimelineItem(
+        title=timeline_data.get("title"),
+        body=timeline_data.get("body"),
+        collapsed=timeline_data.get("collapsed"),
+        project=project,
+        parent=parent,
+    )
+    timeline_items = [parent]
+    if timeline_data.get("items"):
+        for item in timeline_data.get("items"):
+            timeline_items += get_timeline_items(item, parent=parent)
+    return timeline_items
+
+
+def get_sections(data, project):
+    sections, section_urls = [], []
+    if not data.get("sections"):
+        return sections, section_urls
+    for section_type, value in data.get("sections").items():
+        for item in value:
+            section = ProjectSection(
+                project=project, body=item.get("body"), type=section_type
+            )
+            sections.append(section)
+            section_urls += [
+                ProjectSectionUrl(section=section, **v) for v in item.get("links")
+            ]
+    return sections, section_urls
 
 
 def articles(article_data):
@@ -92,7 +201,6 @@ def articles(article_data):
             "title",
             "intro",
             "body",
-            "image",
             "type",
             "url",
             "creation_date",
@@ -111,6 +219,24 @@ def articles(article_data):
             projects = article_project_mapping.get(article.foreign_id)
             article.projects.set(projects)
 
+    articles_dict = {article.foreign_id: article for article in articles_saved}
+    images, image_sources = [], []
+    for data in article_data:
+        article = articles_dict.get(data.get("id"))
+        new_images, new_image_sources = get_image(
+            data,
+            article,
+            image_class=ArticleImage,
+            image_source_class=ArticleImageSource,
+        )
+        images += new_images
+        image_sources += new_image_sources
+
+    with transaction.atomic():
+        ArticleImage.objects.all().delete()
+        ArticleImage.objects.bulk_create(images)
+        ArticleImageSource.objects.bulk_create(image_sources)
+
 
 def get_article_object(data):
     article = Article(
@@ -118,7 +244,6 @@ def get_article_object(data):
         title=data.get("title"),
         intro=data.get("intro"),
         body=data.get("body"),
-        image=data.get("image"),
         type=data.get("type"),
         url=data.get("url"),
         creation_date=data.get("created"),
@@ -127,3 +252,21 @@ def get_article_object(data):
         expiration_date=data.get("expirationDate"),
     )
     return article
+
+
+def get_image(data, parent, image_class, image_source_class):
+    image_data = data.get("image")
+    if not image_data and data.get("images"):
+        image_data = data.get("images")[0]
+    if not image_data:
+        return [], []
+    image = image_class(
+        id=image_data.get("id"),
+        aspectRatio=image_data.get("aspectRatio"),
+        alternativeText=image_data.get("alternativeText"),
+        parent=parent,
+    )
+    image_sources = [
+        image_source_class(image=image, **v) for v in image_data.get("sources")
+    ]
+    return [image], image_sources

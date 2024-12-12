@@ -5,11 +5,17 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from construction_work.models import (
-    Project,
+from construction_work.models.manage_models import (
     ProjectManager,
     WarningImage,
     WarningMessage,
+)
+from construction_work.models.project_models import (
+    Project,
+    ProjectContact,
+    ProjectImage,
+    ProjectImageSource,
+    ProjectTimelineItem,
 )
 from construction_work.serializers.article_serializers import (
     ArticleMinimalSerializer,
@@ -21,7 +27,6 @@ from construction_work.serializers.image_serializer import ImagePublicSerializer
 from construction_work.serializers.iprox_serializer import (
     IproxCoordinatesSerializer,
     IproxImageSerializer,
-    IproxProjectContactSerializer,
     IproxProjectSectionsSerializer,
     IproxProjectTimelineSerializer,
 )
@@ -56,13 +61,27 @@ class DynamicFieldsModelSerializer(serializers.ModelSerializer):
                 self.fields.pop(field_name)
 
 
+class ProjectImageSourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectImageSource
+        exclude = ["image", "id"]
+
+
+class ProjectImageSerializer(serializers.ModelSerializer):
+    sources = ProjectImageSourceSerializer(many=True)
+
+    class Meta:
+        model = ProjectImage
+        exclude = ["parent"]
+
+
 class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
     """Project list serializer"""
 
     meter = serializers.SerializerMethodField()
     followed = serializers.SerializerMethodField()
     recent_articles = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
+    image = ProjectImageSerializer()
 
     class Meta:
         model = Project
@@ -84,7 +103,7 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
             return None
 
         cords_1 = (float(lat), float(lon))
-        project_coordinates = obj.coordinates
+        project_coordinates = {"lat": obj.coordinates_lat, "lon": obj.coordinates_lon}
         if project_coordinates is None:
             return None
         cords_2 = (project_coordinates.get("lat"), project_coordinates.get("lon"))
@@ -119,14 +138,11 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
 
         return recent_news
 
-    @extend_schema_field(IproxImageSerializer)
-    def get_image(self, obj: Project):
-        """Get main image or first image from image list"""
-        if obj.image:
-            return obj.image
-        if obj.images:
-            return obj.images[0]
-        return {}
+
+class ProjectContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectContact
+        exclude = ["project"]
 
 
 class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
@@ -136,24 +152,42 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
     recent_articles = serializers.SerializerMethodField()
     meter = serializers.SerializerMethodField()
     followed = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
-
-    # These fields are only used for correct OpenAPI example generation
     sections = serializers.SerializerMethodField()
-    coordinates = serializers.SerializerMethodField()
-    contacts = serializers.SerializerMethodField()
     timeline = serializers.SerializerMethodField()
-    images = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
+
+    contacts = ProjectContactSerializer(many=True)
 
     class Meta:
         model = Project
-        exclude = ["hidden"]
+        fields = [
+            "id",
+            "meter",
+            "followed",
+            "recent_articles",
+            "image",
+            "followers",
+            "foreign_id",
+            "active",
+            "last_seen",
+            "title",
+            "subtitle",
+            "contacts",
+            "url",
+            "timeline",
+            "sections",
+            "coordinates",
+            "creation_date",
+            "modification_date",
+            "publication_date",
+            "expiration_date",
+        ]
 
     def get_followers(self, obj: Project) -> int:
         """Get amount of followers of project"""
         return obj.device_set.count()
 
-    @extend_schema_field(ArticleSerializer)
+    @extend_schema_field(ArticleSerializer(many=True))
     def get_recent_articles(self, obj: Project) -> list:
         """Get recent articles and warnings"""
         article_max_age = self.context.get("article_max_age", 3)
@@ -162,10 +196,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
 
         # Get recent articles
         recent_articles = obj.article_set.filter(publication_date__gte=start_date)
-        article_serializer = ArticleSerializer(
-            recent_articles,
-            many=True,
-        )
+        article_serializer = ArticleSerializer(recent_articles, many=True)
 
         # Get recent warnings
         recent_warnings = obj.warningmessage_set.filter(
@@ -183,43 +214,58 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
 
     @extend_schema_field(IproxProjectSectionsSerializer)
     def get_sections(self, obj):
-        """
-        This method is only here to specify the serializer,
-        so the example in Swagger is generated correctly.
-        """
-        return obj.sections
-
-    @extend_schema_field(IproxCoordinatesSerializer)
-    def get_coordinates(self, obj):
-        """
-        This method is only here to specify the serializer,
-        so the example in Swagger is generated correctly.
-        """
-        return obj.coordinates
-
-    @extend_schema_field(IproxProjectContactSerializer(many=True))
-    def get_contacts(self, obj):
-        """
-        This method is only here to specify the serializer,
-        so the example in Swagger is generated correctly.
-        """
-        return obj.contacts
+        response = {key: [] for key in ("where", "what", "when", "work", "contact")}
+        for section in obj.sections.all():
+            response[section.type].append(
+                {
+                    "body": section.body,
+                    "title": section.title,
+                    "links": [
+                        {"url": link["url"], "label": link["label"]}
+                        for link in section.links.values()
+                    ],
+                }
+            )
+        return response
 
     @extend_schema_field(IproxProjectTimelineSerializer)
     def get_timeline(self, obj):
-        """
-        This method is only here to specify the serializer,
-        so the example in Swagger is generated correctly.
-        """
-        return obj.timeline
+        items = self.get_timeline_items(obj.timeline_items.all())
+        if not items:
+            return None
 
-    @extend_schema_field(IproxImageSerializer(many=True))
-    def get_images(self, obj):
+        response = {
+            "intro": obj.timeline_intro,
+            "title": obj.timeline_title,
+            "items": items,
+        }
+        return response
+
+    def get_timeline_items(self, item_ids):
         """
-        This method is only here to specify the serializer,
-        so the example in Swagger is generated correctly.
+        This is a recursive function to build the timeline items tree
         """
-        return obj.images
+        timeline_items = ProjectTimelineItem.objects.filter(id__in=item_ids)
+        response = []
+        for item in timeline_items:
+            items = self.get_timeline_items(item.items.all())
+            response.append(
+                {
+                    "title": item.title,
+                    "body": item.body,
+                    "collapsed": item.collapsed,
+                    "items": items,
+                }
+            )
+        return response
+
+    @extend_schema_field(IproxCoordinatesSerializer)
+    def get_coordinates(self, obj: Project) -> dict:
+        """Get coordinates"""
+        return {
+            "lat": obj.coordinates_lat,
+            "lon": obj.coordinates_lon,
+        }
 
 
 class ProjectManagerNameEmailSerializer(serializers.ModelSerializer):

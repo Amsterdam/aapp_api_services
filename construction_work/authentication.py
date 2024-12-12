@@ -99,7 +99,7 @@ class MockEntraIDAuthentication(BaseAuthentication):
     keyword = "Bearer"
 
     def authenticate(self, _):
-        from construction_work.models import ProjectManager
+        from construction_work.models.manage_models import ProjectManager
 
         first_name = "Mock"
         last_name = "User"

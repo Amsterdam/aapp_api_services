@@ -3,7 +3,8 @@ from typing import Dict
 
 
 def create_id_dict(model_instance) -> Dict[str, str]:
-    from construction_work.models import Article, WarningMessage
+    from construction_work.models.article_models import Article
+    from construction_work.models.manage_models import WarningMessage
 
     """
     Create a dictionary with 'id' and 'type' based on the model instance.

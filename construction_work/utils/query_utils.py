@@ -4,7 +4,8 @@ from django.db.models import Prefetch
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from construction_work.models import Image, Project, WarningImage
+from construction_work.models.manage_models import Image, WarningImage
+from construction_work.models.project_models import Project
 from construction_work.utils.model_utils import get_start_end_date_for_max_age
 
 
