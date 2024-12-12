@@ -53,15 +53,17 @@ class BaseTestProjectView(BasicAPITestCase):
         Article.objects.all().delete()
         WarningMessage.objects.all().delete()
 
-    def create_project_and_article(self, project_foreign_id, pub_date):
+    def create_project_and_article(self, project_foreign_id, article_pub_date, project_pub_date=None):
         """Create project and article"""
         project_data = mock_data.projects[0].copy()
         project_data["foreign_id"] = project_foreign_id
+        if project_pub_date:
+            project_data["publication_date"] = project_pub_date
         project = Project.objects.create(**project_data)
 
         article_data = mock_data.articles[0].copy()
         article_data["foreign_id"] = project_foreign_id + 1
-        article_data["publication_date"] = pub_date
+        article_data["publication_date"] = article_pub_date
         article = Article.objects.create(**article_data)
         article.projects.add(project)
 
@@ -108,161 +110,389 @@ class TestProjectListView(BaseTestProjectView):
         super().setUp()
         self.api_url = reverse("construction-work:project-list")
 
+        # Base location (Amsterdam Central Station)
+        self.base_location = (52.379158791458494, 4.899904339167326)
+        # Test locations from closest to furthest from base
+        self.test_locations = [
+            (52.3731077480929, 4.891371824969558),    # Royal Palace (closest)
+            (52.36002292836369, 4.8852016757845345),   # Rijksmuseum (middle)
+            (52.358155575937595, 4.8811891932042055),  # Van Gogh Museum (furthest)
+        ]
+
     def tearDown(self) -> None:
         Project.objects.all().delete()
         Article.objects.all().delete()
         Device.objects.all().delete()
         super().tearDown()
 
-    @freeze_time("2023-01-02")
-    def assert_projects_sorted_descending_by_recent_article_date(
-        self, device_follows_projects: bool
-    ):
-        # Create projects with articles at different times
-        project_1, _ = self.create_project_and_article(10, "2023-01-01T12:00:00+00:00")
-        self.add_article_to_project(project_1, 12, "2023-01-01T12:20:00+00:00")
-        project_2, _ = self.create_project_and_article(20, "2023-01-01T12:35:00+00:00")
-        self.add_article_to_project(project_2, 22, "2023-01-01T12:45:00+00:00")
+    def create_project_with_location(self, foreign_id: int, location_index: int) -> Project:
+        """Helper to create project with specific location"""
+        location = self.test_locations[location_index]
+        return Project.objects.create(**{
+            **mock_data.projects[0].copy(),
+            "foreign_id": foreign_id,
+            "coordinates_lat": location[0],
+            "coordinates_lon": location[1]
+        })
 
-        # Create projects with warnings at different times
-        project_3, _ = self.create_project_and_warning(30, "2023-01-01T12:15:00+00:00")
-        self.add_warning_to_project(project_3, "2023-01-01T12:16:00+00:00")
-        project_4, _ = self.create_project_and_warning(40, "2023-01-01T12:36:00+00:00")
-        self.add_warning_to_project(project_4, "2023-01-01T12:30:00+00:00")
+    def create_projects_with_articles(self, base_foreign_id: int, article_pub_dates: list[str], project_pub_dates: list[str] = None) -> list[Project]:
+        """Helper to create multiple projects with articles at given timestamps"""
+        projects = []
+        for i, article_timestamp in enumerate(article_pub_dates):
+            project, _ = self.create_project_and_article(
+                base_foreign_id + i, 
+                article_timestamp,
+                project_pub_dates[i] if project_pub_dates else None
+            )
+            projects.append(project)
+        return projects
+
+    @freeze_time("2023-01-02")
+    def test_followed_projects_with_articles_and_device_location(self):
+        """
+        Test followed projects with articles when device location is provided:
+        - Projects with articles should be sorted by most recent article first
+        - Projects without articles should be sorted by distance
+        """
+        # Create projects with articles
+        article_projects = self.create_projects_with_articles(10, [
+            "2023-01-01T12:00:00+00:00",  # Oldest
+            "2023-01-01T12:30:00+00:00",  # Newest
+            "2023-01-01T12:15:00+00:00",  # Middle
+        ])
+
+        # Create projects with only locations
+        location_projects = [
+            self.create_project_with_location(20, 1),  # Middle
+            self.create_project_with_location(30, 0),  # Closest
+            self.create_project_with_location(40, 2),  # Furthest
+        ]
 
         # Create device and follow all projects
         device = Device.objects.create(**mock_data.devices[0].copy())
-        if device_follows_projects:
-            device.followed_projects.set([project_1, project_2, project_3, project_4])
+        device.followed_projects.set(article_projects + location_projects)
 
-        # Perform request
-        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
-        response = self.client.get(
-            self.api_url, {"page_size": 4}, headers=self.api_headers
-        )
-
-        # Expected projects to be ordered descending by publication date
-        expected_foreign_id_order = [
-            project_2.pk,
-            project_4.pk,
-            project_1.pk,
-            project_3.pk,
-        ]
-        response_foreign_id_order = [x["id"] for x in response.json()["result"]]
-        self.assertEqual(response_foreign_id_order, expected_foreign_id_order)
-
-    def test_followed_projects_sorted_descending_by_recent_article_date(self):
-        self.assert_projects_sorted_descending_by_recent_article_date(
-            device_follows_projects=True
-        )
-
-    def test_not_followed_projects_sorted_descending_by_recent_article_date(self):
-        self.assert_projects_sorted_descending_by_recent_article_date(
-            device_follows_projects=False
-        )
-
-    @freeze_time("2023-01-02")
-    def assert_project_without_articles_sorted_below_project_with_articles(
-        self, device_follows_projects: bool
-    ):
-        # Create project with articles
-        project_1, _ = self.create_project_and_article(10, "2023-01-01T12:00:00+00:00")
-        self.add_article_to_project(project_1, 12, "2023-01-01T12:20:00+00:00")
-
-        # Create project without articles
-        project_data = mock_data.projects[0].copy()
-        project_data["foreign_id"] = 20
-        project_2 = Project.objects.create(**project_data)
-
-        # Create device and follow all projects (if requested)
-        device = Device.objects.create(**mock_data.devices[0].copy())
-        if device_follows_projects:
-            device.followed_projects.set([project_1, project_2])
-
-        # Perform request
-        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
-        response = self.client.get(
-            self.api_url, {"page_size": 4}, headers=self.api_headers
-        )
-
-        # Expected project without articles on the bottom
-        expected_foreign_id_order = [
-            project_1.pk,
-            project_2.pk,
-        ]
-        response_foreign_id_order = [x["id"] for x in response.json()["result"]]
-        self.assertEqual(response_foreign_id_order, expected_foreign_id_order)
-
-    def test_sort_followed_project_without_articles_below_project_with_articles(self):
-        """
-        Given a list of followed projects:
-        When articles are sorted by recent article date,
-        and there is a project without articles,
-        it should appear on the bottom of the list
-        """
-        self.assert_project_without_articles_sorted_below_project_with_articles(
-            device_follows_projects=True
-        )
-
-    def test_sort_not_followed_project_without_articles_below_project_with_articles(
-        self,
-    ):
-        """
-        Given a list of not followed projects:
-        When articles are sorted by recent article date,
-        and there is a project without articles,
-        it should appear on the bottom of the list
-        """
-        self.assert_project_without_articles_sorted_below_project_with_articles(
-            device_follows_projects=False
-        )
-
-    def test_other_projects_sorted_by_distance_with_lat_lon(self):
-        """Test other projects sorted by distance with lat lon"""
-        # Setup location
-        # - Base location is Amsterdam Central Station
-        adam_central_station = (52.379158791458494, 4.899904339167326)
-        # - The closest location to the base location
-        royal_palace_adam = (52.3731077480929, 4.891371824969558)
-        # - The second closest location to the base location
-        rijks_museam_adam = (52.36002292836369, 4.8852016757845345)
-        # - The furthest location to the base location
-        van_gogh_museum_adam = (52.358155575937595, 4.8811891932042055)
-
-        project_1, _ = self.create_project_and_article(10, "2023-01-01T12:00:00+00:00")
-        project_1.coordinates_lat = van_gogh_museum_adam[0]
-        project_1.coordinates_lon = van_gogh_museum_adam[1]
-        project_1.save()
-
-        project_2, _ = self.create_project_and_article(20, "2023-01-01T12:15:00+00:00")
-        project_2.coordinates_lat = royal_palace_adam[0]
-        project_2.coordinates_lon = royal_palace_adam[1]
-        project_2.save()
-
-        project_3, _ = self.create_project_and_article(30, "2023-01-01T12:30:00+00:00")
-        project_3.coordinates_lat = rijks_museam_adam[0]
-        project_3.coordinates_lon = rijks_museam_adam[1]
-        project_3.save()
-
-        # Create device, but don't follow any projects
-        device = Device.objects.create(**mock_data.devices[0].copy())
-
-        # Perform request
+        # Perform request with location
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
         response = self.client.get(
             self.api_url,
             {
-                "lat": adam_central_station[0],
-                "lon": adam_central_station[1],
-                "page_size": 3,
+                "lat": self.base_location[0],
+                "lon": self.base_location[1],
+                "page_size": 10
             },
-            headers=self.api_headers,
+            headers=self.api_headers
         )
 
-        # Expected projects to be ordered from closest to furthest from the base location
-        expected_foreign_id_order = [project_2.pk, project_3.pk, project_1.pk]
-        response_foreign_id_order = [x["id"] for x in response.json()["result"]]
-        self.assertEqual(response_foreign_id_order, expected_foreign_id_order)
+        # Expected: newest article first, then oldest article, then by distance
+        expected_order = [
+            article_projects[1].pk,  # Newest article
+            article_projects[2].pk,  # Middle article
+            article_projects[0].pk,  # Oldest article
+            location_projects[1].pk, # Closest location
+            location_projects[0].pk, # Middle location
+            location_projects[2].pk, # Furthest location
+        ]
+        actual_order = [x["id"] for x in response.json()["result"]]
+        self.assertEqual(actual_order, expected_order)
+
+    @freeze_time("2023-01-02")
+    def test_followed_projects_with_articles_no_device_location(self):
+        """
+        Test followed projects with articles when no device location is provided:
+        - Projects with articles should be sorted by most recent article first
+        - Then by project publication date for those without articles
+        """
+        # Create projects with articles at different times
+        article_projects = self.create_projects_with_articles(10, [
+            "2023-01-01T12:15:00+00:00",  # Middle
+            "2023-01-01T12:00:00+00:00",  # Oldest
+            "2023-01-01T12:30:00+00:00",  # Newest
+        ])
+
+        # Create projects without articles but with different publication dates
+        no_article_projects = []
+        project_data = mock_data.projects[0].copy()
+        
+        # Earlier publication date
+        project_data["foreign_id"] = 30
+        project_data["publication_date"] = "2023-01-01T11:00:00+00:00"
+        no_article_projects.append(Project.objects.create(**project_data))
+        
+        # Later publication date
+        project_data = mock_data.projects[0].copy()
+        project_data["foreign_id"] = 40
+        project_data["publication_date"] = "2023-01-01T11:30:00+00:00"
+        no_article_projects.append(Project.objects.create(**project_data))
+
+        # Create device and follow all projects
+        device = Device.objects.create(**mock_data.devices[0].copy())
+        device.followed_projects.set(article_projects + no_article_projects)
+
+        # Perform request without location
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
+        response = self.client.get(
+            self.api_url,
+            {"page_size": 10},
+            headers=self.api_headers
+        )
+
+        expected_order = [
+            article_projects[2].pk,    # Newest article
+            article_projects[0].pk,    # Middle article
+            article_projects[1].pk,    # Oldest article
+            no_article_projects[1].pk, # Later publication date
+            no_article_projects[0].pk, # Earlier publication date
+        ]
+        actual_order = [x["id"] for x in response.json()["result"]]
+        self.assertEqual(actual_order, expected_order)
+
+    @freeze_time("2023-01-02")
+    def test_unfollowed_projects_with_device_location(self):
+        """
+        Test unfollowed projects when device location is provided:
+        - Projects should be sorted by distance only
+        """
+        # Create projects at different locations
+        projects = [
+            self.create_project_with_location(10, 1),  # Middle
+            self.create_project_with_location(20, 2),  # Furthest
+            self.create_project_with_location(30, 0),  # Closest
+        ]
+
+        # Create device but don't follow any projects
+        device = Device.objects.create(**mock_data.devices[0].copy())
+
+        # Perform request with location
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
+        response = self.client.get(
+            self.api_url,
+            {
+                "lat": self.base_location[0],
+                "lon": self.base_location[1],
+                "page_size": 3
+            },
+            headers=self.api_headers
+        )
+
+        expected_order = [projects[2].pk, projects[0].pk, projects[1].pk]
+        actual_order = [x["id"] for x in response.json()["result"]]
+        self.assertEqual(actual_order, expected_order)
+
+    @freeze_time("2023-01-02")
+    def test_unfollowed_projects_without_device_location(self):
+        """
+        Test unfollowed projects when no device location is provided:
+        - Projects should be sorted by most recent project publication date
+        """
+        # Create projects with different publication dates
+        projects = []
+        project_data = mock_data.projects[0].copy()
+        
+        # Oldest
+        project_data["foreign_id"] = 10
+        project_data["publication_date"] = "2023-01-01T12:00:00+00:00"
+        projects.append(Project.objects.create(**project_data))
+        
+        # Newest
+        project_data = mock_data.projects[0].copy()
+        project_data["foreign_id"] = 20
+        project_data["publication_date"] = "2023-01-01T12:30:00+00:00"
+        projects.append(Project.objects.create(**project_data))
+        
+        # Middle
+        project_data = mock_data.projects[0].copy()
+        project_data["foreign_id"] = 30
+        project_data["publication_date"] = "2023-01-01T12:15:00+00:00"
+        projects.append(Project.objects.create(**project_data))
+
+        # Create device but don't follow any projects
+        device = Device.objects.create(**mock_data.devices[0].copy())
+
+        # Perform request without location
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
+        response = self.client.get(
+            self.api_url,
+            {"page_size": 3},
+            headers=self.api_headers
+        )
+
+        expected_order = [
+            projects[1].pk,  # Newest publication date
+            projects[2].pk,  # Middle publication date
+            projects[0].pk,  # Oldest publication date
+        ]
+        actual_order = [x["id"] for x in response.json()["result"]]
+        self.assertEqual(actual_order, expected_order)
+
+    @freeze_time("2023-01-02")
+    def test_unfollowed_projects_with_articles_no_device_location(self):
+        """
+        Test unfollowed projects with articles when no device location is provided.
+        Projects should be sorted by project publication date only,
+        ignoring article dates completely.
+        """
+
+        # Create unfollowed projects with articles
+        unfollowed_projects = self.create_projects_with_articles(
+            base_foreign_id=20,
+            article_pub_dates=[
+                "2023-01-01T12:30:00+00:00",
+                "2023-01-01T12:15:00+00:00",
+                "2023-01-01T12:00:00+00:00",
+            ],
+            project_pub_dates=[
+                "2023-01-01T12:00:00+00:00", # Oldest
+                "2023-01-01T12:15:00+00:00", # Middle
+                "2023-01-01T12:30:00+00:00", # Newest
+            ]
+        )
+
+        # Create device but don't follow any projects
+        device = Device.objects.create(**mock_data.devices[0].copy())
+
+        # Perform request without location
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
+        response = self.client.get(
+            self.api_url,
+            {"page_size": 10},
+            headers=self.api_headers
+        )
+
+        # Should be ordered by project publication date only,
+        # completely ignoring article dates
+        expected_order = [
+            unfollowed_projects[2].pk,  # Newest project publication date (12:30)
+            unfollowed_projects[1].pk,  # Middle project publication date (12:15)
+            unfollowed_projects[0].pk,  # Oldest project publication date (12:00)
+        ]
+        actual_order = [x["id"] for x in response.json()["result"]]
+        self.assertEqual(actual_order, expected_order)
+
+    @freeze_time("2023-01-02")
+    def test_mixed_followed_and_unfollowed_with_device_location(self):
+        """
+        Test mixed followed and unfollowed projects with location:
+        - Followed projects with articles should be first, sorted by article date
+        - Followed projects without articles should be next, sorted by distance
+        - Unfollowed projects should be last, sorted by distance
+        """
+        # Create followed projects with articles
+        followed_article_projects = self.create_projects_with_articles(10, [
+            "2023-01-01T12:00:00+00:00",  # Older
+            "2023-01-01T12:30:00+00:00",  # Newer
+        ])
+
+        # Create followed projects with only locations
+        followed_location_projects = [
+            self.create_project_with_location(30, 0),  # Closest
+            self.create_project_with_location(40, 2),  # Furthest
+        ]
+
+        # Create unfollowed projects with locations
+        unfollowed_projects = [
+            self.create_project_with_location(50, 1),  # Middle distance
+            self.create_project_with_location(60, 2),  # Furthest
+        ]
+
+        # Create device and follow specific projects
+        device = Device.objects.create(**mock_data.devices[0].copy())
+        device.followed_projects.set(followed_article_projects + followed_location_projects)
+
+        # Perform request with location
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
+        response = self.client.get(
+            self.api_url,
+            {
+                "lat": self.base_location[0],
+                "lon": self.base_location[1],
+                "page_size": 6
+            },
+            headers=self.api_headers
+        )
+
+        expected_order = [
+            followed_article_projects[1].pk,  # Followed, newest article
+            followed_article_projects[0].pk,  # Followed, older article
+            followed_location_projects[0].pk, # Followed, closest
+            followed_location_projects[1].pk, # Followed, furthest
+            unfollowed_projects[0].pk,       # Unfollowed, middle distance
+            unfollowed_projects[1].pk,       # Unfollowed, furthest
+        ]
+        actual_order = [x["id"] for x in response.json()["result"]]
+        self.assertEqual(actual_order, expected_order)
+
+    @freeze_time("2023-01-02")
+    def test_mixed_followed_and_unfollowed_without_device_location(self):
+        """
+        Test mixed followed and unfollowed projects without device location:
+        - Followed projects with articles should be first, sorted by article date
+        - Followed projects without articles should be next, sorted by project publication date
+        - Unfollowed projects should be last, sorted by project publication date
+        """
+        # Create followed projects with articles
+        followed_article_projects = self.create_projects_with_articles(
+            base_foreign_id=10,
+            article_pub_dates=[
+                "2023-01-01T12:00:00+00:00",  # Older
+                "2023-01-01T12:30:00+00:00",  # Newer
+            ]
+        )
+
+        # Create followed projects without articles but with different publication dates
+        followed_no_article_projects = []
+        project_data = mock_data.projects[0].copy()
+        
+        # Earlier publication date
+        project_data["foreign_id"] = 30
+        project_data["publication_date"] = "2023-01-01T11:00:00+00:00"
+        followed_no_article_projects.append(Project.objects.create(**project_data))
+        
+        # Later publication date
+        project_data = mock_data.projects[0].copy()
+        project_data["foreign_id"] = 40
+        project_data["publication_date"] = "2023-01-01T11:30:00+00:00"
+        followed_no_article_projects.append(Project.objects.create(**project_data))
+
+        # Create unfollowed projects with articles
+        unfollowed_projects = self.create_projects_with_articles(
+            base_foreign_id=50,
+            article_pub_dates=[
+                "2023-01-01T12:00:00+00:00",
+                "2023-01-01T12:00:00+00:00",
+                "2023-01-01T12:00:00+00:00",
+            ],
+            project_pub_dates=[
+                "2023-01-01T12:00:00+00:00", # Oldest
+                "2023-01-01T12:15:00+00:00", # Middle
+                "2023-01-01T12:30:00+00:00", # Newest
+            ]
+        )
+
+        # Create device and follow specific projects
+        device = Device.objects.create(**mock_data.devices[0].copy())
+        device.followed_projects.set(followed_article_projects + followed_no_article_projects)
+
+        # Perform request without location
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
+        response = self.client.get(
+            self.api_url,
+            {"page_size": 10},
+            headers=self.api_headers
+        )
+
+        expected_order = [
+            followed_article_projects[1].pk,    # Followed, newest article
+            followed_article_projects[0].pk,    # Followed, older article
+            followed_no_article_projects[1].pk, # Followed, later publication date
+            followed_no_article_projects[0].pk, # Followed, earlier publication date
+            unfollowed_projects[2].pk,          # Unfollowed, newest
+            unfollowed_projects[1].pk,          # Unfollowed, middle
+            unfollowed_projects[0].pk,          # Unfollowed, oldest
+        ]
+        actual_order = [x["id"] for x in response.json()["result"]]
+        self.assertEqual(actual_order, expected_order)
+
 
     def test_pagination(self):
         """Test pagination"""

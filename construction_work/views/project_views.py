@@ -1,21 +1,20 @@
 import datetime
-from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import (
     BooleanField,
+    Case,
     CharField,
     DateTimeField,
-    Exists,
     F,
+    FloatField,
     Max,
-    OuterRef,
-    Prefetch,
     TextField,
     Value,
+    When,
 )
-from django.db.models.functions import Coalesce, Greatest
+from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter
@@ -47,6 +46,38 @@ from core.views.extend_schema import extend_schema_for_api_key as extend_schema
 
 
 class ProjectListView(generics.ListAPIView):
+    """
+    API endpoint that lists active, non-hidden projects.
+
+    Supports filtering by location (lat/lon coordinates or address) and includes
+    information about whether the requesting device follows each project.
+    Projects can be paginated and include extended project details.
+
+    The projects are ordered based on the following criteria:
+
+    Followed projects are on top:
+    - For projects with content: sorted by most recent content date
+    - For projects without content:
+        - With device location: sorted by shortest distance to project
+        - Without device location: sorted by newest project publication date
+
+    Non-followed projects are ordered after the followed projects:
+    - With device location: sorted by shortest distance to project
+    - Without device location: sorted by newest project publication date
+
+    Required headers:
+        - Device-ID: Unique identifier for the requesting device
+
+    Query parameters:
+        - lat (str, optional): Latitude coordinate for location filtering
+        - lon (str, optional): Longitude coordinate for location filtering
+        - address (str, optional): Address string for location filtering (will be geocoded)
+
+    Returns:
+        Paginated list of projects with extended details including follow status
+    """
+
+    default_date = datetime.datetime(1970, 1, 1, tzinfo=timezone.utc)
     serializer_class = ProjectExtendedSerializer
     pagination_class = CustomPagination
 
@@ -73,103 +104,105 @@ class ProjectListView(generics.ListAPIView):
         if not device_id:
             raise MissingDeviceIdHeader
 
+        device = Device.objects.filter(device_id=device_id).first()
+        lat, lon = self.get_device_location()
+
+        # Annotate queryset with main ordering groups
+        # - 1: followed with content
+        # - 2: followed without content
+        # - 3: non-followed (default value)
+        queryset = self.collect_and_annotate_queryset(device, lat, lon)
+        queryset = self.order_queryset(queryset)
+        return queryset
+
+    def get_device_location(self):
         lat = self.request.query_params.get("lat")
         lon = self.request.query_params.get("lon")
         address = self.request.query_params.get("address")
-
-        article_max_age = self.request.query_params.get(
-            settings.ARTICLE_MAX_AGE_PARAM, 3
-        )
-        try:
-            article_max_age = int(article_max_age)
-        except ValueError:
-            raise InvalidArticleMaxAgeParam
-
         if address and (lat is None or lon is None):
             lat, lon = geocode_address(address)
+        self.device_location_present = lat is not None and lon is not None
+        # Store context data
+        self.lat, self.lon = lat, lon
+        return lat, lon
 
-        device = Device.objects.filter(device_id=device_id).first()
+    def collect_and_annotate_queryset(self, device, lat, lon):
+        queryset = Project.objects.filter(active=True, hidden=False)
+        queryset = self._annotate_with_latest_content_date(queryset)
+        if self.device_location_present:
+            queryset = self._annotate_distance(queryset, float(lat), float(lon))
 
-        # Start with all active, non-hidden projects
-        projects_qs = Project.objects.filter(active=True, hidden=False)
-
-        # Annotate projects with whether they are followed by the device
-        if device:
-            # Use Exists subquery to annotate is_followed
-            followed_projects = device.followed_projects.filter(
-                active=True, hidden=False
+        followed_projects = device.followed_projects.filter(active=True, hidden=False)
+        followed_projects_ids = followed_projects.values_list("id", flat=True)
+        queryset = queryset.annotate(
+            ordering_group=Case(
+                When(id__in=followed_projects_ids, has_content=True, then=Value(1)),
+                When(id__in=followed_projects_ids, has_content=False, then=Value(2)),
+                default=Value(3),
             )
-            projects_qs = projects_qs.annotate(
-                is_followed=Exists(followed_projects.filter(pk=OuterRef("pk")))
-            )
-            self.followed_projects_ids = list(
-                followed_projects.values_list("pk", flat=True)
-            )
-        else:
-            # Annotate all projects as not followed
-            projects_qs = projects_qs.annotate(
-                is_followed=Value(False, output_field=BooleanField())
-            )
-            self.followed_projects_ids = []
-
-        # Annotate and order projects based on provided latitude and longitude
-        if lat and lon:
-            try:
-                lat = float(lat)
-                lon = float(lon)
-            except ValueError:
-                raise ParseError(f"Invalid latitude or longitude: {lat=}, {lon=}")
-
-            # Calculate approximate distance (squared difference)
-            # The calculated distance is not perfect,
-            # since this method treats the Earth as a flat plane.
-            # But this form of calculation is far less expensive.
-            # When sorting, the order of distances remains the same,
-            # whether you use the squared distance or the actual distance.
-            projects_qs = projects_qs.annotate(
-                lat_diff=F("coordinates_lat") - lat,
-                lon_diff=F("coordinates_lon") - lon,
-            ).annotate(
-                distance=F("lat_diff") * F("lat_diff") + F("lon_diff") * F("lon_diff")
-            )
-
-            # Order projects by is_followed and distance
-            projects_qs = projects_qs.order_by("-is_followed", "distance")
-        else:
-            # Annotate projects with latest publication date
-            projects_qs = self.annotate_latest_pub_date(projects_qs)
-            # Order projects by is_followed and latest_pub_date
-            projects_qs = projects_qs.order_by("-is_followed", "-latest_pub_date")
-
-        # Prefetch recent articles and warnings
-        now = timezone.now()
-        start_date = now - timedelta(days=article_max_age)
-
-        recent_articles_prefetch = Prefetch(
-            "article_set",
-            queryset=Article.objects.filter(
-                publication_date__range=[start_date, now]
-            ).only("id", "modification_date"),
-            to_attr="recent_articles",
         )
-
-        recent_warnings_prefetch = Prefetch(
-            "warningmessage_set",
-            queryset=WarningMessage.objects.filter(
-                publication_date__range=[start_date, now]
-            ).only("id", "modification_date"),
-            to_attr="recent_warnings",
-        )
-
-        queryset = projects_qs.prefetch_related(
-            recent_articles_prefetch, recent_warnings_prefetch
-        )
-
-        # Store additional context data
-        self.lat = lat
-        self.lon = lon
-
+        # Store context data
+        self.followed_projects_ids = list(followed_projects_ids)
         return queryset
+
+    def order_queryset(self, queryset):
+        order_fields = ["ordering_group"]
+        # Always order by content date for group 1 (followed projects with content)
+        order_fields.append(
+            Case(
+                When(ordering_group=1, then=F("latest_content_date")),
+                default=self.default_date,
+                output_field=DateTimeField(),
+            ).desc()
+        )
+        if self.device_location_present:
+            order_fields.append("distance")
+        order_fields.append("-publication_date")
+        queryset = queryset.order_by(*order_fields)
+        return queryset
+
+    def _annotate_with_latest_content_date(self, queryset):
+        """
+        Annotate queryset with:
+        - Latest publication date of related content (articles and warnings)
+        - Boolean flag indicating if project has content
+        """
+        return queryset.annotate(
+            latest_article_pub_date=Coalesce(
+                Max("article__publication_date"),
+                Value(self.default_date, output_field=DateTimeField()),
+                output_field=DateTimeField(),
+            ),
+            latest_warning_pub_date=Coalesce(
+                Max("warningmessage__publication_date"),
+                Value(self.default_date, output_field=DateTimeField()),
+                output_field=DateTimeField(),
+            ),
+            latest_content_date=Greatest(
+                "latest_article_pub_date",
+                "latest_warning_pub_date",
+                output_field=DateTimeField(),
+            ),
+            has_content=Case(
+                When(latest_content_date__gt=self.default_date, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            ),
+        )
+
+    def _annotate_distance(self, queryset, lat, lon):
+        """
+        Annotate queryset with squared distance from given coordinates.
+        Uses simplified distance calculation that treats Earth as flat plane.
+        """
+        return queryset.annotate(
+            distance=(
+                (Cast("coordinates_lat", FloatField()) - lat)
+                * (Cast("coordinates_lat", FloatField()) - lat)
+                + (Cast("coordinates_lon", FloatField()) - lon)
+                * (Cast("coordinates_lon", FloatField()) - lon)
+            )
+        )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -181,27 +214,6 @@ class ProjectListView(generics.ListAPIView):
             }
         )
         return context
-
-    def annotate_latest_pub_date(self, queryset):
-        """Annotate queryset with the latest publication date of articles and warnings."""
-        default_date = datetime.datetime(1970, 1, 1, tzinfo=timezone.utc)
-        return queryset.annotate(
-            latest_article_pub_date=Coalesce(
-                Max("article__publication_date"),
-                Value(default_date, output_field=DateTimeField()),
-                output_field=DateTimeField(),
-            ),
-            latest_warning_pub_date=Coalesce(
-                Max("warningmessage__publication_date"),
-                Value(default_date, output_field=DateTimeField()),
-                output_field=DateTimeField(),
-            ),
-            latest_pub_date=Greatest(
-                "latest_article_pub_date",
-                "latest_warning_pub_date",
-                output_field=DateTimeField(),
-            ),
-        )
 
 
 class ProjectSearchView(generics.ListAPIView):
