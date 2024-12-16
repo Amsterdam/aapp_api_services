@@ -1,4 +1,6 @@
 import pathlib
+import random
+from collections import Counter
 from datetime import datetime
 from os.path import join
 
@@ -493,6 +495,64 @@ class TestProjectListView(BaseTestProjectView):
         actual_order = [x["id"] for x in response.json()["result"]]
         self.assertEqual(actual_order, expected_order)
 
+    @freeze_time("2023-01-02")
+    def test_no_duplicates_in_paginated_results(self):
+        """
+        Test that when paginating through projects, there are no duplicates
+        when a device follows some but not all projects.
+        """
+        # Create 100 projects with different publication dates
+        all_projects = []
+        for i in range(100):
+            project_data = mock_data.projects[0].copy()
+            project_data["foreign_id"] = i
+            all_projects.append(Project.objects.create(**project_data))
+
+        # Create device and make it follow 42 random projects
+        device = Device.objects.create(**mock_data.devices[0].copy())
+        device.followed_projects.set(random.sample(all_projects, 42))
+        
+        # Set up for collecting all projects across pages
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
+        all_received_projects = []
+        
+        # Get first page
+        response = self.client.get(
+            self.api_url,
+            {"page_size": 20},
+            headers=self.api_headers
+        )
+        
+        while True:
+            data = response.json()
+            projects = data["result"]
+            all_received_projects.extend(projects)
+            
+            # Break if no next page
+            if "_links" not in data or "next" not in data["_links"]:
+                break
+                
+            # Get next page using the URL from response
+            next_url = data["_links"]["next"]["href"]
+            response = self.client.get(next_url, headers=self.api_headers)
+
+        # Check for duplicates
+        project_ids = [p["id"] for p in all_received_projects]
+        unique_project_ids = set(project_ids)
+        
+        # Find duplicates if any exist
+        if len(project_ids) != len(unique_project_ids):
+            duplicates = [
+                (id, count) for id, count in Counter(project_ids).items() 
+                if count > 1
+            ]
+            self.fail(
+                f"Found duplicate projects in paginated results: {duplicates}\n"
+                f"Duplicate IDs appear {len(project_ids) - len(unique_project_ids)} times"
+            )
+        
+        # Verify we got all 100 projects
+        self.assertEqual(len(all_received_projects), 100)
 
     def test_pagination(self):
         """Test pagination"""
@@ -536,6 +596,8 @@ class TestProjectListView(BaseTestProjectView):
         self.assertEqual(response.json()["page"]["totalElements"], 10)
         self.assertEqual(response.json()["page"]["totalPages"], 3)
         self.assertEqual(len(response.json()["result"]), 2)
+
+    
 
     def test_get_only_active_projects(self):
         """Check if only active projects are returned"""

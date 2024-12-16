@@ -158,6 +158,9 @@ class ProjectListView(generics.ListAPIView):
         if self.device_location_present:
             order_fields.append("distance")
         order_fields.append("-publication_date")
+        # Add id as tiebreaker, to avoid duplicates in paginated results
+        order_fields.append("id")
+
         queryset = queryset.order_by(*order_fields)
         return queryset
 
