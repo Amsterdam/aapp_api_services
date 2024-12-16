@@ -142,12 +142,12 @@ class SessionRefreshAccessView(generics.CreateAPIView):
 
 class SessionLogoutView(generics.CreateAPIView):
     serializer_class = serializers.DetailResultSerializer
+    authentication_classes = [authentication.AccessTokenAuthentication]
 
     @extend_schema_with_access_token(
         success_response=serializers.DetailResultSerializer,
         request=None,
     )
-    @authentication.authenticate_access_token
     def post(self, request, *args, **kwargs):
         session = request.user
         session.delete()

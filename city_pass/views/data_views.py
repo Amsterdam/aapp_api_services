@@ -32,6 +32,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
 
     serializer_class: DRFSerializer = None  # Must be overwritten in subclasses
     serializer_many = True
+    authentication_classes = [authentication.AccessTokenAuthentication]
 
     def __init__(self):
         super().__init__()
@@ -47,7 +48,6 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
     def process_response_content(self, content, request) -> None:
         """Optional method to do something extra with the content from the source API response."""
 
-    @authentication.authenticate_access_token
     def get(self, request, *args, **kwargs) -> Response:
         response_content = self.get_response_content(request)
         self.process_response_content(response_content, request)
