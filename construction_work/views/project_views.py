@@ -132,8 +132,13 @@ class ProjectListView(generics.ListAPIView):
         if self.device_location_present:
             queryset = self._annotate_distance(queryset, float(lat), float(lon))
 
-        followed_projects = device.followed_projects.filter(active=True, hidden=False)
-        followed_projects_ids = followed_projects.values_list("id", flat=True)
+        if device:
+            followed_projects = device.followed_projects.filter(
+                active=True, hidden=False
+            )
+            followed_projects_ids = followed_projects.values_list("id", flat=True)
+        else:
+            followed_projects_ids = []
         queryset = queryset.annotate(
             ordering_group=Case(
                 When(id__in=followed_projects_ids, has_content=True, then=Value(1)),

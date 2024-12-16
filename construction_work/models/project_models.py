@@ -82,6 +82,7 @@ class ProjectImage(BaseImage):
         Project, on_delete=models.CASCADE, related_name="image"
     )
 
+
 class ProjectImageSource(BaseImageSource):
     image = models.ForeignKey(
         ProjectImage, on_delete=models.CASCADE, related_name="sources"
@@ -93,7 +94,9 @@ class ProjectSection(models.Model):
     title = models.CharField()
     type = models.CharField(
         max_length=10,
-        choices=[(choice, choice) for choice in ["where", "what", "when", "work", "contact"]],
+        choices=[
+            (choice, choice) for choice in ["where", "what", "when", "work", "contact"]
+        ],
     )
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="sections"

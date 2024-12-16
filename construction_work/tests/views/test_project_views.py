@@ -55,7 +55,9 @@ class BaseTestProjectView(BasicAPITestCase):
         Article.objects.all().delete()
         WarningMessage.objects.all().delete()
 
-    def create_project_and_article(self, project_foreign_id, article_pub_date, project_pub_date=None):
+    def create_project_and_article(
+        self, project_foreign_id, article_pub_date, project_pub_date=None
+    ):
         """Create project and article"""
         project_data = mock_data.projects[0].copy()
         project_data["foreign_id"] = project_foreign_id
@@ -116,8 +118,8 @@ class TestProjectListView(BaseTestProjectView):
         self.base_location = (52.379158791458494, 4.899904339167326)
         # Test locations from closest to furthest from base
         self.test_locations = [
-            (52.3731077480929, 4.891371824969558),    # Royal Palace (closest)
-            (52.36002292836369, 4.8852016757845345),   # Rijksmuseum (middle)
+            (52.3731077480929, 4.891371824969558),  # Royal Palace (closest)
+            (52.36002292836369, 4.8852016757845345),  # Rijksmuseum (middle)
             (52.358155575937595, 4.8811891932042055),  # Van Gogh Museum (furthest)
         ]
 
@@ -127,24 +129,33 @@ class TestProjectListView(BaseTestProjectView):
         Device.objects.all().delete()
         super().tearDown()
 
-    def create_project_with_location(self, foreign_id: int, location_index: int) -> Project:
+    def create_project_with_location(
+        self, foreign_id: int, location_index: int
+    ) -> Project:
         """Helper to create project with specific location"""
         location = self.test_locations[location_index]
-        return Project.objects.create(**{
-            **mock_data.projects[0].copy(),
-            "foreign_id": foreign_id,
-            "coordinates_lat": location[0],
-            "coordinates_lon": location[1]
-        })
+        return Project.objects.create(
+            **{
+                **mock_data.projects[0].copy(),
+                "foreign_id": foreign_id,
+                "coordinates_lat": location[0],
+                "coordinates_lon": location[1],
+            }
+        )
 
-    def create_projects_with_articles(self, base_foreign_id: int, article_pub_dates: list[str], project_pub_dates: list[str] = None) -> list[Project]:
+    def create_projects_with_articles(
+        self,
+        base_foreign_id: int,
+        article_pub_dates: list[str],
+        project_pub_dates: list[str] = None,
+    ) -> list[Project]:
         """Helper to create multiple projects with articles at given timestamps"""
         projects = []
         for i, article_timestamp in enumerate(article_pub_dates):
             project, _ = self.create_project_and_article(
-                base_foreign_id + i, 
+                base_foreign_id + i,
                 article_timestamp,
-                project_pub_dates[i] if project_pub_dates else None
+                project_pub_dates[i] if project_pub_dates else None,
             )
             projects.append(project)
         return projects
@@ -157,11 +168,14 @@ class TestProjectListView(BaseTestProjectView):
         - Projects without articles should be sorted by distance
         """
         # Create projects with articles
-        article_projects = self.create_projects_with_articles(10, [
-            "2023-01-01T12:00:00+00:00",  # Oldest
-            "2023-01-01T12:30:00+00:00",  # Newest
-            "2023-01-01T12:15:00+00:00",  # Middle
-        ])
+        article_projects = self.create_projects_with_articles(
+            10,
+            [
+                "2023-01-01T12:00:00+00:00",  # Oldest
+                "2023-01-01T12:30:00+00:00",  # Newest
+                "2023-01-01T12:15:00+00:00",  # Middle
+            ],
+        )
 
         # Create projects with only locations
         location_projects = [
@@ -181,9 +195,9 @@ class TestProjectListView(BaseTestProjectView):
             {
                 "lat": self.base_location[0],
                 "lon": self.base_location[1],
-                "page_size": 10
+                "page_size": 10,
             },
-            headers=self.api_headers
+            headers=self.api_headers,
         )
 
         # Expected: newest article first, then oldest article, then by distance
@@ -191,9 +205,9 @@ class TestProjectListView(BaseTestProjectView):
             article_projects[1].pk,  # Newest article
             article_projects[2].pk,  # Middle article
             article_projects[0].pk,  # Oldest article
-            location_projects[1].pk, # Closest location
-            location_projects[0].pk, # Middle location
-            location_projects[2].pk, # Furthest location
+            location_projects[1].pk,  # Closest location
+            location_projects[0].pk,  # Middle location
+            location_projects[2].pk,  # Furthest location
         ]
         actual_order = [x["id"] for x in response.json()["result"]]
         self.assertEqual(actual_order, expected_order)
@@ -206,21 +220,24 @@ class TestProjectListView(BaseTestProjectView):
         - Then by project publication date for those without articles
         """
         # Create projects with articles at different times
-        article_projects = self.create_projects_with_articles(10, [
-            "2023-01-01T12:15:00+00:00",  # Middle
-            "2023-01-01T12:00:00+00:00",  # Oldest
-            "2023-01-01T12:30:00+00:00",  # Newest
-        ])
+        article_projects = self.create_projects_with_articles(
+            10,
+            [
+                "2023-01-01T12:15:00+00:00",  # Middle
+                "2023-01-01T12:00:00+00:00",  # Oldest
+                "2023-01-01T12:30:00+00:00",  # Newest
+            ],
+        )
 
         # Create projects without articles but with different publication dates
         no_article_projects = []
         project_data = mock_data.projects[0].copy()
-        
+
         # Earlier publication date
         project_data["foreign_id"] = 30
         project_data["publication_date"] = "2023-01-01T11:00:00+00:00"
         no_article_projects.append(Project.objects.create(**project_data))
-        
+
         # Later publication date
         project_data = mock_data.projects[0].copy()
         project_data["foreign_id"] = 40
@@ -234,17 +251,15 @@ class TestProjectListView(BaseTestProjectView):
         # Perform request without location
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
         response = self.client.get(
-            self.api_url,
-            {"page_size": 10},
-            headers=self.api_headers
+            self.api_url, {"page_size": 10}, headers=self.api_headers
         )
 
         expected_order = [
-            article_projects[2].pk,    # Newest article
-            article_projects[0].pk,    # Middle article
-            article_projects[1].pk,    # Oldest article
-            no_article_projects[1].pk, # Later publication date
-            no_article_projects[0].pk, # Earlier publication date
+            article_projects[2].pk,  # Newest article
+            article_projects[0].pk,  # Middle article
+            article_projects[1].pk,  # Oldest article
+            no_article_projects[1].pk,  # Later publication date
+            no_article_projects[0].pk,  # Earlier publication date
         ]
         actual_order = [x["id"] for x in response.json()["result"]]
         self.assertEqual(actual_order, expected_order)
@@ -272,9 +287,9 @@ class TestProjectListView(BaseTestProjectView):
             {
                 "lat": self.base_location[0],
                 "lon": self.base_location[1],
-                "page_size": 3
+                "page_size": 3,
             },
-            headers=self.api_headers
+            headers=self.api_headers,
         )
 
         expected_order = [projects[2].pk, projects[0].pk, projects[1].pk]
@@ -290,18 +305,18 @@ class TestProjectListView(BaseTestProjectView):
         # Create projects with different publication dates
         projects = []
         project_data = mock_data.projects[0].copy()
-        
+
         # Oldest
         project_data["foreign_id"] = 10
         project_data["publication_date"] = "2023-01-01T12:00:00+00:00"
         projects.append(Project.objects.create(**project_data))
-        
+
         # Newest
         project_data = mock_data.projects[0].copy()
         project_data["foreign_id"] = 20
         project_data["publication_date"] = "2023-01-01T12:30:00+00:00"
         projects.append(Project.objects.create(**project_data))
-        
+
         # Middle
         project_data = mock_data.projects[0].copy()
         project_data["foreign_id"] = 30
@@ -314,9 +329,7 @@ class TestProjectListView(BaseTestProjectView):
         # Perform request without location
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
         response = self.client.get(
-            self.api_url,
-            {"page_size": 3},
-            headers=self.api_headers
+            self.api_url, {"page_size": 3}, headers=self.api_headers
         )
 
         expected_order = [
@@ -344,10 +357,10 @@ class TestProjectListView(BaseTestProjectView):
                 "2023-01-01T12:00:00+00:00",
             ],
             project_pub_dates=[
-                "2023-01-01T12:00:00+00:00", # Oldest
-                "2023-01-01T12:15:00+00:00", # Middle
-                "2023-01-01T12:30:00+00:00", # Newest
-            ]
+                "2023-01-01T12:00:00+00:00",  # Oldest
+                "2023-01-01T12:15:00+00:00",  # Middle
+                "2023-01-01T12:30:00+00:00",  # Newest
+            ],
         )
 
         # Create device but don't follow any projects
@@ -356,9 +369,7 @@ class TestProjectListView(BaseTestProjectView):
         # Perform request without location
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
         response = self.client.get(
-            self.api_url,
-            {"page_size": 10},
-            headers=self.api_headers
+            self.api_url, {"page_size": 10}, headers=self.api_headers
         )
 
         # Should be ordered by project publication date only,
@@ -380,10 +391,13 @@ class TestProjectListView(BaseTestProjectView):
         - Unfollowed projects should be last, sorted by distance
         """
         # Create followed projects with articles
-        followed_article_projects = self.create_projects_with_articles(10, [
-            "2023-01-01T12:00:00+00:00",  # Older
-            "2023-01-01T12:30:00+00:00",  # Newer
-        ])
+        followed_article_projects = self.create_projects_with_articles(
+            10,
+            [
+                "2023-01-01T12:00:00+00:00",  # Older
+                "2023-01-01T12:30:00+00:00",  # Newer
+            ],
+        )
 
         # Create followed projects with only locations
         followed_location_projects = [
@@ -399,7 +413,9 @@ class TestProjectListView(BaseTestProjectView):
 
         # Create device and follow specific projects
         device = Device.objects.create(**mock_data.devices[0].copy())
-        device.followed_projects.set(followed_article_projects + followed_location_projects)
+        device.followed_projects.set(
+            followed_article_projects + followed_location_projects
+        )
 
         # Perform request with location
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
@@ -408,18 +424,18 @@ class TestProjectListView(BaseTestProjectView):
             {
                 "lat": self.base_location[0],
                 "lon": self.base_location[1],
-                "page_size": 6
+                "page_size": 6,
             },
-            headers=self.api_headers
+            headers=self.api_headers,
         )
 
         expected_order = [
             followed_article_projects[1].pk,  # Followed, newest article
             followed_article_projects[0].pk,  # Followed, older article
-            followed_location_projects[0].pk, # Followed, closest
-            followed_location_projects[1].pk, # Followed, furthest
-            unfollowed_projects[0].pk,       # Unfollowed, middle distance
-            unfollowed_projects[1].pk,       # Unfollowed, furthest
+            followed_location_projects[0].pk,  # Followed, closest
+            followed_location_projects[1].pk,  # Followed, furthest
+            unfollowed_projects[0].pk,  # Unfollowed, middle distance
+            unfollowed_projects[1].pk,  # Unfollowed, furthest
         ]
         actual_order = [x["id"] for x in response.json()["result"]]
         self.assertEqual(actual_order, expected_order)
@@ -438,18 +454,18 @@ class TestProjectListView(BaseTestProjectView):
             article_pub_dates=[
                 "2023-01-01T12:00:00+00:00",  # Older
                 "2023-01-01T12:30:00+00:00",  # Newer
-            ]
+            ],
         )
 
         # Create followed projects without articles but with different publication dates
         followed_no_article_projects = []
         project_data = mock_data.projects[0].copy()
-        
+
         # Earlier publication date
         project_data["foreign_id"] = 30
         project_data["publication_date"] = "2023-01-01T11:00:00+00:00"
         followed_no_article_projects.append(Project.objects.create(**project_data))
-        
+
         # Later publication date
         project_data = mock_data.projects[0].copy()
         project_data["foreign_id"] = 40
@@ -465,32 +481,32 @@ class TestProjectListView(BaseTestProjectView):
                 "2023-01-01T12:00:00+00:00",
             ],
             project_pub_dates=[
-                "2023-01-01T12:00:00+00:00", # Oldest
-                "2023-01-01T12:15:00+00:00", # Middle
-                "2023-01-01T12:30:00+00:00", # Newest
-            ]
+                "2023-01-01T12:00:00+00:00",  # Oldest
+                "2023-01-01T12:15:00+00:00",  # Middle
+                "2023-01-01T12:30:00+00:00",  # Newest
+            ],
         )
 
         # Create device and follow specific projects
         device = Device.objects.create(**mock_data.devices[0].copy())
-        device.followed_projects.set(followed_article_projects + followed_no_article_projects)
+        device.followed_projects.set(
+            followed_article_projects + followed_no_article_projects
+        )
 
         # Perform request without location
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
         response = self.client.get(
-            self.api_url,
-            {"page_size": 10},
-            headers=self.api_headers
+            self.api_url, {"page_size": 10}, headers=self.api_headers
         )
 
         expected_order = [
-            followed_article_projects[1].pk,    # Followed, newest article
-            followed_article_projects[0].pk,    # Followed, older article
-            followed_no_article_projects[1].pk, # Followed, later publication date
-            followed_no_article_projects[0].pk, # Followed, earlier publication date
-            unfollowed_projects[2].pk,          # Unfollowed, newest
-            unfollowed_projects[1].pk,          # Unfollowed, middle
-            unfollowed_projects[0].pk,          # Unfollowed, oldest
+            followed_article_projects[1].pk,  # Followed, newest article
+            followed_article_projects[0].pk,  # Followed, older article
+            followed_no_article_projects[1].pk,  # Followed, later publication date
+            followed_no_article_projects[0].pk,  # Followed, earlier publication date
+            unfollowed_projects[2].pk,  # Unfollowed, newest
+            unfollowed_projects[1].pk,  # Unfollowed, middle
+            unfollowed_projects[0].pk,  # Unfollowed, oldest
         ]
         actual_order = [x["id"] for x in response.json()["result"]]
         self.assertEqual(actual_order, expected_order)
@@ -511,27 +527,25 @@ class TestProjectListView(BaseTestProjectView):
         # Create device and make it follow 42 random projects
         device = Device.objects.create(**mock_data.devices[0].copy())
         device.followed_projects.set(random.sample(all_projects, 42))
-        
+
         # Set up for collecting all projects across pages
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
         all_received_projects = []
-        
+
         # Get first page
         response = self.client.get(
-            self.api_url,
-            {"page_size": 20},
-            headers=self.api_headers
+            self.api_url, {"page_size": 20}, headers=self.api_headers
         )
-        
+
         while True:
             data = response.json()
             projects = data["result"]
             all_received_projects.extend(projects)
-            
+
             # Break if no next page
             if "_links" not in data or "next" not in data["_links"]:
                 break
-                
+
             # Get next page using the URL from response
             next_url = data["_links"]["next"]["href"]
             response = self.client.get(next_url, headers=self.api_headers)
@@ -539,18 +553,17 @@ class TestProjectListView(BaseTestProjectView):
         # Check for duplicates
         project_ids = [p["id"] for p in all_received_projects]
         unique_project_ids = set(project_ids)
-        
+
         # Find duplicates if any exist
         if len(project_ids) != len(unique_project_ids):
             duplicates = [
-                (id, count) for id, count in Counter(project_ids).items() 
-                if count > 1
+                (id, count) for id, count in Counter(project_ids).items() if count > 1
             ]
             self.fail(
                 f"Found duplicate projects in paginated results: {duplicates}\n"
                 f"Duplicate IDs appear {len(project_ids) - len(unique_project_ids)} times"
             )
-        
+
         # Verify we got all 100 projects
         self.assertEqual(len(all_received_projects), 100)
 
@@ -596,8 +609,6 @@ class TestProjectListView(BaseTestProjectView):
         self.assertEqual(response.json()["page"]["totalElements"], 10)
         self.assertEqual(response.json()["page"]["totalPages"], 3)
         self.assertEqual(len(response.json()["result"]), 2)
-
-    
 
     def test_get_only_active_projects(self):
         """Check if only active projects are returned"""
@@ -645,6 +656,22 @@ class TestProjectListView(BaseTestProjectView):
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertNotIn(unfollowed_project.title, res_titles)
         self.assertNotIn(followed_project.title, res_titles)
+
+    def test_unknown_device(self):
+        """Check if only active projects are returned"""
+        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
+        _ = [
+            self.create_project_with_location(10, 1),  # Middle
+            self.create_project_with_location(20, 2),  # Furthest
+            self.create_project_with_location(30, 0),  # Closest
+        ]
+
+        # The projects should not be returned now
+        response = self.client.get(
+            self.api_url, {"page_size": 9999}, headers=self.api_headers
+        )
+        res_titles = [x.get("title") for x in response.data["result"]]
+        self.assertEquals(len(res_titles), 3)
 
 
 class TestProjectDetailsView(BaseTestProjectView):
