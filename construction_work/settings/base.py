@@ -15,9 +15,8 @@ SPECTACULAR_SETTINGS["TITLE"] = "Construction Work API"
 
 LOGGING["loggers"]["construction_work"] = default_app_logging
 
-DEFAULT_ARTICLE_MAX_AGE = 60
-
-ARTICLE_MAX_AGE_PARAM = "article_max_age"
+DEFAULT_ARTICLE_MAX_AGE = 3
+ARTICLE_MAX_AGE = int(os.getenv("ARTICLE_MAX_AGE", DEFAULT_ARTICLE_MAX_AGE))
 
 DEFAULT_WARNING_MESSAGE_EMAIL = "redactieprojecten@amsterdam.nl"
 
