@@ -3,7 +3,12 @@ from rest_framework import serializers
 from notification.models import Device
 
 
-class DeviceRegisterSerializer(serializers.ModelSerializer):
+class DeviceRegisterRequestSerializer(serializers.Serializer):
+    firebase_token = serializers.CharField()
+    os = serializers.CharField()
+
+
+class DeviceRegisterResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
         fields = "__all__"
@@ -11,8 +16,3 @@ class DeviceRegisterSerializer(serializers.ModelSerializer):
             "os": {"required": True, "allow_blank": False},
             "firebase_token": {"required": True, "allow_blank": False},
         }
-
-
-class DeviceRegisterPostSwaggerSerializer(serializers.Serializer):
-    firebase_token = serializers.CharField()
-    os = serializers.CharField()
