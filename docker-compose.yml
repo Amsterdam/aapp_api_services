@@ -28,6 +28,8 @@ services:
       POSTGRES_DB: dev
       POSTGRES_USER: dev
       POSTGRES_PASSWORD: dev
+    volumes:
+      - ./deploy/init_pgtrgm.sql:/docker-entrypoint-initdb.d/init_pgtrgm.sql
     ports:
       - "5435:5432"
     healthcheck:
