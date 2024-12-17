@@ -451,23 +451,18 @@ class ProjectFollowedArticlesSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(ArticleMinimalSerializer)
     def get_recent_articles(self, obj: Project) -> list:
-        article_max_age = self.context.get(settings.ARTICLE_MAX_AGE_PARAM, 3)
         now = timezone.now()
-        start_date = now - timedelta(days=article_max_age)
+        start_date = now - timedelta(days=settings.ARTICLE_MAX_AGE)
 
-        # Get recent articles
         recent_articles = obj.article_set.filter(publication_date__gte=start_date)
         article_serializer = ArticleMinimalSerializer(recent_articles, many=True)
 
-        # Get recent warnings
         recent_warnings = obj.warningmessage_set.filter(
             publication_date__gte=start_date
         )
         warning_serializer = WarningMessageMinimalSerializer(recent_warnings, many=True)
 
-        # Combine articles and warnings
         all_items = article_serializer.data + warning_serializer.data
-        # Sort combined list by modification_date descending
         all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
         return all_items
 

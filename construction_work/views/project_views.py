@@ -9,8 +9,9 @@ from django.db.models import (
     F,
     FloatField,
     Max,
+    Prefetch,
     Value,
-    When, Prefetch,
+    When,
 )
 from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
@@ -21,7 +22,6 @@ from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.response import Response
 
 from construction_work.exceptions import (
-    InvalidArticleMaxAgeParam,
     MissingArticleIdParam,
     MissingWarningMessageIdParam,
 )
@@ -92,7 +92,7 @@ class ProjectListView(generics.ListAPIView):
             OpenApiParameter("address", OpenApiTypes.STR, OpenApiParameter.QUERY),
         ],
         success_response=ProjectExtendedSerializer,
-        exceptions=[MissingDeviceIdHeader, InvalidArticleMaxAgeParam, ParseError],
+        exceptions=[MissingDeviceIdHeader, ParseError],
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -106,8 +106,10 @@ class ProjectListView(generics.ListAPIView):
         lat, lon = self.get_device_location()
 
         queryset = Project.objects.filter(active=True, hidden=False)
-        queryset = self.prefetch_recent_articles_and_warnings(queryset)
-        queryset = self.annotate_queryset(queryset=queryset, device=device, lat=lat, lon=lon)
+        queryset = prefetch_recent_articles_and_warnings(queryset)
+        queryset = self.annotate_queryset(
+            queryset=queryset, device=device, lat=lat, lon=lon
+        )
         queryset = self.order_queryset(queryset)
         return queryset
 
@@ -121,28 +123,6 @@ class ProjectListView(generics.ListAPIView):
         # Store context data
         self.lat, self.lon = lat, lon
         return lat, lon
-
-    def prefetch_recent_articles_and_warnings(self, queryset):
-        now = timezone.now()
-        start_date = now - datetime.timedelta(days=3)
-        recent_articles_prefetch = Prefetch(
-            "article_set",
-            queryset=Article.objects.filter(
-                publication_date__range=[start_date, now]
-            ).only("id", "modification_date"),
-            to_attr="recent_articles",
-        )
-        recent_warnings_prefetch = Prefetch(
-            "warningmessage_set",
-            queryset=WarningMessage.objects.filter(
-                publication_date__range=[start_date, now]
-            ).only("id", "modification_date"),
-            to_attr="recent_warnings",
-        )
-        queryset = queryset.prefetch_related(
-            recent_articles_prefetch, recent_warnings_prefetch
-        )
-        return queryset
 
     def annotate_queryset(self, *, queryset, device, lat, lon):
         """
@@ -261,7 +241,7 @@ class ProjectSearchView(generics.ListAPIView):
             OpenApiParameter("address", OpenApiTypes.STR, OpenApiParameter.QUERY),
         ],
         success_response=ProjectExtendedSerializer,
-        exceptions=[InvalidArticleMaxAgeParam, ParseError],
+        exceptions=[ParseError],
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -286,6 +266,7 @@ class ProjectSearchView(generics.ListAPIView):
                 .filter(similarity__gt=0.1, active=True, hidden=False)
                 .order_by("-similarity")
             )
+        queryset = prefetch_recent_articles_and_warnings(queryset)
         return queryset
 
     def get_similarities(self, text):
@@ -308,22 +289,37 @@ class ProjectSearchView(generics.ListAPIView):
         if address and (not lat or not lon):
             lat, lon = geocode_address(address)
 
-        article_max_age = self.request.query_params.get(
-            settings.ARTICLE_MAX_AGE_PARAM, 3
-        )
-        try:
-            article_max_age = int(article_max_age)
-        except ValueError:
-            raise InvalidArticleMaxAgeParam
-
         context.update(
             {
                 "lat": lat,
                 "lon": lon,
-                "article_max_age": article_max_age,
+                "article_max_age": settings.ARTICLE_MAX_AGE,
             }
         )
         return context
+
+
+def prefetch_recent_articles_and_warnings(queryset):
+    now = timezone.now()
+    start_date = now - datetime.timedelta(days=settings.ARTICLE_MAX_AGE)
+    recent_articles_prefetch = Prefetch(
+        "article_set",
+        queryset=Article.objects.filter(publication_date__range=[start_date, now]).only(
+            "id", "modification_date"
+        ),
+        to_attr="recent_articles",
+    )
+    recent_warnings_prefetch = Prefetch(
+        "warningmessage_set",
+        queryset=WarningMessage.objects.filter(
+            publication_date__range=[start_date, now]
+        ).only("id", "modification_date"),
+        to_attr="recent_warnings",
+    )
+    queryset = queryset.prefetch_related(
+        recent_articles_prefetch, recent_warnings_prefetch
+    )
+    return queryset
 
 
 class ProjectDetailsView(generics.RetrieveAPIView):
@@ -349,7 +345,6 @@ class ProjectDetailsView(generics.RetrieveAPIView):
             MissingDeviceIdHeader,
             ParseError,
             NotFound,
-            InvalidArticleMaxAgeParam,
         ],
         success_response=ProjectExtendedWithFollowersSerializer,
     )
@@ -378,15 +373,6 @@ class ProjectDetailsView(generics.RetrieveAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-
-        article_max_age = self.request.query_params.get(
-            settings.ARTICLE_MAX_AGE_PARAM, settings.DEFAULT_ARTICLE_MAX_AGE
-        )
-        try:
-            article_max_age = int(article_max_age)
-        except ValueError:
-            raise InvalidArticleMaxAgeParam
-
         lat = self.request.query_params.get("lat")
         lon = self.request.query_params.get("lon")
         address = self.request.query_params.get("address")
@@ -405,7 +391,7 @@ class ProjectDetailsView(generics.RetrieveAPIView):
             {
                 "lat": lat,
                 "lon": lon,
-                "article_max_age": article_max_age,
+                "article_max_age": settings.ARTICLE_MAX_AGE,
                 "followed_projects_ids": followed_projects_ids,
                 "media_url": get_media_url(self.request),
             }
@@ -510,12 +496,9 @@ class FollowedProjectsArticlesView(generics.GenericAPIView):
                 OpenApiTypes.STR,
                 OpenApiParameter.HEADER,
                 required=True,
-            ),
-            OpenApiParameter(
-                settings.ARTICLE_MAX_AGE_PARAM, OpenApiTypes.STR, OpenApiParameter.QUERY
-            ),
+            )
         ],
-        exceptions=[MissingDeviceIdHeader, InvalidArticleMaxAgeParam],
+        exceptions=[MissingDeviceIdHeader],
         success_response=ProjectFollowedArticlesSerializer,
         examples=[
             OpenApiExample(
@@ -545,18 +528,11 @@ class FollowedProjectsArticlesView(generics.GenericAPIView):
             # Return empty dictionary if device not found
             return Response(data={}, status=status.HTTP_200_OK)
 
-        article_max_age = request.query_params.get(
-            settings.ARTICLE_MAX_AGE_PARAM, settings.DEFAULT_ARTICLE_MAX_AGE
-        )
-        try:
-            article_max_age = int(article_max_age)
-        except ValueError:
-            raise InvalidArticleMaxAgeParam
-
         followed_projects = device.followed_projects.filter(hidden=False)
-
         serializer = ProjectFollowedArticlesSerializer(
-            followed_projects, many=True, context={"article_max_age": article_max_age}
+            followed_projects,
+            many=True,
+            context={"article_max_age": settings.ARTICLE_MAX_AGE},
         )
 
         # Transform the list into a dictionary mapping project_id to recent_articles
