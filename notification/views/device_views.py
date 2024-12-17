@@ -6,8 +6,8 @@ from core.exceptions import InputDataException, MissingDeviceIdHeader
 from core.views.extend_schema import extend_schema_for_device_id
 from notification.models import Device
 from notification.serializers.device_serializers import (
-    DeviceRegisterPostSwaggerSerializer,
-    DeviceRegisterSerializer,
+    DeviceRegisterRequestSerializer,
+    DeviceRegisterResponseSerializer,
 )
 
 
@@ -17,8 +17,8 @@ class DeviceRegisterView(generics.GenericAPIView):
     """
 
     @extend_schema_for_device_id(
-        request=DeviceRegisterPostSwaggerSerializer,
-        success_response=DeviceRegisterSerializer,
+        request=DeviceRegisterRequestSerializer,
+        success_response=DeviceRegisterResponseSerializer,
         exceptions=[InputDataException],
     )
     def post(self, request, *args, **kwargs):
@@ -30,19 +30,14 @@ class DeviceRegisterView(generics.GenericAPIView):
         if not device_id:
             raise MissingDeviceIdHeader
 
-        # Include 'device_id' in the serializer data
-        request_data = request.data.copy()
-        request_data["external_id"] = device_id
-
-        # Retrieve the device if it exists
-        device = Device.objects.filter(external_id=device_id).first()
-
-        # Initialize the serializer with instance for update or None for create
-        serializer = DeviceRegisterSerializer(instance=device, data=request_data)
+        serializer = DeviceRegisterRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        device, created = Device.objects.get_or_create(
+            external_id=device_id, defaults=serializer.validated_data
+        )
+        return Response(
+            DeviceRegisterResponseSerializer(device).data, status=status.HTTP_200_OK
+        )
 
     @extend_schema_for_device_id(
         success_response={200: None},
