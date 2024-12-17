@@ -692,7 +692,6 @@ class TestProjectDetailsView(BaseTestProjectView):
         params = {
             "lat": 52.379158791458494,
             "lon": 4.899904339167326,
-            "article_max_age": 10,
         }
         response = self.client.get(self.api_url, params, headers=self.api_headers)
 
@@ -706,7 +705,6 @@ class TestProjectDetailsView(BaseTestProjectView):
             "id": 9999,
             "lat": 52.379158791458494,
             "lon": 4.899904339167326,
-            "article_max_age": 10,
         }
         response = self.client.get(self.api_url, params, headers=self.api_headers)
 
@@ -722,7 +720,6 @@ class TestProjectDetailsView(BaseTestProjectView):
             "id": project.pk,
             "lat": 52.379158791458494,
             "lon": 4.899904339167326,
-            "article_max_age": 10,
         }
         response = self.client.get(self.api_url, params, headers=self.api_headers)
 
@@ -1069,9 +1066,8 @@ class TestFollowedProjectsArticlesView(BaseTestProjectView):
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
 
         def assert_total_returned_articles():
-            params = {"article_max_age": settings.ARTICLE_MAX_AGE}
             _response = self.client.get(
-                self.api_url, params, headers=self.api_headers
+                self.api_url, headers=self.api_headers
             ).json()
 
             _total_returned_articles = 0
