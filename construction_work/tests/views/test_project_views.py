@@ -743,66 +743,16 @@ class TestProjectSearchView(BaseTestProjectView):
 
     def test_no_text(self):
         """Test search without a string"""
-        query = {
-            "query_fields": "title,subtitle",
-            "fields": "title,subtitle",
-            "page_size": 1,
-            "page": 1,
-        }
-        response = self.client.get(self.api_url, query, headers=self.api_headers)
+        response = self.client.get(self.api_url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 400)
 
     def test_text_to_short(self):
         """Test for text lower than minimal length"""
-        query = {
-            "text": "x" * (settings.MIN_SEARCH_QUERY_LENGTH - 1),
-            "query_fields": "title,subtitle",
-            "fields": "title,subtitle",
-            "page_size": 1,
-            "page": 1,
-        }
+        query = {"text": "x" * (settings.MIN_SEARCH_QUERY_LENGTH - 1)}
         response = self.client.get(self.api_url, query, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 400)
-
-    def test_search_in_field_not_part_of_model(self):
-        """Test search in field that is not part of the project model"""
-        query = {
-            "text": "title",
-            "query_fields": "foobar",
-            "fields": "title,subtitle",
-            "page_size": 1,
-            "page": 1,
-        }
-        response = self.client.get(self.api_url, query, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 400)
-
-    def test_invalid_model_return_field(self):
-        """Test request return fields that are not part of the model"""
-        query = {
-            "text": "title",
-            "query_fields": "title,subtitle",
-            "fields": "foobar",
-            "page_size": 1,
-            "page": 1,
-        }
-        response = self.client.get(self.api_url, query, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 400)
-
-    def assert_projects_found(self, search_term, projects_found=1):
-        query = {
-            "text": search_term,
-            "query_fields": "title,subtitle",
-            "fields": "title,subtitle",
-            "page_size": 1,
-            "page": 1,
-        }
-        response = self.client.get(self.api_url, query, headers=self.api_headers)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()["result"]), projects_found)
 
     def test_search_project(self):
         self.assert_projects_found("title first project")
@@ -822,10 +772,21 @@ class TestProjectSearchView(BaseTestProjectView):
         self.assert_projects_found("pjorect")
         self.assert_projects_found("fisrt pjorect")
 
-    def test_use_nonsense_search_term(self):
-        self.assert_projects_found("foobar", 0)
+    def assert_projects_found(self, search_term):
+        query = {"text": search_term}
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()["result"]
+        self.assertTrue(len(response_data) > 0)
 
-    def test_title_query_field_is_given_priority(self):
+    def test_use_nonsense_search_term(self):
+        query = {"text": "foobar"}
+        response = self.client.get(self.api_url, query, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()["result"]
+        self.assertTrue(len(response_data) == 0)
+
+    def test_title_is_given_priority(self):
         """Test that matches in title field are prioritized over other fields"""
         Project.objects.all().delete()
         # Create projects with search term in different fields
@@ -840,13 +801,7 @@ class TestProjectSearchView(BaseTestProjectView):
             subtitle="something else",
         )
 
-        # Search across both title and subtitle fields
-        query = {
-            "text": "search_term",
-            "query_fields": "title,subtitle",
-            "fields": "id,title,subtitle",
-            "page_size": 10,
-        }
+        query = {"text": "search_term", "page_size": 10}
         response = self.client.get(self.api_url, query, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
@@ -862,8 +817,6 @@ class TestProjectSearchView(BaseTestProjectView):
         search_text = "title"
         query = {
             "text": search_text,
-            "query_fields": "title,subtitle",
-            "fields": "title,subtitle",
             "page_size": 1,
             "page": 1,
         }
@@ -871,18 +824,15 @@ class TestProjectSearchView(BaseTestProjectView):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()["result"]), 1)
-
         project_data = response.json()["result"][0]
         self.assertTrue(search_text in project_data["title"])
 
+        # Check if next page is available
         next_page = response.json()["_links"]["next"]["href"]
-
-        # Go to next page, and check results
         response = self.client.get(next_page, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()["result"]), 1)
-
         project_data = response.json()["result"][0]
         self.assertTrue(search_text in project_data["title"])
 
@@ -900,13 +850,7 @@ class TestProjectSearchView(BaseTestProjectView):
         new_project.save()
 
         # This active project should be returned
-        query = {
-            "text": new_project.title,
-            "query_fields": "title",
-            "fields": "title",
-            "page_size": 1,
-            "page": 1,
-        }
+        query = {"text": new_project.title}
         response = self.client.get(self.api_url, query, headers=self.api_headers)
         res_titles = [x.get("title") for x in response.data["result"]]
         self.assertIn(new_project.title, res_titles)
@@ -922,18 +866,12 @@ class TestProjectSearchView(BaseTestProjectView):
     def test_search_text_query_fields(self):
         """Test search for projects"""
         search_text = "title"
-        query = {
-            "text": search_text,
-            "query_fields": "id,title,subtitle",
-            "fields": "title,subtitle",
-            "page_size": 1,
-            "page": 1,
-        }
+        query = {"text": search_text}
         response = self.client.get(self.api_url, query, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
         result = response.json()["result"]
-        self.assertEqual(len(result), 1)
+        self.assertTrue(len(result) > 0)
 
 
 class TestFollowProjectView(BaseTestProjectView):
