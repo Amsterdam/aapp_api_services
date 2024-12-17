@@ -12,7 +12,7 @@ from django.db.models import (
     Max,
     TextField,
     Value,
-    When,
+    When, Prefetch,
 )
 from django.db.models.functions import Cast, Coalesce, Greatest
 from django.utils import timezone
@@ -107,11 +107,9 @@ class ProjectListView(generics.ListAPIView):
         device = Device.objects.filter(device_id=device_id).first()
         lat, lon = self.get_device_location()
 
-        # Annotate queryset with main ordering groups
-        # - 1: followed with content
-        # - 2: followed without content
-        # - 3: non-followed (default value)
-        queryset = self.collect_and_annotate_queryset(device, lat, lon)
+        queryset = Project.objects.filter(active=True, hidden=False)
+        queryset = self.prefetch_recent_articles_and_warnings(queryset)
+        queryset = self.annotate_queryset(queryset=queryset, device=device, lat=lat, lon=lon)
         queryset = self.order_queryset(queryset)
         return queryset
 
@@ -126,8 +124,35 @@ class ProjectListView(generics.ListAPIView):
         self.lat, self.lon = lat, lon
         return lat, lon
 
-    def collect_and_annotate_queryset(self, device, lat, lon):
-        queryset = Project.objects.filter(active=True, hidden=False)
+    def prefetch_recent_articles_and_warnings(self, queryset):
+        now = timezone.now()
+        start_date = now - datetime.timedelta(days=3)
+        recent_articles_prefetch = Prefetch(
+            "article_set",
+            queryset=Article.objects.filter(
+                publication_date__range=[start_date, now]
+            ).only("id", "modification_date"),
+            to_attr="recent_articles",
+        )
+        recent_warnings_prefetch = Prefetch(
+            "warningmessage_set",
+            queryset=WarningMessage.objects.filter(
+                publication_date__range=[start_date, now]
+            ).only("id", "modification_date"),
+            to_attr="recent_warnings",
+        )
+        queryset = queryset.prefetch_related(
+            recent_articles_prefetch, recent_warnings_prefetch
+        )
+        return queryset
+
+    def annotate_queryset(self, *, queryset, device, lat, lon):
+        """
+        Annotate queryset with main ordering groups
+        - 1: followed with content
+        - 2: followed without content
+        - 3: non-followed (default value)
+        """
         queryset = self._annotate_with_latest_content_date(queryset)
         if self.device_location_present:
             queryset = self._annotate_distance(queryset, float(lat), float(lon))
