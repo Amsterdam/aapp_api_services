@@ -5,12 +5,10 @@ from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import (
     BooleanField,
     Case,
-    CharField,
     DateTimeField,
     F,
     FloatField,
     Max,
-    TextField,
     Value,
     When, Prefetch,
 )
@@ -258,12 +256,6 @@ class ProjectSearchView(generics.ListAPIView):
             OpenApiParameter(
                 "text", OpenApiTypes.STR, OpenApiParameter.QUERY, required=True
             ),
-            OpenApiParameter(
-                "query_fields", OpenApiTypes.STR, OpenApiParameter.QUERY, required=True
-            ),
-            OpenApiParameter(
-                "fields", OpenApiTypes.STR, OpenApiParameter.QUERY, required=True
-            ),
             OpenApiParameter("lat", OpenApiTypes.STR, OpenApiParameter.QUERY),
             OpenApiParameter("lon", OpenApiTypes.STR, OpenApiParameter.QUERY),
             OpenApiParameter("address", OpenApiTypes.STR, OpenApiParameter.QUERY),
@@ -276,15 +268,11 @@ class ProjectSearchView(generics.ListAPIView):
 
     def get_queryset(self):
         text = self.request.query_params.get("text")
-        query_fields = self.request.query_params.get("query_fields")
-        return_fields = self.request.query_params.get("fields")
-
         if not text or len(text) < settings.MIN_SEARCH_QUERY_LENGTH:
             raise ParseError(
                 f"Search text must be at least {settings.MIN_SEARCH_QUERY_LENGTH} characters long."
             )
-        self.validate_fields(query_fields, return_fields)
-        similarities = self.get_similarities(query_fields, text)
+        similarities = self.get_similarities(text)
 
         queryset = Project.objects.none()
         if len(similarities) > 1:
@@ -298,41 +286,12 @@ class ProjectSearchView(generics.ListAPIView):
                 .filter(similarity__gt=0.1, active=True, hidden=False)
                 .order_by("-similarity")
             )
-
-        # Only include necessary fields
-        return_fields_list = return_fields.split(",")
-        if return_fields_list:
-            queryset = queryset.only(*return_fields_list)
         return queryset
 
-    def validate_fields(self, query_fields, return_fields):
-        if not query_fields:
-            raise ParseError("Query fields are required.")
-        model_fields = [
-            field.name for field in Project._meta.get_fields() if not field.is_relation
-        ]
-        non_model_query_fields = [
-            field for field in query_fields.split(",") if field not in model_fields
-        ]
-        non_model_return_fields = [
-            field for field in return_fields.split(",") if field not in model_fields
-        ]
-        if non_model_query_fields or non_model_return_fields:
-            raise ParseError(
-                f"Field(s) '{', '.join(non_model_query_fields + non_model_return_fields)}' are not valid fields in Project model."
-            )
-        return model_fields
-
-    def get_similarities(self, query_fields, text):
-        text_fields = [
-            field.name
-            for field in Project._meta.get_fields()
-            if isinstance(field, (CharField, TextField))
-        ]
-        query_fields_list = [f for f in query_fields.split(",") if f in text_fields]
-
+    def get_similarities(self, text):
+        text_fields = ["title", "subtitle"]
         similarities = []
-        for field in query_fields_list:
+        for field in text_fields:
             similarity = TrigramSimilarity(field, text)
             if field == "title":
                 similarity = similarity * 2
@@ -365,15 +324,6 @@ class ProjectSearchView(generics.ListAPIView):
             }
         )
         return context
-
-    def get_serializer(self, *args, **kwargs):
-        serializer_class = self.get_serializer_class()
-        kwargs.setdefault("context", self.get_serializer_context())
-        return_fields = self.request.query_params.get("fields")
-        if return_fields:
-            fields = return_fields.split(",")
-            kwargs["fields"] = fields
-        return serializer_class(*args, **kwargs)
 
 
 class ProjectDetailsView(generics.RetrieveAPIView):
