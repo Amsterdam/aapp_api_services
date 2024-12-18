@@ -23,19 +23,17 @@ from construction_work.permissions import (
     IsPublisherOnlyReadOwnProject,
     IsPublisherOnlyUpdateOwnWarning,
 )
-from construction_work.serializers.image_serializer import ImageCreateSerializer
 from construction_work.serializers.project_serializers import (
     ProjectDetailsForManagementSerializer,
     ProjectListForManageSerializer,
     ProjectManagerCreateResultSerializer,
     ProjectManagerNameEmailSerializer,
     ProjectManagerWithProjectsSerializer,
-    PublisherAssignProjectSerializer,
-    WarningImageSerializer,
-    WarningMessageCreateUpdateSerializer,
     WarningMessageForManagementSerializer,
-    WarningMessageWithNotificationResultSerializer,
 )
+from construction_work.serializers.manage_serializers import WarningMessageCreateUpdateSerializer, \
+    WarningMessageWithNotificationResultSerializer, WarningImageSerializer, PublisherAssignProjectSerializer, \
+    ImageCreateSerializer
 from construction_work.services.notification import call_notification_service
 from construction_work.utils.auth_utils import (
     get_manager_type,
