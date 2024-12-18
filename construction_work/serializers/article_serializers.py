@@ -9,7 +9,10 @@ from construction_work.models.article_models import (
     ArticleImageSource,
 )
 from construction_work.models.manage_models import WarningImage, WarningMessage
-from construction_work.serializers.general_serializers import MetaIdSerializer, ImagePublicSerializer
+from construction_work.serializers.general_serializers import (
+    ImagePublicSerializer,
+    MetaIdSerializer,
+)
 from construction_work.utils.model_utils import create_id_dict
 
 
@@ -61,8 +64,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
     """
 
     meta_id = serializers.SerializerMethodField()
-    # images = ArticleImageSerializer(source="image")
-    images = serializers.SerializerMethodField()
+    images = ArticleImageSerializer(source="image")
     publication_date = serializers.SerializerMethodField()
 
     class Meta:
@@ -73,24 +75,17 @@ class ArticleListSerializer(serializers.ModelSerializer):
     def get_meta_id(self, obj):
         return create_id_dict(obj)
 
-    @extend_schema_field(ArticleImageSerializer(many=True))
-    def get_images(self, obj):
-        if hasattr(obj, "image"):
-            image_json = ArticleImageSerializer(obj.image).data
-            return [image_json]
-        return []
-
     # NOTE: somehow, somewhere the datetime object is translated to string
     def get_publication_date(self, obj) -> datetime:
         return obj.publication_date
 
-    # def to_representation(self, instance):
-    #     representation = super().to_representation(instance)
-    #     if representation.get("images"):
-    #         representation["images"] = [representation["images"]]
-    #     else:
-    #         representation["images"] = []
-    #     return representation
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if representation.get("images"):
+            representation["images"] = [representation["images"]]
+        else:
+            representation["images"] = []
+        return representation
 
 
 class WarningImageSerializer(serializers.ModelSerializer):
@@ -109,6 +104,7 @@ class WarningMessageListSerializer(serializers.ModelSerializer):
     meta_id = serializers.SerializerMethodField()
     images = WarningImageSerializer(source="warningimage_set", many=True)
     title = serializers.CharField()
+    publication_date = serializers.SerializerMethodField()
 
     class Meta:
         model = WarningMessage
@@ -117,3 +113,7 @@ class WarningMessageListSerializer(serializers.ModelSerializer):
     @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj):
         return create_id_dict(obj)
+
+    # NOTE: somehow, somewhere the datetime object is translated to string
+    def get_publication_date(self, obj) -> datetime:
+        return obj.publication_date

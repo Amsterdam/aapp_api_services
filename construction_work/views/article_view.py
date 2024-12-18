@@ -63,32 +63,20 @@ class ArticleListView(generics.GenericAPIView):
         if limit < 0:
             raise ParseError("'limit' parameter must be non-negative.")
 
-        # # Collect articles
-        # articles_qs = Article.objects.filter(active=True).prefetch_related("image")
-        # if project_ids:
-        #     articles_qs = articles_qs.filter(projects__id__in=project_ids)
-        # articles_qs = articles_qs.only("id", "title", "publication_date", "image")
-        #
-        # # Collect warnings
-        # warnings_qs = (
-        #     WarningMessage.objects.filter(project__active=True)
-        #     .select_related("project")
-        #     .prefetch_related("warningimage_set", "warningimage_set__images")
-        # )
-        # if project_ids:
-        #     warnings_qs = warnings_qs.filter(project__id__in=project_ids)
-
         # Collect articles
-        articles_qs = Article.objects.filter(active=True)
+        articles_qs = Article.objects.filter(active=True).prefetch_related("image")
         if project_ids:
             articles_qs = articles_qs.filter(projects__id__in=project_ids)
         articles_qs = articles_qs.only("id", "title", "publication_date", "image")
 
         # Collect warnings
-        warnings_qs = WarningMessage.objects.filter(project__active=True)
+        warnings_qs = (
+            WarningMessage.objects.filter(project__active=True)
+            .select_related("project")
+            .prefetch_related("warningimage_set", "warningimage_set__images")
+        )
         if project_ids:
             warnings_qs = warnings_qs.filter(project__id__in=project_ids)
-        warnings_qs = warnings_qs.prefetch_related("warningimage_set__images")
 
         # Serialize articles and warnings
         articles_serializer = ArticleListSerializer(articles_qs, many=True)
