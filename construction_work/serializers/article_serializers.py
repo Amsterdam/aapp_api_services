@@ -8,7 +8,8 @@ from construction_work.models.article_models import (
     ArticleImage,
     ArticleImageSource,
 )
-from construction_work.serializers.general_serializers import MetaIdSerializer
+from construction_work.models.manage_models import WarningImage, WarningMessage
+from construction_work.serializers.general_serializers import MetaIdSerializer, ImagePublicSerializer
 from construction_work.utils.model_utils import create_id_dict
 
 
@@ -60,6 +61,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
     """
 
     meta_id = serializers.SerializerMethodField()
+    # images = ArticleImageSerializer(source="image")
     images = serializers.SerializerMethodField()
     publication_date = serializers.SerializerMethodField()
 
@@ -81,3 +83,37 @@ class ArticleListSerializer(serializers.ModelSerializer):
     # NOTE: somehow, somewhere the datetime object is translated to string
     def get_publication_date(self, obj) -> datetime:
         return obj.publication_date
+
+    # def to_representation(self, instance):
+    #     representation = super().to_representation(instance)
+    #     if representation.get("images"):
+    #         representation["images"] = [representation["images"]]
+    #     else:
+    #         representation["images"] = []
+    #     return representation
+
+
+class WarningImageSerializer(serializers.ModelSerializer):
+    sources = ImagePublicSerializer(source="images", many=True)
+
+    class Meta:
+        model = WarningImage
+        fields = ["id", "sources"]
+
+
+class WarningMessageListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for WarningMessage model in list view.
+    """
+
+    meta_id = serializers.SerializerMethodField()
+    images = WarningImageSerializer(source="warningimage_set", many=True)
+    title = serializers.CharField()
+
+    class Meta:
+        model = WarningMessage
+        fields = ["meta_id", "images", "title", "publication_date"]
+
+    @extend_schema_field(MetaIdSerializer)
+    def get_meta_id(self, obj):
+        return create_id_dict(obj)
