@@ -5,11 +5,18 @@ from os.path import join
 from django.urls import reverse
 from model_bakery import baker
 
-from construction_work.models.article_models import Article, ArticleImage, ArticleImageSource
-from construction_work.models.manage_models import WarningMessage, WarningImage, Image
+from construction_work.models.article_models import (
+    Article,
+    ArticleImage,
+    ArticleImageSource,
+)
+from construction_work.models.manage_models import Image, WarningImage, WarningMessage
 from construction_work.models.project_models import Project
 from construction_work.tests import mock_data
-from construction_work.tests.views.test_project_views import BaseTestProjectView, ROOT_DIR
+from construction_work.tests.views.test_project_views import (
+    ROOT_DIR,
+    BaseTestProjectView,
+)
 from construction_work.utils.date_utils import translate_timezone as tt
 from construction_work.utils.patch_utils import create_image_file
 from core.tests.test_authentication import BasicAPITestCase

@@ -5,10 +5,7 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from construction_work.models.manage_models import (
-    ProjectManager,
-    WarningMessage,
-)
+from construction_work.models.manage_models import ProjectManager, WarningMessage
 from construction_work.models.project_models import (
     Project,
     ProjectContact,
@@ -21,8 +18,14 @@ from construction_work.serializers.article_serializers import (
     ArticleSerializer,
     RecentArticlesIdDateSerializer,
 )
-from construction_work.serializers.general_serializers import MetaIdSerializer, ImagePublicSerializer, \
-    IproxImageSerializer, IproxProjectSectionsSerializer, IproxCoordinatesSerializer, IproxProjectTimelineSerializer
+from construction_work.serializers.general_serializers import (
+    ImagePublicSerializer,
+    IproxCoordinatesSerializer,
+    IproxImageSerializer,
+    IproxProjectSectionsSerializer,
+    IproxProjectTimelineSerializer,
+    MetaIdSerializer,
+)
 from construction_work.utils.geo_utils import calculate_distance
 from construction_work.utils.model_utils import create_id_dict
 from construction_work.utils.query_utils import (

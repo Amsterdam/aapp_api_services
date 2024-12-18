@@ -3,10 +3,12 @@ import uuid
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
-from construction_work.models.manage_models import WarningMessage, WarningImage, Image
-from construction_work.serializers.project_serializers import WarningMessageForManagementSerializer
+from construction_work.models.manage_models import Image, WarningImage, WarningMessage
+from construction_work.serializers.project_serializers import (
+    WarningMessageForManagementSerializer,
+)
 from construction_work.utils.bool_utils import string_to_bool
-from construction_work.utils.image_utils import scale_image, SCALED_IMAGE_FORMAT
+from construction_work.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
 
 
 class WarningImageCreateUpdateSerializer(serializers.Serializer):

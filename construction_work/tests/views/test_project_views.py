@@ -11,9 +11,7 @@ from django.test import override_settings
 from django.urls import reverse
 from freezegun import freeze_time
 
-from construction_work.models.article_models import (
-    Article,
-)
+from construction_work.models.article_models import Article
 from construction_work.models.manage_models import (
     Device,
     Image,
@@ -1063,9 +1061,7 @@ class TestFollowedProjectsArticlesView(BaseTestProjectView):
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
 
         def assert_total_returned_articles():
-            _response = self.client.get(
-                self.api_url, headers=self.api_headers
-            ).json()
+            _response = self.client.get(self.api_url, headers=self.api_headers).json()
 
             _total_returned_articles = 0
             for key in _response:
