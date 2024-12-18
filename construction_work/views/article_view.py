@@ -33,7 +33,7 @@ class ArticleListView(generics.GenericAPIView):
             OpenApiParameter("limit", OpenApiTypes.STR, OpenApiParameter.QUERY),
         ],
         exceptions=[ParseError],
-        success_response=ArticleListSerializer,
+        success_response=WarningMessageListSerializer,
     )
     def get(self, request, *args, **kwargs):
         # Handle 'project_ids' parameter
