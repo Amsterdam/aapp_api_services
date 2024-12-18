@@ -64,7 +64,7 @@ class ArticleListView(generics.GenericAPIView):
             raise ParseError("'limit' parameter must be non-negative.")
 
         # Collect articles
-        articles_qs = Article.objects.filter(active=True).prefetch_related("image")
+        articles_qs = Article.objects.filter(active=True).select_related("image")
         if project_ids:
             articles_qs = articles_qs.filter(projects__id__in=project_ids)
         articles_qs = articles_qs.only("id", "title", "publication_date", "image")
