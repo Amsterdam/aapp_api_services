@@ -118,7 +118,9 @@ def get_project_object(data):
         url=data.get("url"),
         creation_date=data.get("created"),
         modification_date=data.get("modified"),
-        publication_date=data.get("publicationDate"),
+        # 133548: the publicationDate field is filled with the modification date from Iprox' side,
+        # because of that we will use the created date as publication date
+        publication_date=data.get("created"),
         expiration_date=data.get("expirationDate"),
         last_seen=timezone.now(),
         active=True,
@@ -248,7 +250,9 @@ def get_article_object(data):
         url=data.get("url"),
         creation_date=data.get("created"),
         modification_date=data.get("modified"),
-        publication_date=data.get("publicationDate"),
+        # 133548: the publicationDate field is filled with the modification date from Iprox' side,
+        # because of that we will use the created date as publication date
+        publication_date=data.get("created"),
         expiration_date=data.get("expirationDate"),
     )
     return article
