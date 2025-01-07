@@ -15,7 +15,6 @@ pkcs7
 djangorestframework-simplejwt
 
 # Construction work
-geopy
 pillow
 
 # Construction work ETL
