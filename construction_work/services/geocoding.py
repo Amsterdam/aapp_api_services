@@ -22,15 +22,16 @@ def geocode_address(address: str) -> Tuple[Optional[float], Optional[float]]:
         url = f"{settings.ADDRESS_TO_GPS_API}{encoded_address}"
         response = requests.get(url=url, timeout=1)
         response.raise_for_status()
+
         data = response.json()
         results = data.get("results", [])
-        if len(results) == 1:
-            lon = results[0]["centroid"][0]
-            lat = results[0]["centroid"][1]
-            return lat, lon
-        else:
-            logging.warning(f"Multiple or no results found for address: {address}")
+        if not results:
+            logging.warning(f"No results found for address: {address}")
             return None, None
+
+        lon = results[0]["centroid"][0]
+        lat = results[0]["centroid"][1]
+        return lat, lon
     except requests.RequestException as e:
         logging.error(f"Error while geocoding address '{address}': {e}")
         return None, None
