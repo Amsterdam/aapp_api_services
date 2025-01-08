@@ -4,6 +4,11 @@ MODULE_SLUG = "modules"
 INSTALLED_APPS += [
     "modules.apps.ModulesConfig",
 ]
+MIDDLEWARE += [
+    "csp.middleware.CSPMiddleware",
+]
+CSP_DEFAULT_SRC = ["'none'"]
+CSP_FRAME_ANCESTORS = ["'none'"]
 
 ROOT_URLCONF = "modules.urls"
 

@@ -65,7 +65,7 @@ pytest==8.3.4
     #   pytest-django
     #   pytest-dotenv
     #   pytest-env
-pytest-asyncio==0.25.1
+pytest-asyncio==0.25.2
     # via -r requirements/requirements_dev.in
 pytest-django==4.9.0
     # via -r requirements/requirements_dev.in
