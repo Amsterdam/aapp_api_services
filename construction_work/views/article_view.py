@@ -6,8 +6,8 @@ from rest_framework.response import Response
 
 from construction_work.models.article_models import Article
 from construction_work.models.manage_models import WarningMessage
-from construction_work.serializers.article_serializers import ArticleListSerializer
-from construction_work.serializers.project_serializers import (
+from construction_work.serializers.article_serializers import (
+    ArticleListSerializer,
     WarningMessageListSerializer,
 )
 from construction_work.utils.url_utils import get_media_url
@@ -33,7 +33,7 @@ class ArticleListView(generics.GenericAPIView):
             OpenApiParameter("limit", OpenApiTypes.STR, OpenApiParameter.QUERY),
         ],
         exceptions=[ParseError],
-        success_response=ArticleListSerializer,
+        success_response=WarningMessageListSerializer,
     )
     def get(self, request, *args, **kwargs):
         # Handle 'project_ids' parameter
@@ -64,16 +64,19 @@ class ArticleListView(generics.GenericAPIView):
             raise ParseError("'limit' parameter must be non-negative.")
 
         # Collect articles
-        articles_qs = Article.objects.filter(active=True)
+        articles_qs = Article.objects.filter(active=True).select_related("image")
         if project_ids:
             articles_qs = articles_qs.filter(projects__id__in=project_ids)
         articles_qs = articles_qs.only("id", "title", "publication_date", "image")
 
         # Collect warnings
-        warnings_qs = WarningMessage.objects.filter(project__active=True)
+        warnings_qs = (
+            WarningMessage.objects.filter(project__active=True)
+            .select_related("project")
+            .prefetch_related("warningimage_set", "warningimage_set__images")
+        )
         if project_ids:
             warnings_qs = warnings_qs.filter(project__id__in=project_ids)
-        warnings_qs = warnings_qs.prefetch_related("warningimage_set__images")
 
         # Serialize articles and warnings
         articles_serializer = ArticleListSerializer(articles_qs, many=True)
