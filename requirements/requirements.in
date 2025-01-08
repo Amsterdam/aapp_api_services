@@ -6,16 +6,9 @@ drf_spectacular
 python-dotenv
 
 # Modules
-django-cors-headers
-django-nose
-djangorestframework
-djangorestframework-simplejwt
-drf-yasg
-pkcs7
 djangorestframework-simplejwt
 
 # Construction work
-geopy
 pillow
 
 # Construction work ETL

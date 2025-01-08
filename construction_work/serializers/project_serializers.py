@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Optional
 
 from django.conf import settings
 from django.utils import timezone
@@ -26,7 +27,6 @@ from construction_work.serializers.general_serializers import (
     IproxProjectTimelineSerializer,
     MetaIdSerializer,
 )
-from construction_work.utils.geo_utils import calculate_distance
 from construction_work.utils.model_utils import create_id_dict
 from construction_work.utils.query_utils import (
     get_recent_articles_of_project,
@@ -90,22 +90,15 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
             "recent_articles",
         ]
 
-    def get_meter(self, obj: Project) -> int:
-        """Calculate distance from given coordinates to project coordinates"""
-        lat = self.context.get("lat")
-        lon = self.context.get("lon")
-        if obj is None or lat is None or lon is None:
+    def get_meter(self, obj: Project) -> Optional[int]:
+        """
+        Convert kilometers to meters.
+        """
+        if not hasattr(obj, "distance"):
             return None
 
-        cords_1 = (float(lat), float(lon))
-        project_coordinates = {"lat": obj.coordinates_lat, "lon": obj.coordinates_lon}
-        if project_coordinates is None:
-            return None
-        cords_2 = (project_coordinates.get("lat"), project_coordinates.get("lon"))
-        if None in cords_2 or (cords_2 == (0, 0)):
-            return None
-        meter = calculate_distance(cords_1, cords_2)
-        return meter
+        # Convert kilometers to meters
+        return int(obj.distance * 1000)
 
     def get_followed(self, obj: Project) -> bool:
         """Check if project is being followed by given device"""
