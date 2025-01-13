@@ -2,7 +2,8 @@ from django.conf import settings
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from bridge.views import AddressSearchView, WasteGuideView
+from bridge.views.proxy_views import AddressSearchView, WasteGuideView
+from bridge.views.waste_pass_views import WastePassNumberView
 
 urlpatterns = [
     # drf-spectacular
@@ -17,11 +18,17 @@ urlpatterns = [
         WasteGuideView.as_view(),
         name="waste-guide-search",
     ),
-    # Adres zoeker
+    # address search
     path(
         "address/api/v1/free",
         AddressSearchView.as_view(),
         name="address-search",
+    ),
+    # waste pass number
+    path(
+        "waste/api/v1/pass-number",
+        WastePassNumberView.as_view(),
+        name="waste-pass-number",
     ),
 ]
 

@@ -3,10 +3,10 @@ from unittest.mock import Mock, patch
 from django.conf import settings
 from django.test import RequestFactory, TestCase, override_settings
 
-from bridge.views import WasteGuideView
+from bridge.views.proxy_views import WasteGuideView
 
 
-class WasteGuideViewTest(TestCase):
+class TestWasteGuideView(TestCase):
     @override_settings(
         WASTE_GUIDE_URL="http://example.com/wasteguide",
         WASTE_GUID_API_KEY="test_api_key",

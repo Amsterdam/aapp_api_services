@@ -14,11 +14,11 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
 SPECTACULAR_SETTINGS["TITLE"] = "Bridge API"
 LOGGING["loggers"]["bridge"] = default_app_logging
 
+STATIC_URL = "/bridge/static/"
+
 # Waste guide
 WASTE_GUIDE_URL = os.getenv("WASTE_GUIDE_URL")
 WASTE_GUID_API_KEY = os.getenv("WASTE_GUID_API_KEY")
 
 # Address search
 ADDRESS_SEARCH_URL = os.getenv("ADDRESS_SEARCH_URL")
-
-STATIC_URL = "/bridge/static/"
