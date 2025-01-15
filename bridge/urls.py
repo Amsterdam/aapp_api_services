@@ -26,9 +26,9 @@ urlpatterns = [
     ),
     # waste pass number
     path(
-        "waste/api/v1/pass-number",
+        "waste-container/api/v1/pass-number",
         WastePassNumberView.as_view(),
-        name="waste-pass-number",
+        name="waste-container-pass-number",
     ),
 ]
 

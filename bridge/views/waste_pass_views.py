@@ -1,5 +1,5 @@
 from rest_framework import generics, status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from bridge.constants.waste_pass_constants import (
@@ -24,7 +24,7 @@ class WastePassNumberView(generics.RetrieveAPIView):
     @extend_schema_for_api_key(
         additional_params=serializer_to_query_params(WastePassNumberRequestSerializer),
         success_response=WastePassNumberResponseSerializer,
-        exceptions=[ValidationError],
+        exceptions=[ValidationError, NotFound],
     )
     def get(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.GET)
@@ -44,7 +44,11 @@ class WastePassNumberView(generics.RetrieveAPIView):
         has_container = self.has_container(pc_number, pc_letter)
 
         response_serializer = WastePassNumberResponseSerializer(
-            {"district": district.value, "pass_number": pass_number, "has_container": has_container}
+            {
+                "district": district.value,
+                "pass_number": pass_number,
+                "has_container": has_container,
+            }
         )
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 

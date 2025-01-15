@@ -1,3 +1,4 @@
+from django.urls import reverse
 from rest_framework import status
 
 from bridge.constants import waste_pass_constants
@@ -8,7 +9,7 @@ from core.tests.test_authentication import BasicAPITestCase
 class TestWastePassNumberView(BasicAPITestCase):
     def setUp(self):
         super().setUp()
-        self.url = "/waste/api/v1/pass-number"
+        self.url = reverse("waste-container-pass-number")
 
     # Override constants
     waste_pass_constants.DISTRICT_POSTAL_CODE_MAPPING = {
