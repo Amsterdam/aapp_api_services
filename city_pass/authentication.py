@@ -43,3 +43,9 @@ class AccessTokenAuthentication(BaseAuthentication):
             )
 
         return (access_token_obj.session, access_token_obj)
+
+
+class AccessTokenAuthenticationScheme(AuthenticationScheme):
+    target_class = "city_pass.authentication.AccessTokenAuthentication"
+    name = "AccessTokenAuthentication"
+    header_key = settings.ACCESS_TOKEN_HEADER
