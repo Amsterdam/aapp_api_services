@@ -1223,7 +1223,7 @@ class TestWarningMessageDetailView(BaseTestProjectView):
                     "id": image.pk,
                     "sources": [
                         {
-                            "uri": "http://testserver/construction-work/media/images/image.jpg",
+                            "uri": "http://testserver/construction-work/media/construction-work/images/image.jpg",
                             "width": 10,
                             "height": 10,
                         }

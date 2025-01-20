@@ -1,10 +1,13 @@
 from django.conf import settings
 from rest_framework import serializers
 
-from notification.models import Notification
+from notification.models import ImageSet, Notification
+from notification.serializers.image_serializers import ImageSetSerializer
 
 
 class NotificationResultSerializer(serializers.ModelSerializer):
+    image = ImageSetSerializer(source="image_set", required=False)
+
     class Meta:
         model = Notification
         fields = [
@@ -16,15 +19,30 @@ class NotificationResultSerializer(serializers.ModelSerializer):
             "created_at",
             "pushed_at",
             "is_read",
+            "image",
         ]
 
 
 class NotificationCreateSerializer(serializers.ModelSerializer):
     device_ids = serializers.ListField(child=serializers.CharField(), write_only=True)
+    image = serializers.PrimaryKeyRelatedField(
+        queryset=ImageSet.objects.all(),
+        source="image_set",
+        allow_null=True,
+        required=False,
+    )
 
     class Meta:
         model = Notification
-        fields = ["title", "body", "module_slug", "context", "created_at", "device_ids"]
+        fields = [
+            "title",
+            "body",
+            "module_slug",
+            "context",
+            "created_at",
+            "device_ids",
+            "image",
+        ]
 
     def validate_device_ids(self, device_ids):
         max_devices = settings.MAX_DEVICES_PER_REQUEST

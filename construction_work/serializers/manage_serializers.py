@@ -8,7 +8,7 @@ from construction_work.serializers.project_serializers import (
     WarningMessageForManagementSerializer,
 )
 from construction_work.utils.bool_utils import string_to_bool
-from construction_work.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
+from core.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
 
 
 class WarningImageCreateUpdateSerializer(serializers.Serializer):
@@ -107,9 +107,13 @@ class ImageCreateSerializer(serializers.Serializer):
 
         image_ids = []
         new_file_name = uuid.uuid4()
-
-        scaled_images = scale_image(image_file)
-        for size, img_io in scaled_images:
+        resolutions = {
+            "small": (320, 180),
+            "medium": (768, 432),
+            "large": (1280, 720),
+        }
+        scaled_images = scale_image(image_file, resolutions=resolutions)
+        for size, img_io in scaled_images.items():
             image_obj = Image(description=description)
             image_content = ContentFile(img_io.read())
             image_obj.image.save(

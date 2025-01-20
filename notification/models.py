@@ -16,6 +16,45 @@ class Device(models.Model):
     firebase_token = models.CharField(max_length=1000, null=True)
 
 
+class ImageVariant(models.Model):
+    """
+    Image model.
+    - image: the actual image
+    - description: optional description of the image
+    - width: width of the image in pixels
+    - height: height of the image in pixels
+    """
+
+    image = models.ImageField(upload_to="notification/images/")
+    width = models.IntegerField()
+    height = models.IntegerField()
+
+    def save(self, *args, **kwargs):
+        self.width = self.image.width
+        self.height = self.image.height
+        super().save(*args, **kwargs)
+
+
+class ImageSet(models.Model):
+    """
+    Group of images.
+    - firebase_image: image for Firebase
+    - thumbnail_image: thumbnail image
+    - large_image: large image
+    """
+
+    description = models.CharField(max_length=1000, blank=True, null=True)
+    firebase_image = models.ForeignKey(
+        ImageVariant, on_delete=models.CASCADE, related_name="firebase"
+    )
+    thumbnail_image = models.ForeignKey(
+        ImageVariant, on_delete=models.CASCADE, related_name="thumbnail"
+    )
+    large_image = models.ForeignKey(
+        ImageVariant, on_delete=models.CASCADE, related_name="large"
+    )
+
+
 class Notification(models.Model):
     """
     Data as it is sent to devices.
@@ -28,6 +67,7 @@ class Notification(models.Model):
     - pushed_at: set to true when notification was pushed successfully
     - created_at: to create an overview of the notification history
     - is_read: to be set when device has read the notification
+    - image_set: fk to ImageSet.id
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -39,3 +79,6 @@ class Notification(models.Model):
     created_at = models.DateTimeField()
     pushed_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
+    image_set = models.ForeignKey(
+        ImageSet, on_delete=models.CASCADE, null=True, blank=True
+    )

@@ -13,7 +13,7 @@ class NotificationServiceError(Exception):
     """Something went wrong calling the notification service"""
 
 
-def call_notification_service(warning: WarningMessage) -> tuple[int, dict]:
+def call_notification_service(warning: WarningMessage, image) -> tuple[int, dict]:
     """Send a notification for a warning message to registered devices.
 
     Args:
@@ -42,11 +42,10 @@ def call_notification_service(warning: WarningMessage) -> tuple[int, dict]:
         "created_at": timezone.now().isoformat(),
         "device_ids": device_ids,
     }
-
     api_url = settings.NOTIFICATION_ENDPOINTS["INIT_NOTIFICATION"]
 
     try:
-        response = requests.post(api_url, json=request_data)
+        response = requests.post(api_url, json=request_data, files= {"image": image} if image else {})
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         logger.error(

@@ -330,7 +330,7 @@ class WarningMessageCreateView(AutoExtendSchemaMixin, generics.CreateAPIView):
         push_code = False
         push_message = None
         if send_push_notification:
-            push_code, push_message = call_notification_service(new_warning)
+            push_code, push_message = call_notification_service(new_warning, image=image_data)
 
         # Return the created warning with notification result
         return_serializer = WarningMessageWithNotificationResultSerializer(
@@ -414,7 +414,7 @@ class WarningMessageDetailView(
         push_message = None
         send_push_notification = serializer.validated_data.get("send_push_notification")
         if send_push_notification and not warning.notification_sent:
-            push_code, push_message = call_notification_service(warning)
+            push_code, push_message = call_notification_service(warning, image=None)
 
         # Return the updated warning with notification result
         return_serializer = WarningMessageWithNotificationResultSerializer(

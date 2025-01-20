@@ -76,7 +76,9 @@ class WarningMessage(models.Model):
 
 
 class Image(models.Model):
-    image = models.ImageField(upload_to="images/", null=True, blank=True)
+    image = models.ImageField(
+        upload_to="construction-work/images/", null=True, blank=True
+    )
     description = models.CharField(max_length=1000, blank=True, null=True, default=None)
     width = models.IntegerField()
     height = models.IntegerField()

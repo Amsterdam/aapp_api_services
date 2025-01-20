@@ -11,15 +11,22 @@ BASE_PATH = "notification/api/v1"
 BASE_PATH_INTERNAL = "internal/api/v1"
 
 urlpatterns = [
-    path(
-        BASE_PATH + "/device/register",
-        device_views.DeviceRegisterView.as_view(),
-        name="notification-register-device",
-    ),
+    # INTERNAL ENDPOINTS
     path(
         BASE_PATH_INTERNAL + "/notification",
         notification_internal_views.NotificationInitView.as_view(),
         name="notification-create-notification",
+    ),
+    path(
+        BASE_PATH_INTERNAL + "/image",
+        notification_internal_views.ImageSetCreateView.as_view(),
+        name="notification-create-image",
+    ),
+    # EXTERNAL ENDPOINTS
+    path(
+        BASE_PATH + "/device/register",
+        device_views.DeviceRegisterView.as_view(),
+        name="notification-register-device",
     ),
     path(
         BASE_PATH + "/notifications/<uuid:notification_id>",
