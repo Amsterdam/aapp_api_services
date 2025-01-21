@@ -7,3 +7,5 @@ from core.settings.local import *  # isort:skip
 TENANT_ID = os.getenv("TENANT_ID", "test")
 CLIENT_ID = os.getenv("CLIENT_ID", "test")
 DEBUG = True
+
+CSP_REPORT_ONLY = True

@@ -1,17 +1,12 @@
-from django.conf import settings
 from django.urls import path
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from bridge.views.proxy_views import AddressSearchView, WasteGuideView
 from bridge.views.waste_pass_views import WastePassNumberView
+from core.urls import get_swagger_paths
+
+BASE_PATH = "bridge/api/v1"
 
 urlpatterns = [
-    # drf-spectacular
-    path(
-        "bridge/api/v1/openapi/",
-        SpectacularAPIView.as_view(authentication_classes=[], permission_classes=[]),
-        name="bridge-openapi-schema",
-    ),
     # afvalwijzer
     path(
         "waste-guide/api/v1/search",
@@ -32,15 +27,4 @@ urlpatterns = [
     ),
 ]
 
-if settings.DEBUG:
-    urlpatterns += [
-        path(
-            "bridge/api/v1/apidocs",
-            SpectacularSwaggerView.as_view(
-                url_name="bridge-openapi-schema",
-                authentication_classes=[],
-                permission_classes=[],
-            ),
-            name="bridge-swagger-ui",
-        )
-    ]
+urlpatterns += get_swagger_paths(BASE_PATH)
