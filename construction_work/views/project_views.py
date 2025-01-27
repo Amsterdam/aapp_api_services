@@ -214,21 +214,19 @@ class ProjectListView(generics.ListAPIView):
         """
         # Constants for Amsterdam (rough approximation)
         km_per_lat_degree = 111  # km per 1° of latitude
-        km_per_lon_degree = 68   # km per 1° of longitude at ~52°N
+        km_per_lon_degree = 68  # km per 1° of longitude at ~52°N
 
         # Convert lat/lon degrees to kilometer deltas
-        lat_dist = (
-            (Cast(F("coordinates_lat"), FloatField()) - lat)
-            * Value(km_per_lat_degree, output_field=FloatField())
+        lat_dist = (Cast(F("coordinates_lat"), FloatField()) - lat) * Value(
+            km_per_lat_degree, output_field=FloatField()
         )
-        lon_dist = (
-            (Cast(F("coordinates_lon"), FloatField()) - lon)
-            * Value(km_per_lon_degree, output_field=FloatField())
+        lon_dist = (Cast(F("coordinates_lon"), FloatField()) - lon) * Value(
+            km_per_lon_degree, output_field=FloatField()
         )
-        
+
         # distance = sqrt(lat_dist^2 + lon_dist^2)
         distance = Sqrt(Power(lat_dist, 2) + Power(lon_dist, 2))
-        
+
         return queryset.annotate(distance=distance)
 
     def get_serializer_context(self):

@@ -10,11 +10,7 @@ from rest_framework.response import Response
 
 from construction_work.authentication import EntraIDAuthentication
 from construction_work.exceptions import MissingProjectIdBody
-from construction_work.models.manage_models import (
-    ProjectManager,
-    WarningImage,
-    WarningMessage,
-)
+from construction_work.models.manage_models import ProjectManager, WarningMessage
 from construction_work.models.project_models import Project
 from construction_work.permissions import (
     IsEditor,
@@ -310,27 +306,13 @@ class WarningMessageCreateView(AutoExtendSchemaMixin, generics.CreateAPIView):
         create_message_serializer.is_valid(raise_exception=True)
         new_warning = create_message_serializer.save()
 
-        # Handle image data if provided
-        image_data = request.data.get("image")
-        if image_data:
-            image_serializer = ImageCreateSerializer(data=image_data)
-            image_serializer.is_valid(raise_exception=True)
-
-            # Create WarningImage and associate images
-            new_image_ids = image_serializer.save()
-            warning_image = WarningImage.objects.create(
-                warning=new_warning,
-            )
-            warning_image.images.set(new_image_ids)
-
         # Handle push notification
         send_push_notification = create_message_serializer.validated_data.get(
             "send_push_notification"
         )
-        push_code = False
-        push_message = None
+        push_code, push_message = False, False
         if send_push_notification:
-            push_code, push_message = call_notification_service(new_warning, image=image_data)
+            push_code, push_message = call_notification_service(new_warning)
 
         # Return the created warning with notification result
         return_serializer = WarningMessageWithNotificationResultSerializer(
@@ -414,7 +396,7 @@ class WarningMessageDetailView(
         push_message = None
         send_push_notification = serializer.validated_data.get("send_push_notification")
         if send_push_notification and not warning.notification_sent:
-            push_code, push_message = call_notification_service(warning, image=None)
+            push_code, push_message = call_notification_service(warning)
 
         # Return the updated warning with notification result
         return_serializer = WarningMessageWithNotificationResultSerializer(

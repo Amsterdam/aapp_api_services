@@ -729,7 +729,7 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         self.assertEqual(result.status_code, 200)
 
         self.assertFalse(result.data.get("push_ok"))
-        self.assertIsNone(result.data.get("push_message"))
+        self.assertFalse(result.data.get("push_message"))
 
         new_warning_id = result.data.get("id")
         new_warning = WarningMessage.objects.filter(pk=new_warning_id).first()

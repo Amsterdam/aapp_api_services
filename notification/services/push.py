@@ -6,7 +6,7 @@ import firebase_admin
 from django.conf import settings
 from firebase_admin import credentials, messaging
 
-from notification.models import Device, Notification
+from notification.models import Device, ImageSet, Notification
 
 logger = logging.getLogger(__name__)
 
@@ -132,14 +132,42 @@ class PushService:
     ) -> messaging.Message:
         complete_context = notification_obj.context
         complete_context["notificationId"] = str(notification_obj.pk)
+
+        ios_image_config, android_image_config = None, None
+        image_set_obj = notification_obj.image_set
+        if image_set_obj:
+            android_image_config, ios_image_config = self._get_image_config(
+                image_set_obj
+            )
+
         firebase_message = messaging.Message(
             data=complete_context,
             notification=messaging.Notification(
                 title=notification_obj.title, body=notification_obj.body
             ),
             token=device.firebase_token,
+            android=android_image_config,
+            apns=ios_image_config,
         )
         return firebase_message
+
+    def _get_image_config(self, image_set_obj: ImageSet):
+        """ "
+        Image can be max 1 MB
+        JPEG, PNG of BMP format
+        Width between 300px and 2000px
+        Height at least 200px
+        Dimensions: landscape with 2:1 aspect ratio (e.g. 1000x500)
+        """
+        image_url = image_set_obj.image_medium.image.url
+        android_image_config = messaging.AndroidConfig(
+            notification=messaging.AndroidNotification(image=image_url)
+        )
+        ios_image_config = messaging.APNSConfig(
+            payload=messaging.APNSPayload(aps=messaging.Aps(mutable_content=True)),
+            fcm_options=messaging.APNSFCMOptions(image=image_url),
+        )
+        return android_image_config, ios_image_config
 
     def _log_failures(
         self, batch_response, firebase_messages: list[messaging.Message]

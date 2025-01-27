@@ -107,12 +107,7 @@ class ImageCreateSerializer(serializers.Serializer):
 
         image_ids = []
         new_file_name = uuid.uuid4()
-        resolutions = {
-            "small": (320, 180),
-            "medium": (768, 432),
-            "large": (1280, 720),
-        }
-        scaled_images = scale_image(image_file, resolutions=resolutions)
+        scaled_images = scale_image(image_file)
         for size, img_io in scaled_images.items():
             image_obj = Image(description=description)
             image_content = ContentFile(img_io.read())

@@ -43,9 +43,8 @@ class ImageSetCreateViewTests(APITestCase):
         response = self.client.post(self.url, payload, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("id", response.data)
-        self.assertIn("firebase_image", response.data)
-        self.assertIn("thumbnail_image", response.data)
-        self.assertIn("large_image", response.data)
+        self.assertIn("variants", response.data)
+        self.assertIn("description", response.data)
 
     def test_create_imageset_missing_image(self):
         response = self.client.post(
@@ -103,9 +102,9 @@ class NotificationCreateViewTests(APITestCase):
         imagevariant = baker.make(ImageVariant, image=get_image_file())
         imageset = baker.make(
             ImageSet,
-            firebase_image=imagevariant,
-            thumbnail_image=imagevariant,
-            large_image=imagevariant,
+            image_small=imagevariant,
+            image_medium=imagevariant,
+            image_large=imagevariant,
         )
         data = {
             "title": "foobar title",

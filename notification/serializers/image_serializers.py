@@ -1,16 +1,11 @@
 import uuid
 
 from django.core.files.base import ContentFile
+from django.db import transaction
 from rest_framework import serializers
 
 from core.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
 from notification.models import ImageSet, ImageVariant
-
-RESOLUTIONS = {
-    "firebase": (200, 200),
-    "thumbnail": (400, 400),
-    "large": (800, 800),
-}
 
 
 class ImageVariantSerializer(serializers.ModelSerializer):
@@ -20,13 +15,19 @@ class ImageVariantSerializer(serializers.ModelSerializer):
 
 
 class ImageSetSerializer(serializers.ModelSerializer):
-    firebase_image = ImageVariantSerializer()
-    thumbnail_image = ImageVariantSerializer()
-    large_image = ImageVariantSerializer()
+    variants = serializers.SerializerMethodField()
 
     class Meta:
         model = ImageSet
-        fields = "__all__"
+        fields = ["id", "description", "variants"]
+
+    def get_variants(self, obj: ImageSet) -> ImageVariantSerializer(many=True):
+        variants = [
+            obj.image_small,
+            obj.image_medium,
+            obj.image_large,
+        ]
+        return ImageVariantSerializer(variants, many=True).data
 
 
 class ImageSetRequestSerializer(serializers.ModelSerializer):
@@ -36,16 +37,17 @@ class ImageSetRequestSerializer(serializers.ModelSerializer):
         model = ImageSet
         fields = ["description", "image"]
 
+    @transaction.atomic
     def create(self, validated_data):
         image_file = validated_data.pop("image")
-        scaled = scale_image(image_file, RESOLUTIONS)
-        firebase_variant = self.get_image_variant(scaled, "firebase")
-        thumbnail_variant = self.get_image_variant(scaled, "thumbnail")
-        large_variant = self.get_image_variant(scaled, "large")
+        scaled = scale_image(image_file)
+        image_small = self.get_image_variant(scaled, "small")
+        image_medium = self.get_image_variant(scaled, "medium")
+        image_large = self.get_image_variant(scaled, "large")
         return ImageSet.objects.create(
-            firebase_image=firebase_variant,
-            thumbnail_image=thumbnail_variant,
-            large_image=large_variant,
+            image_small=image_small,
+            image_medium=image_medium,
+            image_large=image_large,
             **validated_data,
         )
 

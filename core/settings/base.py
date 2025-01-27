@@ -189,4 +189,5 @@ API_KEYS = os.getenv("API_AUTH_TOKENS")
 NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://api-notification:8000")
 NOTIFICATION_ENDPOINTS = {
     "INIT_NOTIFICATION": urljoin(NOTIFICATION_API, "/internal/api/v1/notification"),
+    "POST_IMAGE": urljoin(NOTIFICATION_API, "/internal/api/v1/image"),
 }

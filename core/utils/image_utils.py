@@ -3,15 +3,18 @@ from io import BytesIO
 from PIL import Image as PILImage
 
 SCALED_IMAGE_FORMAT = "JPEG"
+RESOLUTIONS = {
+    "small": (320, 180),
+    "medium": (768, 432),
+    "large": (1280, 720),
+}
 
 
-def scale_image(
-    image_file, resolutions: dict[str, tuple[int, int]]
-) -> dict[str, BytesIO]:
+def scale_image(image_file) -> dict[str, BytesIO]:
     pil_image = PILImage.open(image_file)
 
     scaled_images = {}
-    for key, size in resolutions.items():
+    for key, size in RESOLUTIONS.items():
         pil_image_resized = pil_image.copy()
         pil_image_resized.thumbnail(size, PILImage.Resampling.LANCZOS)
 

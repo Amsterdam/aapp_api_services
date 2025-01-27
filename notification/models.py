@@ -37,20 +37,17 @@ class ImageVariant(models.Model):
 
 class ImageSet(models.Model):
     """
-    Group of images.
-    - firebase_image: image for Firebase
-    - thumbnail_image: thumbnail image
-    - large_image: large image
+    Group of 3 image variants. One for each resolution.
     """
 
     description = models.CharField(max_length=1000, blank=True, null=True)
-    firebase_image = models.ForeignKey(
-        ImageVariant, on_delete=models.CASCADE, related_name="firebase"
+    image_small = models.ForeignKey(
+        ImageVariant, on_delete=models.CASCADE, related_name="small"
     )
-    thumbnail_image = models.ForeignKey(
-        ImageVariant, on_delete=models.CASCADE, related_name="thumbnail"
+    image_medium = models.ForeignKey(
+        ImageVariant, on_delete=models.CASCADE, related_name="medium"
     )
-    large_image = models.ForeignKey(
+    image_large = models.ForeignKey(
         ImageVariant, on_delete=models.CASCADE, related_name="large"
     )
 
