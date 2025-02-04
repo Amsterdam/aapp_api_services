@@ -506,6 +506,44 @@ class TestProjectListView(BaseTestProjectView):
         actual_order = [x["id"] for x in response.json()["result"]]
         self.assertEqual(actual_order, expected_order)
 
+    def test_projects_with_null_coordinates(self):
+        """Test that projects with NULL coordinates appear last when sorting by distance"""
+        # Create projects with valid coordinates
+        valid_projects = [
+            self.create_project_with_location(10, 1),  # Middle
+            self.create_project_with_location(20, 0),  # Closest
+        ]
+
+        # Create project with NULL coordinates
+        project_data = mock_data.projects[0].copy()
+        project_data["foreign_id"] = 30
+        project_data["coordinates_lat"] = None
+        project_data["coordinates_lon"] = None
+        null_coord_project = Project.objects.create(**project_data)
+
+        # Create device
+        device = Device.objects.create(**mock_data.devices[0].copy())
+
+        # Perform request with location
+        self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
+        response = self.client.get(
+            self.api_url,
+            {
+                "lat": self.base_location[0],
+                "lon": self.base_location[1],
+                "page_size": 3,
+            },
+            headers=self.api_headers,
+        )
+
+        expected_order = [
+            valid_projects[1].pk,  # Closest
+            valid_projects[0].pk,  # Middle
+            null_coord_project.pk,  # NULL coordinates (should be last)
+        ]
+        actual_order = [x["id"] for x in response.json()["result"]]
+        self.assertEqual(actual_order, expected_order)
+
     @freeze_time("2023-01-02")
     def test_no_duplicates_in_paginated_results(self):
         """

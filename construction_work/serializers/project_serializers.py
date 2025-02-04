@@ -96,6 +96,8 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
         """
         if not hasattr(obj, "distance"):
             return None
+        if obj.distance is None:
+            return None
 
         # Convert kilometers to meters
         return int(obj.distance * 1000)
