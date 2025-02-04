@@ -7,6 +7,7 @@ WORKDIR /app
 
 # Install dependencies
 RUN apk add --no-cache --virtual .build-deps build-base linux-headers
+RUN apk add --no-cache libheif
 
 COPY requirements/requirements.txt /app/requirements/
 RUN chmod 777 /app/requirements

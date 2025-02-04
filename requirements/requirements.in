@@ -11,6 +11,7 @@ django-csp
 
 # Construction work
 pillow
+pillow-heif
 
 # Construction work ETL
 aiohttp

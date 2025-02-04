@@ -260,6 +260,10 @@ packaging==24.2
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-flask
 pillow==11.1.0
+    # via
+    #   -r requirements/requirements.in
+    #   pillow-heif
+pillow-heif==0.21.0
     # via -r requirements/requirements.in
 portalocker==2.10.1
     # via msal-extensions

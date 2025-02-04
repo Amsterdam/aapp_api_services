@@ -1294,6 +1294,21 @@ class TestImageUploadView(TestWarningMessageCRUDBaseView):
             WarningImage.objects.filter(pk=response.data["warning_image_id"]).exists()
         )
 
+    def test_upload_heic_image_success(self):
+        """
+        Test that a POST request with a HEIC image successfully uploads an image.
+        """
+        file = open("./construction_work/tests/image_data/small_image.heic", "rb")
+        valid_heic_image_data = {"image": file}
+
+        response = self.client.post(
+            self.api_url,
+            headers=self.api_headers,
+            data=valid_heic_image_data,
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_upload_image_invalid_data(self):
         """
         Test that a POST request with invalid data returns a 400 Bad Request.
