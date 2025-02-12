@@ -1,13 +1,10 @@
 from django.conf import settings
 from rest_framework import serializers
 
-from notification.models import ImageSet, Notification
-from notification.serializers.image_serializers import ImageSetSerializer
+from notification.models import Notification
 
 
 class NotificationResultSerializer(serializers.ModelSerializer):
-    image = ImageSetSerializer(source="image_set", required=False)
-
     class Meta:
         model = Notification
         fields = [
@@ -25,12 +22,6 @@ class NotificationResultSerializer(serializers.ModelSerializer):
 
 class NotificationCreateSerializer(serializers.ModelSerializer):
     device_ids = serializers.ListField(child=serializers.CharField(), write_only=True)
-    image = serializers.PrimaryKeyRelatedField(
-        queryset=ImageSet.objects.all(),
-        source="image_set",
-        allow_null=True,
-        required=False,
-    )
 
     class Meta:
         model = Notification

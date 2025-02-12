@@ -1,6 +1,11 @@
+import pathlib
 from io import BytesIO
+from os.path import join
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image as PILImage
+
+ROOT_DIR = pathlib.Path(__file__).resolve().parents[2]
 
 SCALED_IMAGE_FORMAT = "JPEG"
 RESOLUTIONS = {
@@ -24,3 +29,14 @@ def scale_image(image_file) -> dict[str, BytesIO]:
         img_io.seek(0)
         scaled_images[key] = img_io
     return scaled_images
+
+
+def get_example_image_file():
+    filepath = join(ROOT_DIR, "core/tests/example.jpg")
+    with open(filepath, "rb") as image_file:
+        file = SimpleUploadedFile(
+            name="example.jpg",
+            content=image_file.read(),
+            content_type="image/jpeg",
+        )
+    return file

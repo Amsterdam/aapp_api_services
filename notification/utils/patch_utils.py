@@ -59,9 +59,20 @@ class MockFirebaseSendEach:
 
         # Log each message
         for message in messages:
-            logger.debug(
-                f"Mocked outgoing Firebase message! [{message.notification.title=}, {message.token=}]"
+            log_message = (
+                "Mocked outgoing Firebase message!\n"
+                f"- title: {message.notification.title}\n"
+                f"- token: {message.token}\n"
+                f"- data: {message.data}"
             )
+
+            if message.android:
+                log_message += f"\n- android_image: {message.android.notification.image}"
+            
+            if message.apns:
+                log_message += f"\n- ios_image: {message.apns.fcm_options.image}"
+
+            logger.debug(log_message)
 
 
 def setup_local_development_patches():

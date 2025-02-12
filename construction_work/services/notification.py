@@ -9,8 +9,12 @@ from construction_work.models.manage_models import WarningMessage
 logger = logging.getLogger(__name__)
 
 
-class NotificationServiceError(Exception):
+class InternalServiceError(Exception):
     """Something went wrong calling the notification service"""
+
+
+POST_NOTIFICATION_URL = settings.NOTIFICATION_ENDPOINTS["INIT_NOTIFICATION"]
+POST_IMAGE_URL = settings.IMAGE_ENDPOINTS["POST_IMAGE"]
 
 
 def call_notification_service(warning: WarningMessage) -> tuple[int, dict]:
@@ -26,19 +30,19 @@ def call_notification_service(warning: WarningMessage) -> tuple[int, dict]:
     Raises:
         NotificationServiceError: If the notification service request fails
     """
-    warning_pk = warning.pk
     image_id = get_image_id(warning)
 
-    request_data = get_request_data(warning, image_id)
-    api_url = settings.NOTIFICATION_ENDPOINTS["INIT_NOTIFICATION"]
-    response = make_post_request(api_url, warning_pk, request_data=request_data)
+    request_data = create_request_data(warning, image_id)
+    response = make_post_request(
+        POST_NOTIFICATION_URL, warning_pk=warning.pk, request_data=request_data
+    )
 
     warning.notification_sent = True
     warning.save()
     return response.status_code, response.json()
 
 
-def get_image_id(warning):
+def get_image_id(warning: WarningMessage) -> int | None:
     if not warning.warningimage_set.exists():
         return None
 
@@ -51,15 +55,28 @@ def get_image_id(warning):
     else:
         image_file = images[0].image.file
 
-    api_url = settings.NOTIFICATION_ENDPOINTS["POST_IMAGE"]
+    files_data = {"image": image_file}
     response = make_post_request(
-        api_url, warning_pk=warning.pk, files={"image": image_file}
+        POST_IMAGE_URL, warning_pk=warning.pk, files=files_data
     )
-    image_id = response.json()["id"]
+    response_data = response.json()
+
+    if "id" not in response_data:
+        logger.error(
+            "Image id not found in response",
+            extra={
+                "response_data": response_data,
+                "warning_id": warning.pk,
+                "api_url": POST_IMAGE_URL,
+            },
+        )
+        raise InternalServiceError("Image id not found in response")
+    image_id = response_data["id"]
+
     return image_id
 
 
-def get_request_data(warning, image_id):
+def create_request_data(warning: WarningMessage, image_id: int | None) -> dict:
     device_ids = list(
         warning.project.device_set.exclude(device_id=None).values_list(
             "device_id", flat=True
@@ -81,7 +98,9 @@ def get_request_data(warning, image_id):
     return request_data
 
 
-def make_post_request(api_url, warning_pk, request_data=None, files=None):
+def make_post_request(
+    api_url: str, warning_pk: int, request_data=None, files=None
+) -> requests.Response:
     try:
         response = requests.post(api_url, json=request_data, files=files)
         response.raise_for_status()
@@ -94,6 +113,12 @@ def make_post_request(api_url, warning_pk, request_data=None, files=None):
                 "api_url": api_url,
             },
         )
-        raise NotificationServiceError("Failed to post image") from e
+        if api_url == POST_IMAGE_URL:
+            error_message = "Failed posting image"
+        elif api_url == POST_NOTIFICATION_URL:
+            error_message = "Failed posting notification"
+        else:
+            error_message = "Failed calling internal service"
+        raise InternalServiceError(error_message) from e
 
     return response

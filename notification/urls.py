@@ -17,11 +17,6 @@ urlpatterns = [
         notification_internal_views.NotificationInitView.as_view(),
         name="notification-create-notification",
     ),
-    path(
-        BASE_PATH_INTERNAL + "/image",
-        notification_internal_views.ImageSetCreateView.as_view(),
-        name="notification-create-image",
-    ),
     # EXTERNAL ENDPOINTS
     path(
         BASE_PATH + "/device/register",

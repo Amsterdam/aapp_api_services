@@ -7,6 +7,7 @@ from drf_spectacular.utils import OpenApiExample, OpenApiResponse
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 
 from construction_work.authentication import EntraIDAuthentication
 from construction_work.exceptions import MissingProjectIdBody
@@ -423,6 +424,29 @@ class ImageUploadView(generics.GenericAPIView):
     authentication_classes = [EntraIDAuthentication]
     serializer_class = ImageCreateSerializer
 
+    @extend_schema(
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                        "description": "Image file to upload",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Optional description for the image",
+                        "required": False,
+                    },
+                },
+                "required": ["image"],
+            }
+        },
+        success_response=dict,
+        examples=[OpenApiExample("Example 1", value={"warning_image_id": 1})],
+        exceptions=[ValidationError, PermissionDenied],
+    )
     def post(self, request, *args, **kwargs):
         project_manager = get_project_manager_from_token(self.request.auth)
         if project_manager is None:

@@ -1,17 +1,15 @@
 import json
 import pathlib
-from os.path import join
 from unittest.mock import patch
 
 from django.conf import settings
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
 from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from notification.models import Device, ImageSet, ImageVariant, Notification
+from notification.models import Device, Notification
 from notification.utils.patch_utils import (
     MockFirebaseSendEach,
     apply_init_firebase_patches,
@@ -20,52 +18,12 @@ from notification.utils.patch_utils import (
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
 
-def get_image_file():
-    filepath = join(ROOT_DIR, "notification/tests/views/example.jpg")
-    with open(filepath, "rb") as image_file:
-        file = SimpleUploadedFile(
-            name="example.jpg",
-            content=image_file.read(),
-            content_type="image/jpeg",
-        )
-    return file
-
-
-class ImageSetCreateViewTests(APITestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("notification-create-image")
-
-    @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
-    def test_create_imageset_success(self):
-        file = get_image_file()
-        payload = {"description": "Test", "image": file}
-        response = self.client.post(self.url, payload, format="multipart")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("id", response.data)
-        self.assertIn("variants", response.data)
-        self.assertIn("description", response.data)
-
-    def test_create_imageset_missing_image(self):
-        response = self.client.post(
-            self.url, {"description": "Test"}, format="multipart"
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("image", response.data)
-
-    def test_create_imageset_invalid_file(self):
-        payload = {"description": "Invalid file", "image": "not_an_image"}
-        response = self.client.post(self.url, payload, format="multipart")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("image", response.data)
-
-
 @patch("notification.services.push.messaging.send_each")
 class NotificationCreateViewTests(APITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("notification-create-notification")
-        self.firebase_pathes = apply_init_firebase_patches()
+        self.firebase_paths = apply_init_firebase_patches()
 
     def test_init_notification_success(self, mock_send_each):
         device = baker.make(Device, external_id="abc", firebase_token="abc_token")
@@ -97,15 +55,8 @@ class NotificationCreateViewTests(APITestCase):
             },
         )
 
-    @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
     def test_init_notification_with_image_success(self, _):
-        imagevariant = baker.make(ImageVariant, image=get_image_file())
-        imageset = baker.make(
-            ImageSet,
-            image_small=imagevariant,
-            image_medium=imagevariant,
-            image_large=imagevariant,
-        )
+        image_id = 3
         data = {
             "title": "foobar title",
             "body": "foobar body",
@@ -113,7 +64,7 @@ class NotificationCreateViewTests(APITestCase):
             "context": {"foo": "bar"},
             "created_at": "2024-10-31T15:00:00",
             "device_ids": ["abc", "def", "ghi"],
-            "image": imageset.id,
+            "image": image_id,
         }
 
         result = self.client.post(
@@ -133,7 +84,7 @@ class NotificationCreateViewTests(APITestCase):
             },
         )
         notifications = Notification.objects.all()
-        self.assertEqual(notifications[0].image_set, imageset)
+        self.assertEqual(notifications[0].image, image_id)
 
     @override_settings(MAX_DEVICES_PER_REQUEST=5)
     def test_too_many_devices(self, _):

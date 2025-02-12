@@ -6,7 +6,8 @@ import firebase_admin
 from django.conf import settings
 from firebase_admin import credentials, messaging
 
-from notification.models import Device, ImageSet, Notification
+from core.services.image_set import ImageSetService
+from notification.models import Device, Notification
 
 logger = logging.getLogger(__name__)
 
@@ -134,11 +135,9 @@ class PushService:
         complete_context["notificationId"] = str(notification_obj.pk)
 
         ios_image_config, android_image_config = None, None
-        image_set_obj = notification_obj.image_set
-        if image_set_obj:
-            android_image_config, ios_image_config = self._get_image_config(
-                image_set_obj
-            )
+        if notification_obj.image:
+            image_set = ImageSetService(notification_obj.image)
+            android_image_config, ios_image_config = self._get_image_config(image_set)
 
         firebase_message = messaging.Message(
             data=complete_context,
@@ -151,15 +150,16 @@ class PushService:
         )
         return firebase_message
 
-    def _get_image_config(self, image_set_obj: ImageSet):
-        """ "
-        Image can be max 1 MB
-        JPEG, PNG of BMP format
-        Width between 300px and 2000px
-        Height at least 200px
-        Dimensions: landscape with 2:1 aspect ratio (e.g. 1000x500)
+    def _get_image_config(self, image_set: ImageSetService):
         """
-        image_url = image_set_obj.image_medium.image.url
+        Image requirements:
+        - Max size: 1 MB
+        - Formats: JPEG, PNG, BMP
+        - Width: 300px to 2000px
+        - Height: at least 200px
+        - Dimensions: landscape with 2:1 aspect ratio (e.g., 1000x500)
+        """
+        image_url = image_set.url_medium
         android_image_config = messaging.AndroidConfig(
             notification=messaging.AndroidNotification(image=image_url)
         )

@@ -20,8 +20,22 @@ ALLOWED_HOSTS = [
     "acc.app.amsterdam.nl",
     "app.amsterdam.nl",
     "api-notification",
+    "api-image",
 ]
 
+# Environment settings
+ENVIRONMENT = os.getenv("ENVIRONMENT", "local").lower()
+
+# Host configuration per environment
+HOSTS = {
+    "local": "http://localhost:8000",
+    "development": "https://ontw.app.amsterdam.nl",
+    "testing": "https://test.app.amsterdam.nl",
+    "acceptance": "https://acc.app.amsterdam.nl",
+    "production": "https://app.amsterdam.nl",
+}
+
+HOST = HOSTS.get(ENVIRONMENT, HOSTS["local"])
 
 # Application definition
 
@@ -189,5 +203,10 @@ API_KEYS = os.getenv("API_AUTH_TOKENS")
 NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://api-notification:8000")
 NOTIFICATION_ENDPOINTS = {
     "INIT_NOTIFICATION": urljoin(NOTIFICATION_API, "/internal/api/v1/notification"),
-    "POST_IMAGE": urljoin(NOTIFICATION_API, "/internal/api/v1/image"),
+}
+
+IMAGE_API = os.getenv("IMAGE_API", "http://api-image:8000")
+IMAGE_ENDPOINTS = {
+    "POST_IMAGE": urljoin(IMAGE_API, "/internal/api/v1/image"),
+    "DETAIL": urljoin(IMAGE_API, "/internal/api/v1/image"),
 }
