@@ -94,3 +94,9 @@ class WaitingTimesView(generics.RetrieveAPIView):
             raise WaitingTimeDataException()
 
         return Response(output_serializer.data, status=status.HTTP_200_OK)
+
+
+class HealthCheckView(generics.RetrieveAPIView):
+    def get(self, request, *args, **kwargs):
+        logger.info("Health check passed")
+        return Response({"status": "ok"}, status=status.HTTP_200_OK)

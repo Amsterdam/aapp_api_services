@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "drf_spectacular",
+    "core.apps.CoreConfig",
 ]
 
 MIDDLEWARE = [
@@ -150,18 +151,19 @@ LOGGING = {
         },
     },
     "root": {
-        "level": "INFO",
         "handlers": ["console"],
+        "level": "INFO",
     },
     "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
         "django.db.backends": {
             "handlers": ["console"],
             "level": "WARNING",  # Needs debug to export traces to Application Insights
             "propagate": False,
-        },
-        "root": {
-            "handlers": ["console"],
-            "level": "INFO",
         },
         "azure.core.pipeline.policies.http_logging_policy": {
             "handlers": ["console"],
@@ -171,6 +173,10 @@ LOGGING = {
             "handlers": ["console"],
             "level": "ERROR",  # Set to INFO to log what is being logged by OpenTelemetry
         },
+        "azure.identity._internal.get_token_mixin": {
+            "handlers": ["console"],
+            "level": "WARNING",  # Suppresses "WorkloadIdentityCredential.get_token succeeded" message
+        },
         "opentelemetry.attributes": {
             "handlers": ["console"],
             # This will suppress WARNING messages about invalid data types
@@ -179,22 +185,7 @@ LOGGING = {
             "level": "ERROR",
             "propagate": False,
         },
-        "azure.identity._internal.get_token_mixin": {
-            "handlers": ["console"],
-            "level": "WARNING",
-        },  # suppress "WorkloadIdentityCredential.get_token succeeded" message
-        "django": {
-            "level": "INFO",
-            "handlers": ["console"],
-            "propagate": False,
-        },
     },
-}
-
-default_app_logging = {
-    "level": "DEBUG",
-    "handlers": ["console"],
-    "propagate": False,
 }
 
 API_KEY_HEADER = "X-Api-Key"

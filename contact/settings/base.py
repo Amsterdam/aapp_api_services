@@ -1,6 +1,6 @@
 from core.settings.base import *  # isort:skip
 
-MODULE_SLUG = "contact"
+SERVICE_NAME = "contact"
 INSTALLED_APPS += [
     "contact.apps.ContactConfig",
 ]
@@ -12,8 +12,6 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
 ]
 
 SPECTACULAR_SETTINGS["TITLE"] = "Contact API"
-
-LOGGING["loggers"]["contact"] = default_app_logging
 
 CSV_DIR = os.getenv("CSV_DIR")
 

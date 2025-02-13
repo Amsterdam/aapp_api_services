@@ -1,6 +1,6 @@
 from core.settings.base import *  # isort:skip
 
-MODULE_SLUG = "bridge"
+SERVICE_NAME = "bridge"
 INSTALLED_APPS += [
     "bridge.apps.BridgeConfig",
 ]
@@ -12,7 +12,6 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
 ]
 
 SPECTACULAR_SETTINGS["TITLE"] = "Bridge API"
-LOGGING["loggers"]["bridge"] = default_app_logging
 
 STATIC_URL = "/bridge/static/"
 

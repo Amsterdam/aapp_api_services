@@ -1,9 +1,5 @@
 from .base import *  # isort:skip
 
-import logging
-
-from azure.monitor.opentelemetry import configure_azure_monitor
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 
 from core.azure_util import Azure
 
@@ -30,22 +26,3 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
-
-
-def setup_opentelemetry(service_name):
-    configure_azure_monitor(
-        connection_string=APPLICATIONINSIGHTS_CONNECTION_STRING,
-        enable_live_metrics=True,
-        logger_name="root",
-        instrumentation_options={
-            "azure_sdk": {"enabled": True},
-            "django": {"enabled": True},
-            "psycopg2": {"enabled": True},
-            "requests": {"enabled": True},
-            "urllib": {"enabled": True},
-            "urllib3": {"enabled": True},
-        },
-        resource=Resource.create({SERVICE_NAME: service_name}),
-    )
-    logger = logging.getLogger("root")
-    logger.info("OpenTelemetry has been enabled")

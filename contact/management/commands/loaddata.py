@@ -1,14 +1,29 @@
 import csv
 import json
+import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from contact.models import CityOffice, OpeningHours, OpeningHoursException
 
+logger = logging.getLogger(__name__)
+
 
 class Command(BaseCommand):
     help = "Import contact data from CSVs into database"
+
+    def log_info(self, message):
+        self.stdout.write(self.style.SUCCESS(message))
+        logger.info(message)
+
+    def log_warning(self, message):
+        self.stdout.write(self.style.WARNING(message))
+        logger.warning(message)
+
+    def log_error(self, message):
+        self.stdout.write(self.style.ERROR(message))
+        logger.error(message)
 
     def empty_strings_to_none(self, row):
         return {k: v if v else None for k, v in row.items()}
@@ -23,11 +38,7 @@ class Command(BaseCommand):
 
         if replace_arg is True:
             CityOffice.objects.all().delete()
-            self.stdout.write(
-                self.style.SUCCESS(
-                    "Removed all existing data (to make space to new data)!"
-                )
-            )
+            self.log_info("Removed all existing data (to make space to new data)!")
 
         added_city_offices = []
         with open(f"{settings.CSV_DIR}/cityoffices.csv") as csv_file:
@@ -50,10 +61,8 @@ class Command(BaseCommand):
                     identifier=row["identifier"]
                 )
                 if existing_city_office:
-                    self.stdout.write(
-                        self.style.NOTICE(
-                            f"City office already exists: {row['title']} ({row['identifier']})"
-                        )
+                    self.log_info(
+                        f"City office already exists: {row['title']} ({row['identifier']})"
                     )
                     continue
 
@@ -61,9 +70,7 @@ class Command(BaseCommand):
                 city_office.save()
                 added_city_offices.append(city_office)
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Added city office: {len(added_city_offices)}")
-        )
+        self.log_info(f"Added city office: {len(added_city_offices)}")
 
         added_opening_hours = []
         with open(f"{settings.CSV_DIR}/openinghoursregular.csv") as csv_file:
@@ -74,10 +81,8 @@ class Command(BaseCommand):
                 city_office_id = row["city_office_id"]
                 city_office = CityOffice.objects.filter(pk=city_office_id).first()
                 if not city_office:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"Opening hour can not be added, since city office is not found: {city_office_id}"
-                        )
+                    self.log_error(
+                        f"Opening hour can not be added, since city office is not found: {city_office_id}"
                     )
                     continue
 
@@ -86,10 +91,8 @@ class Command(BaseCommand):
                     city_office=city_office, day_of_week=day_of_week
                 )
                 if existing_opening_hours:
-                    self.stdout.write(
-                        self.style.NOTICE(
-                            f"Opening hour for this city office and day already exists: {city_office.title}, day {day_of_week}"
-                        )
+                    self.log_info(
+                        f"Opening hour for this city office and day already exists: {city_office.title}, day {day_of_week}"
                     )
                     continue
 
@@ -97,11 +100,7 @@ class Command(BaseCommand):
                 opening_hours.save()
                 added_opening_hours.append(opening_hours)
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Added regular opening hours: {len(added_opening_hours)}"
-            )
-        )
+        self.log_info(f"Added regular opening hours: {len(added_opening_hours)}")
 
         added_opening_hour_exceptions = []
         with open(f"{settings.CSV_DIR}/openinghoursexceptions.csv") as csv_file:
@@ -112,10 +111,8 @@ class Command(BaseCommand):
                 city_office_id = row["city_office_id"]
                 city_office = CityOffice.objects.filter(pk=city_office_id).first()
                 if not city_office:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"Opening hour can not be added, since city office is not found: {city_office_id}"
-                        )
+                    self.log_error(
+                        f"Opening hour can not be added, since city office is not found: {city_office_id}"
                     )
                     continue
 
@@ -124,10 +121,8 @@ class Command(BaseCommand):
                     city_office=city_office, date=date
                 )
                 if existing_opening_hours:
-                    self.stdout.write(
-                        self.style.NOTICE(
-                            f"Opening hour exception for this city office and date already exists: {city_office.title}, {date}"
-                        )
+                    self.log_info(
+                        f"Opening hour exception for this city office and date already exists: {city_office.title}, {date}"
                     )
                     continue
 
@@ -135,8 +130,6 @@ class Command(BaseCommand):
                 opening_hours_exception.save()
                 added_opening_hour_exceptions.append(opening_hours_exception)
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Added opening hour exceptions: {len(added_opening_hour_exceptions)}"
-            )
+        self.log_info(
+            f"Added opening hour exceptions: {len(added_opening_hour_exceptions)}"
         )

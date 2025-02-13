@@ -1,6 +1,6 @@
 from core.settings.base import *  # isort:skip
 
-MODULE_SLUG = "notification"
+SERVICE_NAME = "notification"
 INSTALLED_APPS += [
     "notification.apps.NotificationsConfig",
 ]

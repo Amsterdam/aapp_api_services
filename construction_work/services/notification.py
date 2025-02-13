@@ -85,7 +85,7 @@ def create_request_data(warning: WarningMessage, image_id: int | None) -> dict:
     request_data = {
         "title": warning.project.title,
         "body": warning.title,
-        "module_slug": settings.MODULE_SLUG,
+        "module_slug": settings.SERVICE_NAME,
         "context": {
             "linkSourceid": str(warning.pk),
             "type": "ProjectWarningCreatedByProjectManager",

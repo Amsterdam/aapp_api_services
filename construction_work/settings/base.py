@@ -1,6 +1,6 @@
 from core.settings.base import *  # isort:skip
 
-MODULE_SLUG = "construction-work"
+SERVICE_NAME = "construction-work"
 INSTALLED_APPS += [
     "construction_work.apps.ConstructionWorkConfig",
 ]
@@ -12,8 +12,6 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
 ]
 
 SPECTACULAR_SETTINGS["TITLE"] = "Construction Work API"
-
-LOGGING["loggers"]["construction_work"] = default_app_logging
 
 DEFAULT_ARTICLE_MAX_AGE = 3
 ARTICLE_MAX_AGE = int(os.getenv("ARTICLE_MAX_AGE", DEFAULT_ARTICLE_MAX_AGE))

@@ -1,6 +1,6 @@
 from core.settings.base import *  # isort:skip
 
-MODULE_SLUG = "city-pass"
+SERVICE_NAME = "city-pass"
 INSTALLED_APPS += [
     "city_pass.apps.CityPassConfig",
 ]
@@ -13,10 +13,6 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
 ]
 
 SPECTACULAR_SETTINGS["TITLE"] = "City Pass API"
-
-# STATIC_URL = ???
-
-LOGGING["loggers"]["city_pass"] = default_app_logging
 
 # Custom settings
 
