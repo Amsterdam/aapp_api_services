@@ -13,6 +13,4 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
 
 SPECTACULAR_SETTINGS["TITLE"] = "Image API"
 
-LOGGING["loggers"]["image"] = default_app_logging
-
 STATIC_URL = "/image/static/"
