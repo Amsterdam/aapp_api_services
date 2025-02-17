@@ -1,6 +1,6 @@
 from rest_framework.exceptions import PermissionDenied
 
-from core.views.extend_schema import custom_extend_schema
+from core.utils.openapi_utils import custom_extend_schema
 
 
 def extend_schema_for_entra(
@@ -11,7 +11,7 @@ def extend_schema_for_entra(
         success_response=success_response,
         exceptions=exceptions,
         additional_params=additional_params,
-        **kwargs
+        **kwargs,
     )
 
 

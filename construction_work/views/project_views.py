@@ -40,7 +40,7 @@ from construction_work.serializers.project_serializers import (
 from construction_work.services.geocoding import geocode_address
 from construction_work.utils.url_utils import get_media_url
 from core.exceptions import MissingDeviceIdHeader
-from core.views.extend_schema import extend_schema_for_api_key as extend_schema
+from core.utils.openapi_utils import extend_schema_for_api_key as extend_schema
 
 
 class ProjectListView(generics.ListAPIView):

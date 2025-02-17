@@ -1,5 +1,17 @@
-# Waste pass number
-from bridge.enums import District
+from enum import Enum
+
+
+class District(Enum):
+    CENTRUM = "Centrum"
+    NIEUW_WEST = "Nieuw-West"
+    NOORD = "Noord"
+    OOST = "Oost"
+    WEST = "West"
+    ZUID = "Zuid"
+    ZUIDOOST = "Zuidoost"
+    WEESP = "Weesp"
+    WESTPOORT = "Westpoort"
+
 
 DISTRICT_POSTAL_CODE_MAPPING = {
     District.CENTRUM: [("1011", "1018")],
@@ -15,7 +27,7 @@ DISTRICT_POSTAL_CODE_MAPPING = {
 
 DISTRICT_PASS_NUMBER_MAPPING = {
     District.CENTRUM: "80706D8A189404",
-    District.NIEUW_WEST: "80706D8A2E9504", 
+    District.NIEUW_WEST: "80706D8A2E9504",
     District.NOORD: "80706D8A3F8604",
     District.OOST: "80706D8A4B9304",
     District.WEST: "80706D8A72BD04",

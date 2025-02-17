@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 from django.conf import settings
 from django.test import RequestFactory, TestCase, override_settings
 
-from bridge.views.proxy_views import WasteGuideView
+from bridge.proxy.views import WasteGuideView
 
 
 class TestWasteGuideView(TestCase):

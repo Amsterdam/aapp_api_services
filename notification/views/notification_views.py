@@ -8,7 +8,7 @@ from rest_framework.fields import CharField
 from rest_framework.response import Response
 
 from core.exceptions import MissingDeviceIdHeader
-from core.views.extend_schema import extend_schema_for_device_id
+from core.utils.openapi_utils import extend_schema_for_device_id
 from notification.models import Notification
 from notification.serializers.notification_serializers import (
     NotificationResultSerializer,

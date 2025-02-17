@@ -35,7 +35,7 @@ class AddressSearchView(View):
             method=request.method,
             url=url,
             params=params,
-            headers={"Referer": "app.amsterdam.nl"}
+            headers={"Referer": "app.amsterdam.nl"},
         )
         return HttpResponse(
             response.content,

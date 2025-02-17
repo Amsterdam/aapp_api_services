@@ -21,3 +21,7 @@ WASTE_GUID_API_KEY = os.getenv("WASTE_GUID_API_KEY")
 
 # Address search
 ADDRESS_SEARCH_URL = os.getenv("ADDRESS_SEARCH_URL")
+
+# Parking
+SSP_BASE_URL = os.getenv("SSP_BASE_URL")
+SSP_ACCESS_TOKEN_HEADER = "SSP-Access-Token"

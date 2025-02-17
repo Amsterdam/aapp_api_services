@@ -4,7 +4,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
 from core.exceptions import InputDataException
-from core.views.extend_schema import extend_schema_for_api_key as extend_schema
+from core.utils.openapi_utils import extend_schema_for_api_key as extend_schema
 from modules.exceptions import (
     ModuleAlreadyExistsException,
     ModuleNotFoundException,

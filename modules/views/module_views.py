@@ -3,7 +3,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from core.exceptions import InputDataException, NoInputDataException
-from core.views.extend_schema import extend_schema_for_api_key as extend_schema
+from core.utils.openapi_utils import extend_schema_for_api_key as extend_schema
 from modules.exceptions import ModuleNotFoundException, ModuleProtectedException
 from modules.models import Module
 from modules.serializers.module_serializers import (

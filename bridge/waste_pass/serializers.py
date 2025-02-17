@@ -12,8 +12,10 @@ class WastePassNumberRequestSerializer(serializers.Serializer):
         postal_code = value.replace(" ", "")
 
         if len(postal_code) != 6:
-            raise serializers.ValidationError("Postal code must be 6 characters (4 numbers + 2 letters)")
-        
+            raise serializers.ValidationError(
+                "Postal code must be 6 characters (4 numbers + 2 letters)"
+            )
+
         numbers = postal_code[:4]
         letters = postal_code[4:].upper()
 
@@ -22,9 +24,9 @@ class WastePassNumberRequestSerializer(serializers.Serializer):
 
         if not letters.isalpha():
             raise serializers.ValidationError("Last 2 characters must be letters")
-            
+
         return numbers, letters
-    
+
     def validate_house_number(self, value) -> str:
         if value is not None and not value.isdigit():
             raise serializers.ValidationError("House number must be a number")

@@ -14,7 +14,7 @@ def custom_extend_schema(
     success_response=None,
     exceptions=None,
     additional_params=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Extends original extend_schema function from drf-spectacular by adding default exception.
@@ -29,7 +29,7 @@ def custom_extend_schema(
     base_decorator = default_extend_schema(
         parameters=parameters,
         responses={200: success_response, **error_response_serializers},
-        **kwargs
+        **kwargs,
     )
 
     def decorator(func):
@@ -51,7 +51,7 @@ def extend_schema_for_api_key(
         success_response=success_response,
         exceptions=exceptions,
         additional_params=additional_params,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -71,7 +71,7 @@ def extend_schema_for_device_id(
         success_response=success_response,
         exceptions=exceptions,
         additional_params=params,
-        **kwargs
+        **kwargs,
     )
 
 

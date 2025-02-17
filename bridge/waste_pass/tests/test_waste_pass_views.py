@@ -1,8 +1,7 @@
 from django.urls import reverse
 from rest_framework import status
 
-from bridge.constants import waste_pass_constants
-from bridge.enums import District
+from bridge.waste_pass import constants
 from core.tests.test_authentication import BasicAPITestCase
 
 
@@ -12,26 +11,26 @@ class TestWastePassNumberView(BasicAPITestCase):
         self.url = reverse("waste-container-pass-number")
 
     # Override constants
-    waste_pass_constants.DISTRICT_POSTAL_CODE_MAPPING = {
-        District.NOORD: [("1000", "1003")],
-        District.OOST: [("1004", "1007")],
-        District.ZUID: [("1008", "1009")],
+    constants.DISTRICT_POSTAL_CODE_MAPPING = {
+        constants.District.NOORD: [("1000", "1003")],
+        constants.District.OOST: [("1004", "1007")],
+        constants.District.ZUID: [("1008", "1009")],
     }
-    waste_pass_constants.POSTAL_CODE_CONTAINER_NOT_PRESENT = {
+    constants.POSTAL_CODE_CONTAINER_NOT_PRESENT = {
         ("1000", "1000"): ["AB"],
         ("1001", "1001"): ["AB"],
         ("1002", "1003"): [],
     }
-    waste_pass_constants.DISTRICT_PASS_NUMBER_MAPPING = {
-        District.NOORD: "0123456789",
-        District.ZUID: "0123456789",
+    constants.DISTRICT_PASS_NUMBER_MAPPING = {
+        constants.District.NOORD: "0123456789",
+        constants.District.ZUID: "0123456789",
     }
 
     def test_valid_postal_code_with_pass(self):
         valid_cases = [
-            ("1000AA", District.NOORD),
-            ("1001 aa", District.NOORD),
-            ("1008aa", District.ZUID),
+            ("1000AA", constants.District.NOORD),
+            ("1001 aa", constants.District.NOORD),
+            ("1008aa", constants.District.ZUID),
         ]
 
         for postal_code, district in valid_cases:

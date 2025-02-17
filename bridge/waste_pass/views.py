@@ -2,17 +2,17 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
-from bridge.constants.waste_pass_constants import (
+from bridge.waste_pass.constants import (
     DISTRICT_PASS_NUMBER_MAPPING,
     DISTRICT_POSTAL_CODE_MAPPING,
     POSTAL_CODE_CONTAINER_NOT_PRESENT,
+    District,
 )
-from bridge.enums import District
-from bridge.serializers.waste_pass_serializers import (
+from bridge.waste_pass.serializers import (
     WastePassNumberRequestSerializer,
     WastePassNumberResponseSerializer,
 )
-from core.views.extend_schema import (
+from core.utils.openapi_utils import (
     extend_schema_for_api_key,
     serializer_to_query_params,
 )

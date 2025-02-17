@@ -3,7 +3,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from core.exceptions import InputDataException, MissingDeviceIdHeader
-from core.views.extend_schema import extend_schema_for_device_id
+from core.utils.openapi_utils import extend_schema_for_device_id
 from notification.models import Device
 from notification.serializers.device_serializers import (
     DeviceRegisterRequestSerializer,
