@@ -63,8 +63,8 @@ class SessionPostCredentialView(generics.CreateAPIView):
         ).first()
         if not access_token:
             raise TokenInvalidException()
-        if not access_token.is_valid():
-            raise TokenExpiredException()
+
+        access_token.is_valid()
 
         access_token.session.encrypted_adminstration_no = validated_data[
             "encrypted_administration_no"
@@ -91,8 +91,8 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         ).first()
         if not refresh_token:
             raise TokenInvalidException()
-        if not refresh_token.is_valid():
-            raise TokenExpiredException()
+
+        refresh_token.is_valid()
 
         access_token_str, refresh_token_str = self.refresh_tokens(refresh_token)
         serializer = serializers.SessionTokensOutSerializer(

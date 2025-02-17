@@ -21,18 +21,24 @@ MIJN_AMS_API_KEYS_OUTBOUND = os.getenv("MIJN_AMS_AUTH_TOKENS")
 
 ACCESS_TOKEN_HEADER = "Access-Token"
 ACCESS_TOKEN_TTL = int(
-    os.getenv("CITY_PASS_ACCESS_TOKEN_TTL", 604800)
-)  # default = 7 days
+    os.getenv("CITY_PASS_ACCESS_TOKEN_TTL", 30 * 60)
+)  # default = 30 minutes
 REFRESH_TOKEN_TTL = int(
-    os.getenv("CITY_PASS_REFRESH_TOKEN_TTL", 2629746)
-)  # default = 1 month
+    os.getenv("CITY_PASS_REFRESH_TOKEN_TTL", 365 * 24 * 60 * 60)
+)  # default = 1 year
 TOKEN_TTLS = {
     "ACCESS_TOKEN": ACCESS_TOKEN_TTL,
     "REFRESH_TOKEN": REFRESH_TOKEN_TTL,
 }
 REFRESH_TOKEN_EXPIRATION_TIME = int(
-    os.getenv("CITY_PASS_REFRESH_TOKEN_EXP_TIME", 86400)
+    os.getenv("CITY_PASS_REFRESH_TOKEN_EXP_TIME", 24 * 60 * 60)
 )  # default = 1 day
+
+# The time of day when the token cut off is applied.
+# On this moment all tokens get invalidated, and users need to login again.
+# This is because at this time new "stadspas" data made available by the organisation.
+# This moment happens every year, so the format is "month-day hour:minute" or "%m-%d %H:%M"
+TOKEN_CUT_OFF_DATETIME = os.getenv("CITY_PASS_TOKEN_CUT_OFF_DATETIME", "10-1 10:00")
 
 MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
 MIJN_AMS_API_KEY_INBOUND = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")

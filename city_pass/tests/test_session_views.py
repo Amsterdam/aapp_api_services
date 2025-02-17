@@ -124,7 +124,6 @@ class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
             )
 
         self.assertEqual(result.status_code, 401)
-        self.assertContains(result, "expired", status_code=401)
 
     def test_post_credentials_missing_session_token(self):
         data = {

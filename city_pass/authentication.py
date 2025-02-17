@@ -2,11 +2,7 @@ from django.conf import settings
 from django.http import HttpRequest
 from rest_framework.authentication import BaseAuthentication
 
-from city_pass.exceptions import (
-    TokenExpiredException,
-    TokenInvalidException,
-    TokenNotReadyException,
-)
+from city_pass.exceptions import TokenInvalidException, TokenNotReadyException
 from city_pass.models import AccessToken
 from core.authentication import AbstractAppAuthentication, AuthenticationScheme
 
@@ -34,9 +30,10 @@ class AccessTokenAuthentication(BaseAuthentication):
         access_token_obj = AccessToken.objects.filter(token=access_token).first()
         if not access_token_obj:
             raise TokenInvalidException()
-        elif not access_token_obj.is_valid():
-            raise TokenExpiredException()
-        elif not access_token_obj.session.encrypted_adminstration_no:
+
+        access_token_obj.is_valid()
+
+        if not access_token_obj.session.encrypted_adminstration_no:
             credentials_endpoint = reversed("city-pass-session-credentials")
             raise TokenNotReadyException(
                 f"Session not ready, please POST encrypted_administration_no to {credentials_endpoint}"

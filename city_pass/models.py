@@ -4,6 +4,8 @@ from uuid import uuid4
 from django.conf import settings
 from django.db import models
 
+from city_pass.exceptions import TokenExpiredException
+
 
 class Session(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -19,10 +21,12 @@ class PassData(models.Model):
     encrypted_transaction_key = models.CharField(null=False)
 
 
-class AccessToken(models.Model):
+class SessionToken(models.Model):
     token = models.CharField(max_length=255, unique=True, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    session = models.OneToOneField(Session, on_delete=models.CASCADE)
+
+    class Meta:
+        abstract = True
 
     def save(self, *args, **kwargs):
         if not self.token:
@@ -30,32 +34,65 @@ class AccessToken(models.Model):
         super().save(*args, **kwargs)
 
     def is_valid(self) -> bool:
-        """Check if the token is passed its globally defined TTL.
-
-        Returns:
-            bool: if token is still valid
         """
+        This function checks if token is passed its globally defined cut off datetime.
+
+        This datetime represents the moment when new "stadspas" data made available by the organisation.
+        This moment happens every year, so the format is "month-day hour:minute" or "%m-%d %H:%M"
+
+        If token is created after cut off datetime, it's valid.
+        If token is created before or on cut off datetime, and the current time is after cut off datetime,
+        the token is invalid and will be deleted.
+        """
+
         now = datetime.now(timezone.utc)
-        ttl_seconds = settings.TOKEN_TTLS["ACCESS_TOKEN"]
-        expiry_time = self.created_at + timedelta(seconds=ttl_seconds)
-        if now >= expiry_time:
-            return False
+        cut_off_datetime = settings.TOKEN_CUT_OFF_DATETIME
+        current_year = now.year
+
+        cut_off_dt_current_year = datetime.strptime(
+            f"{current_year}-{cut_off_datetime} +0000", "%Y-%m-%d %H:%M %z"
+        )
+
+        # If token is created after cut off datetime, it's valid
+        if self.created_at > cut_off_dt_current_year:
+            return True
+
+        # If token was created before or on cut off datetime,
+        # and the current time is after cut off datetime,
+        # the token is invalid and will be deleted
+        if now >= cut_off_dt_current_year:
+            self.delete()
+            raise TokenExpiredException("Token cut off datetime has passed")
+
         return True
 
     def __str__(self) -> str:
         return self.token
 
 
-class RefreshToken(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(null=True)
-    token = models.CharField(max_length=255, unique=True, null=False)
-    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+class AccessToken(SessionToken):
+    session = models.OneToOneField(Session, on_delete=models.CASCADE)
 
-    def save(self, *args, **kwargs):
-        if not self.token:
-            self.token = str(uuid4())
-        super().save(*args, **kwargs)
+    def is_valid(self) -> bool:
+        """Check if the token is passed its globally defined TTL.
+
+        Returns:
+            bool: if token is still valid
+        """
+        super().is_valid()
+        now = datetime.now(timezone.utc)
+
+        ttl_seconds = settings.TOKEN_TTLS["ACCESS_TOKEN"]
+        expiry_time = self.created_at + timedelta(seconds=ttl_seconds)
+        if now >= expiry_time:
+            raise TokenExpiredException("Token TTL has passed")
+
+        return True
+
+
+class RefreshToken(SessionToken):
+    expires_at = models.DateTimeField(null=True)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
 
     def is_valid(self) -> bool:
         """First check for token specific expiration date.
@@ -64,14 +101,16 @@ class RefreshToken(models.Model):
         Returns:
             bool: if token is still valid
         """
+        super().is_valid()
         now = datetime.now(timezone.utc)
         if self.expires_at and now >= self.expires_at:
-            return False
+            raise TokenExpiredException("Token specific expiration date has passed")
 
         ttl_seconds = settings.TOKEN_TTLS["REFRESH_TOKEN"]
         expiry_time = self.created_at + timedelta(seconds=ttl_seconds)
         if now >= expiry_time:
-            return False
+            raise TokenExpiredException("Token TTL has passed")
+
         return True
 
     def expire(self) -> None:
@@ -82,6 +121,3 @@ class RefreshToken(models.Model):
             seconds=settings.REFRESH_TOKEN_EXPIRATION_TIME
         )
         self.save()
-
-    def __str__(self) -> str:
-        return self.token
