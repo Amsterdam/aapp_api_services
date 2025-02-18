@@ -90,12 +90,16 @@ class TestParkingPermitsView(BaseParkingTestCase):
     @patch("bridge.parking.services.ssp.requests.request")
     def test_get_permits_successfully(self, mock_request):
         single_permit_item_dict = create_serializer_data(PermitItemSerializer)
-        mock_response_content = [single_permit_item_dict]
+        permit_item_list = [single_permit_item_dict]
+        mock_response_content = {
+            "foobar": "this should be ignored",
+            "permits": permit_item_list,
+        }
         mock_request.return_value = self.create_ssp_response(200, mock_response_content)
 
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, mock_response_content)
+        self.assertEqual(response.data, permit_item_list)
 
 
 class TestParkingLicensePlatesGetView(BaseParkingTestCase):

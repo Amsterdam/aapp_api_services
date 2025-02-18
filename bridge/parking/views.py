@@ -45,6 +45,7 @@ class BaseSSPView(generics.GenericAPIView):
     serializer_class = None
     response_serializer_class = None
     response_serializer_many = False
+    response_key_selection = None
     ssp_http_method = None
     ssp_endpoint = None
     requires_access_token = False
@@ -98,11 +99,17 @@ class BaseSSPView(generics.GenericAPIView):
         if ssp_response.content.decode("utf-8") == "OK":
             return Response(status=status.HTTP_200_OK)
 
+        ssp_response_json = ssp_response.json()
+        if self.response_key_selection:
+            ssp_response_json = ssp_response.json()[self.response_key_selection]
+
         response_serializer = self.get_response_serializer_class()(
-            data=ssp_response.json(), many=self.response_serializer_many
+            data=ssp_response_json, many=self.response_serializer_many
         )
         if not response_serializer.is_valid():
             raise SSPResponseError(response_serializer.errors)
+
+        print(response_serializer.data)
 
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
@@ -176,6 +183,7 @@ class ParkingPermitsView(BaseSSPView):
     serializer_class = None
     response_serializer_class = PermitItemSerializer
     response_serializer_many = True
+    response_key_selection = "permits"
     ssp_http_method = "get"
     ssp_endpoint = SSPEndpoint.PERMITS
     with_access_token = True
