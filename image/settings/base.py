@@ -1,6 +1,6 @@
 from core.settings.base import *  # isort:skip
 
-MODULE_SLUG = "image"
+SERVICE_NAME = "image"
 INSTALLED_APPS += [
     "image.apps.ImageConfig",
 ]
