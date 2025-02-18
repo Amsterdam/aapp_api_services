@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from bridge.parking.serializers.general_serializers import MoneyValueSerializer
 from core.utils.serializer_utils import CamelToSnakeCaseSerializer
 
 
@@ -20,11 +21,6 @@ class PermitZoneSerializer(CamelToSnakeCaseSerializer):
     permit_zone_id = serializers.CharField()
     name = serializers.CharField()
     show_permit_zone_url = serializers.BooleanField(required=False)
-
-
-class MoneyValueSerializer(CamelToSnakeCaseSerializer):
-    currency = serializers.CharField()
-    value = serializers.FloatField()
 
 
 class VisitorAccountSerializer(CamelToSnakeCaseSerializer):

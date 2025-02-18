@@ -26,6 +26,9 @@ from bridge.parking.serializers.license_plates_serializers import (
     LicensePlatesPostResponseSerializer,
 )
 from bridge.parking.serializers.permit_serializer import PermitItemSerializer
+from bridge.parking.serializers.session_serializers import (
+    ParkingSessionResponseSerializer,
+)
 from bridge.parking.services.ssp import SSPEndpoint, ssp_api_call
 from core.utils.openapi_utils import (
     extend_schema_for_api_key,
@@ -57,9 +60,6 @@ class BaseSSPView(generics.GenericAPIView):
     def get_response_serializer_class(self):
         return self.response_serializer_class
 
-    def get_ssp_http_method(self):
-        return self.ssp_http_method
-
     def _process_request_data(self, request):
         serializer_class = self.get_serializer_class()
         if serializer_class:
@@ -90,7 +90,7 @@ class BaseSSPView(generics.GenericAPIView):
         request_data = self._process_request_data(request)
 
         ssp_response = ssp_api_call(
-            method=self.get_ssp_http_method(),
+            method=self.ssp_http_method,
             endpoint=self.ssp_endpoint,
             data=request_data,
             ssp_access_token=ssp_access_token,
@@ -264,9 +264,6 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
             return LicensePlatesPostResponseSerializer
         return None
 
-    def get_ssp_http_method(self):
-        return self.request.method.lower()
-
     @ssp_openapi_decorator(
         request=LicensePlatesPostRequestSerializer,
         response_serializer_class=LicensePlatesPostResponseSerializer,
@@ -283,4 +280,24 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
     )
     def delete(self, request, *args, **kwargs):
         self.ssp_http_method = "delete"
+        return self.call_ssp(request)
+
+
+class ParkingSessionsView(BaseSSPView):
+    """
+    Get parking sessions from SSP API
+    """
+
+    response_serializer_class = ParkingSessionResponseSerializer
+    response_serializer_many = True
+    response_key_selection = "parkingSession"
+    ssp_http_method = "get"
+    ssp_endpoint = SSPEndpoint.PARKING_SESSIONS
+    with_access_token = True
+
+    @ssp_openapi_decorator(
+        response_serializer_class=ParkingSessionResponseSerializer(many=True),
+        requires_access_token=True,
+    )
+    def get(self, request, *args, **kwargs):
         return self.call_ssp(request)

@@ -15,6 +15,9 @@ from bridge.parking.serializers.account_serializers import (
     AccountDetailsResponseSerializer,
 )
 from bridge.parking.serializers.permit_serializer import PermitItemSerializer
+from bridge.parking.serializers.session_serializers import (
+    ParkingSessionResponseSerializer,
+)
 from core.tests.test_authentication import BasicAPITestCase
 from core.utils.serializer_utils import create_serializer_data
 
@@ -341,3 +344,25 @@ class TestParkingLicensePlatesDeleteView(BaseParkingTestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["code"], SSPCallError.default_code)
+
+
+class TestParkingSessionsView(BaseParkingTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("parking-sessions")
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_get_parking_sessions_successfully(self, mock_request):
+        single_parking_session_item_dict = create_serializer_data(
+            ParkingSessionResponseSerializer
+        )
+        parking_session_item_list = [single_parking_session_item_dict]
+        mock_response_content = {
+            "foobar": "this should be ignored",
+            "parkingSession": parking_session_item_list,
+        }
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, parking_session_item_list)

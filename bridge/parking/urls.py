@@ -33,4 +33,9 @@ urlpatterns = [
         views.ParkingLicensePlatePostDeleteView.as_view(),
         name="parking-license-plates-post-delete",
     ),
+    path(
+        "parking/api/v1/parking-sessions",
+        views.ParkingSessionsView.as_view(),
+        name="parking-sessions",
+    ),
 ]

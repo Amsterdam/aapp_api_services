@@ -14,6 +14,7 @@ class SSPEndpoint(Enum):
     PERMITS = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/permits"
     LICENSE_PLATES = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/licenseplates"
     REQUEST_PIN_CODE = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/requestPinCode"
+    PARKING_SESSIONS = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/parkingsessions"
 
 
 def ssp_api_call(method, endpoint, data, ssp_access_token=None):
