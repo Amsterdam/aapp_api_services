@@ -1,6 +1,7 @@
 import json
 from unittest.mock import patch
 
+from django.conf import settings
 from django.urls import reverse
 from requests import Response
 
@@ -10,12 +11,19 @@ from bridge.parking.exceptions import (
     SSPNotFoundError,
     SSPResponseError,
 )
+from bridge.parking.serializers.account_serializers import (
+    AccountDetailsResponseSerializer,
+)
 from bridge.parking.serializers.permit_serializer import PermitItemSerializer
 from core.tests.test_authentication import BasicAPITestCase
 from core.utils.serializer_utils import create_serializer_data
 
 
 class BaseParkingTestCase(BasicAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.api_headers[settings.SSP_ACCESS_TOKEN_HEADER] = "fake-access-token"
+
     def create_ssp_response(self, status_code, content):
         mock_response = Response()
         mock_response.status_code = status_code
@@ -80,6 +88,21 @@ class TestParkingAccountLoginView(BaseParkingTestCase):
             )
             self.assertEqual(response.status_code, 403)
             self.assertEqual(response.data["code"], SSPForbiddenError.default_code)
+
+
+class TestParkingAccountDetailsView(BaseParkingTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("parking-account-details")
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_get_account_details_successfully(self, mock_request):
+        mock_response_content = create_serializer_data(AccountDetailsResponseSerializer)
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, mock_response_content)
 
 
 class TestParkingPermitsView(BaseParkingTestCase):

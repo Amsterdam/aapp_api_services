@@ -1,40 +1,51 @@
 from rest_framework import serializers
 
+from core.utils.serializer_utils import (
+    CamelToSnakeCaseSerializer,
+    SnakeToCamelCaseSerializer,
+)
 
-class AccountLoginRequestSerializer(serializers.Serializer):
+
+class AccountLoginRequestSerializer(SnakeToCamelCaseSerializer):
     report_code = serializers.CharField()
     pin = serializers.CharField()
 
-    def to_representation(self, instance):
-        return {
-            "reportCode": instance["report_code"],
-            "pin": instance["pin"],
-        }
 
-
-class AccountLoginResponseSerializer(serializers.Serializer):
+class AccountLoginResponseSerializer(CamelToSnakeCaseSerializer):
     access_token = serializers.CharField()
     scope = serializers.CharField()
-    id = serializers.CharField(required=False)
-
-    def to_representation(self, instance):
-        return {
-            "access_token": instance["access_token"],
-            "scope": instance["scope"],
-            # "id": instance["id"],
-        }
 
 
-class PinCodeRequestSerializer(serializers.Serializer):
+class PinCodeRequestSerializer(SnakeToCamelCaseSerializer):
     report_code = serializers.CharField()
     phone_number = serializers.CharField()
 
-    def to_representation(self, instance):
-        return {
-            "reportCode": instance["report_code"],
-            "phoneNumber": instance["phone_number"],
-        }
 
-
-class PinCodeResponseSerializer(serializers.Serializer):
+class PinCodeResponseSerializer(CamelToSnakeCaseSerializer):
     pass
+
+
+class AddressSerializer(CamelToSnakeCaseSerializer):
+    street = serializers.CharField()
+    house_number = serializers.CharField()
+    house_letter = serializers.CharField(allow_blank=True)
+    zip_code = serializers.CharField()
+    suffix = serializers.CharField(allow_blank=True)
+    city = serializers.CharField()
+    concatenated_address = serializers.CharField()
+
+
+class WalletSerializer(CamelToSnakeCaseSerializer):
+    balance = serializers.FloatField()
+    currency = serializers.CharField()
+
+
+class AccountDetailsResponseSerializer(CamelToSnakeCaseSerializer):
+    initials = serializers.CharField(allow_blank=True)
+    last_name = serializers.CharField()
+    email = serializers.CharField(allow_blank=True)
+    address = AddressSerializer()
+    phone_number = serializers.CharField(allow_blank=True)
+    client_id = serializers.IntegerField()
+    wallet = WalletSerializer()
+    account_type = serializers.CharField()

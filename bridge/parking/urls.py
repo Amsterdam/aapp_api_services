@@ -9,6 +9,11 @@ urlpatterns = [
         name="parking-account-login",
     ),
     path(
+        "parking/api/v1/account-details",
+        views.ParkingAccountDetailsView.as_view(),
+        name="parking-account-details",
+    ),
+    path(
         "parking/api/v1/pin-code",
         views.ParkingRequestPinCodeView.as_view(),
         name="parking-request-pin-code",
@@ -28,9 +33,4 @@ urlpatterns = [
         views.ParkingLicensePlatePostDeleteView.as_view(),
         name="parking-license-plates-post-delete",
     ),
-    # path(
-    #     "parking/api/v1/license-plate2",
-    #     views.ParkingLicensePlatesDeleteView.as_view(),
-    #     name="parking-license-plates-delete",
-    # ),
 ]

@@ -11,6 +11,7 @@ from bridge.parking.exceptions import (
     SSPResponseError,
 )
 from bridge.parking.serializers.account_serializers import (
+    AccountDetailsResponseSerializer,
     AccountLoginRequestSerializer,
     AccountLoginResponseSerializer,
     PinCodeRequestSerializer,
@@ -175,6 +176,25 @@ class ParkingRequestPinCodeView(BaseSSPView):
         return self.call_ssp(request)
 
 
+class ParkingAccountDetailsView(BaseSSPView):
+    """
+    Get account details from SSP API
+    """
+
+    serializer_class = None
+    response_serializer_class = AccountDetailsResponseSerializer
+    ssp_http_method = "get"
+    ssp_endpoint = SSPEndpoint.PERMITS
+    requires_access_token = True
+
+    @ssp_openapi_decorator(
+        response_serializer_class=AccountDetailsResponseSerializer,
+        requires_access_token=True,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+
 class ParkingPermitsView(BaseSSPView):
     """
     Get permits from SSP API
@@ -186,7 +206,7 @@ class ParkingPermitsView(BaseSSPView):
     response_key_selection = "permits"
     ssp_http_method = "get"
     ssp_endpoint = SSPEndpoint.PERMITS
-    with_access_token = True
+    requires_access_token = True
 
     @ssp_openapi_decorator(
         response_serializer_class=PermitItemSerializer(many=True),
@@ -206,7 +226,7 @@ class ParkingLicensePlatesGetView(BaseSSPView):
     response_serializer_many = True
     ssp_http_method = "get"
     ssp_endpoint = SSPEndpoint.LICENSE_PLATES
-    with_access_token = True
+    requires_access_token = True
 
     @ssp_openapi_decorator(
         response_serializer_class=LicensePlatesGetResponseSerializer,
@@ -230,7 +250,7 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
     """
 
     ssp_endpoint = SSPEndpoint.LICENSE_PLATES
-    with_access_token = True
+    requires_access_token = True
 
     def get_serializer_class(self):
         if self.request.method == "POST":
