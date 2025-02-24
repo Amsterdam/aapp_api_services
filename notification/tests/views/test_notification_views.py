@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.urls import reverse
 from django.utils import timezone
@@ -10,7 +11,7 @@ from core.tests.test_authentication import BasicAPITestCase
 from notification.models import Device, Notification
 
 
-class NotificationBaseTests(BasicAPITestCase):
+class BaseNotificationViewTestCase(BasicAPITestCase):
     def setUp(self):
         super().setUp()
         self.client = APIClient()
@@ -18,7 +19,26 @@ class NotificationBaseTests(BasicAPITestCase):
         self.headers_with_device_id = {"DeviceId": self.device_id, **self.api_headers}
 
 
-class NotificationListViewTests(NotificationBaseTests):
+class BaseNotificationViewGetTestCase(BaseNotificationViewTestCase):
+    def setUp(self):
+        super().setUp()
+        self.image_set_service_patcher = patch(
+            "notification.serializers.notification_serializers.ImageSetService"
+        )
+        self.mock_image_set_service = self.image_set_service_patcher.start()
+        self.mock_image_set_service.return_value.json.return_value = {
+            "id": "123",
+            "variants": [
+                {"image": "https://example.com/image.jpg", "width": 100, "height": 100}
+            ],
+        }
+
+    def tearDown(self):
+        super().tearDown()
+        self.image_set_service_patcher.stop()
+
+
+class NotificationListViewTests(BaseNotificationViewGetTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("notification-list-notifications")
@@ -74,7 +94,7 @@ class NotificationListViewTests(NotificationBaseTests):
         self.assertEqual(response.data[2]["id"], str(notification_1.id))
 
 
-class NotificationReadViewTests(NotificationBaseTests):
+class NotificationReadViewTests(BaseNotificationViewTestCase):
     def setUp(self):
         super().setUp()
         self.test_device = baker.make(Device, external_id=self.device_id)
@@ -136,7 +156,7 @@ class NotificationReadViewTests(NotificationBaseTests):
         )
 
 
-class NotificationDetailViewTests(NotificationBaseTests):
+class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
     def setUp(self):
         super().setUp()
         self.notification = baker.make(

@@ -1,10 +1,26 @@
 from django.conf import settings
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from core.services.image_set import ImageSetService
 from notification.models import Notification
 
 
+class NotificationImageSourceSerializer(serializers.Serializer):
+    uri = serializers.URLField(source="image")
+    width = serializers.IntegerField()
+    height = serializers.IntegerField()
+
+
+class NotificationImageSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    description = serializers.CharField(required=False)
+    sources = NotificationImageSourceSerializer(many=True, source="variants")
+
+
 class NotificationResultSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Notification
         fields = [
@@ -18,6 +34,12 @@ class NotificationResultSerializer(serializers.ModelSerializer):
             "is_read",
             "image",
         ]
+
+    @extend_schema_field(NotificationImageSerializer)
+    def get_image(self, obj: Notification) -> dict:
+        image_set = ImageSetService(obj.image)
+        image_set_data = image_set.json()
+        return NotificationImageSerializer(image_set_data).data
 
 
 class NotificationCreateSerializer(serializers.ModelSerializer):
