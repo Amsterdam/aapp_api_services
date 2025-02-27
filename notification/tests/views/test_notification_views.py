@@ -57,6 +57,41 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
         self.assertIn("body", response.data[0])
         self.assertIn("module_slug", response.data[0])
 
+    @patch("notification.serializers.notification_serializers.ImageSetService")
+    def test_list_notifications_with_and_without_image(self, mock_image_set_service):
+        def image_set_side_effect(image_id):
+            if image_id is None:
+                raise ValueError("Invalid image ID")
+            return mock_image_set_service.return_value
+
+        mock_image_set_service.side_effect = image_set_side_effect
+        mock_image_set_service.return_value.json.return_value = {
+            "id": "123",
+            "variants": [
+                {"image": "https://example.com/image.jpg", "width": 100, "height": 100}
+            ],
+        }
+
+        device = baker.make(Device, external_id=self.device_id)
+        notification_with_image = baker.make(
+            Notification, device=device, image=1
+        )  # notification with image
+        baker.make(
+            Notification, device=device, image=None
+        )  # notification without image
+
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+        # Check notifications are returned with correct image data
+        for notification in response.data:
+            if notification["id"] == str(notification_with_image.id):
+                self.assertIsNotNone(notification["image"])
+                self.assertEqual(notification["image"]["id"], 123)
+            else:
+                self.assertIsNone(notification["image"])
+
     def test_list_notifications_missing_device_id(self):
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertContains(

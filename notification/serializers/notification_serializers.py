@@ -37,6 +37,9 @@ class NotificationResultSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(NotificationImageSerializer)
     def get_image(self, obj: Notification) -> dict:
+        if obj.image is None:
+            return None
+
         image_set = ImageSetService(obj.image)
         image_set_data = image_set.json()
         return NotificationImageSerializer(image_set_data).data
