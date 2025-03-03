@@ -37,7 +37,7 @@ azure-identity==1.19.0
     # via -r requirements/requirements.in
 azure-monitor-opentelemetry==1.6.4
     # via -r requirements/requirements.in
-azure-monitor-opentelemetry-exporter==1.0.0b32
+azure-monitor-opentelemetry-exporter==1.0.0b33
     # via
     #   -r requirements/requirements.in
     #   azure-monitor-opentelemetry
@@ -66,15 +66,18 @@ deprecated==1.2.15
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
-django==4.2.17
+django==4.2.18
     # via
     #   -r requirements/requirements.in
     #   django-csp
+    #   django-debug-toolbar
     #   django-storages
     #   djangorestframework
     #   djangorestframework-simplejwt
     #   drf-spectacular
 django-csp==3.8
+    # via -r requirements/requirements.in
+django-debug-toolbar==5.0.1
     # via -r requirements/requirements.in
 django-storages[azure]==1.14.4
     # via -r requirements/requirements.in
@@ -102,7 +105,7 @@ google-api-core[grpc]==2.24.0
     #   google-cloud-core
     #   google-cloud-firestore
     #   google-cloud-storage
-google-api-python-client==2.157.0
+google-api-python-client==2.159.0
     # via firebase-admin
 google-auth==2.37.0
     # via
@@ -118,7 +121,7 @@ google-cloud-core==2.4.1
     # via
     #   google-cloud-firestore
     #   google-cloud-storage
-google-cloud-firestore==2.19.0
+google-cloud-firestore==2.20.0
     # via firebase-admin
 google-cloud-storage==2.19.0
     # via firebase-admin
@@ -275,7 +278,7 @@ proto-plus==1.25.0
     # via
     #   google-api-core
     #   google-cloud-firestore
-protobuf==5.29.2
+protobuf==5.29.3
     # via
     #   google-api-core
     #   google-cloud-firestore
@@ -306,7 +309,7 @@ python-dotenv==1.0.1
     # via -r requirements/requirements.in
 pyyaml==6.0.2
     # via drf-spectacular
-referencing==0.35.1
+referencing==0.36.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -331,7 +334,9 @@ rsa==4.9
 six==1.17.0
     # via azure-core
 sqlparse==0.5.3
-    # via django
+    # via
+    #   django
+    #   django-debug-toolbar
 tenacity==9.0.0
     # via -r requirements/requirements.in
 typing-extensions==4.12.2
@@ -340,6 +345,7 @@ typing-extensions==4.12.2
     #   azure-identity
     #   azure-storage-blob
     #   opentelemetry-sdk
+    #   referencing
 uritemplate==4.1.1
     # via
     #   drf-spectacular
@@ -348,7 +354,7 @@ urllib3==2.3.0
     # via requests
 uwsgi==2.0.28
     # via -r requirements/requirements.in
-wrapt==1.17.0
+wrapt==1.17.2
     # via
     #   deprecated
     #   opentelemetry-instrumentation

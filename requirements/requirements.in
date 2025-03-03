@@ -4,6 +4,7 @@ psycopg2-binary
 uWSGI
 drf_spectacular
 python-dotenv
+django-debug-toolbar
 
 # Modules
 djangorestframework-simplejwt

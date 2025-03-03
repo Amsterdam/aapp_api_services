@@ -2,6 +2,8 @@ import uuid
 
 from django.db import models
 
+from core.enums import Service
+
 
 class Device(models.Model):
     """
@@ -28,6 +30,7 @@ class Notification(models.Model):
     - pushed_at: set to true when notification was pushed successfully
     - created_at: to create an overview of the notification history
     - is_read: to be set when device has read the notification
+    - notification_type: determined by service that creates the notification
     - image: loosely coupled to image service
     """
 
@@ -40,4 +43,33 @@ class Notification(models.Model):
     created_at = models.DateTimeField()
     pushed_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
+    notification_type = models.CharField()
     image = models.IntegerField(default=None, null=True)
+
+
+class NotificationPushTypeEnabled(models.Model):
+    """
+    Record that determines if push notifications are enabled for a device.
+    When no record of notification type exists for a device,
+    push notifications are disabled.
+
+    The current default settings for the Amsterdam App are:
+    - In-app notifications enabled
+    - Push notifications disabled
+
+    Values:
+    - device: fk to Device.id
+    - notification_type: type of notification, e.g. 'construction-work:warning-message'
+    """
+
+    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    notification_type = models.CharField()
+
+
+class NotificationPushServiceEnabled(models.Model):
+    """
+    Record that determines if push notifications are enabled for an entire module.
+    """
+
+    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    service_name = models.CharField(choices=Service.choices())

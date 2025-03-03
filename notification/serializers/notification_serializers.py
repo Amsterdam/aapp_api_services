@@ -57,6 +57,7 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
             "context",
             "created_at",
             "device_ids",
+            "notification_type",
             "image",
         ]
 

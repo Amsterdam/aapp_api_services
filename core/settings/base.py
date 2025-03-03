@@ -23,6 +23,19 @@ ALLOWED_HOSTS = [
     "api-image",
 ]
 
+# Required for debug toolbar
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
+# Required for debug toolbar
+STATIC_URL = "static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+DEBUG_TOOLBAR_CONFIG = {
+    "UPDATE_ON_FETCH": True,
+}
+
 # Environment settings
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local").lower()
 
@@ -48,10 +61,12 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "drf_spectacular",
+    "debug_toolbar",
     "core.apps.CoreConfig",
 ]
 
 MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -124,14 +139,6 @@ USE_L10N = True
 USE_TZ = True
 DEFAULT_CHARSET = "utf-8"
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.2/howto/static-files/
-
-STATIC_URL = "/construction-work/static/"  # Placeholder for the actual URL
-STATICFILES_DIR = []
-STATIC_ROOT = "{base_dir}/static/".format(base_dir=BASE_DIR)
-HEADER_DEVICE_ID = "DeviceId"
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -190,6 +197,8 @@ LOGGING = {
 
 API_KEY_HEADER = "X-Api-Key"
 API_KEYS = os.getenv("API_AUTH_TOKENS")
+
+HEADER_DEVICE_ID = "DeviceId"
 
 NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://api-notification:8000")
 NOTIFICATION_ENDPOINTS = {

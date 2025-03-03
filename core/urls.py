@@ -1,3 +1,4 @@
+from debug_toolbar.toolbar import debug_toolbar_urls
 from django.conf import settings
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -26,5 +27,5 @@ def get_swagger_paths(base_path):
                 ),
                 name=f"{service_name}-swagger-ui",
             ),
-        ]
+        ] + debug_toolbar_urls()
     return urlpatterns

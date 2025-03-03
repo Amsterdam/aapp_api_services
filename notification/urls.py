@@ -24,6 +24,26 @@ urlpatterns = [
         name="notification-register-device",
     ),
     path(
+        BASE_PATH + "/device/enabled_push_type",
+        device_views.NotificationPushEnabledView.as_view(),
+        name="notification-device-push-type-enabled",
+    ),
+    path(
+        BASE_PATH + "/device/enabled_push_types",
+        device_views.NotificationPushEnabledListView.as_view(),
+        name="notification-device-push-type-enabled-list",
+    ),
+    path(
+        BASE_PATH + "/device/enabled_push_service",
+        device_views.NotificationPushServiceEnabledView.as_view(),
+        name="notification-device-push-service-enabled",
+    ),
+    path(
+        BASE_PATH + "/device/enabled_push_services",
+        device_views.NotificationPushServiceEnabledListView.as_view(),
+        name="notification-device-push-service-enabled-list",
+    ),
+    path(
         BASE_PATH + "/notifications/<uuid:notification_id>",
         notification_views.NotificationDetailView.as_view(),
         name="notification-detail-notification",

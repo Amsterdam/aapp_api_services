@@ -4,10 +4,16 @@ import logging
 
 import firebase_admin
 from django.conf import settings
+from django.db.models import Exists, OuterRef
 from firebase_admin import credentials, messaging
 
 from core.services.image_set import ImageSetService
-from notification.models import Device, Notification
+from notification.models import (
+    Device,
+    Notification,
+    NotificationPushServiceEnabled,
+    NotificationPushTypeEnabled,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,9 +62,28 @@ class PushService:
         self.source_notification.id = None
 
     def push(self) -> dict:
-        known_devices = Device.objects.filter(external_id__in=self.device_ids).all()
-        known_device_ids = [device.external_id for device in known_devices]
+        known_devices = (
+            Device.objects.filter(
+                external_id__in=self.device_ids,
+            )
+            .annotate(
+                wants_notification=Exists(
+                    NotificationPushTypeEnabled.objects.filter(
+                        device=OuterRef("pk"),
+                        notification_type=self.source_notification.notification_type,
+                    )
+                )
+                & Exists(
+                    NotificationPushServiceEnabled.objects.filter(
+                        device=OuterRef("pk"),
+                        service_name=self.source_notification.module_slug,
+                    )
+                )
+            )
+            .all()
+        )
 
+        known_device_ids = [device.external_id for device in known_devices]
         unknown_device_ids = set(self.device_ids) - set(known_device_ids)
         new_devices = Device.objects.bulk_create(
             Device(external_id=device_id) for device_id in unknown_device_ids
@@ -66,7 +91,18 @@ class PushService:
 
         all_devices = list(known_devices) + new_devices
         notifications = self.create_notifications(all_devices)
+
         response_data = self.push_messages(notifications, known_devices)
+
+        # NOTE: we're not yet checking if the device has the notification type enabled
+        # TODO: when this gets activated, unit tests need to be added!
+
+        # known_devices_with_notification_enabled = [
+        #     device for device in known_devices if device.wants_notification
+        # ]
+        # response_data = self.push_messages(
+        #     notifications, known_devices_with_notification_enabled
+        # )
 
         response_data["total_device_count"] = len(self.device_ids)
         response_data["unknown_device_count"] = len(unknown_device_ids)

@@ -67,8 +67,10 @@ class MockFirebaseSendEach:
             )
 
             if message.android:
-                log_message += f"\n- android_image: {message.android.notification.image}"
-            
+                log_message += (
+                    f"\n- android_image: {message.android.notification.image}"
+                )
+
             if message.apns:
                 log_message += f"\n- ios_image: {message.apns.fcm_options.image}"
 

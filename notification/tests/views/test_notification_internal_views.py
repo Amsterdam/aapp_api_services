@@ -34,6 +34,7 @@ class NotificationCreateViewTests(APITestCase):
             "context": {"foo": "bar"},
             "created_at": "2024-10-31T15:00:00",
             "device_ids": ["abc", "def", "ghi"],
+            "notification_type": "foobar-notification-type",
         }
         messages = mock_send_each([device], title=data["title"], body=data["body"])
         mock_send_each.return_value = MockFirebaseSendEach(messages)
@@ -44,9 +45,8 @@ class NotificationCreateViewTests(APITestCase):
             content_type="application/json",
         )
         self.assertEqual(result.status_code, status.HTTP_200_OK)
-        response = result.json()
         self.assertEqual(
-            response,
+            result.json(),
             {
                 "devices_with_token_count": 1,
                 "failed_token_count": 0,
@@ -64,6 +64,7 @@ class NotificationCreateViewTests(APITestCase):
             "context": {"foo": "bar"},
             "created_at": "2024-10-31T15:00:00",
             "device_ids": ["abc", "def", "ghi"],
+            "notification_type": "foobar-notification-type",
             "image": image_id,
         }
 
