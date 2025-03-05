@@ -40,10 +40,14 @@ from construction_work.serializers.project_serializers import (
 from construction_work.services.geocoding import geocode_address
 from construction_work.utils.url_utils import get_media_url
 from core.exceptions import MissingDeviceIdHeader
-from core.utils.openapi_utils import extend_schema_for_api_key as extend_schema
+from core.utils.openapi_utils import (
+    extend_schema_for_api_key,
+    extend_schema_for_device_id,
+)
+from core.views.mixins import DeviceIdMixin
 
 
-class ProjectListView(generics.ListAPIView):
+class ProjectListView(DeviceIdMixin, generics.ListAPIView):
     """
     API endpoint that lists active, non-hidden projects.
 
@@ -79,14 +83,8 @@ class ProjectListView(generics.ListAPIView):
     serializer_class = ProjectExtendedSerializer
     pagination_class = CustomPagination
 
-    @extend_schema(
+    @extend_schema_for_device_id(
         additional_params=[
-            OpenApiParameter(
-                settings.HEADER_DEVICE_ID,
-                OpenApiTypes.STR,
-                OpenApiParameter.HEADER,
-                required=True,
-            ),
             OpenApiParameter("lat", OpenApiTypes.STR, OpenApiParameter.QUERY),
             OpenApiParameter("lon", OpenApiTypes.STR, OpenApiParameter.QUERY),
             OpenApiParameter("address", OpenApiTypes.STR, OpenApiParameter.QUERY),
@@ -98,11 +96,7 @@ class ProjectListView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
-        if not device_id:
-            raise MissingDeviceIdHeader
-
-        device = Device.objects.filter(device_id=device_id).first()
+        device = Device.objects.filter(device_id=self.device_id).first()
         lat, lon = self.get_device_location()
 
         queryset = Project.objects.filter(active=True, hidden=False)
@@ -243,7 +237,7 @@ class ProjectSearchView(generics.ListAPIView):
     serializer_class = ProjectExtendedSerializer
     pagination_class = CustomPagination
 
-    @extend_schema(
+    @extend_schema_for_api_key(
         additional_params=[
             OpenApiParameter(
                 "text", OpenApiTypes.STR, OpenApiParameter.QUERY, required=True
@@ -334,17 +328,11 @@ def prefetch_recent_articles_and_warnings(queryset):
     return queryset
 
 
-class ProjectDetailsView(generics.RetrieveAPIView):
+class ProjectDetailsView(DeviceIdMixin, generics.RetrieveAPIView):
     serializer_class = ProjectExtendedWithFollowersSerializer
 
-    @extend_schema(
+    @extend_schema_for_device_id(
         additional_params=[
-            OpenApiParameter(
-                settings.HEADER_DEVICE_ID,
-                OpenApiTypes.STR,
-                OpenApiParameter.HEADER,
-                required=True,
-            ),
             OpenApiParameter(
                 "id",
                 OpenApiTypes.INT,
@@ -364,10 +352,6 @@ class ProjectDetailsView(generics.RetrieveAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
-        if not device_id:
-            raise MissingDeviceIdHeader
-
         project_id = self.request.query_params.get("id")
         if not project_id:
             raise ParseError("Missing project id")
@@ -391,8 +375,7 @@ class ProjectDetailsView(generics.RetrieveAPIView):
         if address and (not lat or not lon):
             lat, lon = geocode_address(address)
 
-        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
-        device = Device.objects.filter(device_id=device_id).first()
+        device = Device.objects.filter(device_id=self.device_id).first()
         followed_projects_ids = (
             list(device.followed_projects.values_list("pk", flat=True))
             if device
@@ -411,21 +394,13 @@ class ProjectDetailsView(generics.RetrieveAPIView):
         return context
 
 
-class FollowProjectView(generics.GenericAPIView):
+class FollowProjectView(DeviceIdMixin, generics.GenericAPIView):
     """
     API view to subscribe or unsubscribe from a project.
     """
 
-    @extend_schema(
+    @extend_schema_for_device_id(
         request=FollowProjectPostDeleteSerializer,
-        additional_params=[
-            OpenApiParameter(
-                settings.HEADER_DEVICE_ID,
-                OpenApiTypes.STR,
-                OpenApiParameter.HEADER,
-                required=True,
-            ),
-        ],
         exceptions=[MissingDeviceIdHeader, NotFound],
         success_response=str,
         # examples=[OpenApiExample("Example 1", value="Subscription added")],
@@ -434,10 +409,6 @@ class FollowProjectView(generics.GenericAPIView):
         """
         Subscribe to a project.
         """
-        device_id = request.headers.get(settings.HEADER_DEVICE_ID)
-        if not device_id:
-            raise MissingDeviceIdHeader
-
         serializer = FollowProjectPostDeleteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -446,21 +417,13 @@ class FollowProjectView(generics.GenericAPIView):
         except Project.DoesNotExist:
             raise NotFound("Project not found")
 
-        device, _ = Device.objects.get_or_create(device_id=device_id)
+        device, _ = Device.objects.get_or_create(device_id=self.device_id)
         device.followed_projects.add(project)
         device.save()
 
         return Response(data="Subscription added", status=status.HTTP_200_OK)
 
-    @extend_schema(
-        additional_params=[
-            OpenApiParameter(
-                settings.HEADER_DEVICE_ID,
-                OpenApiTypes.STR,
-                OpenApiParameter.HEADER,
-                required=True,
-            ),
-        ],
+    @extend_schema_for_device_id(
         exceptions=[MissingDeviceIdHeader, NotFound],
         success_response=str,
         examples=[OpenApiExample("Example 1", value="Subscription removed")],
@@ -473,10 +436,6 @@ class FollowProjectView(generics.GenericAPIView):
         """
         Unsubscribe from a project.
         """
-        device_id = request.headers.get(settings.HEADER_DEVICE_ID)
-        if not device_id:
-            raise MissingDeviceIdHeader
-
         serializer = FollowProjectPostDeleteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -486,7 +445,7 @@ class FollowProjectView(generics.GenericAPIView):
             raise NotFound("Project not found")
 
         try:
-            device = Device.objects.get(device_id=device_id)
+            device = Device.objects.get(device_id=self.device_id)
         except Device.DoesNotExist:
             raise NotFound("Device not found")
 
@@ -496,20 +455,12 @@ class FollowProjectView(generics.GenericAPIView):
         return Response(data="Subscription removed", status=status.HTTP_200_OK)
 
 
-class FollowedProjectsArticlesView(generics.GenericAPIView):
+class FollowedProjectsArticlesView(DeviceIdMixin, generics.GenericAPIView):
     """
     API view to get articles per followed projects
     """
 
-    @extend_schema(
-        additional_params=[
-            OpenApiParameter(
-                settings.HEADER_DEVICE_ID,
-                OpenApiTypes.STR,
-                OpenApiParameter.HEADER,
-                required=True,
-            )
-        ],
+    @extend_schema_for_device_id(
         exceptions=[MissingDeviceIdHeader],
         success_response=ProjectFollowedArticlesSerializer,
         examples=[
@@ -531,11 +482,7 @@ class FollowedProjectsArticlesView(generics.GenericAPIView):
         ],
     )
     def get(self, request, *args, **kwargs):
-        device_id = request.headers.get(settings.HEADER_DEVICE_ID)
-        if not device_id:
-            raise MissingDeviceIdHeader
-
-        device = Device.objects.filter(device_id=device_id).first()
+        device = Device.objects.filter(device_id=self.device_id).first()
         if not device:
             # Return empty dictionary if device not found
             return Response(data={}, status=status.HTTP_200_OK)
@@ -559,7 +506,7 @@ class ArticleDetailView(generics.RetrieveAPIView):
     serializer_class = ArticleSerializer
     queryset = Article.objects.filter(active=True)
 
-    @extend_schema(
+    @extend_schema_for_api_key(
         additional_params=[
             OpenApiParameter(
                 "id",
@@ -590,7 +537,7 @@ class WarningMessageDetailView(generics.RetrieveAPIView):
     serializer_class = WarningMessageWithImagesSerializer
     queryset = WarningMessage.objects.filter(project__active=True)
 
-    @extend_schema(
+    @extend_schema_for_api_key(
         additional_params=[
             OpenApiParameter(
                 "id",
