@@ -1,10 +1,11 @@
+import json
 import logging
 from enum import Enum
 
 import requests
 from django.conf import settings
 
-from bridge.parking.exceptions import SSPCallError, SSPForbiddenError, SSPNotFoundError
+from bridge.parking import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,11 @@ class SSPEndpoint(Enum):
     PERMITS = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/permits"
     LICENSE_PLATES = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/licenseplates"
     REQUEST_PIN_CODE = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/requestPinCode"
-    PARKING_SESSIONS = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/parkingsessions"
+    PARKING_SESSIONS = f"{settings.SSP_BASE_URL}/rest/sspapi/v2/parkingsessions"
+    PARKING_SESSION_RECEIPT = (
+        f"{settings.SSP_BASE_URL}/rest/sspapi/v1/parkingsessions/receipt"
+    )
+    ORDERS = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/orders"
 
 
 def ssp_api_call(method, endpoint, data, ssp_access_token=None):
@@ -49,16 +54,30 @@ def ssp_api_call(method, endpoint, data, ssp_access_token=None):
         json=body_data,
         headers=headers,
     )
-    if ssp_response.status_code != 200:
-        logger.warning(ssp_response.text)
 
-    if ssp_response.status_code == 401:
-        raise SSPForbiddenError(detail=ssp_response.text)
+    if ssp_response.status_code == 200:
+        return ssp_response
+
+    if ssp_response.status_code == 400:
+        try:
+            ssp_response_json = json.loads(ssp_response.text)
+        except json.JSONDecodeError:
+            raise exceptions.SSPCallError(detail=ssp_response.text)
+
+        ssp_response_error = ssp_response_json.get("error", {})
+        ssp_response_content = ssp_response_error.get("content")
+        # ssp_response_message = ssp_response_error.get("message")
+
+        for error in exceptions.SSP_COMMON_400_ERRORS:
+            if ssp_response_content and error.default_detail in ssp_response_content:
+                raise error()
+        raise exceptions.SSPCallError(detail=ssp_response.text)
+    elif ssp_response.status_code == 401:
+        raise exceptions.SSPForbiddenError(detail=ssp_response.text)
     elif ssp_response.status_code == 403:
-        raise SSPForbiddenError(detail=ssp_response.text)
+        raise exceptions.SSPForbiddenError(detail=ssp_response.text)
     elif ssp_response.status_code == 404:
-        raise SSPNotFoundError(detail=ssp_response.text)
-    elif ssp_response.status_code != 200:
+        raise exceptions.SSPNotFoundError(detail=ssp_response.text)
+    else:
         logger.error(f"Unexpected SSP response: {ssp_response.text}")
-        raise SSPCallError(detail=ssp_response.text)
-    return ssp_response
+        raise exceptions.SSPCallError(detail=ssp_response.text)

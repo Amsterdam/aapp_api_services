@@ -1,41 +1,51 @@
 from django.urls import path
 
-from bridge.parking import views
+from bridge.parking.views import account_views, license_plate_views, session_views
 
 urlpatterns = [
     path(
         "parking/api/v1/login",
-        views.ParkingAccountLoginView.as_view(),
+        account_views.ParkingAccountLoginView.as_view(),
         name="parking-account-login",
     ),
     path(
         "parking/api/v1/account-details",
-        views.ParkingAccountDetailsView.as_view(),
+        account_views.ParkingAccountDetailsView.as_view(),
         name="parking-account-details",
     ),
     path(
         "parking/api/v1/pin-code",
-        views.ParkingRequestPinCodeView.as_view(),
+        account_views.ParkingRequestPinCodeView.as_view(),
         name="parking-request-pin-code",
     ),
     path(
         "parking/api/v1/permits",
-        views.ParkingPermitsView.as_view(),
+        account_views.ParkingPermitsView.as_view(),
         name="parking-permits",
     ),
     path(
         "parking/api/v1/license-plates",
-        views.ParkingLicensePlatesGetView.as_view(),
+        license_plate_views.ParkingLicensePlateListView.as_view(),
         name="parking-license-plates-list",
     ),
     path(
         "parking/api/v1/license-plate",
-        views.ParkingLicensePlatePostDeleteView.as_view(),
+        license_plate_views.ParkingLicensePlatePostDeleteView.as_view(),
         name="parking-license-plates-post-delete",
     ),
     path(
-        "parking/api/v1/parking-sessions",
-        views.ParkingSessionsView.as_view(),
+        "parking/api/v1/sessions",
+        session_views.ParkingSessionListView.as_view(),
         name="parking-sessions",
+    ),
+    path(
+        "parking/api/v1/session",
+        session_views.ParkingSessionStartUpdateView.as_view(),
+        name="parking-session-start",
+    ),
+    path(
+        "parking/api/v1/session/receipt",
+        session_views.ParkingSessionReceiptView.as_view(),
+        name="parking-session-receipt",
     ),
 ]

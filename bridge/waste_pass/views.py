@@ -12,17 +12,14 @@ from bridge.waste_pass.serializers import (
     WastePassNumberRequestSerializer,
     WastePassNumberResponseSerializer,
 )
-from core.utils.openapi_utils import (
-    extend_schema_for_api_key,
-    serializer_to_query_params,
-)
+from core.utils.openapi_utils import extend_schema_for_api_key
 
 
 class WastePassNumberView(generics.RetrieveAPIView):
     serializer_class = WastePassNumberRequestSerializer
 
     @extend_schema_for_api_key(
-        additional_params=serializer_to_query_params(WastePassNumberRequestSerializer),
+        additional_params=[WastePassNumberRequestSerializer],
         success_response=WastePassNumberResponseSerializer,
         exceptions=[ValidationError, NotFound],
     )

@@ -1,7 +1,13 @@
 from rest_framework import serializers
 
-from bridge.parking.serializers.general_serializers import MoneyValueSerializer
-from core.utils.serializer_utils import CamelToSnakeCaseSerializer
+from bridge.parking.serializers.general_serializers import (
+    StatusTranslationSerializer,
+    ValueCurrencySerializer,
+)
+from core.utils.serializer_utils import (
+    CamelToSnakeCaseSerializer,
+    SnakeToCamelCaseSerializer,
+)
 
 
 class DayScheduleSerializer(CamelToSnakeCaseSerializer):
@@ -21,12 +27,21 @@ class PermitZoneSerializer(CamelToSnakeCaseSerializer):
     permit_zone_id = serializers.CharField()
     name = serializers.CharField()
     show_permit_zone_url = serializers.BooleanField(required=False)
+    description = serializers.CharField(required=False, allow_blank=True)
 
 
 class VisitorAccountSerializer(CamelToSnakeCaseSerializer):
     report_code = serializers.IntegerField()
     pin = serializers.CharField()
     minutes_remaining = serializers.IntegerField(required=False)
+
+
+class PermitsRequestSerializer(SnakeToCamelCaseSerializer):
+    STATUS_CHOICES = [
+        ("ACTIVE", "Actief"),
+    ]
+
+    status = StatusTranslationSerializer(required=False, choices=STATUS_CHOICES)
 
 
 class PermitItemSerializer(CamelToSnakeCaseSerializer):
@@ -38,8 +53,8 @@ class PermitItemSerializer(CamelToSnakeCaseSerializer):
     permit_zone = PermitZoneSerializer()
     payment_zones = PaymentZoneSerializer(many=True)
     visitor_account = VisitorAccountSerializer(required=False)
-    parking_rate = MoneyValueSerializer()
-    parking_rate_original = MoneyValueSerializer()
+    parking_rate = ValueCurrencySerializer()
+    parking_rate_original = ValueCurrencySerializer()
     time_balance_applicable = serializers.BooleanField()
     money_balance_applicable = serializers.BooleanField()
     forced_license_plate_list = serializers.BooleanField()

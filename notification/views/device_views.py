@@ -5,10 +5,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from core.exceptions import InputDataException
-from core.utils.openapi_utils import (
-    extend_schema_for_device_id,
-    serializer_to_query_params,
-)
+from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 from notification.models import (
     Device,
@@ -103,7 +100,7 @@ class NotificationPushEnabledView(DeviceIdMixin, generics.GenericAPIView):
         return Response(self.serializer_class(config).data, status=status.HTTP_200_OK)
 
     @extend_schema_for_device_id(
-        additional_params=serializer_to_query_params(NotificationPushEnabledSerializer),
+        additional_params=[NotificationPushEnabledSerializer],
         exceptions=[NotFound],
     )
     def delete(self, request, *args, **kwargs):
@@ -170,9 +167,7 @@ class NotificationPushServiceEnabledView(DeviceIdMixin, generics.GenericAPIView)
         return Response(self.serializer_class(config).data, status=status.HTTP_200_OK)
 
     @extend_schema_for_device_id(
-        additional_params=serializer_to_query_params(
-            NotificationPushServiceEnabledSerializer
-        ),
+        additional_params=[NotificationPushServiceEnabledSerializer],
         exceptions=[NotFound],
     )
     def delete(self, request, *args, **kwargs):

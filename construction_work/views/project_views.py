@@ -28,7 +28,6 @@ from construction_work.exceptions import (
 from construction_work.models.article_models import Article
 from construction_work.models.manage_models import Device, WarningMessage
 from construction_work.models.project_models import Project
-from construction_work.pagination import CustomPagination
 from construction_work.serializers.article_serializers import ArticleSerializer
 from construction_work.serializers.project_serializers import (
     FollowProjectPostDeleteSerializer,
@@ -40,6 +39,7 @@ from construction_work.serializers.project_serializers import (
 from construction_work.services.geocoding import geocode_address
 from construction_work.utils.url_utils import get_media_url
 from core.exceptions import MissingDeviceIdHeader
+from core.pagination import CustomPagination
 from core.utils.openapi_utils import (
     extend_schema_for_api_key,
     extend_schema_for_device_id,

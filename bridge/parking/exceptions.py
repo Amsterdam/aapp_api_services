@@ -32,3 +32,49 @@ class SSPNotFoundError(BaseApiException):
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = "Resouce not found by SSP"
     default_code = "SSP_NOT_FOUND"
+
+
+class SSPBalanceTooLowError(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Balance too low"
+    default_code = "SSP_BALANCE_TOO_LOW"
+
+
+class SSPStartTimeInPastError(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Start time is in the past"
+    default_code = "SSP_START_TIME_IN_PAST"
+
+
+class SSPStartDateEndDateNotSameError(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Startdate and enddate not same date"
+    default_code = "SSP_DATES_NOT_SAME_DAY"
+
+
+class SSPMaxSessionsReachedError(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Session maximum reached"
+    default_code = "SSP_MAX_SESSIONS_REACHED"
+
+
+class SSPVehicleIDNotAllowedError(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Vehicle ID is not allowed for this permit"
+    default_code = "SSP_VEHICLE_ID_NOT_ALLOWED"
+
+
+class SSPSessionDurationExceededError(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Session duration exceeded"
+    default_code = "SSP_SESSION_DURATION_EXCEEDED"
+
+
+SSP_COMMON_400_ERRORS = [
+    SSPBalanceTooLowError,
+    SSPStartTimeInPastError,
+    SSPStartDateEndDateNotSameError,
+    SSPMaxSessionsReachedError,
+    SSPVehicleIDNotAllowedError,
+    SSPSessionDurationExceededError,
+]

@@ -1,134 +1,13 @@
-import json
 from unittest.mock import patch
 
-from django.conf import settings
 from django.urls import reverse
 from requests import Response
 
-from bridge.parking.exceptions import (
-    SSPCallError,
-    SSPForbiddenError,
-    SSPNotFoundError,
-    SSPResponseError,
-)
-from bridge.parking.serializers.account_serializers import (
-    AccountDetailsResponseSerializer,
-)
-from bridge.parking.serializers.permit_serializer import PermitItemSerializer
-from bridge.parking.serializers.session_serializers import (
-    ParkingSessionResponseSerializer,
-)
-from core.tests.test_authentication import BasicAPITestCase
-from core.utils.serializer_utils import create_serializer_data
+from bridge.parking.exceptions import SSPCallError, SSPNotFoundError, SSPResponseError
+from bridge.parking.tests.test_base_ssp_view import BaseSSPTestCase
 
 
-class BaseParkingTestCase(BasicAPITestCase):
-    def setUp(self):
-        super().setUp()
-        self.api_headers[settings.SSP_ACCESS_TOKEN_HEADER] = "fake-access-token"
-
-    def create_ssp_response(self, status_code, content):
-        mock_response = Response()
-        mock_response.status_code = status_code
-        mock_response._content = json.dumps(content).encode("utf-8")
-        return mock_response
-
-
-class TestParkingAccountLoginView(BaseParkingTestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("parking-account-login")
-
-        self.test_payload = {
-            "report_code": "1234567890",
-            "pin": "123456",
-        }
-
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_successful_login(self, mock_request):
-        mock_access_token = "abc.123.def"
-        mock_scope = "permitHolder"
-        mock_response_content = {
-            "access_token": mock_access_token,
-            "reportcode": 1234567890,
-            "family_name": " TestFamilyName",
-            "initials": "",
-            "scope": mock_scope,
-        }
-
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
-
-        response = self.client.post(
-            self.url, self.test_payload, headers=self.api_headers
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["access_token"], mock_access_token)
-        self.assertEqual(response.data["scope"], mock_scope)
-
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_missing_ssp_response_values(self, mock_request):
-        mock_reponse_missing_expected_values = {}
-
-        mock_request.return_value = self.create_ssp_response(
-            200, mock_reponse_missing_expected_values
-        )
-
-        response = self.client.post(
-            self.url, self.test_payload, headers=self.api_headers
-        )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["code"], SSPResponseError.default_code)
-
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_ssp_login_failed(self, mock_request):
-        ssp_login_failed_codes = [401, 403]
-
-        for code in ssp_login_failed_codes:
-            mock_request.return_value = self.create_ssp_response(code, {})
-
-            response = self.client.post(
-                self.url, self.test_payload, headers=self.api_headers
-            )
-            self.assertEqual(response.status_code, 403)
-            self.assertEqual(response.data["code"], SSPForbiddenError.default_code)
-
-
-class TestParkingAccountDetailsView(BaseParkingTestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("parking-account-details")
-
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_get_account_details_successfully(self, mock_request):
-        mock_response_content = create_serializer_data(AccountDetailsResponseSerializer)
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
-
-        response = self.client.get(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, mock_response_content)
-
-
-class TestParkingPermitsView(BaseParkingTestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("parking-permits")
-
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_get_permits_successfully(self, mock_request):
-        single_permit_item_dict = create_serializer_data(PermitItemSerializer)
-        permit_item_list = [single_permit_item_dict]
-        mock_response_content = {
-            "foobar": "this should be ignored",
-            "permits": permit_item_list,
-        }
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
-
-        response = self.client.get(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, permit_item_list)
-
-
-class TestParkingLicensePlatesGetView(BaseParkingTestCase):
+class TestParkingLicensePlatesGetView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("parking-license-plates-list")
@@ -232,7 +111,7 @@ class TestParkingLicensePlatesGetView(BaseParkingTestCase):
         self.assertEqual(response.data["code"], SSPResponseError.default_code)
 
 
-class TestParkingLicensePlatesPostView(BaseParkingTestCase):
+class TestParkingLicensePlatesPostView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("parking-license-plates-post-delete")
@@ -283,7 +162,7 @@ class TestParkingLicensePlatesPostView(BaseParkingTestCase):
         self.assertContains(response, ssp_error_message, status_code=400)
 
 
-class TestParkingLicensePlatesDeleteView(BaseParkingTestCase):
+class TestParkingLicensePlatesDeleteView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("parking-license-plates-post-delete")
@@ -344,25 +223,3 @@ class TestParkingLicensePlatesDeleteView(BaseParkingTestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["code"], SSPCallError.default_code)
-
-
-class TestParkingSessionsView(BaseParkingTestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("parking-sessions")
-
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_get_parking_sessions_successfully(self, mock_request):
-        single_parking_session_item_dict = create_serializer_data(
-            ParkingSessionResponseSerializer
-        )
-        parking_session_item_list = [single_parking_session_item_dict]
-        mock_response_content = {
-            "foobar": "this should be ignored",
-            "parkingSession": parking_session_item_list,
-        }
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
-
-        response = self.client.get(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, parking_session_item_list)
