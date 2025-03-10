@@ -4,7 +4,7 @@ from rest_framework import serializers
 class MijnAmsPassOwnerSerializer(serializers.Serializer):
     firstname = serializers.CharField()
     lastname = serializers.CharField()
-    initials = serializers.CharField()
+    initials = serializers.CharField(allow_null=True, allow_blank=True)
     infix = serializers.CharField(required=False)
 
 
@@ -45,7 +45,7 @@ class MijnAmsPassBudgetTransactionsSerializer(serializers.Serializer):
 
 class MijnAmsPassAanbiedingTransactionsSerializer(serializers.Serializer):
     id = serializers.CharField()
-    title = serializers.CharField(allow_null=True)
+    title = serializers.CharField(allow_null=True, allow_blank=True)
     description = serializers.CharField()
     discountTitle = serializers.CharField()
     discountAmount = serializers.FloatField()
