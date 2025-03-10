@@ -31,12 +31,12 @@ def scale_image(image_file) -> dict[str, BytesIO]:
     return scaled_images
 
 
-def get_example_image_file():
-    filepath = join(ROOT_DIR, "core/tests/example.jpg")
+def get_example_image_file(
+    file_path: str = "core/tests/example.jpg",
+) -> SimpleUploadedFile:
+    filepath = join(ROOT_DIR, file_path)
     with open(filepath, "rb") as image_file:
         file = SimpleUploadedFile(
-            name="example.jpg",
-            content=image_file.read(),
-            content_type="image/jpeg",
+            name=file_path.split("/")[-1], content=image_file.read()
         )
     return file

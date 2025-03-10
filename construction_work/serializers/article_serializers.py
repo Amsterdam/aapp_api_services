@@ -89,7 +89,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
 
 
 class WarningImageSerializer(serializers.ModelSerializer):
-    sources = ImagePublicSerializer(source="images", many=True)
+    sources = ImagePublicSerializer(source="image_set", many=True)
 
     class Meta:
         model = WarningImage

@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from os.path import join
 
 from django.urls import reverse
 from model_bakery import baker
@@ -13,12 +12,8 @@ from construction_work.models.article_models import (
 from construction_work.models.manage_models import Image, WarningImage, WarningMessage
 from construction_work.models.project_models import Project
 from construction_work.tests import mock_data
-from construction_work.tests.views.test_project_views import (
-    ROOT_DIR,
-    BaseTestProjectView,
-)
+from construction_work.tests.views.test_project_views import BaseTestProjectView
 from construction_work.utils.date_utils import translate_timezone as tt
-from construction_work.utils.patch_utils import create_image_file
 from core.tests.test_authentication import BasicAPITestCase
 
 
@@ -293,17 +288,10 @@ class TestArticleListView(BaseTestProjectView):
         warning = WarningMessage.objects.create(**warning_data)
         warning.refresh_from_db()
 
-        warning_image_data = {
-            "warning_id": warning.pk,
-        }
-        warning_image = WarningImage.objects.create(**warning_image_data)
-
-        image_data = mock_data.images[0].copy()
-        image_data["image"] = create_image_file(
-            join(ROOT_DIR, "construction_work/tests/image_data/small_image.png")
+        warning_image = baker.make(WarningImage, warning_id=warning.pk)
+        baker.make(
+            Image, warning_image=warning_image, image="image.jpg", width=10, height=10
         )
-        image = Image.objects.create(**image_data)
-        warning_image.images.add(image)
 
         result = self.client.get(
             self.api_url, {"project_ids": project.pk}, headers=self.api_headers
@@ -322,9 +310,9 @@ class TestArticleListView(BaseTestProjectView):
                     "id": warning_image.pk,
                     "sources": [
                         {
-                            "uri": "http://testserver/construction-work/media/construction-work/images/image.jpg",
-                            "width": image.width,
-                            "height": image.height,
+                            "uri": "image.jpg",
+                            "width": 10,
+                            "height": 10,
                         }
                     ],
                 }

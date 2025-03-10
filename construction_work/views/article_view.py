@@ -73,7 +73,7 @@ class ArticleListView(generics.GenericAPIView):
         warnings_qs = (
             WarningMessage.objects.filter(project__active=True)
             .select_related("project")
-            .prefetch_related("warningimage_set", "warningimage_set__images")
+            .prefetch_related("warningimage_set", "warningimage_set__image_set")
         )
         if project_ids:
             warnings_qs = warnings_qs.filter(project__id__in=project_ids)

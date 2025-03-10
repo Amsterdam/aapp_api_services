@@ -75,33 +75,24 @@ class WarningMessage(models.Model):
         return create_id_dict(self)
 
 
-class Image(models.Model):
-    image = models.ImageField(
-        upload_to="construction-work/images/", null=True, blank=True
-    )
-    description = models.CharField(max_length=1000, blank=True, null=True, default=None)
-    width = models.IntegerField()
-    height = models.IntegerField()
-
-    def save(self, *args, **kwargs):
-        if not self.image:
-            super().save(*args, **kwargs)
-
-        self.width = self.image.width
-        self.height = self.image.height
-
-        super().save(*args, **kwargs)
-
-
 class WarningImage(models.Model):
     """Warning image db model"""
 
     warning = models.ForeignKey(WarningMessage, on_delete=models.CASCADE, null=True)
-    images = models.ManyToManyField(Image)
+    image_set_id = models.IntegerField(
+        null=True
+    )  # References the image id in the image service
+
+
+class Image(models.Model):
+    image = models.URLField()
+    description = models.CharField(max_length=1000, blank=True, null=True, default=None)
+    width = models.IntegerField()
+    height = models.IntegerField()
+    warning_image = models.ForeignKey(WarningImage, on_delete=models.CASCADE)
 
 
 @receiver(pre_delete, sender=WarningImage)
 def remove_images_for_warning_message(sender, instance, **kwargs):
     """Delete images for warning messages"""
-    for image in instance.images.all():
-        image.delete()
+    instance.image_set.all().delete()

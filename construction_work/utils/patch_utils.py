@@ -7,7 +7,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.conf import settings
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
 
@@ -46,16 +45,6 @@ def create_jwt_token(
         "given_name": first_name,
     }
     return "Bearer " + jwt.encode(payload, mock_private_key, algorithm="RS256")
-
-
-def create_image_file(image_path):
-    with open(image_path, "rb") as image_file:
-        image_file = SimpleUploadedFile(
-            name="image.jpg",
-            content=image_file.read(),
-            content_type="image/jpeg",
-        )
-    return image_file
 
 
 class MockNotificationResponse:

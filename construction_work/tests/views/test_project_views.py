@@ -2,7 +2,6 @@ import pathlib
 import random
 from collections import Counter
 from datetime import datetime
-from os.path import join
 
 from django.conf import settings
 from django.core.management import call_command
@@ -10,6 +9,7 @@ from django.db import DEFAULT_DB_ALIAS, connections
 from django.test import override_settings
 from django.urls import reverse
 from freezegun import freeze_time
+from model_bakery import baker
 
 from construction_work.models.article_models import Article
 from construction_work.models.manage_models import (
@@ -22,7 +22,6 @@ from construction_work.models.manage_models import (
 from construction_work.models.project_models import Project
 from construction_work.tests import mock_data
 from construction_work.utils.date_utils import translate_timezone as tt
-from construction_work.utils.patch_utils import create_image_file
 from core.tests.test_authentication import BasicAPITestCase
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
@@ -1233,20 +1232,19 @@ class TestWarningMessageDetailView(BaseTestProjectView):
             "project_foreign_id": 2048,
             "project_manager_email": "mock0@amsterdam.nl",
         }
+        uri = "http://testserver/construction-work/media/construction-work/images/image.jpg"
+        width = height = 10
         new_warning_message = self.create_message_from_data(data)
 
-        warning_image_data = {
-            "warning_id": new_warning_message.pk,
-        }
-        warning_image = WarningImage.objects.create(**warning_image_data)
-
-        image_data = mock_data.images[0].copy()
-        image_path = join(
-            ROOT_DIR, "construction_work/tests/image_data/small_image.png"
+        warning_image = baker.make(WarningImage, warning=new_warning_message)
+        image = baker.make(
+            Image,
+            warning_image=warning_image,
+            image=uri,
+            width=width,
+            height=height,
+            description="square image",
         )
-        image_data["image"] = create_image_file(image_path)
-        image = Image.objects.create(**image_data)
-        warning_image.images.add(image)
 
         result = self.client.get(
             f"{self.api_url}?id={new_warning_message.pk}", headers=self.api_headers
@@ -1261,9 +1259,9 @@ class TestWarningMessageDetailView(BaseTestProjectView):
                     "id": image.pk,
                     "sources": [
                         {
-                            "uri": "http://testserver/construction-work/media/construction-work/images/image.jpg",
-                            "width": 10,
-                            "height": 10,
+                            "uri": uri,
+                            "width": width,
+                            "height": height,
                         }
                     ],
                     "landscape": False,

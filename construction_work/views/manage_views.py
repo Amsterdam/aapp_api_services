@@ -23,7 +23,6 @@ from construction_work.permissions import (
 from construction_work.serializers.manage_serializers import (
     ImageCreateSerializer,
     PublisherAssignProjectSerializer,
-    WarningImageSerializer,
     WarningMessageCreateUpdateSerializer,
     WarningMessageWithNotificationResultSerializer,
 )
@@ -49,6 +48,7 @@ from construction_work.utils.query_utils import (
     get_warningimage_width_height_prefetch,
 )
 from construction_work.utils.url_utils import get_media_url
+from core.services.image_set import ImageSetService
 
 logger = logging.getLogger(__name__)
 
@@ -453,15 +453,11 @@ class ImageUploadView(generics.GenericAPIView):
             return Response(
                 data="Publisher not known", status=status.HTTP_403_FORBIDDEN
             )
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        image_serializer = self.get_serializer(data=request.data)
-        image_serializer.is_valid(raise_exception=True)
-        image_ids = image_serializer.save()
-
-        warning_image_serializer = WarningImageSerializer(data={"images": image_ids})
-        warning_image_serializer.is_valid(raise_exception=True)
-        warning_image = warning_image_serializer.save()
-
-        return Response(
-            {"warning_image_id": warning_image.pk}, status=status.HTTP_200_OK
+        image_data = ImageSetService().upload(
+            image=request.data["image"], description=request.data.get("description")
         )
+        image_data["warning_image_id"] = image_data.pop("id")
+        return Response(image_data, status=status.HTTP_200_OK)

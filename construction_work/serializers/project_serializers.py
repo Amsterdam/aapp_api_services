@@ -327,13 +327,13 @@ class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
         images = []
         for warning_image in obj.warningimage_set.all():
             image_serializer = ImagePublicSerializer(
-                warning_image.images.all(),
+                warning_image.image_set.all(),
                 many=True,
                 context={"media_url": media_url},
             )
             sources = image_serializer.data
 
-            first_image = warning_image.images.first()
+            first_image = warning_image.image_set.first()
             image = {
                 "id": warning_image.pk,
                 "sources": sources,

@@ -31,9 +31,9 @@ def call_notification_service(warning: WarningMessage) -> tuple[int, dict]:
     Raises:
         NotificationServiceError: If the notification service request fails
     """
-    image_id = get_image_id(warning)
+    warning_image = warning.warningimage_set.first()
 
-    request_data = create_request_data(warning, image_id)
+    request_data = create_request_data(warning, warning_image)
     response = make_post_request(
         POST_NOTIFICATION_URL, warning_pk=warning.pk, request_data=request_data
     )
@@ -43,41 +43,7 @@ def call_notification_service(warning: WarningMessage) -> tuple[int, dict]:
     return response.status_code, response.json()
 
 
-def get_image_id(warning: WarningMessage) -> int | None:
-    if not warning.warningimage_set.exists():
-        return None
-
-    image_set = warning.warningimage_set.first()
-    images = image_set.images.all()
-    for image in images:
-        if image.width == 1280:
-            image_file = image.image.file
-            break
-    else:
-        image_file = images[0].image.file
-
-    files_data = {"image": image_file}
-    response = make_post_request(
-        POST_IMAGE_URL, warning_pk=warning.pk, files=files_data
-    )
-    response_data = response.json()
-
-    if "id" not in response_data:
-        logger.error(
-            "Image id not found in response",
-            extra={
-                "response_data": response_data,
-                "warning_id": warning.pk,
-                "api_url": POST_IMAGE_URL,
-            },
-        )
-        raise InternalServiceError("Image id not found in response")
-    image_id = response_data["id"]
-
-    return image_id
-
-
-def create_request_data(warning: WarningMessage, image_id: int | None) -> dict:
+def create_request_data(warning: WarningMessage, warning_image) -> dict:
     device_ids = list(
         warning.project.device_set.exclude(device_id=None).values_list(
             "device_id", flat=True
@@ -95,8 +61,8 @@ def create_request_data(warning: WarningMessage, image_id: int | None) -> dict:
         "device_ids": device_ids,
         "notification_type": NotificationType.CONSTRUCTION_WORK_WARNING_MESSAGE.value,
     }
-    if image_id:
-        request_data["image"] = image_id
+    if warning_image and warning_image.image_set_id:
+        request_data["image"] = warning_image.image_set_id
     return request_data
 
 

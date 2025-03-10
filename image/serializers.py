@@ -1,11 +1,17 @@
+import io
 import uuid
 
 from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import transaction
+from PIL import Image
+from pillow_heif import register_heif_opener
 from rest_framework import serializers
 
 from core.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
 from image.models import ImageSet, ImageVariant
+
+register_heif_opener()
 
 
 class ImageSetRequestSerializer(serializers.ModelSerializer):
@@ -45,6 +51,24 @@ class ImageVariantSerializer(serializers.ModelSerializer):
     def get_image(self, obj):
         return obj.image_url
 
+    def validate_image(self, image):
+        if image.name.lower().endswith(".heic"):
+            image = self.convert_heic_to_jpeg(image)
+        return image
+
+    def convert_heic_to_jpeg(self, image):
+        heif_image = Image.open(image)
+        output = io.BytesIO()
+        heif_image.convert("RGB").save(output, format="JPEG")
+        return InMemoryUploadedFile(
+            output,
+            "ImageField",
+            image.name.replace(".heic", ".jpg"),
+            "image/jpeg",
+            output.tell(),
+            None,
+        )
+
 
 class ImageSetSerializer(serializers.ModelSerializer):
     variants = serializers.SerializerMethodField()
@@ -53,7 +77,7 @@ class ImageSetSerializer(serializers.ModelSerializer):
         model = ImageSet
         fields = ["id", "description", "variants"]
 
-    def get_variants(self, obj: ImageSet) -> list:
+    def get_variants(self, obj: ImageSet) -> ImageVariantSerializer(many=True):
         variants = [
             obj.image_small,
             obj.image_medium,

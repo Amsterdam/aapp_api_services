@@ -1,7 +1,6 @@
 import json
 import pathlib
-from os.path import join
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -22,7 +21,6 @@ from construction_work.tests import mock_data
 from construction_work.utils.patch_utils import (
     MockNotificationResponse,
     apply_signing_key_patch,
-    create_image_file,
     create_jwt_token,
 )
 
@@ -683,14 +681,17 @@ class TestProjectDetailsForManageView(BaseTestManageView):
         self.assertEqual(result.status_code, 403)
 
 
-@override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
 class TestWarningMessageCRUDBaseView(BaseTestManageView):
-    def create_warning_image(self, image_file):
-        new_image = Image(image=image_file, description="foobar")
-        new_image.save()
-        new_warning_image = WarningImage()
+    def create_warning_image(self, warning=None):
+        new_warning_image = WarningImage(warning=warning)
         new_warning_image.save()
-        new_warning_image.images.add(new_image)
+        for i in range(3):
+            new_warning_image.image_set.create(
+                image=f"image-{i}.png",
+                description="new image description",
+                width=10,
+                height=10,
+            )
         return new_warning_image
 
 
@@ -700,16 +701,15 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
 
         self.api_url_str = "construction-work:manage-warning-create"
 
-    def test_create_warning_with_image_without_push_notification(self):
+    @patch("construction_work.serializers.manage_serializers.WarningMessageCreateUpdateSerializer.construct_warning_image")
+    def test_create_warning_with_image_without_push_notification(
+        self, mock_construct_image
+    ):
         project, publisher = self.create_project_and_publisher()
         self.update_headers_with_publisher_data(publisher.email)
 
-        image_path = join(
-            ROOT_DIR, "construction_work/tests/image_data/small_image.png"
-        )
-        image_file = create_image_file(image_path)
-
-        new_warning_image = self.create_warning_image(image_file)
+        new_warning_image = self.create_warning_image()
+        mock_construct_image.return_value = new_warning_image
 
         request_data = {
             "title": "title of new warning",
@@ -965,19 +965,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         self.update_headers_with_publisher_data(publisher.email)
 
         warning = self.create_warning(project, publisher)
-        images = []
-        for image_data in mock_data.images:
-            image_path = join(
-                ROOT_DIR, "construction_work/tests/image_data/small_image.png"
-            )
-            image_data["image"] = create_image_file(image_path)
-            image = Image.objects.create(**image_data)
-            images.append(image)
-
-        warning_image = WarningImage.objects.create(
-            warning=warning,
-        )
-        warning_image.images.set(images)
+        self.create_warning_image(warning)
 
         result = self.client.get(
             reverse(self.api_url_str, kwargs={"pk": warning.pk}),
@@ -1069,19 +1057,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
 
         # Setup existing warning message with image
         warning = self.create_warning(project, publisher)
-
-        images = []
-        for image_data in mock_data.images:
-            image_data["image"] = create_image_file(
-                "./construction_work/tests/image_data/small_image.png"
-            )
-            image = Image.objects.create(**image_data)
-            images.append(image)
-
-        original_warning_image = WarningImage.objects.create(
-            warning=warning,
-        )
-        original_warning_image.images.set(images)
+        original_warning_image = self.create_warning_image(warning)
 
         # PATCH warning message
         new_data = {
@@ -1104,31 +1080,17 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         new_warning_image = WarningImage.objects.filter(warning=warning).first()
         self.assertIsNone(new_warning_image)
 
-    def test_update_warning_replace_image(self):
+    @patch("construction_work.serializers.manage_serializers.WarningMessageCreateUpdateSerializer.construct_warning_image")
+    def test_update_warning_replace_image(self, mock_construct_image):
         project, publisher = self.create_project_and_publisher()
         self.update_headers_with_publisher_data(publisher.email)
 
         # Setup existing warning message with image
         warning = self.create_warning(project, publisher)
-        images = []
-        for image_data in mock_data.images:
-            image_path = join(
-                ROOT_DIR, "construction_work/tests/image_data/small_image.png"
-            )
-            image_data["image"] = create_image_file(image_path)
-            image = Image.objects.create(**image_data)
-            images.append(image)
+        original_warning_image = self.create_warning_image(warning)
+        new_warning_image = self.create_warning_image()
 
-        original_warning_image = WarningImage.objects.create(
-            warning=warning,
-        )
-        original_warning_image.images.set(images)
-
-        image_path = join(
-            ROOT_DIR, "construction_work/tests/image_data/small_image.png"
-        )
-        image_file = create_image_file(image_path)
-        new_warning_image = self.create_warning_image(image_file)
+        mock_construct_image.return_value = new_warning_image
 
         new_data = {
             "title": warning.title,
@@ -1157,7 +1119,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         new_warning_image = WarningImage.objects.filter(warning=warning).first()
         self.assertIsNotNone(new_warning_image)
         # and description is updated
-        first_image = Image.objects.get(pk=new_warning_image.images.first().pk)
+        first_image = Image.objects.get(pk=new_warning_image.image_set.first().pk)
         self.assertEqual(first_image.description, "new image description")
         # and a warning only has a single image
         image_count = WarningImage.objects.filter(warning=warning).all().count()
@@ -1268,6 +1230,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         self.assert_remove_warning_successfully(project, publisher)
 
 
+@override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
 class TestImageUploadView(TestWarningMessageCRUDBaseView):
     def setUp(self):
         super().setUp()
@@ -1278,10 +1241,16 @@ class TestImageUploadView(TestWarningMessageCRUDBaseView):
         _, publisher = self.create_project_and_publisher()
         self.update_headers_with_publisher_data(publisher.email)
 
-    def test_upload_image_success(self):
+    @patch("core.services.image_set.requests.post")
+    def test_upload_image_success(self, mock_post):
         """
         Test that a POST request with valid data successfully uploads an image.
         """
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"id": 123}
+        mock_post.return_value = mock_response
+
         response = self.client.post(
             self.api_url,
             headers=self.api_headers,
@@ -1290,36 +1259,6 @@ class TestImageUploadView(TestWarningMessageCRUDBaseView):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("warning_image_id", response.data)
-        self.assertTrue(
-            WarningImage.objects.filter(pk=response.data["warning_image_id"]).exists()
-        )
-
-    def test_upload_heic_image_success(self):
-        """
-        Test that a POST request with a HEIC image successfully uploads an image.
-        """
-        file = open("./construction_work/tests/image_data/small_image.heic", "rb")
-        valid_heic_image_data = {"image": file}
-
-        response = self.client.post(
-            self.api_url,
-            headers=self.api_headers,
-            data=valid_heic_image_data,
-            format="multipart",
-        )
-        self.assertEqual(response.status_code, 200)
-
-    def test_upload_image_invalid_data(self):
-        """
-        Test that a POST request with invalid data returns a 400 Bad Request.
-        """
-        response = self.client.post(
-            self.api_url,
-            headers=self.api_headers,
-            data=self.invalid_image_data,
-            format="multipart",
-        )
-        self.assertEqual(response.status_code, 400)
 
     def test_upload_image_method_not_allowed(self):
         """

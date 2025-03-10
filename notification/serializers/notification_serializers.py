@@ -40,8 +40,7 @@ class NotificationResultSerializer(serializers.ModelSerializer):
         if obj.image is None:
             return None
 
-        image_set = ImageSetService(obj.image)
-        image_set_data = image_set.json()
+        image_set_data = ImageSetService().get(obj.image)
         return NotificationImageSerializer(image_set_data).data
 
 

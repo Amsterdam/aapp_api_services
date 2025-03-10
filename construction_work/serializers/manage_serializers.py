@@ -1,19 +1,15 @@
-import uuid
-
-from django.core.files.base import ContentFile
 from rest_framework import serializers
 
-from construction_work.models.manage_models import Image, WarningImage, WarningMessage
+from construction_work.models.manage_models import WarningImage, WarningMessage
 from construction_work.serializers.project_serializers import (
     WarningMessageForManagementSerializer,
 )
 from construction_work.utils.bool_utils import string_to_bool
-from core.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
+from core.services.image_set import ImageSetService
 
 
 class WarningImageCreateUpdateSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    description = serializers.CharField()
 
 
 class WarningMessageCreateUpdateSerializer(serializers.Serializer):
@@ -40,30 +36,40 @@ class WarningMessageCreateUpdateSerializer(serializers.Serializer):
         )
 
         if validated_data.get("warning_image"):
-            warning_image = WarningImage.objects.get(
-                id=validated_data["warning_image"]["id"]
-            )
+            image_set_id = validated_data["warning_image"]["id"]
+            warning_image = self.construct_warning_image(image_set_id)
             new_warning.warningimage_set.add(warning_image)
 
         return new_warning
 
-    def update(self, instance: WarningMessage, validated_data):
-        instance.title = validated_data.get("title", instance.title)
-        instance.body = validated_data.get("body", instance.body)
-        instance.save()
+    def update(self, warning: WarningMessage, validated_data):
+        warning.title = validated_data.get("title", warning.title)
+        warning.body = validated_data.get("body", warning.body)
+        warning.save()
 
-        instance.warningimage_set.update(warning=None)
+        warning.warningimage_set.update(warning=None)
         if validated_data.get("warning_image"):
-            warning_image = WarningImage.objects.get(
-                id=validated_data["warning_image"]["id"]
-            )
-            warning_image.images.all().update(
-                description=validated_data["warning_image"]["description"]
-            )
-            warning_image.warning = instance
-            warning_image.save()
+            image_set_id = validated_data["warning_image"]["id"]
+            warning_image = self.construct_warning_image(image_set_id)
+            warning.warningimage_set.add(warning_image)
+            warning.save()
 
-        return instance
+        return warning
+
+    @staticmethod
+    def construct_warning_image(image_set_id):
+        image_data = ImageSetService().get(image_set_id)
+        warning_image = WarningImage(image_set_id=image_set_id)
+        warning_image.save()
+        for variant in image_data["variants"]:
+            warning_image.image_set.create(
+                image=variant["image"],
+                width=variant["width"],
+                height=variant["height"],
+                description=image_data["description"],
+                warning_image=warning_image,
+            )
+        return warning_image
 
 
 class WarningMessageWithNotificationResultSerializer(
@@ -100,22 +106,3 @@ class PublisherAssignProjectSerializer(serializers.Serializer):
 class ImageCreateSerializer(serializers.Serializer):
     image = serializers.ImageField(required=True)
     description = serializers.CharField(required=False)
-
-    def create(self, validated_data):
-        image_file = validated_data["image"]
-        description = validated_data.get("description")
-
-        image_ids = []
-        new_file_name = uuid.uuid4()
-        scaled_images = scale_image(image_file)
-        for size, img_io in scaled_images.items():
-            image_obj = Image(description=description)
-            image_content = ContentFile(img_io.read())
-            image_obj.image.save(
-                f"{new_file_name}_{size}.{SCALED_IMAGE_FORMAT.lower()}",
-                image_content,
-                save=False,
-            )
-            image_obj.save()
-            image_ids.append(image_obj.pk)
-        return image_ids

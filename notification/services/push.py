@@ -172,7 +172,8 @@ class PushService:
 
         ios_image_config, android_image_config = None, None
         if notification_obj.image:
-            image_set = ImageSetService(notification_obj.image)
+            image_set = ImageSetService()
+            image_set.get(notification_obj.image)
             android_image_config, ios_image_config = self._get_image_config(image_set)
 
         firebase_message = messaging.Message(

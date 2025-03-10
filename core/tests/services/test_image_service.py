@@ -30,13 +30,15 @@ EXAMPLE_RESPONSE = {
 @patch("requests.get")
 class TestImageService(TestCase):
     def test_init(self, mock_requests):
-        ImageSetService(1)
+        image_service = ImageSetService()
+        image_service.get(1)
         mock_requests.assert_called_with(
             "http://api-image:8000/internal/api/v1/image/1"
         )
 
     def test_url_small(self, mock_requests):
-        image_service = ImageSetService(1)
+        image_service = ImageSetService()
+        image_service.get(1)
         image_service.data = EXAMPLE_RESPONSE
         assert (
             image_service.url_small
@@ -44,7 +46,8 @@ class TestImageService(TestCase):
         )
 
     def test_url_medium(self, mock_requests):
-        image_service = ImageSetService(1)
+        image_service = ImageSetService()
+        image_service.get(1)
         image_service.data = EXAMPLE_RESPONSE
         assert (
             image_service.url_medium
@@ -52,7 +55,8 @@ class TestImageService(TestCase):
         )
 
     def test_url_large(self, mock_requests):
-        image_service = ImageSetService(1)
+        image_service = ImageSetService()
+        image_service.get(1)
         image_service.data = EXAMPLE_RESPONSE
         assert (
             image_service.url_large
@@ -60,6 +64,7 @@ class TestImageService(TestCase):
         )
 
     def test_json(self, mock_requests):
-        image_service = ImageSetService(1)
+        image_service = ImageSetService()
+        image_service.get(1)
         image_service.data = EXAMPLE_RESPONSE
         assert image_service.json() == EXAMPLE_RESPONSE

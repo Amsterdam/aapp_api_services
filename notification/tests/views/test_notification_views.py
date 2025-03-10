@@ -59,14 +59,10 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
 
     @patch("notification.serializers.notification_serializers.ImageSetService")
     def test_list_notifications_with_and_without_image(self, mock_image_set_service):
-        def image_set_side_effect(image_id):
-            if image_id is None:
-                raise ValueError("Invalid image ID")
-            return mock_image_set_service.return_value
-
-        mock_image_set_service.side_effect = image_set_side_effect
-        mock_image_set_service.return_value.json.return_value = {
-            "id": "123",
+        image_id = 123
+        mock_service_instance = mock_image_set_service.return_value
+        mock_service_instance.get.return_value = {
+            "id": image_id,
             "variants": [
                 {"image": "https://example.com/image.jpg", "width": 100, "height": 100}
             ],
@@ -74,7 +70,7 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
 
         device = baker.make(Device, external_id=self.device_id)
         notification_with_image = baker.make(
-            Notification, device=device, image=1
+            Notification, device=device, image=image_id
         )  # notification with image
         baker.make(
             Notification, device=device, image=None
@@ -88,7 +84,7 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
         for notification in response.data:
             if notification["id"] == str(notification_with_image.id):
                 self.assertIsNotNone(notification["image"])
-                self.assertEqual(notification["image"]["id"], 123)
+                self.assertEqual(notification["image"]["id"], image_id)
             else:
                 self.assertIsNone(notification["image"])
 

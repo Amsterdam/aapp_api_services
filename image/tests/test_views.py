@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
@@ -15,8 +16,16 @@ class ImageSetCreateViewTests(APITestCase):
         self.url = reverse("image-create-imageset")
 
     @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
-    def test_create_imageset_success(self):
-        file = get_example_image_file()
+    def test_create_imageset_success_jpg(self):
+        file = get_example_image_file("core/tests/example.jpg")
+        self._create_imageset_success(file)
+
+    @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
+    def test_create_imageset_success_heic(self):
+        file = get_example_image_file("core/tests/example.heic")
+        self._create_imageset_success(file)
+
+    def _create_imageset_success(self, file: SimpleUploadedFile):
         payload = {"description": "Test", "image": file}
         response = self.client.post(self.url, payload, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -46,7 +46,7 @@ def get_warningimage_width_height_prefetch():
     return Prefetch(
         "warningimage_set",
         queryset=WarningImage.objects.prefetch_related(
-            Prefetch("images", queryset=Image.objects.only("width", "height"))
+            Prefetch("image_set", queryset=Image.objects.only("width", "height"))
         ),
     )
 
