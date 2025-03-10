@@ -45,7 +45,7 @@ class MijnAmsPassBudgetTransactionsSerializer(serializers.Serializer):
 
 class MijnAmsPassAanbiedingTransactionsSerializer(serializers.Serializer):
     id = serializers.CharField()
-    title = serializers.CharField()
+    title = serializers.CharField(allow_null=True)
     description = serializers.CharField()
     discountTitle = serializers.CharField()
     discountAmount = serializers.FloatField()
