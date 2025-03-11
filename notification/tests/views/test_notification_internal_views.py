@@ -5,11 +5,12 @@ from unittest.mock import patch
 from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 from model_bakery import baker
 from rest_framework import status
-from rest_framework.test import APITestCase
 
-from notification.models import Device, Notification
+from core.tests.test_authentication import BasicAPITestCase
+from notification.models import Device, Notification, ScheduledNotification
 from notification.utils.patch_utils import (
     MockFirebaseSendEach,
     apply_init_firebase_patches,
@@ -19,7 +20,7 @@ ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
 
 @patch("notification.services.push.messaging.send_each")
-class NotificationCreateViewTests(APITestCase):
+class NotificationCreateViewTests(BasicAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("notification-create-notification")
@@ -55,7 +56,10 @@ class NotificationCreateViewTests(APITestCase):
             },
         )
 
-    def test_init_notification_with_image_success(self, _):
+    @patch("notification.serializers.notification_serializers.ImageSetService")
+    def test_init_notification_with_image_success(self, mock_image_service, _):
+        instance_image_service = mock_image_service.return_value
+        instance_image_service.exists.return_value = True
         image_id = 3
         data = {
             "title": "foobar title",
@@ -105,3 +109,162 @@ class NotificationCreateViewTests(APITestCase):
         )
         self.assertEqual(result.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Too many device ids", result.content.decode())
+
+
+class ScheduledNotificationBase(BasicAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("notification-scheduled-notification")
+        self.firebase_paths = apply_init_firebase_patches()
+        device_ids = ["abc", "def", "ghi"]
+        [baker.make(Device, external_id=external_id) for external_id in device_ids]
+        self.identifier = "foobar-identifier"
+        self.notification_payload = {
+            "title": "foobar title",
+            "body": "foobar body",
+            "module_slug": "foobar",
+            "context": {"foo": "bar"},
+            "created_at": "2024-10-31T15:00:00",
+            "device_ids": device_ids,
+            "notification_type": "foobar-notification-type",
+            "scheduled_for": timezone.now() + timezone.timedelta(days=1),
+            "identifier": self.identifier,
+        }
+
+    def client_post(self, payload):
+        payload = payload.copy()
+        payload["scheduled_for"] = payload["scheduled_for"].isoformat()
+        return self.client.post(
+            self.url,
+            data=json.dumps(payload),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+
+
+class ScheduledNotificationTests(ScheduledNotificationBase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("notification-scheduled-notification")
+
+    def test_create_scheduled_notification_success(self):
+        response = self.client_post(self.notification_payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(
+            ScheduledNotification.objects.filter(identifier=self.identifier).exists()
+        )
+
+    def test_create_scheduled_notification_in_the_past(self):
+        payload = self.notification_payload.copy()
+        payload["scheduled_for"] = timezone.now() - timezone.timedelta(days=1)
+        response = self.client_post(payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("SCHEDULED_NOTIFICATION_IN_PAST", response.content.decode())
+
+    def test_create_scheduled_notification_duplicate_identifier(self):
+        response = self.client_post(self.notification_payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(
+            ScheduledNotification.objects.filter(identifier=self.identifier).exists()
+        )
+
+        response = self.client_post(self.notification_payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "SCHEDULED_NOTIFICATION_DUPLICATE_IDENTIFIER", response.content.decode()
+        )
+
+    def test_create_scheduled_notification_missing_device_id(self):
+        payload = self.notification_payload.copy()
+        payload["device_ids"] += ["missing_device_id"]
+        response = self.client_post(self.notification_payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(
+            ScheduledNotification.objects.filter(identifier=self.identifier).exists()
+        )
+        self.assertTrue(Device.objects.filter(external_id="missing_device_id").exists())
+        scheduled_devices = ScheduledNotification.objects.get(
+            identifier=self.identifier
+        ).device_ids.all()
+        self.assertEqual(scheduled_devices.count(), 4)
+
+    def test_create_scheduled_notification_identifier_must_start_with_module_slug(self):
+        payload = self.notification_payload.copy()
+        payload["identifier"] = "wrong-identifier-234"
+        response = self.client_post(payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("SCHEDULED_NOTIFICATION_IDENTIFIER", response.content.decode())
+
+    @patch("notification.serializers.notification_serializers.ImageSetService")
+    def test_create_scheduled_notification_with_image(self, mock_image_service):
+        instance_image_service = mock_image_service.return_value
+        instance_image_service.exists.return_value = True
+        payload = self.notification_payload.copy()
+        payload["image"] = 123
+
+        response = self.client_post(payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        saved_notification = ScheduledNotification.objects.get(
+            identifier=self.identifier
+        )
+        self.assertEqual(saved_notification.image, 123)
+
+    @patch("notification.serializers.notification_serializers.ImageSetService")
+    def test_create_scheduled_notification_with_image_does_not_exist(
+        self, mock_image_service
+    ):
+        instance_image_service = mock_image_service.return_value
+        instance_image_service.exists.return_value = False
+        payload = self.notification_payload.copy()
+        payload["image"] = 123
+
+        response = self.client_post(payload)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("IMAGE_SET_NOT_FOUND", response.content.decode())
+
+    @override_settings(MAX_DEVICES_PER_REQUEST=2)
+    def test_create_scheduled_notification_too_many_devices(self):
+        response = self.client_post(self.notification_payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Too many device ids", response.content.decode())
+
+    def test_list_scheduled_notifications(self):
+        baker.make(ScheduledNotification, _quantity=5)
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()), 5)
+
+
+class ScheduledNotificationDetailTests(ScheduledNotificationBase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("notification-scheduled-notification")
+        response = self.client_post(self.notification_payload)
+        self.url = reverse(
+            "notification-scheduled-notification-detail",
+            kwargs={"identifier": self.identifier},
+        )
+        print(response.json())
+
+    def test_retrieve_scheduled_notification_success(self):
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["title"], self.notification_payload["title"])
+
+    def test_update_scheduled_notification_success(self):
+        patch_data = {"title": "Updated Title"}
+        response = self.client.patch(
+            self.url,
+            data=json.dumps(patch_data),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["title"], "Updated Title")
+
+    def test_delete_scheduled_notification_success(self):
+        response = self.client.delete(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(
+            ScheduledNotification.objects.filter(identifier=self.identifier).exists()
+        )

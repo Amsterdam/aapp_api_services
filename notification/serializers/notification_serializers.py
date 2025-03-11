@@ -1,9 +1,16 @@
 from django.conf import settings
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from core.services.image_set import ImageSetService
-from notification.models import Notification
+from notification.exceptions import (
+    ImageSetNotFoundError,
+    ScheduledNotificationDuplicateIdentifierError,
+    ScheduledNotificationIdentifierError,
+    ScheduledNotificationInPastError,
+)
+from notification.models import Device, Notification, ScheduledNotification
 
 
 class NotificationImageSourceSerializer(serializers.Serializer):
@@ -68,10 +75,53 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
             )
         return device_ids
 
+    def validate_image(self, image_id):
+        if not ImageSetService().exists(image_id):
+            raise ImageSetNotFoundError()
+        return image_id
+
     def validate_context(self, context):
         if not isinstance(context, dict):
             raise serializers.ValidationError("Context must be a dictionary")
         return context
+
+
+class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
+    scheduled_for = serializers.DateTimeField()
+    device_ids = serializers.SlugRelatedField(
+        many=True, queryset=Device.objects.all(), slug_field="external_id"
+    )
+
+    class Meta:
+        model = ScheduledNotification
+        fields = NotificationCreateSerializer.Meta.fields + [
+            "scheduled_for",
+        ]
+
+    def validate_scheduled_for(self, scheduled_date):
+        if scheduled_date < timezone.now():
+            raise ScheduledNotificationInPastError()
+        return scheduled_date
+
+
+class ScheduledNotificationSerializer(ScheduledNotificationDetailSerializer):
+    identifier = serializers.CharField()
+
+    class Meta:
+        model = ScheduledNotification
+        fields = ScheduledNotificationDetailSerializer.Meta.fields + [
+            "identifier",
+        ]
+
+    def validate_identifier(self, identifier):
+        module_slug = self.initial_data.get("module_slug")
+        if not identifier:
+            raise serializers.ValidationError("Identifier is required.")
+        if module_slug and not identifier.startswith(module_slug):
+            raise ScheduledNotificationIdentifierError()
+        if ScheduledNotification.objects.filter(identifier=identifier).exists():
+            raise ScheduledNotificationDuplicateIdentifierError()
+        return identifier
 
 
 class NotificationCreateResponseSerializer(serializers.Serializer):

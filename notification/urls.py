@@ -17,6 +17,21 @@ urlpatterns = [
         notification_internal_views.NotificationInitView.as_view(),
         name="notification-create-notification",
     ),
+    path(
+        BASE_PATH_INTERNAL + "/scheduled-notification",
+        notification_internal_views.ScheduledNotificationView.as_view(
+            {
+                "post": "create",
+                "get": "list",
+            }
+        ),
+        name="notification-scheduled-notification",
+    ),
+    path(
+        BASE_PATH_INTERNAL + "/scheduled-notification/<str:identifier>",
+        notification_internal_views.ScheduledNotificationDetailView.as_view(),
+        name="notification-scheduled-notification-detail",
+    ),
     # EXTERNAL ENDPOINTS
     path(
         BASE_PATH + "/device/register",

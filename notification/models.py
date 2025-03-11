@@ -18,7 +18,7 @@ class Device(models.Model):
     firebase_token = models.CharField(max_length=1000, null=True)
 
 
-class Notification(models.Model):
+class BaseNotification(models.Model):
     """
     Data as it is sent to devices.
     - id: custom primary key
@@ -34,17 +34,44 @@ class Notification(models.Model):
     - image: loosely coupled to image service
     """
 
+    class Meta:
+        abstract = True
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=1000)
     body = models.CharField(max_length=1000)
     module_slug = models.CharField()
     context = models.JSONField()
-    device = models.ForeignKey(Device, on_delete=models.CASCADE)
-    created_at = models.DateTimeField()
-    pushed_at = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
     notification_type = models.CharField()
     image = models.IntegerField(default=None, null=True)
+    created_at = models.DateTimeField()
+
+
+class ScheduledNotification(BaseNotification):
+    """
+    Scheduled notifications are notifications that are scheduled to be sent at a later time.
+    - scheduled_at: the date the notification was scheduled at
+    - scheduled_for: the date the notification was scheduled for
+    - identifier: the unique identifier of the schedule starting with the module_slug
+    """
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["identifier"], name="unique_identifier")
+        ]
+
+    identifier = models.CharField()
+    scheduled_for = models.DateTimeField()
+    device_ids = models.ManyToManyField(Device, related_name="scheduled_notifications")
+
+
+class Notification(BaseNotification):
+    schedule = models.ForeignKey(
+        ScheduledNotification, on_delete=models.CASCADE, null=True
+    )
+    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+    pushed_at = models.DateTimeField(auto_now_add=True)
 
 
 class NotificationPushTypeEnabled(models.Model):

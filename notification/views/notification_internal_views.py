@@ -3,14 +3,18 @@ import logging
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 from core.serializers.error_serializers import get_error_response_serializers
 from notification.exceptions import PushServiceError
-from notification.models import Notification
+from notification.models import Device, Notification, ScheduledNotification
 from notification.serializers.notification_serializers import (
     NotificationCreateResponseSerializer,
     NotificationCreateSerializer,
+    ScheduledNotificationDetailSerializer,
+    ScheduledNotificationSerializer,
 )
 from notification.services.push import PushService
 
@@ -53,3 +57,36 @@ class NotificationInitView(generics.CreateAPIView):
             raise PushServiceError("Failed to push notification")
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class ScheduledNotificationView(ModelViewSet):
+    serializer_class = ScheduledNotificationSerializer
+    queryset = ScheduledNotification.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        create_missing_device_ids(request)
+        return super().create(request, *args, **kwargs)
+
+
+class ScheduledNotificationDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = ScheduledNotification.objects.all()
+    serializer_class = ScheduledNotificationDetailSerializer
+    lookup_field = "identifier"
+    http_method_names = ["get", "patch", "delete"]
+
+    def update(self, request, *args, **kwargs):
+        create_missing_device_ids(request)
+        return super().update(request, *args, **kwargs)
+
+
+def create_missing_device_ids(request):
+    device_ids = request.data.get("device_ids", [])
+    existing_devices = Device.objects.filter(external_id__in=device_ids).values_list(
+        "external_id", flat=True
+    )
+    missing_device_ids = set(device_ids) - set(existing_devices)
+    if missing_device_ids:
+        Device.objects.bulk_create(
+            Device(external_id=device_id) for device_id in missing_device_ids
+        )
+    logger.warning(f"Created {len(missing_device_ids)} missing devices.")

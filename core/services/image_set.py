@@ -14,6 +14,13 @@ class ImageSetService:
         self.data = response.json()
         return self.data
 
+    def exists(self, image_set_id):
+        try:
+            self.get(image_set_id)
+            return True
+        except requests.HTTPError:
+            return False
+
     def upload(self, image, description=None):
         image_upload_url = settings.IMAGE_ENDPOINTS["POST_IMAGE"]
         files = {"image": image}
