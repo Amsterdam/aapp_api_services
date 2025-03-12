@@ -7,11 +7,11 @@ class ChoicesEnum(Enum):
         return [(item.value, item.name) for item in cls]
 
 
-class Service(ChoicesEnum):
+class Module(ChoicesEnum):
     CONSTRUCTION_WORK = "construction-work"
 
 
 class NotificationType(ChoicesEnum):
     CONSTRUCTION_WORK_WARNING_MESSAGE = (
-        f"{Service.CONSTRUCTION_WORK.value}:warning-message"
+        f"{Module.CONSTRUCTION_WORK.value}:warning-message"
     )

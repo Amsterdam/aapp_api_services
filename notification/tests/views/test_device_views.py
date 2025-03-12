@@ -4,13 +4,13 @@ from model_bakery import baker
 from rest_framework import status
 
 from core.authentication import APIKeyAuthentication
-from core.enums import Service
+from core.enums import Module
 from core.exceptions import MissingDeviceIdHeader
 from core.tests.test_authentication import AuthenticatedAPITestCase
 from notification.models import (
     Device,
-    NotificationPushServiceEnabled,
-    NotificationPushTypeEnabled,
+    NotificationPushModuleDisabled,
+    NotificationPushTypeDisabled,
 )
 
 
@@ -96,12 +96,12 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class TestNotificationPushEnabledView(AuthenticatedAPITestCase):
+class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
     authentication_class = APIKeyAuthentication
 
     def setUp(self):
         super().setUp()
-        self.url = reverse("notification-device-push-type-enabled")
+        self.url = reverse("notification-device-push-type-disabled")
         self.device = baker.make(
             Device, external_id="test-device-id", firebase_token="test-token", os="ios"
         )
@@ -111,7 +111,7 @@ class TestNotificationPushEnabledView(AuthenticatedAPITestCase):
             **self.api_headers,
         }
 
-    def test_enable_push_notification_success(self):
+    def test_disable_push_notification_success(self):
         """Test successfully enabling push notifications for a type."""
         data = {"notification_type": self.valid_notification_type}
         response = self.client.post(self.url, data, headers=self.headers_with_device_id)
@@ -121,15 +121,15 @@ class TestNotificationPushEnabledView(AuthenticatedAPITestCase):
             response.data["notification_type"], self.valid_notification_type
         )
         self.assertTrue(
-            NotificationPushTypeEnabled.objects.filter(
+            NotificationPushTypeDisabled.objects.filter(
                 device=self.device, notification_type=self.valid_notification_type
             ).exists()
         )
 
-    def test_enable_push_notification_duplicate(self):
-        """Test enabling an already enabled notification type."""
+    def test_disable_push_notification_duplicate(self):
+        """Test enabling an already disabled notification type."""
         baker.make(
-            NotificationPushTypeEnabled,
+            NotificationPushTypeDisabled,
             device=self.device,
             notification_type=self.valid_notification_type,
         )
@@ -139,13 +139,13 @@ class TestNotificationPushEnabledView(AuthenticatedAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            NotificationPushTypeEnabled.objects.filter(
+            NotificationPushTypeDisabled.objects.filter(
                 device=self.device, notification_type=self.valid_notification_type
             ).count(),
             1,
         )
 
-    def test_enable_push_notification_missing_device_id(self):
+    def test_disable_push_notification_missing_device_id(self):
         """Test enabling push notifications without device ID header."""
         data = {"notification_type": self.valid_notification_type}
         response = self.client.post(self.url, data, headers=self.api_headers)
@@ -153,7 +153,7 @@ class TestNotificationPushEnabledView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], MissingDeviceIdHeader.default_detail)
 
-    def test_enable_push_notification_invalid_device(self):
+    def test_disable_push_notification_invalid_device(self):
         """Test enabling push notifications for non-existent device."""
         headers = {settings.HEADER_DEVICE_ID: "non-existent-device", **self.api_headers}
         data = {"notification_type": self.valid_notification_type}
@@ -164,10 +164,10 @@ class TestNotificationPushEnabledView(AuthenticatedAPITestCase):
             response, "No Device matches the given query", status_code=404
         )
 
-    def test_disable_push_notification_success(self):
+    def test_enable_push_notification_success(self):
         """Test successfully disabling push notifications for a type."""
         baker.make(
-            NotificationPushTypeEnabled,
+            NotificationPushTypeDisabled,
             device=self.device,
             notification_type=self.valid_notification_type,
         )
@@ -177,7 +177,7 @@ class TestNotificationPushEnabledView(AuthenticatedAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(
-            NotificationPushTypeEnabled.objects.filter(
+            NotificationPushTypeDisabled.objects.filter(
                 device=self.device, notification_type=self.valid_notification_type
             ).exists()
         )
@@ -190,7 +190,7 @@ class TestNotificationPushEnabledView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertContains(
             response,
-            "No NotificationPushTypeEnabled matches the given query",
+            "No NotificationPushTypeDisabled matches the given query",
             status_code=404,
         )
 
@@ -202,12 +202,12 @@ class TestNotificationPushEnabledView(AuthenticatedAPITestCase):
         self.assertContains(response, "Notification type is required", status_code=400)
 
 
-class TestNotificationPushEnabledListView(AuthenticatedAPITestCase):
+class TestNotificationPushDisabledListView(AuthenticatedAPITestCase):
     authentication_class = APIKeyAuthentication
 
     def setUp(self):
         super().setUp()
-        self.url = reverse("notification-device-push-type-enabled-list")
+        self.url = reverse("notification-device-push-type-disabled-list")
         self.device = baker.make(
             Device, external_id="test-device-id", firebase_token="test-token", os="ios"
         )
@@ -217,19 +217,18 @@ class TestNotificationPushEnabledListView(AuthenticatedAPITestCase):
         }
         self.notification_types = ["type1", "type2", "type3"]
 
-    def test_list_enabled_notifications_empty(self):
-        """Test listing enabled notifications when none exist."""
+    def test_list_disabled_notifications_empty(self):
+        """Test listing disabled notifications when none exist."""
         response = self.client.get(self.url, headers=self.headers)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
-    def test_list_enabled_notifications_success(self):
-        """Test listing multiple enabled notifications."""
-        # Create some enabled notifications
+    def test_list_disabled_notifications_success(self):
+        """Test listing multiple disabled notifications."""
         for notification_type in self.notification_types:
             baker.make(
-                NotificationPushTypeEnabled,
+                NotificationPushTypeDisabled,
                 device=self.device,
                 notification_type=notification_type,
             )
@@ -240,14 +239,14 @@ class TestNotificationPushEnabledListView(AuthenticatedAPITestCase):
         self.assertEqual(len(response.data), len(self.notification_types))
         self.assertEqual(sorted(response.data), sorted(self.notification_types))
 
-    def test_list_enabled_notifications_missing_device_id(self):
+    def test_list_disabled_notifications_missing_device_id(self):
         """Test listing notifications without device ID header."""
         response = self.client.get(self.url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], MissingDeviceIdHeader.default_detail)
 
-    def test_list_enabled_notifications_invalid_device(self):
+    def test_list_disabled_notifications_invalid_device(self):
         """Test listing notifications for non-existent device."""
         headers = {settings.HEADER_DEVICE_ID: "non-existent-device", **self.api_headers}
         response = self.client.get(self.url, headers=headers)
@@ -255,7 +254,7 @@ class TestNotificationPushEnabledListView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
-    def test_list_enabled_notifications_other_device(self):
+    def test_list_disabled_notifications_other_device(self):
         """Test that notifications from other devices are not included."""
         # Create another device with notifications
         other_device = baker.make(
@@ -265,14 +264,14 @@ class TestNotificationPushEnabledListView(AuthenticatedAPITestCase):
             os="android",
         )
         baker.make(
-            NotificationPushTypeEnabled,
+            NotificationPushTypeDisabled,
             device=other_device,
             notification_type="other-type",
         )
 
         # Create notification for test device
         baker.make(
-            NotificationPushTypeEnabled,
+            NotificationPushTypeDisabled,
             device=self.device,
             notification_type="test-type",
         )
@@ -284,12 +283,12 @@ class TestNotificationPushEnabledListView(AuthenticatedAPITestCase):
         self.assertEqual(response.data[0], "test-type")
 
 
-class TestNotificationPushServiceEnabledView(AuthenticatedAPITestCase):
+class TestNotificationPushModuleDisabledView(AuthenticatedAPITestCase):
     authentication_class = APIKeyAuthentication
 
     def setUp(self):
         super().setUp()
-        self.url = reverse("notification-device-push-service-enabled")
+        self.url = reverse("notification-device-push-module-disabled")
         self.device = baker.make(
             Device, external_id="test-device-id", firebase_token="test-token", os="ios"
         )
@@ -297,95 +296,95 @@ class TestNotificationPushServiceEnabledView(AuthenticatedAPITestCase):
             settings.HEADER_DEVICE_ID: self.device.external_id,
             **self.api_headers,
         }
-        self.service_names = [service.value for service in Service]
+        self.module_slugs = [module.value for module in Module]
 
-    def test_enable_push_service_success(self):
-        """Test successfully enabling push notifications for a service."""
-        service_name = self.service_names[0]
-        data = {"service_name": service_name}
-        response = self.client.post(self.url, data, headers=self.headers)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["service_name"], service_name)
-        self.assertTrue(
-            NotificationPushServiceEnabled.objects.filter(
-                device=self.device, service_name=service_name
-            ).exists()
-        )
-
-    def test_enable_push_service_duplicate(self):
-        """Test enabling an already enabled service."""
+    def test_disable_push_module_duplicate(self):
+        """Test enabling an already disabled module."""
         baker.make(
-            NotificationPushServiceEnabled,
+            NotificationPushModuleDisabled,
             device=self.device,
-            service_name=self.service_names[0],
+            module_slug=self.module_slugs[0],
         )
 
-        data = {"service_name": self.service_names[0]}
+        data = {"module_slug": self.module_slugs[0]}
         response = self.client.post(self.url, data, headers=self.headers)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            NotificationPushServiceEnabled.objects.filter(
-                device=self.device, service_name=self.service_names[0]
+            NotificationPushModuleDisabled.objects.filter(
+                device=self.device, module_slug=self.module_slugs[0]
             ).count(),
             1,
         )
 
-    def test_unknown_service_name(self):
-        """Test enabling push notifications for an unknown service."""
-        unknown_service_name = "unknown-service-name"
-        data = {"service_name": unknown_service_name}
+    def test_unknown_module_slug(self):
+        """Test enabling push notifications for an unknown module. This should not raise an error."""
+        unknown_module_slug = "unknown-module-name"
+        data = {"module_slug": unknown_module_slug}
         response = self.client.post(self.url, data, headers=self.headers)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_enable_push_service_missing_device_id(self):
+    def test_disable_push_module_missing_device_id(self):
         """Test enabling push notifications without device ID header."""
-        data = {"service_name": self.service_names[0]}
+        data = {"module_slug": self.module_slugs[0]}
         response = self.client.post(self.url, data, headers=self.api_headers)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_disable_push_service_success(self):
-        """Test successfully disabling push notifications for a service."""
-        baker.make(
-            NotificationPushServiceEnabled,
-            device=self.device,
-            service_name=self.service_names[0],
+    def test_disable_push_module_success(self):
+        """Test successfully enabling push notifications for a module."""
+        module_slug = self.module_slugs[0]
+        data = {"module_slug": module_slug}
+        response = self.client.post(self.url, data, headers=self.headers)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["module_slug"], module_slug)
+        self.assertTrue(
+            NotificationPushModuleDisabled.objects.filter(
+                device=self.device, module_slug=module_slug
+            ).exists()
         )
 
-        url = f"{self.url}?service_name={self.service_names[0]}"
+    def test_enable_push_module_success(self):
+        """Test successfully disabling push notifications for a module."""
+        baker.make(
+            NotificationPushModuleDisabled,
+            device=self.device,
+            module_slug=self.module_slugs[0],
+        )
+
+        url = f"{self.url}?module_slug={self.module_slugs[0]}"
         response = self.client.delete(url, headers=self.headers)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(
-            NotificationPushServiceEnabled.objects.filter(
-                device=self.device, service_name=self.service_names[0]
+            NotificationPushModuleDisabled.objects.filter(
+                device=self.device, module_slug=self.module_slugs[0]
             ).exists()
         )
 
-    def test_disable_push_service_service_name_not_found(self):
-        """Test disabling push notifications for a non-existent service."""
-        url = f"{self.url}?service_name={self.service_names[0]}"
+    def test_disable_push_module_module_slug_not_found(self):
+        """Test disabling push notifications for a non-existent module."""
+        url = f"{self.url}?module_slug={self.module_slugs[0]}"
         response = self.client.delete(url, headers=self.headers)
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_disable_push_service_missing_service_name(self):
-        """Test disabling push notifications without specifying service name."""
+    def test_disable_push_module_missing_module_slug(self):
+        """Test disabling push notifications without specifying module name."""
         response = self.client.delete(self.url, headers=self.headers)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertContains(response, "Service name is required", status_code=400)
+        self.assertContains(response, "Module name is required", status_code=400)
 
 
-class TestNotificationPushServiceEnabledListView(AuthenticatedAPITestCase):
+class TestNotificationPushModuleDisabledListView(AuthenticatedAPITestCase):
     authentication_class = APIKeyAuthentication
 
     def setUp(self):
         super().setUp()
-        self.url = reverse("notification-device-push-service-enabled-list")
+        self.url = reverse("notification-device-push-module-disabled-list")
         self.device = baker.make(
             Device, external_id="test-device-id", firebase_token="test-token", os="ios"
         )
@@ -393,40 +392,39 @@ class TestNotificationPushServiceEnabledListView(AuthenticatedAPITestCase):
             settings.HEADER_DEVICE_ID: self.device.external_id,
             **self.api_headers,
         }
-        self.service_names = [service.value for service in Service]
+        self.module_slugs = [module.value for module in Module]
 
-    def test_list_enabled_services_empty(self):
-        """Test listing enabled services when none exist."""
+    def test_list_disabled_modules_empty(self):
+        """Test listing disabled modules when none exist."""
         response = self.client.get(self.url, headers=self.headers)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
-    def test_list_enabled_services_success(self):
-        """Test listing multiple enabled services."""
-        # Create some enabled services
-        for service_name in self.service_names:
+    def test_list_disabled_modules_success(self):
+        """Test listing multiple disabled modules."""
+        for module_slug in self.module_slugs:
             baker.make(
-                NotificationPushServiceEnabled,
+                NotificationPushModuleDisabled,
                 device=self.device,
-                service_name=service_name,
+                module_slug=module_slug,
             )
 
         response = self.client.get(self.url, headers=self.headers)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), len(self.service_names))
-        self.assertEqual(sorted(response.data), sorted(self.service_names))
+        self.assertEqual(len(response.data), len(self.module_slugs))
+        self.assertEqual(sorted(response.data), sorted(self.module_slugs))
 
-    def test_list_enabled_services_missing_device_id(self):
-        """Test listing enabled services without device ID header."""
+    def test_list_disabled_modules_missing_device_id(self):
+        """Test listing disabled modules without device ID header."""
         response = self.client.get(self.url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], MissingDeviceIdHeader.default_detail)
 
-    def test_list_enabled_services_invalid_device(self):
-        """Test listing enabled services for non-existent device."""
+    def test_list_disabled_modules_invalid_device(self):
+        """Test listing disabled modules for non-existent device."""
         headers = {settings.HEADER_DEVICE_ID: "non-existent-device", **self.api_headers}
         response = self.client.get(self.url, headers=headers)
 

@@ -9,8 +9,8 @@ from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 from notification.models import (
     Device,
-    NotificationPushServiceEnabled,
-    NotificationPushTypeEnabled,
+    NotificationPushModuleDisabled,
+    NotificationPushTypeDisabled,
 )
 from notification.serializers.device_serializers import (
     DeviceRegisterRequestSerializer,
@@ -19,8 +19,8 @@ from notification.serializers.device_serializers import (
 from notification.serializers.notification_config_serializers import (
     NotificationPushEnabledListSerializer,
     NotificationPushEnabledSerializer,
-    NotificationPushServiceEnabledListSerializer,
-    NotificationPushServiceEnabledSerializer,
+    NotificationPushModuleEnabledListSerializer,
+    NotificationPushModuleEnabledSerializer,
 )
 
 
@@ -92,7 +92,7 @@ class NotificationPushEnabledView(DeviceIdMixin, generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         device = get_object_or_404(Device, external_id=self.device_id)
-        config, _ = NotificationPushTypeEnabled.objects.get_or_create(
+        config, _ = NotificationPushTypeDisabled.objects.get_or_create(
             device=device,
             notification_type=serializer.validated_data["notification_type"],
         )
@@ -109,7 +109,7 @@ class NotificationPushEnabledView(DeviceIdMixin, generics.GenericAPIView):
             raise ValidationError("Notification type is required")
 
         get_object_or_404(
-            NotificationPushTypeEnabled,
+            NotificationPushTypeDisabled,
             device__external_id=self.device_id,
             notification_type=notification_type,
         ).delete()
@@ -124,7 +124,7 @@ class NotificationPushEnabledListView(DeviceIdMixin, generics.ListAPIView):
     serializer_class = NotificationPushEnabledListSerializer
 
     def get_queryset(self):
-        return NotificationPushTypeEnabled.objects.filter(
+        return NotificationPushTypeDisabled.objects.filter(
             device__external_id=self.device_id
         )
 
@@ -141,17 +141,17 @@ class NotificationPushEnabledListView(DeviceIdMixin, generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class NotificationPushServiceEnabledView(DeviceIdMixin, generics.GenericAPIView):
+class NotificationPushModuleEnabledView(DeviceIdMixin, generics.GenericAPIView):
     """
     Enable or disable a push for a notification type for a device.
     """
 
-    serializer_class = NotificationPushServiceEnabledSerializer
+    serializer_class = NotificationPushModuleEnabledSerializer
     http_method_names = ["post", "delete"]
 
     @extend_schema_for_device_id(
-        request=NotificationPushServiceEnabledSerializer,
-        success_response=NotificationPushServiceEnabledSerializer,
+        request=NotificationPushModuleEnabledSerializer,
+        success_response=NotificationPushModuleEnabledSerializer,
         exceptions=[ValidationError, NotFound],
     )
     def post(self, request, *args, **kwargs):
@@ -159,44 +159,44 @@ class NotificationPushServiceEnabledView(DeviceIdMixin, generics.GenericAPIView)
         serializer.is_valid(raise_exception=True)
 
         device = get_object_or_404(Device, external_id=self.device_id)
-        config, _ = NotificationPushServiceEnabled.objects.get_or_create(
+        config, _ = NotificationPushModuleDisabled.objects.get_or_create(
             device=device,
-            service_name=serializer.validated_data["service_name"],
+            module_slug=serializer.validated_data["module_slug"],
         )
 
         return Response(self.serializer_class(config).data, status=status.HTTP_200_OK)
 
     @extend_schema_for_device_id(
-        additional_params=[NotificationPushServiceEnabledSerializer],
+        additional_params=[NotificationPushModuleEnabledSerializer],
         exceptions=[NotFound],
     )
     def delete(self, request, *args, **kwargs):
-        service_name = request.query_params.get("service_name")
-        if not service_name:
-            raise ValidationError("Service name is required")
+        module_slug = request.query_params.get("module_slug")
+        if not module_slug:
+            raise ValidationError("Module name is required")
 
         get_object_or_404(
-            NotificationPushServiceEnabled,
+            NotificationPushModuleDisabled,
             device__external_id=self.device_id,
-            service_name=service_name,
+            module_slug=module_slug,
         ).delete()
         return Response(status=status.HTTP_200_OK)
 
 
-class NotificationPushServiceEnabledListView(DeviceIdMixin, generics.ListAPIView):
+class NotificationPushModuleEnabledListView(DeviceIdMixin, generics.ListAPIView):
     """
     List all enabled push types for a device.
     """
 
-    serializer_class = NotificationPushServiceEnabledListSerializer
+    serializer_class = NotificationPushModuleEnabledListSerializer
 
     def get_queryset(self):
-        return NotificationPushServiceEnabled.objects.filter(
+        return NotificationPushModuleDisabled.objects.filter(
             device__external_id=self.device_id
         )
 
     @extend_schema_for_device_id(
-        success_response=NotificationPushServiceEnabledListSerializer,
+        success_response=NotificationPushModuleEnabledListSerializer,
         examples=[
             OpenApiExample(
                 name="Example 1",

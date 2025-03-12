@@ -1,6 +1,6 @@
-""" IPROX Extract Transform and Load (IPROX-ETL)
+"""IPROX Extract Transform and Load (IPROX-ETL)
 
-    Fetch data from the IPROX API and ingest it into Construction-Work database
+Fetch data from the IPROX API and ingest it into Construction-Work database
 """
 
 from logging import getLogger

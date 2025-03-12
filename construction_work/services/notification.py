@@ -5,7 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from construction_work.models.manage_models import WarningMessage
-from core.enums import NotificationType, Service
+from core.enums import Module, NotificationType
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def create_request_data(warning: WarningMessage, warning_image) -> dict:
     request_data = {
         "title": warning.project.title,
         "body": warning.title,
-        "module_slug": Service.CONSTRUCTION_WORK.value,
+        "module_slug": Module.CONSTRUCTION_WORK.value,
         "context": {
             "linkSourceid": str(warning.pk),
             "type": "ProjectWarningCreatedByProjectManager",

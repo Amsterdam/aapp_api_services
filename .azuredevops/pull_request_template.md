@@ -12,9 +12,10 @@ Affected services
 
 Definition of Done
 - [ ] 100% unittest coverage
-- [ ] Infrastructure is deployed 
+- [ ] Infrastructure in aapp_azure_infra repo is bijgewerkt 
 - [ ] Elk endpoint heeft een loadtest (zover mogelijk)
-- [ ] Geen brekende backwards compatibility met de app
+- [ ] Swagger UI is gecontroleerd en up-to-date
+- [ ] Dependencies zijn up-to-date
 
 Na deployment
 - [ ] Handmatige functionele test op Ontwikkel en Test (bijvoorbeeld: door swagger klikken of notificatie sturen via beheer systeem) 

@@ -701,7 +701,9 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
 
         self.api_url_str = "construction-work:manage-warning-create"
 
-    @patch("construction_work.serializers.manage_serializers.WarningMessageCreateUpdateSerializer.construct_warning_image")
+    @patch(
+        "construction_work.serializers.manage_serializers.WarningMessageCreateUpdateSerializer.construct_warning_image"
+    )
     def test_create_warning_with_image_without_push_notification(
         self, mock_construct_image
     ):
@@ -1080,7 +1082,9 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         new_warning_image = WarningImage.objects.filter(warning=warning).first()
         self.assertIsNone(new_warning_image)
 
-    @patch("construction_work.serializers.manage_serializers.WarningMessageCreateUpdateSerializer.construct_warning_image")
+    @patch(
+        "construction_work.serializers.manage_serializers.WarningMessageCreateUpdateSerializer.construct_warning_image"
+    )
     def test_update_warning_replace_image(self, mock_construct_image):
         project, publisher = self.create_project_and_publisher()
         self.update_headers_with_publisher_data(publisher.email)

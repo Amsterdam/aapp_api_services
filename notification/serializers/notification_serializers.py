@@ -89,7 +89,10 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
 class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
     scheduled_for = serializers.DateTimeField()
     device_ids = serializers.SlugRelatedField(
-        many=True, queryset=Device.objects.all(), slug_field="external_id"
+        many=True,
+        queryset=Device.objects.all(),
+        slug_field="external_id",
+        source="devices",
     )
 
     class Meta:
@@ -126,12 +129,9 @@ class ScheduledNotificationSerializer(ScheduledNotificationDetailSerializer):
 
 class NotificationCreateResponseSerializer(serializers.Serializer):
     total_device_count = serializers.IntegerField()
-    total_create_count = serializers.IntegerField()
     total_token_count = serializers.IntegerField()
+    total_enabled_count = serializers.IntegerField()
     failed_token_count = serializers.IntegerField()
-    missing_device_ids = serializers.ListField(
-        child=serializers.CharField(), allow_empty=True
-    )
 
 
 class NotificationUpdateSerializer(serializers.ModelSerializer):

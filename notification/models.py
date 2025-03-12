@@ -2,8 +2,6 @@ import uuid
 
 from django.db import models
 
-from core.enums import Service
-
 
 class Device(models.Model):
     """
@@ -22,14 +20,10 @@ class BaseNotification(models.Model):
     """
     Data as it is sent to devices.
     - id: custom primary key
-    - device_id: fk to Device.id
     - title: header of a notification (usually the name of app)
     - body: explains what the notification relates to
     - module_slug: for which (app) module was the notification created
     - context_json: tells the OS API how to handle e.g. click event, badge counter
-    - pushed_at: set to true when notification was pushed successfully
-    - created_at: to create an overview of the notification history
-    - is_read: to be set when device has read the notification
     - notification_type: determined by service that creates the notification
     - image: loosely coupled to image service
     """
@@ -50,9 +44,11 @@ class BaseNotification(models.Model):
 class ScheduledNotification(BaseNotification):
     """
     Scheduled notifications are notifications that are scheduled to be sent at a later time.
-    - scheduled_at: the date the notification was scheduled at
-    - scheduled_for: the date the notification was scheduled for
+    - created_at: the timestamp on which the service created the schedule request
     - identifier: the unique identifier of the schedule starting with the module_slug
+    - scheduled_for: the timestamp the notification was scheduled to be pushed
+    - device_ids: m2m to Device.id
+    - pushed_at: set to true when scheduled notification was processed successfully. Prevents duplicate pushes.
     """
 
     class Meta:
@@ -62,10 +58,22 @@ class ScheduledNotification(BaseNotification):
 
     identifier = models.CharField()
     scheduled_for = models.DateTimeField()
-    device_ids = models.ManyToManyField(Device, related_name="scheduled_notifications")
+    devices = models.ManyToManyField(Device, related_name="scheduled_notifications")
+    pushed_at = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return f"[SCHEDULED] {self.module_slug} - {self.title}"
 
 
 class Notification(BaseNotification):
+    """
+    - created_at: the timestamp on which the service created the push request
+    - schedule: fk to ScheduledNotification.id, only filled when the notification originated from a schedule
+    - device_id: fk to Device.id
+    - is_read: to be set when device has read the notification
+    - pushed_at: set to true when notification was pushed successfully
+    """
+
     schedule = models.ForeignKey(
         ScheduledNotification, on_delete=models.CASCADE, null=True
     )
@@ -73,8 +81,11 @@ class Notification(BaseNotification):
     is_read = models.BooleanField(default=False)
     pushed_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.module_slug} - {self.title}"
 
-class NotificationPushTypeEnabled(models.Model):
+
+class NotificationPushTypeDisabled(models.Model):
     """
     Record that determines if push notifications are enabled for a device.
     When no record of notification type exists for a device,
@@ -93,10 +104,10 @@ class NotificationPushTypeEnabled(models.Model):
     notification_type = models.CharField()
 
 
-class NotificationPushServiceEnabled(models.Model):
+class NotificationPushModuleDisabled(models.Model):
     """
     Record that determines if push notifications are enabled for an entire module.
     """
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
-    service_name = models.CharField(choices=Service.choices())
+    module_slug = models.CharField()

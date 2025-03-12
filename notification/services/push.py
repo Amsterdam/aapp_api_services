@@ -4,15 +4,15 @@ import logging
 
 import firebase_admin
 from django.conf import settings
-from django.db.models import Exists, OuterRef
+from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
 from firebase_admin import credentials, messaging
 
 from core.services.image_set import ImageSetService
 from notification.models import (
     Device,
     Notification,
-    NotificationPushServiceEnabled,
-    NotificationPushTypeEnabled,
+    NotificationPushModuleDisabled,
+    NotificationPushTypeDisabled,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class PushServiceDeviceLimitError(Exception):
 
 class PushService:
     def __init__(
-        self, source_notification: Notification, device_ids: list[str]
+        self, source_notification: Notification, devices_qs: QuerySet[Device]
     ) -> None:
         """
         First the Firebase admin will be initialized.
@@ -51,80 +51,97 @@ class PushService:
         else:
             firebase_admin.get_app()
 
-        max_devices = settings.FIREBASE_DEVICE_LIMIT
-        if len(device_ids) > max_devices:
-            raise PushServiceDeviceLimitError(
-                f"Too many devices [{len(device_ids)=}, {max_devices=}]"
-            )
-
-        self.device_ids = device_ids
+        self.devices_qs = devices_qs
         self.source_notification = source_notification
-        self.source_notification.id = None
+        self.total_device_count = 0
+        self.total_token_count = 0
+        self.total_enabled_count = 0
+        self.failed_token_count = 0
 
     def push(self) -> dict:
-        known_devices = (
-            Device.objects.filter(
-                external_id__in=self.device_ids,
-            )
-            .annotate(
-                wants_notification=Exists(
-                    NotificationPushTypeEnabled.objects.filter(
-                        device=OuterRef("pk"),
-                        notification_type=self.source_notification.notification_type,
-                    )
-                )
-                & Exists(
-                    NotificationPushServiceEnabled.objects.filter(
-                        device=OuterRef("pk"),
-                        service_name=self.source_notification.module_slug,
-                    )
-                )
-            )
-            .all()
+        device_list, enabled_devices = self.get_enabled_devices_for_notification()
+        notifications_with_push, _ = self.create_notifications(
+            device_list, enabled_devices
+        )
+        if not notifications_with_push:
+            logger.info("Notification(s) created, but no devices to push to")
+            return self._response_data
+
+        self.push_messages(notifications_with_push)
+        return self._response_data
+
+    def get_enabled_devices_for_notification(self) -> (list[Device], list[Device]):
+        """
+        This function should execute a single database query, to get all enabled devices
+        """
+        module_disabled_exists = NotificationPushModuleDisabled.objects.filter(
+            device=OuterRef("pk"), module_slug=self.source_notification.module_slug
+        )
+        type_disabled_exists = NotificationPushTypeDisabled.objects.filter(
+            device=OuterRef("pk"),
+            notification_type=self.source_notification.notification_type,
+        )
+        annotated_devices = self.devices_qs.annotate(
+            has_token=Case(
+                When(firebase_token__isnull=False, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+            module_disabled=Exists(module_disabled_exists),
+            type_disabled=Exists(type_disabled_exists),
         )
 
-        known_device_ids = [device.external_id for device in known_devices]
-        unknown_device_ids = set(self.device_ids) - set(known_device_ids)
-        new_devices = Device.objects.bulk_create(
-            Device(external_id=device_id) for device_id in unknown_device_ids
-        )
+        self.device_list = list(annotated_devices)  # Database query is executed here
+        max_devices = settings.FIREBASE_DEVICE_LIMIT
+        if len(self.device_list) > max_devices:
+            raise PushServiceDeviceLimitError(
+                f"Too many devices [{len(self.device_list)=}, {max_devices=}]"
+            )
+        self.total_device_count = len(self.device_list)
 
-        all_devices = list(known_devices) + new_devices
-        notifications = self.create_notifications(all_devices)
+        enabled_devices = []
+        self.total_token_count = 0
+        for device in self.device_list:
+            if device.has_token:
+                self.total_token_count += 1
+            if (
+                device.has_token
+                and not device.module_disabled
+                and not device.type_disabled
+            ):
+                enabled_devices.append(device)
 
-        response_data = self.push_messages(notifications, known_devices)
+        self.total_enabled_count = len(enabled_devices)
+        return self.device_list, enabled_devices
 
-        # NOTE: we're not yet checking if the device has the notification type enabled
-        # TODO: when this gets activated, unit tests need to be added!
-
-        # known_devices_with_notification_enabled = [
-        #     device for device in known_devices if device.wants_notification
-        # ]
-        # response_data = self.push_messages(
-        #     notifications, known_devices_with_notification_enabled
-        # )
-
-        response_data["total_device_count"] = len(self.device_ids)
-        response_data["unknown_device_count"] = len(unknown_device_ids)
-        return response_data
-
-    def create_notifications(self, devices: list[Device]) -> dict[str, Notification]:
+    def create_notifications(
+        self, device_list: list[Device], enabled_device_list: list[Device]
+    ) -> (list[Notification], list[Notification]):
         """
         The supplied source_notification will be duplicated for every device.
 
         Returns:
             list[Notification]: newly created notification objects
         """
-        new_notifications = {}
-        for c in devices:
+        notifications_with_push, notifications_without_push = [], []
+        self.source_notification.id = None
+        for c in device_list:
             new_notification: Notification = copy.copy(self.source_notification)
             new_notification.device = c
-            new_notifications[c.external_id] = new_notification
+            if c in enabled_device_list:
+                notifications_with_push.append(new_notification)
+            else:
+                notifications_without_push.append(new_notification)
 
-        Notification.objects.bulk_create(new_notifications.values())
-        return new_notifications
+        notifications_with_push = Notification.objects.bulk_create(
+            notifications_with_push
+        )
+        notifications_without_push = Notification.objects.bulk_create(
+            notifications_without_push
+        )
+        return notifications_with_push, notifications_without_push
 
-    def push_messages(self, notifications: dict[str, Notification], devices) -> dict:
+    def push_messages(self, notifications: list[Notification]):
         """
         Forwards notification to Firebase, to be pushed to devices.
 
@@ -135,37 +152,14 @@ class PushService:
             notifications (list[Notification]): notifications used for Firebase message data
         """
 
-        devices_with_token = [c for c in devices if c.firebase_token]
-        if not devices_with_token:
-            logger.info(
-                "Notification(s) created, but none of the devices have a Firebase token",
-                extra={
-                    "total_device_count": len(self.device_ids),
-                },
-            )
-            return {
-                "devices_with_token_count": 0,
-                "failed_token_count": 0,
-            }
-
-        firebase_messages = []
-        for device in devices_with_token:
-            notification_obj = notifications[device.external_id]
-            message = self._define_firebase_message(device, notification_obj)
-            firebase_messages.append(message)
+        firebase_messages = [self._define_firebase_message(n) for n in notifications]
         batch_response = messaging.send_each(firebase_messages)
-
-        failed_tokens = []
         if batch_response.failure_count > 0:
-            failed_tokens = self._log_failures(batch_response, firebase_messages)
-
-        return {
-            "devices_with_token_count": len(devices_with_token),
-            "failed_token_count": len(failed_tokens),
-        }
+            self._log_failures(batch_response, firebase_messages)
+        return
 
     def _define_firebase_message(
-        self, device: Device, notification_obj: Notification
+        self, notification_obj: Notification
     ) -> messaging.Message:
         complete_context = notification_obj.context
         complete_context["notificationId"] = str(notification_obj.pk)
@@ -181,7 +175,7 @@ class PushService:
             notification=messaging.Notification(
                 title=notification_obj.title, body=notification_obj.body
             ),
-            token=device.firebase_token,
+            token=notification_obj.device.firebase_token,
             android=android_image_config,
             apns=ios_image_config,
         )
@@ -206,9 +200,7 @@ class PushService:
         )
         return android_image_config, ios_image_config
 
-    def _log_failures(
-        self, batch_response, firebase_messages: list[messaging.Message]
-    ) -> list[str]:
+    def _log_failures(self, batch_response, firebase_messages: list[messaging.Message]):
         failed_tokens = []
         responses = batch_response.responses
         for idx, resp in enumerate(responses):
@@ -222,4 +214,13 @@ class PushService:
                         "firebase_token": failed_token,
                     },
                 )
-        return failed_tokens
+        self.failed_token_count = len(failed_tokens)
+
+    @property
+    def _response_data(self):
+        return dict(
+            total_device_count=self.total_device_count,
+            total_token_count=self.total_token_count,
+            total_enabled_count=self.total_enabled_count,
+            failed_token_count=self.failed_token_count,
+        )

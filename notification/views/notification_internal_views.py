@@ -49,14 +49,32 @@ class NotificationInitView(generics.CreateAPIView):
         device_ids = serializer.validated_data.pop("device_ids")
         notification = Notification(**serializer.validated_data)
 
+        logger.info(f"Processing new notification: {notification}")
+        devices_qs = self.get_device_queryset(device_ids)
         try:
-            push_service = PushService(notification, device_ids)
+            push_service = PushService(notification, devices_qs=devices_qs)
             response_data = push_service.push()
         except Exception:
             logger.error("Failed to push notification", exc_info=True)
             raise PushServiceError("Failed to push notification")
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def get_device_queryset(device_ids):
+        known_devices_qs = Device.objects.filter(external_id__in=device_ids).all()
+        known_device_ids = [device.external_id for device in known_devices_qs]
+        unknown_device_ids = set(device_ids) - set(known_device_ids)
+        if not unknown_device_ids:
+            return known_devices_qs
+
+        Device.objects.bulk_create(
+            Device(external_id=device_id) for device_id in unknown_device_ids
+        )
+        new_devices_qs = Device.objects.filter(external_id__in=unknown_device_ids)
+        logger.warning(f"Created {len(new_devices_qs)} unknown devices.")
+        devices_qs = known_devices_qs | new_devices_qs
+        return devices_qs
 
 
 class ScheduledNotificationView(ModelViewSet):

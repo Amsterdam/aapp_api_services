@@ -1,14 +1,14 @@
 from rest_framework import serializers
 
 from notification.models import (
-    NotificationPushServiceEnabled,
-    NotificationPushTypeEnabled,
+    NotificationPushModuleDisabled,
+    NotificationPushTypeDisabled,
 )
 
 
 class NotificationPushEnabledSerializer(serializers.ModelSerializer):
     class Meta:
-        model = NotificationPushTypeEnabled
+        model = NotificationPushTypeDisabled
         fields = ["notification_type"]
 
 
@@ -17,14 +17,14 @@ class NotificationPushEnabledListSerializer(NotificationPushEnabledSerializer):
         return instance.notification_type
 
 
-class NotificationPushServiceEnabledSerializer(serializers.ModelSerializer):
+class NotificationPushModuleEnabledSerializer(serializers.ModelSerializer):
     class Meta:
-        model = NotificationPushServiceEnabled
-        fields = ["service_name"]
+        model = NotificationPushModuleDisabled
+        fields = ["module_slug"]
 
 
-class NotificationPushServiceEnabledListSerializer(
-    NotificationPushServiceEnabledSerializer
+class NotificationPushModuleEnabledListSerializer(
+    NotificationPushModuleEnabledSerializer
 ):
     def to_representation(self, instance):
-        return instance.service_name
+        return instance.module_slug

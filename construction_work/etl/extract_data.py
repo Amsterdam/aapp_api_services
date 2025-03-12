@@ -1,5 +1,5 @@
-""" Fetch all project and article data from IPROX via its API
-    See README.md for more info regarding the IPROX API
+"""Fetch all project and article data from IPROX via its API
+See README.md for more info regarding the IPROX API
 """
 
 import asyncio

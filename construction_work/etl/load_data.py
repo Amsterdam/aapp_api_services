@@ -1,5 +1,5 @@
-""" Write all project and article data from IPROX to Construction Work database
-    See README.md for more info regarding the IPROX API
+"""Write all project and article data from IPROX to Construction Work database
+See README.md for more info regarding the IPROX API
 """
 
 from logging import getLogger

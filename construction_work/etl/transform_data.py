@@ -1,4 +1,4 @@
-""" Transform data into suitable format for ingestion """
+"""Transform data into suitable format for ingestion"""
 
 from datetime import datetime
 

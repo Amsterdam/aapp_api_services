@@ -49,10 +49,10 @@ class NotificationCreateViewTests(BasicAPITestCase):
         self.assertEqual(
             result.json(),
             {
-                "devices_with_token_count": 1,
-                "failed_token_count": 0,
                 "total_device_count": 3,
-                "unknown_device_count": 2,
+                "total_token_count": 1,
+                "total_enabled_count": 1,
+                "failed_token_count": 0,
             },
         )
 
@@ -82,10 +82,10 @@ class NotificationCreateViewTests(BasicAPITestCase):
         self.assertEqual(
             response,
             {
-                "devices_with_token_count": 0,
-                "failed_token_count": 0,
                 "total_device_count": 3,
-                "unknown_device_count": 3,
+                "total_token_count": 0,
+                "total_enabled_count": 0,
+                "failed_token_count": 0,
             },
         )
         notifications = Notification.objects.all()
@@ -185,7 +185,7 @@ class ScheduledNotificationTests(ScheduledNotificationBase):
         self.assertTrue(Device.objects.filter(external_id="missing_device_id").exists())
         scheduled_devices = ScheduledNotification.objects.get(
             identifier=self.identifier
-        ).device_ids.all()
+        ).devices.all()
         self.assertEqual(scheduled_devices.count(), 4)
 
     def test_create_scheduled_notification_identifier_must_start_with_module_slug(self):
