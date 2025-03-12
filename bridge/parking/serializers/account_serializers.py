@@ -1,5 +1,9 @@
 from rest_framework import serializers
 
+from bridge.parking.serializers.general_serializers import (
+    AmountCurrencySerializer,
+    RedirectSerializer,
+)
 from core.utils.serializer_utils import (
     CamelToSnakeCaseSerializer,
     SnakeToCamelCaseSerializer,
@@ -49,3 +53,9 @@ class AccountDetailsResponseSerializer(CamelToSnakeCaseSerializer):
     client_id = serializers.IntegerField()
     wallet = WalletSerializer()
     account_type = serializers.CharField()
+
+
+class BalanceRequestSerializer(SnakeToCamelCaseSerializer):
+    balance = AmountCurrencySerializer()
+    redirect = RedirectSerializer()
+    locale = serializers.CharField()

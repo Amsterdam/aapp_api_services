@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from bridge.parking.serializers.general_serializers import (
     AmountCurrencySerializer,
+    RedirectSerializer,
     StatusTranslationSerializer,
     ValueCurrencySerializer,
 )
@@ -33,6 +34,7 @@ class ParkingSessionResponseSerializer(CamelToSnakeCaseSerializer):
     vehicle_id = serializers.CharField()
     status = serializers.CharField()
     ps_right_id = serializers.IntegerField(required=False)
+    visitor_name = serializers.CharField(required=False)
     remaining_time = serializers.IntegerField()
     report_code = serializers.CharField()
     created_time = serializers.DateTimeField()
@@ -66,10 +68,6 @@ class ParkingSessionOrderUpdateSerializer(SnakeToCamelCaseSerializer):
     end_date_time = serializers.DateTimeField()
 
 
-class RedirectSerializer(CamelToSnakeCaseSerializer):
-    merchant_return_url = serializers.URLField()
-
-
 class FixedParkingSessionSerializer(SnakeToCamelCaseSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -87,12 +85,6 @@ class ParkingSessionStartRequestSerializer(FixedParkingSessionSerializer):
 
 class ParkingSessionUpdateRequestSerializer(FixedParkingSessionSerializer):
     parking_session = ParkingSessionOrderUpdateSerializer()
-
-
-class ParkingSessionStartResponseSerializer(CamelToSnakeCaseSerializer):
-    frontend_id = serializers.IntegerField()
-    order_status = serializers.CharField()
-    order_type = serializers.CharField()
 
 
 class ParkingSessionReceiptRequestSerializer(SnakeToCamelCaseSerializer):

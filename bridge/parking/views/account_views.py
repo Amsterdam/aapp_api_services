@@ -2,8 +2,12 @@ from bridge.parking.serializers.account_serializers import (
     AccountDetailsResponseSerializer,
     AccountLoginRequestSerializer,
     AccountLoginResponseSerializer,
+    BalanceRequestSerializer,
     PinCodeRequestSerializer,
     PinCodeResponseSerializer,
+)
+from bridge.parking.serializers.general_serializers import (
+    ParkingOrderResponseSerializer,
 )
 from bridge.parking.serializers.permit_serializer import (
     PermitItemSerializer,
@@ -83,4 +87,23 @@ class ParkingPermitsView(BaseSSPView):
         requires_access_token=True,
     )
     def get(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+
+class ParkingBalanceView(BaseSSPView):
+    """
+    Upgrade balance via SSP API
+    """
+
+    serializer_class = BalanceRequestSerializer
+    response_serializer_class = ParkingOrderResponseSerializer
+    ssp_http_method = "post"
+    ssp_endpoint = SSPEndpoint.ORDERS
+    requires_access_token = True
+
+    @ssp_openapi_decorator(
+        response_serializer_class=ParkingOrderResponseSerializer,
+        requires_access_token=True,
+    )
+    def post(self, request, *args, **kwargs):
         return self.call_ssp(request)

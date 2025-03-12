@@ -42,3 +42,26 @@ class StatusTranslationSerializer(serializers.ChoiceField):
             if key.upper() == data.upper():
                 return key
         raise serializers.ValidationError(f"Invalid status: {data}")
+
+
+class ParkingOrderResponseSerializer(CamelToSnakeCaseSerializer):
+    """
+    order_status options:
+    - Initiated
+    - Processing
+    - ...?
+
+    order_type options:
+    - Parking
+    - Payment
+    - Both
+    - ...?
+    """
+
+    frontend_id = serializers.IntegerField()
+    order_status = serializers.CharField()
+    order_type = serializers.CharField()
+
+
+class RedirectSerializer(CamelToSnakeCaseSerializer):
+    merchant_return_url = serializers.URLField()

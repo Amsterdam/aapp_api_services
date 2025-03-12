@@ -1,3 +1,6 @@
+from bridge.parking.serializers.general_serializers import (
+    ParkingOrderResponseSerializer,
+)
 from bridge.parking.serializers.session_serializers import (
     ParkingSessionListPaginatedResponseSerializer,
     ParkingSessionListRequestSerializer,
@@ -5,7 +8,6 @@ from bridge.parking.serializers.session_serializers import (
     ParkingSessionReceiptResponseSerializer,
     ParkingSessionResponseSerializer,
     ParkingSessionStartRequestSerializer,
-    ParkingSessionStartResponseSerializer,
     ParkingSessionUpdateRequestSerializer,
 )
 from bridge.parking.services.ssp import SSPEndpoint
@@ -42,7 +44,7 @@ class ParkingSessionStartUpdateView(BaseSSPView):
     """
 
     # TODO: response the same for POST and PATCH?
-    response_serializer_class = ParkingSessionStartResponseSerializer
+    response_serializer_class = ParkingOrderResponseSerializer
     ssp_endpoint = SSPEndpoint.ORDERS
     requires_access_token = True
 
@@ -54,7 +56,7 @@ class ParkingSessionStartUpdateView(BaseSSPView):
         return None
 
     @ssp_openapi_decorator(
-        response_serializer_class=ParkingSessionStartResponseSerializer,
+        response_serializer_class=ParkingOrderResponseSerializer,
         requires_access_token=True,
     )
     def post(self, request, *args, **kwargs):
@@ -62,7 +64,7 @@ class ParkingSessionStartUpdateView(BaseSSPView):
         return self.call_ssp(request)
 
     @ssp_openapi_decorator(
-        response_serializer_class=ParkingSessionStartResponseSerializer,
+        response_serializer_class=ParkingOrderResponseSerializer,
         requires_access_token=True,
     )
     def patch(self, request, *args, **kwargs):

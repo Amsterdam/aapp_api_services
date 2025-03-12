@@ -24,6 +24,11 @@ urlpatterns = [
         name="parking-permits",
     ),
     path(
+        "parking/api/v1/balance",
+        account_views.ParkingBalanceView.as_view(),
+        name="parking-balance",
+    ),
+    path(
         "parking/api/v1/license-plates",
         license_plate_views.ParkingLicensePlateListView.as_view(),
         name="parking-license-plates-list",
@@ -41,7 +46,7 @@ urlpatterns = [
     path(
         "parking/api/v1/session",
         session_views.ParkingSessionStartUpdateView.as_view(),
-        name="parking-session-start",
+        name="parking-session-start-update",
     ),
     path(
         "parking/api/v1/session/receipt",

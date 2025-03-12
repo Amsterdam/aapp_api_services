@@ -6,6 +6,9 @@ from bridge.parking.exceptions import SSPForbiddenError, SSPResponseError
 from bridge.parking.serializers.account_serializers import (
     AccountDetailsResponseSerializer,
 )
+from bridge.parking.serializers.general_serializers import (
+    ParkingOrderResponseSerializer,
+)
 from bridge.parking.serializers.permit_serializer import PermitItemSerializer
 from bridge.parking.tests.test_base_ssp_view import BaseSSPTestCase
 from core.utils.serializer_utils import create_serializer_data
@@ -103,3 +106,28 @@ class TestParkingPermitsView(BaseSSPTestCase):
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, permit_item_list)
+
+
+class TestParkingBalanceView(BaseSSPTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("parking-balance")
+        self.test_payload = {
+            "balance": {
+                "amount": 100,
+                "currency": "EUR",
+            },
+            "redirect": {"merchant_return_url": "https://example.com"},
+            "locale": "nl",
+        }
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_successful_balance_upgrade(self, mock_request):
+        mock_response_content = create_serializer_data(ParkingOrderResponseSerializer)
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        response = self.client.post(
+            self.url, self.test_payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, mock_response_content)
