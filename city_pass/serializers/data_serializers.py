@@ -1,20 +1,33 @@
 from rest_framework import serializers
 
 
+class NotRequiredBlankToNullCharField(serializers.CharField):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.required = False
+        self.allow_null = True
+        self.allow_blank = True
+
+    def to_internal_value(self, data):
+        if data == "":
+            return None
+        return super().to_internal_value(data)
+
+
 class MijnAmsPassOwnerSerializer(serializers.Serializer):
     firstname = serializers.CharField()
     lastname = serializers.CharField()
-    initials = serializers.CharField(allow_null=True, allow_blank=True)
-    infix = serializers.CharField(required=False)
+    initials = NotRequiredBlankToNullCharField()
+    infix = NotRequiredBlankToNullCharField()
 
 
 class MijnAmsPassBudgetSerializer(serializers.Serializer):
     title = serializers.CharField()
-    description = serializers.CharField(required=False, allow_blank=True)
+    description = NotRequiredBlankToNullCharField()
     code = serializers.CharField()
-    budgetAssigned = serializers.FloatField()
+    budgetAssigned = serializers.FloatField(required=False)
     budgetAssignedFormatted = serializers.CharField()
-    budgetBalance = serializers.FloatField()
+    budgetBalance = serializers.FloatField(required=False)
     budgetBalanceFormatted = serializers.CharField()
     dateEnd = serializers.CharField()
     dateEndFormatted = serializers.CharField()
@@ -29,13 +42,13 @@ class MijnAmsPassDataSerializer(serializers.Serializer):
     dateEndFormatted = serializers.CharField()
     budgets = MijnAmsPassBudgetSerializer(many=True)
     balanceFormatted = serializers.CharField()
-    securityCode = serializers.CharField(allow_null=True)
+    securityCode = NotRequiredBlankToNullCharField()
 
 
 class MijnAmsPassBudgetTransactionsSerializer(serializers.Serializer):
     id = serializers.CharField()
     title = serializers.CharField()
-    amount = serializers.FloatField()
+    amount = serializers.FloatField(required=False)
     amountFormatted = serializers.CharField()
     datePublished = serializers.CharField()
     datePublishedFormatted = serializers.CharField()
@@ -45,16 +58,16 @@ class MijnAmsPassBudgetTransactionsSerializer(serializers.Serializer):
 
 class MijnAmsPassAanbiedingTransactionsSerializer(serializers.Serializer):
     id = serializers.CharField()
-    title = serializers.CharField(allow_null=True, allow_blank=True)
+    title = NotRequiredBlankToNullCharField()
     description = serializers.CharField()
     discountTitle = serializers.CharField()
-    discountAmount = serializers.FloatField()
+    discountAmount = serializers.FloatField(required=False)
     discountAmountFormatted = serializers.CharField()
     datePublished = serializers.CharField()
     datePublishedFormatted = serializers.CharField()
 
 
 class MijnAmsPassAanbiedingSerializer(serializers.Serializer):
-    discountAmountTotal = serializers.FloatField()
+    discountAmountTotal = serializers.FloatField(required=False)
     discountAmountTotalFormatted = serializers.CharField()
     transactions = MijnAmsPassAanbiedingTransactionsSerializer(many=True)
