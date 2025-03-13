@@ -8,6 +8,9 @@ x-app: &base-app
     POSTGRES_DB: dev
     POSTGRES_PORT: 5432
     POSTGRES_HOST: db
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    REDIS_PASSWORD: password
   volumes:
     - ./requirements:/app/requirements
     - ./core:/app/core
@@ -15,9 +18,10 @@ x-app: &base-app
   ports:
     - 8000:8000
   depends_on:
+    redis:
+      condition: service_healthy
     db:
       condition: service_healthy
-
 volumes:
   cache:
 
@@ -83,3 +87,14 @@ services:
     image: openapitools/openapi-diff:latest
     volumes:
       - ./${SERVICE_NAME}:/specs:ro
+
+  redis:
+    image: redis:6.2
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass password --maxmemory 100mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+      timeout: 3s

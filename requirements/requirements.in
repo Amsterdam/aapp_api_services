@@ -5,6 +5,7 @@ uWSGI
 drf_spectacular
 python-dotenv
 django-debug-toolbar
+django-redis
 
 # Modules
 djangorestframework-simplejwt

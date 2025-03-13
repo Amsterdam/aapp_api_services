@@ -80,4 +80,4 @@ spectacular:
 openapi-diff: spectacular
 	$(run) openapi-diff https://acc.app.amsterdam.nl/$(SERVICE_NAME_HYPHEN)/api/v1/openapi/ /specs/openapi-schema.yaml
 
-prepare-for-pr: requirements lintfix test
+prepare-for-pr: requirements lintfix test openapi-diff

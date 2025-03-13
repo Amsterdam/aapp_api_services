@@ -210,3 +210,19 @@ IMAGE_ENDPOINTS = {
     "POST_IMAGE": urljoin(IMAGE_API, "/internal/api/v1/image"),
     "DETAIL": urljoin(IMAGE_API, "/internal/api/v1/image"),
 }
+
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
+REDIS_PREFIX = "redis"
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"{REDIS_PREFIX}://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
+        "OPTIONS": {
+            # "CLIENT_CLASS": "core.services.cache.CustomRedisClient",  # This breaks the cache.keys() method somehow
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+        },
+    }
+}

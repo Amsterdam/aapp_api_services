@@ -1,9 +1,12 @@
 import requests
 from django.conf import settings
 from django.http import HttpResponse
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.cache import cache_page
 
 
+@method_decorator(cache_page(60 * 60 * 24), name="dispatch")
 class WasteGuideView(View):
     def dispatch(self, request, *args, **kwargs):
         url = settings.WASTE_GUIDE_URL
@@ -21,6 +24,7 @@ class WasteGuideView(View):
         )
 
 
+@method_decorator(cache_page(60 * 60 * 24), name="dispatch")
 class AddressSearchView(View):
     def dispatch(self, request, *args, **kwargs):
         url = settings.ADDRESS_SEARCH_URL

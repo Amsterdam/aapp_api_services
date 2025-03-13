@@ -16,11 +16,15 @@ SPECTACULAR_SETTINGS["TITLE"] = "Bridge API"
 STATIC_URL = "/bridge/static/"
 
 # Waste guide
-WASTE_GUIDE_URL = os.getenv("WASTE_GUIDE_URL")
+WASTE_GUIDE_URL = os.getenv(
+    "WASTE_GUIDE_URL", "https://api.data.amsterdam.nl/v1/afvalwijzer/afvalwijzer/"
+)
 WASTE_GUID_API_KEY = os.getenv("WASTE_GUID_API_KEY")
 
 # Address search
-ADDRESS_SEARCH_URL = os.getenv("ADDRESS_SEARCH_URL")
+ADDRESS_SEARCH_URL = os.getenv(
+    "ADDRESS_SEARCH_URL", "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free"
+)
 
 # Parking
 SSP_BASE_URL = os.getenv("SSP_BASE_URL")

@@ -14,7 +14,7 @@ asgiref==3.8.1
     # via
     #   django
     #   opentelemetry-instrumentation-asgi
-attrs==25.2.0
+attrs==25.3.0
     # via
     #   aiohttp
     #   jsonschema
@@ -71,6 +71,7 @@ django==4.2.20
     #   -r requirements/requirements.in
     #   django-csp
     #   django-debug-toolbar
+    #   django-redis
     #   django-storages
     #   djangorestframework
     #   djangorestframework-simplejwt
@@ -78,6 +79,8 @@ django==4.2.20
 django-csp==3.8
     # via -r requirements/requirements.in
 django-debug-toolbar==5.0.1
+    # via -r requirements/requirements.in
+django-redis==5.4.0
     # via -r requirements/requirements.in
 django-storages[azure]==1.14.5
     # via -r requirements/requirements.in
@@ -90,7 +93,7 @@ djangorestframework-simplejwt==5.5.0
     # via -r requirements/requirements.in
 drf-spectacular==0.28.0
     # via -r requirements/requirements.in
-firebase-admin==6.6.0
+firebase-admin==6.7.0
     # via -r requirements/requirements.in
 fixedint==0.1.6
     # via azure-monitor-opentelemetry-exporter
@@ -105,7 +108,7 @@ google-api-core[grpc]==2.24.2
     #   google-cloud-core
     #   google-cloud-firestore
     #   google-cloud-storage
-google-api-python-client==2.163.0
+google-api-python-client==2.164.0
     # via firebase-admin
 google-auth==2.38.0
     # via
@@ -149,7 +152,7 @@ idna==3.10
     # via
     #   requests
     #   yarl
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via opentelemetry-api
 inflection==0.5.1
     # via drf-spectacular
@@ -161,7 +164,7 @@ jsonschema==4.23.0
     # via drf-spectacular
 jsonschema-specifications==2024.10.1
     # via jsonschema
-msal==1.31.1
+msal==1.32.0
     # via
     #   azure-identity
     #   msal-extensions
@@ -177,7 +180,7 @@ multidict==6.1.0
     #   yarl
 oauthlib==3.2.2
     # via requests-oauthlib
-opentelemetry-api==1.30.0
+opentelemetry-api==1.31.0
     # via
     #   azure-core-tracing-opentelemetry
     #   azure-monitor-opentelemetry-exporter
@@ -194,7 +197,7 @@ opentelemetry-api==1.30.0
     #   opentelemetry-instrumentation-wsgi
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.51b0
+opentelemetry-instrumentation==0.52b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-dbapi
@@ -206,36 +209,36 @@ opentelemetry-instrumentation==0.51b0
     #   opentelemetry-instrumentation-urllib
     #   opentelemetry-instrumentation-urllib3
     #   opentelemetry-instrumentation-wsgi
-opentelemetry-instrumentation-asgi==0.51b0
+opentelemetry-instrumentation-asgi==0.52b0
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-dbapi==0.51b0
+opentelemetry-instrumentation-dbapi==0.52b0
     # via opentelemetry-instrumentation-psycopg2
-opentelemetry-instrumentation-django==0.51b0
+opentelemetry-instrumentation-django==0.52b0
     # via azure-monitor-opentelemetry
-opentelemetry-instrumentation-fastapi==0.51b0
+opentelemetry-instrumentation-fastapi==0.52b0
     # via azure-monitor-opentelemetry
-opentelemetry-instrumentation-flask==0.51b0
+opentelemetry-instrumentation-flask==0.52b0
     # via azure-monitor-opentelemetry
-opentelemetry-instrumentation-psycopg2==0.51b0
+opentelemetry-instrumentation-psycopg2==0.52b0
     # via azure-monitor-opentelemetry
-opentelemetry-instrumentation-requests==0.51b0
+opentelemetry-instrumentation-requests==0.52b0
     # via azure-monitor-opentelemetry
-opentelemetry-instrumentation-urllib==0.51b0
+opentelemetry-instrumentation-urllib==0.52b0
     # via azure-monitor-opentelemetry
-opentelemetry-instrumentation-urllib3==0.51b0
+opentelemetry-instrumentation-urllib3==0.52b0
     # via azure-monitor-opentelemetry
-opentelemetry-instrumentation-wsgi==0.51b0
+opentelemetry-instrumentation-wsgi==0.52b0
     # via
     #   opentelemetry-instrumentation-django
     #   opentelemetry-instrumentation-flask
 opentelemetry-resource-detector-azure==0.1.5
     # via azure-monitor-opentelemetry
-opentelemetry-sdk==1.30.0
+opentelemetry-sdk==1.31.0
     # via
     #   azure-monitor-opentelemetry
     #   azure-monitor-opentelemetry-exporter
     #   opentelemetry-resource-detector-azure
-opentelemetry-semantic-conventions==0.51b0
+opentelemetry-semantic-conventions==0.52b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
@@ -248,7 +251,7 @@ opentelemetry-semantic-conventions==0.51b0
     #   opentelemetry-instrumentation-urllib3
     #   opentelemetry-instrumentation-wsgi
     #   opentelemetry-sdk
-opentelemetry-util-http==0.51b0
+opentelemetry-util-http==0.52b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-django
@@ -309,6 +312,8 @@ python-dotenv==1.0.1
     # via -r requirements/requirements.in
 pyyaml==6.0.2
     # via drf-spectacular
+redis==5.2.1
+    # via django-redis
 referencing==0.36.2
     # via
     #   jsonschema
