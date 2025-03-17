@@ -8,10 +8,10 @@ class NotRequiredBlankToNullCharField(serializers.CharField):
         self.allow_null = True
         self.allow_blank = True
 
-    def to_internal_value(self, data):
-        if data == "":
+    def to_representation(self, value):
+        if value == "":
             return None
-        return super().to_internal_value(data)
+        return super().to_representation(value)
 
 
 class MijnAmsPassOwnerSerializer(serializers.Serializer):
