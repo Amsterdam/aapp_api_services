@@ -1,6 +1,11 @@
+import math
+
 from rest_framework import serializers
 
-from core.utils.serializer_utils import CamelToSnakeCaseSerializer
+from core.utils.serializer_utils import (
+    CamelToSnakeCaseSerializer,
+    SnakeToCamelCaseSerializer,
+)
 
 
 class ValueCurrencySerializer(CamelToSnakeCaseSerializer):
@@ -8,7 +13,7 @@ class ValueCurrencySerializer(CamelToSnakeCaseSerializer):
     currency = serializers.CharField()
 
 
-class AmountCurrencySerializer(CamelToSnakeCaseSerializer):
+class AmountCurrencySerializer(SnakeToCamelCaseSerializer):
     amount = serializers.FloatField()
     currency = serializers.CharField()
 
@@ -59,9 +64,16 @@ class ParkingOrderResponseSerializer(CamelToSnakeCaseSerializer):
     """
 
     frontend_id = serializers.IntegerField()
+    redirect_url = serializers.URLField(required=False)
     order_status = serializers.CharField()
     order_type = serializers.CharField()
 
 
-class RedirectSerializer(CamelToSnakeCaseSerializer):
+class RedirectSerializer(SnakeToCamelCaseSerializer):
     merchant_return_url = serializers.URLField()
+
+
+class MillisecondsToSecondsSerializer(serializers.IntegerField):
+    def to_representation(self, milliseconds):
+        seconds = math.ceil(milliseconds / 1000)
+        return seconds

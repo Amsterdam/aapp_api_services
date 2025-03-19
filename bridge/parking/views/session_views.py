@@ -43,7 +43,6 @@ class ParkingSessionStartUpdateView(BaseSSPView):
     Start or update a parking session with SSP API
     """
 
-    # TODO: response the same for POST and PATCH?
     response_serializer_class = ParkingOrderResponseSerializer
     ssp_endpoint = SSPEndpoint.ORDERS
     requires_access_token = True
@@ -68,7 +67,7 @@ class ParkingSessionStartUpdateView(BaseSSPView):
         requires_access_token=True,
     )
     def patch(self, request, *args, **kwargs):
-        self.ssp_http_method = "patch"
+        self.ssp_http_method = "post"
         return self.call_ssp(request)
 
 
@@ -78,6 +77,7 @@ class ParkingSessionReceiptView(BaseSSPView):
     """
 
     serializer_class = ParkingSessionReceiptRequestSerializer
+    response_serializer_class = ParkingSessionReceiptResponseSerializer
     ssp_http_method = "get"
     ssp_endpoint = SSPEndpoint.PARKING_SESSION_RECEIPT
     requires_access_token = True

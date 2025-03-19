@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from bridge.parking.serializers.general_serializers import (
+    MillisecondsToSecondsSerializer,
     StatusTranslationSerializer,
     ValueCurrencySerializer,
 )
@@ -46,7 +47,7 @@ class PermitsRequestSerializer(SnakeToCamelCaseSerializer):
 
 class PermitItemSerializer(CamelToSnakeCaseSerializer):
     report_code = serializers.IntegerField()
-    time_balance = serializers.IntegerField()
+    time_balance = MillisecondsToSecondsSerializer()
     time_valid_until = serializers.DateTimeField(required=False)
     permit_type = serializers.CharField()
     discount = serializers.FloatField(required=False)

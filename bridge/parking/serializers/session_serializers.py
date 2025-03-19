@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from bridge.parking.serializers.general_serializers import (
     AmountCurrencySerializer,
+    MillisecondsToSecondsSerializer,
     RedirectSerializer,
     StatusTranslationSerializer,
     ValueCurrencySerializer,
@@ -60,7 +61,6 @@ class ParkingSessionOrderSerializer(SnakeToCamelCaseSerializer):
     end_date_time = serializers.DateTimeField(required=False)
 
 
-# TODO: combine with ParkingSessionOrderSerializer?
 class ParkingSessionOrderUpdateSerializer(SnakeToCamelCaseSerializer):
     report_code = serializers.IntegerField()
     ps_right_id = serializers.IntegerField()
@@ -88,13 +88,33 @@ class ParkingSessionUpdateRequestSerializer(FixedParkingSessionSerializer):
 
 
 class ParkingSessionReceiptRequestSerializer(SnakeToCamelCaseSerializer):
+    report_code = serializers.IntegerField()
     payment_zone_id = serializers.CharField()
+    vehicle_id = serializers.CharField()
     start_date = serializers.DateTimeField()
     end_date = serializers.DateTimeField()
-    ps_right_id = serializers.IntegerField()
-    report_code = serializers.IntegerField()
-    vehicle_id = serializers.CharField()
+
+
+class ReceiptRegimeTimeSerializer(CamelToSnakeCaseSerializer):
+    id = serializers.CharField()
+    start_time = serializers.CharField()
+    end_time = serializers.CharField()
 
 
 class ParkingSessionReceiptResponseSerializer(CamelToSnakeCaseSerializer):
-    pass
+    start_time = serializers.DateTimeField()
+    end_time = serializers.DateTimeField()
+    parking_time = MillisecondsToSecondsSerializer()
+    remaining_parking_time = MillisecondsToSecondsSerializer()
+    current_time_balance = MillisecondsToSecondsSerializer()
+    remaining_time_balance = MillisecondsToSecondsSerializer()
+    costs = ValueCurrencySerializer()
+    costs_per_hour = ValueCurrencySerializer()
+    current_wallet_balance = ValueCurrencySerializer()
+    remaining_wallet_balance = ValueCurrencySerializer()
+    regime_time = ReceiptRegimeTimeSerializer(many=True)
+    remaining_time = MillisecondsToSecondsSerializer()
+    report_code = serializers.IntegerField()
+    payment_zone_id = serializers.CharField()
+    payment_required = serializers.BooleanField()
+    parking_cost = ValueCurrencySerializer()

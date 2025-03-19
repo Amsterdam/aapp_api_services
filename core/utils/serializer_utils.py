@@ -17,7 +17,10 @@ def create_serializer_data(serializer_class, **custom_data):
     serializer = serializer_class()
 
     for field_name, field in serializer.fields.items():
-        if isinstance(field, serializers.CharField):
+        # Check URL field first, as it inherits from CharField
+        if isinstance(field, serializers.URLField):
+            default_data[field_name] = "https://example.com"
+        elif isinstance(field, serializers.CharField):
             default_data[field_name] = f"test_{field_name}"
         elif isinstance(field, serializers.IntegerField):
             default_data[field_name] = 1

@@ -116,6 +116,18 @@ class ParkingPermitsView(BaseSSPView):
 class ParkingBalanceView(BaseSSPView):
     """
     Upgrade balance via SSP API
+
+    Redirect URL is passed to the payment service of SSP.
+    When the payment is finished, the user is redirected to the redirect URL.
+    So this URL should be the deeplink to the app: amsterdam://parking/something.
+    This URL will contain query parameters with the order details:
+    - order_id: this is the "frontend_id" as
+    - status: COMPLETED, EXPIRED, IN_PROGRESS or CANCELLED
+    - signature: not relevant for us
+
+    According to Egis, the status apart from COMPLETED is quite unreliable.
+    So we should only act on COMPLETED status.
+    If the status is not COMPLETED, we have to pull the status of the session manually.
     """
 
     serializer_class = BalanceRequestSerializer
