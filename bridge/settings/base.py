@@ -27,5 +27,5 @@ ADDRESS_SEARCH_URL = os.getenv(
 )
 
 # Parking
-SSP_BASE_URL = os.getenv("SSP_BASE_URL")
+SSP_BASE_URL = os.getenv("SSP_BASE_URL", "https://evs-ssp-accp.mendixcloud.com")
 SSP_ACCESS_TOKEN_HEADER = "SSP-Access-Token"

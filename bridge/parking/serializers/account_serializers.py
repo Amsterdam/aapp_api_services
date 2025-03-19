@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from bridge.parking.exceptions import SSPPinCodeCheckError
 from bridge.parking.serializers.general_serializers import (
     AmountCurrencySerializer,
     RedirectSerializer,
@@ -23,6 +24,18 @@ class AccountLoginResponseSerializer(CamelToSnakeCaseSerializer):
 class PinCodeRequestSerializer(SnakeToCamelCaseSerializer):
     report_code = serializers.CharField()
     phone_number = serializers.CharField()
+
+
+class PinCodeChangeRequestSerializer(SnakeToCamelCaseSerializer):
+    report_code = serializers.CharField()
+    pin_current = serializers.CharField()
+    pin_code = serializers.CharField()
+    pin_code_check = serializers.CharField()
+
+    def validate_pin_code_check(self, value):
+        if self.initial_data.get("pin_code") != value:
+            raise SSPPinCodeCheckError
+        return value
 
 
 class PinCodeResponseSerializer(CamelToSnakeCaseSerializer):

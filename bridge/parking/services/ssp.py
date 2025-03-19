@@ -14,6 +14,7 @@ class SSPEndpoint(Enum):
     LOGIN = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/login"
     PERMITS = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/permits"
     LICENSE_PLATES = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/licenseplates"
+    CHANGE_PIN_CODE = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/clients/pincode"
     REQUEST_PIN_CODE = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/requestPinCode"
     PARKING_SESSIONS = f"{settings.SSP_BASE_URL}/rest/sspapi/v2/parkingsessions"
     PARKING_SESSION_RECEIPT = (

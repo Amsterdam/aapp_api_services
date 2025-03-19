@@ -145,7 +145,10 @@ class BaseSSPView(generics.GenericAPIView):
         )
 
         # SSP returns "OK" if the request is successful
-        if ssp_response.content.decode("utf-8") == "OK":
+        if (
+            ssp_response.content.decode("utf-8") == "OK"
+            or ssp_response.content.decode("utf-8") == ""
+        ):
             return Response(status=status.HTTP_200_OK)
 
         ssp_data_json = ssp_response.json()
@@ -182,6 +185,7 @@ def ssp_openapi_decorator(
     serializer_as_params=None,
     requires_access_token=False,
     paginated=False,
+    exceptions=None,
     **kwargs,
 ):
     """
@@ -195,6 +199,8 @@ def ssp_openapi_decorator(
             SSPNotFoundError,
         ],
     }
+    if exceptions:
+        kwargs["exceptions"].extend(exceptions)
 
     additional_params = []
     if requires_access_token:

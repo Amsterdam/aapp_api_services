@@ -1,10 +1,12 @@
 from unittest.mock import patch
 
+from django.conf import settings
 from django.urls import reverse
 
 from bridge.parking.exceptions import SSPForbiddenError, SSPResponseError
 from bridge.parking.serializers.account_serializers import (
     AccountDetailsResponseSerializer,
+    PinCodeResponseSerializer,
 )
 from bridge.parking.serializers.general_serializers import (
     ParkingOrderResponseSerializer,
@@ -14,6 +16,7 @@ from bridge.parking.tests.test_base_ssp_view import BaseSSPTestCase
 from core.utils.serializer_utils import create_serializer_data
 
 
+@patch("bridge.parking.services.ssp.requests.request")
 class TestParkingAccountLoginView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
@@ -24,7 +27,6 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
             "pin": "123456",
         }
 
-    @patch("bridge.parking.services.ssp.requests.request")
     def test_successful_login(self, mock_request):
         mock_access_token = "abc.123.def"
         mock_scope = "permitHolder"
@@ -45,7 +47,6 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
         self.assertEqual(response.data["access_token"], mock_access_token)
         self.assertEqual(response.data["scope"], mock_scope)
 
-    @patch("bridge.parking.services.ssp.requests.request")
     def test_missing_ssp_response_values(self, mock_request):
         mock_reponse_missing_expected_values = {}
 
@@ -59,7 +60,6 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["code"], SSPResponseError.default_code)
 
-    @patch("bridge.parking.services.ssp.requests.request")
     def test_ssp_login_failed(self, mock_request):
         ssp_login_failed_codes = [401, 403]
 
@@ -71,6 +71,67 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
             )
             self.assertEqual(response.status_code, 403)
             self.assertEqual(response.data["code"], SSPForbiddenError.default_code)
+
+
+@patch("bridge.parking.services.ssp.requests.request")
+class TestParkingPinCodeView(BaseSSPTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("parking-pin-code")
+
+    def test_request_pin_code_successfully(self, mock_request):
+        # POST request
+        mock_response_content = create_serializer_data(PinCodeResponseSerializer)
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        data = {"report_code": "37613017", "phone_number": "8633"}
+        response = self.client.post(self.url, data=data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, mock_response_content)
+
+    def test_request_pin_code_missing_payload(self, mock_request):
+        # POST request
+        response = self.client.post(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 400)
+
+    def test_change_pin_code_successfully(self, mock_request):
+        # PUT request
+        mock_response_content = create_serializer_data(PinCodeResponseSerializer)
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        data = {
+            "report_code": "37613017",
+            "pin_current": "1234",
+            "pin_code": "6543",
+            "pin_code_check": "6543",
+        }
+        response = self.client.put(self.url, data=data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, mock_response_content)
+
+    def test_change_pin_code_missing_access_token(self, mock_request):
+        # PUT request
+        self.api_headers.pop(settings.SSP_ACCESS_TOKEN_HEADER)
+        response = self.client.put(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data.get("code"), "SSP_MISSING_SSL_API_KEY")
+
+    def test_change_pin_code_pin_mismatch(self, mock_request):
+        # PUT request
+        data = {
+            "report_code": "37613017",
+            "pin_current": "1234",
+            "pin_code": "6543",
+            "pin_code_check": "3456",
+        }
+        response = self.client.put(self.url, data=data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data.get("code"), "SSP_PIN_CODE_CHECK_ERROR")
+
+    def test_change_pin_code_missing_payload(self, mock_request):
+        # PUT request
+        response = self.client.put(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 400)
 
 
 class TestParkingAccountDetailsView(BaseSSPTestCase):

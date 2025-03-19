@@ -1,8 +1,10 @@
+from bridge.parking.exceptions import SSPPinCodeCheckError
 from bridge.parking.serializers.account_serializers import (
     AccountDetailsResponseSerializer,
     AccountLoginRequestSerializer,
     AccountLoginResponseSerializer,
     BalanceRequestSerializer,
+    PinCodeChangeRequestSerializer,
     PinCodeRequestSerializer,
     PinCodeResponseSerializer,
 )
@@ -33,19 +35,40 @@ class ParkingAccountLoginView(BaseSSPView):
 
 
 class ParkingRequestPinCodeView(BaseSSPView):
-    """
-    Request a pin code from SSP API (via redirect)
-    """
 
-    serializer_class = PinCodeRequestSerializer
     response_serializer_class = PinCodeResponseSerializer
-    ssp_http_method = "post"
-    ssp_endpoint = SSPEndpoint.REQUEST_PIN_CODE
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return PinCodeRequestSerializer
+        elif self.request.method == "PUT":
+            return PinCodeChangeRequestSerializer
+        return None
 
     @ssp_openapi_decorator(
         response_serializer_class=PinCodeResponseSerializer,
     )
     def post(self, request, *args, **kwargs):
+        """
+        Request a pin code from SSP API (via redirect)
+        """
+        self.ssp_endpoint = SSPEndpoint.REQUEST_PIN_CODE
+        self.ssp_http_method = "post"
+        self.requires_access_token = False
+        return self.call_ssp(request)
+
+    @ssp_openapi_decorator(
+        response_serializer_class=PinCodeResponseSerializer,
+        requires_access_token=True,
+        exceptions=[SSPPinCodeCheckError],
+    )
+    def put(self, request, *args, **kwargs):
+        """
+        Change a pin code from SSP API
+        """
+        self.ssp_endpoint = SSPEndpoint.CHANGE_PIN_CODE
+        self.ssp_http_method = "post"
+        self.requires_access_token = True
         return self.call_ssp(request)
 
 

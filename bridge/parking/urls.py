@@ -16,7 +16,7 @@ urlpatterns = [
     path(
         "parking/api/v1/pin-code",
         account_views.ParkingRequestPinCodeView.as_view(),
-        name="parking-request-pin-code",
+        name="parking-pin-code",
     ),
     path(
         "parking/api/v1/permits",
