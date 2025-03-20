@@ -15,7 +15,7 @@ class NotRequiredBlankToNullCharField(serializers.CharField):
 
 
 class MijnAmsPassOwnerSerializer(serializers.Serializer):
-    firstname = serializers.CharField()
+    firstname = NotRequiredBlankToNullCharField()
     lastname = serializers.CharField()
     initials = NotRequiredBlankToNullCharField()
     infix = NotRequiredBlankToNullCharField()
