@@ -77,3 +77,10 @@ class MillisecondsToSecondsSerializer(serializers.IntegerField):
     def to_representation(self, milliseconds):
         seconds = math.ceil(milliseconds / 1000)
         return seconds
+
+
+class SecondsToMillisecondsSerializer(serializers.IntegerField):
+    def to_representation(self, seconds):
+        milliseconds = seconds * 1000
+        print(milliseconds)
+        return milliseconds

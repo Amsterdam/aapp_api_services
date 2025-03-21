@@ -34,8 +34,7 @@ class ParkingAccountLoginView(BaseSSPView):
         return self.call_ssp(request)
 
 
-class ParkingRequestPinCodeView(BaseSSPView):
-
+class ParkingPinCodeView(BaseSSPView):
     response_serializer_class = PinCodeResponseSerializer
 
     def get_serializer_class(self):

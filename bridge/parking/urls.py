@@ -1,5 +1,6 @@
 from django.urls import path
 
+import bridge.parking.views.visitor_views
 from bridge.parking.views import account_views, license_plate_views, session_views
 
 urlpatterns = [
@@ -15,8 +16,18 @@ urlpatterns = [
     ),
     path(
         "parking/api/v1/pin-code",
-        account_views.ParkingRequestPinCodeView.as_view(),
+        account_views.ParkingPinCodeView.as_view(),
         name="parking-pin-code",
+    ),
+    path(
+        "parking/api/v1/visitor/pin-code",
+        bridge.parking.views.visitor_views.ParkingPinCodeVisitorView.as_view(),
+        name="parking-pin-code-visitor",
+    ),
+    path(
+        "parking/api/v1/visitor/time-balance",
+        bridge.parking.views.visitor_views.ParkingVisitorTimeBalanceView.as_view(),
+        name="parking-visitor-time-balance",
     ),
     path(
         "parking/api/v1/permits",
