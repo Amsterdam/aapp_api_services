@@ -19,9 +19,6 @@ class ImageSetCreateView(generics.CreateAPIView):
     The image is uploaded in three different formats to Azure Blob Storage and variants are created in the database.
     """
 
-    authentication_classes = (
-        []
-    )  # No authentication or API key required. Endpoint is not exposed through ingress.
     serializer_class = ImageSetRequestSerializer
 
     @extend_schema(
@@ -60,6 +57,3 @@ class ImageSetDetailView(generics.RetrieveDestroyAPIView):
     queryset = ImageSet.objects.all()
     serializer_class = ImageSetSerializer
     lookup_field = "pk"
-    authentication_classes = (
-        []
-    )  # No authentication or API key required. Endpoint is not exposed through ingress.

@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from django.conf import settings
 from django.test import TestCase
 
 from core.services.image_set import ImageSetService
@@ -33,7 +34,8 @@ class TestImageService(TestCase):
         image_service = ImageSetService()
         image_service.get(1)
         mock_requests.assert_called_with(
-            "http://api-image:8000/internal/api/v1/image/1"
+            "http://api-image:8000/internal/api/v1/image/1",
+            headers={settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0]},
         )
 
     def test_url_small(self, mock_requests):

@@ -70,7 +70,12 @@ def make_post_request(
     api_url: str, warning_pk: int, request_data=None, files=None
 ) -> requests.Response:
     try:
-        response = requests.post(api_url, json=request_data, files=files)
+        headers = {
+            settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0],
+        }
+        response = requests.post(
+            api_url, json=request_data, files=files, headers=headers
+        )
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         logger.error(

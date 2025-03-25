@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import requests
+from django.conf import settings
 from django.test import TestCase, override_settings
 from model_bakery import baker
 
@@ -56,7 +57,10 @@ class TestNotificationService(TestCase):
 
         # Verify only notification endpoint was called
         mock_post.assert_called_once_with(
-            POST_NOTIFICATION_URL, json=mock_post.call_args[1]["json"], files=None
+            POST_NOTIFICATION_URL,
+            json=mock_post.call_args[1]["json"],
+            files=None,
+            headers={settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0]},
         )
         self.assertEqual(status_code, 200)
         self.assertEqual(response_data, {"status": "success"})
@@ -95,5 +99,8 @@ class TestNotificationService(TestCase):
 
         # Verify notification endpoint was called
         mock_post.assert_called_once_with(
-            POST_NOTIFICATION_URL, json=mock_post.call_args[1]["json"], files=None
+            POST_NOTIFICATION_URL,
+            json=mock_post.call_args[1]["json"],
+            files=None,
+            headers={settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0]},
         )

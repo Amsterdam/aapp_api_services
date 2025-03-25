@@ -6,10 +6,16 @@ class ImageSetService:
     def __init__(self):
         self.data = None
 
+    @property
+    def _headers(self):
+        return {
+            settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0],
+        }
+
     def get(self, image_set_id):
         base_url = settings.IMAGE_ENDPOINTS["DETAIL"]
         url = f"{base_url}/{image_set_id}"
-        response = requests.get(url)
+        response = requests.get(url, headers=self._headers)
         response.raise_for_status()
         self.data = response.json()
         return self.data
@@ -32,7 +38,9 @@ class ImageSetService:
             else {}
         )
 
-        response = requests.post(image_upload_url, data=data, files=files)
+        response = requests.post(
+            image_upload_url, data=data, files=files, headers=self._headers
+        )
         response.raise_for_status()
         self.data = response.json()
         return self.data

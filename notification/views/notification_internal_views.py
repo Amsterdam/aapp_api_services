@@ -31,9 +31,6 @@ class NotificationInitView(generics.CreateAPIView):
     Response: notification data as posted with auto set fields
     """
 
-    authentication_classes = (
-        []
-    )  # No authentication or API key required. Endpoint is not exposed through ingress.
     serializer_class = NotificationCreateSerializer
 
     @extend_schema(

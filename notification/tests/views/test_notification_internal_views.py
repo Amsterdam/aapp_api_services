@@ -43,6 +43,7 @@ class NotificationCreateViewTests(BasicAPITestCase):
         result = self.client.post(
             self.url,
             data=json.dumps(data),
+            headers=self.api_headers,
             content_type="application/json",
         )
         self.assertEqual(result.status_code, status.HTTP_200_OK)
@@ -75,6 +76,7 @@ class NotificationCreateViewTests(BasicAPITestCase):
         result = self.client.post(
             self.url,
             data=json.dumps(data),
+            headers=self.api_headers,
             content_type="application/json",
         )
         self.assertEqual(result.status_code, status.HTTP_200_OK)
@@ -105,6 +107,7 @@ class NotificationCreateViewTests(BasicAPITestCase):
         result = self.client.post(
             self.url,
             data=json.dumps(data),
+            headers=self.api_headers,
             content_type="application/json",
         )
         self.assertEqual(result.status_code, status.HTTP_400_BAD_REQUEST)
