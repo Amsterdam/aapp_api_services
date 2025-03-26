@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from bridge.parking.serializers.account_serializers import PinCodeResponseSerializer
 from bridge.parking.serializers.visitor_serializers import (
+    VisitorSessionResponseSerializer,
     VisitorTimeBalanceResponseSerializer,
 )
 from bridge.parking.tests.test_base_ssp_view import BaseSSPTestCase
@@ -73,5 +74,32 @@ class TestParkingVisitorTimeBalanceView(BaseSSPTestCase):
     def test_missing_access_token(self, mock_request):
         self.api_headers.pop(settings.SSP_ACCESS_TOKEN_HEADER)
         response = self.client.post(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data.get("code"), "SSP_MISSING_SSL_API_KEY")
+
+
+@patch("bridge.parking.services.ssp.requests.request")
+class TestParkingVisitorSessionView(BaseSSPTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("parking-visitor-sessions")
+
+    def test_get_session_successfully(self, mock_request):
+        mock_response_content = create_serializer_data(VisitorSessionResponseSerializer)
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        response = self.client.get(
+            self.url, data={"vehicle_id": 123}, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, mock_response_content)
+
+    def test_missing_vehicle_id(self, mock_request):
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 400)
+
+    def test_missing_access_token(self, mock_request):
+        self.api_headers.pop(settings.SSP_ACCESS_TOKEN_HEADER)
+        response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.data.get("code"), "SSP_MISSING_SSL_API_KEY")

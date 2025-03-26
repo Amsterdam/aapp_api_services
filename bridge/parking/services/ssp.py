@@ -17,6 +17,9 @@ class SSPEndpoint(Enum):
     CHANGE_PIN_CODE = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/clients/pincode"
     CHANGE_PIN_CODE_VISITOR = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/visitoraccount"
     VISITOR_TIME_BALANCE = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/visitortimebalance"
+    VISITOR_SESSIONS = (
+        f"{settings.SSP_BASE_URL}/rest/sspapi/v1/visitoraccount/parkingsessions"
+    )
     REQUEST_PIN_CODE = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/requestPinCode"
     PARKING_SESSIONS = f"{settings.SSP_BASE_URL}/rest/sspapi/v2/parkingsessions"
     PARKING_SESSION_RECEIPT = (

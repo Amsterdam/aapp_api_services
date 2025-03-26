@@ -4,6 +4,8 @@ from bridge.parking.serializers.account_serializers import (
     PinCodeResponseSerializer,
 )
 from bridge.parking.serializers.visitor_serializers import (
+    VisitorSessionRequestSerializer,
+    VisitorSessionResponseSerializer,
     VisitorTimeBalanceRequestSerializer,
     VisitorTimeBalanceResponseSerializer,
 )
@@ -44,5 +46,24 @@ class ParkingVisitorTimeBalanceView(BaseSSPView):
     def post(self, request, *args, **kwargs):
         """
         Assign a time balance to a visitor account
+        """
+        return self.call_ssp(request)
+
+
+class ParkingVisitorSessionView(BaseSSPView):
+    serializer_class = VisitorSessionRequestSerializer
+    response_serializer_class = VisitorSessionResponseSerializer
+    ssp_endpoint = SSPEndpoint.VISITOR_SESSIONS
+    ssp_http_method = "get"
+    requires_access_token = True
+
+    @ssp_openapi_decorator(
+        response_serializer_class=VisitorSessionResponseSerializer,
+        requires_access_token=True,
+        serializer_as_params=VisitorSessionRequestSerializer,
+    )
+    def get(self, request, *args, **kwargs):
+        """
+        Get the sessions of a specific vehicle
         """
         return self.call_ssp(request)

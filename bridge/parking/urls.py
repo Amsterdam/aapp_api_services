@@ -30,6 +30,11 @@ urlpatterns = [
         name="parking-visitor-time-balance",
     ),
     path(
+        "parking/api/v1/visitor/sessions",
+        bridge.parking.views.visitor_views.ParkingVisitorSessionView.as_view(),
+        name="parking-visitor-sessions",
+    ),
+    path(
         "parking/api/v1/permits",
         account_views.ParkingPermitsView.as_view(),
         name="parking-permits",

@@ -219,10 +219,10 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": f"{REDIS_PREFIX}://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
-        "OPTIONS": {
-            # "CLIENT_CLASS": "core.services.cache.CustomRedisClient",  # This breaks the cache.keys() method somehow
-            "SOCKET_CONNECT_TIMEOUT": 5,
-            "SOCKET_TIMEOUT": 5,
-        },
+        # "OPTIONS": {
+        #     "CLIENT_CLASS": "core.services.cache.CustomRedisClient",  # This breaks the cache.keys() method somehow
+        #     "SOCKET_CONNECT_TIMEOUT": 5,
+        #     "SOCKET_TIMEOUT": 5,
+        # },
     }
 }

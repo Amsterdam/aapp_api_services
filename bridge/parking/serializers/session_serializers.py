@@ -34,7 +34,7 @@ class ParkingSessionResponseSerializer(CamelToSnakeCaseSerializer):
     end_date = serializers.DateTimeField()
     vehicle_id = serializers.CharField()
     status = serializers.CharField()
-    ps_right_id = serializers.IntegerField(required=False)
+    ps_right_id = serializers.CharField(required=False)
     visitor_name = serializers.CharField(required=False)
     remaining_time = serializers.IntegerField()
     report_code = serializers.CharField()
@@ -60,6 +60,15 @@ class ParkingSessionOrderSerializer(SnakeToCamelCaseSerializer):
     start_date_time = serializers.DateTimeField()
     end_date_time = serializers.DateTimeField(required=False)
 
+    def validate(self, data):
+        start = data.get("start_date_time")
+        end = data.get("end_date_time")
+        if start and end and end < start:
+            raise serializers.ValidationError(
+                "End date time must be after start date time"
+            )
+        return data
+
 
 class ParkingSessionOrderUpdateSerializer(SnakeToCamelCaseSerializer):
     report_code = serializers.IntegerField()
@@ -77,13 +86,13 @@ class FixedParkingSessionSerializer(SnakeToCamelCaseSerializer):
 
 
 class ParkingSessionStartRequestSerializer(FixedParkingSessionSerializer):
-    balance = AmountCurrencySerializer(required=False)
     parking_session = ParkingSessionOrderSerializer()
+    balance = AmountCurrencySerializer(required=False)
     redirect = RedirectSerializer(required=False)
     locale = serializers.CharField(required=False)
 
 
-class ParkingSessionUpdateRequestSerializer(FixedParkingSessionSerializer):
+class ParkingSessionUpdateRequestSerializer(ParkingSessionStartRequestSerializer):
     parking_session = ParkingSessionOrderUpdateSerializer()
 
 
