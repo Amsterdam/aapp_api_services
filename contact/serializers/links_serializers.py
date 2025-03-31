@@ -12,6 +12,7 @@ class LinksOutSerializer(serializers.Serializer):
     cityPassRequest = serializers.URLField()
     cityPassChildBudget = serializers.URLField()
     cityPassUsage = serializers.URLField()
+    contactNewsletterSignup = serializers.URLField()
     acknowledgeChild = serializers.URLField()
     birth = serializers.URLField()
     immigration = serializers.URLField()
