@@ -1,9 +1,10 @@
 .PHONY: deploy requirements
 
-ifndef SERVICE_NAME
-$(error SERVICE_NAME is not set)
-endif
+ALL_SERVICES = bridge city_pass construction_work contact image modules notification
+
+ifdef SERVICE_NAME
 export SERVICE_NAME_HYPHEN=$(subst _,-,$(SERVICE_NAME))
+endif
 
 UID:=$(shell id --user)
 GID:=$(shell id --group)
@@ -12,72 +13,120 @@ dc = SERVICE_NAME=${SERVICE_NAME} docker compose
 run = $(dc) run --rm -u ${UID}:${GID}
 manage = $(run) dev python manage.py
 
-help:                               ## Show this help.
+help:
+    # Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
 pip-tools:
 	pip install pip-tools
 
-install: pip-tools                  ## Install requirements and sync venv with expected state as defined in requirements.txt
+install: pip-tools
+    # Install requirements and sync venv with expected state as defined in requirements.txt
 	pip install -r requirements/requirements.txt
 	pip install -r requirements/requirements_dev.txt
 
-requirements:                       ## Upgrade requirements (in requirements.in) to latest versions and compile requirements.txt
-	# The --allow-unsafe flag should be used and will become the default behaviour of pip-compile in the future
-	# https://stackoverflow.com/questions/58843905
+requirements:
 	$(run) dev pip-compile --upgrade --output-file requirements/requirements.txt --allow-unsafe requirements/requirements.in
+	echo "# Generated on: $$(date +%Y-%m-%d)" | cat - requirements/requirements.txt > tmp && mv tmp requirements/requirements.txt
+
 	$(run) dev pip-compile --upgrade --output-file requirements/requirements_dev.txt --allow-unsafe requirements/requirements_dev.in
+	echo "# Generated on: $$(date +%Y-%m-%d)" | cat - requirements/requirements_dev.txt > tmp && mv tmp requirements/requirements_dev.txt
 
-shell:                              ## Start Django shell
-	$(manage) shell
+upgrade: requirements install
+    # Run 'requirements' and 'install' targets
 
-upgrade: requirements install       ## Run 'requirements' and 'install' targets
+### MAKEFILE TARGETS THAT CAN LOOP THROUGH ALL SERVICES ###
+define dc_for_all
+	@if [ -z "$(SERVICE_NAME)" ]; then \
+	  for s in $(ALL_SERVICES); do \
+		SERVICE_NAME=$$s docker compose $(1); \
+	  done; \
+	else \
+	  SERVICE_NAME=$(SERVICE_NAME) docker compose $(1); \
+	fi
+endef
 
-migrations:                         ## Make Django migrations
-	$(manage) makemigrations
+define run_for_all
+$(call dc_for_all,run --rm -u $(UID):$(GID) $(1))
+endef
 
-migrate:                            ## Apply Django migrations to database
-	$(manage) migrate
+migrations:
+    # Create Django migrations
+	$(call run_for_all,dev python manage.py makemigrations)
 
-dev:                                ## Start Django app in development mode
-	$(run) --service-ports dev
+lintfix:
+	# Execute lint fixes
+	$(call run_for_all,test black /app/)
+	$(call run_for_all,test ruff check /app/ --no-show-fixes --fix)
+	$(call run_for_all,test isort /app/)
 
-lintfix:                            ## Execute lint fixes
-	$(run) test black /app/
-	$(run) test ruff check /app/ --no-show-fixes --fix
-	$(run) test isort /app/
+lint:
+	# Execute lint checks
+	$(call run_for_all,test ruff check /app/ --no-show-fixes)
+	$(call run_for_all,test isort --diff --check /app/)
 
-lint:                               ## Execute lint checks
-	$(run) test ruff check /app/ --no-show-fixes
-	$(run) test isort --diff --check /app/
+run-test:
+	# Run tests
+	$(call run_for_all,test)
 
-run-test:                           ## Run tests
-	$(run) test
+test: run-test lint
+	# Run tests & lint checks
 
-test: run-test lint                 ## Run tests & lint checks
+build:
+	# Build Docker images
+	$(call dc_for_all,build)
 
-app:                                ## Start Django app via uWSGI
-	$(dc) up app
+push:
+    # Push images to repository
+	$(call dc_for_all,push)
 
-build:                              ## Build images
-	$(dc) build
+clean:
+    # Stop Docker container and remove orphans
+	$(call dc_for_all,down -v --remove-orphans)
 
-push:                               ## Push images to repository
-	$(dc) push
+prepare-for-pr: requirements build lintfix test
+    # Prepare for PR
 
-clean:                              ## Stop Docker container and remove orphans
-	$(dc) down -v --remove-orphans
+### SINGLE SERVICE COMMANDS ###
+check-service:
+	# Check if SERVICE_NAME is set in environment variables
+	@if [ -z "$(SERVICE_NAME)" ]; then \
+		echo "ERROR: SERVICE_NAME is not set"; \
+		exit 1; \
+	fi
 
-settings:                           ## Print Django settings
-	$(run) test python manage.py diffsettings
-
-run_etl:
+run_etl: check-service
+	# Django command for the construction_work service
 	$(manage) runetl
 
-spectacular:
+send_waste_notifications: check-service
+	# Django command for the Waste service
+	$(manage) sendwastenotifications
+
+spectacular: check-service
+    # Generate OpenAPI schema
 	$(manage) spectacular --file /app/${SERVICE_NAME}/openapi-schema.yaml
 
 openapi-diff: spectacular
+    # Compare OpenAPI schema on acceptance with the one in the repository
 	$(run) openapi-diff https://acc.app.amsterdam.nl/$(SERVICE_NAME_HYPHEN)/api/v1/openapi/ /specs/openapi-schema.yaml
 
-prepare-for-pr: requirements build lintfix test openapi-diff
+migrate: check-service
+    # Run Django migrations on database
+	$(manage) migrate
+
+settings: check-service
+    # Show Django settings
+	$(run) test python manage.py diffsettings
+
+dev: check-service build
+    # Start Django app with runserver
+	$(run) --service-ports dev
+
+app: check-service
+    # Start Django app with UWsgi
+	$(dc) up app
+
+shell: check-service
+    # Start Django shell
+	$(manage) shell
