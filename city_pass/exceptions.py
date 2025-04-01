@@ -28,7 +28,7 @@ class MijnAMSRequestException(BaseApiException):
 
 
 class MijnAMSAPIException(BaseApiException):
-    status_code = status.HTTP_400_BAD_REQUEST
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = "Something went wrong during request to source data, see logs for more information"
     default_code = "API_ERROR"
 

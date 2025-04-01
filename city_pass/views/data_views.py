@@ -75,7 +75,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
 
         if response_content is None:
             logger.error("No content received from Mijn Amsterdam API")
-            raise MijnAMSAPIException("No data found for this user")
+            raise MijnAMSInvalidDataException()
 
         return response_content
 
@@ -111,7 +111,6 @@ class PassesDataView(AbstractMijnAmsDataView):
 
     def process_response_content(self, content, request) -> None:
         session = request.user
-        logger.info(f"Updating passes for user [{session}]")
         passes = [
             models.PassData(
                 session=session,
@@ -151,7 +150,7 @@ class AbstractTransactionsView(AbstractMijnAmsDataView):
                 f"Pass with pass number {pass_number} not found for user {session}"
             )
             url = reverse("city-pass-data-passes")
-            raise MijnAMSAPIException(
+            raise MijnAMSInvalidDataException(
                 f"Pass with pass number {pass_number} not found. Please refresh the passes list with the [{url}] endpoint."
             )
 
