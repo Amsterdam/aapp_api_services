@@ -36,6 +36,6 @@ class NotificationServiceTest(TestCase):
                 },
                 "created_at": "2021-08-01T00:00:00+00:00",
                 "device_ids": ["device1", "device2"],
-                'notification_type': 'waste:date-reminder'
+                "notification_type": "waste:date-reminder",
             },
         )
