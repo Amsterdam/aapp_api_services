@@ -1,14 +1,15 @@
 Affected services
-- [ ] core
+- core
 
-- [ ] bridge
-- [ ] city_pass
-- [ ] construction_work
-- [ ] contact
-- [ ] modules
+- bridge
+- city_pass
+- construction_work
+- contact
+- modules
+- waste
 
-- [ ] image
-- [ ] notification
+- image
+- notification
 
 Definition of Done
 - [ ] Swagger UI is gecontroleerd en up-to-date

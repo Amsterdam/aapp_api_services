@@ -1,4 +1,4 @@
-""" Modules models for MBS """
+"""Modules models for MBS"""
 
 from django.contrib.postgres.fields import ArrayField
 from django.db import models

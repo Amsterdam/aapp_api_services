@@ -27,7 +27,7 @@ volumes:
 
 services:
   db:
-    image: timescale/timescaledb-ha:pg15
+    image: timescale/timescaledb:latest-pg15
     environment:
       POSTGRES_DB: dev
       POSTGRES_USER: dev
@@ -82,6 +82,21 @@ services:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.otap'
     command: /app/deploy/docker-run.sh
+
+  lint:
+    <<: *base-app
+    build:
+      context: .
+      target: dev-${SERVICE_NAME}
+    volumes:
+    - ./bridge:/app/bridge
+    - ./city_pass:/app/city_pass
+    - ./construction_work:/app/construction_work
+    - ./contact:/app/contact
+    - ./image:/app/image
+    - ./modules:/app/modules
+    - ./notification:/app/notification
+    - ./waste:/app/waste
 
   openapi-diff:
     image: openapitools/openapi-diff:latest

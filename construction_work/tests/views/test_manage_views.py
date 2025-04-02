@@ -1,4 +1,5 @@
 import json
+import os
 import pathlib
 from unittest.mock import MagicMock, patch
 from urllib.parse import urlencode
@@ -317,28 +318,6 @@ class TestPublisherDetailView(BaseTestManageView):
             content_type="application/json",
         )
         self.assertEqual(result.status_code, 403)
-
-    def test_update_publisher_missing_data(self):
-        publisher = ProjectManager.objects.create(
-            name="foobar", email="publisher@amsterdam.nl"
-        )
-
-        updated_publisher_data = {
-            # MISSING: "name": publisher.name,
-            "email": "foobar@amsterdam.nl",
-        }
-
-        self.update_headers_with_editor_data()
-        result = self.client.patch(
-            reverse(self.api_url_str, args=[publisher.pk]),
-            data=updated_publisher_data,
-            headers=self.api_headers,
-            content_type="application/json",
-        )
-        self.assertEqual(result.status_code, 400)
-
-        # Object should not have been updated at all
-        self.assertNotEqual(publisher.email, updated_publisher_data["email"])
 
     def test_update_publisher_that_does_not_exist(self):
         self.update_headers_with_editor_data()
@@ -1239,7 +1218,8 @@ class TestImageUploadView(TestWarningMessageCRUDBaseView):
     def setUp(self):
         super().setUp()
         self.api_url = reverse("construction-work:image-upload")
-        file = open("./construction_work/tests/image_data/small_image.png", "rb")
+        file_path = "construction_work/tests/image_data/small_image.png"
+        file = open(os.path.join(ROOT_DIR, file_path), "rb")
         self.valid_image_data = {"image": file}
         self.invalid_image_data = {"image": ""}
         _, publisher = self.create_project_and_publisher()

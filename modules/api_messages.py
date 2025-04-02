@@ -1,5 +1,4 @@
-""" Common messages returned by API. Just import 'Messages' and get all messages at once (hence the class)
-"""
+"""Common messages returned by API. Just import 'Messages' and get all messages at once (hence the class)"""
 
 
 class Messages:

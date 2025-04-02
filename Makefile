@@ -1,6 +1,6 @@
 .PHONY: deploy requirements
 
-ALL_SERVICES = bridge city_pass construction_work contact image modules notification
+ALL_SERVICES = bridge city_pass construction_work contact image modules notification waste
 
 ifdef SERVICE_NAME
 export SERVICE_NAME_HYPHEN=$(subst _,-,$(SERVICE_NAME))
@@ -39,35 +39,31 @@ upgrade: requirements install
 define dc_for_all
 	@if [ -z "$(SERVICE_NAME)" ]; then \
 	  for s in $(ALL_SERVICES); do \
-		SERVICE_NAME=$$s docker compose $(1); \
+		SERVICE_NAME=$$s docker compose $(1) || exit $$?; \
 	  done; \
 	else \
 	  SERVICE_NAME=$(SERVICE_NAME) docker compose $(1); \
 	fi
 endef
 
-define run_for_all
-$(call dc_for_all,run --rm -u $(UID):$(GID) $(1))
-endef
-
 migrations:
     # Create Django migrations
-	$(call run_for_all,dev python manage.py makemigrations)
+	$(call dc_for_all,run --rm dev python manage.py makemigrations)
 
 lintfix:
 	# Execute lint fixes
-	$(call run_for_all,test black /app/)
-	$(call run_for_all,test ruff check /app/ --no-show-fixes --fix)
-	$(call run_for_all,test isort /app/)
+	$(dc) run --rm lint black /app/
+	$(dc) run --rm lint ruff check /app/ --no-show-fixes --fix
+	$(dc) run --rm lint isort /app/
 
 lint:
 	# Execute lint checks
-	$(call run_for_all,test ruff check /app/ --no-show-fixes)
-	$(call run_for_all,test isort --diff --check /app/)
+	$(dc) run --rm lint ruff check /app/ --no-show-fixes
+	$(dc) run --rm lint isort --diff --check /app/
 
 run-test:
 	# Run tests
-	$(call run_for_all,test)
+	$(call dc_for_all,run test)
 
 test: run-test lint
 	# Run tests & lint checks

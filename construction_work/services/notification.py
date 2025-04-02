@@ -56,6 +56,7 @@ def create_request_data(warning: WarningMessage, warning_image) -> dict:
         "context": {
             "linkSourceid": str(warning.pk),
             "type": "ProjectWarningCreatedByProjectManager",
+            "module_slug": Module.CONSTRUCTION_WORK.value,
         },
         "created_at": timezone.now().isoformat(),
         "device_ids": device_ids,

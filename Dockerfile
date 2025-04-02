@@ -91,10 +91,18 @@ FROM dev AS dev-notification
 COPY notification /app/notification
 CMD ["./manage.py", "runserver", "0.0.0.0:8000"]
 
-### Notification stages
+### Image stages
 FROM core AS app-image
 COPY image /app/image
 
 FROM dev AS dev-image
 COPY image /app/image
+CMD ["./manage.py", "runserver", "0.0.0.0:8000"]
+
+### Waste stages
+FROM core AS app-waste
+COPY waste /app/waste
+
+FROM dev AS dev-waste
+COPY waste /app/waste
 CMD ["./manage.py", "runserver", "0.0.0.0:8000"]

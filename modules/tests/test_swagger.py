@@ -1,4 +1,4 @@
-""" Swagger tests """
+"""Swagger tests"""
 
 from django.test import Client, TestCase
 
