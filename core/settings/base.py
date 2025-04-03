@@ -215,14 +215,21 @@ REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = os.getenv("REDIS_PORT")
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
 REDIS_PREFIX = "redis"
+# retry_strategy = Retry(ExponentialBackoff(base=1), 3)
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": f"{REDIS_PREFIX}://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
-        # "OPTIONS": {
-        #     "CLIENT_CLASS": "core.services.cache.CustomRedisClient",  # This breaks the cache.keys() method somehow
-        #     "SOCKET_CONNECT_TIMEOUT": 5,
-        #     "SOCKET_TIMEOUT": 5,
-        # },
+        "OPTIONS": {
+            # "CLIENT_CLASS": "core.services.cache.CustomRedisClient",  # This breaks the cache.keys() method somehow
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+            "CONNECTION_POOL_KWARGS": {
+                "retry_on_timeout": True,
+                "retry_on_error": [ConnectionError, TimeoutError],
+                # Default retry strategy is a single retry without delay
+                # "retry": retry_strategy
+            },
+        },
     }
 }
