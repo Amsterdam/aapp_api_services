@@ -29,3 +29,8 @@ ADDRESS_SEARCH_URL = os.getenv(
 # Parking
 SSP_BASE_URL = os.getenv("SSP_BASE_URL", "https://evs-ssp-accp.mendixcloud.com")
 SSP_ACCESS_TOKEN_HEADER = "SSP-Access-Token"
+SSP_GEOJSON_URL = os.getenv(
+    "SSP_GEOJSON_URL", "https://api.staging01.ams.rest.geodeci.fr/api/v1/common/zone/"
+)
+SSP_GEOJSON_TOKEN = os.getenv("SSP_GEOJSON_TOKEN")
+SSP_GEOJSON_TOKEN_HEADER = "X-Auth-Token"

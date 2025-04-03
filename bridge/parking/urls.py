@@ -1,5 +1,6 @@
 from django.urls import path
 
+import bridge.parking.views.permit_zone_views
 import bridge.parking.views.visitor_views
 from bridge.parking.views import account_views, license_plate_views, session_views
 
@@ -38,6 +39,11 @@ urlpatterns = [
         "parking/api/v1/permits",
         account_views.ParkingPermitsView.as_view(),
         name="parking-permits",
+    ),
+    path(
+        "parking/api/v1/permit-zones",
+        bridge.parking.views.permit_zone_views.ParkingPermitZoneView.as_view(),
+        name="parking-permit-zones",
     ),
     path(
         "parking/api/v1/balance",
