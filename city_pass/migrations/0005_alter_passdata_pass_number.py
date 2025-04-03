@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("city_pass", "0004_alter_passdata_unique_together"),
     ]

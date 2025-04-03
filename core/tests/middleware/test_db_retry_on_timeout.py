@@ -52,7 +52,7 @@ class DatabaseRetryMiddlewareTest(TestCase):
         self.assertEqual(self.mock_logger.warning.call_count, middleware.max_retries)
         for i in range(middleware.max_retries):
             self.mock_logger.warning.assert_any_call(
-                f"OperationalError (timeout) encountered. Retrying request {i + 1}/{middleware.max_retries} after {1 * (2 ** i)} seconds."
+                f"OperationalError (timeout) encountered. Retrying request {i + 1}/{middleware.max_retries} after {1 * (2**i)} seconds."
             )
 
     def test_retry_on_timeout_then_succeed(self, mock_sleep):
@@ -88,7 +88,7 @@ class DatabaseRetryMiddlewareTest(TestCase):
         self.assertEqual(self.mock_logger.warning.call_count, 2)
         for i in range(2):
             self.mock_logger.warning.assert_any_call(
-                f"OperationalError (timeout) encountered. Retrying request {i + 1}/{middleware.max_retries} after {1 * (2 ** i)} seconds."
+                f"OperationalError (timeout) encountered. Retrying request {i + 1}/{middleware.max_retries} after {1 * (2**i)} seconds."
             )
 
     def test_no_retry_on_non_timeout_operational_error(self, mock_sleep):

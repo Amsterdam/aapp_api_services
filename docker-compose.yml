@@ -12,9 +12,10 @@ x-app: &base-app
     REDIS_PORT: 6379
     REDIS_PASSWORD: password
   volumes:
-    - ./requirements:/app/requirements
     - ./core:/app/core
     - ./${SERVICE_NAME}:/app/${SERVICE_NAME}
+    - ./pyproject.toml:/app/pyproject.toml
+    - ./manage.py:/app/manage.py
   ports:
     - 8000:8000
   depends_on:
@@ -70,7 +71,7 @@ services:
       SECRET_KEY: secret-key-for-testing
       EDITOR_GROUP_ID: editor-group-id-for-testing
       PUBLISHER_GROUP_ID: publisher-group-id-for-testing
-    command: pytest
+    command: uv run pytest
 
   app:
     <<: *base-app
@@ -89,14 +90,16 @@ services:
       context: .
       target: dev-${SERVICE_NAME}
     volumes:
-    - ./bridge:/app/bridge
-    - ./city_pass:/app/city_pass
-    - ./construction_work:/app/construction_work
-    - ./contact:/app/contact
-    - ./image:/app/image
-    - ./modules:/app/modules
-    - ./notification:/app/notification
-    - ./waste:/app/waste
+      - ./core:/app/core
+      - ./manage.py:/app/manage.py
+      - ./bridge:/app/bridge
+      - ./city_pass:/app/city_pass
+      - ./construction_work:/app/construction_work
+      - ./contact:/app/contact
+      - ./image:/app/image
+      - ./modules:/app/modules
+      - ./notification:/app/notification
+      - ./waste:/app/waste
 
   openapi-diff:
     image: openapitools/openapi-diff:latest

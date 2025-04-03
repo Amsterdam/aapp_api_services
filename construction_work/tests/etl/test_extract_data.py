@@ -65,7 +65,7 @@ def test_get_iprox_items_data_success():
 
     with aioresponses() as mocked:
         # Mock each item URL with corresponding response
-        for url, response in zip(expected_urls, api_responses):
+        for url, response in zip(expected_urls, api_responses, strict=True):
             mocked.get(url, payload=response)
 
         result = get_iprox_items_data(base_url, item_ids)

@@ -20,9 +20,9 @@ def get_error_response_serializers(exceptions):
 
 def get_serializer(status_code, exceptions):
     for exp in exceptions:
-        assert (
-            status_code == exp.status_code
-        ), "All exceptions must have the same status code"
+        assert status_code == exp.status_code, (
+            "All exceptions must have the same status code"
+        )
 
     hash_val = get_hash(exceptions)
     if hash_val in SERIALIZERS:

@@ -53,13 +53,13 @@ def create_meta_pagination_data(
         },
     }
     if total_pages > current_page:
-        meta_pagination_data["pagination"][
-            "next"
-        ] = f"/parkingsessions?page={current_page + 1}&itemsPerPage={page_size}"
+        meta_pagination_data["pagination"]["next"] = (
+            f"/parkingsessions?page={current_page + 1}&itemsPerPage={page_size}"
+        )
     if current_page > 1:
-        meta_pagination_data["pagination"][
-            "prev"
-        ] = f"/parkingsessions?page={current_page - 1}&itemsPerPage={page_size}"
+        meta_pagination_data["pagination"]["prev"] = (
+            f"/parkingsessions?page={current_page - 1}&itemsPerPage={page_size}"
+        )
 
     return meta_pagination_data
 

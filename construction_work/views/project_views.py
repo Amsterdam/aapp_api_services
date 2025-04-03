@@ -79,7 +79,7 @@ class ProjectListView(DeviceIdMixin, generics.ListAPIView):
         Paginated list of projects with extended details including follow status
     """
 
-    default_date = datetime.datetime(1970, 1, 1, tzinfo=timezone.utc)
+    default_date = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
     serializer_class = ProjectExtendedSerializer
     pagination_class = CustomPagination
 

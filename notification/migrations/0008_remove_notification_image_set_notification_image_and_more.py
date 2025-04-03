@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("notification", "0007_rename_large_image_imageset_image_large_and_more"),
     ]

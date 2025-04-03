@@ -11,26 +11,23 @@ GID:=$(shell id --group)
 
 dc = SERVICE_NAME=${SERVICE_NAME} docker compose
 run = $(dc) run --rm -u ${UID}:${GID}
-manage = $(run) dev python manage.py
+run_lint = $(dc) run --rm lint uv run
+manage = $(run) dev uv run python manage.py
 
 help:
     # Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-pip-tools:
-	pip install pip-tools
-
-install: pip-tools
-    # Install requirements and sync venv with expected state as defined in requirements.txt
-	pip install -r requirements/requirements.txt
-	pip install -r requirements/requirements_dev.txt
+install:
+    # Install requirements on local active venv
+	uv sync --active
 
 requirements:
-	$(run) dev pip-compile --upgrade --output-file requirements/requirements.txt --allow-unsafe requirements/requirements.in
-	echo "# Generated on: $$(date +%Y-%m-%d)" | cat - requirements/requirements.txt > tmp && mv tmp requirements/requirements.txt
-
-	$(run) dev pip-compile --upgrade --output-file requirements/requirements_dev.txt --allow-unsafe requirements/requirements_dev.in
-	echo "# Generated on: $$(date +%Y-%m-%d)" | cat - requirements/requirements_dev.txt > tmp && mv tmp requirements/requirements_dev.txt
+    # Update uv.lock file and overwrite timestamp
+	$(run) dev uv lock
+	@timestamp=$$(date -u +"%Y-%m-%dT%H:%M:%SZ"); \
+	sed -i '/^# Generated:/d' uv.lock; \
+	sed -i "1s/^/# Generated: $${timestamp}\n/" uv.lock
 
 upgrade: requirements install
     # Run 'requirements' and 'install' targets
@@ -46,20 +43,15 @@ define dc_for_all
 	fi
 endef
 
-migrations:
-    # Create Django migrations
-	$(call dc_for_all,run --rm dev python manage.py makemigrations)
-
 lintfix:
 	# Execute lint fixes
-	$(dc) run --rm lint black /app/
-	$(dc) run --rm lint ruff check /app/ --no-show-fixes --fix
-	$(dc) run --rm lint isort /app/
+	$(run_lint) ruff format /app/
+	$(run_lint) ruff check /app/ --no-show-fixes --fix
 
 lint:
 	# Execute lint checks
-	$(dc) run --rm lint ruff check /app/ --no-show-fixes
-	$(dc) run --rm lint isort --diff --check /app/
+	$(run_lint) ruff format /app/ --check
+	$(run_lint) ruff check /app/ --no-show-fixes
 
 run-test:
 	# Run tests
@@ -107,13 +99,17 @@ openapi-diff: spectacular
     # Compare OpenAPI schema on acceptance with the one in the repository
 	$(run) openapi-diff https://acc.app.amsterdam.nl/$(SERVICE_NAME_HYPHEN)/api/v1/openapi/ /specs/openapi-schema.yaml
 
+migrations: check-service
+    # Run Django migrations on database
+	$(manage) makemigrations
+
 migrate: check-service
     # Run Django migrations on database
 	$(manage) migrate
 
 settings: check-service
-    # Show Django settings
-	$(run) test python manage.py diffsettings
+    # Show Django settings for local
+	$(manage) diffsettings
 
 dev: check-service build
     # Start Django app with runserver
