@@ -4,6 +4,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=on
 
+# Any process that requires to write in the home dir
+# we write to /tmp since we have no home dir
+ENV HOME=/tmp
 WORKDIR /app
 
 # Install dependencies
@@ -32,10 +35,6 @@ FROM core AS dev
 USER root
 RUN uv sync --dev
 WORKDIR /app
-
-# Any process that requires to write in the home dir
-# we write to /tmp since we have no home dir
-ENV HOME=/tmp
 
 CMD ["uv", "run", "python", "./manage.py", "runserver", "0.0.0.0:8000"]
 

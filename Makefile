@@ -6,12 +6,9 @@ ifdef SERVICE_NAME
 export SERVICE_NAME_HYPHEN=$(subst _,-,$(SERVICE_NAME))
 endif
 
-UID:=$(shell id --user)
-GID:=$(shell id --group)
-
 dc = SERVICE_NAME=${SERVICE_NAME} docker compose
-run = $(dc) run --rm -u ${UID}:${GID}
-run_lint = $(dc) run --rm lint uv run
+run = $(dc) run --rm
+lint = $(run) lint uv run
 manage = $(run) dev uv run python manage.py
 
 help:
@@ -45,13 +42,13 @@ endef
 
 lintfix:
 	# Execute lint fixes
-	$(run_lint) ruff format /app/
-	$(run_lint) ruff check /app/ --no-show-fixes --fix
+	$(lint) ruff format /app/
+	$(lint) ruff check /app/ --no-show-fixes --fix
 
 lint:
 	# Execute lint checks
-	$(run_lint) ruff format /app/ --check
-	$(run_lint) ruff check /app/ --no-show-fixes
+	$(lint) ruff format /app/ --check
+	$(lint) ruff check /app/ --no-show-fixes
 
 run-test:
 	# Run tests
