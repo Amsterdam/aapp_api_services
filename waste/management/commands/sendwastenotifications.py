@@ -11,7 +11,6 @@ from waste.services.notification import call_notification_service
 from waste.services.waste_collection import WasteCollectionService
 
 logger = logging.getLogger(__name__)
-TABLE_NAME = "bridge_notification_schedule"
 DAYS_AHEAD = 1
 
 

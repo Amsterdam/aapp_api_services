@@ -18,7 +18,7 @@ class TestWasteGuideView(APITestCase):
         WASTE_GUIDE_URL="http://example.com/wasteguide",
         WASTE_GUID_API_KEY="test_api_key",
     )
-    @patch("requests.request")
+    @patch("requests.get")
     def test_waste_guide_view(self, mock_request):
         # Mock the response from the external API
         mock_response = Mock()
@@ -32,13 +32,12 @@ class TestWasteGuideView(APITestCase):
 
         # Assert that the external request was called with the X-Api-Key
         mock_request.assert_called_once_with(
-            method="GET",
-            url=settings.WASTE_GUIDE_URL,
+            settings.WASTE_GUIDE_URL,
             headers={"X-Api-Key": settings.WASTE_GUID_API_KEY},
             params=request.GET,
         )
 
-    @patch("bridge.proxy.views.requests.request")
+    @patch("bridge.proxy.views.requests.get")
     def test_cache(self, mock_request):
         url = reverse("waste-guide-search")
         mock_response = Mock()

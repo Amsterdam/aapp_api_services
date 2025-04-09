@@ -21,7 +21,7 @@ install:
 
 requirements:
     # Update uv.lock file and overwrite timestamp
-	$(run) dev uv lock
+	$(run) dev uv lock --upgrade
 	@timestamp=$$(date -u +"%Y-%m-%dT%H:%M:%SZ"); \
 	sed -i '/^# Generated:/d' uv.lock; \
 	sed -i "1s/^/# Generated: $${timestamp}\n/" uv.lock

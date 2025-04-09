@@ -1,11 +1,11 @@
 from django.urls import reverse
 from rest_framework import status
 
-from bridge.waste_pass import constants
 from core.tests.test_authentication import BasicAPITestCase
+from waste import constants
 
 
-class TestWastePassNumberView(BasicAPITestCase):
+class TestWasteContainerPassNumberView(BasicAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("waste-container-pass-number")

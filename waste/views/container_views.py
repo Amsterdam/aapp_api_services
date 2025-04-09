@@ -2,20 +2,20 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
-from bridge.waste_pass.constants import (
+from core.utils.openapi_utils import extend_schema_for_api_key
+from waste.constants import (
     DISTRICT_PASS_NUMBER_MAPPING,
     DISTRICT_POSTAL_CODE_MAPPING,
     POSTAL_CODE_CONTAINER_NOT_PRESENT,
     District,
 )
-from bridge.waste_pass.serializers import (
+from waste.serializers.container_serializers import (
     WastePassNumberRequestSerializer,
     WastePassNumberResponseSerializer,
 )
-from core.utils.openapi_utils import extend_schema_for_api_key
 
 
-class WastePassNumberView(generics.RetrieveAPIView):
+class WasteContainerPassNumberView(generics.RetrieveAPIView):
     serializer_class = WastePassNumberRequestSerializer
 
     @extend_schema_for_api_key(
