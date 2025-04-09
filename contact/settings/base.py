@@ -13,7 +13,7 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
 
 SPECTACULAR_SETTINGS["TITLE"] = "Contact API"
 
-CSV_DIR = os.getenv("CSV_DIR")
+CSV_DIR = os.getenv("CSV_DIR", "/app/contact/csv")
 
 WAITING_TIME_API = "https://wachttijdenamsterdam.nl/data/"
 

@@ -30,27 +30,23 @@ class TestCityOfficeView(BasicAPITestCase):
             appointment={"type": "appointment_info"},
             visiting_hours_content="Visit us between 9am and 5pm.",
             address_content={"additional": "info"},
-            order=1,
+            order=0,
         )
 
         # Create OpeningHours for the city office
         OpeningHours.objects.create(
             city_office=self.city_office,
             day_of_week=1,  # Monday
-            opens_hours=9,
-            opens_minutes=0,
-            closes_hours=17,
-            closes_minutes=0,
+            opens_time="09:00",
+            closes_time="17:00",
         )
 
         # Create an OpeningHoursException for the city office
         OpeningHoursException.objects.create(
             city_office=self.city_office,
             date=datetime.date.today(),
-            opens_hours=10,
-            opens_minutes=0,
-            closes_hours=16,
-            closes_minutes=0,
+            opens_time="10:00",
+            closes_time="16:00",
         )
 
         self.client = APIClient()
@@ -78,7 +74,7 @@ class TestCityOfficeView(BasicAPITestCase):
         # Check that result contains the correct data
         result = response_data.get("result")
         self.assertIsInstance(result, list)
-        self.assertEqual(len(result), 1)
+        self.assertEqual(len(result), 9)
 
         office_data = result[0]
         self.assertEqual(office_data["identifier"], "stadsloket-centrum")
@@ -96,7 +92,7 @@ class TestCityOfficeView(BasicAPITestCase):
             office_data["visitingHoursContent"], "Visit us between 9am and 5pm."
         )
         self.assertEqual(office_data["addressContent"], {"additional": "info"})
-        self.assertEqual(office_data["order"], 1)
+        self.assertEqual(office_data["order"], 0)
 
         # Check visiting hours
         visiting_hours = office_data["visitingHours"]

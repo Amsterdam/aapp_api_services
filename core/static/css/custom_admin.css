@@ -1,0 +1,68 @@
+.theme-toggle {
+    display: none;
+}
+
+/* Header: White background, black text, subtle bottom border */
+#header {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-bottom: 1px solid #ddd !important;
+  padding: 0.5rem 1rem;
+}
+
+/* Header links (e.g., Logout) in black */
+#header a {
+  color: #000000 !important;
+  text-decoration: none;
+}
+#header a:hover {
+  text-decoration: underline;
+}
+
+/* Optional: Hide the theme toggle if present */
+.theme-toggle {
+  display: none !important;
+}
+
+/* Minor tweak: Make main admin heading black and bold */
+#content h1 {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+/* (Optional) Example of small style change for buttons */
+button, input[type="submit"], .button {
+  background-color: #003087 !important; /* Amsterdam's deep blue */
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 4px !important;
+  margin: 0 5px;
+  padding: 0.4rem 1rem;
+}
+/* Table headers */
+caption {
+  background-color: #003087 !important;
+  color: #ffffff !important;
+  border: 1px solid #ddd !important;
+}
+nav div {
+  background-color: #003087 !important;
+  color: #ffffff !important;
+  border: 1px solid #ddd !important;
+}
+#content-main table caption a.section,
+#content-main table caption a.section:visited,
+#content-main table caption a.section:active,
+#content-main table caption a.section:hover {
+    color: #ffffff !important;
+}
+
+
+/* Replace default blue text for links with #003087 */
+#content-main a {
+  color: #003087 !important;
+}
+
+#content-main a:hover {
+  color: #00215C !important;
+}

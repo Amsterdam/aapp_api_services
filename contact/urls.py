@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.urls import path
 
 from contact.views import contact_views, link_views
@@ -22,6 +23,7 @@ urlpatterns = [
         contact_views.HealthCheckView.as_view(),
         name="contact-health-check",
     ),
+    path("admin/", admin.site.urls),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH)

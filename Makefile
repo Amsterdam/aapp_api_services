@@ -108,7 +108,7 @@ settings: check-service
     # Show Django settings for local
 	$(manage) diffsettings
 
-dev: check-service build
+dev: check-service
     # Start Django app with runserver
 	$(run) --service-ports dev
 

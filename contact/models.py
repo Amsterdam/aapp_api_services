@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 DAYS = [
@@ -9,9 +10,6 @@ DAYS = [
     (5, "Vrijdag"),
     (6, "Zaterdag"),
 ]
-
-HOURS = [(x, x) for x in range(0, 24)]
-MINUTES = [(x, x) for x in range(0, 60)]
 
 
 class CityOffice(models.Model):
@@ -37,32 +35,52 @@ class CityOffice(models.Model):
     class Meta:
         unique_together = [["lat", "lon"]]
 
+    def __str__(self):
+        return self.title
 
-class OpeningHours(models.Model):
+
+class OpeningHourAbstract(models.Model):
+    """Abstract model for City Offices Opening Hours"""
+
+    class Meta:
+        abstract = True
+
+    city_office = models.ForeignKey(
+        CityOffice, on_delete=models.CASCADE, verbose_name="Stadskantoor"
+    )
+    opens_time = models.TimeField()
+    closes_time = models.TimeField()
+
+    def clean(self):
+        if bool(self.opens_time) != bool(self.closes_time):
+            raise ValidationError(
+                "Both 'opens_time' and 'closes_time' must be set or both left empty."
+            )
+
+        if self.opens_time and self.closes_time:
+            if self.opens_time >= self.closes_time:
+                raise ValidationError("Opens time must be before closes time.")
+
+
+class OpeningHours(OpeningHourAbstract):
     """Model for City Offices Opening Hours Regular"""
 
-    city_office = models.ForeignKey(CityOffice, on_delete=models.CASCADE)
-    day_of_week = models.IntegerField(choices=DAYS, blank=False, unique=False)
-    opens_hours = models.IntegerField(choices=HOURS, blank=False, unique=False)
-    opens_minutes = models.IntegerField(choices=MINUTES, blank=False, unique=False)
-    closes_hours = models.IntegerField(choices=HOURS, blank=False, unique=False)
-    closes_minutes = models.IntegerField(choices=MINUTES, blank=False, unique=False)
+    class Meta:
+        verbose_name = "Openingstijd"
+        verbose_name_plural = "Openingstijden"
+        unique_together = [["city_office", "day_of_week"]]
+
+    day_of_week = models.IntegerField(choices=DAYS, verbose_name="Dag van de week")
 
 
-class OpeningHoursException(models.Model):
+class OpeningHoursException(OpeningHourAbstract):
     """Model for City Offices Opening Hours Exceptions"""
 
-    city_office = models.ForeignKey(CityOffice, on_delete=models.CASCADE)
-    date = models.DateField(null=False)  # YYYY-MM-DD format
-    opens_hours = models.IntegerField(
-        choices=HOURS, null=True, blank=True, unique=False
-    )
-    opens_minutes = models.IntegerField(
-        choices=MINUTES, null=True, blank=True, unique=False
-    )
-    closes_hours = models.IntegerField(
-        choices=HOURS, null=True, blank=True, unique=False
-    )
-    closes_minutes = models.IntegerField(
-        choices=MINUTES, null=True, blank=True, unique=False
-    )
+    class Meta:
+        verbose_name = "Openingstijden uitzondering"
+        verbose_name_plural = "Openingstijden uitzonderingen"
+        unique_together = [["city_office", "date"]]
+
+    date = models.DateField(verbose_name="Datum")
+    opens_time = models.TimeField(null=True, blank=True)
+    closes_time = models.TimeField(null=True, blank=True)

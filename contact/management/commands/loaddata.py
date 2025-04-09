@@ -96,7 +96,22 @@ class Command(BaseCommand):
                     )
                     continue
 
-                opening_hours = OpeningHours(**row)
+                opens_time = (
+                    f"{row['opens_hours']}:{row['opens_minutes']}"
+                    if row["opens_hours"]
+                    else None
+                )
+                closes_time = (
+                    f"{row['closes_hours']}:{row['closes_minutes']}"
+                    if row["closes_hours"]
+                    else None
+                )
+                opening_hours = OpeningHours(
+                    city_office=city_office,
+                    day_of_week=day_of_week,
+                    opens_time=opens_time,
+                    closes_time=closes_time,
+                )
                 opening_hours.save()
                 added_opening_hours.append(opening_hours)
 
@@ -126,7 +141,22 @@ class Command(BaseCommand):
                     )
                     continue
 
-                opening_hours_exception = OpeningHoursException(**row)
+                opens_time = (
+                    f"{row['opens_hours']}:{row['opens_minutes']}"
+                    if row["opens_hours"]
+                    else None
+                )
+                closes_time = (
+                    f"{row['closes_hours']}:{row['closes_minutes']}"
+                    if row["closes_hours"]
+                    else None
+                )
+                opening_hours_exception = OpeningHoursException(
+                    city_office=city_office,
+                    date=date,
+                    opens_time=opens_time,
+                    closes_time=closes_time,
+                )
                 opening_hours_exception.save()
                 added_opening_hour_exceptions.append(opening_hours_exception)
 

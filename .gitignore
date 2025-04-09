@@ -26,9 +26,6 @@ env/
 __azurite*
 __blobstorage*
 
-# Static files
-static
-
 # Pytest
 pytest.ini
 .pytest_cache/
