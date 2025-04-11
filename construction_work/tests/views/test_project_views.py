@@ -27,7 +27,9 @@ from core.tests.test_authentication import BasicAPITestCase
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
 
-@override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
+@override_settings(
+    STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
+)
 class BaseTestProjectView(BasicAPITestCase):
     """Abstract base class for API tests"""
 

@@ -9,17 +9,18 @@ from core.utils.image_utils import get_example_image_file
 from image.models import ImageSet, ImageVariant
 
 
+@override_settings(
+    STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
+)
 class ImageSetCreateViewTests(BasicAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("image-create-imageset")
 
-    @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
     def test_create_imageset_success_jpg(self):
         file = get_example_image_file("core/tests/example.jpg")
         self._create_imageset_success(file)
 
-    @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
     def test_create_imageset_success_heic(self):
         file = get_example_image_file("core/tests/example.heic")
         self._create_imageset_success(file)
@@ -53,7 +54,9 @@ class ImageSetCreateViewTests(BasicAPITestCase):
         self.assertIn("image", response.data)
 
 
-@override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
+@override_settings(
+    STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
+)
 class ImageSetDetailViewTests(BasicAPITestCase):
     def setUp(self):
         super().setUp()

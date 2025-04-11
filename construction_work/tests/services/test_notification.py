@@ -19,7 +19,9 @@ from construction_work.services.notification import (
 from core.utils.image_utils import get_example_image_file
 
 
-@override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
+@override_settings(
+    STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
+)
 class TestNotificationService(TestCase):
     def setUp(self):
         self.project = baker.make(Project, title="Test Project")

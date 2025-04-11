@@ -43,11 +43,10 @@ dev = [
   "pytest-dotenv",
   "pytest-env",
   "model-bakery",
-  "black",
-  "isort",
   "ruff",
   "aioresponses",
   "pytest-asyncio",
+  "coverage",
 ]
 
 [tool.pytest.ini_options]
@@ -68,8 +67,14 @@ unfixable = ["B"]
 [tool.ruff.lint.per-file-ignores]
 "**/{settings}/*" = ["F403", "F405"]
 
-[tool.isort]
-profile = "black"
+[tool.coverage.run]
+branch = true
+omit = [
+  "*/migrations/*",
+  "*/settings/*"
+]
 
-[tool.autoflake]
-ignore_init_module_imports = true
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true

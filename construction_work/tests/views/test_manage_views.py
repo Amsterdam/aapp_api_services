@@ -1213,7 +1213,9 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         self.assert_remove_warning_successfully(project, publisher)
 
 
-@override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.InMemoryStorage")
+@override_settings(
+    STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
+)
 class TestImageUploadView(TestWarningMessageCRUDBaseView):
     def setUp(self):
         super().setUp()

@@ -1,24 +1,22 @@
 Affected services
 - core
-
 - bridge
 - city_pass
 - construction_work
 - contact
 - modules
 - waste
-
 - image
 - notification
 
 Definition of Done
-- [ ] Swagger UI is gecontroleerd en up-to-date
-- [ ] Dependencies zijn up-to-date
-- [ ] 100% unittest coverage
-- [ ] API endpoints zijn backwards compatible
-- [ ] Infrastructure in aapp_azure_infra repo is bijgewerkt 
-- [ ] Elk endpoint heeft een loadtest (zover mogelijk)
+- [ ] Swagger UI tested & up-to-date (`make dev`)
+- [ ] Dependencies updated (`make requirements`)
+- [ ] Unittest coverage >90% (`make coverage`)
+- [ ] API endpoints backwards compatible (`make openapi-diff`)
+- [ ] Infrastructure config updated (aapp_azure_infra)
+- [ ] Loadtests for relevant endpoints (aapp_testing_loadtests)
 
-Na deployment
-- [ ] Handmatige functionele test op Ontwikkel en Test (bijvoorbeeld: door swagger klikken of notificatie sturen via beheer systeem) 
-- [ ] Sanity check in development app
+After deployment
+- [ ] Manual check on "Ontwikkel" en "Test" (e.g.: use feature via Swagger or admin panel)
+- [ ] Sanity check on test app

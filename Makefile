@@ -54,6 +54,10 @@ run-test:
 	# Run tests
 	$(call dc_for_all,run test)
 
+coverage:
+	# Run pytest coverage
+	$(call dc_for_all,run --rm test sh -c "uv run coverage run -m pytest $$s && uv run coverage report")
+
 test: run-test lint
 	# Run tests & lint checks
 
