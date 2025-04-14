@@ -34,13 +34,6 @@ class ParkingLicensePlateListView(BaseSSPView):
 class ParkingLicensePlatePostDeleteView(BaseSSPView):
     """
     Manage license plates through SSP API (via redirect)
-
-    DELETE expects the following body (which is not supported by OpenAPI/Swagger):
-    {
-        "report_code": "1234567890",
-        "vehicle_id": "1234567890"
-    }
-
     """
 
     ssp_endpoint = SSPEndpoint.LICENSE_PLATES
@@ -68,7 +61,7 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
         return self.call_ssp(request)
 
     @ssp_openapi_decorator(
-        request=LicensePlatesDeleteRequestSerializer,
+        serializer_as_params=LicensePlatesDeleteRequestSerializer,
         response_serializer_class=LicensePlatesDeleteResponseSerializer,
         requires_access_token=True,
     )

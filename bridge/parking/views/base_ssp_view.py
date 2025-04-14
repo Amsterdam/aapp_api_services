@@ -54,11 +54,9 @@ class BaseSSPView(generics.GenericAPIView):
         serializer_class = self.get_serializer_class()
         if serializer_class:
             serializer_data = None
-            if self.ssp_http_method == "get":
+            if request.method in ["GET", "DELETE"]:
                 serializer_data = request.query_params
-            elif self.ssp_http_method == "delete":
-                serializer_data = request.data
-            elif self.ssp_http_method == "post":
+            elif request.method in ["POST", "PATCH", "PUT"]:
                 serializer_data = request.data
             else:
                 return None

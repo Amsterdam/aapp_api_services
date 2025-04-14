@@ -44,25 +44,36 @@ def create_serializer_data(serializer_class, **custom_data):
 
 
 class CamelToSnakeCaseSerializer(serializers.Serializer):
-    def camel_to_snake(self, name):
-        """Convert CamelCase or camelCase to snake_case"""
+    """
+    Convert incoming CamelCase keys to snake_case keys.
+
+    Globally adjust startDate and endDate to startDateTime and endDateTime.
+    """
+
+    def camel_to_snake_case(self, name):
         s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
         return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
     def to_internal_value(self, data):
-        """Convert all keys in the input dict from camelCase to snake_case"""
         if isinstance(data, dict):
-            data = {self.camel_to_snake(key): value for key, value in data.items()}
+            if "startDate" in data:
+                data["startDateTime"] = data.pop("startDate")
+            if "endDate" in data:
+                data["endDateTime"] = data.pop("endDate")
+
+            data = {self.camel_to_snake_case(key): value for key, value in data.items()}
         return super().to_internal_value(data)
 
 
 class SnakeToCamelCaseSerializer(serializers.Serializer):
-    def snake_to_camel(self, name):
-        """Convert snake_case to camelCase"""
+    """
+    Convert incoming snake_case keys to CamelCase keys.
+    """
+
+    def snake_to_camel_case(self, name):
         components = name.split("_")
         return components[0] + "".join(x.title() for x in components[1:])
 
     def to_representation(self, instance):
-        """Convert all keys from snake_case to camelCase"""
         result = super().to_representation(instance)
-        return {self.snake_to_camel(key): value for key, value in result.items()}
+        return {self.snake_to_camel_case(key): value for key, value in result.items()}

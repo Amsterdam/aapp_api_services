@@ -34,8 +34,8 @@ class VisitorSessionRequestSerializer(SnakeToCamelCaseSerializer):
 
 
 class VisitorSessionSerializer(CamelToSnakeCaseSerializer):
-    start_date = serializers.DateTimeField()
-    end_date = serializers.DateTimeField()
+    start_date_time = serializers.DateTimeField()
+    end_date_time = serializers.DateTimeField()
     vehicle_id = serializers.CharField()
     status = serializers.CharField()
     ps_right_id = serializers.CharField(required=False)

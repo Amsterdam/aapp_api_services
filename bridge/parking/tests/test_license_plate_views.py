@@ -180,7 +180,7 @@ class TestParkingLicensePlatesDeleteView(BaseSSPTestCase):
         mock_request.return_value = mock_response
 
         response = self.client.delete(
-            self.url, self.test_payload, headers=self.api_headers
+            self.url, query_params=self.test_payload, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
 
@@ -206,7 +206,7 @@ class TestParkingLicensePlatesDeleteView(BaseSSPTestCase):
         mock_request.return_value = self.create_ssp_response(404, mock_response)
 
         response = self.client.delete(
-            self.url, self.test_payload, headers=self.api_headers
+            self.url, query_params=self.test_payload, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["code"], SSPNotFoundError.default_code)
@@ -219,7 +219,7 @@ class TestParkingLicensePlatesDeleteView(BaseSSPTestCase):
         mock_request.return_value = self.create_ssp_response(400, mock_response)
 
         response = self.client.delete(
-            self.url, self.test_payload, headers=self.api_headers
+            self.url, query_params=self.test_payload, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["code"], SSPCallError.default_code)

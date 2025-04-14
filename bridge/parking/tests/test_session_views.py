@@ -26,6 +26,7 @@ class TestParkingSessionListView(BaseSSPTestCase):
         single_parking_session_item_dict = create_serializer_data(
             ParkingSessionResponseSerializer
         )
+        single_parking_session_item_dict["status"] = "Actief"
         parking_session_item_list = [single_parking_session_item_dict]
         mock_response_content = {
             "parkingSession": parking_session_item_list,
@@ -38,13 +39,18 @@ class TestParkingSessionListView(BaseSSPTestCase):
 
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["result"], parking_session_item_list)
+
+        response_data = response.data["result"]
+        # Status cannot direcly be compared, since it is translated.
+        response_data[0].pop("status")
+        parking_session_item_list[0].pop("status")
+        self.assertEqual(response_data, parking_session_item_list)
 
 
-class TestParkingSessionStartUpdateView(BaseSSPTestCase):
+class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
-        self.url = reverse("parking-session-start-update")
+        self.url = reverse("parking-session-start-update-delete")
 
     @patch("bridge.parking.services.ssp.requests.request")
     def test_start_session_without_balance_upgrade(self, mock_request):
@@ -114,6 +120,24 @@ class TestParkingSessionStartUpdateView(BaseSSPTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, update_response_data)
 
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_delete_session(self, mock_request):
+        delete_response_data = create_serializer_data(ParkingOrderResponseSerializer)
+        mock_response_content = delete_response_data
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        delete_session_payload = {
+            "report_code": 1234567890,
+            "ps_right_id": 1234567890,
+            "start_date_time": "2021-01-01T00:00:00Z",
+        }
+
+        response = self.client.delete(
+            self.url, query_params=delete_session_payload, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, delete_response_data)
+
 
 class TestParkingSessionReceiptView(BaseSSPTestCase):
     def setUp(self):
@@ -132,8 +156,8 @@ class TestParkingSessionReceiptView(BaseSSPTestCase):
             "report_code": 1234567890,
             "payment_zone_id": "FOOBAR",
             "vehicle_id": "FOOBAR",
-            "start_date": "2021-01-01T00:00:00Z",
-            "end_date": "2021-01-01T00:00:00Z",
+            "start_date_time": "2021-01-01T00:00:00Z",
+            "end_date_time": "2021-01-01T00:00:00Z",
         }
 
         response = self.client.get(self.url, query_params, headers=self.api_headers)

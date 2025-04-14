@@ -67,8 +67,8 @@ urlpatterns = [
     ),
     path(
         "parking/api/v1/session",
-        session_views.ParkingSessionStartUpdateView.as_view(),
-        name="parking-session-start-update",
+        session_views.ParkingSessionStartUpdateDeleteView.as_view(),
+        name="parking-session-start-update-delete",
     ),
     path(
         "parking/api/v1/session/receipt",
