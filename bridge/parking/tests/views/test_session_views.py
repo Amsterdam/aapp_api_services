@@ -9,7 +9,7 @@ from bridge.parking.serializers.session_serializers import (
     ParkingSessionReceiptResponseSerializer,
     ParkingSessionResponseSerializer,
 )
-from bridge.parking.tests.test_base_ssp_view import (
+from bridge.parking.tests.views.test_base_ssp_view import (
     BaseSSPTestCase,
     create_meta_pagination_data,
 )

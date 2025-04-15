@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from bridge.parking.serializers.general_serializers import (
     AmountCurrencySerializer,
+    FlexibleDateTimeSerializer,
     MillisecondsToSecondsSerializer,
     RedirectSerializer,
     StatusTranslationSerializer,
@@ -34,6 +35,7 @@ class ParkingSessionResponseSerializer(CamelToSnakeCaseSerializer):
     STATUS_CHOICES = [
         ("Actief", "ACTIVE"),
         ("Gepland", "PLANNED"),
+        ("Toekomstig", "PLANNED"),
         ("Voltooid", "COMPLETED"),
         ("Geannuleerd", "CANCELLED"),
     ]
@@ -62,12 +64,12 @@ class ParkingSessionListPaginatedResponseSerializer(serializers.Serializer):
     _links = PaginationLinksSerializer()
 
 
-class ParkingSessionOrderSerializer(SnakeToCamelCaseSerializer):
+class ParkingSessionOrderStartRequestSerializer(SnakeToCamelCaseSerializer):
     report_code = serializers.IntegerField()
     payment_zone_id = serializers.CharField(required=False)
     vehicle_id = serializers.CharField()
-    start_date_time = serializers.DateTimeField()
-    end_date_time = serializers.DateTimeField(required=False)
+    start_date_time = FlexibleDateTimeSerializer()
+    end_date_time = FlexibleDateTimeSerializer(required=False)
 
     def validate(self, data):
         start = data.get("start_date_time")
@@ -79,14 +81,12 @@ class ParkingSessionOrderSerializer(SnakeToCamelCaseSerializer):
         return data
 
 
-class ParkingSessionOrderUpdateSerializer(SnakeToCamelCaseSerializer):
-    report_code = serializers.IntegerField()
-    ps_right_id = serializers.IntegerField()
-    start_date_time = serializers.DateTimeField()
-    end_date_time = serializers.DateTimeField()
+class ParkingSessionStartRequestSerializer(SnakeToCamelCaseSerializer):
+    parking_session = ParkingSessionOrderStartRequestSerializer()
+    balance = AmountCurrencySerializer(required=False)
+    redirect = RedirectSerializer(required=False)
+    locale = serializers.CharField(required=False)
 
-
-class FixedParkingSessionSerializer(SnakeToCamelCaseSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["parkingsession"] = data["parkingSession"]
@@ -94,35 +94,34 @@ class FixedParkingSessionSerializer(SnakeToCamelCaseSerializer):
         return data
 
 
-class ParkingSessionStartRequestSerializer(FixedParkingSessionSerializer):
-    parking_session = ParkingSessionOrderSerializer()
-    balance = AmountCurrencySerializer(required=False)
-    redirect = RedirectSerializer(required=False)
-    locale = serializers.CharField(required=False)
+class ParkingSessionOrderUpdateRequestSerializer(SnakeToCamelCaseSerializer):
+    report_code = serializers.IntegerField()
+    ps_right_id = serializers.IntegerField()
+    start_date_time = FlexibleDateTimeSerializer()
+    end_date_time = FlexibleDateTimeSerializer()
+
+
+class ParkingSessionUpdateRequestSerializer(ParkingSessionStartRequestSerializer):
+    parking_session = ParkingSessionOrderUpdateRequestSerializer()
 
 
 class ParkingSessionDeleteRequestSerializer(SnakeToCamelCaseSerializer):
     report_code = serializers.IntegerField()
     ps_right_id = serializers.IntegerField()
-    start_date_time = serializers.DateTimeField()
-    end_date_time = serializers.DateTimeField(required=False)
+    start_date_time = FlexibleDateTimeSerializer()
 
     def to_representation(self, instance):
-        instance["end_date_time"] = timezone.now()
         data = super().to_representation(instance)
+        data["endDateTime"] = timezone.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         return {"parkingsession": data}
-
-
-class ParkingSessionUpdateRequestSerializer(ParkingSessionStartRequestSerializer):
-    parking_session = ParkingSessionOrderUpdateSerializer()
 
 
 class ParkingSessionReceiptRequestSerializer(SnakeToCamelCaseSerializer):
     report_code = serializers.IntegerField()
     payment_zone_id = serializers.CharField()
     vehicle_id = serializers.CharField()
-    start_date_time = serializers.DateTimeField()
-    end_date_time = serializers.DateTimeField()
+    start_date_time = FlexibleDateTimeSerializer()
+    end_date_time = FlexibleDateTimeSerializer()
 
     def to_representation(self, instance):
         """

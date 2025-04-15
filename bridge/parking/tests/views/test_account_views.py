@@ -12,7 +12,7 @@ from bridge.parking.serializers.general_serializers import (
     ParkingOrderResponseSerializer,
 )
 from bridge.parking.serializers.permit_serializer import PermitItemSerializer
-from bridge.parking.tests.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
 from core.utils.serializer_utils import create_serializer_data
 
 

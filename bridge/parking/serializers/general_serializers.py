@@ -2,6 +2,7 @@ import math
 
 from rest_framework import serializers
 
+from bridge.parking.utils import parse_iso_datetime
 from core.utils.serializer_utils import (
     CamelToSnakeCaseSerializer,
     SnakeToCamelCaseSerializer,
@@ -16,6 +17,30 @@ class ValueCurrencySerializer(CamelToSnakeCaseSerializer):
 class AmountCurrencySerializer(SnakeToCamelCaseSerializer):
     amount = serializers.FloatField()
     currency = serializers.CharField()
+
+
+class ParkingOrderResponseSerializer(CamelToSnakeCaseSerializer):
+    """
+    order_status options:
+    - Initiated
+    - Processing
+    - ...?
+
+    order_type options:
+    - Parking
+    - Payment
+    - Both
+    - ...?
+    """
+
+    frontend_id = serializers.IntegerField()
+    redirect_url = serializers.URLField(required=False)
+    order_status = serializers.CharField()
+    order_type = serializers.CharField()
+
+
+class RedirectSerializer(SnakeToCamelCaseSerializer):
+    merchant_return_url = serializers.URLField()
 
 
 class StatusTranslationSerializer(serializers.ChoiceField):
@@ -49,38 +74,25 @@ class StatusTranslationSerializer(serializers.ChoiceField):
         raise serializers.ValidationError(f"Invalid status: {data}")
 
 
-class ParkingOrderResponseSerializer(CamelToSnakeCaseSerializer):
-    """
-    order_status options:
-    - Initiated
-    - Processing
-    - ...?
-
-    order_type options:
-    - Parking
-    - Payment
-    - Both
-    - ...?
-    """
-
-    frontend_id = serializers.IntegerField()
-    redirect_url = serializers.URLField(required=False)
-    order_status = serializers.CharField()
-    order_type = serializers.CharField()
-
-
-class RedirectSerializer(SnakeToCamelCaseSerializer):
-    merchant_return_url = serializers.URLField()
-
-
 class MillisecondsToSecondsSerializer(serializers.IntegerField):
     def to_representation(self, milliseconds):
-        seconds = math.ceil(milliseconds / 1000)
-        return seconds
+        return math.ceil(milliseconds / 1000)
 
 
 class SecondsToMillisecondsSerializer(serializers.IntegerField):
     def to_representation(self, seconds):
-        milliseconds = seconds * 1000
-        print(milliseconds)
-        return milliseconds
+        return seconds * 1000
+
+
+class FlexibleDateTimeSerializer(serializers.DateTimeField):
+    """
+    Parses datetime strings using custom parser function.
+    """
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            try:
+                return parse_iso_datetime(data)
+            except ValueError as e:
+                raise serializers.ValidationError(str(e)) from e
+        return super().to_internal_value(data)

@@ -4,7 +4,7 @@ from django.urls import reverse
 from requests import Response
 
 from bridge.parking.exceptions import SSPCallError, SSPNotFoundError, SSPResponseError
-from bridge.parking.tests.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
 
 
 class TestParkingLicensePlatesGetView(BaseSSPTestCase):
