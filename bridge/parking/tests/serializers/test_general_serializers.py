@@ -143,26 +143,25 @@ class TestFlexibleDateTimeSerializer(TestCase):
             # UTC notations
             "2025-01-01T10:00:00Z",
             "2025-01-01T10:00:00.000Z",
-            "2025-01-01 10:00:00.000Z",
             "2025-01-01T10:00:00+00:00",
             "2025-01-01T10:00:00.000+00:00",
-            "2025-01-01 10:00:00.000+00:00",
             # Amsterdam timezone offset notations
             "2025-01-01T11:00:00+01:00",
             "2025-01-01T11:00:00.000+01:00",
-            "2025-01-01 11:00:00.000+01:00",
             # None Amsterdam timezone offset notations
             "2025-01-01T12:00:00+02:00",
             "2025-01-01T12:00:00.000+02:00",
-            "2025-01-01 12:00:00.000+02:00",
             "2025-01-01T08:00:00-02:00",
             "2025-01-01T08:00:00.000-02:00",
-            "2025-01-01 08:00:00.000-02:00",
             # Assumed Amsterdam timezone offset notations
             "2025-01-01T11:00:00",
             "2025-01-01T11:00:00.000",
-            "2025-01-01 11:00:00",
-            "2025-01-01 11:00:00.000",
+            # Missing T between date and time
+            "2025-01-01 10:00:00.000Z",
+            "2025-01-01 10:00:00.000+00:00",
+            "2025-01-01 11:00:00.000+01:00",
+            "2025-01-01 12:00:00.000+02:00",
+            "2025-01-01 08:00:00.000-02:00",
         ]
         # First of January 2021 in Europe/Amsterdam (CEST/CET) timezone equals this:
         valid_timestamps_resolved = "2025-01-01T11:00:00+01:00"
@@ -177,7 +176,11 @@ class TestFlexibleDateTimeSerializer(TestCase):
 
     def test_failure(self):
         invalid_timestamps = [
-            # Invalid formats
+            # Missing plus sign before offset
+            "2025-01-01T11:00:00 01:00",
+            "2025-01-01T11:00:00.000 01:00",
+            "2025-01-01 11:00:00.000 01:00",
+            # Other invalid formats
             "2025-13-01T00:00:00Z",  # Invalid month
             "2025-02-30T00:00:00Z",  # Invalid day
             "2025-01-01T25:00:00Z",  # Invalid hour
@@ -197,5 +200,5 @@ class TestFlexibleDateTimeSerializer(TestCase):
 
         for ts in invalid_timestamps:
             serializer = TestSerializer(data={"timestamp": ts})
-            with self.assertRaises(serializers.ValidationError):
+            with self.assertRaises(serializers.ValidationError, msg=ts):
                 serializer.is_valid(raise_exception=True)
