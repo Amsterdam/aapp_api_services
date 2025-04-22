@@ -1,5 +1,6 @@
 from copy import copy
 from datetime import datetime, timedelta
+from uuid import uuid4
 
 from django.utils import timezone
 
@@ -17,6 +18,7 @@ class TestReleaseViews(TestCaseWithAuth):
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
             accept="application/json",
+            query_params={"no_caching": uuid4()},
         )
         expected_result = {
             "version": "0.0.1",
@@ -76,6 +78,7 @@ class TestReleaseViews(TestCaseWithAuth):
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
             accept="application/json",
+            query_params={"no_caching": uuid4()},
         )
         self.assertContains(response, "does not exist", status_code=404)
 
@@ -87,6 +90,7 @@ class TestReleaseViews(TestCaseWithAuth):
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
             accept="application/json",
+            query_params={"no_caching": uuid4()},
         )
         expected_result = "RELEASE_NOT_FOUND"
         self.assertContains(response, expected_result, status_code=404)
@@ -102,6 +106,7 @@ class TestReleaseViews(TestCaseWithAuth):
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
             accept="application/json",
+            query_params={"no_caching": uuid4()},
         )
         expected_result = {
             "version": "0.0.1",
@@ -161,6 +166,7 @@ class TestReleaseViews(TestCaseWithAuth):
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
             accept="application/json",
+            query_params={"no_caching": uuid4()},
         )
         expected_result = {
             "version": "0.1.1",
@@ -559,6 +565,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "/modules/api/v1/releases",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
+            query_params={"no_caching": uuid4()},
         )
         self.assertEqual(response.status_code, 200)
 
@@ -715,6 +722,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "/modules/api/v1/release/14.0.0",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
+            query_params={"no_caching": uuid4()},
         )
 
         self.assertEqual(response.status_code, 200)
@@ -766,6 +774,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "/modules/api/v1/release/14.0.0",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
+            query_params={"no_caching": uuid4()},
         )
 
         self.assertEqual(response.status_code, 200)
@@ -816,6 +825,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "/modules/api/v1/release/14.0.0",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
+            query_params={"no_caching": uuid4()},
         )
 
         self.assertEqual(response.status_code, 200)
@@ -867,6 +877,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "/modules/api/v1/release/14.0.0",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
+            query_params={"no_caching": uuid4()},
         )
 
         self.assertEqual(response.status_code, 200)
@@ -918,6 +929,7 @@ class TestReleaseViews(TestCaseWithAuth):
             "/modules/api/v1/release/14.0.0",
             HTTP_AUTHORIZATION=self.jwt_token,
             content_type="application/json",
+            query_params={"no_caching": uuid4()},
         )
 
         self.assertEqual(response.status_code, 200)

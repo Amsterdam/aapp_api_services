@@ -1,5 +1,7 @@
 import logging
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
@@ -112,6 +114,7 @@ class ReleaseCreateView(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@method_decorator(cache_page(60 * 60), name="dispatch")
 class ReleaseDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update, or delete a specific release and the versions of the modules it consists of.
