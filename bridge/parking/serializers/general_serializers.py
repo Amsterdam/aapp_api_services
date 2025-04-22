@@ -1,5 +1,10 @@
 import math
 
+from drf_spectacular.extensions import OpenApiSerializerFieldExtension
+from drf_spectacular.plumbing import build_basic_type
+from drf_spectacular.utils import (
+    OpenApiTypes,
+)
 from rest_framework import serializers
 
 from bridge.parking.utils import parse_iso_datetime
@@ -7,6 +12,7 @@ from core.utils.serializer_utils import (
     CamelToSnakeCaseSerializer,
     SnakeToCamelCaseSerializer,
 )
+from core.validators import AappDeeplinkValidator
 
 
 class ValueCurrencySerializer(CamelToSnakeCaseSerializer):
@@ -39,8 +45,22 @@ class ParkingOrderResponseSerializer(CamelToSnakeCaseSerializer):
     order_type = serializers.CharField()
 
 
+class DeeplinkUrlField(serializers.CharField):
+    def __init__(self, **kwargs):
+        super().__init__(validators=[AappDeeplinkValidator()], **kwargs)
+
+
+class DeeplinkUrlFieldAutoSchema(OpenApiSerializerFieldExtension):
+    target_class = DeeplinkUrlField
+
+    def map_serializer_field(self, auto_schema, direction):
+        schema = build_basic_type(OpenApiTypes.STR)
+        schema["example"] = "amsterdam://some-module/some-action"
+        return schema
+
+
 class RedirectSerializer(SnakeToCamelCaseSerializer):
-    merchant_return_url = serializers.URLField()
+    merchant_return_url = DeeplinkUrlField()
 
 
 class StatusTranslationSerializer(serializers.ChoiceField):

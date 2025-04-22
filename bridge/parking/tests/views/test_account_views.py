@@ -178,7 +178,7 @@ class TestParkingBalanceView(BaseSSPTestCase):
                 "amount": 100,
                 "currency": "EUR",
             },
-            "redirect": {"merchant_return_url": "https://example.com"},
+            "redirect": {"merchant_return_url": "amsterdam://some/path"},
             "locale": "nl",
         }
 
@@ -192,3 +192,11 @@ class TestParkingBalanceView(BaseSSPTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, mock_response_content)
+
+    def test_invalid_deeplink(self):
+        self.test_payload["redirect"]["merchant_return_url"] = "invalid://deeplink"
+        response = self.client.post(
+            self.url, self.test_payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "Invalid deeplink", status_code=400)
