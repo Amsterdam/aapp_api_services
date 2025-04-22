@@ -1,6 +1,7 @@
 import json
 from enum import Enum
 from unittest.mock import patch
+from urllib.parse import urlencode
 
 from django.conf import settings
 from requests import Response
@@ -15,17 +16,60 @@ class DummyEnum(Enum):
     FOOBAR = "foobar"
 
 
-class DummyRequestSerializer(serializers.Serializer):
+class DummyRequestOptionalSerializer(serializers.Serializer):
     foo = serializers.CharField(required=False)
     bar = serializers.CharField(required=False)
+
+
+class DummyRequestRequiredSerializer(serializers.Serializer):
+    foo = serializers.CharField(required=True)
+    bar = serializers.CharField(required=True)
 
 
 class DummyResponseSerializer(serializers.Serializer):
     foobar = serializers.CharField()
 
 
+class ExampleMinimalView(BaseSSPView):
+    ssp_http_method = "get"
+    ssp_endpoint = DummyEnum.FOOBAR
+
+    def get(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+
+class ExampleRequestSerializerView(BaseSSPView):
+    serializer_class = DummyRequestRequiredSerializer
+    response_serializer_class = DummyResponseSerializer
+    ssp_endpoint = DummyEnum.FOOBAR
+
+    def get(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+    def post(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+    def patch(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+    def put(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+    def delete(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+
+class ExampleResponseSerializerView(BaseSSPView):
+    response_serializer_class = DummyResponseSerializer
+    ssp_http_method = "get"
+    ssp_endpoint = DummyEnum.FOOBAR
+
+    def get(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+
 class ExamplePaginatedView(BaseSSPView):
-    serializer_class = DummyRequestSerializer
+    serializer_class = DummyRequestOptionalSerializer
     response_serializer_class = DummyResponseSerializer
     response_serializer_many = True
     response_key_selection = "foobar"
@@ -33,6 +77,30 @@ class ExamplePaginatedView(BaseSSPView):
     ssp_endpoint = DummyEnum.FOOBAR
     requires_access_token = True
     paginated = True
+
+    def get(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+
+class ExampleManyResponseSelectionView(BaseSSPView):
+    serializer_class = DummyRequestOptionalSerializer
+    response_serializer_class = DummyResponseSerializer
+    response_serializer_many = True
+    response_key_selection = "foobar"
+    ssp_http_method = "get"
+    ssp_endpoint = DummyEnum.FOOBAR
+
+    def get(self, request, *args, **kwargs):
+        return self.call_ssp(request)
+
+
+class ExampleDictResponseSelectionView(BaseSSPView):
+    serializer_class = DummyRequestOptionalSerializer
+    response_serializer_class = DummyResponseSerializer
+    response_serializer_many = False
+    response_key_selection = "foobar"
+    ssp_http_method = "get"
+    ssp_endpoint = DummyEnum.FOOBAR
 
     def get(self, request, *args, **kwargs):
         return self.call_ssp(request)
@@ -76,10 +144,160 @@ class BaseSSPTestCase(BasicAPITestCase):
         return mock_response
 
 
+class TestEmptySSPResponse(BaseSSPTestCase):
+    def setUp(self):
+        super().setUp()
+        self.factory = APIRequestFactory()
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_empty_ssp_response_empty_content(self, mock_request):
+        mock_response = Response()
+        mock_response.status_code = 200
+        mock_response._content = b""
+
+        mock_request.return_value = mock_response
+
+        request = self.factory.get("/", headers=self.api_headers)
+        response = ExampleMinimalView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.data)
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_empty_ssp_response_ok_content(self, mock_request):
+        mock_response = Response()
+        mock_response.status_code = 200
+        mock_response._content = b"OK"
+
+        mock_request.return_value = mock_response
+
+        request = self.factory.get("/", headers=self.api_headers)
+        response = ExampleMinimalView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.data)
+
+
+class TestRequestSerializerView(BaseSSPTestCase):
+    # TODO: test if _process_request_data is called correctly
+    def setUp(self):
+        super().setUp()
+        self.factory = APIRequestFactory()
+        self.view = ExampleRequestSerializerView()
+        self.valid_request_data = {"foo": "hello", "bar": "world"}
+        self.invalid_request_data = {"foo": "hello", "not_bar": "world"}
+
+    def assert_request_data_is_valid(self, request, mock_request):
+        response_data = {"foobar": "foo"}
+        mock_request.return_value = self.create_ssp_response(200, response_data)
+
+        response = ExampleRequestSerializerView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, response_data)
+
+    def assert_request_data_is_invalid(self, request, mock_request):
+        response_data = {"foobar": "foo"}
+        mock_request.return_value = self.create_ssp_response(200, response_data)
+
+        response = ExampleRequestSerializerView.as_view()(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "bar", status_code=400)
+        self.assertContains(response, "This field is required", status_code=400)
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_valid_request_data(self, mock_request):
+        request = self.factory.get(
+            "/", data=self.valid_request_data, headers=self.api_headers
+        )
+        self.assert_request_data_is_valid(request, mock_request)
+
+        request = self.factory.post(
+            "/", data=self.valid_request_data, headers=self.api_headers
+        )
+        self.assert_request_data_is_valid(request, mock_request)
+
+        request = self.factory.patch(
+            "/", data=self.valid_request_data, headers=self.api_headers
+        )
+        self.assert_request_data_is_valid(request, mock_request)
+
+        request = self.factory.put(
+            "/", data=self.valid_request_data, headers=self.api_headers
+        )
+        self.assert_request_data_is_valid(request, mock_request)
+
+        request = self.factory.delete(
+            f"/?{urlencode(self.valid_request_data)}",
+            data=None,
+            headers=self.api_headers,
+        )
+        self.assert_request_data_is_valid(request, mock_request)
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_invalid_request_data(self, mock_request):
+        request = self.factory.get(
+            "/", data=self.invalid_request_data, headers=self.api_headers
+        )
+        self.assert_request_data_is_invalid(request, mock_request)
+
+        request = self.factory.post(
+            "/", data=self.invalid_request_data, headers=self.api_headers
+        )
+        self.assert_request_data_is_invalid(request, mock_request)
+
+        request = self.factory.patch(
+            "/", data=self.invalid_request_data, headers=self.api_headers
+        )
+        self.assert_request_data_is_invalid(request, mock_request)
+
+        request = self.factory.put(
+            "/", data=self.invalid_request_data, headers=self.api_headers
+        )
+        self.assert_request_data_is_invalid(request, mock_request)
+
+        request = self.factory.delete(
+            "/", data=self.invalid_request_data, headers=self.api_headers
+        )
+        self.assert_request_data_is_invalid(request, mock_request)
+
+        request = self.factory.delete(
+            f"/?{urlencode(self.invalid_request_data)}",
+            data=None,
+            headers=self.api_headers,
+        )
+        self.assert_request_data_is_invalid(request, mock_request)
+
+
+class TestResponseSerializerView(BaseSSPTestCase):
+    def setUp(self):
+        super().setUp()
+        self.factory = APIRequestFactory()
+        self.view = ExampleResponseSerializerView()
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_valid_response_data(self, mock_request):
+        response_data = {"foobar": "foo"}
+        mock_request.return_value = self.create_ssp_response(200, response_data)
+
+        request = self.factory.get("/", headers=self.api_headers)
+        response = self.view.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, response_data)
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_invalid_response_data(self, mock_request):
+        mock_request.return_value = self.create_ssp_response(200, {"something": "else"})
+
+        request = self.factory.get("/", headers=self.api_headers)
+        response = self.view.as_view()(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "foobar", status_code=400)
+        self.assertContains(response, "This field is required", status_code=400)
+
+
 class TestPaginatedSSPView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.factory = APIRequestFactory()
+        self.view = ExamplePaginatedView()
 
     @patch("bridge.parking.services.ssp.requests.request")
     def test_functional_pagination(self, mock_request):
@@ -108,7 +326,7 @@ class TestPaginatedSSPView(BaseSSPTestCase):
             request = self.factory.get(
                 f"?page={current_page}{extra_query_params}", headers=self.api_headers
             )
-            response = ExamplePaginatedView.as_view()(request)
+            response = self.view.as_view()(request)
             self.assertEqual(response.status_code, 200)
             self.assertEqual(
                 response.data["page"],
@@ -150,11 +368,107 @@ class TestPaginatedSSPView(BaseSSPTestCase):
     def test_pagination_with_invalid_page_number(self, mock_request):
         total_pages = 10
         mock_response_content = {
-            "parkingSession": [],
-            "meta": create_meta_pagination_data(total_pages=total_pages),
+            "foobar": [],
+            "meta": create_meta_pagination_data(total_items=0, total_pages=total_pages),
         }
         mock_request.return_value = self.create_ssp_response(200, mock_response_content)
 
         request = self.factory.get(f"?page={total_pages + 1}", headers=self.api_headers)
+        response = self.view.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["result"], [])
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_pagination_meta_data_missing(self, mock_request):
+        mock_request.return_value = self.create_ssp_response(200, {"foobar": []})
+        request = self.factory.get("/", headers=self.api_headers)
+        response = self.view.as_view()(request)
+        self.assertEqual(response.status_code, 400)
+
+
+class TestResponseKeySelection(BaseSSPTestCase):
+    def setUp(self):
+        super().setUp()
+        self.factory = APIRequestFactory()
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_response_key_selection_list_success(self, mock_request):
+        mock_response_content = {
+            "foobar": [
+                {"foobar": "something"},
+            ],
+            "something": "else",
+        }
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        request = self.factory.get("/", headers=self.api_headers)
+        response = ExampleManyResponseSelectionView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, mock_response_content["foobar"])
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_response_key_selection_empty(self, mock_request):
+        mock_response_content = {
+            "foobar": [],
+            "something": "else",
+        }
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        request = self.factory.get("/", headers=self.api_headers)
+        response = ExampleManyResponseSelectionView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, [])
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_response_key_selection_missing(self, mock_request):
+        mock_response_content = {
+            # "foobar" key with content is missing here
+            "something": "else",
+        }
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        request = self.factory.get("/", headers=self.api_headers)
+        response = ExampleManyResponseSelectionView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, [])
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_response_key_selection_dict_success(self, mock_request):
+        mock_response_content = {
+            "foobar": {"foobar": "something"},
+            "something": "else",
+        }
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        request = self.factory.get("/", headers=self.api_headers)
+        response = ExampleDictResponseSelectionView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, mock_response_content["foobar"])
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_response_key_selection_dict_missing(self, mock_request):
+        mock_response_content = {
+            # "foobar" key with content is missing here
+            "something": "else",
+        }
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        request = self.factory.get("/", headers=self.api_headers)
+        response = ExampleDictResponseSelectionView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {})
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_response_key_selection_not_found_paginated(self, mock_request):
+        mock_response_content = {
+            # "foobar" is not present in the response
+            "meta": create_meta_pagination_data(),
+        }
+        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+
+        request = self.factory.get("/", headers=self.api_headers)
         response = ExamplePaginatedView.as_view()(request)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["result"], [])
+        self.assertIsNotNone(response.data["page"])
+        self.assertIsNotNone(response.data["_links"])

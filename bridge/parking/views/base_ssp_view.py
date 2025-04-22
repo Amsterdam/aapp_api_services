@@ -56,10 +56,8 @@ class BaseSSPView(generics.GenericAPIView):
             serializer_data = None
             if request.method in ["GET", "DELETE"]:
                 serializer_data = request.query_params
-            elif request.method in ["POST", "PATCH", "PUT"]:
-                serializer_data = request.data
             else:
-                return None
+                serializer_data = request.data
 
             serializer = serializer_class(data=serializer_data)
             serializer.is_valid(raise_exception=True)
@@ -152,15 +150,22 @@ class BaseSSPView(generics.GenericAPIView):
         ssp_data_json = ssp_response.json()
         if self.response_key_selection:
             ssp_data_json = ssp_response.json().get(self.response_key_selection)
-            if ssp_data_json is None and self.paginated:
-                raise SSPNotFoundError(
-                    f"No data found for key '{self.response_key_selection}'"
-                )
-
             if ssp_data_json is None:
-                raise SSPResponseError(
-                    f"Key '{self.response_key_selection}' not found in response"
-                )
+                return_data = [] if self.response_serializer_many else {}
+                if self.paginated:
+                    data = CustomPagination.create_paginated_data(
+                        data=return_data,
+                        page_number=1,
+                        page_size=1,
+                        total_elements=0,
+                        total_pages=1,
+                        self_href=None,
+                        next_href=None,
+                        previous_href=None,
+                    )
+                else:
+                    data = return_data
+                return Response(data, status=status.HTTP_200_OK)
 
         response_serializer = self.get_response_serializer_class()(
             data=ssp_data_json, many=self.response_serializer_many

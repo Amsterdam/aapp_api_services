@@ -48,7 +48,7 @@ class ParkingSessionResponseSerializer(CamelToSnakeCaseSerializer):
     visitor_name = serializers.CharField(required=False)
     remaining_time = serializers.IntegerField()
     report_code = serializers.CharField()
-    payment_zone_id = serializers.CharField()
+    payment_zone_id = serializers.CharField(required=False)
     created_time = serializers.DateTimeField()
     parking_cost = ValueCurrencySerializer()
     is_cancelled = serializers.BooleanField()

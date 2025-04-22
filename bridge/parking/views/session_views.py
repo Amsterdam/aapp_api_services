@@ -1,7 +1,3 @@
-from rest_framework import status
-from rest_framework.response import Response
-
-from bridge.parking.exceptions import SSPNotFoundError
 from bridge.parking.serializers.general_serializers import (
     ParkingOrderResponseSerializer,
 )
@@ -17,7 +13,6 @@ from bridge.parking.serializers.session_serializers import (
 )
 from bridge.parking.services.ssp import SSPEndpoint
 from bridge.parking.views.base_ssp_view import BaseSSPView, ssp_openapi_decorator
-from core.pagination import CustomPagination
 
 
 class ParkingSessionListView(BaseSSPView):
@@ -41,23 +36,7 @@ class ParkingSessionListView(BaseSSPView):
         paginated=True,
     )
     def get(self, request, *args, **kwargs):
-        try:
-            return self.call_ssp(request)
-        except SSPNotFoundError:
-            # If the SSP returns a 404, we return a 200 with an empty list.
-            # Therefor pagination has to built up manually.
-            # The pagination values are not correct, but this is acceptable.
-            paginated_data = CustomPagination.create_paginated_data(
-                data=[],
-                page_number=1,
-                page_size=1,
-                total_elements=0,
-                total_pages=1,
-                self_href=None,
-                next_href=None,
-                previous_href=None,
-            )
-            return Response(paginated_data, status=status.HTTP_200_OK)
+        return self.call_ssp(request)
 
 
 class ParkingSessionStartUpdateDeleteView(BaseSSPView):

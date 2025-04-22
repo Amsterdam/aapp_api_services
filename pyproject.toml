@@ -71,7 +71,8 @@ unfixable = ["B"]
 branch = true
 omit = [
   "*/migrations/*",
-  "*/settings/*"
+  "*/settings/*",
+  "*/tests/*",
 ]
 
 [tool.coverage.report]
