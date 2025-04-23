@@ -45,19 +45,6 @@ class ArticleSerializer(serializers.ModelSerializer):
         return create_id_dict(obj)
 
 
-class ArticleMinimalSerializer(ArticleSerializer):
-    """Article serializer with minimal data"""
-
-    class Meta:
-        model = Article
-        fields = ["meta_id", "modification_date"]
-
-
-class RecentArticlesIdDateSerializer(serializers.Serializer):
-    meta_id = MetaIdSerializer()
-    modification_date = serializers.DateTimeField()
-
-
 class ArticleListSerializer(serializers.ModelSerializer):
     """
     Serializer for Article model in list view.
@@ -89,11 +76,16 @@ class ArticleListSerializer(serializers.ModelSerializer):
 
 
 class WarningImageSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
     sources = ImagePublicSerializer(source="image_set", many=True)
 
     class Meta:
         model = WarningImage
         fields = ["id", "sources"]
+
+    def get_id(self, obj) -> str:
+        # We do not want to expose the id used by the construction_work service, but the id used by the image service
+        return obj.image_set_id
 
 
 class WarningMessageListSerializer(serializers.ModelSerializer):

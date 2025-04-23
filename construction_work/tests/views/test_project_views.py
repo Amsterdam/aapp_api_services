@@ -705,7 +705,7 @@ class TestProjectListView(BaseTestProjectView):
             self.api_url, {"page_size": 9999}, headers=self.api_headers
         )
         res_titles = [x.get("title") for x in response.data["result"]]
-        self.assertEquals(len(res_titles), 3)
+        self.assertEqual(len(res_titles), 3)
 
 
 class TestProjectDetailsView(BaseTestProjectView):
@@ -1238,8 +1238,10 @@ class TestWarningMessageDetailView(BaseTestProjectView):
         width = height = 10
         new_warning_message = self.create_message_from_data(data)
 
-        warning_image = baker.make(WarningImage, warning=new_warning_message)
-        image = baker.make(
+        warning_image = baker.make(
+            WarningImage, warning=new_warning_message, image_set_id=10
+        )
+        baker.make(
             Image,
             warning_image=warning_image,
             image=uri,
@@ -1258,7 +1260,7 @@ class TestWarningMessageDetailView(BaseTestProjectView):
             "id": new_warning_message.pk,
             "images": [
                 {
-                    "id": image.pk,
+                    "id": warning_image.image_set_id,
                     "sources": [
                         {
                             "uri": uri,

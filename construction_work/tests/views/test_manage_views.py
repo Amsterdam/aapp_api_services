@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+from random import randint
 from unittest.mock import MagicMock, patch
 from urllib.parse import urlencode
 
@@ -662,7 +663,7 @@ class TestProjectDetailsForManageView(BaseTestManageView):
 
 class TestWarningMessageCRUDBaseView(BaseTestManageView):
     def create_warning_image(self, warning=None):
-        new_warning_image = WarningImage(warning=warning)
+        new_warning_image = WarningImage(warning=warning, image_set_id=randint(1, 1000))
         new_warning_image.save()
         for i in range(3):
             new_warning_image.image_set.create(
@@ -696,7 +697,7 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
             "title": "title of new warning",
             "body": "body of new warning",
             "warning_image": {
-                "id": new_warning_image.pk,
+                "id": new_warning_image.image_set_id,
                 "description": "this should be ignored",
             },
             "send_push_notification": False,
@@ -1079,7 +1080,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
             "title": warning.title,
             "body": warning.body,
             "warning_image": {
-                "id": new_warning_image.pk,
+                "id": new_warning_image.image_set_id,
                 "description": "new image description",
             },
             "send_push_notification": False,

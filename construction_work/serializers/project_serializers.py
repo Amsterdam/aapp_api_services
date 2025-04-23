@@ -6,6 +6,7 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from construction_work.models.article_models import Article
 from construction_work.models.manage_models import ProjectManager, WarningMessage
 from construction_work.models.project_models import (
     Project,
@@ -15,11 +16,10 @@ from construction_work.models.project_models import (
     ProjectTimelineItem,
 )
 from construction_work.serializers.article_serializers import (
-    ArticleMinimalSerializer,
     ArticleSerializer,
-    RecentArticlesIdDateSerializer,
 )
 from construction_work.serializers.general_serializers import (
+    DynamicFieldsModelSerializer,
     ImagePublicSerializer,
     IproxCoordinatesSerializer,
     IproxImageSerializer,
@@ -28,32 +28,6 @@ from construction_work.serializers.general_serializers import (
     MetaIdSerializer,
 )
 from construction_work.utils.model_utils import create_id_dict
-from construction_work.utils.query_utils import (
-    get_recent_articles_of_project,
-    get_recent_warnings_of_project,
-)
-
-
-class DynamicFieldsModelSerializer(serializers.ModelSerializer):
-    """
-    Special ModelSerializer used for enabling the search function.
-    A ModelSerializer that takes an additional `fields` argument that
-    controls which fields should be displayed.
-    """
-
-    def __init__(self, *args, **kwargs):
-        # Don't pass the 'fields' arg up to the superclass
-        fields = kwargs.pop("fields", None)
-
-        # Instantiate the superclass normally
-        super(DynamicFieldsModelSerializer, self).__init__(*args, **kwargs)
-
-        if fields is not None:
-            # Drop any fields that are not specified in the `fields` argument.
-            allowed = set(fields)
-            existing = set(self.fields)
-            for field_name in existing - allowed:
-                self.fields.pop(field_name)
 
 
 class ProjectImageSourceSerializer(serializers.ModelSerializer):
@@ -68,6 +42,11 @@ class ProjectImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectImage
         exclude = ["parent"]
+
+
+class RecentArticlesIdDateSerializer(serializers.Serializer):
+    meta_id = MetaIdSerializer()
+    modification_date = serializers.DateTimeField()
 
 
 class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
@@ -135,6 +114,67 @@ class ProjectContactSerializer(serializers.ModelSerializer):
         exclude = ["project"]
 
 
+class ProjectManagerNameEmailSerializer(serializers.ModelSerializer):
+    """Project manager serializer"""
+
+    class Meta:
+        model = ProjectManager
+        fields = ["name", "email"]
+
+
+class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
+    """Warning message with images serializer"""
+
+    meta_id = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WarningMessage
+        exclude = ["project_manager"]
+
+    @extend_schema_field(MetaIdSerializer)
+    def get_meta_id(self, obj: WarningMessage) -> dict:
+        return create_id_dict(obj)
+
+    @extend_schema_field(IproxImageSerializer(many=True))
+    def get_images(self, obj: WarningMessage):
+        """Get images"""
+        media_url = self.context.get("media_url", "")
+        images = []
+        for warning_image in obj.warningimage_set.all():
+            image_serializer = ImagePublicSerializer(
+                warning_image.image_set.all(),
+                many=True,
+                context={"media_url": media_url},
+            )
+            sources = image_serializer.data
+
+            first_image = warning_image.image_set.first()
+            image = {
+                "id": warning_image.image_set_id,
+                "sources": sources,
+                "landscape": bool(first_image.width > first_image.height),
+                "alternativeText": first_image.description,
+            }
+            images.append(image)
+        return images
+
+
+class WarningMessageSerializer(WarningMessageWithImagesSerializer):
+    """Warning message serializer for management interface"""
+
+    publisher = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WarningMessage
+        exclude = ["project_manager", "author_email"]
+
+    @extend_schema_field(ProjectManagerNameEmailSerializer)
+    def get_publisher(self, obj: WarningMessage):
+        serializer = ProjectManagerNameEmailSerializer(obj.project_manager)
+        return serializer.data
+
+
 class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
     """Project details serializer"""
 
@@ -192,7 +232,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
         recent_warnings = obj.warningmessage_set.filter(
             publication_date__gte=start_date
         )
-        warning_serializer = WarningMessageForManagementSerializer(
+        warning_serializer = WarningMessageSerializer(
             recent_warnings, many=True, context={"media_url": media_url}
         )
 
@@ -258,165 +298,6 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
         }
 
 
-class ProjectManagerNameEmailSerializer(serializers.ModelSerializer):
-    """Project manager serializer"""
-
-    class Meta:
-        model = ProjectManager
-        fields = ["name", "email"]
-
-
-class ProjectManagerCreateResultSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProjectManager
-        fields = ["id", "name", "email"]
-
-
-class ProjectListForManageSerializer(ProjectExtendedWithFollowersSerializer):
-    publishers = serializers.SerializerMethodField()
-    warning_count = serializers.SerializerMethodField()
-    article_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Project
-        fields = [
-            "id",
-            "foreign_id",
-            "title",
-            "subtitle",
-            "image",
-            "creation_date",
-            "publishers",
-            "warning_count",
-            "article_count",
-        ]
-
-    @extend_schema_field(ProjectManagerNameEmailSerializer)
-    def get_publishers(self, obj: Project) -> list:
-        managers = obj.projectmanager_set.all()
-        serializer = ProjectManagerNameEmailSerializer(instance=managers, many=True)
-        return serializer.data
-
-    def get_warning_count(self, obj: Project) -> int:
-        warning_count = obj.warningmessage_set.count()
-        return warning_count
-
-    def get_article_count(self, obj: Project) -> int:
-        article_count = obj.article_set.count()
-        return article_count
-
-
-class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
-    """Warning message with images serializer"""
-
-    meta_id = serializers.SerializerMethodField()
-    images = serializers.SerializerMethodField()
-
-    class Meta:
-        model = WarningMessage
-        exclude = ["project_manager"]
-
-    @extend_schema_field(MetaIdSerializer)
-    def get_meta_id(self, obj: WarningMessage) -> dict:
-        return create_id_dict(obj)
-
-    @extend_schema_field(IproxImageSerializer(many=True))
-    def get_images(self, obj: WarningMessage):
-        """Get images"""
-        media_url = self.context.get("media_url", "")
-        images = []
-        for warning_image in obj.warningimage_set.all():
-            image_serializer = ImagePublicSerializer(
-                warning_image.image_set.all(),
-                many=True,
-                context={"media_url": media_url},
-            )
-            sources = image_serializer.data
-
-            first_image = warning_image.image_set.first()
-            image = {
-                "id": warning_image.pk,
-                "sources": sources,
-                "landscape": bool(first_image.width > first_image.height),
-                "alternativeText": first_image.description,
-            }
-            images.append(image)
-        return images
-
-
-class WarningMessageForManagementSerializer(WarningMessageWithImagesSerializer):
-    """Warning message serializer for management interface"""
-
-    publisher = serializers.SerializerMethodField()
-
-    class Meta:
-        model = WarningMessage
-        exclude = ["project_manager", "author_email"]
-
-    @extend_schema_field(ProjectManagerNameEmailSerializer)
-    def get_publisher(self, obj: WarningMessage):
-        serializer = ProjectManagerNameEmailSerializer(obj.project_manager)
-        return serializer.data
-
-
-class ProjectDetailsForManagementSerializer(ProjectListForManageSerializer):
-    """Project details for warning management"""
-
-    warnings = serializers.SerializerMethodField()
-    articles = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Project
-        fields = [
-            "id",
-            "foreign_id",
-            "url",
-            "title",
-            "subtitle",
-            "creation_date",
-            "image",
-            "publishers",
-            "warnings",
-            "articles",
-            "followers",
-        ]
-
-    @extend_schema_field(WarningMessageForManagementSerializer)
-    def get_warnings(self, obj: Project) -> list:
-        media_url = self.context.get("media_url")
-        article_max_age = self.context.get("article_max_age", 10000)
-        warnings = get_recent_warnings_of_project(
-            obj,
-            article_max_age,
-            WarningMessageForManagementSerializer,
-            context={"media_url": media_url},
-        )
-        return warnings
-
-    @extend_schema_field(ArticleSerializer)
-    def get_articles(self, obj: Project) -> list:
-        article_max_age = self.context.get("article_max_age", 10000)
-        articles = get_recent_articles_of_project(
-            obj, article_max_age, ArticleSerializer
-        )
-        return articles
-
-
-class ProjectManagerWithProjectsSerializer(serializers.ModelSerializer):
-    """Project managers serializer"""
-
-    projects = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ProjectManager
-        fields = "__all__"
-
-    def get_projects(self, obj: ProjectManager) -> list[int]:
-        """Get projects"""
-        project_ids = [project.id for project in obj.projects.all()]
-        return project_ids
-
-
 class WarningMessageMinimalSerializer(serializers.ModelSerializer):
     """Waring message serializer with meta id field"""
 
@@ -429,6 +310,14 @@ class WarningMessageMinimalSerializer(serializers.ModelSerializer):
     @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj: WarningMessage) -> dict:
         return obj.get_id_dict()
+
+
+class ArticleMinimalSerializer(ArticleSerializer):
+    """Article serializer with minimal data"""
+
+    class Meta:
+        model = Article
+        fields = ["meta_id", "modification_date"]
 
 
 class ProjectFollowedArticlesSerializer(serializers.ModelSerializer):

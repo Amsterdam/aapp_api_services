@@ -22,17 +22,17 @@ from construction_work.permissions import (
 )
 from construction_work.serializers.manage_serializers import (
     ImageCreateSerializer,
+    ProjectDetailsForManagementSerializer,
+    ProjectListForManageSerializer,
+    ProjectManagerCreateResultSerializer,
+    ProjectManagerWithProjectsSerializer,
     PublisherAssignProjectSerializer,
     WarningMessageCreateUpdateSerializer,
     WarningMessageWithNotificationResultSerializer,
 )
 from construction_work.serializers.project_serializers import (
-    ProjectDetailsForManagementSerializer,
-    ProjectListForManageSerializer,
-    ProjectManagerCreateResultSerializer,
     ProjectManagerNameEmailSerializer,
-    ProjectManagerWithProjectsSerializer,
-    WarningMessageForManagementSerializer,
+    WarningMessageSerializer,
 )
 from construction_work.services.notification import call_notification_service
 from construction_work.utils.auth_utils import (
@@ -333,7 +333,7 @@ class WarningMessageDetailView(
     AutoExtendSchemaMixin, generics.RetrieveUpdateDestroyAPIView
 ):
     authentication_classes = [EntraIDAuthentication]
-    serializer_class = WarningMessageForManagementSerializer
+    serializer_class = WarningMessageSerializer
 
     def get_queryset(self):
         return WarningMessage.objects.prefetch_related(

@@ -307,7 +307,7 @@ class TestArticleListView(BaseTestProjectView):
             },
             "images": [
                 {
-                    "id": warning_image.pk,
+                    "id": warning_image.image_set_id,
                     "sources": [
                         {
                             "uri": "image.jpg",
