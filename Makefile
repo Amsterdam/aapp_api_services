@@ -73,7 +73,14 @@ clean:
     # Stop Docker container and remove orphans
 	$(call dc_for_all,down -v --remove-orphans)
 
-prepare-for-pr: requirements build lintfix test
+openapi-diff-all:
+	for s in $(ALL_SERVICES); do \
+		SERVICE_NAME_HYPHEN=$$(printf '%s\n' "$$s" | tr '_' '-'); \
+		SERVICE_NAME=$$s docker compose run --rm dev uv run python manage.py spectacular --file /app/$$s/openapi-schema.yaml;\
+		SERVICE_NAME=$$s docker compose run --rm openapi-diff https://test.app.amsterdam.nl/$${SERVICE_NAME_HYPHEN}/api/v1/openapi/ /specs/openapi-schema.yaml --fail-on-incompatible || exit $$?; \
+	done
+
+prepare-for-pr: requirements build lintfix test openapi-diff-all
     # Prepare for PR
 
 ### SINGLE SERVICE COMMANDS ###
