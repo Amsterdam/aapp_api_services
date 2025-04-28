@@ -36,7 +36,8 @@ define dc_for_all
 		SERVICE_NAME=$$s docker compose $(1) || exit $$?; \
 	  done; \
 	else \
-	  SERVICE_NAME=$(SERVICE_NAME) docker compose $(1); \
+	  s=$$SERVICE_NAME; \
+	  SERVICE_NAME=$$s docker compose $(1); \
 	fi
 endef
 
@@ -56,10 +57,10 @@ run-test:
 
 coverage:
 	# Run pytest coverage
-	$(call dc_for_all,run --rm test sh -c "uv run coverage run -m pytest $$s && uv run coverage report")
+	$(call dc_for_all,run --rm test sh -c "uv run coverage run -m pytest $$s core && uv run coverage report")
 
-test: run-test lint
-	# Run tests & lint checks
+test: lint coverage
+	# Run tests (via coverage), coverage and lint checks
 
 build:
 	# Build Docker images

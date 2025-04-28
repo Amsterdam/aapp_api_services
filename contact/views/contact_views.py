@@ -7,7 +7,6 @@ from rest_framework.response import Response
 
 from contact.exceptions import (
     FailedDependencyException,
-    WaitingTimeDataException,
     WaitingTimeSourceAvailabilityException,
 )
 from contact.models import CityOffice
@@ -54,8 +53,10 @@ class WaitingTimesView(generics.RetrieveAPIView):
 
         result = []
         for office in waiting_times_json:
-            internal_office_id = settings.CITY_OFFICE_LOOKUP_TABLE.get(office["id"])
+            office_id = office["id"]
+            internal_office_id = settings.CITY_OFFICE_LOOKUP_TABLE.get(office_id)
             if internal_office_id is None:
+                logger.error(f"City office not found in lookup table: {office_id}")
                 continue
 
             waiting_count = office["waiting"]
@@ -65,12 +66,20 @@ class WaitingTimesView(generics.RetrieveAPIView):
                 identifier=internal_office_id
             ).first()
 
-            if waiting_time.lower() == "meer dan een uur":
-                waiting_time = 60
-            elif waiting_time.lower() == "geen":
-                waiting_time = 0
-            else:
-                waiting_time = int(waiting_time.split(" ")[0])
+            # Convert waiting time to minutes
+            # If conversion fails, skip this office
+            try:
+                if waiting_time.lower() == "meer dan een uur":
+                    waiting_time = 60
+                elif waiting_time.lower() == "geen":
+                    waiting_time = 0
+                else:
+                    waiting_time = int(waiting_time.split(" ")[0])
+            except Exception:
+                logger.error(
+                    f"Waiting time data not in expected format: {waiting_time} [{office_id}]",
+                )
+                continue
 
             result.append(
                 {
@@ -81,19 +90,11 @@ class WaitingTimesView(generics.RetrieveAPIView):
                 }
             )
 
-        output_serializer = self.get_serializer(
-            data={
-                "status": True,
-                "result": result,
-            }
-        )
-        if not output_serializer.is_valid():
-            logger.error(
-                f"Waiting time data not in expected format: {output_serializer.errors}"
-            )
-            raise WaitingTimeDataException()
-
-        return Response(output_serializer.data, status=status.HTTP_200_OK)
+        data = {
+            "status": True,
+            "result": result,
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class HealthCheckView(generics.RetrieveAPIView):

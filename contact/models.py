@@ -57,9 +57,10 @@ class OpeningHourAbstract(models.Model):
                 "Both 'opens_time' and 'closes_time' must be set or both left empty."
             )
 
-        if self.opens_time and self.closes_time:
-            if self.opens_time >= self.closes_time:
-                raise ValidationError("Opens time must be before closes time.")
+        if (self.opens_time and self.closes_time) and (
+            self.opens_time >= self.closes_time
+        ):
+            raise ValidationError("Opens time must be before closes time.")
 
 
 class OpeningHours(OpeningHourAbstract):

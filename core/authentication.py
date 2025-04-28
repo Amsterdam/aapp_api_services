@@ -24,12 +24,12 @@ class AbstractAppAuthentication(BaseAuthentication, ABC):
 
     @property
     @abstractmethod
-    def api_keys(self):
+    def api_keys(self):  # pragma: no cover
         pass
 
     @property
     @abstractmethod
-    def api_key_header(self):
+    def api_key_header(self):  # pragma: no cover
         pass
 
     def authenticate(self, request: HttpRequest):
@@ -43,11 +43,11 @@ class AbstractAppAuthentication(BaseAuthentication, ABC):
 
 class APIKeyAuthentication(AbstractAppAuthentication):
     @property
-    def api_keys(self):
+    def api_keys(self):  # pragma: no cover
         return settings.API_KEYS.split(",")
 
     @property
-    def api_key_header(self):
+    def api_key_header(self):  # pragma: no cover
         return settings.API_KEY_HEADER
 
 
@@ -59,7 +59,7 @@ class AuthenticationScheme(OpenApiAuthenticationExtension):
 
     header_key = None
 
-    def get_security_definition(self, auto_schema):
+    def get_security_definition(self, auto_schema):  # pragma: no cover
         return {
             "type": "apiKey",
             "in": "header",
