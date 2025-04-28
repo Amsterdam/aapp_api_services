@@ -1,14 +1,20 @@
+import re
+from datetime import timedelta
 from unittest.mock import patch
 
+import responses
+from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
+from responses import matchers
 
-from bridge.parking.serializers.general_serializers import (
-    ParkingOrderResponseSerializer,
-)
+from bridge.parking.enums import NotificationStatus
 from bridge.parking.serializers.session_serializers import (
+    ParkingOrderResponseSerializer,
     ParkingSessionReceiptResponseSerializer,
     ParkingSessionResponseSerializer,
 )
+from bridge.parking.services.ssp import SSPEndpoint
 from bridge.parking.tests.views.test_base_ssp_view import (
     BaseSSPTestCase,
     create_meta_pagination_data,
@@ -21,8 +27,8 @@ class TestParkingSessionListView(BaseSSPTestCase):
         super().setUp()
         self.url = reverse("parking-sessions")
 
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_get_list_result_successfully(self, mock_request):
+    @responses.activate
+    def test_get_list_result_successfully(self):
         single_parking_session_item_dict = create_serializer_data(
             ParkingSessionResponseSerializer
         )
@@ -35,7 +41,10 @@ class TestParkingSessionListView(BaseSSPTestCase):
             "totalUpcomingParkingSessions": 0,
             "totalFinishedParkingSessions": 0,
         }
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+        responses.get(
+            re.compile(SSPEndpoint.PARKING_SESSIONS.value + ".*"),
+            json=mock_response_content,
+        )
 
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
@@ -51,12 +60,15 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("parking-session-start-update-delete")
+        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
 
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_start_session_without_balance_upgrade(self, mock_request):
+    @responses.activate
+    def test_start_session_without_balance_upgrade(self):
         start_response_data = create_serializer_data(ParkingOrderResponseSerializer)
-        mock_response_content = start_response_data
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+        responses.post(
+            SSPEndpoint.ORDERS.value,
+            json=start_response_data,
+        )
 
         start_session_payload = {
             "parking_session": {
@@ -66,18 +78,21 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
                 "end_date_time": "2021-01-01T00:00:00Z",
             }
         }
-
         response = self.client.post(
             self.url, start_session_payload, format="json", headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
+        # Since we did not patch the notification service, we need to set the notification status to ERROR
+        start_response_data["notification_status"] = NotificationStatus.ERROR.name
         self.assertEqual(response.data, start_response_data)
 
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_start_session_with_balance_upgrade(self, mock_request):
+    @responses.activate
+    def test_start_session_with_balance_upgrade(self):
         start_response_data = create_serializer_data(ParkingOrderResponseSerializer)
-        mock_response_content = start_response_data
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+        responses.post(
+            SSPEndpoint.ORDERS.value,
+            json=start_response_data,
+        )
 
         start_session_payload = {
             "balance": {
@@ -91,18 +106,21 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
                 "end_date_time": "2021-01-01T00:00:00Z",
             },
         }
-
         response = self.client.post(
             self.url, start_session_payload, format="json", headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
+        # Since we did not patch the notification service, we need to set the notification status to ERROR
+        start_response_data["notification_status"] = NotificationStatus.ERROR.name
         self.assertEqual(response.data, start_response_data)
 
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_update_session_end_time(self, mock_request):
+    @responses.activate
+    def test_update_session_end_time(self):
         update_response_data = create_serializer_data(ParkingOrderResponseSerializer)
-        mock_response_content = update_response_data
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+        responses.post(
+            SSPEndpoint.ORDERS.value,
+            json=update_response_data,
+        )
 
         update_session_payload = {
             "parking_session": {
@@ -118,25 +136,181 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
             self.url, update_session_payload, format="json", headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
+        # Since we did not patch the notification service, we need to set the notification status to ERROR
+        update_response_data["notification_status"] = NotificationStatus.ERROR.name
         self.assertEqual(response.data, update_response_data)
 
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_delete_session(self, mock_request):
+    @responses.activate
+    def test_delete_session(self):
         delete_response_data = create_serializer_data(ParkingOrderResponseSerializer)
-        mock_response_content = delete_response_data
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+        responses.post(
+            SSPEndpoint.ORDERS.value,
+            json=delete_response_data,
+        )
 
         delete_session_payload = {
             "report_code": 1234567890,
             "ps_right_id": 1234567890,
             "start_date_time": "2021-01-01T00:00:00Z",
         }
-
         response = self.client.delete(
             self.url, query_params=delete_session_payload, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
+        # Since we did not patch the notification service, we need to set the notification status to ERROR
+        delete_response_data["notification_status"] = NotificationStatus.ERROR.name
         self.assertEqual(response.data, delete_response_data)
+
+
+class TestParkingSessionProcessNotification(BaseSSPTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("parking-session-start-update-delete")
+        self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
+        self.start_response_data = create_serializer_data(
+            ParkingOrderResponseSerializer
+        )
+        self.report_code = 1234567890
+        self.notifications_endpoint_regex_url = re.compile(
+            settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"] + ".*"
+        )
+
+    @responses.activate
+    def test_create_scheduled_notification(self):
+        rsp_get = responses.get(
+            self.notifications_endpoint_regex_url,
+            json={},
+            status=404,
+        )
+        rsp_post = responses.post(
+            self.notifications_endpoint_regex_url,
+            json={},
+        )
+        start_time = timezone.now()
+        end_time = start_time + timedelta(minutes=settings.PARKING_REMINDER_TIME + 1)
+        response = self.start_parking_session(start_time, end_time)
+
+        self.assertEqual(
+            response.data["notification_status"], NotificationStatus.CREATED.name
+        )
+        self.assertEqual(rsp_get.call_count, 1)
+        self.assertEqual(rsp_post.call_count, 1)
+
+    @responses.activate
+    def test_no_scheduled_notification(self):
+        rsp_get = responses.get(
+            self.notifications_endpoint_regex_url,
+            json={},
+            status=404,
+        )
+        start_time = timezone.now()
+        end_time = start_time + timedelta(minutes=settings.PARKING_REMINDER_TIME - 1)
+        response = self.start_parking_session(start_time, end_time)
+
+        self.assertEqual(
+            response.data["notification_status"], NotificationStatus.NO_CHANGE.name
+        )
+        self.assertEqual(rsp_get.call_count, 1)
+
+    @responses.activate
+    def test_patch_scheduled_notification(self):
+        start_time = timezone.now()
+        end_time = start_time + timedelta(minutes=settings.PARKING_REMINDER_TIME + 1)
+
+        rsp_get = responses.get(
+            self.notifications_endpoint_regex_url,
+            json={"device_ids": ["foobar"]},
+        )
+        rsp_patch = responses.patch(
+            self.notifications_endpoint_regex_url,
+            match=[
+                matchers.json_params_matcher(
+                    {
+                        "scheduled_for": (
+                            end_time - timedelta(minutes=settings.PARKING_REMINDER_TIME)
+                        ).isoformat(),
+                        "device_ids": ["foobar"],
+                    }
+                )
+            ],
+            json={},
+        )
+        response = self.start_parking_session(start_time, end_time)
+
+        self.assertEqual(
+            response.data["notification_status"], NotificationStatus.UPDATED.name
+        )
+        self.assertEqual(rsp_get.call_count, 1)
+        self.assertEqual(rsp_patch.call_count, 1)
+
+    @responses.activate
+    def test_patch_scheduled_notification_extra_device(self):
+        start_time = timezone.now()
+        end_time = start_time + timedelta(minutes=settings.PARKING_REMINDER_TIME + 1)
+
+        rsp_get = responses.get(
+            self.notifications_endpoint_regex_url,
+            json={"device_ids": ["other_device_id"]},
+        )
+        rsp_patch = responses.patch(
+            self.notifications_endpoint_regex_url,
+            match=[
+                matchers.json_params_matcher(
+                    {
+                        "scheduled_for": (
+                            end_time - timedelta(minutes=settings.PARKING_REMINDER_TIME)
+                        ).isoformat(),
+                        "device_ids": ["foobar", "other_device_id"],
+                    }
+                )
+            ],
+            json={},
+        )
+        response = self.start_parking_session(start_time, end_time)
+
+        self.assertEqual(
+            response.data["notification_status"], NotificationStatus.UPDATED.name
+        )
+        self.assertEqual(rsp_get.call_count, 1)
+        self.assertEqual(rsp_patch.call_count, 1)
+
+    @responses.activate
+    def test_delete_scheduled_notification(self):
+        rsp_get = responses.get(
+            self.notifications_endpoint_regex_url,
+            json={"device_ids": ["foobar"]},
+        )
+        rsp_patch = responses.delete(
+            self.notifications_endpoint_regex_url,
+        )
+        start_time = timezone.now()
+        end_time = start_time + timedelta(minutes=settings.PARKING_REMINDER_TIME - 1)
+        response = self.start_parking_session(start_time, end_time)
+
+        self.assertEqual(
+            response.data["notification_status"], NotificationStatus.CANCELLED.name
+        )
+        self.assertEqual(rsp_get.call_count, 1)
+        self.assertEqual(rsp_patch.call_count, 1)
+
+    def start_parking_session(self, start_time, end_time):
+        responses.post(
+            SSPEndpoint.ORDERS.value,
+            json=self.start_response_data,
+        )
+        start_session_payload = {
+            "parking_session": {
+                "report_code": self.report_code,
+                "vehicle_id": "FOOBAR",
+                "start_date_time": start_time.isoformat(),
+                "end_date_time": end_time.isoformat(),
+            }
+        }
+        response = self.client.post(
+            self.url, start_session_payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        return response
 
 
 class TestParkingSessionReceiptView(BaseSSPTestCase):

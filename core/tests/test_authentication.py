@@ -1,4 +1,3 @@
-from django.test import override_settings
 from rest_framework.test import APITestCase
 
 from core.authentication import AbstractAppAuthentication, APIKeyAuthentication
@@ -19,6 +18,5 @@ class AuthenticatedAPITestCase(APITestCase):
         self.api_headers = {auth_instance.api_key_header: api_keys[0]}
 
 
-@override_settings(API_KEYS="test-api-key")
 class BasicAPITestCase(AuthenticatedAPITestCase):
     authentication_class = APIKeyAuthentication

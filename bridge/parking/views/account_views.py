@@ -9,7 +9,7 @@ from bridge.parking.serializers.account_serializers import (
     PinCodeResponseSerializer,
 )
 from bridge.parking.serializers.general_serializers import (
-    ParkingOrderResponseSerializer,
+    ParkingBalanceResponseSerializer,
 )
 from bridge.parking.serializers.permit_serializer import (
     PermitItemSerializer,
@@ -130,13 +130,13 @@ class ParkingBalanceView(BaseSSPView):
     """
 
     serializer_class = BalanceRequestSerializer
-    response_serializer_class = ParkingOrderResponseSerializer
+    response_serializer_class = ParkingBalanceResponseSerializer
     ssp_http_method = "post"
     ssp_endpoint = SSPEndpoint.ORDERS
     requires_access_token = True
 
     @ssp_openapi_decorator(
-        response_serializer_class=ParkingOrderResponseSerializer,
+        response_serializer_class=ParkingBalanceResponseSerializer,
         requires_access_token=True,
     )
     def post(self, request, *args, **kwargs):

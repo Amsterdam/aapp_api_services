@@ -201,8 +201,12 @@ API_KEYS = os.getenv("API_AUTH_TOKENS")
 HEADER_DEVICE_ID = "DeviceId"
 
 NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://api-notification:8000")
+NOTIFICATION_BASE_URL = urljoin(
+    NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH", "/internal/api/v1/")
+)
 NOTIFICATION_ENDPOINTS = {
-    "INIT_NOTIFICATION": urljoin(NOTIFICATION_API, "/internal/api/v1/notification"),
+    "INIT_NOTIFICATION": urljoin(NOTIFICATION_BASE_URL, "notification"),
+    "SCHEDULED_NOTIFICATION": urljoin(NOTIFICATION_BASE_URL, "scheduled-notification"),
 }
 
 IMAGE_API = os.getenv("IMAGE_API", "http://api-image:8000")

@@ -1,10 +1,12 @@
 from django.utils import timezone
 from rest_framework import serializers
 
+from bridge.parking.enums import NotificationStatus
 from bridge.parking.serializers.general_serializers import (
     AmountCurrencySerializer,
     FlexibleDateTimeSerializer,
     MillisecondsToSecondsSerializer,
+    ParkingBalanceResponseSerializer,
     RedirectSerializer,
     StatusTranslationSerializer,
     ValueCurrencySerializer,
@@ -157,3 +159,9 @@ class ParkingSessionReceiptResponseSerializer(CamelToSnakeCaseSerializer):
     payment_zone_id = serializers.CharField()
     payment_required = serializers.BooleanField()
     parking_cost = ValueCurrencySerializer()
+
+
+class ParkingOrderResponseSerializer(ParkingBalanceResponseSerializer):
+    notification_status = serializers.ChoiceField(
+        choices=[(s.name, s.value) for s in NotificationStatus], required=False
+    )

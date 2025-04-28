@@ -8,10 +8,10 @@ from bridge.parking.serializers.account_serializers import (
     AccountDetailsResponseSerializer,
     PinCodeResponseSerializer,
 )
-from bridge.parking.serializers.general_serializers import (
+from bridge.parking.serializers.permit_serializer import PermitItemSerializer
+from bridge.parking.serializers.session_serializers import (
     ParkingOrderResponseSerializer,
 )
-from bridge.parking.serializers.permit_serializer import PermitItemSerializer
 from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
 from core.utils.serializer_utils import create_serializer_data
 

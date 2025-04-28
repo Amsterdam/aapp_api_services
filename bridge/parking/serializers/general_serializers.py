@@ -25,7 +25,7 @@ class AmountCurrencySerializer(SnakeToCamelCaseSerializer):
     currency = serializers.CharField()
 
 
-class ParkingOrderResponseSerializer(CamelToSnakeCaseSerializer):
+class ParkingBalanceResponseSerializer(CamelToSnakeCaseSerializer):
     """
     order_status options:
     - Initiated

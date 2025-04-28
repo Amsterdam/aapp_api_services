@@ -1,7 +1,10 @@
-from bridge.parking.serializers.general_serializers import (
-    ParkingOrderResponseSerializer,
-)
+import hashlib
+import logging
+from datetime import datetime
+
+from bridge.parking.enums import NotificationStatus
 from bridge.parking.serializers.session_serializers import (
+    ParkingOrderResponseSerializer,
     ParkingSessionDeleteRequestSerializer,
     ParkingSessionListPaginatedResponseSerializer,
     ParkingSessionListRequestSerializer,
@@ -11,8 +14,17 @@ from bridge.parking.serializers.session_serializers import (
     ParkingSessionStartRequestSerializer,
     ParkingSessionUpdateRequestSerializer,
 )
+from bridge.parking.services.reminder_scheduler import ParkingReminderScheduler
 from bridge.parking.services.ssp import SSPEndpoint
+from bridge.parking.utils import parse_iso_datetime
 from bridge.parking.views.base_ssp_view import BaseSSPView, ssp_openapi_decorator
+from core.views.mixins import DeviceIdMixin
+
+logger = logging.getLogger(__name__)
+
+
+class ReminderTimeError(Exception):
+    pass
 
 
 class ParkingSessionListView(BaseSSPView):
@@ -39,7 +51,7 @@ class ParkingSessionListView(BaseSSPView):
         return self.call_ssp(request)
 
 
-class ParkingSessionStartUpdateDeleteView(BaseSSPView):
+class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
     """
     Start or update a parking session with SSP API
     """
@@ -48,6 +60,9 @@ class ParkingSessionStartUpdateDeleteView(BaseSSPView):
     ssp_endpoint = SSPEndpoint.ORDERS
     ssp_http_method = "post"
     requires_access_token = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -63,14 +78,24 @@ class ParkingSessionStartUpdateDeleteView(BaseSSPView):
         requires_access_token=True,
     )
     def post(self, request, *args, **kwargs):
-        return self.call_ssp(request)
+        response = self.call_ssp(request)
+        if response.status_code != 200:
+            return self._make_response(response)
+
+        notification_status = self.process_notification(request)
+        return self._make_response(response, notification_status=notification_status)
 
     @ssp_openapi_decorator(
         response_serializer_class=ParkingOrderResponseSerializer,
         requires_access_token=True,
     )
     def patch(self, request, *args, **kwargs):
-        return self.call_ssp(request)
+        response = self.call_ssp(request)
+        if response.status_code != 200:
+            return self._make_response(response)
+
+        notification_status = self.process_notification(request)
+        return self._make_response(response, notification_status=notification_status)
 
     @ssp_openapi_decorator(
         serializer_as_params=ParkingSessionDeleteRequestSerializer,
@@ -78,7 +103,48 @@ class ParkingSessionStartUpdateDeleteView(BaseSSPView):
         requires_access_token=True,
     )
     def delete(self, request, *args, **kwargs):
-        return self.call_ssp(request)
+        response = self.call_ssp(request)
+        if response.status_code != 200:
+            return self._make_response(response)
+
+        notification_status = self.process_notification(request)
+        return self._make_response(response, notification_status=notification_status)
+
+    def process_notification(self, request) -> NotificationStatus:
+        try:
+            parking_session = request.data["parking_session"]
+            reminder_key = self._get_reminder_key(
+                report_code=parking_session["report_code"],
+                vehicle_id=parking_session["vehicle_id"],
+            )
+            end_datetime = parse_iso_datetime(
+                date_time_str=parking_session["end_date_time"]
+            )
+            scheduler = ParkingReminderScheduler(
+                reminder_key=reminder_key,
+                end_datetime=end_datetime,
+                device_id=self.device_id,
+            )
+            notification_status = scheduler.process()
+            return notification_status
+        except Exception as e:
+            logger.error(f"Error when calling parking reminder scheduler: {str(e)}")
+            return NotificationStatus.ERROR
+
+    def _get_reminder_key(self, report_code: str, vehicle_id: str) -> str:
+        """Create a hashed reminder key from report code and vehicle id"""
+        data_string = (
+            f"{report_code}_{vehicle_id}_{datetime.today().strftime('%Y-%m-%d')}"
+        )
+        return hashlib.sha256(data_string.encode()).hexdigest()
+
+    def _make_response(
+        self,
+        response,
+        notification_status: NotificationStatus = NotificationStatus.NO_CHANGE,
+    ):
+        response.data["notification_status"] = notification_status.name
+        return response
 
 
 class ParkingSessionReceiptView(BaseSSPView):

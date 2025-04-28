@@ -2,7 +2,7 @@
 name = "aapp-api-services"
 version = "0.1.0"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
   "django",
   "djangorestframework",
@@ -31,13 +31,7 @@ dependencies = [
   "azure-identity",
   "azure-monitor-opentelemetry",
   "azure-monitor-opentelemetry-exporter",
-]
-
-[tool.uv]
-default-groups = []
-
-[dependency-groups]
-dev = [
+  # Integration and unit testing
   "freezegun",
   "pytest-django",
   "pytest-dotenv",
@@ -47,12 +41,17 @@ dev = [
   "aioresponses",
   "pytest-asyncio",
   "coverage",
+  "responses",
 ]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "core.settings.base"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 cache_dir = "/tmp/pytest_cache"
+markers = [
+  "integration: integration tests that require the k8s cluster",
+]
+addopts = "-m 'not integration'"
 
 [tool.ruff]
 cache-dir = "/tmp/.cache/ruff"

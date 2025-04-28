@@ -47,7 +47,7 @@ services:
     <<: *base-app
     build:
       context: .
-      target: dev-${SERVICE_NAME}
+      target: app-${SERVICE_NAME}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.local'
@@ -56,13 +56,14 @@ services:
       SECRET_KEY: secret-key-for-development
       EDITOR_GROUP_ID: editor-group-id-for-development
       PUBLISHER_GROUP_ID: publisher-group-id-for-development
+    command: uv run python ./manage.py runserver 0.0.0.0:8000
 
   test:
     <<: *base-app
     build:
       context: .
-      target: dev-${SERVICE_NAME}
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/dev-${SERVICE_NAME}:${VERSION:-latest}
+      target: app-${SERVICE_NAME}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.base'
@@ -78,7 +79,6 @@ services:
     build:
       context: .
       target: app-${SERVICE_NAME}
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.otap'
@@ -88,7 +88,7 @@ services:
     <<: *base-app
     build:
       context: .
-      target: dev-${SERVICE_NAME}
+      target: app-${SERVICE_NAME}
     volumes:
       - ./core:/app/core
       - ./manage.py:/app/manage.py

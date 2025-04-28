@@ -53,7 +53,6 @@ class BaseSSPView(generics.GenericAPIView):
 
         serializer_class = self.get_serializer_class()
         if serializer_class:
-            serializer_data = None
             if request.method in ["GET", "DELETE"]:
                 serializer_data = request.query_params
             else:
