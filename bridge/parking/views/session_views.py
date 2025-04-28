@@ -76,6 +76,7 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
     @ssp_openapi_decorator(
         response_serializer_class=ParkingOrderResponseSerializer,
         requires_access_token=True,
+        requires_device_id=True,
     )
     def post(self, request, *args, **kwargs):
         response = self.call_ssp(request)
@@ -88,6 +89,7 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
     @ssp_openapi_decorator(
         response_serializer_class=ParkingOrderResponseSerializer,
         requires_access_token=True,
+        requires_device_id=True,
     )
     def patch(self, request, *args, **kwargs):
         response = self.call_ssp(request)
@@ -101,6 +103,7 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         serializer_as_params=ParkingSessionDeleteRequestSerializer,
         response_serializer_class=ParkingOrderResponseSerializer,
         requires_access_token=True,
+        requires_device_id=True,
     )
     def delete(self, request, *args, **kwargs):
         response = self.call_ssp(request)

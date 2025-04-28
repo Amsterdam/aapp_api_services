@@ -186,6 +186,7 @@ def ssp_openapi_decorator(
     response_serializer_class,
     serializer_as_params=None,
     requires_access_token=False,
+    requires_device_id=False,
     paginated=False,
     exceptions=None,
     **kwargs,
@@ -216,6 +217,15 @@ def ssp_openapi_decorator(
             )
         )
         kwargs["exceptions"].insert(0, SSLMissingAccessTokenError)
+    if requires_device_id:
+        additional_params.append(
+            OpenApiParameter(
+                settings.HEADER_DEVICE_ID,
+                OpenApiTypes.STR,
+                OpenApiParameter.HEADER,
+                required=True,
+            )
+        )
 
     if serializer_as_params:
         additional_params.append(serializer_as_params)
