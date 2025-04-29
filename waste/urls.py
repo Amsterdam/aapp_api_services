@@ -3,14 +3,14 @@ from django.urls import path
 from core.urls import get_swagger_paths
 from waste.views.container_views import WasteContainerPassNumberView
 from waste.views.notification_views import WasteGuideNotificationView
-from waste.views.waste_views import WasteCalendarView
+from waste.views.waste_views import WasteGuideView
 
 BASE_PATH = "waste/api/v1"
 
 urlpatterns = [
     path(
         BASE_PATH + "/guide",
-        WasteCalendarView.as_view(),
+        WasteGuideView.as_view(),
         name="waste-guide-calendar",
     ),
     path(

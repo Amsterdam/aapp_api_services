@@ -16,7 +16,7 @@ class TestWasteGuideView(APITestCase):
 
     @override_settings(
         WASTE_GUIDE_URL="http://example.com/wasteguide",
-        WASTE_GUID_API_KEY="test_api_key",
+        WASTE_GUIDE_API_KEY="test_api_key",
     )
     @patch("requests.get")
     def test_waste_guide_view(self, mock_request):
@@ -33,7 +33,7 @@ class TestWasteGuideView(APITestCase):
         # Assert that the external request was called with the X-Api-Key
         mock_request.assert_called_once_with(
             settings.WASTE_GUIDE_URL,
-            headers={"X-Api-Key": settings.WASTE_GUID_API_KEY},
+            headers={"X-Api-Key": settings.WASTE_GUIDE_API_KEY},
             params=request.GET,
         )
 

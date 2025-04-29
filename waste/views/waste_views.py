@@ -12,7 +12,7 @@ from waste.serializers.waste_guide_serializers import (
 from waste.services.waste_collection import WasteCollectionService
 
 
-class WasteCalendarView(APIView):
+class WasteGuideView(APIView):
     serializer_class = WasteRequestSerializer
     response_serializer_class = WasteResponseSerializer
 

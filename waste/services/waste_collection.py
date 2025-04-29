@@ -16,7 +16,7 @@ class WasteCollectionService:
 
     def get_validated_data(self):
         url = settings.WASTE_GUIDE_URL
-        api_key = settings.WASTE_GUID_API_KEY
+        api_key = settings.WASTE_GUIDE_API_KEY
         resp = requests.get(
             url,
             params={"bagNummeraanduidingId": self.bag_nummeraanduiding_id},

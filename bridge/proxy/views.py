@@ -24,7 +24,7 @@ class WasteGuideView(APIView):
         data.is_valid(raise_exception=True)
 
         url = settings.WASTE_GUIDE_URL
-        api_key = settings.WASTE_GUID_API_KEY
+        api_key = settings.WASTE_GUIDE_API_KEY
         response = requests.get(url, params=request.GET, headers={"X-Api-Key": api_key})
         return HttpResponse(
             response.content,
