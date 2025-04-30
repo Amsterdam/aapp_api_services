@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import extend_schema
-from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 
 from bridge.proxy.serializers import (
     AddressSearchRequestSerializer,
@@ -13,15 +13,13 @@ from bridge.proxy.serializers import (
 
 
 @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
-class WasteGuideView(APIView):
+class WasteGuideView(GenericAPIView):
     authentication_classes = []
+    serializer_class = WasteGuideRequestSerializer
 
-    @extend_schema(
-        parameters=[WasteGuideRequestSerializer],
-    )
+    @extend_schema(parameters=[WasteGuideRequestSerializer])
     def get(self, request):
-        data = WasteGuideRequestSerializer(data=request.GET)
-        data.is_valid(raise_exception=True)
+        self.get_serializer(data=request.query_params).is_valid(raise_exception=True)
 
         url = settings.WASTE_GUIDE_URL
         api_key = settings.WASTE_GUIDE_API_KEY
@@ -34,21 +32,17 @@ class WasteGuideView(APIView):
 
 
 @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
-class AddressSearchView(APIView):
+class AddressSearchView(GenericAPIView):
     authentication_classes = []
+    serializer_class = AddressSearchRequestSerializer
 
-    @extend_schema(
-        parameters=[AddressSearchRequestSerializer],
-    )
+    @extend_schema(parameters=[AddressSearchRequestSerializer])
     def get(self, request):
+        self.get_serializer(data=request.query_params).is_valid(raise_exception=True)
+
         url = settings.ADDRESS_SEARCH_URL
-
         # Since the query params are repetitive, we need to construct the list ourselves to avoid losing duplicate keys
-        params = []
-        for key, values in request.GET.lists():
-            for value in values:
-                params.append((key, value))
-
+        params = [(k, v) for k, vs in request.GET.lists() for v in vs]
         response = requests.get(
             url, params=params, headers={"Referer": "app.amsterdam.nl"}
         )

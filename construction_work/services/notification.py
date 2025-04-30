@@ -82,9 +82,11 @@ def make_post_request(
         logger.error(
             "Failed to make post request",
             extra={
-                "error": str(e),
-                "warning_id": warning_pk,
-                "api_url": api_url,
+                "custom_dimensions": {
+                    "error": str(e),
+                    "warning_id": warning_pk,
+                    "api_url": api_url,
+                },
             },
         )
         if api_url == POST_IMAGE_URL:

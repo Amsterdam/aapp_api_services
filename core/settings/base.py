@@ -76,6 +76,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "core.middleware.db_retry_on_timeout.DatabaseRetryMiddleware",
     "core.middleware.set_headers.DefaultHeadersMiddleware",
+    "core.middleware.log_4xx_status.Log4xxMiddleware",
 ]
 
 TEMPLATES = [

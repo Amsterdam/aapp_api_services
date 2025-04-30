@@ -10,4 +10,4 @@ class WasteGuideRequestSerializer(serializers.Serializer):
 class AddressSearchRequestSerializer(serializers.Serializer):
     """Serializer for the WasteGuideRequest model."""
 
-    q = serializers.CharField()
+    q = serializers.CharField(required=True)

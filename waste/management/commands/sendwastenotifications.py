@@ -22,7 +22,8 @@ class Command(BaseCommand):
             days=DAYS_AHEAD
         )
         logger.info(
-            "Sending notifications", extra={"notification_date": notification_date}
+            "Sending notifications",
+            extra={"custom_dimensions": {"notification_date": notification_date}},
         )
 
         # get the datetime of today with the time set to 00:00
@@ -59,8 +60,10 @@ class Command(BaseCommand):
                 logger.error(
                     "Failed to get waste schedule",
                     extra={
-                        "bag_nummeraanduiding_id": schedule.bag_nummeraanduiding_id,
-                        "device_id": schedule.device_id,
+                        "custom_dimensions": {
+                            "bag_nummeraanduiding_id": schedule.bag_nummeraanduiding_id,
+                            "device_id": schedule.device_id,
+                        },
                     },
                 )
                 continue
@@ -78,5 +81,5 @@ class Command(BaseCommand):
                 call_notification_service(batch, type)
                 logger.info(
                     "Sent notification",
-                    extra={"type": type, "device_ids": batch},
+                    extra={"custom_dimensions": {"type": type, "device_ids": batch}},
                 )
