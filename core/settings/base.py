@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from urllib.parse import urljoin
 
+from core.enums import NotificationType
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -209,6 +211,9 @@ NOTIFICATION_ENDPOINTS = {
     "INIT_NOTIFICATION": urljoin(NOTIFICATION_BASE_URL, "notification"),
     "SCHEDULED_NOTIFICATION": urljoin(NOTIFICATION_BASE_URL, "scheduled-notification"),
 }
+NOTIFICATION_SCOPES = [
+    NotificationType.MIJN_AMS_NOTIFICATION.value,
+]
 
 IMAGE_API = os.getenv("IMAGE_API", "http://api-image:8000")
 IMAGE_ENDPOINTS = {

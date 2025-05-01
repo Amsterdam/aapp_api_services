@@ -4,8 +4,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
+from notification.crud import NotificationCRUD
 from notification.models import Notification, ScheduledNotification
-from notification.services.push import PushService
 
 logger = logging.getLogger(__name__)
 BATCH_SIZE = 100
@@ -50,10 +50,10 @@ class Command(BaseCommand):
             schedule=scheduled_notification,
         )
         scheduled_notification.devices.all()
-        response = PushService(
-            source_notification=notification_obj,
-            devices_qs=scheduled_notification.devices.all(),
-        ).push()
+        notification_crud = NotificationCRUD(source_notification=notification_obj)
+        response = notification_crud.create(
+            device_qs=scheduled_notification.devices.all()
+        )
         logger.debug(response)
 
         # Update the pushed_at flag to prevent duplicate pushes!!!

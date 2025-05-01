@@ -10,7 +10,12 @@ from notification.exceptions import (
     ScheduledNotificationIdentifierError,
     ScheduledNotificationInPastError,
 )
-from notification.models import Device, Notification, ScheduledNotification
+from notification.models import (
+    Device,
+    Notification,
+    NotificationLast,
+    ScheduledNotification,
+)
 
 
 class NotificationImageSourceSerializer(serializers.Serializer):
@@ -143,3 +148,15 @@ class NotificationUpdateSerializer(serializers.ModelSerializer):
         return NotificationResultSerializer(context=self.context).to_representation(
             instance
         )
+
+
+class NotificationLastResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationLast
+        fields = ["notification_scope", "last_create"]
+
+
+class NotificationLastRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationLast
+        fields = ["module_slug"]

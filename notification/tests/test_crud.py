@@ -6,20 +6,23 @@ from django.test import TestCase, override_settings
 from firebase_admin import messaging
 from model_bakery import baker
 
+from notification.crud import (
+    NotificationCRUD,
+    NotificationCRUDDeviceLimitError,
+)
 from notification.models import (
     Device,
     Notification,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
 )
-from notification.services.push import PushService, PushServiceDeviceLimitError
 from notification.utils.patch_utils import (
     MockFirebaseSendEach,
     apply_init_firebase_patches,
 )
 
 
-class TestPushService(TestCase):
+class TestNotificationService(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -73,8 +76,8 @@ class TestPushService(TestCase):
         multicast_mock.return_value = MockFirebaseSendEach(messages)
 
         device_qs = Device.objects.all()
-        push_service = PushService(self.notification, device_qs)
-        push_service.push()
+        notification_crud = NotificationCRUD(self.notification)
+        notification_crud.create(device_qs)
 
         notification = Notification.objects.filter(
             device__external_id=device.external_id
@@ -98,7 +101,7 @@ class TestPushService(TestCase):
         )
 
         device_qs = Device.objects.all()
-        push_service = PushService(self.notification, device_qs)
+        notification_crud = NotificationCRUD(self.notification)
 
         logger = logging.getLogger("notification.services.push")
         parent_logger = logger.parent
@@ -106,7 +109,7 @@ class TestPushService(TestCase):
         parent_logger.propagate = True
 
         with self.assertLogs(logger, level=logging.INFO) as log_context:
-            result = push_service.push()
+            result = notification_crud.create(device_qs)
 
         self.assertTrue(
             any(
@@ -121,23 +124,23 @@ class TestPushService(TestCase):
     def test_hit_max_devices(self):
         [baker.make(Device) for i in range(settings.FIREBASE_DEVICE_LIMIT + 1)]
         device_qs = Device.objects.all()
-        with self.assertRaises(PushServiceDeviceLimitError):
+        with self.assertRaises(NotificationCRUDDeviceLimitError):
             notification = baker.make(Notification)
-            PushService(notification, device_qs).push()
+            NotificationCRUD(notification).create(device_qs)
 
     def test_device_without_firebase_tokens(self):
         created_devices = self.create_devices(5, with_token=False)
         device_qs = Device.objects.all()
 
-        push_service = PushService(self.notification, device_qs)
+        notification_crud = NotificationCRUD(self.notification)
 
-        logger = logging.getLogger("notification.services.push")
+        logger = logging.getLogger("notification.crud")
         parent_logger = logger.parent
         parent_logger.setLevel(logging.INFO)
         parent_logger.propagate = True
 
         with self.assertLogs(logger, level=logging.INFO) as log_context:
-            result = push_service.push()
+            result = notification_crud.create(device_qs)
 
         for c in created_devices:
             notification = Notification.objects.filter(
@@ -169,8 +172,8 @@ class TestPushService(TestCase):
         self.assertFalse(Notification.objects.filter(device=device).exists())
 
         device_qs = Device.objects.all()
-        push_service = PushService(notification, device_qs)
-        response = push_service.push()
+        notification_crud = NotificationCRUD(notification)
+        response = notification_crud.create(device_qs)
 
         self.assertTrue(Notification.objects.filter(device=device).exists())
         self.assertEqual(
@@ -192,8 +195,8 @@ class TestPushService(TestCase):
         self.assertFalse(Notification.objects.filter(device=device).exists())
 
         device_qs = Device.objects.all()
-        push_service = PushService(notification, device_qs)
-        response = push_service.push()
+        notification_crud = NotificationCRUD(notification)
+        response = notification_crud.create(device_qs)
 
         self.assertTrue(Notification.objects.filter(device=device).exists())
         self.assertEqual(
@@ -236,8 +239,8 @@ class TestPushService(TestCase):
         )
 
         devices_qs = Device.objects.all()
-        push_service = PushService(self.notification, devices_qs)
-        response_data = push_service.push()
+        notification_crud = NotificationCRUD(self.notification)
+        response_data = notification_crud.create(devices_qs)
 
         self.assertEqual(
             response_data,

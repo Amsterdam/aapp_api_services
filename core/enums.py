@@ -11,6 +11,7 @@ class Module(ChoicesEnum):
     CONSTRUCTION_WORK = "construction-work"
     PARKING = "parking"
     WASTE = "waste"
+    MIJN_AMS = "mijn-amsterdam"
 
 
 class NotificationType(ChoicesEnum):
@@ -19,3 +20,4 @@ class NotificationType(ChoicesEnum):
     )
     PARKING_REMINDER = f"{Module.PARKING.value}:parking-reminder"
     WASTE_DATE_REMINDER = f"{Module.WASTE.value}:date-reminder"
+    MIJN_AMS_NOTIFICATION = f"{Module.MIJN_AMS.value}:notification"

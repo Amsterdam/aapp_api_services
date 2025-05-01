@@ -8,6 +8,8 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from core.serializers.error_serializers import get_error_response_serializers
+from core.services.notificiation import NotificationServiceError
+from notification.crud import NotificationCRUD
 from notification.exceptions import PushServiceError
 from notification.models import Device, Notification, ScheduledNotification
 from notification.serializers.notification_serializers import (
@@ -16,7 +18,6 @@ from notification.serializers.notification_serializers import (
     ScheduledNotificationDetailSerializer,
     ScheduledNotificationSerializer,
 )
-from notification.services.push import PushService
 
 logger = logging.getLogger(__name__)
 
@@ -45,15 +46,15 @@ class NotificationInitView(generics.CreateAPIView):
 
         device_ids = serializer.validated_data.pop("device_ids")
         notification = Notification(**serializer.validated_data)
+        notification_crud = NotificationCRUD(notification)
 
         logger.info(f"Processing new notification: {notification}")
         devices_qs = self.get_device_queryset(device_ids)
         try:
-            push_service = PushService(notification, devices_qs=devices_qs)
-            response_data = push_service.push()
+            response_data = notification_crud.create(devices_qs)
         except Exception:
             logger.error("Failed to push notification", exc_info=True)
-            raise PushServiceError("Failed to push notification")
+            raise NotificationServiceError("Failed to push notification")
 
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -88,6 +89,14 @@ class ScheduledNotificationDetailView(RetrieveUpdateDestroyAPIView):
     serializer_class = ScheduledNotificationDetailSerializer
     lookup_field = "identifier"
     http_method_names = ["get", "patch", "delete"]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+
+        if request.method in ["PATCH", "DELETE"]:
+            instance = self.get_object()
+            if instance.pushed_at:
+                raise ValidationError("Cannot modify a pushed notification.")
 
     def update(self, request, *args, **kwargs):
         create_missing_device_ids(request)

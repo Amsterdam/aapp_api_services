@@ -59,7 +59,7 @@ coverage:
 	# Run pytest coverage
 	$(call dc_for_all,run --rm test sh -c "uv run coverage run -m pytest $$s core && uv run coverage report")
 
-test: lint coverage
+test: coverage lint
 	# Run tests (via coverage), coverage and lint checks
 
 build:

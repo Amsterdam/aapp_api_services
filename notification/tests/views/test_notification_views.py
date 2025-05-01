@@ -1,6 +1,8 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from model_bakery import baker
@@ -8,6 +10,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from core.tests.test_authentication import BasicAPITestCase
+from notification.crud import NotificationCRUD
 from notification.models import Device, Notification
 
 
@@ -267,3 +270,79 @@ class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
             "Missing header: DeviceId",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+
+
+TEST_SCOPE_1, TEST_SCOPE_2 = "mijn-amsterdam:alert", "mijn-amsterdam:alert-2"
+
+
+@override_settings(NOTIFICATION_SCOPES=[TEST_SCOPE_1, TEST_SCOPE_2])
+class NotificationLastViewTests(BaseNotificationViewGetTestCase):
+    def setUp(self):
+        super().setUp()
+        self.test_slug = "mijn-amsterdam"
+
+        base_notification = baker.make(
+            Notification,
+            module_slug=self.test_slug,
+            notification_type=TEST_SCOPE_1,
+        )
+        notification_crud = NotificationCRUD(base_notification)
+
+        self.device = baker.make(Device, external_id=self.device_id)
+        notification_crud.create(Device.objects.all())
+
+        base_notification.module_slug = "other_slug"
+        base_notification.notification_type = "other_slug:scope"
+        notification_crud.create(Device.objects.all())
+
+        base_notification.module_slug = self.test_slug
+        base_notification.notification_type = TEST_SCOPE_2
+        self.other_device = baker.make(Device, external_id="999")
+        notification_crud.create(Device.objects.all())
+
+        self.url = reverse("notification-last")
+
+    def _params(self, slug="mijn-amsterdam"):
+        return {"module_slug": slug}
+
+    def test_list_push_last_returns_device_records(self):
+        response = self.client.get(
+            self.url, query_params=self._params(), headers=self.headers_with_device_id
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        scopes = {rec["notification_scope"] for rec in response.data}
+        self.assertSetEqual(scopes, {TEST_SCOPE_1, TEST_SCOPE_2})
+
+    def test_missing_module_slug_returns_400(self):
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_other_device(self):
+        headers_other = {
+            **self.headers_with_device_id,
+            settings.HEADER_DEVICE_ID: self.other_device.external_id,
+        }
+        response = self.client.get(
+            self.url, query_params=self._params(), headers=headers_other
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_other_scope_not_active(self):
+        params = self._params(slug="other_slug")
+        response = self.client.get(
+            self.url, query_params=params, headers=self.headers_with_device_id
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+    def test_other_device_and_scope(self):
+        headers_other = {
+            **self.headers_with_device_id,
+            settings.HEADER_DEVICE_ID: self.other_device.external_id,
+        }
+        params = self._params(slug="other_slug")
+        response = self.client.get(self.url, query_params=params, headers=headers_other)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)

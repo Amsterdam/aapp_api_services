@@ -1,5 +1,7 @@
 import uuid
 
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -30,6 +32,11 @@ class BaseNotification(models.Model):
 
     class Meta:
         abstract = True
+        indexes = [
+            models.Index(fields=["module_slug"]),
+            models.Index(fields=["notification_type"]),
+            models.Index(fields=["created_at"]),
+        ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=1000)
@@ -75,7 +82,7 @@ class Notification(BaseNotification):
     """
 
     schedule = models.ForeignKey(
-        ScheduledNotification, on_delete=models.CASCADE, null=True
+        ScheduledNotification, on_delete=models.PROTECT, null=True
     )
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False)
@@ -111,3 +118,34 @@ class NotificationPushModuleDisabled(models.Model):
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     module_slug = models.CharField()
+
+
+class NotificationLast(models.Model):
+    """
+    Record that determines the last time a notification was created for a device.
+
+    device: fk to Device.id
+    module_slug: the module slug of the notification
+    notification_scope: the scope of the notification, usually the notification_type
+    last_create: the last time a notification was created for the device
+    """
+
+    class Meta:
+        unique_together = ("device", "notification_scope")
+        indexes = [
+            models.Index(fields=["device", "module_slug"]),
+        ]
+
+    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    module_slug = models.CharField()
+    notification_scope = models.CharField()
+    last_create = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        if not self.notification_scope.startswith(self.module_slug):
+            raise ValidationError("Notification scope must start with module slug")
+
+        if self.notification_scope not in settings.NOTIFICATION_SCOPES:
+            raise ValidationError(
+                f"Notification scope {self.notification_scope} is not in the list of allowed scopes"
+            )
