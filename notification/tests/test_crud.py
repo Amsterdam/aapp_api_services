@@ -69,20 +69,43 @@ class TestNotificationService(TestCase):
 
     @patch("notification.services.push.messaging.send_each")
     def test_push_success(self, multicast_mock):
-        device = baker.make(Device)
+        device = baker.make(Device, firebase_token="abc_token")
         messages = self.create_firebase_messages(
             [device], title=self.notification.title, body=self.notification.body
         )
         multicast_mock.return_value = MockFirebaseSendEach(messages)
 
-        device_qs = Device.objects.all()
         notification_crud = NotificationCRUD(self.notification)
-        notification_crud.create(device_qs)
+        notification_crud.create(Device.objects.all())
 
         notification = Notification.objects.filter(
             device__external_id=device.external_id
         ).first()
         self.assertIsNotNone(notification.pushed_at)
+
+    @patch("notification.services.push.messaging.send_each")
+    def test_push_missing_token(self, _):
+        device = baker.make(Device)
+        notification_crud = NotificationCRUD(self.notification)
+        notification_crud.create(Device.objects.all())
+
+        notification = Notification.objects.filter(
+            device__external_id=device.external_id
+        ).first()
+        # Check that the notification was created but not pushed
+        self.assertIsNone(notification.pushed_at)
+
+    @patch("notification.services.push.messaging.send_each")
+    def test_push_disabled(self, _):
+        device = baker.make(Device, firebase_token="abc_token")
+        notification_crud = NotificationCRUD(self.notification)
+        notification_crud.create(Device.objects.all(), push_enabled=False)
+
+        notification = Notification.objects.filter(
+            device__external_id=device.external_id
+        ).first()
+        # Check that the notification was created but not pushed
+        self.assertIsNone(notification.pushed_at)
 
     @patch("notification.services.push.messaging.send_each")
     def test_push_with_some_failed_tokens(self, multicast_mock):

@@ -58,6 +58,7 @@ class NotificationResultSerializer(serializers.ModelSerializer):
 
 class NotificationCreateSerializer(serializers.ModelSerializer):
     device_ids = serializers.ListField(child=serializers.CharField(), write_only=True)
+    make_push = serializers.BooleanField(default=True, write_only=True)
 
     class Meta:
         model = Notification
@@ -70,6 +71,7 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
             "device_ids",
             "notification_type",
             "image",
+            "make_push",
         ]
 
     def validate_device_ids(self, device_ids):
@@ -102,7 +104,15 @@ class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
 
     class Meta:
         model = ScheduledNotification
-        fields = NotificationCreateSerializer.Meta.fields + [
+        fields = [
+            "title",
+            "body",
+            "module_slug",
+            "context",
+            "created_at",
+            "device_ids",
+            "notification_type",
+            "image",
             "scheduled_for",
         ]
 

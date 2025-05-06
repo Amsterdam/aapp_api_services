@@ -3,6 +3,7 @@ import logging
 
 from django.conf import settings
 from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
+from django.utils import timezone
 
 from notification.models import (
     Device,
@@ -44,25 +45,30 @@ class NotificationCRUD:
 
         self.push_service = PushService()
 
-    def create(self, device_qs: QuerySet) -> dict:
+    def create(self, device_qs: QuerySet, push_enabled: bool = True) -> dict:
         """
         Create a new notification for each device in the supplied queryset.
         Push the notification to Firebase if applicable.
 
         device_ids (list[str]): All devices who want to receive a notification
         """
-        device_list, enabled_devices = self.get_enabled_devices_for_notification(
-            device_qs
-        )
+        if push_enabled:
+            device_list, enabled_devices = self.get_enabled_devices_for_notification(
+                device_qs
+            )
+        else:
+            device_list, enabled_devices = list(device_qs), []
+        self.assert_device_count(device_list)
+
         notifications_with_push, _ = self.create_notifications(
             device_list, enabled_devices
         )
         self.update_last_timestamps(device_list)
 
-        if not notifications_with_push:
+        if notifications_with_push:
+            self.failed_token_count = self.push_service.push(notifications_with_push)
+        else:
             logger.info("Notification(s) created, but no devices to push to")
-            return self._response_data
-        self.failed_token_count = self.push_service.push(notifications_with_push)
         return self._response_data
 
     def get_enabled_devices_for_notification(
@@ -89,13 +95,6 @@ class NotificationCRUD:
         )
 
         device_list = list(annotated_devices)  # Database query is executed here
-        max_devices = settings.FIREBASE_DEVICE_LIMIT
-        if len(device_list) > max_devices:
-            raise NotificationCRUDDeviceLimitError(
-                f"Too many devices [{len(device_list)=}, {max_devices=}]"
-            )
-        self.total_device_count = len(device_list)
-
         enabled_devices = []
         self.total_token_count = 0
         for device in device_list:
@@ -110,6 +109,14 @@ class NotificationCRUD:
 
         self.total_enabled_count = len(enabled_devices)
         return device_list, enabled_devices
+
+    def assert_device_count(self, device_list):
+        max_devices = settings.FIREBASE_DEVICE_LIMIT
+        if len(device_list) > max_devices:
+            raise NotificationCRUDDeviceLimitError(
+                f"Too many devices [{len(device_list)=}, {max_devices=}]"
+            )
+        self.total_device_count = len(device_list)
 
     def create_notifications(
         self, device_list: list[Device], enabled_device_list: list[Device]
@@ -126,6 +133,7 @@ class NotificationCRUD:
             new_notification: Notification = copy.copy(self.source_notification)
             new_notification.device = c
             if c in enabled_device_list:
+                new_notification.pushed_at = timezone.now()
                 notifications_with_push.append(new_notification)
             else:
                 notifications_without_push.append(new_notification)

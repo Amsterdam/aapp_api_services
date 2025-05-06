@@ -86,7 +86,7 @@ class Notification(BaseNotification):
     )
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False)
-    pushed_at = models.DateTimeField(auto_now_add=True)
+    pushed_at = models.DateTimeField(null=True)
 
     def __str__(self):
         return f"{self.module_slug} - {self.title}"
