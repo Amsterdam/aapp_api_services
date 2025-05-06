@@ -1,7 +1,7 @@
 x-app: &base-app
   build:
     context: .
-    target: core
+    target: app-${SERVICE_NAME}
   environment: &base-app-env
     POSTGRES_PASSWORD: dev
     POSTGRES_USER: dev
@@ -45,9 +45,7 @@ services:
 
   dev:
     <<: *base-app
-    build:
-      context: .
-      target: app-${SERVICE_NAME}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.local'
@@ -60,9 +58,6 @@ services:
 
   test:
     <<: *base-app
-    build:
-      context: .
-      target: app-${SERVICE_NAME}
     image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
@@ -76,9 +71,7 @@ services:
 
   app:
     <<: *base-app
-    build:
-      context: .
-      target: app-${SERVICE_NAME}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.otap'
@@ -86,10 +79,8 @@ services:
 
   lint:
     <<: *base-app
-    build:
-      context: .
-      target: app-${SERVICE_NAME}
     volumes:
+      - ./requirements.txt:/app/requirements.txt
       - ./core:/app/core
       - ./manage.py:/app/manage.py
       - ./bridge:/app/bridge

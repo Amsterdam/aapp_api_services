@@ -102,7 +102,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
     def test_patch_parking_session(self):
         start_time, end_time = self._init_test()
 
-        response = self._patch_parking_session(end_time, start_time)
+        response = self._patch_parking_session(start_time=start_time, end_time=end_time)
         self.assertEqual(
             response.data["notification_status"], NotificationStatus.UPDATED.name
         )
@@ -113,7 +113,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         start_time, end_time = self._init_test()
 
         end_time = end_time - timedelta(minutes=5)
-        response = self._patch_parking_session(end_time, start_time)
+        response = self._patch_parking_session(start_time=start_time, end_time=end_time)
         self.assertEqual(
             response.data["notification_status"], NotificationStatus.CANCELLED.name
         )
@@ -123,7 +123,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
     def test_patch_parking_session_missing_reminder(self):
         start_time, end_time = self._init_test(start_session=False)
 
-        response = self._patch_parking_session(end_time, start_time)
+        response = self._patch_parking_session(start_time=start_time, end_time=end_time)
         self.assertEqual(
             response.data["notification_status"], NotificationStatus.CREATED.name
         )
@@ -165,7 +165,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self.assertEqual(response.status_code, 200)
         return response
 
-    def _patch_parking_session(self, end_time, start_time):
+    def _patch_parking_session(self, start_time, end_time):
         session_payload = {
             "parking_session": {
                 "report_code": self.report_code,

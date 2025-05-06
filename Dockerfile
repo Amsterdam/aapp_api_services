@@ -11,7 +11,10 @@ WORKDIR /app
 
 # Install dependencies
 RUN apk add --no-cache --virtual .build-deps build-base linux-headers
-RUN apk add --no-cache libheif
+RUN apk add --no-cache \
+    libheif \
+    bash \
+    curl
 
 COPY pyproject.toml /app/pyproject.toml
 RUN uv sync

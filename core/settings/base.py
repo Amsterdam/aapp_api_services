@@ -216,9 +216,10 @@ NOTIFICATION_SCOPES = [
 ]
 
 IMAGE_API = os.getenv("IMAGE_API", "http://api-image:8000")
+IMAGE_BASE_URL = urljoin(IMAGE_API, os.getenv("IMAGE_BASE_PATH", "/internal/api/v1/"))
 IMAGE_ENDPOINTS = {
-    "POST_IMAGE": urljoin(IMAGE_API, "/internal/api/v1/image"),
-    "DETAIL": urljoin(IMAGE_API, "/internal/api/v1/image"),
+    "POST_IMAGE": urljoin(IMAGE_BASE_URL, "/internal/api/v1/image"),
+    "DETAIL": urljoin(IMAGE_BASE_URL, "/internal/api/v1/image"),
 }
 
 REDIS_HOST = os.getenv("REDIS_HOST")

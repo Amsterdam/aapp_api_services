@@ -5,6 +5,7 @@ ALL_SERVICES = bridge city_pass construction_work contact image modules notifica
 ifdef SERVICE_NAME
 export SERVICE_NAME_HYPHEN=$(subst _,-,$(SERVICE_NAME))
 endif
+API_AUTH_TOKENS ?= insecure-token
 
 dc = SERVICE_NAME=${SERVICE_NAME} docker compose
 run = $(dc) run --rm
@@ -15,29 +16,35 @@ help:
     # Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-install:
-    # Install requirements on local active venv
-	uv sync --active
-
-requirements:
+lock-packages:
     # Update uv.lock file and overwrite timestamp
-	$(run) dev uv lock --upgrade
+	$(lint) uv lock --upgrade
+	$(lint) uv pip freeze > requirements.txt
 	@timestamp=$$(date -u +"%Y-%m-%dT%H:%M:%SZ"); \
 	sed -i '/^# Generated:/d' uv.lock; \
-	sed -i "1s/^/# Generated: $${timestamp}\n/" uv.lock
+	sed -i "1s/^/# Generated: $${timestamp}\n/" uv.lock; \
 
-upgrade: requirements install
-    # Run 'requirements' and 'install' targets
+pip-freeze:
+    # Run pip-freeze for human readable requirements.txt
+	$(lint) uv pip freeze > requirements.txt
+	@timestamp=$$(date -u +"%Y-%m-%dT%H:%M:%SZ"); \
+	sed -i "1s/^/# Generated: $${timestamp}\n/" requirements.txt;
+
+requirements: lock-packages build pip-freeze
+    # Update dependencies and generate requirements.txt
 
 ### MAKEFILE TARGETS THAT CAN LOOP THROUGH ALL SERVICES ###
+# Interprets code 5 (no tests found) as 0 (success)
 define dc_for_all
 	@if [ -z "$(SERVICE_NAME)" ]; then \
 	  for s in $(ALL_SERVICES); do \
-		SERVICE_NAME=$$s docker compose $(1) || exit $$?; \
+		SERVICE_NAME=$$s docker compose $(1);  \
+	    status=$$?; if [ $$status -ne 0 ] && [ $$status -ne 5 ]; then exit $$status; fi; \
 	  done; \
 	else \
 	  s=$$SERVICE_NAME; \
-	  SERVICE_NAME=$$s docker compose $(1); \
+	  SERVICE_NAME=$$s docker compose $(1);  \
+      status=$$?; if [ $$status -ne 0 ] && [ $$status -ne 5 ]; then exit $$status; fi; \
 	fi
 endef
 
@@ -59,6 +66,11 @@ coverage:
 	# Run pytest coverage
 	$(call dc_for_all,run --rm test sh -c "uv run coverage run -m pytest $$s core && uv run coverage report")
 
+integration-test:
+	# Run integration tests
+	# Don't forget to set the API_AUTH_TOKENS environment variable!
+	$(call dc_for_all,run --rm --env API_AUTH_TOKENS='$(API_AUTH_TOKENS)' dev uv run pytest -m integration)
+
 test: coverage lint
 	# Run tests (via coverage), coverage and lint checks
 
@@ -74,7 +86,7 @@ clean:
     # Stop Docker container and remove orphans
 	$(call dc_for_all,down -v --remove-orphans)
 
-openapi-diff-all:
+openapi-diff:
 	@if [ -z "$(SERVICE_NAME)" ]; then \
 	  for s in $(ALL_SERVICES); do \
 		SERVICE_NAME_HYPHEN=$$(printf '%s\n' "$$s" | tr '_' '-'); \
@@ -86,7 +98,7 @@ openapi-diff-all:
         SERVICE_NAME=$$SERVICE_NAME docker compose run --rm openapi-diff https://test.app.amsterdam.nl/$${SERVICE_NAME_HYPHEN}/api/v1/openapi/ /specs/openapi-schema.yaml --fail-on-incompatible || exit $$?; \
 	fi
 
-prepare-for-pr: requirements build lintfix test openapi-diff-all
+prepare-for-pr: requirements lintfix test openapi-diff
     # Prepare for PR
 
 ### SINGLE SERVICE COMMANDS ###
@@ -108,10 +120,6 @@ send_waste_notifications: check-service
 spectacular: check-service
     # Generate OpenAPI schema
 	$(manage) spectacular --file /app/${SERVICE_NAME}/openapi-schema.yaml
-
-openapi-diff: spectacular
-    # Compare OpenAPI schema on acceptance with the one in the repository
-	$(run) openapi-diff https://acc.app.amsterdam.nl/$(SERVICE_NAME_HYPHEN)/api/v1/openapi/ /specs/openapi-schema.yaml
 
 migrations: check-service
     # Run Django migrations on database
