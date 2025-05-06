@@ -19,11 +19,7 @@ class Log4xxMiddleware:
         if 400 <= status < 500:
             try:
                 release_version = request.headers.get("releaseVersion")
-                extra = (
-                    {"custom_dimensions": {"releaseVersion": release_version}}
-                    if release_version
-                    else None
-                )
+                extra = {"releaseVersion": release_version} if release_version else None
                 body = response.content.decode(errors="replace")[: self.max_body_len]
                 logger.warning(
                     f"{request.method} {request.get_full_path()} → "
@@ -34,10 +30,8 @@ class Log4xxMiddleware:
                 logger.error(
                     f"Error logging 4xx response: {e}",
                     extra={
-                        "custom_dimensions": {
-                            "request_method": request.method,
-                            "request_path": request.get_full_path(),
-                        }
+                        "request_method": request.method,
+                        "request_path": request.get_full_path(),
                     },
                 )
         return response

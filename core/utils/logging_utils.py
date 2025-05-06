@@ -41,4 +41,4 @@ def setup_opentelemetry():
         },
         resource=Resource.create({SERVICE_NAME: settings.SERVICE_NAME}),
     )
-    logger.info("OpenTelemetry has been enabled!")
+    logger.debug("OpenTelemetry has been enabled!")

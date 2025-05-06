@@ -96,10 +96,6 @@ class PushService:
 
                 logger.error(
                     "Failed to send notification to device",
-                    extra={
-                        "custom_dimensions": {
-                            "firebase_token": failed_token,
-                        },
-                    },
+                    extra={"firebase_token": failed_token},
                 )
         return len(failed_tokens)

@@ -46,6 +46,6 @@ class DatabaseRetryMiddlewareTest(TestCase):
         self.mock_logger.warning.assert_called_once()
         kwargs = self.mock_logger.warning.call_args.kwargs
         self.assertEqual(
-            kwargs["extra"]["custom_dimensions"]["releaseVersion"],
+            kwargs["extra"]["releaseVersion"],
             version,
         )

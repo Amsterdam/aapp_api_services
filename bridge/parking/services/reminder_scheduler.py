@@ -35,9 +35,7 @@ class ParkingReminderScheduler:
         reminder = self.schedule_service.get(self.identifier)
         if reminder:
             if self.reminder_time:
-                logger.info(
-                    "Updating reminder", extra={"custom_dimensions": self.log_extra}
-                )
+                logger.info("Updating reminder", extra=self.log_extra)
                 # Add the current device_id to the list of device_ids
                 device_ids = list(
                     set(reminder["device_ids"] + [self.device_id])
@@ -50,22 +48,18 @@ class ParkingReminderScheduler:
                 )
                 return NotificationStatus.UPDATED
             else:
-                logger.info(
-                    "Deleting reminder", extra={"custom_dimensions": self.log_extra}
-                )
+                logger.info("Deleting reminder", extra=self.log_extra)
                 self.schedule_service.delete(self.identifier)
                 return NotificationStatus.CANCELLED
         else:
             if self.reminder_time:
                 self.schedule_reminder()
-                logger.info(
-                    "Creating reminder", extra={"custom_dimensions": self.log_extra}
-                )
+                logger.info("Creating reminder", extra=self.log_extra)
                 return NotificationStatus.CREATED
             else:
                 logger.info(
                     "No changes to reminder",
-                    extra={"custom_dimensions": self.log_extra},
+                    extra=self.log_extra,
                 )
                 return NotificationStatus.NO_CHANGE
 
@@ -91,7 +85,7 @@ class ParkingReminderScheduler:
             # Also, this deletes the reminder if it exists
             logger.info(
                 "End time is too close to current time",
-                extra={"custom_dimensions": self.log_extra},
+                extra=self.log_extra,
             )
             return None
         return reminder_time

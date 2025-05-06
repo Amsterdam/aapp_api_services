@@ -192,10 +192,8 @@ def articles(article_data):
                 logger.error(
                     f"Project ID {id} not found in database",
                     extra={
-                        "custom_dimensions": {
-                            "project_id": id,
-                            "article_id": item.get("id"),
-                        },
+                        "project_id": id,
+                        "article_id": item.get("id"),
                     },
                 )
         article_project_mapping[article_object.foreign_id] = projects
