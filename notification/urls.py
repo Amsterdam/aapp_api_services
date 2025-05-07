@@ -18,6 +18,11 @@ urlpatterns = [
         name="notification-create-notification",
     ),
     path(
+        BASE_PATH_INTERNAL + "/notification/aggregate",
+        notification_internal_views.NotificationAggregateView.as_view(),
+        name="notification-aggregate-notification",
+    ),
+    path(
         BASE_PATH_INTERNAL + "/scheduled-notification",
         notification_internal_views.ScheduledNotificationView.as_view(
             {

@@ -98,8 +98,8 @@ class TestNotificationService(TestCase):
     @patch("notification.services.push.messaging.send_each")
     def test_push_disabled(self, _):
         device = baker.make(Device, firebase_token="abc_token")
-        notification_crud = NotificationCRUD(self.notification)
-        notification_crud.create(Device.objects.all(), push_enabled=False)
+        notification_crud = NotificationCRUD(self.notification, push_enabled=False)
+        notification_crud.create(Device.objects.all())
 
         notification = Notification.objects.filter(
             device__external_id=device.external_id
@@ -132,7 +132,7 @@ class TestNotificationService(TestCase):
         parent_logger.propagate = True
 
         with self.assertLogs(logger, level=logging.INFO) as log_context:
-            result = notification_crud.create(device_qs)
+            notification_crud.create(device_qs)
 
         self.assertTrue(
             any(
@@ -141,7 +141,9 @@ class TestNotificationService(TestCase):
             )
         )
         self.assertEqual(Notification.objects.count(), device_count)
-        self.assertEqual(result["failed_token_count"], failed_device_count)
+        self.assertEqual(
+            notification_crud.response_data["failed_token_count"], failed_device_count
+        )
 
     @override_settings(FIREBASE_DEVICE_LIMIT=5)
     def test_hit_max_devices(self):
@@ -163,7 +165,7 @@ class TestNotificationService(TestCase):
         parent_logger.propagate = True
 
         with self.assertLogs(logger, level=logging.INFO) as log_context:
-            result = notification_crud.create(device_qs)
+            notification_crud.create(device_qs)
 
         for c in created_devices:
             notification = Notification.objects.filter(
@@ -179,7 +181,7 @@ class TestNotificationService(TestCase):
         )
         self.assertEqual(Notification.objects.count(), len(created_devices))
         self.assertEqual(
-            result,
+            notification_crud.response_data,
             {
                 "total_device_count": 5,
                 "total_token_count": 0,
@@ -196,11 +198,11 @@ class TestNotificationService(TestCase):
 
         device_qs = Device.objects.all()
         notification_crud = NotificationCRUD(notification)
-        response = notification_crud.create(device_qs)
+        notification_crud.create(device_qs)
 
         self.assertTrue(Notification.objects.filter(device=device).exists())
         self.assertEqual(
-            response,
+            notification_crud.response_data,
             {
                 "total_device_count": 1,
                 "total_token_count": 1,
@@ -219,11 +221,11 @@ class TestNotificationService(TestCase):
 
         device_qs = Device.objects.all()
         notification_crud = NotificationCRUD(notification)
-        response = notification_crud.create(device_qs)
+        notification_crud.create(device_qs)
 
         self.assertTrue(Notification.objects.filter(device=device).exists())
         self.assertEqual(
-            response,
+            notification_crud.response_data,
             {
                 "total_device_count": 1,
                 "total_token_count": 1,
@@ -263,10 +265,10 @@ class TestNotificationService(TestCase):
 
         devices_qs = Device.objects.all()
         notification_crud = NotificationCRUD(self.notification)
-        response_data = notification_crud.create(devices_qs)
+        notification_crud.create(devices_qs)
 
         self.assertEqual(
-            response_data,
+            notification_crud.response_data,
             {
                 "total_device_count": len(known_devices),
                 "total_token_count": len(devices_with_token),

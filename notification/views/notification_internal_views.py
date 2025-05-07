@@ -1,4 +1,5 @@
 import logging
+from collections import Counter, defaultdict
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
@@ -18,6 +19,7 @@ from notification.serializers.notification_serializers import (
     ScheduledNotificationDetailSerializer,
     ScheduledNotificationSerializer,
 )
+from notification.services.push import PushService
 
 logger = logging.getLogger(__name__)
 
@@ -45,19 +47,31 @@ class NotificationInitView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         device_ids = serializer.validated_data.pop("device_ids")
-        make_push = serializer.validated_data.pop("make_push")
-        notification = Notification(**serializer.validated_data)
-        notification_crud = NotificationCRUD(notification)
+        make_push = serializer.validated_data.pop("make_push") or True
 
-        logger.info(f"Processing new notification: {notification}")
-        devices_qs = self.get_device_queryset(device_ids)
+        source_notification = Notification(**serializer.validated_data)
+        notification_crud = NotificationCRUD(
+            source_notification, push_enabled=make_push
+        )
+        self.create_notifications(
+            notification_crud=notification_crud, device_ids=device_ids
+        )
+
+        return Response(notification_crud.response_data, status=status.HTTP_200_OK)
+
+    def create_notifications(
+        self, *, notification_crud: NotificationCRUD, device_ids: list[str]
+    ):
         try:
-            response_data = notification_crud.create(devices_qs, push_enabled=make_push)
+            logger.info(
+                f"Processing new notification: {notification_crud.source_notification}",
+                extra={"device_ids": device_ids},
+            )
+            devices_qs = self.get_device_queryset(device_ids)
+            notification_crud.create(devices_qs)
         except Exception:
-            logger.error("Failed to push notification", exc_info=True)
-            raise NotificationServiceError("Failed to push notification")
-
-        return Response(response_data, status=status.HTTP_200_OK)
+            logger.error("Failed to create notifications", exc_info=True)
+            raise NotificationServiceError("Failed to create notifications")
 
     @staticmethod
     def get_device_queryset(device_ids):
@@ -74,6 +88,100 @@ class NotificationInitView(generics.CreateAPIView):
         logger.warning(f"Created {len(new_devices_qs)} unknown devices.")
         devices_qs = known_devices_qs | new_devices_qs
         return devices_qs
+
+
+class NotificationAggregateView(NotificationInitView):
+    """
+    Endpoint to initialize multiple notifications. This endpoint is network isolated and only accessible from other backend services.
+    The "make_push" field is ignored in this endpoint, as a single push is made for the entire batch per device id.
+    All notifications are required to contain the same module slug.
+    """
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs["many"] = True
+        return self.serializer_class(*args, **kwargs)
+
+    @extend_schema(
+        responses={
+            200: NotificationCreateResponseSerializer(many=True),
+            **get_error_response_serializers([PushServiceError, ValidationError]),
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+
+        module_slug = self._get_module_slug(validated_data)
+        devices_chain, responses = self.create_notifications_without_push(
+            validated_data
+        )
+
+        created_at = validated_data[0].get("created_at")
+        self.push_aggregated_notifications(devices_chain, module_slug, created_at)
+        return Response(responses, status=status.HTTP_200_OK)
+
+    def create_notifications_without_push(self, validated_data):
+        devices_chain = []
+        responses = []
+        for notification_data in validated_data:
+            device_ids = notification_data.pop("device_ids")
+            notification_data.pop("make_push")
+            source_notification = Notification(**notification_data)
+            notification_crud = NotificationCRUD(
+                source_notification, push_enabled=False
+            )
+            self.create_notifications(
+                notification_crud=notification_crud, device_ids=device_ids
+            )
+            devices_chain += notification_crud.devices_for_push
+            responses.append(notification_crud.response_data)
+        return devices_chain, responses
+
+    def push_aggregated_notifications(
+        self, devices_chain: list[Device], module_slug: str, created_at: str
+    ):
+        device_id_by_occurrence = self.group_by_occurrence(devices_chain)
+        push_service = PushService()
+        for occurrence, devices in device_id_by_occurrence.items():
+            notifications = [
+                Notification(
+                    title=module_slug,
+                    body=self._get_aggregate_body(occurrence),
+                    module_slug=module_slug,
+                    context={
+                        "type": "AggregateNotification",
+                        "module_slug": module_slug,
+                    },
+                    notification_type=f"{module_slug}:aggregate",
+                    created_at=created_at,
+                    device=device,
+                )
+                for device in devices
+            ]
+            push_service.push(notifications)
+
+    @staticmethod
+    def group_by_occurrence(chain) -> dict[int, list[Device]]:
+        """
+        Returns a dictionary with the number of occurrences as key and a list of devices as value.
+        """
+        grouped = defaultdict(list)
+        for device, count in Counter(chain).items():
+            grouped[count].append(device)
+        return dict(grouped)
+
+    def _get_module_slug(self, validated_data):
+        module_slug = validated_data[0].get("module_slug")
+        for notification in validated_data:
+            if module_slug != notification.get("module_slug"):
+                raise ValidationError(
+                    "All notifications must have the same module slug."
+                )
+        return module_slug
+
+    def _get_aggregate_body(self, occurrence):
+        return f"Er staan {occurrence} berichten voor je klaar"
 
 
 class ScheduledNotificationView(ModelViewSet):

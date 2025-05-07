@@ -24,7 +24,7 @@ class NotificationCRUDDeviceLimitError(Exception):
 
 
 class NotificationCRUD:
-    def __init__(self, source_notification: Notification) -> None:
+    def __init__(self, source_notification: Notification, push_enabled: bool = True):
         """
         The source notification is used to create a new notification for each device.
 
@@ -42,40 +42,37 @@ class NotificationCRUD:
         self.total_token_count = 0
         self.total_enabled_count = 0
         self.failed_token_count = 0
+        self.notifications_with_push, self.notifications_without_push = [], []
+        self.devices_for_push = []
+        self.push_service = PushService() if push_enabled else None
 
-        self.push_service = PushService()
-
-    def create(self, device_qs: QuerySet, push_enabled: bool = True) -> dict:
+    def create(self, device_qs: QuerySet):
         """
         Create a new notification for each device in the supplied queryset.
         Push the notification to Firebase if applicable.
 
         device_ids (list[str]): All devices who want to receive a notification
         """
-        if push_enabled:
-            device_list, enabled_devices = self.get_enabled_devices_for_notification(
-                device_qs
-            )
-        else:
-            device_list, enabled_devices = list(device_qs), []
-        self.assert_device_count(device_list)
+        device_list = self._collect_and_annotate_devices(device_qs)
+        self._assert_device_count(device_list)
 
-        notifications_with_push, _ = self.create_notifications(
-            device_list, enabled_devices
-        )
-        self.update_last_timestamps(device_list)
+        notifications_with_push = self._create_notifications(device_list)
+        self._update_last_timestamps(device_list)
 
-        if notifications_with_push:
-            self.failed_token_count = self.push_service.push(notifications_with_push)
+        if notifications_with_push and self.push_service:
+            try:
+                self.failed_token_count = self.push_service.push(
+                    notifications=notifications_with_push
+                )
+            except Exception as e:
+                logger.error("Failed to push notification", exc_info=True)
+                raise e
         else:
             logger.info("Notification(s) created, but no devices to push to")
-        return self._response_data
 
-    def get_enabled_devices_for_notification(
-        self, device_qs: QuerySet
-    ) -> (list[Device], list[Device]):
+    def _collect_and_annotate_devices(self, device_qs: QuerySet) -> list[Device]:
         """
-        This function should execute a single database query, to get all enabled devices
+        This function should execute a single database query, to get all devices
         """
         module_disabled_exists = NotificationPushModuleDisabled.objects.filter(
             device=OuterRef("pk"), module_slug=self.source_notification.module_slug
@@ -95,7 +92,7 @@ class NotificationCRUD:
         )
 
         device_list = list(annotated_devices)  # Database query is executed here
-        enabled_devices = []
+        devices_for_push = []
         self.total_token_count = 0
         for device in device_list:
             if device.has_token:
@@ -105,12 +102,13 @@ class NotificationCRUD:
                 and not device.module_disabled
                 and not device.type_disabled
             ):
-                enabled_devices.append(device)
+                devices_for_push.append(device)
 
-        self.total_enabled_count = len(enabled_devices)
-        return device_list, enabled_devices
+        self.devices_for_push = devices_for_push
+        self.total_enabled_count = len(devices_for_push)
+        return device_list
 
-    def assert_device_count(self, device_list):
+    def _assert_device_count(self, device_list):
         max_devices = settings.FIREBASE_DEVICE_LIMIT
         if len(device_list) > max_devices:
             raise NotificationCRUDDeviceLimitError(
@@ -118,35 +116,29 @@ class NotificationCRUD:
             )
         self.total_device_count = len(device_list)
 
-    def create_notifications(
-        self, device_list: list[Device], enabled_device_list: list[Device]
-    ) -> (list[Notification], list[Notification]):
+    def _create_notifications(self, device_list: list[Device]) -> list[Notification]:
         """
         The supplied source_notification will be duplicated for every device.
 
         Returns:
-            list[Notification]: newly created notification objects
+            list[Notification]: newly created notification objects that should be pushed
         """
-        notifications_with_push, notifications_without_push = [], []
         self.source_notification.id = None
+        with_push, without_push = [], []
         for c in device_list:
             new_notification: Notification = copy.copy(self.source_notification)
             new_notification.device = c
-            if c in enabled_device_list:
+            if c in self.devices_for_push and self.push_service:
                 new_notification.pushed_at = timezone.now()
-                notifications_with_push.append(new_notification)
+                with_push.append(new_notification)
             else:
-                notifications_without_push.append(new_notification)
+                without_push.append(new_notification)
 
-        notifications_with_push = Notification.objects.bulk_create(
-            notifications_with_push
-        )
-        notifications_without_push = Notification.objects.bulk_create(
-            notifications_without_push
-        )
-        return notifications_with_push, notifications_without_push
+        self.notifications_with_push = Notification.objects.bulk_create(with_push)
+        self.notifications_without_push = Notification.objects.bulk_create(without_push)
+        return self.notifications_with_push
 
-    def update_last_timestamps(self, device_list: list[Device]) -> None:
+    def _update_last_timestamps(self, device_list: list[Device]) -> None:
         """
         Update the last timestamps for all devices.
         This is used to determine when the last notification was created
@@ -170,7 +162,7 @@ class NotificationCRUD:
         )
 
     @property
-    def _response_data(self):
+    def response_data(self):
         return dict(
             total_device_count=self.total_device_count,
             total_token_count=self.total_token_count,

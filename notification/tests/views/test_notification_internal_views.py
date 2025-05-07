@@ -1,6 +1,6 @@
 import json
 import pathlib
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.conf import settings
 from django.test import override_settings
@@ -291,3 +291,70 @@ class ScheduledNotificationDetailTests(ScheduledNotificationBase):
         notification.save()
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+@patch("notification.services.push.messaging.send_each")
+class NotificationAggregateViewTests(BasicAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("notification-aggregate-notification")
+        self.firebase_paths = apply_init_firebase_patches()
+
+    def test_aggregate_notification_success_1(self, mock_send_each):
+        self._run_aggregate_notification_test(mock_send_each, notification_count=1)
+
+    def test_aggregate_notification_success_2(self, mock_send_each):
+        self._run_aggregate_notification_test(mock_send_each, notification_count=2)
+
+    def test_aggregate_notification_success_3(self, mock_send_each):
+        self._run_aggregate_notification_test(mock_send_each, notification_count=3)
+
+    def _run_aggregate_notification_test(self, mock_send_each, notification_count):
+        baker.make(Device, external_id="abc", firebase_token="abc_token")
+        data = [
+            {
+                "title": "foobar title",
+                "body": "foobar body",
+                "module_slug": "foobar module slug",
+                "context": {"foo": "bar"},
+                "created_at": "2024-10-31T15:00:00",
+                "device_ids": ["abc", "def", "ghi"],
+                "notification_type": "foobar-notification-type",
+            }
+            for _ in range(notification_count)
+        ]
+        firebase_response = Mock()
+        firebase_response.failure_count = 0
+        mock_send_each.return_value = firebase_response
+
+        result = self.client.post(
+            self.url,
+            data=json.dumps(data),
+            headers=self.api_headers,
+            content_type="application/json",
+        )
+
+        self.assertEqual(result.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            result.json(),
+            [
+                {
+                    "total_device_count": 3,
+                    "total_token_count": 1,
+                    "total_enabled_count": 1,
+                    "failed_token_count": 0,
+                }
+                for _ in range(notification_count)
+            ],
+        )
+        # Assert number of created notifications
+        created_count = Notification.objects.count()
+        self.assertEqual(created_count, 3 * notification_count)
+
+        # Assert send_each was called ONCE with the correct body
+        mock_send_each.assert_called_once()
+        args, _ = mock_send_each.call_args
+        notification = args[0][0].notification
+        self.assertEqual(
+            notification.body, f"Er staan {notification_count} berichten voor je klaar"
+        )

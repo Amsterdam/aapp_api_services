@@ -48,7 +48,7 @@ class NotificationResultSerializer(serializers.ModelSerializer):
         ]
 
     @extend_schema_field(NotificationImageSerializer)
-    def get_image(self, obj: Notification) -> dict:
+    def get_image(self, obj: Notification) -> dict | None:
         if obj.image is None:
             return None
 
@@ -80,6 +80,8 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 f"Too many device ids [{len(device_ids)=}, {max_devices=}]"
             )
+        if len(device_ids) != len(set(device_ids)):
+            raise serializers.ValidationError("Duplicate device ids found in input")
         return device_ids
 
     def validate_image(self, image_id):
