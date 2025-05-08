@@ -6,7 +6,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image as PILImage
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[2]
-
+EXAMPLE_JPG_FILE = "core/tests/example.jpg"
+EXAMPLE_HEIC_FILE = "core/tests/example.heic"
 SCALED_IMAGE_FORMAT = "JPEG"
 RESOLUTIONS = {
     "small": (320, 180),
@@ -32,7 +33,7 @@ def scale_image(image_file) -> dict[str, BytesIO]:
 
 
 def get_example_image_file(
-    file_path: str = "core/tests/example.jpg",
+    file_path: str = EXAMPLE_JPG_FILE,
 ) -> SimpleUploadedFile:
     filepath = join(ROOT_DIR, file_path)
     with open(filepath, "rb") as image_file:
@@ -40,3 +41,9 @@ def get_example_image_file(
             name=file_path.split("/")[-1], content=image_file.read()
         )
     return file
+
+
+def get_example_image_data(file_path: str = EXAMPLE_JPG_FILE) -> bytes:
+    filepath = join(ROOT_DIR, file_path)
+    with open(filepath, "rb") as image_file:
+        return image_file.read()

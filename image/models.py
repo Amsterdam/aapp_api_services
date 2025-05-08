@@ -1,13 +1,13 @@
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import models
+from django.db.models import Index, Q, UniqueConstraint
 
 
 class ImageVariant(models.Model):
     """
     Image model.
     - image: the actual image
-    - description: optional description of the image
     - width: width of the image in pixels
     - height: height of the image in pixels
     """
@@ -37,7 +37,24 @@ class ImageSet(models.Model):
     Group of 3 image variants. One for each resolution.
     """
 
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=["identifier"],
+                condition=Q(identifier__isnull=False),
+                name="image_imageset_unique_identifier",
+            ),
+        ]
+        indexes = [
+            Index(
+                fields=["identifier"],
+                condition=Q(identifier__isnull=False),
+                name="idx_identifier_not_null",
+            ),
+        ]
+
     description = models.CharField(max_length=1000, blank=True, null=True)
+    identifier = models.CharField(null=True)
     image_small = models.ForeignKey(
         ImageVariant, on_delete=models.CASCADE, related_name="small"
     )

@@ -1,3 +1,4 @@
+from django.test import override_settings
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, APITestCase
 from rest_framework.views import APIView
@@ -20,6 +21,9 @@ class AuthenticatedAPITestCase(APITestCase):
         self.api_headers = {auth_instance.api_key_header: api_keys[0]}
 
 
+@override_settings(
+    STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
+)
 class BasicAPITestCase(AuthenticatedAPITestCase):
     authentication_class = APIKeyAuthentication
 

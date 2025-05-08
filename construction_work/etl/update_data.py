@@ -36,6 +36,7 @@ def extract_transform_load(*, iprox_url, transform_func, load_func):
     logger.info("Ingesting data into Construction-Work")
     load_func(transformed_data)
 
+    logger.info("Data ingestion finished!")
     return [item["id"] for item in all_iprox_items]
 
 

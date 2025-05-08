@@ -74,6 +74,7 @@ class TestArticleDetailView(BasicAPITestCase):
                 "id": article.image.id,
                 "aspectRatio": article.image.aspectRatio,
                 "alternativeText": article.image.alternativeText,
+                "image_set": article.image.image_set,
                 "sources": [],
             },
             "url": article.url,
@@ -218,13 +219,19 @@ class TestArticleListView(BaseTestProjectView):
             ],
             "aspectRatio": 2.0,
             "alternativeText": None,
+            "image_set": 123,
         }
 
         article_data = mock_data.articles[0].copy()
         article_data["foreign_id"] = 9999
         article = Article.objects.create(**article_data)
         image = baker.make(
-            ArticleImage, parent=article, alternativeText=None, aspectRatio=2.0, id=123
+            ArticleImage,
+            parent=article,
+            alternativeText=None,
+            aspectRatio=2.0,
+            id=123,
+            image_set=123,
         )
         baker.make(
             ArticleImageSource, image=image, height=50, uri="/foo/bar.png", width=100

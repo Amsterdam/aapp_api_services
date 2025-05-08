@@ -6,6 +6,7 @@ from logging import getLogger
 
 from django.db import transaction
 from django.utils import timezone
+from requests import HTTPError
 
 from construction_work.models.article_models import (
     Article,
@@ -21,6 +22,7 @@ from construction_work.models.project_models import (
     ProjectSectionUrl,
     ProjectTimelineItem,
 )
+from core.services.image_set import ImageSetService
 
 logger = getLogger(__name__)
 
@@ -61,12 +63,13 @@ def projects(project_data):
 
         contacts += get_contacts(data, project)
 
-        new_images, new_image_sources = get_image(
+        new_images, new_image_sources = store_image(
             data,
             project,
             image_class=ProjectImage,
             image_source_class=ProjectImageSource,
         )
+
         images += new_images
         image_sources += new_image_sources
 
@@ -228,7 +231,7 @@ def articles(article_data):
     images, image_sources = [], []
     for data in article_data:
         article = articles_dict.get(data.get("id"))
-        new_images, new_image_sources = get_image(
+        new_images, new_image_sources = store_image(
             data,
             article,
             image_class=ArticleImage,
@@ -261,10 +264,12 @@ def get_article_object(data):
     return article
 
 
-def get_image(data, parent, image_class, image_source_class):
-    image_data = data.get("image")
-    if not image_data and data.get("images"):
-        image_data = data.get("images")[0]
+def store_image(
+    project_data, parent, image_class, image_source_class
+) -> tuple[list, list]:
+    image_data = project_data.get("image")
+    if not image_data and project_data.get("images"):
+        image_data = project_data.get("images")[0]
     if not image_data:
         return [], []
     image = image_class(
@@ -273,7 +278,47 @@ def get_image(data, parent, image_class, image_source_class):
         alternativeText=image_data.get("alternativeText"),
         parent=parent,
     )
+
+    image_data_sources = image_data.get("sources")
+    if not image_data_sources:
+        return [], []
+
+    for source in image_data_sources:
+        try:
+            source["width"] = int(source["width"])
+            source["height"] = int(source["height"])
+        except (KeyError, ValueError) as e:
+            logger.error(
+                "Invalid image source width/height data",
+                extra={"sources": image_data_sources, "error": e},
+            )
+            return [], []
+
+    biggest_source_image = max(
+        image_data_sources,
+        key=lambda s: s["width"] * s["height"],
+    )
+    if not biggest_source_image.get("uri"):
+        logger.error("Missing image source uri", extra={"sources": image_data_sources})
+        return [], []
+
+    try:
+        image_set_data = ImageSetService().get_or_upload_from_url(
+            biggest_source_image["uri"]
+        )
+    except HTTPError as e:
+        logger.error(f"Error getting or uploading image: {e}")
+        return [], []
+
+    image.image_set = image_set_data["id"]
+
     image_sources = [
-        image_source_class(image=image, **v) for v in image_data.get("sources")
+        image_source_class(
+            image=image,
+            uri=v["image"],
+            width=v["width"],
+            height=v["height"],
+        )
+        for v in image_set_data["variants"]
     ]
     return [image], image_sources

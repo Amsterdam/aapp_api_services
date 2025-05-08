@@ -14,6 +14,11 @@ urlpatterns = [
         name="image-create-imageset",
     ),
     path(
+        BASE_PATH_INTERNAL + "/image/from_url",
+        views.ImageSetFromUrlCreateView.as_view(),
+        name="image-create-imageset-from-url",
+    ),
+    path(
         BASE_PATH_INTERNAL + "/image/<int:pk>",
         views.ImageSetDetailView.as_view(),
         name="image-detail-imageset",

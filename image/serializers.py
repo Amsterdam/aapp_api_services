@@ -1,29 +1,28 @@
+import hashlib
 import io
+import logging
 import uuid
 
+import requests
 from django.core.files.base import ContentFile
-from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import transaction
-from PIL import Image
-from pillow_heif import register_heif_opener
+from drf_spectacular.utils import extend_schema_field
+from PIL import Image, UnidentifiedImageError
 from rest_framework import serializers
 
 from core.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
 from image.models import ImageSet, ImageVariant
 
-register_heif_opener()
+logger = logging.getLogger(__name__)
 
 
-class ImageSetRequestSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(write_only=True)
-
+class ImageSetBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImageSet
-        fields = ["description", "image"]
+        abstract = True
 
     @transaction.atomic
-    def create(self, validated_data):
-        image_file = validated_data.pop("image")
+    def create_set(self, image_file, validated_data):
         scaled = scale_image(image_file)
         image_small = self._get_image_variant(scaled, "small")
         image_medium = self._get_image_variant(scaled, "medium")
@@ -41,6 +40,42 @@ class ImageSetRequestSerializer(serializers.ModelSerializer):
         return ImageVariant.objects.create(image=content_file)
 
 
+class ImageSetRequestSerializer(ImageSetBaseSerializer):
+    image = serializers.ImageField(write_only=True)
+
+    class Meta:
+        model = ImageSet
+        fields = ["id", "image", "identifier", "description"]
+
+    def create(self, validated_data):
+        image_file = validated_data.pop("image")
+        return self.create_set(image_file, validated_data)
+
+
+class ImageSetFromUrlRequestSerializer(ImageSetBaseSerializer):
+    url = serializers.URLField(write_only=True)
+
+    class Meta:
+        model = ImageSet
+        fields = ["id", "url", "description"]
+
+    def create(self, validated_data):
+        url = validated_data.pop("url")
+        response = requests.get(url)
+        response.raise_for_status()
+        image_file = io.BytesIO(response.content)
+        try:
+            image_file.seek(0)
+            Image.open(image_file).verify()
+            image_file.seek(0)
+        except UnidentifiedImageError:
+            raise serializers.ValidationError(
+                "Provided URL does not contain a valid image."
+            )
+        validated_data["identifier"] = hashlib.sha256(url.encode("utf-8")).hexdigest()
+        return self.create_set(image_file, validated_data)
+
+
 class ImageVariantSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
 
@@ -51,33 +86,16 @@ class ImageVariantSerializer(serializers.ModelSerializer):
     def get_image(self, obj):
         return obj.image_url
 
-    def validate_image(self, image):
-        if image.name.lower().endswith(".heic"):
-            image = self.convert_heic_to_jpeg(image)
-        return image
-
-    def convert_heic_to_jpeg(self, image):
-        heif_image = Image.open(image)
-        output = io.BytesIO()
-        heif_image.convert("RGB").save(output, format="JPEG")
-        return InMemoryUploadedFile(
-            output,
-            "ImageField",
-            image.name.replace(".heic", ".jpg"),
-            "image/jpeg",
-            output.tell(),
-            None,
-        )
-
 
 class ImageSetSerializer(serializers.ModelSerializer):
     variants = serializers.SerializerMethodField()
 
     class Meta:
         model = ImageSet
-        fields = ["id", "description", "variants"]
+        fields = ["id", "identifier", "description", "variants"]
 
-    def get_variants(self, obj: ImageSet) -> ImageVariantSerializer(many=True):
+    @extend_schema_field(ImageVariantSerializer(many=True))
+    def get_variants(self, obj: ImageSet) -> list:
         variants = [
             obj.image_small,
             obj.image_medium,

@@ -110,3 +110,15 @@ class TestImageService(TestCase):
             data={},
             files={"image": image},
         )
+
+    @patch("core.services.image_set.requests.post")
+    def test_upload_from_url(self, mock_requests_post, _):
+        mock_requests_post.status_code = 200
+        image_service = ImageSetService()
+        image_service.get_or_upload_from_url("https://example.com/image.jpg")
+
+        mock_requests_post.assert_called_with(
+            settings.IMAGE_ENDPOINTS["POST_IMAGE_FROM_URL"],
+            headers={settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0]},
+            data={"url": "https://example.com/image.jpg", "description": None},
+        )

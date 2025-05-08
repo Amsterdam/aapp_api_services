@@ -1057,7 +1057,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
 
         # Check if original warning image does not point to the warning anymore
         original_warning_image = WarningImage.objects.get(pk=original_warning_image.pk)
-        self.assertEquals(original_warning_image.warning, None)
+        self.assertIsNone(original_warning_image.warning)
         # and no image is linked to the warning
         new_warning_image = WarningImage.objects.filter(warning=warning).first()
         self.assertIsNone(new_warning_image)
@@ -1098,7 +1098,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         original_warning_image = WarningImage.objects.filter(
             pk=original_warning_image.pk
         ).first()
-        self.assertEquals(original_warning_image.warning, None)
+        self.assertIsNone(original_warning_image.warning)
         # and new image is created
         new_warning_image = WarningImage.objects.filter(warning=warning).first()
         self.assertIsNotNone(new_warning_image)

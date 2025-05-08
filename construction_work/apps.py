@@ -1,7 +1,4 @@
 from django.apps import AppConfig
-from pillow_heif import register_heif_opener
-
-register_heif_opener()
 
 
 class ConstructionWorkConfig(AppConfig):

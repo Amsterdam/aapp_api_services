@@ -26,7 +26,7 @@ def setup_opentelemetry():
         )
         return
 
-    logger.info("Setting up OpenTelemetry...")
+    logger.debug("Setting up OpenTelemetry...")
     configure_azure_monitor(
         connection_string=settings.APPLICATIONINSIGHTS_CONNECTION_STRING,
         enable_live_metrics=True,

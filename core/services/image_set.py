@@ -45,6 +45,21 @@ class ImageSetService:
         self.data = response.json()
         return self.data
 
+    def get_or_upload_from_url(self, url, description=None):
+        """
+        If the image already exists, it will be returned.
+        If the image does not exist, it will be uploaded and then returned.
+        """
+        image_upload_url = settings.IMAGE_ENDPOINTS["POST_IMAGE_FROM_URL"]
+        data = {
+            "url": url,
+            "description": description,
+        }
+        response = requests.post(image_upload_url, data=data, headers=self._headers)
+        response.raise_for_status()
+        self.data = response.json()
+        return self.data
+
     @property
     def url_small(self):
         return self.data["variants"][0]["image"]

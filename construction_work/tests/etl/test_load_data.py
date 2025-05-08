@@ -1,19 +1,46 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 from django.utils import timezone
 from model_bakery import baker
+from requests import HTTPError
 
 from construction_work.etl.load_data import (
     articles,
     get_article_object,
     get_project_object,
     projects,
+    store_image,
 )
 from construction_work.models.article_models import Article
-from construction_work.models.project_models import Project
+from construction_work.models.project_models import (
+    Project,
+    ProjectImage,
+    ProjectImageSource,
+)
 
 
 class LoadDataTestCase(TestCase):
-    def test_projects(self):
+    def _set_mock_image_set_service_side_effect(
+        self, mock_image_set_service, image_data_list
+    ):
+        mock_image_set_service.return_value.get_or_upload_from_url.side_effect = [
+            {
+                "id": image_data["id"],
+                "variants": [
+                    {
+                        "image": x["uri"],
+                        "width": x["width"],
+                        "height": x["height"],
+                    }
+                    for x in image_data["sources"]
+                ],
+            }
+            for image_data in image_data_list
+        ]
+
+    @patch("construction_work.etl.load_data.ImageSetService")
+    def test_projects(self, mock_image_set_service):
         """Test that projects function correctly creates or updates Project instances."""
         project_data = [
             {
@@ -67,7 +94,9 @@ class LoadDataTestCase(TestCase):
                 "url": "http://example.com/project/1",
                 "image": {
                     "id": 236,
-                    "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
+                    "sources": [
+                        {"uri": "https://image.jpg", "width": 940, "height": 415}
+                    ],
                     "aspectRatio": 2,
                 },
                 "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
@@ -99,7 +128,9 @@ class LoadDataTestCase(TestCase):
                 },
                 "image": {
                     "id": 238,
-                    "sources": [{"uri": "image2.jpg", "width": 940, "height": 415}],
+                    "sources": [
+                        {"uri": "http://image2.jpg", "width": 940, "height": 415}
+                    ],
                     "aspectRatio": 2,
                 },
                 "url": "http://example.com/project/2",
@@ -110,6 +141,10 @@ class LoadDataTestCase(TestCase):
                 "expirationDate": None,
             },
         ]
+        self._set_mock_image_set_service_side_effect(
+            mock_image_set_service, [p["image"] for p in project_data]
+        )
+
         projects(project_data)
 
         self.assertEqual(Project.objects.count(), 2)
@@ -119,7 +154,8 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(project1.title, "Project 1")
         self.assertEqual(project2.title, "Project 2")
 
-    def test_projects_update_conflict(self):
+    @patch("construction_work.etl.load_data.ImageSetService")
+    def test_projects_update_conflict(self, mock_image_set_service):
         """Test that projects function updates existing Project instances on conflict."""
         # Create an initial project
         initial_project = baker.make(Project, foreign_id=1)
@@ -167,7 +203,9 @@ class LoadDataTestCase(TestCase):
                 },
                 "image": {
                     "id": 236,
-                    "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
+                    "sources": [
+                        {"uri": "https://image.jpg", "width": 940, "height": 415}
+                    ],
                     "aspectRatio": 2,
                 },
                 "url": "http://example.com/project/1",
@@ -178,6 +216,9 @@ class LoadDataTestCase(TestCase):
                 "expirationDate": None,
             },
         ]
+        self._set_mock_image_set_service_side_effect(
+            mock_image_set_service, [p["image"] for p in project_data]
+        )
 
         projects(project_data)
 
@@ -314,7 +355,8 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(set(article1.projects.all()), {project1, project2})
         self.assertEqual(set(article2.projects.all()), {project1})
 
-    def test_articles_update_conflict(self):
+    @patch("construction_work.etl.load_data.ImageSetService")
+    def test_articles_update_conflict(self, mock_image_set_service):
         """Test that articles function updates existing Article instances on conflict."""
         article100 = baker.make(Article, id=100)
         project1 = baker.make(Project, foreign_id=1)
@@ -335,11 +377,16 @@ class LoadDataTestCase(TestCase):
                 "projectIds": [1],
                 "image": {
                     "id": 23626572,
-                    "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
+                    "sources": [
+                        {"uri": "https://image.jpg", "width": 940, "height": 415}
+                    ],
                     "aspectRatio": 2,
                 },
             },
         ]
+        self._set_mock_image_set_service_side_effect(
+            mock_image_set_service, [a["image"] for a in article_data]
+        )
 
         articles(article_data)
 
@@ -407,3 +454,170 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(article.modification_date, data["modified"])
         self.assertEqual(article.publication_date, data["created"])
         self.assertEqual(article.expiration_date, data["expirationDate"])
+
+    @patch("construction_work.etl.load_data.ImageSetService")
+    def test_store_image_expected_source_data(self, mock_image_set_service):
+        parent = baker.make(Project, foreign_id=1)
+        image_class = ProjectImage
+        image_source_class = ProjectImageSource
+
+        project_data = {
+            "image": {
+                "id": 100,
+                "sources": [
+                    {
+                        "uri": "https://foo.bar/medium-image.jpg",
+                        "width": 200,
+                        "height": 20,
+                    },
+                    {
+                        "uri": "https://foo.bar/big-image.jpg",
+                        "width": 20,
+                        "height": 201,
+                    },
+                    {
+                        "uri": "https://foo.bar/small-image.jpg",
+                        "width": 19,
+                        "height": 200,
+                    },
+                ],
+                "aspectRatio": 2,
+            }
+        }
+
+        self._set_mock_image_set_service_side_effect(
+            mock_image_set_service, [project_data["image"]]
+        )
+
+        images, sources = store_image(
+            project_data, parent, image_class, image_source_class
+        )
+
+        self.assertEqual(len(images), 1)
+        self.assertEqual(len(sources), 3)
+        self.assertIsNotNone(images[0].image_set)
+
+    @patch("construction_work.etl.load_data.ImageSetService")
+    def test_store_image_width_height_as_strings(self, mock_image_set_service):
+        parent = baker.make(Project, foreign_id=1)
+        image_class = ProjectImage
+        image_source_class = ProjectImageSource
+
+        project_data = {
+            "image": {
+                "id": 100,
+                "sources": [
+                    {
+                        "uri": "https://foo.bar/medium-image.jpg",
+                        "width": "200",
+                        "height": "20",
+                    },
+                    {
+                        "uri": "https://foo.bar/big-image.jpg",
+                        "width": "20",
+                        "height": "201",
+                    },
+                    {
+                        "uri": "https://foo.bar/small-image.jpg",
+                        "width": 19,
+                        "height": 200,
+                    },
+                ],
+                "aspectRatio": 2,
+            }
+        }
+
+        self._set_mock_image_set_service_side_effect(
+            mock_image_set_service, [project_data["image"]]
+        )
+
+        images, sources = store_image(
+            project_data, parent, image_class, image_source_class
+        )
+
+        self.assertEqual(len(images), 1)
+        self.assertEqual(len(sources), 3)
+        self.assertIsNotNone(images[0].image_set)
+
+    def test_store_image_invalid_source_data(self):
+        parent = baker.make(Project, foreign_id=1)
+        image_class = ProjectImage
+        image_source_class = ProjectImageSource
+
+        # Missing width and height
+        project_data = {
+            "image": {"id": 100, "sources": [{"uri": "https://foo.bar/image.jpg"}]}
+        }
+        images, sources = store_image(
+            project_data, parent, image_class, image_source_class
+        )
+        self.assertEqual(len(images), 0)
+        self.assertEqual(len(sources), 0)
+
+        # Width or height not integer
+        project_data = {
+            "image": {
+                "id": 100,
+                "sources": [
+                    {
+                        "uri": "https://foo.bar/image.jpg",
+                        "width": "not an integer",
+                        "height": 200,
+                    }
+                ],
+            }
+        }
+        images, sources = store_image(
+            project_data, parent, image_class, image_source_class
+        )
+        self.assertEqual(len(images), 0)
+        self.assertEqual(len(sources), 0)
+
+    def test_store_image_no_sources(self):
+        parent = baker.make(Project, foreign_id=1)
+        image_class = ProjectImage
+        image_source_class = ProjectImageSource
+
+        project_data = {"image": {"id": 100, "sources": []}}
+        images, sources = store_image(
+            project_data, parent, image_class, image_source_class
+        )
+        self.assertEqual(len(images), 0)
+        self.assertEqual(len(sources), 0)
+
+    def test_store_image_missing_source_uri(self):
+        parent = baker.make(Project, foreign_id=1)
+        image_class = ProjectImage
+        image_source_class = ProjectImageSource
+
+        project_data = {
+            "image": {"id": 100, "sources": [{"width": 100, "height": 100}]}
+        }
+        images, sources = store_image(
+            project_data, parent, image_class, image_source_class
+        )
+        self.assertEqual(len(images), 0)
+        self.assertEqual(len(sources), 0)
+
+    @patch("construction_work.etl.load_data.ImageSetService")
+    def test_store_image_http_error(self, mock_image_set_service):
+        mock_image_set_service.return_value.get_or_upload_from_url.side_effect = (
+            HTTPError("Something went wrong")
+        )
+        parent = baker.make(Project, foreign_id=1)
+        image_class = ProjectImage
+        image_source_class = ProjectImageSource
+
+        project_data = {
+            "image": {
+                "id": 100,
+                "sources": [
+                    {"uri": "https://foo.bar/image.jpg", "width": 100, "height": 100}
+                ],
+            }
+        }
+        images, sources = store_image(
+            project_data, parent, image_class, image_source_class
+        )
+        self.assertEqual(len(images), 0)
+        self.assertEqual(len(sources), 0)
