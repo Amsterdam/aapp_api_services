@@ -2,7 +2,12 @@ from django.urls import path
 
 import bridge.parking.views.permit_zone_views
 import bridge.parking.views.visitor_views
-from bridge.parking.views import account_views, license_plate_views, session_views
+from bridge.parking.views import (
+    account_views,
+    license_plate_views,
+    session_views,
+    transaction_views,
+)
 
 urlpatterns = [
     path(
@@ -74,5 +79,10 @@ urlpatterns = [
         "parking/api/v1/session/receipt",
         session_views.ParkingSessionReceiptView.as_view(),
         name="parking-session-receipt",
+    ),
+    path(
+        "parking/api/v1/transactions",
+        transaction_views.TransactionsListView.as_view(),
+        name="parking-transactions",
     ),
 ]

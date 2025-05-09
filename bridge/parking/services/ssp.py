@@ -26,6 +26,7 @@ class SSPEndpoint(Enum):
         f"{settings.SSP_BASE_URL}/rest/sspapi/v1/parkingsessions/receipt"
     )
     ORDERS = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/orders"
+    TRANSACTIONS = f"{settings.SSP_BASE_URL}/rest/sspapi/v1/transactions"
 
 
 def ssp_api_call(method, endpoint, data, ssp_access_token=None):
