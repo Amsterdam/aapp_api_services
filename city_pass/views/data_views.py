@@ -7,7 +7,7 @@ from django.conf import settings
 from django.urls import reverse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
-from rest_framework import generics, status
+from rest_framework import generics, mixins, status
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer as DRFSerializer
 
@@ -49,18 +49,21 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
         """Optional method to do something extra with the content from the source API response."""
 
     def get(self, request, *args, **kwargs) -> Response:
-        response_content = self.get_response_content(request)
+        response_content = self.make_request(request, method="GET")
         self.process_response_content(response_content, request)
         serializer = self.serialize_response_content(response_content)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def get_response_content(self, request):
+    def make_request(self, request, method):
         source_api_path = self.get_source_api_path(request)
         source_api_url = urljoin(settings.MIJN_AMS_API_DOMAIN, source_api_path)
         headers = {settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY_INBOUND}
         try:
-            mijn_ams_response = requests.get(
-                source_api_url, headers=headers, params=self.query_params
+            mijn_ams_response = requests.request(
+                method=method,
+                url=source_api_url,
+                headers=headers,
+                params=self.query_params,
             )
             mijn_ams_response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
         except requests.exceptions.RequestException as e:
@@ -133,7 +136,7 @@ class AbstractTransactionsView(AbstractMijnAmsDataView):
 
     def get_source_api_path(self, request) -> str:
         session = request.user
-        pass_number = request.query_params.get("passNumber")
+        pass_number = self.get_pass_number(request)
         if pass_number is None:
             logger.error("Pass number not provided in query parameters")
             raise MijnAMSRequestException(
@@ -158,6 +161,10 @@ class AbstractTransactionsView(AbstractMijnAmsDataView):
             self.base_url,
             encrypted_transaction_key,
         )
+
+    def get_pass_number(self, request):
+        pass_number = request.query_params.get("passNumber")
+        return pass_number
 
 
 class BudgetTransactionsView(AbstractTransactionsView):
@@ -219,3 +226,27 @@ class AanbiedingTransactionsView(AbstractTransactionsView):
     def get(self, request, *args, **kwargs) -> Response:
         """Endpoint to retrieve all aanbieding transactions for a specific pass"""
         return super().get(request, *args, **kwargs)
+
+
+class PassBlockView(mixins.CreateModelMixin, AbstractTransactionsView):
+    serializer_class = serializers.MijnAmsPassBlockSerializer
+    base_url = settings.MIJN_AMS_API_PATHS["PASS_BLOCK"]
+    serializer_many = False
+    http_method_names = ["post"]
+
+    @extend_schema_with_access_token(
+        success_response=serializer_class,
+        exceptions=[
+            MijnAMSAPIException,
+            MijnAMSInvalidDataException,
+            MijnAMSRequestException,
+        ],
+    )
+    def post(self, request, *args, **kwargs) -> Response:
+        self.make_request(request, method="POST")
+        data = {"status": "BLOCKED"}
+        return Response(data, status=status.HTTP_200_OK)
+
+    def get_pass_number(self, request):
+        pass_number = request.data.get("passNumber")
+        return pass_number

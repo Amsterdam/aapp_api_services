@@ -1,6 +1,7 @@
 import json
 from unittest.mock import patch
 
+from django.urls import reverse
 from model_bakery import baker
 from requests import Response
 
@@ -10,13 +11,13 @@ from city_pass.tests.base_test import BaseCityPassTestCase
 
 
 class TestPassesView(BaseCityPassTestCase):
-    api_url = "/city-pass/api/v1/data/passes"
+    api_url = reverse("city-pass-data-passes")
 
     def setUp(self) -> None:
         super().setUp()
         self.headers = {**self.headers, "Access-Token": self.session.accesstoken.token}
 
-    @patch("city_pass.views.data_views.requests.get")
+    @patch("city_pass.views.data_views.requests.request")
     def test_get_passes_successful(self, mock_get):
         mock_response = Response()
         mock_response.status_code = 200
@@ -66,7 +67,7 @@ class TestPassesView(BaseCityPassTestCase):
             status_code=500,
         )
 
-    @patch("city_pass.views.data_views.requests.get")
+    @patch("city_pass.views.data_views.requests.request")
     def test_source_api_could_not_decrypt_admin_no(self, mock_get):
         self.assert_source_api_error_was_logged_and_500_returned(
             mock_get,
@@ -79,7 +80,7 @@ class TestPassesView(BaseCityPassTestCase):
             },
         )
 
-    @patch("city_pass.views.data_views.requests.get")
+    @patch("city_pass.views.data_views.requests.request")
     def test_source_api_did_not_accept_api_key(self, mock_get):
         self.assert_source_api_error_was_logged_and_500_returned(
             mock_get,
@@ -92,7 +93,7 @@ class TestPassesView(BaseCityPassTestCase):
             },
         )
 
-    @patch("city_pass.views.data_views.requests.get")
+    @patch("city_pass.views.data_views.requests.request")
     def test_content_is_empty_list(self, mock_get):
         mock_response = Response()
         mock_response.status_code = 200
@@ -106,7 +107,7 @@ class TestPassesView(BaseCityPassTestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.data, [])
 
-    @patch("city_pass.views.data_views.requests.get")
+    @patch("city_pass.views.data_views.requests.request")
     def test_content_is_invalid_format(self, mock_get):
         mock_response = Response()
         mock_response.status_code = 200
@@ -118,7 +119,7 @@ class TestPassesView(BaseCityPassTestCase):
         self.assertEqual(result.status_code, 500)
 
 
-@patch("city_pass.views.data_views.requests.get")
+@patch("city_pass.views.data_views.requests.request")
 class BaseAbstractTransactionsViews(BaseCityPassTestCase):
     api_url = ""
     mock_data = []
@@ -180,11 +181,11 @@ class BaseAbstractTransactionsViews(BaseCityPassTestCase):
 
 
 class TestBudgetTransactionsViews(BaseAbstractTransactionsViews):
-    api_url = "/city-pass/api/v1/data/budget-transactions"
+    api_url = reverse("city-pass-data-budget-transactions")
     mock_data = mock_data.budget_transactions
     __test__ = True
 
-    @patch("city_pass.views.data_views.requests.get")
+    @patch("city_pass.views.data_views.requests.request")
     def test_content_is_empty_list(self, mock_get):
         mock_response = Response()
         mock_response.status_code = 200
@@ -205,11 +206,11 @@ class TestBudgetTransactionsViews(BaseAbstractTransactionsViews):
 
 
 class TestAanbiedingTransactionsViews(BaseAbstractTransactionsViews):
-    api_url = "/city-pass/api/v1/data/aanbieding-transactions"
+    api_url = reverse("city-pass-data-aanbieding-transactions")
     mock_data = mock_data.aanbieding_transactions
     __test__ = True
 
-    @patch("city_pass.views.data_views.requests.get")
+    @patch("city_pass.views.data_views.requests.request")
     def test_content_is_empty_dict(self, mock_get):
         mock_response = Response()
         mock_response.status_code = 200
@@ -232,3 +233,31 @@ class TestAanbiedingTransactionsViews(BaseAbstractTransactionsViews):
         )
         self.assertEqual(200, result.status_code)
         self.assertEqual(result.data, content)
+
+
+class TestPassBlockView(BaseCityPassTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.headers = {**self.headers, "Access-Token": self.session.accesstoken.token}
+        self.pass_number = "6011013116525"
+        self.pass_data = baker.make(
+            PassData, session=self.session, pass_number=self.pass_number
+        )
+
+    @patch("city_pass.views.data_views.requests.request")
+    def test_block_pass_successful(self, mock_post):
+        mock_response = Response()
+        mock_response.status_code = 200
+        mock_response._content = json.dumps(
+            {"content": "foobar", "status": "SUCCESS"}
+        ).encode("utf-8")
+        mock_post.return_value = mock_response
+
+        url = reverse("city-pass-data-pass-block", args=[self.pass_number])
+        result = self.client.post(
+            url,
+            headers=self.headers,
+            data={"passNumber": self.pass_number},
+            follow=True,
+        )
+        self.assertEqual(200, result.status_code)

@@ -42,6 +42,7 @@ class MijnAmsPassDataSerializer(serializers.Serializer):
     dateEndFormatted = serializers.CharField()
     budgets = MijnAmsPassBudgetSerializer(many=True)
     balanceFormatted = serializers.CharField()
+    actief = serializers.BooleanField()
     securityCode = NotRequiredBlankToNullCharField()
 
 
@@ -71,3 +72,7 @@ class MijnAmsPassAanbiedingSerializer(serializers.Serializer):
     discountAmountTotal = serializers.FloatField(required=False)
     discountAmountTotalFormatted = serializers.CharField()
     transactions = MijnAmsPassAanbiedingTransactionsSerializer(many=True)
+
+
+class MijnAmsPassBlockSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["BLOCKED", "UNBLOCKED"])

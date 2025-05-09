@@ -47,6 +47,7 @@ MIJN_AMS_API_PATHS = {
     "PASSES": "/private/api/v1/services/amsapp/stadspas/passen/",
     "BUDGET_TRANSACTIONS": "/private/api/v1/services/amsapp/stadspas/budget/transactions/",
     "AANBIEDING_TRANSACTIONS": "/private/api/v1/services/amsapp/stadspas/aanbiedingen/transactions/",
+    "PASS_BLOCK": "/private/api/v1/services/amsapp/stadspas/block/",
 }
 
 STATIC_URL = "/city-pass/static/"

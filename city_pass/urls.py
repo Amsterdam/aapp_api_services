@@ -48,6 +48,11 @@ urlpatterns = [
         data_views.AanbiedingTransactionsView.as_view(),
         name="city-pass-data-aanbieding-transactions",
     ),
+    path(
+        BASE_PATH + "/data/passes/block/<str:pass_number>",
+        data_views.PassBlockView.as_view(),
+        name="city-pass-data-pass-block",
+    ),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH)
