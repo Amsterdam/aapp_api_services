@@ -24,6 +24,7 @@ class TestTransactionsListView(BaseSSPTestCase):
         single_transaction_item_dict = create_serializer_data(
             TransactionResponseSerializer
         )
+        single_transaction_item_dict["orderType"] = "opwaarderen"
         transaction_item_list = [single_transaction_item_dict]
         mock_response_content = {
             "data": transaction_item_list,
@@ -39,4 +40,6 @@ class TestTransactionsListView(BaseSSPTestCase):
 
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
+        single_transaction_item_dict.pop("orderType")
+        single_transaction_item_dict["order_type"] = "RECHARGE"
         self.assertEqual(response.data["result"], transaction_item_list)
