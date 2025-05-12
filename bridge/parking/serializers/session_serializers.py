@@ -51,13 +51,19 @@ class ParkingSessionResponseSerializer(CamelToSnakeCaseSerializer):
     remaining_time = serializers.IntegerField()
     report_code = serializers.CharField()
     payment_zone_id = serializers.CharField(required=False)
-    created_time = serializers.DateTimeField()
+    created_date_time = serializers.DateTimeField()
     parking_cost = ValueCurrencySerializer()
     is_cancelled = serializers.BooleanField()
     time_balance_applicable = serializers.BooleanField()
     money_balance_applicable = serializers.BooleanField()
     no_endtime = serializers.BooleanField()
     is_paid = serializers.BooleanField()
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            if "createdTime" in data:
+                data["createdDateTime"] = data.pop("createdTime")
+        return super().to_internal_value(data)
 
 
 class ParkingSessionListPaginatedResponseSerializer(serializers.Serializer):
@@ -143,8 +149,8 @@ class ReceiptRegimeTimeSerializer(CamelToSnakeCaseSerializer):
 
 
 class ParkingSessionReceiptResponseSerializer(CamelToSnakeCaseSerializer):
-    start_time = serializers.DateTimeField()
-    end_time = serializers.DateTimeField()
+    start_date_time = serializers.DateTimeField()
+    end_date_time = serializers.DateTimeField()
     parking_time = MillisecondsToSecondsSerializer()
     remaining_parking_time = MillisecondsToSecondsSerializer()
     current_time_balance = MillisecondsToSecondsSerializer(required=False)
@@ -159,6 +165,14 @@ class ParkingSessionReceiptResponseSerializer(CamelToSnakeCaseSerializer):
     payment_zone_id = serializers.CharField()
     payment_required = serializers.BooleanField()
     parking_cost = ValueCurrencySerializer()
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            if "startTime" in data:
+                data["startDateTime"] = data.pop("startTime")
+            if "endTime" in data:
+                data["endDateTime"] = data.pop("endTime")
+        return super().to_internal_value(data)
 
 
 class ParkingOrderResponseSerializer(ParkingBalanceResponseSerializer):

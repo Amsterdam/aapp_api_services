@@ -29,10 +29,18 @@ class TransactionResponseSerializer(CamelToSnakeCaseSerializer):
     time_balance_applicable = serializers.BooleanField(required=False)
     money_balance_applicable = serializers.BooleanField(required=False)
     no_endtime = serializers.BooleanField(required=False)
-    creation_time = FlexibleDateTimeSerializer(required=False)
-    updated_time = FlexibleDateTimeSerializer(required=False)
+    created_date_time = FlexibleDateTimeSerializer(required=False)
+    updated_date_time = FlexibleDateTimeSerializer(required=False)
     days = DayScheduleSerializer(many=True, required=False)
     is_paid = serializers.BooleanField(required=False)
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            if "creationTime" in data:
+                data["createdDateTime"] = data.pop("creationTime")
+            if "updatedTime" in data:
+                data["updatedDateTime"] = data.pop("updatedTime")
+        return super().to_internal_value(data)
 
 
 class TransactionsListPaginatedResponseSerializer(CamelToSnakeCaseSerializer):
