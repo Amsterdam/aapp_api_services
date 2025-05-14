@@ -58,13 +58,13 @@ class WalletSerializer(CamelToSnakeCaseSerializer):
 
 
 class AccountDetailsResponseSerializer(CamelToSnakeCaseSerializer):
-    initials = serializers.CharField(allow_blank=True)
+    initials = serializers.CharField(allow_blank=True, required=False)
     last_name = serializers.CharField()
-    email = serializers.CharField(allow_blank=True)
-    address = AddressSerializer()
-    phone_number = serializers.CharField(allow_blank=True)
-    client_id = serializers.IntegerField()
-    wallet = WalletSerializer()
+    email = serializers.CharField(allow_blank=True, required=False)
+    address = AddressSerializer(required=False)
+    phone_number = serializers.CharField(allow_blank=True, required=False)
+    client_id = serializers.IntegerField(required=False)
+    wallet = WalletSerializer(required=False)
     account_type = serializers.CharField()
 
 
