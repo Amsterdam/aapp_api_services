@@ -2,6 +2,8 @@ import logging
 
 import requests
 from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework import generics, status
 from rest_framework.response import Response
 
@@ -16,6 +18,7 @@ from contact.serializers.waiting_time_serializers import WaitingTimeResultSerial
 logger = logging.getLogger(__name__)
 
 
+@method_decorator(cache_page(60), name="dispatch")
 class CityOfficesView(generics.RetrieveAPIView):
     queryset = CityOffice.objects.all().order_by("order")
     serializer_class = CityOfficeResultSerializer
@@ -29,6 +32,7 @@ class CityOfficesView(generics.RetrieveAPIView):
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
 
+@method_decorator(cache_page(60), name="dispatch")
 class WaitingTimesView(generics.RetrieveAPIView):
     serializer_class = WaitingTimeResultSerializer
 

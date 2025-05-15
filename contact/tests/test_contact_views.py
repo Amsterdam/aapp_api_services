@@ -12,9 +12,8 @@ from core.tests.test_authentication import BasicAPITestCase
 
 
 @override_settings(
-    CITY_OFFICE_LOOKUP_TABLE={
-        "1": "stadsloket-centrum",
-    }
+    CITY_OFFICE_LOOKUP_TABLE={"1": "stadsloket-centrum"},
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}},
 )
 class BaseContactTestCase(BasicAPITestCase):
     def setUp(self):

@@ -118,6 +118,27 @@ class TestPassesView(BaseCityPassTestCase):
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(result.status_code, 500)
 
+    @patch("city_pass.views.data_views.requests.request")
+    def test_succeeds_after_retry(self, mock_get):
+        # Simulate a 500 error on the first request
+        mock_response_1 = Response()
+        mock_response_1.status_code = 500
+        mock_response_1._content = json.dumps(
+            {"status": "ERROR", "message": "Internal Server Error"}
+        ).encode("utf-8")
+
+        # Simulate a successful response on the second request
+        mock_response_2 = Response()
+        mock_response_2.status_code = 200
+        mock_response_2._content = json.dumps(
+            {"content": mock_data.passes, "status": "SUCCESS"}
+        ).encode("utf-8")
+
+        mock_get.side_effect = [mock_response_1, mock_response_2]
+
+        result = self.client.get(self.api_url, headers=self.headers, follow=True)
+        self.assertEqual(result.status_code, 200)
+
 
 @patch("city_pass.views.data_views.requests.request")
 class BaseAbstractTransactionsViews(BaseCityPassTestCase):

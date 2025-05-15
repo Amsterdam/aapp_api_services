@@ -10,6 +10,7 @@ from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, mixins, status
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer as DRFSerializer
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from city_pass import authentication, models
 from city_pass.exceptions import (
@@ -49,26 +50,16 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
         """Optional method to do something extra with the content from the source API response."""
 
     def get(self, request, *args, **kwargs) -> Response:
-        response_content = self.make_request(request, method="GET")
+        response_content = self.get_response_content(request, method="GET")
         self.process_response_content(response_content, request)
         serializer = self.serialize_response_content(response_content)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def make_request(self, request, method):
+    def get_response_content(self, request, method):
         source_api_path = self.get_source_api_path(request)
         source_api_url = urljoin(settings.MIJN_AMS_API_DOMAIN, source_api_path)
         headers = {settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY_INBOUND}
-        try:
-            mijn_ams_response = requests.request(
-                method=method,
-                url=source_api_url,
-                headers=headers,
-                params=self.query_params,
-            )
-            mijn_ams_response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Request to Mijn Amsterdam API failed: {e}")
-            raise MijnAMSAPIException()
+        mijn_ams_response = self.make_request(headers, method, source_api_url)
 
         try:
             response_content = mijn_ams_response.json().get("content")
@@ -81,6 +72,26 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
             raise MijnAMSInvalidDataException()
 
         return response_content
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(2),
+        retry=retry_if_exception_type(MijnAMSAPIException),
+        reraise=True,  # Reraise the MijnAMSAPIException after retries
+    )
+    def make_request(self, headers, method, source_api_url):
+        try:
+            mijn_ams_response = requests.request(
+                method=method,
+                url=source_api_url,
+                headers=headers,
+                params=self.query_params,
+            )
+            mijn_ams_response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request to Mijn Amsterdam API failed: {e}")
+            raise MijnAMSAPIException()
+        return mijn_ams_response
 
     def serialize_response_content(self, response_content) -> DRFSerializer:
         output_serializer = self.get_serializer(
@@ -243,7 +254,7 @@ class PassBlockView(mixins.CreateModelMixin, AbstractTransactionsView):
         ],
     )
     def post(self, request, *args, **kwargs) -> Response:
-        self.make_request(request, method="POST")
+        self.get_response_content(request, method="POST")
         data = {"status": "BLOCKED"}
         return Response(data, status=status.HTTP_200_OK)
 
