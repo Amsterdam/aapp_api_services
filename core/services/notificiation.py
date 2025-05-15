@@ -31,6 +31,7 @@ class ScheduledNotificationService:
         context: dict,
         device_ids: list[str],
         notification_type: str,
+        module_slug: str = None,
         image: str = None,
     ):
         request_data = {
@@ -41,7 +42,7 @@ class ScheduledNotificationService:
             "identifier": identifier,
             "device_ids": device_ids,
             "notification_type": notification_type,
-            "module_slug": settings.SERVICE_NAME,
+            "module_slug": module_slug or settings.SERVICE_NAME,
             "created_at": timezone.now().isoformat(),
         }
         if image:

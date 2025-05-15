@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from bridge.parking.config import DEFAULT_LANGUAGE, REMINDER_MESSAGES
 from bridge.parking.enums import NotificationStatus
-from core.enums import NotificationType
+from core.enums import Module, NotificationType
 from core.services.notificiation import ScheduledNotificationService
 
 logger = logging.getLogger(__name__)
@@ -76,6 +76,7 @@ class ParkingReminderScheduler:
             context={"reminderKey": self.reminder_key},
             device_ids=[self.device_id],
             notification_type=NotificationType.PARKING_REMINDER.value,
+            module_slug=Module.PARKING.value,
         )
 
     def _get_reminder_time(self, end_datetime: datetime) -> datetime | None:
@@ -91,4 +92,4 @@ class ParkingReminderScheduler:
         return reminder_time
 
     def _create_identifier(self, reminder_key: str) -> str:
-        return f"{settings.SERVICE_NAME}_parking-reminder_{reminder_key}"
+        return f"{Module.PARKING.value}_parking-reminder_{reminder_key}"
