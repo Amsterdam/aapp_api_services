@@ -1,6 +1,11 @@
 from django.urls import path
 
-from bridge.proxy.views import AddressSearchView, WasteGuideView
+from bridge.proxy.views import (
+    AddressSearchByCoordinateView,
+    AddressSearchByNameView,
+    AddressSearchView,
+    WasteGuideView,
+)
 
 urlpatterns = [
     # afvalwijzer
@@ -14,5 +19,15 @@ urlpatterns = [
         "address/api/v1/free",
         AddressSearchView.as_view(),
         name="address-search",
+    ),
+    path(
+        "address/api/v1/address",
+        AddressSearchByNameView.as_view(),
+        name="address-search-by-name",
+    ),
+    path(
+        "address/api/v1/coordinate",
+        AddressSearchByCoordinateView.as_view(),
+        name="address-search-by-coordinate",
     ),
 ]

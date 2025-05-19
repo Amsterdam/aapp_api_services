@@ -1,3 +1,5 @@
+import responses
+from django.core.cache import cache
 from django.test import override_settings
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, APITestCase
@@ -20,12 +22,26 @@ class AuthenticatedAPITestCase(APITestCase):
         api_keys = auth_instance.api_keys
         self.api_headers = {auth_instance.api_key_header: api_keys[0]}
 
+        # flush cache before every test run
+        cache.clear()
+
+    def assertEqual(self, first, second, msg=None):
+        """The 'expected' and 'actual' values are swapped in the assertion."""
+        return super().assertEqual(second, first, msg)
+
 
 @override_settings(
     STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
 )
 class BasicAPITestCase(AuthenticatedAPITestCase):
     authentication_class = APIKeyAuthentication
+
+
+class ResponsesActivatedAPITestCase(BasicAPITestCase):
+    @responses.activate
+    def run(self, result=None):
+        # this wraps setUp, each test, and tearDown
+        super().run(result)
 
 
 class ExampleAppAuthentication(AbstractAppAuthentication):
