@@ -66,6 +66,7 @@ class IproxProjectTimelineItemSerializer(serializers.Serializer):
     title = serializers.CharField()
     body = serializers.CharField()
     collapsed = serializers.BooleanField()
+    progress = serializers.ChoiceField(choices=["done", "active", "planned"])
     items = serializers.ListField(child=RecursiveField())
 
 

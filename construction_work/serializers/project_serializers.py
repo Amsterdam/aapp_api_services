@@ -276,14 +276,29 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
         This is a recursive function to build the timeline items tree
         """
         timeline_items = ProjectTimelineItem.objects.filter(id__in=item_ids)
+        collapsed_idx = [
+            i for i, item in enumerate(timeline_items) if not item.collapsed
+        ]
+        if not collapsed_idx:
+            first, last = 0, len(timeline_items) - 1
+        else:
+            first, last = collapsed_idx[0], collapsed_idx[-1]
+
         response = []
-        for item in timeline_items:
+        for i, item in enumerate(timeline_items):
             items = self.get_timeline_items(item.items.all())
+            if i < first:
+                progress = "done"
+            elif first <= i <= last:
+                progress = "active"
+            else:
+                progress = "planned"
             response.append(
                 {
                     "title": item.title,
                     "body": item.body,
                     "collapsed": item.collapsed,
+                    "progress": progress,
                     "items": items,
                 }
             )
