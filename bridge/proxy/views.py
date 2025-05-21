@@ -89,14 +89,14 @@ class AddressSearchAbstractView(GenericAPIView):
         response_serializer = AddressSearchResponseSerializer(
             data=data["response"]["docs"], many=True
         )
-        response_serializer.is_valid(raise_exception=True)
+        response_serializer.is_valid()
         return Response(response_serializer.data)
 
     def get_params(self, data):
         return [
             (
                 "fl",
-                "id straatnaam huisnummer huisletter huisnummertoevoeging postcode woonplaatsnaam type score nummeraanduiding_id centroide_ll",
+                "straatnaam huisnummer huisletter huisnummertoevoeging postcode woonplaatsnaam type nummeraanduiding_id centroide_ll",
             ),
             (
                 "qf",
@@ -145,8 +145,8 @@ class AddressSearchByCoordinateView(AddressSearchAbstractView):
 
     def get_params(self, data):
         params = super().get_params(data)
-        params.append(("lat", data["latitude"]))
-        params.append(("lon", data["longitude"]))
+        params.append(("lat", data["lat"]))
+        params.append(("lon", data["lon"]))
 
         params.append(("fq", "type:adres"))
         params.append(("rows", "5"))

@@ -78,7 +78,7 @@ class TestAddressSearchByNameView(BaseProxyViewTestCase):
     def test_with_coordinates_exception(self):
         response = self.client.get(
             self.url,
-            {"latitude": "52.7", "longitude": "3.15"},
+            {"lat": "52.7", "lon": "3.15"},
             headers=self.api_headers,
         )
 
@@ -100,7 +100,7 @@ class TestAddressSearchByCoordinateView(BaseProxyViewTestCase):
     def test_success(self):
         response = self.client.get(
             self.url,
-            {"latitude": "52.7", "longitude": "3.15"},
+            {"lat": "52.7", "lon": "3.15"},
             headers=self.api_headers,
         )
 
@@ -117,4 +117,4 @@ class TestAddressSearchByCoordinateView(BaseProxyViewTestCase):
         self.assertEqual(self.rsp_get.call_count, 0)
 
     def test_cache(self):
-        self.assert_caching({"latitude": "50.7", "longitude": "3.15"})
+        self.assert_caching({"lat": "50.7", "lon": "3.15"})

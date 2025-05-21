@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 
 
@@ -25,18 +27,65 @@ class AddressSearchByNameSerializer(serializers.Serializer):
 class AddressSearchByCoordinateSerializer(serializers.Serializer):
     """Serializer for the WasteGuideRequest model."""
 
-    latitude = serializers.FloatField()
-    longitude = serializers.FloatField()
+    lat = serializers.FloatField()
+    lon = serializers.FloatField()
+
+
+class CoordinatesSerializer(serializers.Serializer):
+    """Serializer for the Coordinates model."""
+
+    lat = serializers.SerializerMethodField()
+    lon = serializers.SerializerMethodField()
+
+    def _parse_point(self, point):
+        if hasattr(point, "coords"):
+            lon, lat = point.coords
+            return lat, lon
+        # string case: "POINT(lat lon)"
+        m = re.match(r"POINT\(\s*([-0-9.]+)\s+([-0-9.]+)\s*\)", point)
+        if not m:
+            return None, None
+        lat, lon = m.groups()
+        return float(lat), float(lon)
+
+    def get_lat(self, obj) -> float:
+        return self._parse_point(obj)[0]
+
+    def get_lon(self, obj) -> float:
+        return self._parse_point(obj)[1]
 
 
 class AddressSearchResponseSerializer(serializers.Serializer):
-    type = serializers.ChoiceField(choices=["adres", "weg"])
-    woonplaatsnaam = serializers.CharField()
-    centroide_ll = serializers.CharField()
-    straatnaam = serializers.CharField()
-    # The following fields seem to only be used for results of type 'adres'
+    type = serializers.ChoiceField(choices=["woonplaats", "adres", "weg"])
+    city = serializers.CharField(source="woonplaatsnaam")
+    street = serializers.CharField(source="straatnaam")
+    coordinates = CoordinatesSerializer(source="centroide_ll")
+    bagId = serializers.CharField(required=False, source="nummeraanduiding_id")
+    number = serializers.IntegerField(required=False, source="huisnummer")
+    additionLetter = serializers.CharField(required=False, source="huisletter")
+    additionNumber = serializers.CharField(
+        required=False, source="huisnummertoevoeging"
+    )
     postcode = serializers.CharField(required=False)
-    nummeraanduiding_id = serializers.CharField(required=False)
-    huisnummer = serializers.IntegerField(required=False)
-    huisletter = serializers.CharField(required=False)
-    huisnummertoevoeging = serializers.CharField(required=False)
+    addition = serializers.SerializerMethodField()
+    addressLine1 = serializers.SerializerMethodField()
+    addressLine2 = serializers.SerializerMethodField()
+
+    def get_addition(self, obj) -> str:
+        """Get the addition of the address."""
+        addition = obj.get("huisletter", "")
+        if obj.get("huisnummertoevoeging"):
+            addition += "-" + obj["huisnummertoevoeging"]
+        return addition
+
+    def get_addressLine1(self, obj) -> str:
+        """Get the first line of the address."""
+        if obj.get("huisnummer"):
+            return f"{obj['straatnaam']} {obj['huisnummer']}{self.get_addition(obj)}"
+        return obj["straatnaam"]
+
+    def get_addressLine2(self, obj) -> str:
+        """Get the second line of the address."""
+        if obj.get("postcode"):
+            return f"{obj['postcode']} {obj['woonplaatsnaam']}"
+        return ""
