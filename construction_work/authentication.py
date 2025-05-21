@@ -1,15 +1,16 @@
 import logging
 
-import jwt
 from django.conf import settings
 from drf_spectacular.authentication import TokenScheme
 from rest_framework.authentication import BaseAuthentication
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.exceptions import AuthenticationFailed
+
+from core.authentication import EntraTokenMixin
 
 logger = logging.getLogger(__name__)
 
 
-class EntraIDAuthentication(BaseAuthentication):
+class EntraIDAuthentication(BaseAuthentication, EntraTokenMixin):
     """
     Custom authentication class for Entra ID tokens.
 
@@ -32,51 +33,9 @@ class EntraIDAuthentication(BaseAuthentication):
             raise AuthenticationFailed("Missing bearer token")
 
         token = bearer_token.split(" ")[1]
-        try:
-            signing_key = self._get_signing_key(token)
-        except Exception as error:
-            logger.warning(f"Authentication error: {error}")
-            raise AuthenticationFailed("Authentication failed")
-
-        is_valid_token, token_data = self._validate_token_data(signing_key, token)
-        if not is_valid_token:
-            logger.warning(f"Invalid token: {token_data=}]")
-            raise AuthenticationFailed("Invalid token")
-
-        if not self._validate_scope(token_data):
-            raise PermissionDenied("Insufficient scope")
+        token_data = self.validate_token(token)
 
         return (None, token_data)
-
-    def _get_signing_key(self, token):
-        from jwt import PyJWKClient
-
-        jwks_client = PyJWKClient(settings.ENTRA_ID_JWKS_URI)
-        signing_key = jwks_client.get_signing_key_from_jwt(token)
-        return signing_key.key
-
-    def _validate_token_data(self, signing_key, token):
-        try:
-            data = jwt.decode(
-                token,
-                signing_key,
-                algorithms=["RS256"],
-                audience=f"api://{settings.ENTRA_CLIENT_ID}",
-                issuer=f"https://sts.windows.net/{settings.ENTRA_TENANT_ID}/",
-            )
-            return True, data
-        except jwt.ExpiredSignatureError:
-            logger.info("Token has expired")
-            return False, {"error": "Token has expired"}
-        except jwt.InvalidSignatureError:
-            logger.warning("Token has invalid signature")
-            return False, {"error": "Token has invalid signature"}
-        except Exception as error:
-            logger.warning(f"Error validating token: {error}")
-            return False, {"error": "Error validating token"}
-
-    def _validate_scope(self, data):
-        return data.get("scp") == "Modules.Edit"
 
 
 class EntraIDAuthenticationScheme(TokenScheme):

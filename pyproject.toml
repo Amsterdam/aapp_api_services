@@ -22,9 +22,9 @@ dependencies = [
   # construction work ETL
   "aiohttp",
   "tenacity",
-    # notifications
+  # notifications
   "firebase_admin",
-    # azure
+  # azure
   "django-storages[azure]",
   "azure-ad-verify-token",
   "azure-core",
@@ -77,6 +77,6 @@ omit = [
 ]
 
 [tool.coverage.report]
-fail_under = 91
+fail_under = 92
 show_missing = true
 skip_covered = true

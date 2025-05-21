@@ -81,6 +81,20 @@ MIDDLEWARE = [
     "core.middleware.log_4xx_status.Log4xxMiddleware",
 ]
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
+
+ENTRA_TENANT_ID = os.getenv("TENANT_ID")
+ENTRA_CLIENT_ID = os.getenv("CLIENT_ID")
+
+ENTRA_SCOPE = "Modules.Edit"
+
+ENTRA_TOKEN_COOKIE_NAME = "__Host-Access-Token"
+
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",

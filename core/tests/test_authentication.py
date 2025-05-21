@@ -1,11 +1,27 @@
+from unittest.mock import patch
+
+import jwt
 import responses
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import override_settings
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, APITestCase
 from rest_framework.views import APIView
 
-from core.authentication import AbstractAppAuthentication, APIKeyAuthentication
+from core.authentication import (
+    AbstractAppAuthentication,
+    APIKeyAuthentication,
+    EntraCookieTokenAuthentication,
+    EntraTokenMixin,
+)
+from core.utils.patch_utils import (
+    apply_signing_key_patch,
+    create_jwt_token,
+    mock_public_key,
+)
 
 
 class AuthenticatedAPITestCase(APITestCase):
@@ -81,3 +97,179 @@ class TestAbstractAppAuthentication(APITestCase):
         response = ExampleView.as_view()(request)
         self.assertEqual(response.status_code, 401)
         self.assertContains(response, "Invalid API key", status_code=401)
+
+
+class TestEntraTokenMixin(APITestCase):
+    def setUp(self):
+        super().setUp()
+        self.mixin = EntraTokenMixin()
+        self.signing_key_patcher = apply_signing_key_patch(self)
+
+    def tearDown(self):
+        self.signing_key_patcher.stop()
+
+    def test_validate_token_success(self):
+        """Test successful token validation with correct scope"""
+        token = create_jwt_token(
+            email="test@test.com",
+            first_name="Test",
+            last_name="User",
+            scope=settings.ENTRA_SCOPE,
+        )
+        token_data = self.mixin.validate_token(token)
+
+        self.assertEqual(token_data["upn"], "test@test.com")
+        self.assertEqual(token_data["name"], "User, Test")
+        self.assertEqual(token_data["scp"], settings.ENTRA_SCOPE)
+
+    def test_validate_token_insufficient_scope(self):
+        """Test token validation fails with insufficient scope"""
+        token = create_jwt_token(scope="Invalid.Scope")
+
+        with self.assertRaises(PermissionDenied) as context:
+            self.mixin.validate_token(token)
+
+        self.assertEqual(str(context.exception), "Insufficient scope")
+
+    def test_validate_token_signing_key_error(self):
+        """Test token validation fails when signing key retrieval fails"""
+        self.mock_get_signing_key.side_effect = Exception("Mocked error!")
+        token = create_jwt_token()
+
+        with self.assertRaises(AuthenticationFailed) as context:
+            self.mixin.validate_token(token)
+
+        self.assertEqual(str(context.exception), "Authentication failed")
+
+    def test_validate_token_expired(self):
+        """Test token validation fails with expired token"""
+        # Create an expired token by mocking the decode method
+        with patch("jwt.decode") as mock_decode:
+            mock_decode.side_effect = jwt.ExpiredSignatureError()
+            token = create_jwt_token()
+
+            with self.assertRaises(AuthenticationFailed) as context:
+                self.mixin.validate_token(token)
+
+            self.assertEqual(str(context.exception), "Invalid token")
+
+    def test_validate_token_invalid_signature(self):
+        """Test token validation fails with invalid signature"""
+        with patch("jwt.decode") as mock_decode:
+            mock_decode.side_effect = jwt.InvalidSignatureError()
+            token = create_jwt_token()
+
+            with self.assertRaises(AuthenticationFailed) as context:
+                self.mixin.validate_token(token)
+
+            self.assertEqual(str(context.exception), "Invalid token")
+
+    def test_validate_token_general_error(self):
+        """Test token validation fails with general error"""
+        with patch("jwt.decode") as mock_decode:
+            mock_decode.side_effect = Exception("General error")
+            token = create_jwt_token()
+
+            with self.assertRaises(AuthenticationFailed) as context:
+                self.mixin.validate_token(token)
+
+            self.assertEqual(str(context.exception), "Invalid token")
+
+    def test_get_signing_key_success(self):
+        """Test successful signing key retrieval"""
+        token = create_jwt_token()
+        signing_key = self.mixin._get_signing_key(token)
+        self.assertEqual(signing_key, mock_public_key)
+
+    def test_validate_token_data_success(self):
+        """Test successful token data validation"""
+        token = create_jwt_token()
+        is_valid, token_data = self.mixin._validate_token_data(mock_public_key, token)
+
+        self.assertTrue(is_valid)
+        self.assertEqual(token_data["scp"], settings.ENTRA_SCOPE)
+        self.assertEqual(token_data["aud"], f"api://{settings.ENTRA_CLIENT_ID}")
+        self.assertEqual(
+            token_data["iss"], f"https://sts.windows.net/{settings.ENTRA_TENANT_ID}/"
+        )
+
+
+class DummyCookieView(APIView):
+    authentication_classes = [EntraCookieTokenAuthentication]
+
+    def get(self, request):
+        return Response("ok", status=200)
+
+
+class TestEntraCookieTokenAuthentication(APITestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.factory = APIRequestFactory()
+        self.signing_key_patcher = apply_signing_key_patch(self)
+
+    def tearDown(self):
+        self.signing_key_patcher.stop()
+
+    def test_successful_authentication(self):
+        token = create_jwt_token(
+            email="test@test.com", first_name="Test", last_name="Test"
+        )
+        headers = {"Cookie": f"{settings.ENTRA_TOKEN_COOKIE_NAME}={token}"}
+
+        request = self.factory.get("/", headers=headers)
+        response = DummyCookieView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, "ok")
+
+    def test_missing_cookie(self):
+        request = self.factory.get("/")
+        response = DummyCookieView.as_view()(request)
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(response, "Cookie not found", status_code=403)
+
+    def test_superuser_is_created_if_not_exists(self):
+        token = create_jwt_token(
+            email="test@test.com", first_name="Foo", last_name="Bar"
+        )
+        headers = {"Cookie": f"{settings.ENTRA_TOKEN_COOKIE_NAME}={token}"}
+        request = self.factory.get("/", headers=headers)
+        response = DummyCookieView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, "ok")
+        self.assertEqual(User.objects.count(), 1)
+        self.assertEqual(User.objects.first().email, "test@test.com")
+        self.assertEqual(User.objects.first().username, "Bar, Foo")
+        self.assertTrue(User.objects.first().is_superuser)
+
+    def test_groups_are_added_to_user(self):
+        email = "test@test.com"
+
+        def get_token(groups):
+            return create_jwt_token(
+                email=email, first_name="Test", last_name="Test", groups=groups
+            )
+
+        def make_request(token):
+            headers = {"Cookie": f"{settings.ENTRA_TOKEN_COOKIE_NAME}={token}"}
+            request = self.factory.get("/", headers=headers)
+            response = DummyCookieView.as_view()(request)
+            self.assertEqual(response.status_code, 200)
+
+        def assert_user_has_groups(groups):
+            user = User.objects.get(email=email)
+            self.assertEqual([group.name for group in user.groups.all()], groups)
+
+        # First user has one group
+        groups = ["group1"]
+        make_request(get_token(groups))
+        assert_user_has_groups(groups)
+
+        # Then same user has extra group
+        groups.append("group2")
+        make_request(get_token(groups))
+        assert_user_has_groups(groups)
+
+        # Then user loses first group
+        groups.remove("group1")
+        make_request(get_token(groups))
+        assert_user_has_groups(groups)

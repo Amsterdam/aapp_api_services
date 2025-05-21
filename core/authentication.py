@@ -1,11 +1,18 @@
+import logging
 from abc import ABC, abstractmethod
 
+import jwt
 from django.conf import settings
+from django.contrib.auth.models import Group, User
+from django.db import transaction
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
 from core.exceptions import ApiKeyInvalidException
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractAppAuthentication(BaseAuthentication, ABC):
@@ -71,3 +78,82 @@ class APIKeyAuthenticationScheme(AuthenticationScheme):
     target_class = "core.authentication.APIKeyAuthentication"
     name = "APIKeyAuthentication"
     header_key = settings.API_KEY_HEADER
+
+
+class EntraTokenMixin:
+    def validate_token(self, token):
+        try:
+            signing_key = self._get_signing_key(token)
+        except Exception as error:
+            logger.warning(f"Authentication error: {error}")
+            raise AuthenticationFailed("Authentication failed")
+
+        is_valid_token, token_data = self._validate_token_data(signing_key, token)
+        if not is_valid_token:
+            logger.warning(f"Invalid token: {token_data=}]")
+            raise AuthenticationFailed("Invalid token")
+
+        if not token_data.get("scp") == settings.ENTRA_SCOPE:
+            raise PermissionDenied("Insufficient scope")
+
+        return token_data
+
+    def _get_signing_key(self, token):  # pragma: no cover
+        from jwt import PyJWKClient
+
+        jwks_client = PyJWKClient(settings.ENTRA_ID_JWKS_URI)
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
+        return signing_key.key
+
+    def _validate_token_data(self, signing_key, token):
+        try:
+            data = jwt.decode(
+                token,
+                signing_key,
+                algorithms=["RS256"],
+                audience=f"api://{settings.ENTRA_CLIENT_ID}",
+                issuer=f"https://sts.windows.net/{settings.ENTRA_TENANT_ID}/",
+            )
+            return True, data
+        except jwt.ExpiredSignatureError:
+            logger.info("Token has expired")
+            return False, {"error": "Token has expired"}
+        except jwt.InvalidSignatureError:
+            logger.warning("Token has invalid signature")
+            return False, {"error": "Token has invalid signature"}
+        except Exception as error:
+            logger.warning(f"Error validating token: {error}")
+            return False, {"error": "Error validating token"}
+
+
+class EntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
+    def authenticate(self, request):
+        token = request.COOKIES.get(settings.ENTRA_TOKEN_COOKIE_NAME)
+        if not token:
+            raise AuthenticationFailed("Cookie not found")
+
+        token_data = self.validate_token(token)
+
+        user = self._create_user(token_data)
+
+        if token_data.get("groups"):
+            self._update_user_groups(user, token_data)
+
+        return (user, token_data)
+
+    def _create_user(self, token_data: dict):
+        token_data_email = token_data.get("upn")
+        user = User.objects.filter(email=token_data_email).first()
+        if not user:
+            user = User.objects.create_superuser(
+                username=token_data.get("name"), email=token_data_email
+            )
+
+        return user
+
+    @transaction.atomic
+    def _update_user_groups(self, user: User, token_data: dict):
+        user.groups.clear()
+        for group_name in token_data.get("groups", []):
+            group, _ = Group.objects.get_or_create(name=group_name)
+            user.groups.add(group)

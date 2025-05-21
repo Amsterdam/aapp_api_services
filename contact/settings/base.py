@@ -4,6 +4,11 @@ SERVICE_NAME = "contact"
 INSTALLED_APPS += [
     "contact.apps.ContactConfig",
 ]
+MIDDLEWARE += [
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+X_FRAME_OPTIONS = "SAMEORIGIN"
 
 ROOT_URLCONF = "contact.urls"
 
@@ -27,4 +32,4 @@ CITY_OFFICE_LOOKUP_TABLE = {
     11: "d338d28f8e6132ea2cfcf3e61785454c",  # Zuidoost
 }
 
-STATIC_URL = "/contact/static/"
+ENTRA_ADMIN_GROUP = "b02f476b-6f1d-4f9e-86e6-5a935310050b"

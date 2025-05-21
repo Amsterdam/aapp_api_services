@@ -8,15 +8,14 @@ from rest_framework.views import APIView
 from construction_work.authentication import EntraIDAuthentication
 from construction_work.permissions import IsEditor, IsPublisher
 from construction_work.utils.patch_utils import (
-    apply_signing_key_patch,
-    create_jwt_token,
+    create_bearer_token,
 )
+from core.utils.patch_utils import apply_signing_key_patch
 
 
 class TestEntraIDAuthentication(TestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
-        # Patch the _get_signing_key method in EntraIDAuthentication
         self.signing_key_patcher = apply_signing_key_patch(self)
 
     def tearDown(self):
@@ -33,7 +32,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_jwt_token()
+        jwt_token = create_bearer_token()
         headers = {
             "Authorization": jwt_token,
         }
@@ -104,7 +103,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_jwt_token(scope="Invalid.Scope")
+        jwt_token = create_bearer_token(scope="Invalid.Scope")
         headers = {
             "Authorization": jwt_token,
         }
@@ -125,7 +124,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_jwt_token()
+        jwt_token = create_bearer_token()
         headers = {
             "Authorization": jwt_token,
         }
@@ -145,7 +144,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_jwt_token(groups=[settings.EDITOR_GROUP_ID])
+        jwt_token = create_bearer_token(groups=[settings.EDITOR_GROUP_ID])
         headers = {
             "Authorization": jwt_token,
         }
@@ -166,7 +165,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_jwt_token(groups=["InvalidGroup"])
+        jwt_token = create_bearer_token(groups=["InvalidGroup"])
         headers = {
             "Authorization": jwt_token,
         }
@@ -187,7 +186,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_jwt_token(groups=[settings.PUBLISHER_GROUP_ID])
+        jwt_token = create_bearer_token(groups=[settings.PUBLISHER_GROUP_ID])
         headers = {
             "Authorization": jwt_token,
         }
@@ -208,7 +207,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_jwt_token(groups=[settings.PUBLISHER_GROUP_ID])
+        jwt_token = create_bearer_token(groups=[settings.PUBLISHER_GROUP_ID])
         headers = {
             "Authorization": jwt_token,
         }
@@ -229,7 +228,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_jwt_token(groups=["InvalidGroup"])
+        jwt_token = create_bearer_token(groups=["InvalidGroup"])
         headers = {
             "Authorization": jwt_token,
         }
@@ -250,7 +249,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_jwt_token(groups=[settings.EDITOR_GROUP_ID])
+        jwt_token = create_bearer_token(groups=[settings.EDITOR_GROUP_ID])
         headers = {
             "Authorization": jwt_token,
         }

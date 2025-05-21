@@ -22,9 +22,9 @@ from construction_work.models.project_models import Project
 from construction_work.tests import mock_data
 from construction_work.utils.patch_utils import (
     MockNotificationResponse,
-    apply_signing_key_patch,
-    create_jwt_token,
+    create_bearer_token,
 )
+from core.utils.patch_utils import apply_signing_key_patch
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
@@ -47,7 +47,7 @@ class BaseTestManageView(APITestCase):
     def update_headers_with_editor_data(
         self, email="editor@amsterdam.nl", first_name=None, last_name=None
     ):
-        jwt_token = create_jwt_token(
+        jwt_token = create_bearer_token(
             groups=[settings.EDITOR_GROUP_ID],
             email=email,
             first_name=first_name,
@@ -57,14 +57,16 @@ class BaseTestManageView(APITestCase):
         self.api_headers["Authorization"] = jwt_token
 
     def update_headers_with_publisher_data(self, email="publisher@amsterdam.nl"):
-        jwt_token = create_jwt_token(groups=[settings.PUBLISHER_GROUP_ID], email=email)
+        jwt_token = create_bearer_token(
+            groups=[settings.PUBLISHER_GROUP_ID], email=email
+        )
         self.api_headers["Accept"] = "application/json"
         self.api_headers["Authorization"] = jwt_token
 
     def update_headers_with_editor_publisher_data(
         self, publisher_email="publisher@amsterdam.nl"
     ):
-        jwt_token = create_jwt_token(
+        jwt_token = create_bearer_token(
             groups=[settings.EDITOR_GROUP_ID, settings.PUBLISHER_GROUP_ID],
             email=publisher_email,
         )
