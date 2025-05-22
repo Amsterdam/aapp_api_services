@@ -67,25 +67,3 @@ class AddressSearchResponseSerializer(serializers.Serializer):
         required=False, source="huisnummertoevoeging"
     )
     postcode = serializers.CharField(required=False)
-    addition = serializers.SerializerMethodField()
-    addressLine1 = serializers.SerializerMethodField()
-    addressLine2 = serializers.SerializerMethodField()
-
-    def get_addition(self, obj) -> str:
-        """Get the addition of the address."""
-        addition = obj.get("huisletter", "")
-        if obj.get("huisnummertoevoeging"):
-            addition += "-" + obj["huisnummertoevoeging"]
-        return addition
-
-    def get_addressLine1(self, obj) -> str:
-        """Get the first line of the address."""
-        if obj.get("huisnummer"):
-            return f"{obj['straatnaam']} {obj['huisnummer']}{self.get_addition(obj)}"
-        return obj["straatnaam"]
-
-    def get_addressLine2(self, obj) -> str:
-        """Get the second line of the address."""
-        if obj.get("postcode"):
-            return f"{obj['postcode']} {obj['woonplaatsnaam']}"
-        return ""
