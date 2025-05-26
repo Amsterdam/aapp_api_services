@@ -34,7 +34,12 @@ class PermitZoneSerializer(CamelToSnakeCaseSerializer):
 class VisitorAccountSerializer(CamelToSnakeCaseSerializer):
     report_code = serializers.IntegerField()
     pin = serializers.CharField()
-    minutes_remaining = serializers.IntegerField(required=False)
+    seconds_remaining = serializers.IntegerField(required=False)
+
+    def to_internal_value(self, data):
+        if "millisecondsRemaining" in data:
+            data["secondsRemaining"] = data.pop("millisecondsRemaining") / 1000
+        return super().to_internal_value(data)
 
 
 class PermitsRequestSerializer(SnakeToCamelCaseSerializer):
