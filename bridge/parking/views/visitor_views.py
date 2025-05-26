@@ -51,14 +51,17 @@ class ParkingVisitorTimeBalanceView(BaseSSPView):
 
 
 class ParkingVisitorSessionView(BaseSSPView):
-    serializer_class = VisitorSessionRequestSerializer
-    response_serializer_class = VisitorSessionResponseSerializer
     ssp_endpoint = SSPEndpoint.VISITOR_SESSIONS
     ssp_http_method = "get"
     requires_access_token = True
+    serializer_class = VisitorSessionRequestSerializer
+    response_serializer_class = VisitorSessionResponseSerializer
+    response_serializer_many = True
+    response_key_selection = "parkingSession"
 
     @ssp_openapi_decorator(
-        response_serializer_class=VisitorSessionResponseSerializer,
+        response_serializer_class=VisitorSessionResponseSerializer(many=True),
+        response_serializer_many=True,
         requires_access_token=True,
         serializer_as_params=VisitorSessionRequestSerializer,
     )

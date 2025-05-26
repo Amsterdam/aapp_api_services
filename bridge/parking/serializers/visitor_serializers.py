@@ -3,6 +3,7 @@ from rest_framework import serializers
 from bridge.parking.serializers.general_serializers import (
     MillisecondsToSecondsSerializer,
     SecondsToMillisecondsSerializer,
+    StatusTranslationSerializer,
 )
 from core.utils.serializer_utils import (
     CamelToSnakeCaseSerializer,
@@ -33,11 +34,19 @@ class VisitorSessionRequestSerializer(SnakeToCamelCaseSerializer):
     vehicle_id = serializers.CharField()
 
 
-class VisitorSessionSerializer(CamelToSnakeCaseSerializer):
+class VisitorSessionResponseSerializer(CamelToSnakeCaseSerializer):
+    STATUS_CHOICES = [
+        ("Actief", "ACTIVE"),
+        ("Gepland", "PLANNED"),
+        ("Toekomstig", "PLANNED"),
+        ("Voltooid", "COMPLETED"),
+        ("Geannuleerd", "CANCELLED"),
+    ]
+
     start_date_time = serializers.DateTimeField()
     end_date_time = serializers.DateTimeField()
     vehicle_id = serializers.CharField()
-    status = serializers.CharField()
+    status = StatusTranslationSerializer(choices=STATUS_CHOICES)
     ps_right_id = serializers.CharField(required=False)
     visitor_name = serializers.CharField(required=False)
     remaining_time = serializers.IntegerField()
@@ -46,7 +55,3 @@ class VisitorSessionSerializer(CamelToSnakeCaseSerializer):
     time_balance_applicable = serializers.BooleanField()
     money_balance_applicable = serializers.BooleanField()
     no_endtime = serializers.BooleanField()
-
-
-class VisitorSessionResponseSerializer(CamelToSnakeCaseSerializer):
-    parking_session = VisitorSessionSerializer(many=True, required=False)

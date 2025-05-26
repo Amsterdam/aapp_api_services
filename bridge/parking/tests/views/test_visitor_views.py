@@ -86,13 +86,20 @@ class TestParkingVisitorSessionView(BaseSSPTestCase):
 
     def test_get_session_successfully(self, mock_request):
         mock_response_content = create_serializer_data(VisitorSessionResponseSerializer)
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+        mock_response_content["status"] = "Actief"
+        mock_return_value = {
+            "parkingSession": [
+                mock_response_content,
+            ]
+        }
+        mock_request.return_value = self.create_ssp_response(200, mock_return_value)
 
         response = self.client.get(
             self.url, data={"vehicle_id": 123}, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, mock_response_content)
+        mock_response_content["status"] = "ACTIVE"
+        self.assertDictEqual(response.data[0], mock_response_content)
 
     def test_missing_vehicle_id(self, mock_request):
         response = self.client.get(self.url, headers=self.api_headers)
