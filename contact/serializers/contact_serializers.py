@@ -1,6 +1,11 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from contact.models import CityOffice, OpeningHours, OpeningHoursException
+from contact.models import (
+    CityOffice,
+    OpeningHoursException,
+    RegularOpeningHours,
+)
 
 
 class TimeDictField(serializers.Field):
@@ -13,10 +18,10 @@ class TimeDictField(serializers.Field):
 class RegularOpeningHoursSerializer(serializers.ModelSerializer):
     opening = TimeDictField(source="opens_time")
     closing = TimeDictField(source="closes_time")
-    dayOfWeek = serializers.JSONField(source="day_of_week")
+    dayOfWeek = serializers.IntegerField(source="day_of_week")
 
     class Meta:
-        model = OpeningHours
+        model = RegularOpeningHours
         fields = ("dayOfWeek", "opening", "closing")
 
 
@@ -74,14 +79,18 @@ class CityOfficeSerializer(serializers.ModelSerializer):
             "order",
         )
 
+    @extend_schema_field(OpeningHoursSerializer)
     def get_visitingHours(self, obj):
-        regular = RegularOpeningHoursSerializer(
-            obj.openinghours_set.all(), many=True
-        ).data
-        exceptions = ExceptionOpeningHoursSerializer(
-            obj.openinghoursexception_set.all(), many=True
-        ).data
-        return {"regular": regular, "exceptions": exceptions}
+        regular_hours = RegularOpeningHours.objects.filter(
+            city_office_opening_hours__city_office=obj
+        ).filter(opens_time__isnull=False, closes_time__isnull=False)
+
+        exceptions = OpeningHoursException.objects.filter(affected_offices=obj)
+
+        opening_hours = OpeningHoursSerializer(
+            {"regular": regular_hours, "exceptions": exceptions}
+        )
+        return opening_hours.data
 
 
 class CityOfficeResultSerializer(serializers.Serializer):

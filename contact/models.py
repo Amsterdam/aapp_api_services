@@ -1,15 +1,15 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-DAYS = [
-    (0, "Zondag"),
-    (1, "Maandag"),
-    (2, "Dinsdag"),
-    (3, "Woensdag"),
-    (4, "Donderdag"),
-    (5, "Vrijdag"),
-    (6, "Zaterdag"),
-]
+
+class WeekDay(models.IntegerChoices):
+    SUNDAY = 0, "Zondag"
+    MONDAY = 1, "Maandag"
+    TUESDAY = 2, "Dinsdag"
+    WEDNESDAY = 3, "Woensdag"
+    THURSDAY = 4, "Donderdag"
+    FRIDAY = 5, "Vrijdag"
+    SATURDAY = 6, "Zaterdag"
 
 
 class CityOffice(models.Model):
@@ -39,17 +39,31 @@ class CityOffice(models.Model):
         return self.title
 
 
+class CityOfficeOpeningHours(models.Model):
+    """Model to group opening hours for a city office"""
+
+    class Meta:
+        verbose_name = "Openingstijd regulier"
+        verbose_name_plural = "Openingstijden regulier"
+
+    city_office = models.ForeignKey(
+        CityOffice,
+        on_delete=models.CASCADE,
+        verbose_name="Stadsloket",
+    )
+
+    def __str__(self):
+        return f"Openingstijden {self.city_office.title}"
+
+
 class OpeningHourAbstract(models.Model):
     """Abstract model for City Offices Opening Hours"""
 
     class Meta:
         abstract = True
 
-    city_office = models.ForeignKey(
-        CityOffice, on_delete=models.CASCADE, verbose_name="Stadskantoor"
-    )
-    opens_time = models.TimeField()
-    closes_time = models.TimeField()
+    opens_time = models.TimeField(null=True, blank=True)
+    closes_time = models.TimeField(null=True, blank=True)
 
     def clean(self):
         if bool(self.opens_time) != bool(self.closes_time):
@@ -63,25 +77,55 @@ class OpeningHourAbstract(models.Model):
             raise ValidationError("Opens time must be before closes time.")
 
 
-class OpeningHours(OpeningHourAbstract):
-    """Model for City Offices Opening Hours Regular"""
+class RegularOpeningHours(OpeningHourAbstract):
+    """Model for regular opening hours per city office"""
 
     class Meta:
         verbose_name = "Openingstijd"
         verbose_name_plural = "Openingstijden"
-        unique_together = [["city_office", "day_of_week"]]
+        unique_together = [["city_office_opening_hours", "day_of_week"]]
 
-    day_of_week = models.IntegerField(choices=DAYS, verbose_name="Dag van de week")
+    city_office_opening_hours = models.ForeignKey(
+        CityOfficeOpeningHours,
+        on_delete=models.CASCADE,
+        verbose_name="Openingstijden stadsloket",
+    )
+
+    day_of_week = models.IntegerField(
+        choices=WeekDay.choices, verbose_name="Dag van de week"
+    )
+
+    def __str__(self):
+        return WeekDay(self.day_of_week).label
 
 
 class OpeningHoursException(OpeningHourAbstract):
-    """Model for City Offices Opening Hours Exceptions"""
+    """Model for exceptions to regular opening hours"""
 
     class Meta:
         verbose_name = "Openingstijden uitzondering"
         verbose_name_plural = "Openingstijden uitzonderingen"
-        unique_together = [["city_office", "date"]]
 
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name="Rede van de uitzondering",
+    )
     date = models.DateField(verbose_name="Datum")
+    affected_offices = models.ManyToManyField(
+        CityOffice,
+        verbose_name="Stadsloketten",
+        help_text="Selecteer de stadsloketten waar deze uitzondering voor geldt",
+    )
     opens_time = models.TimeField(null=True, blank=True)
     closes_time = models.TimeField(null=True, blank=True)
+
+    def __str__(self):
+        if type(self.date) is str:
+            return self.__str__()
+
+        date = self.date.strftime("%d-%m-%Y")
+        if self.description:
+            return f"{self.description} ({date})"
+        return date

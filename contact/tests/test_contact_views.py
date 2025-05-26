@@ -1,13 +1,16 @@
 import datetime
-import os
 from unittest.mock import patch
 
 import requests
-from django.core.management import call_command
 from django.test.utils import override_settings
 from django.urls import reverse
 
-from contact.models import CityOffice, OpeningHours, OpeningHoursException
+from contact.models import (
+    CityOffice,
+    CityOfficeOpeningHours,
+    OpeningHoursException,
+    RegularOpeningHours,
+)
 from core.tests.test_authentication import BasicAPITestCase
 
 
@@ -37,37 +40,31 @@ class BaseContactTestCase(BasicAPITestCase):
             order=0,
         )
 
-        # Create OpeningHours for the city office
-        OpeningHours.objects.create(
+        self.city_office_opening_hours = CityOfficeOpeningHours.objects.create(
             city_office=self.city_office,
+        )
+
+        # Create OpeningHours for the city office
+        RegularOpeningHours.objects.create(
+            city_office_opening_hours=self.city_office_opening_hours,
             day_of_week=1,  # Monday
             opens_time="09:00",
             closes_time="17:00",
         )
 
         # Create an OpeningHoursException for the city office
-        OpeningHoursException.objects.create(
-            city_office=self.city_office,
+        exception = OpeningHoursException.objects.create(
             date=datetime.date.today(),
             opens_time="10:00",
             closes_time="16:00",
         )
+        exception.affected_offices.add(self.city_office)
 
 
 class TestCityOfficeView(BaseContactTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("contact-city-offices")
-
-    @override_settings(
-        CSV_DIR=os.path.join(os.path.dirname(os.path.dirname(__file__)), "csv"),
-    )
-    def test_load_data_get_data(self):
-        call_command("loaddata")
-
-        response = self.client.get(self.url, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 200)
 
     def test_get_city_offices(self):
         response = self.client.get(self.url, headers=self.api_headers)
@@ -80,7 +77,7 @@ class TestCityOfficeView(BaseContactTestCase):
         # Check that result contains the correct data
         result = response_data.get("result")
         self.assertIsInstance(result, list)
-        self.assertEqual(len(result), 9)
+        self.assertEqual(len(result), 1)
 
         office_data = result[0]
         self.assertEqual(office_data["identifier"], "stadsloket-centrum")

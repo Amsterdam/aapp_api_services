@@ -1,10 +1,5 @@
 # Created by Jeroen Beekman on 2025-04-08 11:27
-from django.core.management import call_command
 from django.db import migrations, models
-
-
-def run_loaddata(apps, schema_editor):
-    call_command("loaddata", verbosity=0)
 
 
 class Migration(migrations.Migration):
@@ -91,5 +86,4 @@ class Migration(migrations.Migration):
             name="openinghoursexception",
             unique_together={("city_office", "date")},
         ),
-        migrations.RunPython(run_loaddata),
     ]

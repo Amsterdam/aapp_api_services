@@ -1,4 +1,4 @@
-# Generated: 2025-05-21T14:15:42Z
+# Generated: 2025-05-23T13:23:49Z
 aiohappyeyeballs==2.6.1
 aiohttp==3.11.18
 aioresponses==0.7.8
@@ -17,7 +17,7 @@ cachetools==5.5.2
 certifi==2025.4.26
 cffi==1.17.1
 charset-normalizer==3.4.2
-coverage==7.8.0
+coverage==7.8.2
 cryptography==45.0.2
 deprecated==1.2.18
 django==5.2.1
@@ -34,8 +34,8 @@ fixedint==0.1.6
 freezegun==1.5.1
 frozenlist==1.6.0
 google-api-core==2.24.2
-google-api-python-client==2.169.0
-google-auth==2.40.1
+google-api-python-client==2.170.0
+google-auth==2.40.2
 google-auth-httplib2==0.2.0
 google-cloud-core==2.4.3
 google-cloud-firestore==2.20.2
@@ -103,9 +103,9 @@ referencing==0.36.2
 requests==2.32.3
 requests-oauthlib==2.0.0
 responses==0.25.7
-rpds-py==0.25.0
+rpds-py==0.25.1
 rsa==4.9.1
-ruff==0.11.10
+ruff==0.11.11
 six==1.17.0
 sqlparse==0.5.3
 tenacity==9.1.2

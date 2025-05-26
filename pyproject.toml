@@ -39,7 +39,7 @@ dependencies = [
   "model-bakery",
   "ruff",
   "aioresponses",
-  "pytest-asyncio",
+  "pytest-asyncio",  # anyio pytest plugin?
   "coverage",
   "responses",
 ]
@@ -74,6 +74,8 @@ omit = [
   "*/tests/*",
   "*/integration_tests/*",
   "*/urls.py",
+  "*/admin.py",
+  "*/apps.py",
 ]
 
 [tool.coverage.report]

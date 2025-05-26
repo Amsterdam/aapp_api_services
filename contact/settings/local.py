@@ -5,3 +5,5 @@ from .base import *  # isort:skip
 from core.settings.local import *  # isort:skip
 
 STATIC_URL = "/contact/static/"
+
+MOCK_ENTRA_AUTH = os.getenv("MOCK_ENTRA_AUTH", "true").lower() == "true"

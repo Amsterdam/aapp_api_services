@@ -157,3 +157,17 @@ class EntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         for group_name in token_data.get("groups", []):
             group, _ = Group.objects.get_or_create(name=group_name)
             user.groups.add(group)
+
+
+class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
+    def authenticate(self, request):  # pragma: no cover
+        email = "mock.user@amsterdam.nl"
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            user = User.objects.create_superuser(username="Mock User", email=email)
+
+        group, _ = Group.objects.get_or_create(name=settings.ENTRA_ADMIN_GROUP)
+        user.groups.set([group])
+
+        return (user, None)

@@ -24,9 +24,7 @@ class CityOfficesView(generics.RetrieveAPIView):
     serializer_class = CityOfficeResultSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset().prefetch_related(
-            "openinghours_set", "openinghoursexception_set"
-        )
+        queryset = self.get_queryset()
         output_data = {"status": True, "result": queryset}
         output_serializer = self.get_serializer(output_data)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
