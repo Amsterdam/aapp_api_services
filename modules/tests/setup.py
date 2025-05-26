@@ -17,13 +17,10 @@ class TestCaseWithAuth(TestCaseWithData):
             public_exponent=65537, key_size=2048, backend=default_backend()
         )
 
-        # Mock Azude AD response
-        patcher = patch("azure_ad_verify_token.requests.get")
-        mock_requests_get = patcher.start()
-        mock_response = mock_requests_get.return_value
-        mock_response.status_code = 200
-        mock_response.json.return_value = self._get_jwks()
-        self.addCleanup(mock_requests_get.stop)
+        patcher = patch("azure_ad_verify_token.verify.get_jwk")
+        mock_get_jwk = patcher.start()
+        mock_get_jwk.return_value = self._get_jwk()
+        self.addCleanup(patcher.stop)
 
         # Add mock token and client
         self.jwt_token = f"Bearer {self.get_jwt_token()}"
@@ -48,7 +45,7 @@ class TestCaseWithAuth(TestCaseWithData):
         )
         return token
 
-    def _get_jwks(self):
+    def _get_jwk(self):
         self.public_key = self.private_key.public_key()
         public_numbers = self.public_key.public_numbers()
         e = public_numbers.e
@@ -63,11 +60,10 @@ class TestCaseWithAuth(TestCaseWithData):
                 .decode("ascii")
             )
 
-        jwk_key = {
+        return {
             "kty": "RSA",
             "use": "sig",
             "kid": "test-key-id",
             "n": long_to_base64(n),
             "e": long_to_base64(e),
         }
-        return {"keys": [jwk_key]}

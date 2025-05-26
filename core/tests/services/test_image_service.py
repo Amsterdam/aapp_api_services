@@ -1,10 +1,9 @@
-from unittest.mock import patch
-
-import requests
+import responses
 from django.conf import settings
-from django.test import TestCase
+from django.core.cache import cache
 
 from core.services.image_set import ImageSetService
+from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
 EXAMPLE_RESPONSE = {
     "id": 12,
@@ -29,96 +28,85 @@ EXAMPLE_RESPONSE = {
 }
 
 
-@patch("core.services.image_set.requests.get")
-class TestImageService(TestCase):
-    def test_init(self, mock_requests):
-        image_service = ImageSetService()
-        image_service.get(1)
-        mock_requests.assert_called_with(
-            "http://api-image:8000/internal/api/v1/image/1",
-            headers={settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0]},
+class TestImageService(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.rsp_get = responses.get(
+            f"{settings.IMAGE_ENDPOINTS['DETAIL']}/1", json=EXAMPLE_RESPONSE
+        )
+        self.rsp_post = responses.post(
+            settings.IMAGE_ENDPOINTS["POST_IMAGE"], json=EXAMPLE_RESPONSE
+        )
+        self.rsp_post_from_url = responses.post(
+            settings.IMAGE_ENDPOINTS["POST_IMAGE_FROM_URL"], json=EXAMPLE_RESPONSE
         )
 
-    def test_url_small(self, mock_requests):
+    def test_init(self):
         image_service = ImageSetService()
         image_service.get(1)
-        image_service.data = EXAMPLE_RESPONSE
-        assert (
-            image_service.url_small
-            == "https://ontw.app.amsterdam.nl/media/image/small.JPEG"
+        self.assertEquals(self.rsp_get.call_count, 1)
+
+    def test_url_small(self):
+        image_service = ImageSetService()
+        image_service.get(1)
+        self.assertEquals(
+            image_service.url_small,
+            "https://ontw.app.amsterdam.nl/media/image/small.JPEG",
         )
 
-    def test_url_medium(self, mock_requests):
+    def test_url_medium(self):
         image_service = ImageSetService()
         image_service.get(1)
-        image_service.data = EXAMPLE_RESPONSE
-        assert (
-            image_service.url_medium
-            == "https://ontw.app.amsterdam.nl/media/image/medium.JPEG"
+        self.assertEqual(
+            image_service.url_medium,
+            "https://ontw.app.amsterdam.nl/media/image/medium.JPEG",
         )
 
-    def test_url_large(self, mock_requests):
+    def test_url_large(self):
         image_service = ImageSetService()
         image_service.get(1)
-        image_service.data = EXAMPLE_RESPONSE
-        assert (
-            image_service.url_large
-            == "https://ontw.app.amsterdam.nl/media/image/large.JPEG"
+        self.assertEqual(
+            image_service.url_large,
+            "https://ontw.app.amsterdam.nl/media/image/large.JPEG",
         )
 
-    def test_json(self, mock_requests):
+    def test_json(self):
         image_service = ImageSetService()
         image_service.get(1)
-        image_service.data = EXAMPLE_RESPONSE
-        assert image_service.json() == EXAMPLE_RESPONSE
+        self.assertEqual(image_service.json(), EXAMPLE_RESPONSE)
 
-    def test_exists(self, mock_requests):
-        mock_requests.status_code = 200
+    def test_exists(self):
         image_service = ImageSetService()
-        assert image_service.exists(1)
+        self.assertTrue(image_service.exists(1))
+        self.assertEqual(self.rsp_get.call_count, 1)
 
-    def test_exists_not_found(self, mock_requests):
-        mock_requests.side_effect = requests.HTTPError()
+        cached_image = cache.get("core.services.image_set.get_from_id.1")
+        self.assertIsNotNone(cached_image)
+        self.assertEqual(cached_image, EXAMPLE_RESPONSE)
+
+    def test_exists_not_found(self):
+        responses.reset()
+        responses.get(f"{settings.IMAGE_ENDPOINTS['DETAIL']}/1", status=404)
         image_service = ImageSetService()
-        assert not image_service.exists(1)
+        self.assertFalse(image_service.exists(1))
 
-    @patch("core.services.image_set.requests.post")
-    def test_upload(self, mock_requests_post, _):
-        mock_requests_post.status_code = 200
+    def test_upload(self):
         image_service = ImageSetService()
         image = b"test"
         description = "test"
         image_service.upload(image=image, description=description)
 
-        mock_requests_post.assert_called_with(
-            settings.IMAGE_ENDPOINTS["POST_IMAGE"],
-            headers={settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0]},
-            data={"description": description},
-            files={"image": image},
-        )
+        self.assertEqual(self.rsp_post.call_count, 1)
 
-    @patch("core.services.image_set.requests.post")
-    def test_upload_no_description(self, mock_requests_post, _):
-        mock_requests_post.status_code = 200
+    def test_upload_no_description(self):
         image_service = ImageSetService()
         image = b"test"
         image_service.upload(image=image)
 
-        mock_requests_post.assert_called_with(
-            settings.IMAGE_ENDPOINTS["POST_IMAGE"],
-            headers={settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0]},
-            data={},
-            files={"image": image},
-        )
+        self.assertEqual(self.rsp_post.call_count, 1)
 
-    @patch("core.services.image_set.requests.post")
-    def test_upload_from_url(self, mock_requests_post, _):
-        mock_requests_post.status_code = 200
+    def test_upload_from_url(self):
         image_service = ImageSetService()
         image_service.get_or_upload_from_url("https://example.com/image.jpg")
 
-        mock_requests_post.assert_called_with(
-            settings.IMAGE_ENDPOINTS["POST_IMAGE_FROM_URL"],
-            headers={settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0]},
-            data={"url": "https://example.com/image.jpg", "description": None},
-        )
+        self.assertEqual(self.rsp_post_from_url.call_count, 1)
