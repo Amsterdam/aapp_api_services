@@ -2,9 +2,12 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.test import override_settings
+from django.urls import reverse
 from freezegun import freeze_time
 from model_bakery import baker
 
+from city_pass.authentication import AccessTokenAuthentication
+from city_pass.exceptions import TokenInvalidException
 from city_pass.models import AccessToken, RefreshToken, Session
 from city_pass.tests.base_test import (
     DATE_FORMAT,
@@ -294,7 +297,9 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
 
 
 class TestSessionLogoutView(BaseCityPassTestCase):
-    api_url = "/city-pass/api/v1/session/logout"
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.api_url = reverse("session-logout")
 
     def test_logout_success(self):
         headers = {**self.headers, "Access-Token": self.session.accesstoken.token}
@@ -354,3 +359,20 @@ class TestSessionLogoutView(BaseCityPassTestCase):
         self.assertEqual(
             len(Session.objects.filter(encrypted_adminstration_no="barfoo")), 2
         )
+
+    def test_logout_without_encrypted_admin_nr(self):
+        """
+        Test that logout invalidates the access token.
+        """
+        session = Session.objects.create()
+        access_token = AccessToken(session=session)
+        access_token.save()
+
+        headers = {settings.ACCESS_TOKEN_HEADER: access_token.token, **self.headers}
+
+        request = self.client.post(self.api_url, headers=headers)
+        self.assertEqual(request.status_code, 200)
+
+        # Check that the token is no longer valid
+        with self.assertRaises(TokenInvalidException):
+            AccessTokenAuthentication().authenticate(request)

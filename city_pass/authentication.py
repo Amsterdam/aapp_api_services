@@ -33,11 +33,15 @@ class AccessTokenAuthentication(BaseAuthentication):
 
         access_token_obj.is_valid()
 
+        return (access_token_obj.session, access_token_obj)
+
+
+class AccessTokenWithAdminNrAuthentication(AccessTokenAuthentication):
+    def authenticate(self, request: HttpRequest):
+        _, access_token_obj = super().authenticate(request)
+
         if not access_token_obj.session.encrypted_adminstration_no:
-            credentials_endpoint = reversed("city-pass-session-credentials")
-            raise TokenNotReadyException(
-                f"Session not ready, please POST encrypted_administration_no to {credentials_endpoint}"
-            )
+            raise TokenNotReadyException()
 
         return (access_token_obj.session, access_token_obj)
 

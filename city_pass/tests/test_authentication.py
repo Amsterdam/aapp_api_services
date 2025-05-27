@@ -4,7 +4,7 @@ from django.conf import settings
 from django.test import RequestFactory, TestCase
 from freezegun import freeze_time
 
-from city_pass.authentication import AccessTokenAuthentication
+from city_pass.authentication import AccessTokenWithAdminNrAuthentication
 from city_pass.exceptions import (
     TokenExpiredException,
     TokenInvalidException,
@@ -36,7 +36,7 @@ class TestAuthenicateAccessToken(TestCase):
             "/some-endpoint/", headers={self.header_name: access_token.token}
         )
 
-        token_authenticator = AccessTokenAuthentication()
+        token_authenticator = AccessTokenWithAdminNrAuthentication()
         result_session, result_token = token_authenticator.authenticate(request)
 
         self.assertEqual(result_session, access_token.session)
@@ -51,7 +51,7 @@ class TestAuthenicateAccessToken(TestCase):
         )
 
         with self.assertRaises(TokenInvalidException):
-            token_authenticator = AccessTokenAuthentication()
+            token_authenticator = AccessTokenWithAdminNrAuthentication()
             token_authenticator.authenticate(request)
 
     def test_expired_access_token(self):
@@ -73,7 +73,7 @@ class TestAuthenicateAccessToken(TestCase):
         )
         with freeze_time(token_authenticate_time):
             with self.assertRaises(TokenExpiredException):
-                token_authenticator = AccessTokenAuthentication()
+                token_authenticator = AccessTokenWithAdminNrAuthentication()
                 token_authenticator.authenticate(request)
 
     @freeze_time("2024-01-01 12:00")
@@ -90,5 +90,5 @@ class TestAuthenicateAccessToken(TestCase):
         )
 
         with self.assertRaises(TokenNotReadyException):
-            token_authenticator = AccessTokenAuthentication()
+            token_authenticator = AccessTokenWithAdminNrAuthentication()
             token_authenticator.authenticate(request)

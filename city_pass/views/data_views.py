@@ -33,7 +33,7 @@ class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
 
     serializer_class: DRFSerializer = None  # Must be overwritten in subclasses
     serializer_many = True
-    authentication_classes = [authentication.AccessTokenAuthentication]
+    authentication_classes = [authentication.AccessTokenWithAdminNrAuthentication]
 
     def __init__(self):
         super().__init__()

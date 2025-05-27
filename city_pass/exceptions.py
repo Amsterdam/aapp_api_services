@@ -17,7 +17,7 @@ class TokenInvalidException(BaseApiException):
 
 class TokenNotReadyException(BaseApiException):
     status_code = status.HTTP_412_PRECONDITION_FAILED
-    default_detail = "Token not ready"
+    default_detail = "Session not ready, please POST encrypted_administration_no"
     default_code = "TOKEN_NOT_READY"
 
 
