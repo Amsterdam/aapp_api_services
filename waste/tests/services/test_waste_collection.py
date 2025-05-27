@@ -70,6 +70,7 @@ class WasteCollectionServiceTest(TestCase):
             {
                 "Papier": date(year=2025, month=3, day=31),
                 "GFT": date(year=2025, month=4, day=1),
+                "GFET": None,
                 "Glas": None,
                 "Plastic": None,
                 "GA": None,

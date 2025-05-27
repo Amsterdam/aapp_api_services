@@ -54,7 +54,7 @@ class ImageSet(models.Model):
         ]
 
     description = models.CharField(max_length=1000, blank=True, null=True)
-    identifier = models.CharField(null=True)
+    identifier = models.CharField(max_length=64, null=True)
     image_small = models.ForeignKey(
         ImageVariant, on_delete=models.CASCADE, related_name="small"
     )

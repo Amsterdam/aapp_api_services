@@ -29,4 +29,5 @@ WASTE_TYPES = [
     "GA",
     "Rest",
     "Textiel",
+    "GFET",
 ]

@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth.models import Group, User
+from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory, override_settings
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from core.views.admin_views import AdminLoginView
@@ -49,7 +49,7 @@ class TestAdminLoginView(ResponsesActivatedAPITestCase):
         mock_auth_instance.authenticate.return_value = (None, None)
 
         # Act & Assert
-        with self.assertRaises(AuthenticationFailed):
+        with self.assertRaises(PermissionDenied):
             AdminLoginView.as_view()(request)
         mock_auth_instance.authenticate.assert_called_once_with(request)
 
