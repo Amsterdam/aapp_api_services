@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import override_settings
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, APITestCase
 from rest_framework.views import APIView
@@ -114,22 +114,11 @@ class TestEntraTokenMixin(APITestCase):
             email="test@test.com",
             first_name="Test",
             last_name="User",
-            scope=settings.ENTRA_SCOPE,
         )
         token_data = self.mixin.validate_token(token)
 
         self.assertEqual(token_data["upn"], "test@test.com")
         self.assertEqual(token_data["name"], "User, Test")
-        self.assertEqual(token_data["scp"], settings.ENTRA_SCOPE)
-
-    def test_validate_token_insufficient_scope(self):
-        """Test token validation fails with insufficient scope"""
-        token = create_jwt_token(scope="Invalid.Scope")
-
-        with self.assertRaises(PermissionDenied) as context:
-            self.mixin.validate_token(token)
-
-        self.assertEqual(str(context.exception), "Insufficient scope")
 
     def test_validate_token_signing_key_error(self):
         """Test token validation fails when signing key retrieval fails"""
@@ -187,7 +176,6 @@ class TestEntraTokenMixin(APITestCase):
         is_valid, token_data = self.mixin._validate_token_data(mock_public_key, token)
 
         self.assertTrue(is_valid)
-        self.assertEqual(token_data["scp"], settings.ENTRA_SCOPE)
         self.assertEqual(token_data["aud"], f"api://{settings.ENTRA_CLIENT_ID}")
         self.assertEqual(
             token_data["iss"], f"https://sts.windows.net/{settings.ENTRA_TENANT_ID}/"

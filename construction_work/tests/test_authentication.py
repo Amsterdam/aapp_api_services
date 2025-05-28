@@ -92,25 +92,6 @@ class TestEntraIDAuthentication(TestCase):
         response = TestView.as_view()(request)
         self.assertEqual(response.status_code, 403)
 
-    def test_insufficient_scope(self):
-        """
-        Test that a token with insufficient scope results in PermissionDenied.
-        """
-
-        class TestView(APIView):
-            authentication_classes = [EntraIDAuthentication]
-
-            def post(self, request):
-                return Response({"message": "success"}, status=status.HTTP_200_OK)
-
-        jwt_token = create_bearer_token(scope="Invalid.Scope")
-        headers = {
-            "Authorization": jwt_token,
-        }
-        request = self.factory.post("/", headers=headers)
-        response = TestView.as_view()(request)
-        self.assertEqual(response.status_code, 403)
-
     def test_error_on_get_signing_key(self):
         """
         Test that error on get signing key results in AuthenticationFailed.

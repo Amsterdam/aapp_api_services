@@ -90,8 +90,6 @@ ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/key
 ENTRA_TENANT_ID = os.getenv("TENANT_ID")
 ENTRA_CLIENT_ID = os.getenv("CLIENT_ID")
 
-ENTRA_SCOPE = "Modules.Edit"
-
 ENTRA_TOKEN_COOKIE_NAME = "__Host-Access-Token"
 
 

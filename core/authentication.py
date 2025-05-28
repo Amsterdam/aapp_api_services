@@ -8,7 +8,7 @@ from django.db import transaction
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import BaseAuthentication
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.exceptions import AuthenticationFailed
 
 from core.exceptions import ApiKeyInvalidException
 
@@ -92,9 +92,6 @@ class EntraTokenMixin:
         if not is_valid_token:
             logger.warning(f"Invalid token: {token_data=}]")
             raise AuthenticationFailed("Invalid token")
-
-        if not token_data.get("scp") == settings.ENTRA_SCOPE:
-            raise PermissionDenied("Insufficient scope")
 
         return token_data
 

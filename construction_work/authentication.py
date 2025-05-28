@@ -71,7 +71,6 @@ class MockEntraIDAuthentication(BaseAuthentication):
                 settings.EDITOR_GROUP_ID,
                 # settings.PUBLISHER_GROUP_ID,
             ],
-            "scp": "Modules.Edit",
             "upn": email,
             "family_name": last_name,
             "given_name": first_name,
