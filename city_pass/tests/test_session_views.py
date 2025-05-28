@@ -179,6 +179,7 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
 
     @override_settings(
         TOKEN_TTLS={
+            "ACCESS_TOKEN": ONE_HOUR_IN_SECONDS,
             "REFRESH_TOKEN": ONE_HOUR_IN_SECONDS,
         }
     )
@@ -294,6 +295,58 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
                 follow=True,
             )
             self.assertEqual(result.status_code, 401)
+
+    def test_related_refresh_tokens_removed(self):
+        session = Session.objects.create()
+        AccessToken.objects.create(session=session)
+        first_refresh_token_obj = RefreshToken.objects.create(session=session)
+
+        # First refresh call
+        result = self.client.post(
+            self.api_url,
+            headers=self.headers,
+            data={"refresh_token": first_refresh_token_obj.token},
+            content_type="application/json",
+            follow=True,
+        )
+        self.assertEqual(result.status_code, 200)
+
+        second_refresh_token = result.data.get("refresh_token")
+        second_refresh_token_obj = RefreshToken.objects.filter(
+            token=second_refresh_token
+        ).first()
+        self.assertIsNotNone(second_refresh_token_obj)
+
+        # Assert that both refresh tokens are related to the same session
+        self.assertEqual(len(session.refreshtoken_set.all()), 2)
+        self.assertEqual(session.refreshtoken_set.first(), first_refresh_token_obj)
+        self.assertEqual(session.refreshtoken_set.last(), second_refresh_token_obj)
+
+        # Second refresh call
+        result = self.client.post(
+            self.api_url,
+            headers=self.headers,
+            data={"refresh_token": second_refresh_token_obj.token},
+            content_type="application/json",
+            follow=True,
+        )
+        self.assertEqual(result.status_code, 200)
+
+        third_refresh_token = result.data.get("refresh_token")
+        third_refresh_token_obj = RefreshToken.objects.filter(
+            token=third_refresh_token
+        ).first()
+        self.assertIsNotNone(third_refresh_token_obj)
+
+        # Assert that the first refresh token is removed
+        self.assertIsNone(
+            RefreshToken.objects.filter(pk=first_refresh_token_obj.pk).first()
+        )
+
+        # Assert that the second and third refresh tokens are related to the same session
+        self.assertEqual(len(session.refreshtoken_set.all()), 2)
+        self.assertEqual(session.refreshtoken_set.first(), second_refresh_token_obj)
+        self.assertEqual(session.refreshtoken_set.last(), third_refresh_token_obj)
 
 
 class TestSessionLogoutView(BaseCityPassTestCase):

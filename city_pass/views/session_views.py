@@ -19,18 +19,16 @@ class SessionInitView(generics.CreateAPIView):
         request=None,
     )
     def post(self, request, *args, **kwargs):
-        access_token_str, refresh_token_str = self.init_session()
-        serializer = self.get_serializer(
-            {"access_token": access_token_str, "refresh_token": refresh_token_str}
-        )
+        access_token, refresh_token = self.init_session()
+        serializer = self.get_serializer((access_token, refresh_token))
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @transaction.atomic
-    def init_session(self) -> Tuple[str, str]:
+    def init_session(self) -> Tuple[models.AccessToken, models.RefreshToken]:
         """Initialize a new session with related access and refresh token.
 
         Returns:
-            Tuple[str, str]: a new token pair in string format
+            Tuple[models.AccessToken, models.RefreshToken]: a new token pair
         """
 
         new_session = models.Session()
@@ -42,7 +40,7 @@ class SessionInitView(generics.CreateAPIView):
         refresh_token = models.RefreshToken(session=new_session)
         refresh_token.save()
 
-        return access_token.token, refresh_token.token
+        return access_token, refresh_token
 
 
 class SessionPostCredentialView(generics.CreateAPIView):
@@ -94,16 +92,16 @@ class SessionRefreshAccessView(generics.CreateAPIView):
 
         refresh_token.is_valid()
 
-        access_token_str, refresh_token_str = self.refresh_tokens(refresh_token)
+        new_access_token, new_refresh_token = self.refresh_tokens(refresh_token)
         serializer = serializers.SessionTokensOutSerializer(
-            {"access_token": access_token_str, "refresh_token": refresh_token_str}
+            (new_access_token, new_refresh_token)
         )
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @transaction.atomic
     def refresh_tokens(
         self, incoming_refresh_token: models.RefreshToken
-    ) -> Tuple[str, str]:
+    ) -> Tuple[models.AccessToken, models.RefreshToken]:
         """Create a new access en refresh token pair.
         An incoming refresh token does not get invalidated immediatly,
         in order to allow a client to retry a refresh request in case they did not receive the result.
@@ -121,23 +119,24 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         """
         session: models.Session = incoming_refresh_token.session
 
+        # Incoming refresh token will stay valid for a little longer, so client can retry the request
         incoming_refresh_token.expire()
 
+        # Any remaining refresh tokens get removed
         for rt in session.refreshtoken_set.all():
             if rt == incoming_refresh_token:
                 continue
             rt.delete()
 
-        new_refresh_token = models.RefreshToken(session=session)
-        new_refresh_token.save()
+        # Create a new refresh token
+        new_refresh_token = models.RefreshToken.objects.create(session=session)
 
-        access_token: models.AccessToken = session.accesstoken
-        access_token.delete()
+        # Remove the existing access token
+        session.accesstoken.delete()
+        # Then create a new access token
+        new_access_token = models.AccessToken.objects.create(session=session)
 
-        new_access_token = models.AccessToken(session=session)
-        new_access_token.save()
-
-        return new_access_token.token, new_refresh_token.token
+        return new_access_token, new_refresh_token
 
 
 class SessionLogoutView(generics.CreateAPIView):
