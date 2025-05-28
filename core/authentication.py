@@ -140,11 +140,18 @@ class EntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
 
     def _create_user(self, token_data: dict):
         token_data_email = token_data.get("upn")
-        user = User.objects.filter(email=token_data_email).first()
-        if not user:
-            user = User.objects.create_superuser(
-                username=token_data.get("name"), email=token_data_email
-            )
+        user, created = User.objects.update_or_create(
+            username=token_data_email,
+            email=token_data_email,
+            first_name=token_data.get("given_name"),
+            last_name=token_data.get("family_name"),
+            defaults={
+                "is_staff": True,
+                "is_superuser": True,
+            },
+        )
+        if created:
+            logger.info(f"User created: {user}")
 
         return user
 
@@ -164,7 +171,7 @@ class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         if not user:
             user = User.objects.create_superuser(username="Mock User", email=email)
 
-        group, _ = Group.objects.get_or_create(name=settings.ENTRA_ADMIN_GROUP)
+        group, _ = Group.objects.get_or_create(name=settings.CBS_TIME_PUBLISHER_GROUP)
         user.groups.set([group])
 
         return (user, None)

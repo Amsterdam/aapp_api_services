@@ -225,9 +225,11 @@ class TestEntraCookieTokenAuthentication(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, "ok")
         self.assertEqual(User.objects.count(), 1)
-        self.assertEqual(User.objects.first().email, "test@test.com")
-        self.assertEqual(User.objects.first().username, "Bar, Foo")
         self.assertTrue(User.objects.first().is_superuser)
+        self.assertEqual(User.objects.first().email, "test@test.com")
+        self.assertEqual(User.objects.first().username, "test@test.com")
+        self.assertEqual(User.objects.first().first_name, "Foo")
+        self.assertEqual(User.objects.first().last_name, "Bar")
 
     def test_groups_are_added_to_user(self):
         email = "test@test.com"
