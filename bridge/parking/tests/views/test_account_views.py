@@ -1,7 +1,10 @@
+import datetime
 from unittest.mock import patch
 
+import jwt
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 
 from bridge.parking.exceptions import SSPForbiddenError, SSPResponseError
 from bridge.parking.serializers.account_serializers import (
@@ -28,7 +31,11 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
         }
 
     def test_successful_login(self, mock_request):
-        mock_access_token = "abc.123.def"
+        mock_access_token = jwt.encode(
+            {"exp": timezone.now() + datetime.timedelta(hours=1)},
+            "secret",
+            algorithm="HS256",
+        )
         mock_scope = "permitHolder"
         mock_response_content = {
             "access_token": mock_access_token,
@@ -46,6 +53,7 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["access_token"], mock_access_token)
         self.assertEqual(response.data["scope"], mock_scope)
+        self.assertIsNotNone(response.data["access_token_expiration"])
 
     def test_missing_ssp_response_values(self, mock_request):
         mock_reponse_missing_expected_values = {}

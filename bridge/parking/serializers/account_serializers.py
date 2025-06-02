@@ -21,6 +21,10 @@ class AccountLoginResponseSerializer(CamelToSnakeCaseSerializer):
     scope = serializers.CharField()
 
 
+class AccountLoginResponseExtendedSerializer(AccountLoginResponseSerializer):
+    access_token_expiration = serializers.DateTimeField()
+
+
 class PinCodeRequestSerializer(SnakeToCamelCaseSerializer):
     report_code = serializers.CharField()
     phone_number = serializers.CharField()

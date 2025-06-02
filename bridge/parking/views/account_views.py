@@ -1,7 +1,14 @@
+from datetime import datetime
+
+import jwt
+from rest_framework import status
+from rest_framework.response import Response
+
 from bridge.parking.exceptions import SSPPinCodeCheckError
 from bridge.parking.serializers.account_serializers import (
     AccountDetailsResponseSerializer,
     AccountLoginRequestSerializer,
+    AccountLoginResponseExtendedSerializer,
     AccountLoginResponseSerializer,
     BalanceRequestSerializer,
     PinCodeChangeRequestSerializer,
@@ -29,9 +36,26 @@ class ParkingAccountLoginView(BaseSSPView):
     ssp_http_method = "post"
     ssp_endpoint = SSPEndpoint.LOGIN
 
-    @ssp_openapi_decorator(response_serializer_class=AccountLoginResponseSerializer)
+    @ssp_openapi_decorator(
+        response_serializer_class=AccountLoginResponseExtendedSerializer
+    )
     def post(self, request, *args, **kwargs):
-        return self.call_ssp(request)
+        ssp_response = self.call_ssp(request)
+        if ssp_response.status_code != 200:
+            return ssp_response
+
+        access_jwt = ssp_response.data["access_token"]
+        decoded_jwt = jwt.decode(access_jwt, options={"verify_signature": False})
+        extended_data = {
+            **ssp_response.data,
+            "access_token_expiration": datetime.fromtimestamp(decoded_jwt["exp"]),
+        }
+        extended_response = AccountLoginResponseExtendedSerializer(extended_data)
+
+        return Response(
+            data=extended_response.data,
+            status=status.HTTP_200_OK,
+        )
 
 
 class ParkingPinCodeView(BaseSSPView):
