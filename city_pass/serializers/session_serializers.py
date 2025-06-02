@@ -13,9 +13,9 @@ class DetailResultSerializer(serializers.Serializer):
 
 class SessionTokensOutSerializer(serializers.Serializer):
     access_token = serializers.CharField()
-    access_token_exp = serializers.DateTimeField()
+    access_token_expiration = serializers.DateTimeField()
     refresh_token = serializers.CharField()
-    refresh_token_exp = serializers.DateTimeField()
+    refresh_token_expiration = serializers.DateTimeField()
 
     def _get_expiration_datetime(self, token: SessionToken) -> datetime:
         token_ttl = None
@@ -39,9 +39,9 @@ class SessionTokensOutSerializer(serializers.Serializer):
 
         return {
             "access_token": access_token.token,
-            "access_token_exp": self._get_expiration_datetime(access_token),
+            "access_token_expiration": self._get_expiration_datetime(access_token),
             "refresh_token": refresh_token.token,
-            "refresh_token_exp": self._get_expiration_datetime(refresh_token),
+            "refresh_token_expiration": self._get_expiration_datetime(refresh_token),
         }
 
 

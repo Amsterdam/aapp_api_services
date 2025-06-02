@@ -40,10 +40,14 @@ class TestSessionTokensOutSerializer(TestCase):
 
         # Expiration dates should be related to token ttl
         self.assert_expiration_dt_related_to_ttl(
-            freeze_time_at, "ACCESS_TOKEN", serializer_output.data["access_token_exp"]
+            freeze_time_at,
+            "ACCESS_TOKEN",
+            serializer_output.data["access_token_expiration"],
         )
         self.assert_expiration_dt_related_to_ttl(
-            freeze_time_at, "REFRESH_TOKEN", serializer_output.data["refresh_token_exp"]
+            freeze_time_at,
+            "REFRESH_TOKEN",
+            serializer_output.data["refresh_token_expiration"],
         )
 
     @override_settings(
@@ -63,10 +67,14 @@ class TestSessionTokensOutSerializer(TestCase):
 
         # Expiration dates should again be related to token ttl
         self.assert_expiration_dt_related_to_ttl(
-            freeze_time_at, "ACCESS_TOKEN", serializer_output.data["access_token_exp"]
+            freeze_time_at,
+            "ACCESS_TOKEN",
+            serializer_output.data["access_token_expiration"],
         )
         self.assert_expiration_dt_related_to_ttl(
-            freeze_time_at, "REFRESH_TOKEN", serializer_output.data["refresh_token_exp"]
+            freeze_time_at,
+            "REFRESH_TOKEN",
+            serializer_output.data["refresh_token_expiration"],
         )
 
     @override_settings(
@@ -87,10 +95,10 @@ class TestSessionTokensOutSerializer(TestCase):
 
         # Expiration dates should be equal to cut off datetime
         self.assertEqual(
-            serializer_output.data["access_token_exp"], token_cut_off_datetime
+            serializer_output.data["access_token_expiration"], token_cut_off_datetime
         )
         self.assertEqual(
-            serializer_output.data["refresh_token_exp"], token_cut_off_datetime
+            serializer_output.data["refresh_token_expiration"], token_cut_off_datetime
         )
 
     @override_settings(
@@ -111,8 +119,8 @@ class TestSessionTokensOutSerializer(TestCase):
 
         # Expiration dates should be equal to cut off datetime
         self.assertEqual(
-            serializer_output.data["access_token_exp"], token_cut_off_datetime
+            serializer_output.data["access_token_expiration"], token_cut_off_datetime
         )
         self.assertEqual(
-            serializer_output.data["refresh_token_exp"], token_cut_off_datetime
+            serializer_output.data["refresh_token_expiration"], token_cut_off_datetime
         )
