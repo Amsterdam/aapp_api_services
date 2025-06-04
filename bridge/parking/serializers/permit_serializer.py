@@ -45,6 +45,7 @@ class VisitorAccountSerializer(CamelToSnakeCaseSerializer):
 class PermitsRequestSerializer(SnakeToCamelCaseSerializer):
     STATUS_CHOICES = [
         ("ACTIVE", "Actief"),
+        ("INACTIVE", "Inactief"),
     ]
 
     status = StatusTranslationSerializer(required=False, choices=STATUS_CHOICES)
