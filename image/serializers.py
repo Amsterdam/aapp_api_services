@@ -61,8 +61,14 @@ class ImageSetFromUrlRequestSerializer(ImageSetBaseSerializer):
 
     def create(self, validated_data):
         url = validated_data.pop("url")
-        response = requests.get(url)
-        response.raise_for_status()
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            raise serializers.ValidationError(
+                f"Failed creating image set from URL: {e}"
+            )
+
         image_file = io.BytesIO(response.content)
         try:
             image_file.seek(0)

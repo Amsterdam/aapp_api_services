@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from requests import HTTPError
 from rest_framework import status
 
 from core.tests.test_authentication import BasicAPITestCase
@@ -164,6 +165,13 @@ class ImageSetFromUrlCreateViewTests(BasicAPITestCase):
     def test_create_imageset_from_url_invalid_image(self, mock_get):
         mock_get.return_value.status_code = 200
         mock_get.return_value.content = b"not_an_image"
+        payload = {"url": "https://example.com/image.jpg"}
+        response = self.client.post(self.url, payload, headers=self.api_headers)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch("image.serializers.requests.get")
+    def test_create_imageset_from_url_unreachable(self, mock_get):
+        mock_get.side_effect = HTTPError("Unreachable URL")
         payload = {"url": "https://example.com/image.jpg"}
         response = self.client.post(self.url, payload, headers=self.api_headers)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
