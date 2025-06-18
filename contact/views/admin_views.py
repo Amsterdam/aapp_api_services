@@ -1,4 +1,6 @@
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.urls import reverse
 from rest_framework.exceptions import APIException
 
 from contact.permissions import IsTimeAdmin
@@ -26,3 +28,16 @@ class CustomAdminLoginView(AdminLoginView):
             raise PermissionDenied("Group membership check failed.")
 
         return super().get(request, *args, **kwargs)
+
+
+def oidc_login(request, **kwargs):
+    oidc_authentication_init = reverse("oidc_authentication_init")
+    return HttpResponseRedirect(oidc_authentication_init)
+
+
+def oidc_login_failure(request):
+    return HttpResponseForbidden("Login failed")
+
+
+def oidc_login_success(request):
+    return HttpResponseRedirect(reverse("admin:index"))

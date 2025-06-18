@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 
+import amsterdam_django_oidc
 import jwt
 from django.conf import settings
 from django.contrib.auth.models import Group, User
@@ -175,3 +176,44 @@ class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         user.groups.set([group])
 
         return (user, None)
+
+
+class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend):
+    def verify_claims(self, claims):
+        return True
+
+    def create_user(self, claims):
+        user = super().create_user(claims)
+        return self.update_user(user, claims)
+
+    def update_user(self, user, claims):
+        user.first_name = claims.get("given_name", "")
+        user.last_name = claims.get("family_name", "")
+        user.is_staff = True
+        user.save()
+        self.update_groups(user, claims)
+        return user
+
+    def update_groups(self, user, claims):
+        pass
+
+    def authenticate(self, request, **kwargs):
+        user = super().authenticate(request, **kwargs)
+        # Ensure that the user does not come into an endless redirect loop
+        # when they try to login in to the admin, but do not have the correct
+        # role to edit sensors.
+        if user and user.is_staff:
+            return user
+        return None
+
+    def get_userinfo(self, access_token, id_token, payload):
+        """Return user details dictionary. The id_token and payload are not used in
+        the default implementation, but may be used when overriding this method"""
+
+        user_response = super().get_userinfo(access_token, id_token, payload)
+
+        # Add 'roles', 'groups' etc from payload
+        if payload.get("roles"):
+            user_response["roles"] = payload["roles"]
+
+        return user_response

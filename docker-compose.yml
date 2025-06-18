@@ -107,3 +107,12 @@ services:
       interval: 5s
       retries: 5
       timeout: 3s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    command: ["start-dev"]

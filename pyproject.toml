@@ -39,9 +39,10 @@ dependencies = [
   "model-bakery",
   "ruff",
   "aioresponses",
-  "pytest-asyncio",  # anyio pytest plugin?
+  "pytest-asyncio", # anyio pytest plugin?
   "coverage",
   "responses",
+  "amsterdam-django-oidc",
 ]
 
 [tool.pytest.ini_options]
@@ -82,3 +83,6 @@ omit = [
 fail_under = 92
 show_missing = true
 skip_covered = true
+
+[tool.uv.sources]
+amsterdam-django-oidc = { git = "https://github.com/Amsterdam/amsterdam-django-oidc" }
