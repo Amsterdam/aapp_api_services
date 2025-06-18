@@ -95,8 +95,7 @@ ENTRA_CLIENT_ID = os.getenv("CLIENT_ID")
 
 ENTRA_TOKEN_COOKIE_NAME = "__Host-Access-Token"
 
-# OIDC
-
+# Required by mozilla_django_oidc
 OIDC_BASE_URL = os.getenv(
     "OIDC_BASE_URL", f"https://login.microsoftonline.com/{ENTRA_TENANT_ID}"
 )
@@ -121,6 +120,11 @@ OIDC_OP_LOGOUT_ENDPOINT = os.getenv(
 )
 OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"prompt": "select_account"}
 OIDC_USE_NONCE = False
+
+LOGIN_REDIRECT_URL = "/contact/admin/"
+LOGIN_REDIRECT_URL_FAILURE = "/contact/admin/login/failure/"
+# LOGOUT_REDIRECT_URL = "/contact/admin"
+
 # Required by amsterdam_django_oidc
 OIDC_OP_ISSUER = os.getenv(
     "OIDC_OP_ISSUER", f"https://sts.windows.net/{ENTRA_TENANT_ID}/"
@@ -130,9 +134,9 @@ OIDC_TRUSTED_AUDIENCES = os.getenv(
     "OIDC_TRUSTED_AUDIENCES", [f"api://{OIDC_RP_CLIENT_ID}"]
 )
 
-LOGIN_REDIRECT_URL = "/contact/admin/"
-LOGIN_REDIRECT_URL_FAILURE = "/contact/admin/login/failure/"
-# LOGOUT_REDIRECT_URL = "/contact/admin"
+# Custom OIDC settings
+OIDC_TOKEN_EMAIL_CLAIM = os.getenv("OIDC_TOKEN_EMAIL_CLAIM", "upn")
+
 
 TEMPLATES = [
     {

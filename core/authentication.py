@@ -179,14 +179,13 @@ class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
 
 
 class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend):
-    def verify_claims(self, claims):
-        return True
-
     def create_user(self, claims):
         user = super().create_user(claims)
         return self.update_user(user, claims)
 
+    @transaction.atomic
     def update_user(self, user, claims):
+        user.username = claims.get(settings.OIDC_TOKEN_EMAIL_CLAIM)
         user.first_name = claims.get("given_name", "")
         user.last_name = claims.get("family_name", "")
         user.is_staff = True
@@ -195,7 +194,11 @@ class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend)
         return user
 
     def update_groups(self, user, claims):
-        pass
+        # TODO: remove "environment-app_name-" from group names?
+        user.groups.clear()
+        for role_name in claims.get("roles", []):
+            group, _ = Group.objects.get_or_create(name=role_name)
+            user.groups.add(group)
 
     def authenticate(self, request, **kwargs):
         user = super().authenticate(request, **kwargs)
