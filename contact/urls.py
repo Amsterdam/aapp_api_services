@@ -32,6 +32,7 @@ urlpatterns = [
         name="contact-admin-login-failure",
     ),
     path("contact/admin/", admin.site.urls),
+    # path("beheer", admin_views.oidc_login_success, name="contact-admin-login-success"),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH)

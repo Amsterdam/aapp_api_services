@@ -85,7 +85,6 @@ MIDDLEWARE = [
 AUTHENTICATION_BACKENDS = [
     # "django.contrib.auth.backends.ModelBackend",
     "core.authentication.OIDCAuthenticationBackend",
-    # "mozilla_django_oidc.auth.OIDCAuthenticationBackend",
 ]
 
 ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
@@ -124,6 +123,8 @@ OIDC_USE_NONCE = False
 LOGIN_REDIRECT_URL = "/contact/admin/"
 LOGIN_REDIRECT_URL_FAILURE = "/contact/admin/login/failure/"
 # LOGOUT_REDIRECT_URL = "/contact/admin"
+
+# OIDC_AUTHENTICATION_CALLBACK_URL = "contact-admin-login-success"
 
 # Required by amsterdam_django_oidc
 OIDC_OP_ISSUER = os.getenv(

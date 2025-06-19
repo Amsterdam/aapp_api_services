@@ -202,20 +202,12 @@ class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend)
 
     def authenticate(self, request, **kwargs):
         user = super().authenticate(request, **kwargs)
-        # Ensure that the user does not come into an endless redirect loop
-        # when they try to login in to the admin, but do not have the correct
-        # role to edit sensors.
         if user and user.is_staff:
             return user
         return None
 
     def get_userinfo(self, access_token, id_token, payload):
-        """Return user details dictionary. The id_token and payload are not used in
-        the default implementation, but may be used when overriding this method"""
-
         user_response = super().get_userinfo(access_token, id_token, payload)
-
-        # Add 'roles', 'groups' etc from payload
         if payload.get("roles"):
             user_response["roles"] = payload["roles"]
 
