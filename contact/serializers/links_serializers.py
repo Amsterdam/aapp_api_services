@@ -4,6 +4,7 @@ from rest_framework import serializers
 class LinksOutSerializer(serializers.Serializer):
     parking = serializers.URLField()
     parking_visitors = serializers.URLField()
+    parking_request_license_plate = serializers.URLField()
     documents = serializers.URLField()
     relocation = serializers.URLField()
     income_help = serializers.URLField()
