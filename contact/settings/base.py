@@ -41,9 +41,9 @@ MOCK_ENTRA_AUTH = False
 # Auth settings
 
 # Enable to use OIDC for authentication
-AUTHENTICATION_BACKENDS = [
-    "amsterdam_django_oidc.OIDCAuthenticationBackend",
-]
+# AUTHENTICATION_BACKENDS = [
+#     "amsterdam_django_oidc.OIDCAuthenticationBackend",
+# ]
 
 LOGIN_REDIRECT_URL = "/contact/admin/"
 LOGIN_REDIRECT_URL_FAILURE = "/contact/admin/login/failure/"
