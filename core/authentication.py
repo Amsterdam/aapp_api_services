@@ -179,5 +179,9 @@ class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
 
 
 class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend):
-    def authenticate(self, request, **kwargs):
+    def authenticate(self, request, **kwargs):  # pragma: no cover
+        # This is the start of a custom OIDC authentication backend.
+        # Returning None will cause authentication to fail.
+        # This is to test the working of LOGIN_REDIRECT_URL_FAILURE.
+        # When implemented the "pragma: no cover" should be removed.
         return None

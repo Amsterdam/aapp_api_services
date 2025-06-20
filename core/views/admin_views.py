@@ -6,12 +6,12 @@ from django.views import View
 
 
 class AdminLoginView(View):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):  # pragma: no cover
         login(request, request.user)
         url_lookup = reverse("admin:index")
         return redirect(url_lookup)
 
 
 class OIDCLoginFailureView(View):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):  # pragma: no cover
         return HttpResponseForbidden("Login failed")
