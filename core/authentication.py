@@ -1,7 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
 
-import amsterdam_django_oidc
 import jwt
 from django.conf import settings
 from django.contrib.auth.models import Group, User
@@ -176,39 +175,3 @@ class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         user.groups.set([group])
 
         return (user, None)
-
-
-class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend):
-    def create_user(self, claims):
-        user = super().create_user(claims)
-        return self.update_user(user, claims)
-
-    @transaction.atomic
-    def update_user(self, user, claims):
-        user.username = claims.get(settings.OIDC_TOKEN_EMAIL_CLAIM)
-        user.first_name = claims.get("given_name", "")
-        user.last_name = claims.get("family_name", "")
-        user.is_staff = True
-        user.save()
-        self.update_groups(user, claims)
-        return user
-
-    def update_groups(self, user, claims):
-        # TODO: remove "environment-app_name-" from group names?
-        user.groups.clear()
-        for role_name in claims.get("roles", []):
-            group, _ = Group.objects.get_or_create(name=role_name)
-            user.groups.add(group)
-
-    def authenticate(self, request, **kwargs):
-        user = super().authenticate(request, **kwargs)
-        if user and user.is_staff:
-            return user
-        return None
-
-    def get_userinfo(self, access_token, id_token, payload):
-        user_response = super().get_userinfo(access_token, id_token, payload)
-        if payload.get("roles"):
-            user_response["roles"] = payload["roles"]
-
-        return user_response

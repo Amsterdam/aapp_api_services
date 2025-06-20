@@ -1,38 +1,44 @@
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic.base import RedirectView
 
 from contact.views import admin_views, contact_views, link_views
 from core.urls import get_swagger_paths
 
-BASE_PATH = "contact/api/v1"
-
+BASE_PATH_API = "contact/api/v1"
+BASE_PATH_ADMIN = "contact/admin"
 
 urlpatterns = [
     path(
-        BASE_PATH + "/city-offices",
+        BASE_PATH_API + "/city-offices",
         contact_views.CityOfficesView.as_view(),
         name="contact-city-offices",
     ),
     path(
-        BASE_PATH + "/waiting-times",
+        BASE_PATH_API + "/waiting-times",
         contact_views.WaitingTimesView.as_view(),
         name="contact-waiting-times",
     ),
-    path(BASE_PATH + "/links", link_views.LinksView.as_view(), name="contact-links"),
     path(
-        BASE_PATH + "/health-check",
+        BASE_PATH_API + "/links", link_views.LinksView.as_view(), name="contact-links"
+    ),
+    path(
+        BASE_PATH_API + "/health-check",
         contact_views.HealthCheckView.as_view(),
         name="contact-health-check",
     ),
-    path("contact/oidc/", include("mozilla_django_oidc.urls")),
-    path("contact/admin/login/", admin_views.oidc_login, name="contact-admin-login"),
+    path(BASE_PATH_ADMIN + "/oidc/", include("mozilla_django_oidc.urls")),
     path(
-        "contact/admin/login/failure/",
-        admin_views.oidc_login_failure,
+        BASE_PATH_ADMIN + "/login/",
+        RedirectView.as_view(pattern_name="oidc_authentication_init", permanent=False),
+        name="contact-admin-login",
+    ),
+    path(
+        BASE_PATH_ADMIN + "/login/failure/",
+        admin_views.OIDCLoginFailureView.as_view(),
         name="contact-admin-login-failure",
     ),
-    path("contact/admin/", admin.site.urls),
-    # path("beheer", admin_views.oidc_login_success, name="contact-admin-login-success"),
+    path(BASE_PATH_ADMIN + "/", admin.site.urls),
 ]
 
-urlpatterns += get_swagger_paths(BASE_PATH)
+urlpatterns += get_swagger_paths(BASE_PATH_API)

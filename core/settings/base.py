@@ -84,7 +84,7 @@ MIDDLEWARE = [
 
 AUTHENTICATION_BACKENDS = [
     # "django.contrib.auth.backends.ModelBackend",
-    "core.authentication.OIDCAuthenticationBackend",
+    "amsterdam_django_oidc.OIDCAuthenticationBackend",
 ]
 
 ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
@@ -117,14 +117,13 @@ OIDC_OP_JWKS_ENDPOINT = os.getenv(
 OIDC_OP_LOGOUT_ENDPOINT = os.getenv(
     "OIDC_OP_LOGOUT_ENDPOINT", f"{OIDC_BASE_URL}/oauth2/v2.0/logout"
 )
-OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"prompt": "select_account"}
-OIDC_USE_NONCE = False
+OIDC_AUTH_REQUEST_EXTRA_PARAMS = {
+    "prompt": "select_account"
+}  # TODO: check what this does
+OIDC_USE_NONCE = False  # TODO: check what this does
 
 LOGIN_REDIRECT_URL = "/contact/admin/"
 LOGIN_REDIRECT_URL_FAILURE = "/contact/admin/login/failure/"
-# LOGOUT_REDIRECT_URL = "/contact/admin"
-
-# OIDC_AUTHENTICATION_CALLBACK_URL = "contact-admin-login-success"
 
 # Required by amsterdam_django_oidc
 OIDC_OP_ISSUER = os.getenv(
