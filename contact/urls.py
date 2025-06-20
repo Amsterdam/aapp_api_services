@@ -1,6 +1,7 @@
 from django.urls import path
 
 from contact.views import contact_views, link_views
+from contact.views.admin_views import CustomAdminLoginView
 from core.urls import get_admin_paths, get_swagger_paths
 
 BASE_PATH_API = "contact/api/v1"
@@ -28,4 +29,6 @@ urlpatterns = [
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH_API)
-urlpatterns += get_admin_paths(BASE_PATH_ADMIN)
+urlpatterns += get_admin_paths(
+    BASE_PATH_ADMIN, enable_oidc=False, admin_login_view=CustomAdminLoginView
+)

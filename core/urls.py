@@ -35,23 +35,42 @@ def get_swagger_paths(base_path):
     return urlpatterns
 
 
-def get_admin_paths(base_path_admin):
+def get_admin_paths(
+    base_path_admin,
+    enable_oidc=True,
+    admin_login_view=admin_views.AdminLoginView,
+):  # pragma: no cover
     service_name = base_path_admin.split("/")[0]
-    login_name = f"{service_name}-admin-login"
-    urlpatterns = [
-        path(base_path_admin + "/oidc/", include("mozilla_django_oidc.urls")),
-        path(
-            base_path_admin + "/login/",
-            RedirectView.as_view(
-                pattern_name="oidc_authentication_init", permanent=False
+    urlpatterns = []
+
+    if enable_oidc:
+        urlpatterns += [
+            path(base_path_admin + "/oidc/", include("mozilla_django_oidc.urls")),
+            path(
+                base_path_admin + "/login/",
+                RedirectView.as_view(
+                    pattern_name="oidc_authentication_init", permanent=False
+                ),
+                name=f"{service_name}-admin-login",
             ),
-            name=login_name,
-        ),
-        path(
-            base_path_admin + "/login/failure/",
-            admin_views.OIDCLoginFailureView.as_view(),
-            name=f"{service_name}-admin-login-failure",
-        ),
+            path(
+                base_path_admin + "/login/failure/",
+                admin_views.OIDCLoginFailureView.as_view(),
+                name=f"{service_name}-admin-login-failure",
+            ),
+        ]
+    else:
+        urlpatterns += [
+            path(
+                base_path_admin + "/login/",
+                admin_login_view.as_view(),
+                name=f"{service_name}-admin-login",
+            ),
+        ]
+
+    # Admin has to be last, so that it can handle the login/failure paths
+    urlpatterns += [
         path(base_path_admin + "/", admin.site.urls),
     ]
+
     return urlpatterns
