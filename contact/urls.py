@@ -1,9 +1,7 @@
-from django.contrib import admin
-from django.urls import include, path
-from django.views.generic.base import RedirectView
+from django.urls import path
 
-from contact.views import admin_views, contact_views, link_views
-from core.urls import get_swagger_paths
+from contact.views import contact_views, link_views
+from core.urls import get_admin_urls, get_swagger_paths
 
 BASE_PATH_API = "contact/api/v1"
 BASE_PATH_ADMIN = "contact/admin"
@@ -27,18 +25,7 @@ urlpatterns = [
         contact_views.HealthCheckView.as_view(),
         name="contact-health-check",
     ),
-    path(BASE_PATH_ADMIN + "/oidc/", include("mozilla_django_oidc.urls")),
-    path(
-        BASE_PATH_ADMIN + "/login/",
-        RedirectView.as_view(pattern_name="oidc_authentication_init", permanent=False),
-        name="contact-admin-login",
-    ),
-    path(
-        BASE_PATH_ADMIN + "/login/failure/",
-        admin_views.OIDCLoginFailureView.as_view(),
-        name="contact-admin-login-failure",
-    ),
-    path(BASE_PATH_ADMIN + "/", admin.site.urls),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH_API)
+urlpatterns += get_admin_urls(BASE_PATH_ADMIN)
