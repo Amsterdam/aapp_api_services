@@ -46,7 +46,7 @@ dependencies = [
 requires-dist = [
     { name = "aiohttp" },
     { name = "aioresponses" },
-    { name = "amsterdam-django-oidc", git = "https://github.com/Amsterdam/amsterdam-django-oidc" },
+    { name = "amsterdam-django-oidc", specifier = ">=0.2.0" },
     { name = "azure-ad-verify-token" },
     { name = "azure-core" },
     { name = "azure-identity" },
@@ -149,9 +149,13 @@ wheels = [
 [[package]]
 name = "amsterdam-django-oidc"
 version = "0.2.0"
-source = { git = "https://github.com/Amsterdam/amsterdam-django-oidc#cf0bbde3643575e8e8b8d1bc056e3977d82be4c3" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mozilla-django-oidc" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/27/29/7cc997730e4ccacd6a0852575aeecab89de9fb863c9d531d3e3f242f2430/amsterdam_django_oidc-0.2.0.tar.gz", hash = "sha256:f8acb51479ae6ae46801b74547122a4baee6f357f93bf1a0e82fe4b17a38939b", size = 8185 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1a/84/86f64fb1a40d0205603a9ebba0eb72e257f37b7425246acc2740a3601b39/amsterdam_django_oidc-0.2.0-py3-none-any.whl", hash = "sha256:cb3406565882d30eeb41d06a99ad93fea6f03052d3bea593b1b0e77a8b8e5aaa", size = 9118 },
 ]
 
 [[package]]

@@ -1,6 +1,4 @@
 from django.core.exceptions import PermissionDenied
-from django.urls import reverse
-from django.views.generic import TemplateView
 from rest_framework.exceptions import APIException
 
 from contact.permissions import IsTimeAdmin
@@ -28,19 +26,3 @@ class CustomAdminLoginView(AdminLoginView):
             raise PermissionDenied("Group membership check failed.")
 
         return super().get(request, *args, **kwargs)
-
-
-class OIDCLoginFailureView(TemplateView):
-    template_name = "admin/login_failure.html"
-    status_code = 403  # HTTP Forbidden
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "title": "Login Failed",
-                "message": "Authentication failed. Please try again.",
-                "login_url": reverse("contact-admin-login"),
-            }
-        )
-        return context

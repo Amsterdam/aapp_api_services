@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 
+import amsterdam_django_oidc
 import jwt
 from django.conf import settings
 from django.contrib.auth.models import Group, User
@@ -175,3 +176,8 @@ class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         user.groups.set([group])
 
         return (user, None)
+
+
+class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend):
+    def authenticate(self, request, **kwargs):
+        return None

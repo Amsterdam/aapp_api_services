@@ -1,7 +1,7 @@
 from django.urls import path
 
 from contact.views import contact_views, link_views
-from core.urls import get_admin_urls, get_swagger_paths
+from core.urls import get_admin_paths, get_swagger_paths
 
 BASE_PATH_API = "contact/api/v1"
 BASE_PATH_ADMIN = "contact/admin"
@@ -28,4 +28,4 @@ urlpatterns = [
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH_API)
-urlpatterns += get_admin_urls(BASE_PATH_ADMIN)
+urlpatterns += get_admin_paths(BASE_PATH_ADMIN)

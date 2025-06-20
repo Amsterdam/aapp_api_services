@@ -5,7 +5,7 @@ from django.urls import include, path
 from django.views.generic.base import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from contact.views import admin_views
+from core.views import admin_views
 
 
 def get_swagger_paths(base_path):
@@ -35,7 +35,9 @@ def get_swagger_paths(base_path):
     return urlpatterns
 
 
-def get_admin_urls(base_path_admin):
+def get_admin_paths(base_path_admin):
+    service_name = base_path_admin.split("/")[0]
+    login_name = f"{service_name}-admin-login"
     urlpatterns = [
         path(base_path_admin + "/oidc/", include("mozilla_django_oidc.urls")),
         path(
@@ -43,12 +45,12 @@ def get_admin_urls(base_path_admin):
             RedirectView.as_view(
                 pattern_name="oidc_authentication_init", permanent=False
             ),
-            name="contact-admin-login",
+            name=login_name,
         ),
         path(
             base_path_admin + "/login/failure/",
             admin_views.OIDCLoginFailureView.as_view(),
-            name="contact-admin-login-failure",
+            name=f"{service_name}-admin-login-failure",
         ),
         path(base_path_admin + "/", admin.site.urls),
     ]
