@@ -1,3 +1,6 @@
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib import admin
 from django.urls import path
 
 from city_pass.views import data_views, session_views
@@ -53,6 +56,9 @@ urlpatterns = [
         data_views.PassBlockView.as_view(),
         name="city-pass-data-pass-block",
     ),
+    # Activate admin
+    path("city-pass/admin/", admin.site.urls),
 ]
-
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += get_swagger_paths(BASE_PATH)

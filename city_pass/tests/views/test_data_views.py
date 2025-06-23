@@ -5,7 +5,7 @@ from django.urls import reverse
 from model_bakery import baker
 from requests import Response
 
-from city_pass.models import PassData
+from city_pass.models import Budget, PassData
 from city_pass.tests import mock_data
 from city_pass.tests.base_test import BaseCityPassTestCase
 
@@ -46,6 +46,12 @@ class TestPassesView(BaseCityPassTestCase):
                 pass_data_obj.encrypted_transaction_key,
                 pass_no_trans_key_dict.get(pass_data_obj.pass_number),
             )
+
+        # Check if budgets were persisted
+        budgets = Budget.objects.all()
+        self.assertEqual(len(budgets), 2)
+        self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_4-9").exists())
+        self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_0-3").exists())
 
     def assert_source_api_error_was_logged_and_500_returned(
         self, mock_get, status_code: int, error_response: dict

@@ -44,6 +44,28 @@ class TestSessionInitView(BaseCityPassTestCase):
         self.assertIsNotNone(refresh_token_obj.session)
         self.assertEqual(access_token_obj.session, refresh_token_obj.session)
 
+    def test_session_init_without_device_id(self):
+        result = self.client.post(self.api_url, headers=self.headers, follow=True)
+        self.assertEqual(result.status_code, 200)
+        session = Session.objects.last()
+        self.assertIsNone(session.device_id)
+
+    def test_session_init_with_device_id(self):
+        headers = {**self.headers, settings.HEADER_DEVICE_ID: "test-device-id"}
+        result = self.client.post(self.api_url, headers=headers, follow=True)
+        self.assertEqual(result.status_code, 200)
+        session = Session.objects.last()
+        self.assertEqual(session.device_id, "test-device-id")
+
+    def test_session_init_with_existing_device_id(self):
+        headers = {**self.headers, settings.HEADER_DEVICE_ID: "test-device-id"}
+        result = self.client.post(self.api_url, headers=headers, follow=True)
+        self.assertEqual(result.status_code, 200)
+        result = self.client.post(self.api_url, headers=headers, follow=True)
+        self.assertEqual(result.status_code, 200)
+        session = Session.objects.last()
+        self.assertEqual(session.device_id, "test-device-id")
+
     def test_session_init_invalid_api_key(self):
         result = self.client.get(self.api_url, headers=None, follow=True)
         self.assertEqual(result.status_code, 401)

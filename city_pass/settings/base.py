@@ -3,7 +3,11 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "city-pass"
 INSTALLED_APPS += [
     "city_pass.apps.CityPassConfig",
+    "client_side_image_cropping",
 ]
+MEDIA_ROOT = BASE_DIR / "city-pass/media"
+MEDIA_URL = "/city-pass/media/"
+LANGUAGE_CODE = "nl-NL"
 
 ROOT_URLCONF = "city_pass.urls"
 
@@ -42,12 +46,14 @@ TOKEN_CUT_OFF_DATETIME = os.getenv("CITY_PASS_TOKEN_CUT_OFF_DATETIME", "10-1 10:
 
 MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
 MIJN_AMS_API_KEY_INBOUND = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
-MIJN_AMS_API_DOMAIN = os.getenv("MIJN_AMS_API_DOMAIN")
+MIJN_AMS_API_DOMAIN = os.getenv(
+    "MIJN_AMS_API_DOMAIN", "https://mams-t-appservice-bff.azurewebsites.net/"
+)
 MIJN_AMS_API_PATHS = {
     "PASSES": "/private/api/v1/services/amsapp/stadspas/passen/",
     "BUDGET_TRANSACTIONS": "/private/api/v1/services/amsapp/stadspas/budget/transactions/",
     "AANBIEDING_TRANSACTIONS": "/private/api/v1/services/amsapp/stadspas/aanbiedingen/transactions/",
     "PASS_BLOCK": "/private/api/v1/services/amsapp/stadspas/block/",
 }
-
+STATIC_ROOT = BASE_DIR / "city-pass/static"
 STATIC_URL = "/city-pass/static/"

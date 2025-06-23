@@ -19,6 +19,7 @@ dependencies = [
   # image
   "pillow",
   "pillow-heif",
+  "django-client-side-image-cropping",
   # construction work ETL
   "aiohttp",
   "tenacity",
@@ -75,6 +76,7 @@ omit = [
   "*/integration_tests/*",
   "*/urls.py",
   "*/admin.py",
+  "*/admin/*",
   "*/apps.py",
 ]
 

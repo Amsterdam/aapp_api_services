@@ -1,6 +1,9 @@
 from typing import Tuple
 
+from django.conf import settings
 from django.db import transaction
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
 from rest_framework.response import Response
 
@@ -8,17 +11,29 @@ from city_pass import authentication, models
 from city_pass.exceptions import TokenExpiredException, TokenInvalidException
 from city_pass.serializers import session_serializers as serializers
 from city_pass.views.extend_schema import extend_schema_with_access_token
-from core.utils.openapi_utils import extend_schema_for_api_key as extend_schema
+from core.utils.openapi_utils import extend_schema_for_api_key
+from core.views.mixins import DeviceIdMixin
 
 
-class SessionInitView(generics.CreateAPIView):
+class SessionInitView(DeviceIdMixin, generics.CreateAPIView):
     serializer_class = serializers.SessionTokensOutSerializer
+    device_id_required = False
 
-    @extend_schema(
+    @extend_schema_for_api_key(
         success_response=serializers.SessionTokensOutSerializer,
         request=None,
+        additional_params=[
+            OpenApiParameter(
+                settings.HEADER_DEVICE_ID,
+                OpenApiTypes.STR,
+                OpenApiParameter.HEADER,
+                required=False,
+            )
+        ],
     )
     def post(self, request, *args, **kwargs):
+        """Initialize a new session and return access and refresh token pair.
+        The device_id is optional and used to send notifications to the user."""
         access_token, refresh_token = self.init_session()
         serializer = self.get_serializer((access_token, refresh_token))
         return Response(data=serializer.data, status=status.HTTP_200_OK)
@@ -30,8 +45,10 @@ class SessionInitView(generics.CreateAPIView):
         Returns:
             Tuple[models.AccessToken, models.RefreshToken]: a new token pair
         """
+        old_sessions = models.Session.objects.filter(device_id=self.device_id).all()
+        old_sessions.delete()  # Remove old sessions for this device_id
 
-        new_session = models.Session()
+        new_session = models.Session(device_id=self.device_id)
         new_session.save()
 
         access_token = models.AccessToken(session=new_session)
@@ -47,7 +64,7 @@ class SessionPostCredentialView(generics.CreateAPIView):
     serializer_class = serializers.SessionCredentialInSerializer
     authentication_classes = [authentication.SessionCredentialsKeyAuthentication]
 
-    @extend_schema(
+    @extend_schema_for_api_key(
         success_response=serializers.DetailResultSerializer,
         exceptions=[TokenInvalidException, TokenExpiredException],
     )
@@ -75,7 +92,7 @@ class SessionPostCredentialView(generics.CreateAPIView):
 class SessionRefreshAccessView(generics.CreateAPIView):
     serializer_class = serializers.SessionRefreshInSerializer
 
-    @extend_schema(
+    @extend_schema_for_api_key(
         success_response=serializers.SessionTokensOutSerializer,
         exceptions=[TokenInvalidException, TokenExpiredException],
     )

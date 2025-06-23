@@ -12,6 +12,7 @@ class Module(ChoicesEnum):
     PARKING = "parking"
     WASTE = "waste"
     MIJN_AMS = "mijn-amsterdam"
+    CITY_PASS = "city-pass"
 
 
 class NotificationType(ChoicesEnum):
@@ -21,3 +22,4 @@ class NotificationType(ChoicesEnum):
     PARKING_REMINDER = f"{Module.PARKING.value}:parking-reminder"
     WASTE_DATE_REMINDER = f"{Module.WASTE.value}:date-reminder"
     MIJN_AMS_NOTIFICATION = f"{Module.MIJN_AMS.value}:notification"
+    CITY_PASS_NOTIFICATION = f"{Module.CITY_PASS.value}:notification"

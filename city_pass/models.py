@@ -2,7 +2,9 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import ForeignKey
 
 from city_pass.exceptions import TokenExpiredException
 
@@ -10,6 +12,21 @@ from city_pass.exceptions import TokenExpiredException
 class Session(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     encrypted_adminstration_no = models.CharField(null=True)
+    device_id = models.CharField(max_length=255, unique=True, null=True)
+
+
+class Budget(models.Model):
+    class Meta:
+        verbose_name = "Budget"
+        verbose_name_plural = "Budgetten"
+
+    code = models.CharField(max_length=255, unique=True)
+    title = models.CharField("Titel", max_length=255)
+    description = models.TextField("Omschrijving", null=True, blank=True)
+    created_at = models.DateTimeField("Aangemaakt op", auto_now_add=True)
+
+    def __str__(self) -> str:
+        return self.title
 
 
 class PassData(models.Model):
@@ -19,6 +36,7 @@ class PassData(models.Model):
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
     pass_number = models.CharField(null=False)
     encrypted_transaction_key = models.CharField(null=False)
+    budgets = models.ManyToManyField(Budget, verbose_name="Budgetten", blank=True)
 
 
 class SessionToken(models.Model):
@@ -121,3 +139,39 @@ class RefreshToken(SessionToken):
             seconds=settings.REFRESH_TOKEN_EXPIRATION_TIME
         )
         self.save()
+
+
+class Notification(models.Model):
+    class Meta:
+        verbose_name = "Notificatie"
+        verbose_name_plural = "Notificaties"
+
+    title = models.CharField("Titel", max_length=255)
+    message = models.TextField("Bericht")
+    url = models.URLField(null=True, blank=True)
+    budgets = models.ManyToManyField(Budget, verbose_name="Budgetten", blank=True)
+    image = models.ImageField(
+        "Afbeelding",
+        upload_to="city-pass/media/",
+        null=True,
+        blank=True,
+    )
+    image_description = models.CharField(
+        "Afbeelding omschrijving", max_length=255, null=True, blank=True
+    )
+    image_set_id = models.CharField(
+        "Image Set ID", max_length=255, null=True, blank=True
+    )
+    created_by = ForeignKey(
+        User,
+        verbose_name="Aangemaakt door",
+        on_delete=models.PROTECT,
+        related_name="notifications",
+    )
+    send_at = models.DateTimeField("Verstuurd op", null=True, blank=True)
+    nr_sessions = models.PositiveIntegerField(
+        "Aantal berichten verstuurd", default=0, editable=False
+    )
+
+    def __str__(self) -> str:
+        return f"Notificatie: {self.title[:50]}"
