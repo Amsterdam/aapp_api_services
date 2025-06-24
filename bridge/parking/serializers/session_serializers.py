@@ -136,6 +136,7 @@ class ParkingSessionReceiptRequestSerializer(SnakeToCamelCaseSerializer):
     vehicle_id = serializers.CharField()
     start_date_time = FlexibleDateTimeSerializer()
     end_date_time = FlexibleDateTimeSerializer()
+    ps_right_id = serializers.CharField(required=False)
 
     def to_representation(self, instance):
         """
