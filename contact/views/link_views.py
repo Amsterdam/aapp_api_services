@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 APP_LINKS = {
     "parking": "https://www.amsterdam.nl/parkeren/",
-    "parking_request_license_plate": "https://www.amsterdam.nl/parkeren/parkeren-gehandicapten/parkeervergunning-gehandicapte-bewoners/gehandicapte-bewoners-kenteken-wijzigen/",
+    "parking_request_license_plate_ga_bewoners": "https://www.amsterdam.nl/parkeren/parkeren-gehandicapten/parkeervergunning-gehandicapte-bewoners/gehandicapte-bewoners-kenteken-wijzigen/",
+    "parking_request_license_plate_ga_bezoekers": "https://www.amsterdam.nl/parkeren/parkeren-gehandicapten/parkeervergunning-gehandicapte-bezoekers/gehandicapte-bezoekers-kenteken-wijzigen/ ",
+    "parking_request_license_plate_mantelzorgers": "https://www.amsterdam.nl/parkeren/parkeervergunning/parkeervergunning-voor-mantelzorgers/parkeervergunning-mantelzorgers-kenteken/",
     "parking_visitors": "https://aanmeldenparkeren.amsterdam.nl/login",
     "documents": "https://www.amsterdam.nl/burgerzaken/akten-uittreksels/",
     "relocation": "https://www.amsterdam.nl/burgerzaken/verhuizing-doorgeven/",
