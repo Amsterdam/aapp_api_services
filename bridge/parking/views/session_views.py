@@ -2,6 +2,8 @@ import hashlib
 import logging
 from datetime import datetime
 
+from django.utils import timezone
+
 from bridge.parking.enums import NotificationStatus
 from bridge.parking.serializers.session_serializers import (
     ParkingOrderResponseSerializer,
@@ -83,7 +85,8 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         if response.status_code != 200:
             return self._make_response(response)
 
-        notification_status = self.process_notification(request)
+        parking_session = request.data["parking_session"]
+        notification_status = self.process_notification(parking_session)
         return self._make_response(response, notification_status=notification_status)
 
     @ssp_openapi_decorator(
@@ -96,7 +99,8 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         if response.status_code != 200:
             return self._make_response(response)
 
-        notification_status = self.process_notification(request)
+        parking_session = request.data["parking_session"]
+        notification_status = self.process_notification(parking_session)
         return self._make_response(response, notification_status=notification_status)
 
     @ssp_openapi_decorator(
@@ -110,23 +114,25 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         if response.status_code != 200:
             return self._make_response(response)
 
-        notification_status = self.process_notification(request)
+        parking_session = request.query_params
+        notification_status = self.process_notification(parking_session)
         return self._make_response(response, notification_status=notification_status)
 
-    def process_notification(self, request) -> NotificationStatus:
+    def process_notification(self, parking_session) -> NotificationStatus:
         try:
-            parking_session = request.data["parking_session"]
             reminder_key = self._get_reminder_key(
                 report_code=parking_session["report_code"],
                 vehicle_id=parking_session["vehicle_id"],
             )
             end_datetime = parse_iso_datetime(
-                date_time_str=parking_session["end_date_time"]
+                date_time_str=parking_session.get("end_date_time")
+                or timezone.now().isoformat()
             )
             scheduler = ParkingReminderScheduler(
                 reminder_key=reminder_key,
                 end_datetime=end_datetime,
                 device_id=self.device_id,
+                report_code=parking_session["report_code"],
             )
             notification_status = scheduler.process()
             return notification_status

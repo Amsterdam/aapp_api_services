@@ -17,10 +17,17 @@ class ReminderSchedulerError(Exception):
 
 
 class ParkingReminderScheduler:
-    def __init__(self, reminder_key: str, end_datetime: datetime, device_id: str):
+    def __init__(
+        self,
+        reminder_key: str,
+        end_datetime: datetime,
+        device_id: str,
+        report_code: str,
+    ):
         self.schedule_service = ScheduledNotificationService()
 
         self.device_id = device_id
+        self.report_code = report_code
         self.reminder_key = reminder_key
         self.identifier = self._create_identifier(reminder_key)
 
@@ -73,7 +80,12 @@ class ParkingReminderScheduler:
             body=content.body,
             identifier=self.identifier,
             scheduled_for=self.reminder_time,
-            context={"reminderKey": self.reminder_key},
+            context={
+                "reminderKey": self.reminder_key,
+                "type": NotificationType.PARKING_REMINDER.value,
+                "module_slug": Module.PARKING.value,
+                "reportCode": self.report_code,
+            },
             device_ids=[self.device_id],
             notification_type=NotificationType.PARKING_REMINDER.value,
             module_slug=Module.PARKING.value,

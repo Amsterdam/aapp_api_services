@@ -152,6 +152,7 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
             "report_code": 1234567890,
             "ps_right_id": 1234567890,
             "start_date_time": "2021-01-01T00:00:00Z",
+            "vehicle_id": "FOOBAR",
         }
         response = self.client.delete(
             self.url, query_params=delete_session_payload, headers=self.api_headers
@@ -311,6 +312,77 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self.assertEqual(response.status_code, 200)
         return response
+
+    @responses.activate
+    def test_delete_scheduled_notification_from_patch_endpoint(self):
+        responses.post(
+            SSPEndpoint.ORDERS.value,
+            json=self.start_response_data,
+        )
+        rsp_get = responses.get(
+            self.notifications_endpoint_regex_url,
+            json={"device_ids": ["foobar"]},
+        )
+        rsp_patch = responses.delete(
+            self.notifications_endpoint_regex_url,
+        )
+        start_time = timezone.now()
+        end_time = start_time + timedelta(minutes=settings.PARKING_REMINDER_TIME - 1)
+
+        patch_session_payload = {
+            "parking_session": {
+                "report_code": self.report_code,
+                "ps_right_id": 1234,
+                "start_date_time": start_time.isoformat(),
+                "end_date_time": end_time.isoformat(),
+                "vehicle_id": "FOOBAR",
+            }
+        }
+        response = self.client.patch(
+            self.url, patch_session_payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            response.data["notification_status"], NotificationStatus.CANCELLED.name
+        )
+        self.assertEqual(rsp_get.call_count, 1)
+        self.assertEqual(rsp_patch.call_count, 1)
+
+    @responses.activate
+    def test_delete_scheduled_notification_from_delete_endpoint(self):
+        responses.post(
+            SSPEndpoint.ORDERS.value,
+            json=self.start_response_data,
+        )
+        rsp_get = responses.get(
+            self.notifications_endpoint_regex_url,
+            json={"device_ids": ["foobar"]},
+        )
+        rsp_patch = responses.delete(
+            self.notifications_endpoint_regex_url,
+        )
+        start_time = timezone.now()
+
+        delete_session_payload = {
+            "report_code": self.report_code,
+            "ps_right_id": 1234,
+            "start_date_time": start_time.isoformat(),
+            "vehicle_id": "FOOBAR",
+        }
+        response = self.client.delete(
+            self.url,
+            query_params=delete_session_payload,
+            format="json",
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            response.data["notification_status"], NotificationStatus.CANCELLED.name
+        )
+        self.assertEqual(rsp_get.call_count, 1)
+        self.assertEqual(rsp_patch.call_count, 1)
 
 
 class TestParkingSessionReceiptView(BaseSSPTestCase):
