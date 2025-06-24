@@ -19,7 +19,6 @@ help:
 lock-packages:
     # Update uv.lock file and overwrite timestamp
 	$(lint) uv lock --upgrade
-	$(lint) uv pip freeze > requirements.txt
 	@timestamp=$$(date -u +"%Y-%m-%dT%H:%M:%SZ"); \
 	sed -i '/^# Generated:/d' uv.lock; \
 	sed -i "1s/^/# Generated: $${timestamp}\n/" uv.lock; \

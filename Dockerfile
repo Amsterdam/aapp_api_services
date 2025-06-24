@@ -1,12 +1,15 @@
 ### Builds core application
 FROM python:3.11-alpine AS core
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.7.13 /uv /uvx /bin/
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=on
 
 # Any process that requires to write in the home dir
 # we write to /tmp since we have no home dir
-ENV HOME=/tmp
+ENV HOME=/tmp \
+    TMPDIR=/tmp \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPYCACHEPREFIX=/tmp/pycache
 WORKDIR /app
 
 # Install dependencies
