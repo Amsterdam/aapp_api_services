@@ -32,11 +32,6 @@ class BaseNotification(models.Model):
 
     class Meta:
         abstract = True
-        indexes = [
-            models.Index(fields=["module_slug"]),
-            models.Index(fields=["notification_type"]),
-            models.Index(fields=["created_at"]),
-        ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=1000)
@@ -62,6 +57,11 @@ class ScheduledNotification(BaseNotification):
         constraints = [
             models.UniqueConstraint(fields=["identifier"], name="unique_identifier")
         ]
+        indexes = [
+            models.Index(fields=["module_slug"]),
+            models.Index(fields=["notification_type"]),
+            models.Index(fields=["created_at"]),
+        ]
 
     identifier = models.CharField()
     scheduled_for = models.DateTimeField()
@@ -80,6 +80,13 @@ class Notification(BaseNotification):
     - is_read: to be set when device has read the notification
     - pushed_at: set to true when notification was pushed successfully
     """
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["module_slug"]),
+            models.Index(fields=["notification_type"]),
+            models.Index(fields=["created_at"]),
+        ]
 
     schedule = models.ForeignKey(
         ScheduledNotification, on_delete=models.PROTECT, null=True
