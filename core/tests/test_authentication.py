@@ -209,6 +209,25 @@ class TestEntraCookieTokenAuthentication(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, "ok")
 
+    def test_successful_authentication_cookie_chunks(self):
+        token = create_jwt_token(
+            email="test@test.com", first_name="Test", last_name="Test"
+        )
+        # Simulate cookie being split into chunks
+        token_chunks = [token[i : i + 100] for i in range(0, len(token), 100)]
+        token = "; ".join(
+            [
+                f"{settings.ENTRA_TOKEN_COOKIE_NAME}.{i}={chunk}"
+                for i, chunk in enumerate(token_chunks)
+            ]
+        )
+        headers = {"Cookie": token}
+
+        request = self.factory.get("/", headers=headers)
+        response = DummyCookieView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, "ok")
+
     def test_missing_cookie(self):
         request = self.factory.get("/")
         response = DummyCookieView.as_view()(request)
@@ -234,9 +253,9 @@ class TestEntraCookieTokenAuthentication(APITestCase):
     def test_groups_are_added_to_user(self):
         email = "test@test.com"
 
-        def get_token(groups):
+        def get_token(roles):
             return create_jwt_token(
-                email=email, first_name="Test", last_name="Test", groups=groups
+                email=email, first_name="Test", last_name="Test", roles=roles
             )
 
         def make_request(token):
@@ -250,16 +269,16 @@ class TestEntraCookieTokenAuthentication(APITestCase):
             self.assertEqual([group.name for group in user.groups.all()], groups)
 
         # First user has one group
-        groups = ["group1"]
-        make_request(get_token(groups))
-        assert_user_has_groups(groups)
+        roles = ["group1"]
+        make_request(get_token(roles))
+        assert_user_has_groups(roles)
 
         # Then same user has extra group
-        groups.append("group2")
-        make_request(get_token(groups))
-        assert_user_has_groups(groups)
+        roles.append("group2")
+        make_request(get_token(roles))
+        assert_user_has_groups(roles)
 
         # Then user loses first group
-        groups.remove("group1")
-        make_request(get_token(groups))
-        assert_user_has_groups(groups)
+        roles.remove("group1")
+        make_request(get_token(roles))
+        assert_user_has_groups(roles)

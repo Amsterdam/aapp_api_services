@@ -4,24 +4,24 @@ from django.contrib.auth.models import AnonymousUser, Group, User
 from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory, override_settings
 
-from contact.views.admin_views import CustomAdminLoginView
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+from core.views.admin_views import AdminLoginView
 
 
-@override_settings(CBS_TIME_PUBLISHER_GROUP="entra_admin")
+@override_settings(ADMIN_ROLES=["cbs-time-publisher", "cbs-time-delegated"])
 class TestContactAdminLoginView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
 
-        self.view_class = CustomAdminLoginView
+        self.view_class = AdminLoginView
         self.factory = RequestFactory()
-        self.admin_group = Group.objects.create(name="entra_admin")
+        self.admin_group = Group.objects.create(name="o-cbs-time-publisher")
         self.test_user = User.objects.create_user(
             username="testuser", email="test@example.com"
         )
         self.test_user.groups.add(self.admin_group)
 
-    @patch("contact.views.admin_views.EntraCookieTokenAuthentication")
+    @patch("core.views.admin_views.EntraCookieTokenAuthentication")
     @patch("core.views.admin_views.login")
     @patch("core.views.admin_views.reverse")
     @patch("core.views.admin_views.redirect")
@@ -43,7 +43,7 @@ class TestContactAdminLoginView(ResponsesActivatedAPITestCase):
         # Assert
         self.assertEqual(response.status_code, 302)
 
-    @patch("contact.views.admin_views.EntraCookieTokenAuthentication")
+    @patch("core.views.admin_views.EntraCookieTokenAuthentication")
     def test_admin_login_view_authentication_failed(self, mock_auth):
         # Arrange
         request = self.factory.get("/admin/login/")
@@ -55,7 +55,7 @@ class TestContactAdminLoginView(ResponsesActivatedAPITestCase):
             self.view_class.as_view()(request)
         mock_auth_instance.authenticate.assert_called_once_with(request)
 
-    @patch("contact.views.admin_views.EntraCookieTokenAuthentication")
+    @patch("core.views.admin_views.EntraCookieTokenAuthentication")
     def test_admin_login_view_insufficient_permissions(self, mock_auth):
         # Arrange
         request = self.factory.get("/admin/login/")

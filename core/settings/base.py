@@ -40,6 +40,14 @@ DEBUG_TOOLBAR_CONFIG = {
 
 # Environment settings
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local").lower()
+SLUG_MAPPING = {
+    "local": "o",
+    "development": "o",
+    "testing": "t",
+    "acceptance": "a",
+    "production": "p",
+}
+ENVIRONMENT_SLUG = SLUG_MAPPING.get(ENVIRONMENT, "o")
 
 # Host configuration per environment
 HOSTS = {
@@ -257,3 +265,5 @@ CACHES = {
         },
     }
 }
+
+ADMIN_ROLES = []

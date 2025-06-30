@@ -5,6 +5,7 @@ from django.urls import path
 
 from city_pass.views import data_views, session_views
 from core.urls import get_swagger_paths
+from core.views.admin_views import AdminLoginView
 
 BASE_PATH = "city-pass/api/v1"
 
@@ -57,6 +58,11 @@ urlpatterns = [
         name="city-pass-data-pass-block",
     ),
     # Activate admin
+    path(
+        "city-pass/admin/login/",
+        AdminLoginView.as_view(),
+        name="city-pass-admin-login",
+    ),
     path("city-pass/admin/", admin.site.urls),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

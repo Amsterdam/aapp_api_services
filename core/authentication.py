@@ -125,7 +125,7 @@ class EntraTokenMixin:
 
 class EntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
     def authenticate(self, request):
-        token = request.COOKIES.get(settings.ENTRA_TOKEN_COOKIE_NAME)
+        token = self._read_token_from_cookies(request.COOKIES)
         if not token:
             raise AuthenticationFailed("Cookie not found")
 
@@ -133,7 +133,7 @@ class EntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
 
         user = self._create_user(token_data)
 
-        if token_data.get("groups"):
+        if token_data.get("roles"):
             self._update_user_groups(user, token_data)
 
         return (user, token_data)
@@ -158,9 +158,25 @@ class EntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
     @transaction.atomic
     def _update_user_groups(self, user: User, token_data: dict):
         user.groups.clear()
-        for group_name in token_data.get("groups", []):
+        for group_name in token_data.get("roles", []):
             group, _ = Group.objects.get_or_create(name=group_name)
             user.groups.add(group)
+
+    def _read_token_from_cookies(self, cookies) -> str | None:
+        base = settings.ENTRA_TOKEN_COOKIE_NAME
+        if base in cookies:  # old single-cookie path
+            return cookies[base]
+
+        # gather & sort chunks: AccessToken.0, AccessToken.1, …
+        chunks = {
+            int(k.split(".")[-1]): v
+            for k, v in cookies.items()
+            if k.startswith(f"{base}.")
+        }
+        if not chunks:
+            return None
+
+        return "".join(v for _, v in sorted(chunks.items()))
 
 
 class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
@@ -171,7 +187,8 @@ class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         if not user:
             user = User.objects.create_superuser(username="Mock User", email=email)
 
-        group, _ = Group.objects.get_or_create(name=settings.CBS_TIME_PUBLISHER_GROUP)
-        user.groups.set([group])
+        for _, role_name in ["mbs-admin", "cbs-time-publisher", "city-pass-publisher"]:
+            group, _ = Group.objects.get_or_create(name=f"o-{role_name}")
+            user.groups.set([group])
 
         return (user, None)

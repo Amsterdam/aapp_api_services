@@ -9,6 +9,7 @@ MEDIA_ROOT = BASE_DIR / "city-pass/media"
 MEDIA_URL = "/city-pass/media/"
 LANGUAGE_CODE = "nl-NL"
 
+X_FRAME_OPTIONS = "SAMEORIGIN"
 ROOT_URLCONF = "city_pass.urls"
 
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
@@ -57,3 +58,6 @@ MIJN_AMS_API_PATHS = {
 }
 STATIC_ROOT = BASE_DIR / "city-pass/static"
 STATIC_URL = "/city-pass/static/"
+
+MOCK_ENTRA_AUTH = False
+ADMIN_ROLES = ["city-pass-delegated", "city-pass-publisher"]

@@ -34,3 +34,6 @@ LOGGING["loggers"]["modules"] = {
 }
 
 STATIC_URL = "/modules/static/"
+
+MOCK_ENTRA_AUTH = False
+ADMIN_ROLES = ["msb-admin"]

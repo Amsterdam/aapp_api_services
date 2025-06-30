@@ -3,3 +3,5 @@
 # isort wants to change this order, which has to be skipped.
 from .base import *  # isort:skip
 from core.settings.local import *  # isort:skip
+
+MOCK_ENTRA_AUTH = os.getenv("MOCK_ENTRA_AUTH", "true").lower() == "true"

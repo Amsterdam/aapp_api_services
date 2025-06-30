@@ -1,6 +1,8 @@
+from django.contrib import admin
 from django.urls import path
 
 from core.urls import get_swagger_paths
+from core.views.admin_views import AdminLoginView
 from modules.views.module_version_views import (
     ModuleVersionCreateView,
     ModuleVersionDetailView,
@@ -62,6 +64,13 @@ urlpatterns = [
         BASE_PATH + "/releases",
         GetReleasesView.as_view(),
     ),
+    # Activate admin
+    path(
+        "modules/admin/login/",
+        AdminLoginView.as_view(),
+        name="modules-admin-login",
+    ),
+    path("modules/admin/", admin.site.urls),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH)

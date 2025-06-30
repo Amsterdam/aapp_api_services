@@ -25,6 +25,7 @@ def apply_signing_key_patch(test_case: TestCase) -> None:
 
 def create_jwt_token(
     groups: list[str] = None,
+    roles: list[str] = None,
     email: str = None,
     first_name: str = None,
     last_name: str = None,
@@ -33,6 +34,7 @@ def create_jwt_token(
         "aud": f"api://{settings.ENTRA_CLIENT_ID}",
         "iss": f"https://sts.windows.net/{settings.ENTRA_TENANT_ID}/",
         "groups": groups,
+        "roles": roles,
         "upn": email,
         "family_name": last_name,
         "given_name": first_name,

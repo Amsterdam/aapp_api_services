@@ -5,6 +5,7 @@ from django.conf import settings
 class ContactConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "contact"
+    verbose_name = "Openingstijden stadskantoren"
 
     def ready(self):
         from core import authentication
