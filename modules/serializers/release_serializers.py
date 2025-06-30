@@ -1,62 +1,90 @@
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from modules.generic_functions.get_versions import VersionQueries
-from modules.models import AppRelease, ModuleVersion
-from modules.serializers.module_version_serializers import ModuleVersionSerializer
+from modules.models import AppRelease, ReleaseModuleStatus
+from modules.utils import VersionQueries
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
 
-class ModuleOrderSerializer(serializers.Serializer):
-    moduleSlug = serializers.CharField(source="module.slug")  # Read-only slug
-    version = serializers.CharField()
-    status = serializers.IntegerField()
-
-
-class AppReleaseCreateSerializer(serializers.ModelSerializer):
-    modules = ModuleOrderSerializer(many=True)
+class ReleaseModuleSerializer(serializers.ModelSerializer):
+    # Module fields
+    moduleSlug = serializers.CharField(
+        source="module_version.module.slug", read_only=True
+    )
+    moduleStatus = serializers.IntegerField(
+        source="module_version.module.status", read_only=True
+    )
+    moduleAppReason = serializers.CharField(
+        source="module_version.module.app_reason", read_only=True
+    )
+    moduleFallbackUrl = serializers.CharField(
+        source="module_version.module.fallback_url", read_only=True
+    )
+    # Module Version fields
+    title = serializers.CharField(source="module_version.title", read_only=True)
+    version = serializers.CharField(source="module_version.version", read_only=True)
+    description = serializers.CharField(
+        source="module_version.description", read_only=True
+    )
+    icon = serializers.CharField(source="module_version.icon", read_only=True)
+    # ReleaseModuleStatus fields
+    releaseStatus = serializers.IntegerField(source="status", read_only=True)
+    releaseAppReason = serializers.CharField(source="app_reason", read_only=True)
+    releaseFallbackUrl = serializers.CharField(source="fallback_url", read_only=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
-        model = AppRelease
-        fields = "__all__"
-
-
-class ModuleVersionWithStatusSerializer(ModuleVersionSerializer):
-    status = serializers.IntegerField()
-
-    class Meta:
-        model = ModuleVersion
+        model = ReleaseModuleStatus
         fields = [
-            "title",
+            "moduleSlug",
             "version",
+            "title",
             "description",
             "icon",
-            "moduleSlug",
             "status",
+            "moduleStatus",
+            "moduleAppReason",
+            "moduleFallbackUrl",
+            "releaseStatus",
+            "releaseAppReason",
+            "releaseFallbackUrl",
         ]
+
+    def get_status(self, obj: ReleaseModuleStatus) -> int:
+        """
+        Returns the status of the module version in the context of the release.
+        """
+        release_status = obj.status
+        module_status = obj.module_version.module.status
+        if release_status == ReleaseModuleStatus.Status.INACTIVE:
+            return 0
+        if module_status == ReleaseModuleStatus.Status.INACTIVE:
+            return 0
+        return 1
 
 
 class AppReleaseSerializer(serializers.ModelSerializer):
-    """ModuleVersions by release"""
+    """
+    ModuleVersions by release
+
+    Some remarks:
+    1. releaseNotes refers to the release notes of the latest release
+    2. supported and deprecated refer to the current release
+    3. latestVersion refers to the latest published version
+    """
 
     latestReleaseNotes = serializers.SerializerMethodField()
     releaseNotes = serializers.SerializerMethodField()
-    modules = serializers.SerializerMethodField()
+    modules = ReleaseModuleSerializer(
+        many=True, source="releasemodulestatus_set", read_only=True
+    )
     published = serializers.SerializerMethodField()
     unpublished = serializers.SerializerMethodField()
     deprecated = serializers.SerializerMethodField()
     latestVersion = serializers.SerializerMethodField()
     isSupported = serializers.SerializerMethodField()
     isDeprecated = serializers.SerializerMethodField()
-
-    """
-    Some remarks:
-    1. releaseNotes refers to the release notes of the latest release
-    2. supported and deprecated refer to the current release
-    3. latestVersion refers to the latest published version
-    """
 
     class Meta:
         model = AppRelease
@@ -75,37 +103,12 @@ class AppReleaseSerializer(serializers.ModelSerializer):
             "latestReleaseNotes",
         ]
 
-    @extend_schema_field(ModuleVersionWithStatusSerializer(many=True))
-    def get_modules(self, obj: AppRelease) -> list:
-        all_rms = obj.releasemodulestatus_set.all()
-        _modules = []
-        for rms in all_rms:
-            _modules.append(
-                {
-                    "moduleSlug": rms.module_version.module.slug,
-                    "version": rms.module_version.version,
-                    "title": rms.module_version.title,
-                    "description": rms.module_version.description,
-                    "icon": rms.module_version.icon,
-                    "status": (
-                        rms.module_version.module.status
-                        if rms.module_version.module.status == 0
-                        else rms.status
-                    ),
-                }
-            )
-        # Sort modules as defined in module order of release
-        _modules = sorted(
-            _modules, key=lambda module: obj.module_order.index(module["moduleSlug"])
-        )
-        return _modules
-
     def get_releaseNotes(self, obj: AppRelease) -> str:
         return obj.release_notes
 
     def get_latestReleaseNotes(self, obj: AppRelease) -> str:
         latest_release = VersionQueries.get_highest_published_release()
-        return latest_release.release_notes
+        return latest_release.release_notes if latest_release else None
 
     def get_published(self, obj: AppRelease) -> str:
         result = None
@@ -127,7 +130,7 @@ class AppReleaseSerializer(serializers.ModelSerializer):
 
     def get_latestVersion(self, obj: AppRelease) -> str:
         latest_release = VersionQueries.get_highest_published_release()
-        return latest_release.version
+        return latest_release.version if latest_release else None
 
     def get_isDeprecated(self, obj: AppRelease) -> bool:
         today = timezone.now()

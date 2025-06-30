@@ -21,7 +21,7 @@ class BaseProxyViewTestCase(ResponsesActivatedAPITestCase):
         self.assertEqual(self.rsp_get.call_count, 1)
 
         # Second call
-        self.client.get(self.url, request_body, headers=self.api_headers)
+        response = self.client.get(self.url, request_body, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(cache.keys("*")), 2)
