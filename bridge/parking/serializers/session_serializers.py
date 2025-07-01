@@ -47,7 +47,7 @@ class ParkingSessionResponseSerializer(CamelToSnakeCaseSerializer):
     vehicle_id = serializers.CharField()
     status = StatusTranslationSerializer(choices=STATUS_CHOICES)
     ps_right_id = serializers.CharField(required=False)
-    visitor_name = serializers.CharField(required=False)
+    visitor_name = serializers.CharField(allow_blank=True, required=False)
     remaining_time = serializers.IntegerField()
     report_code = serializers.CharField()
     payment_zone_id = serializers.CharField(required=False)

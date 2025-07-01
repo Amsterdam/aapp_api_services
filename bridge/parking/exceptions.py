@@ -40,6 +40,12 @@ class SSPBalanceTooLowError(BaseApiException):
     default_code = "SSP_BALANCE_TOO_LOW"
 
 
+class SSPTimeBalanceInsufficientError(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Timebalance insufficient"
+    default_code = "SSP_TIME_BALANCE_INSUFFICIENT"
+
+
 class SSPStartTimeInPastError(BaseApiException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Start time is in the past"
@@ -78,6 +84,7 @@ class SSPPinCodeCheckError(BaseApiException):
 
 SSP_COMMON_400_ERRORS = [
     SSPBalanceTooLowError,
+    SSPTimeBalanceInsufficientError,
     SSPStartTimeInPastError,
     SSPStartDateEndDateNotSameError,
     SSPMaxSessionsReachedError,

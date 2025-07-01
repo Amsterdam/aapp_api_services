@@ -32,7 +32,7 @@ class TransactionResponseSerializer(CamelToSnakeCaseSerializer):
     is_visitor = serializers.BooleanField(required=False)
     parking_time = MillisecondsToSecondsSerializer(required=False)
     vehicle_id = serializers.CharField(required=False)
-    visitor_name = serializers.CharField(required=False)
+    visitor_name = serializers.CharField(allow_blank=True, required=False)
     amount = ValueCurrencySerializer(required=False)
     is_cancelled = serializers.BooleanField(required=False)
     is_stopped_early = serializers.BooleanField(required=False)
