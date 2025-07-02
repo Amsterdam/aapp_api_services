@@ -91,3 +91,5 @@ SSP_COMMON_400_ERRORS = [
     SSPVehicleIDNotAllowedError,
     SSPSessionDurationExceededError,
 ]
+# De error "Parking time outside available regime" moet NIET afgevangen worden,
+# want de frontend kijkt naar de raw error message

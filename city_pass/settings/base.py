@@ -56,8 +56,6 @@ MIJN_AMS_API_PATHS = {
     "AANBIEDING_TRANSACTIONS": "/private/api/v1/services/amsapp/stadspas/aanbiedingen/transactions/",
     "PASS_BLOCK": "/private/api/v1/services/amsapp/stadspas/block/",
 }
-STATIC_ROOT = BASE_DIR / "city-pass/static"
-STATIC_URL = "/city-pass/static/"
 
 MOCK_ENTRA_AUTH = False
-ADMIN_ROLES = ["city-pass-delegated", "city-pass-publisher"]
+ADMIN_ROLES += ["city-pass-delegated", "city-pass-publisher"]

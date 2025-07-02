@@ -11,6 +11,7 @@ MIDDLEWARE += [
 CSP_DEFAULT_SRC = ["'none'"]
 CSP_FRAME_ANCESTORS = ["'none'"]
 
+X_FRAME_OPTIONS = "SAMEORIGIN"
 ROOT_URLCONF = "modules.urls"
 
 SPECTACULAR_SETTINGS["TITLE"] = "Modules API"
@@ -26,8 +27,7 @@ LOGGING["loggers"]["modules"] = {
     "propagate": False,
 }
 
-STATIC_URL = "/modules/static/"
 LANGUAGE_CODE = "nl-NL"
 
 MOCK_ENTRA_AUTH = False
-ADMIN_ROLES = ["msb-admin"]
+ADMIN_ROLES += ["mbs-admin"]

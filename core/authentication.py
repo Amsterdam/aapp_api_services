@@ -187,8 +187,10 @@ class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         if not user:
             user = User.objects.create_superuser(username="Mock User", email=email)
 
-        for _, role_name in ["mbs-admin", "cbs-time-publisher", "city-pass-publisher"]:
+        groups = []
+        for role_name in ["mbs-admin", "cbs-time-publisher", "city-pass-publisher"]:
             group, _ = Group.objects.get_or_create(name=f"o-{role_name}")
-            user.groups.set([group])
+            groups.append(group)
+        user.groups.set(groups)
 
         return (user, None)

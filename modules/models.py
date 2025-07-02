@@ -2,6 +2,7 @@
 
 import re
 
+from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.forms import ValidationError
 
@@ -119,6 +120,11 @@ class AppRelease(models.Model):
         through_fields=("app_release", "module_version"),
         verbose_name="Modules in deze release",
     )
+    module_order = ArrayField(
+        models.CharField(max_length=500, blank=False),
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return f"Release {self.version} ({self.created.date()})"
@@ -155,20 +161,17 @@ class ReleaseModuleStatus(models.Model):
         max_length=500,
         blank=True,
         null=True,
-        help_text="Rede voor status wijziging. Alleen intern zichtbaar.",
     )
     app_reason = models.CharField(
         "App reden",
         max_length=500,
         blank=True,
         null=True,
-        help_text="Rede voor status wijziging. Zichtbaar in de app.",
     )
     fallback_url = models.URLField(
         max_length=500,
         blank=True,
         null=True,
-        help_text="URL om als backup te gebruiken.",
     )
 
     def __str__(self):

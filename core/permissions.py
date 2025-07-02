@@ -1,8 +1,4 @@
-import operator
-from functools import reduce
-
 from django.conf import settings
-from django.db.models import Q
 from rest_framework.permissions import BasePermission
 
 
@@ -12,14 +8,14 @@ class AdminPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        slug = settings.ENVIRONMENT_SLUG
-        environment_admin_roles = []
-        for role in settings.ADMIN_ROLES:
-            environment_admin_roles.append(f"{slug}-{role}")
+        if not settings.ADMIN_ROLES:
+            return False
+        # Do NOT check the environment of the admin roles.
+        required_roles = settings.ADMIN_ROLES
+        user_roles = request.user.groups.values_list("name", flat=True)
 
-        # Do NOT check environment of the admin roles.
-        query = reduce(
-            operator.or_, (Q(name__endswith=role) for role in environment_admin_roles)
-        )
-        user_has_admin_rights = request.user.groups.filter(query).exists()
-        return user_has_admin_rights
+        for role_req in required_roles:
+            for role_user in user_roles:
+                if role_req in role_user:
+                    return True
+        return False

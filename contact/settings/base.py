@@ -36,4 +36,4 @@ CITY_OFFICE_LOOKUP_TABLE = {
 TIME_INPUT_FORMATS = ["%H:%M"]
 
 MOCK_ENTRA_AUTH = False
-ADMIN_ROLES = ["cbs-time-delegated", "cbs-time-publisher"]
+ADMIN_ROLES += ["cbs-time-delegated", "cbs-time-publisher"]

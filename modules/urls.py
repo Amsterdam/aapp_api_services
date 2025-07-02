@@ -13,7 +13,6 @@ urlpatterns = [
         ReleaseDetailView.as_view(),
         name="modules-release-detail",
     ),
-    path("modules/admin/", admin.site.urls),
     # Activate admin
     path(
         "modules/admin/login/",
