@@ -17,13 +17,13 @@ class Migration(migrations.Migration):
                 SELECT
                   stat.id as module_status_id,
                   rel.version as release_version,
-                  row_number() OVER (PARTITION BY rel.id) AS sort_order,
+                  row_number() OVER (PARTITION BY rel.id order by ordinality) AS sort_order,
                   mm.slug,
                   ver.version as module_version
                 FROM modules_releasemodulestatus stat
                 join modules_apprelease AS rel
                 on rel.id = stat.app_release_id 
-                CROSS JOIN LATERAL unnest(rel.module_order) AS m(module_slug)
+                CROSS JOIN LATERAL unnest(rel.module_order) WITH ORDINALITY AS m(module_slug, ordinality)
                 join modules_module mm
                 on mm.slug = m.module_slug
                 join modules_moduleversion ver
