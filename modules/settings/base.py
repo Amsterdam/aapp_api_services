@@ -3,7 +3,6 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "modules"
 INSTALLED_APPS += [
     "modules.apps.ModulesConfig",
-    "adminsortable2",
 ]
 MIDDLEWARE += [
     "csp.middleware.CSPMiddleware",
