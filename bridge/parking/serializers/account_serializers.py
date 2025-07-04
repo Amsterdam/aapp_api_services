@@ -49,9 +49,9 @@ class PinCodeResponseSerializer(CamelToSnakeCaseSerializer):
 class AddressSerializer(CamelToSnakeCaseSerializer):
     street = serializers.CharField()
     house_number = serializers.CharField()
-    house_letter = serializers.CharField(allow_blank=True)
+    house_letter = serializers.CharField(allow_blank=True, required=False)
     zip_code = serializers.CharField()
-    suffix = serializers.CharField(allow_blank=True)
+    suffix = serializers.CharField(allow_blank=True, required=False)
     city = serializers.CharField()
     concatenated_address = serializers.CharField()
 
