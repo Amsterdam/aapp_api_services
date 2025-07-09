@@ -35,6 +35,7 @@ class ParkingReminderScheduler:
             "reminder_key": reminder_key,
             "end_datetime": end_datetime,
         }
+        self.end_datetime = end_datetime
         self.reminder_time = self._get_reminder_time(end_datetime)
         self.log_extra["reminder_time"] = self.reminder_time
 
@@ -80,6 +81,7 @@ class ParkingReminderScheduler:
             body=content.body,
             identifier=self.identifier,
             scheduled_for=self.reminder_time,
+            expires_at=self.end_datetime,
             context={
                 "reminderKey": self.reminder_key,
                 "type": NotificationType.PARKING_REMINDER.value,

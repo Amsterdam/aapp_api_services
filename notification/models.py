@@ -61,12 +61,18 @@ class ScheduledNotification(BaseNotification):
             models.Index(fields=["module_slug"]),
             models.Index(fields=["notification_type"]),
             models.Index(fields=["created_at"]),
+            models.Index(
+                fields=["scheduled_for"],
+                condition=models.Q(pushed_at__isnull=True),
+                name="idx_notif_sched_for_unpushed",
+            ),  # Do not index the expires_at column, as this will increase write operations and slow down the database
         ]
 
     identifier = models.CharField()
     scheduled_for = models.DateTimeField()
     devices = models.ManyToManyField(Device, related_name="scheduled_notifications")
     pushed_at = models.DateTimeField(null=True)
+    expires_at = models.DateTimeField(default="3000-01-01")
 
     def __str__(self):
         return f"[SCHEDULED] {self.module_slug} - {self.title}"

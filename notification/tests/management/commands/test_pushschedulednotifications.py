@@ -85,3 +85,48 @@ class UpdatePartitionsTest(TransactionTestCase):
             ScheduledNotification.objects.filter(pushed_at__isnull=False).count(), 2
         )
         self.assertEqual(Notification.objects.count(), 5)
+
+    def test_push_expired_scheduled_notification(self):
+        devices = baker.make(Device, _quantity=2)
+        yesterday = datetime.now() - timedelta(days=1)
+        tomorrow = datetime.now() + timedelta(days=1)
+
+        non_expirable_notification = baker.make(
+            ScheduledNotification,
+            scheduled_for=yesterday,
+            pushed_at=None,
+            devices=devices,
+        )
+
+        expirable_notification = baker.make(
+            ScheduledNotification,
+            scheduled_for=yesterday,
+            expires_at=yesterday + timedelta(minutes=10),
+            pushed_at=None,
+            devices=devices,
+        )
+
+        future_notification = baker.make(
+            ScheduledNotification,
+            scheduled_for=tomorrow,
+            expires_at=tomorrow + timedelta(minutes=10),
+            pushed_at=None,
+            devices=devices,
+        )
+
+        call_command("pushschedulednotifications")
+
+        pushed_notifications = ScheduledNotification.objects.filter(
+            pushed_at__lt="3000-01-01 00:00:00"
+        )
+        not_pushed_notifications = ScheduledNotification.objects.filter(
+            pushed_at__isnull=True
+        )
+        expired_notifications = ScheduledNotification.objects.filter(
+            pushed_at="3000-01-01 00:00:00"
+        )
+        self.assertTrue(non_expirable_notification in pushed_notifications)
+        self.assertTrue(expirable_notification in expired_notifications)
+        self.assertTrue(future_notification in not_pushed_notifications)
+
+        self.assertEqual(Notification.objects.count(), len(devices))

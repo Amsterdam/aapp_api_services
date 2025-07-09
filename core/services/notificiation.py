@@ -33,6 +33,7 @@ class ScheduledNotificationService:
         notification_type: str,
         module_slug: str = None,
         image: str = None,
+        expires_at: datetime = None,
     ):
         request_data = {
             "title": title,
@@ -47,6 +48,8 @@ class ScheduledNotificationService:
         }
         if image:
             request_data["image"] = image
+        if expires_at:
+            request_data["expires_at"] = expires_at.isoformat()
 
         try:
             url = settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"]
