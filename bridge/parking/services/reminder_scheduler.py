@@ -42,6 +42,10 @@ class ParkingReminderScheduler:
     def process(self) -> NotificationStatus:
         reminder = self.schedule_service.get(self.identifier)
         if reminder:
+            if reminder.get("pushed_at") is not None:
+                logger.info("Reminder already pushed", extra=self.log_extra)
+                return NotificationStatus.NO_CHANGE
+
             if self.reminder_time:
                 logger.info("Updating reminder", extra=self.log_extra)
                 # Add the current device_id to the list of device_ids

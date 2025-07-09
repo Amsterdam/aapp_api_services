@@ -116,6 +116,7 @@ class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
             "notification_type",
             "image",
             "scheduled_for",
+            "pushed_at",
         ]
 
     def validate_scheduled_for(self, scheduled_date):
