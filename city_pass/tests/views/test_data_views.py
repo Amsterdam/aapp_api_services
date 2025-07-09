@@ -53,6 +53,25 @@ class TestPassesView(BaseCityPassTestCase):
         self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_4-9").exists())
         self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_0-3").exists())
 
+    @patch("city_pass.views.data_views.requests.request")
+    def test_get_passes_successful_repeated(self, mock_get):
+        mock_response = Response()
+        mock_response.status_code = 200
+        mock_response._content = json.dumps(
+            {"content": mock_data.passes, "status": "SUCCESS"}
+        ).encode("utf-8")
+        mock_get.return_value = mock_response
+
+        for _i in range(3):
+            result = self.client.get(self.api_url, headers=self.headers, follow=True)
+            self.assertEqual(result.status_code, 200)
+
+        # Check if budgets were persisted
+        budgets = Budget.objects.all()
+        self.assertEqual(len(budgets), 2)
+        self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_4-9").exists())
+        self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_0-3").exists())
+
     def assert_source_api_error_was_logged_and_500_returned(
         self, mock_get, status_code: int, error_response: dict
     ):
@@ -281,10 +300,26 @@ class TestPassBlockView(BaseCityPassTestCase):
         mock_post.return_value = mock_response
 
         url = reverse("city-pass-data-pass-block", args=[self.pass_number])
-        result = self.client.post(
+        result = self.client.put(
             url,
             headers=self.headers,
-            data={"passNumber": self.pass_number},
             follow=True,
         )
         self.assertEqual(200, result.status_code)
+
+    @patch("city_pass.views.data_views.requests.request")
+    def test_block_pass_unknown_pass_number(self, mock_post):
+        mock_response = Response()
+        mock_response.status_code = 200
+        mock_response._content = json.dumps(
+            {"content": "foobar", "status": "SUCCESS"}
+        ).encode("utf-8")
+        mock_post.return_value = mock_response
+
+        url = reverse("city-pass-data-pass-block", args=[123])
+        result = self.client.put(
+            url,
+            headers=self.headers,
+            follow=True,
+        )
+        self.assertEqual(500, result.status_code)

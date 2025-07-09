@@ -53,7 +53,7 @@ urlpatterns = [
         name="city-pass-data-aanbieding-transactions",
     ),
     path(
-        BASE_PATH + "/data/passes/block/<str:pass_number>",
+        BASE_PATH + "/data/passes/<str:pass_number>/block",
         data_views.PassBlockView.as_view(),
         name="city-pass-data-pass-block",
     ),

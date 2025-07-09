@@ -75,4 +75,4 @@ class MijnAmsPassAanbiedingSerializer(serializers.Serializer):
 
 
 class MijnAmsPassBlockSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=["BLOCKED", "UNBLOCKED"])
+    status = serializers.ChoiceField(choices=["BLOCKED"])

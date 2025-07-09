@@ -160,7 +160,7 @@ class PassesDataView(AbstractMijnAmsDataView):
         )
         Through.objects.bulk_create(
             links,
-            update_conflicts=False,
+            ignore_conflicts=True,
         )
 
 
@@ -262,24 +262,22 @@ class AanbiedingTransactionsView(AbstractTransactionsView):
 
 
 class PassBlockView(mixins.CreateModelMixin, AbstractTransactionsView):
-    serializer_class = serializers.MijnAmsPassBlockSerializer
     base_url = settings.MIJN_AMS_API_PATHS["PASS_BLOCK"]
-    serializer_many = False
-    http_method_names = ["post"]
+    http_method_names = ["put"]
 
     @extend_schema_with_access_token(
-        success_response=serializer_class,
+        success_response=serializers.MijnAmsPassBlockSerializer,
         exceptions=[
             MijnAMSAPIException,
             MijnAMSInvalidDataException,
             MijnAMSRequestException,
         ],
     )
-    def post(self, request, *args, **kwargs) -> Response:
+    def put(self, request, *args, **kwargs) -> Response:
         self.get_response_content(request, method="POST")
         data = {"status": "BLOCKED"}
         return Response(data, status=status.HTTP_200_OK)
 
     def get_pass_number(self, request):
-        pass_number = request.data.get("passNumber")
+        pass_number = self.kwargs["pass_number"]
         return pass_number
