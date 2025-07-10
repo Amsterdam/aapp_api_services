@@ -1,15 +1,11 @@
 import logging
 from unittest.mock import patch
 
-from django.conf import settings
 from django.test import TestCase, override_settings
 from firebase_admin import messaging
 from model_bakery import baker
 
-from notification.crud import (
-    NotificationCRUD,
-    NotificationCRUDDeviceLimitError,
-)
+from notification.crud import NotificationCRUD
 from notification.models import (
     Device,
     Notification,
@@ -22,7 +18,7 @@ from notification.utils.patch_utils import (
 )
 
 
-class TestNotificationService(TestCase):
+class TestNotificationCRUD(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -147,11 +143,12 @@ class TestNotificationService(TestCase):
 
     @override_settings(FIREBASE_DEVICE_LIMIT=5)
     def test_hit_max_devices(self):
-        [baker.make(Device) for i in range(settings.FIREBASE_DEVICE_LIMIT + 1)]
+        [baker.make(Device) for i in range(6)]
         device_qs = Device.objects.all()
-        with self.assertRaises(NotificationCRUDDeviceLimitError):
-            notification = baker.make(Notification)
-            NotificationCRUD(notification).create(device_qs)
+        NotificationCRUD(self.notification).create(device_qs)
+
+        # Check that the notification was created for all devices
+        self.assertEqual(Notification.objects.count(), 6)
 
     def test_device_without_firebase_tokens(self):
         created_devices = self.create_devices(5, with_token=False)

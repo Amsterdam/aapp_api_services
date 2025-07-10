@@ -7,7 +7,7 @@ from model_bakery import baker
 from notification.models import Device, Notification, ScheduledNotification
 
 
-class UpdatePartitionsTest(TransactionTestCase):
+class UpdateScheduledNotificationsTest(TransactionTestCase):
     def test_push_scheduled_notification(self):
         scheduled_date = datetime.now() - timedelta(days=1)
         devices = baker.make(Device, _quantity=2)

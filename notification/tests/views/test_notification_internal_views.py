@@ -96,13 +96,15 @@ class NotificationCreateViewTests(BasicAPITestCase):
     @override_settings(MAX_DEVICES_PER_REQUEST=5)
     def test_too_many_devices(self, _):
         data = {
-            "title": "foobar",
-            "body": "something",
-            "context_json": {"foo": "bar"},
+            "title": "foobar title",
+            "body": "foobar body",
+            "module_slug": "foobar module slug",
+            "context": {"foo": "bar"},
             "created_at": "2024-10-31T15:00:00",
             "device_ids": [
                 f"device_{i}" for i in range(settings.MAX_DEVICES_PER_REQUEST + 1)
             ],
+            "notification_type": "foobar-notification-type",
         }
         result = self.client.post(
             self.url,
@@ -110,8 +112,7 @@ class NotificationCreateViewTests(BasicAPITestCase):
             headers=self.api_headers,
             content_type="application/json",
         )
-        self.assertEqual(result.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Too many device ids", result.content.decode())
+        self.assertEqual(result.status_code, status.HTTP_200_OK)
 
 
 class ScheduledNotificationBase(BasicAPITestCase):
@@ -228,8 +229,7 @@ class ScheduledNotificationTests(ScheduledNotificationBase):
     @override_settings(MAX_DEVICES_PER_REQUEST=2)
     def test_create_scheduled_notification_too_many_devices(self):
         response = self.client_post(self.notification_payload)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Too many device ids", response.content.decode())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_list_scheduled_notifications(self):
         baker.make(ScheduledNotification, _quantity=5)

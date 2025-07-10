@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -75,11 +74,6 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_device_ids(self, device_ids):
-        max_devices = settings.MAX_DEVICES_PER_REQUEST
-        if len(device_ids) > settings.MAX_DEVICES_PER_REQUEST:
-            raise serializers.ValidationError(
-                f"Too many device ids [{len(device_ids)=}, {max_devices=}]"
-            )
         if len(device_ids) != len(set(device_ids)):
             raise serializers.ValidationError("Duplicate device ids found in input")
         return device_ids
