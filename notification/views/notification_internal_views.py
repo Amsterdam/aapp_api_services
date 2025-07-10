@@ -207,6 +207,17 @@ class ScheduledNotificationDetailView(RetrieveUpdateDestroyAPIView):
             if instance.pushed_at:
                 raise ValidationError("Cannot modify a pushed notification.")
 
+    def retrieve(self, request, *args, **kwargs):
+        """Return 204 instead of 404 when not found."""
+        try:
+            instance = ScheduledNotification.objects.get(
+                identifier=kwargs["identifier"]
+            )
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        except ScheduledNotification.DoesNotExist:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
     def update(self, request, *args, **kwargs):
         create_missing_device_ids(request)
         return super().update(request, *args, **kwargs)

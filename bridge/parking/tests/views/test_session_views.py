@@ -180,8 +180,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
     def test_create_scheduled_notification(self):
         rsp_get = responses.get(
             self.notifications_endpoint_regex_url,
-            json={},
-            status=404,
+            status=204,
         )
         rsp_post = responses.post(
             self.notifications_endpoint_regex_url,
@@ -201,8 +200,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
     def test_no_scheduled_notification(self):
         rsp_get = responses.get(
             self.notifications_endpoint_regex_url,
-            json={},
-            status=404,
+            status=204,
         )
         start_time = timezone.now()
         end_time = start_time + timedelta(minutes=settings.PARKING_REMINDER_TIME - 1)

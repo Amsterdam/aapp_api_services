@@ -117,6 +117,7 @@ class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
             "image",
             "scheduled_for",
             "pushed_at",
+            "expires_at",
         ]
 
     def validate_scheduled_for(self, scheduled_date):

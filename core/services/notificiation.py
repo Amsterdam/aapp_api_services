@@ -86,7 +86,7 @@ class ScheduledNotificationService:
                 url,
                 headers=self._headers,
             )
-            if response.status_code == 404:
+            if response.status_code == 204:
                 return None
             response.raise_for_status()
         except Exception as e:

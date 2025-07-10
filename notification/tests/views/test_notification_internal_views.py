@@ -254,6 +254,16 @@ class ScheduledNotificationDetailTests(ScheduledNotificationBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["title"], self.notification_payload["title"])
 
+    def test_retrieve_scheduled_notification_not_found(self):
+        response = self.client.get(
+            reverse(
+                "notification-scheduled-notification-detail",
+                kwargs={"identifier": "not-existing-identifier"},
+            ),
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
     def test_update_scheduled_notification_success(self):
         patch_data = {"title": "Updated Title"}
         response = self.client.patch(
