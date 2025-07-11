@@ -19,6 +19,10 @@ from city_pass.tests.base_test import (
 class TestSessionInitView(BaseCityPassTestCase):
     api_url = "/city-pass/api/v1/session/init"
 
+    def setUp(self) -> None:
+        super().setUp()
+        Session.objects.all().delete()  # Clear any existing sessions
+
     def test_session_init_success(self):
         result = self.client.post(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(result.status_code, 200)
@@ -65,6 +69,30 @@ class TestSessionInitView(BaseCityPassTestCase):
         self.assertEqual(result.status_code, 200)
         session = Session.objects.last()
         self.assertEqual(session.device_id, "test-device-id")
+        self.assertEqual(Session.objects.count(), 1)
+
+    def test_multiple_sessions_without_device_id(self):
+        session_nr = 3
+        for _i in range(session_nr):
+            print(Session.objects.count())
+            result = self.client.post(self.api_url, headers=self.headers, follow=True)
+            self.assertEqual(result.status_code, 200)
+        self.assertEqual(Session.objects.count(), session_nr)
+
+    def test_multiple_sessions_with_different_device_id(self):
+        for _i in range(5):
+            result = self.client.post(self.api_url, headers=self.headers, follow=True)
+            self.assertEqual(result.status_code, 200)
+        headers = {**self.headers, settings.HEADER_DEVICE_ID: "test-device-id"}
+        for _i in range(5):
+            result = self.client.post(self.api_url, headers=headers, follow=True)
+            self.assertEqual(result.status_code, 200)
+        headers = {**self.headers, settings.HEADER_DEVICE_ID: "test-device-id-2"}
+        for _i in range(5):
+            result = self.client.post(self.api_url, headers=headers, follow=True)
+            self.assertEqual(result.status_code, 200)
+
+        self.assertEqual(Session.objects.count(), 7)
 
     def test_session_init_invalid_api_key(self):
         result = self.client.get(self.api_url, headers=None, follow=True)

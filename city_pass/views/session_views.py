@@ -45,8 +45,9 @@ class SessionInitView(DeviceIdMixin, generics.CreateAPIView):
         Returns:
             Tuple[models.AccessToken, models.RefreshToken]: a new token pair
         """
-        old_sessions = models.Session.objects.filter(device_id=self.device_id).all()
-        old_sessions.delete()  # Remove old sessions for this device_id
+        if self.device_id:
+            old_sessions = models.Session.objects.filter(device_id=self.device_id).all()
+            old_sessions.delete()  # Remove old sessions for this device_id
 
         new_session = models.Session(device_id=self.device_id)
         new_session.save()
