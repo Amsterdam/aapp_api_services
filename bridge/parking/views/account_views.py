@@ -4,7 +4,10 @@ import jwt
 from rest_framework import status
 from rest_framework.response import Response
 
-from bridge.parking.exceptions import SSPPinCodeCheckError
+from bridge.parking.exceptions import (
+    SSPPermitNotFoundError,
+    SSPPinCodeCheckError,
+)
 from bridge.parking.serializers.account_serializers import (
     AccountDetailsResponseSerializer,
     AccountLoginRequestSerializer,
@@ -25,6 +28,8 @@ from bridge.parking.serializers.permit_serializer import (
 from bridge.parking.services.ssp import SSPEndpoint
 from bridge.parking.views.base_ssp_view import BaseSSPView, ssp_openapi_decorator
 
+PIN_EXCEPTIONS = [SSPPinCodeCheckError]
+
 
 class ParkingAccountLoginView(BaseSSPView):
     """
@@ -37,7 +42,8 @@ class ParkingAccountLoginView(BaseSSPView):
     ssp_endpoint = SSPEndpoint.LOGIN
 
     @ssp_openapi_decorator(
-        response_serializer_class=AccountLoginResponseExtendedSerializer
+        response_serializer_class=AccountLoginResponseExtendedSerializer,
+        exceptions=PIN_EXCEPTIONS,
     )
     def post(self, request, *args, **kwargs):
         ssp_response = self.call_ssp(request)
@@ -70,6 +76,7 @@ class ParkingPinCodeView(BaseSSPView):
 
     @ssp_openapi_decorator(
         response_serializer_class=PinCodeResponseSerializer,
+        exceptions=PIN_EXCEPTIONS,
     )
     def post(self, request, *args, **kwargs):
         """
@@ -83,7 +90,7 @@ class ParkingPinCodeView(BaseSSPView):
     @ssp_openapi_decorator(
         response_serializer_class=PinCodeResponseSerializer,
         requires_access_token=True,
-        exceptions=[SSPPinCodeCheckError],
+        exceptions=PIN_EXCEPTIONS,
     )
     def put(self, request, *args, **kwargs):
         """
@@ -109,6 +116,7 @@ class ParkingAccountDetailsView(BaseSSPView):
     @ssp_openapi_decorator(
         response_serializer_class=AccountDetailsResponseSerializer,
         requires_access_token=True,
+        exceptions=[SSPPermitNotFoundError],
     )
     def get(self, request, *args, **kwargs):
         return self.call_ssp(request)
@@ -131,6 +139,7 @@ class ParkingPermitsView(BaseSSPView):
         serializer_as_params=PermitsRequestSerializer,
         response_serializer_class=PermitItemSerializer(many=True),
         requires_access_token=True,
+        exceptions=[SSPPermitNotFoundError],
     )
     def get(self, request, *args, **kwargs):
         return self.call_ssp(request)

@@ -3,7 +3,13 @@ from unittest.mock import patch
 from django.urls import reverse
 from requests import Response
 
-from bridge.parking.exceptions import SSPCallError, SSPNotFoundError, SSPResponseError
+from bridge.parking.exceptions import (
+    SSPCallError,
+    SSPLicensePlateExistsError,
+    SSPLicensePlateNotFoundError,
+    SSPNotFoundError,
+    SSPResponseError,
+)
 from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
 
 
@@ -107,7 +113,7 @@ class TestParkingLicensePlatesGetView(BaseSSPTestCase):
 
         query_params = {"report_code": "1234567890"}
         response = self.client.get(self.url, query_params, headers=self.api_headers)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(response.data["code"], SSPResponseError.default_code)
 
 
@@ -157,9 +163,9 @@ class TestParkingLicensePlatesPostView(BaseSSPTestCase):
         response = self.client.post(
             self.url, self.test_payload, headers=self.api_headers
         )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["code"], SSPCallError.default_code)
-        self.assertContains(response, ssp_error_message, status_code=400)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.data["code"], SSPLicensePlateExistsError.default_code)
+        self.assertContains(response, ssp_error_message, status_code=422)
 
 
 class TestParkingLicensePlatesDeleteView(BaseSSPTestCase):
@@ -208,7 +214,25 @@ class TestParkingLicensePlatesDeleteView(BaseSSPTestCase):
         response = self.client.delete(
             self.url, query_params=self.test_payload, headers=self.api_headers
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(
+            response.data["code"], SSPLicensePlateNotFoundError.default_code
+        )
+
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_unknown_404_exception(self, mock_request):
+        mock_response = {
+            "error": {
+                "statusCode": 404,
+                "content": "Unknown 404 error.",
+            }
+        }
+        mock_request.return_value = self.create_ssp_response(404, mock_response)
+
+        response = self.client.delete(
+            self.url, query_params=self.test_payload, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["code"], SSPNotFoundError.default_code)
 
     @patch("bridge.parking.services.ssp.requests.request")

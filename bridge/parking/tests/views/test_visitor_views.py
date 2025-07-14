@@ -46,7 +46,7 @@ class TestParkingPinCodeVisitorView(BaseSSPTestCase):
             "pin_code_check": "3456",
         }
         response = self.client.put(self.url, data=data, headers=self.api_headers)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 422)
         self.assertEqual(response.data.get("code"), "SSP_PIN_CODE_CHECK_ERROR")
 
     def test_change_pin_code_missing_payload(self, mock_request):

@@ -5,6 +5,16 @@ from datetime import datetime
 from django.utils import timezone
 
 from bridge.parking.enums import NotificationStatus
+from bridge.parking.exceptions import (
+    SSPBalanceTooLowError,
+    SSPFreeParkingError,
+    SSPMaxSessionsReachedError,
+    SSPNoParkingFeeError,
+    SSPSessionDurationExceededError,
+    SSPSessionNotActiveError,
+    SSPStartDateEndDateNotSameError,
+    SSPStartTimeInPastError,
+)
 from bridge.parking.serializers.session_serializers import (
     ParkingOrderResponseSerializer,
     ParkingSessionDeleteRequestSerializer,
@@ -23,6 +33,16 @@ from bridge.parking.views.base_ssp_view import BaseSSPView, ssp_openapi_decorato
 from core.views.mixins import DeviceIdMixin
 
 logger = logging.getLogger(__name__)
+EXCEPTIONS = [
+    SSPSessionNotActiveError,
+    SSPBalanceTooLowError,
+    SSPSessionDurationExceededError,
+    SSPMaxSessionsReachedError,
+    SSPStartDateEndDateNotSameError,
+    SSPStartTimeInPastError,
+    SSPFreeParkingError,
+    SSPNoParkingFeeError,
+]
 
 
 class ReminderTimeError(Exception):
@@ -48,6 +68,7 @@ class ParkingSessionListView(BaseSSPView):
         response_serializer_class=ParkingSessionListPaginatedResponseSerializer,
         requires_access_token=True,
         paginated=True,
+        exceptions=EXCEPTIONS,
     )
     def get(self, request, *args, **kwargs):
         return self.call_ssp(request)
@@ -79,6 +100,7 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         response_serializer_class=ParkingOrderResponseSerializer,
         requires_access_token=True,
         requires_device_id=True,
+        exceptions=EXCEPTIONS,
     )
     def post(self, request, *args, **kwargs):
         response = self.call_ssp(request)
@@ -93,6 +115,7 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         response_serializer_class=ParkingOrderResponseSerializer,
         requires_access_token=True,
         requires_device_id=True,
+        exceptions=EXCEPTIONS,
     )
     def patch(self, request, *args, **kwargs):
         response = self.call_ssp(request)
@@ -108,6 +131,7 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         response_serializer_class=ParkingOrderResponseSerializer,
         requires_access_token=True,
         requires_device_id=True,
+        exceptions=EXCEPTIONS,
     )
     def delete(self, request, *args, **kwargs):
         response = self.call_ssp(request)
@@ -171,6 +195,7 @@ class ParkingSessionReceiptView(BaseSSPView):
         response_serializer_class=ParkingSessionReceiptResponseSerializer,
         serializer_as_params=ParkingSessionReceiptRequestSerializer,
         requires_access_token=True,
+        exceptions=EXCEPTIONS,
     )
     def get(self, request, *args, **kwargs):
         return self.call_ssp(request)

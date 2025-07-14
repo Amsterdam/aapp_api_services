@@ -11,7 +11,9 @@ from bridge.parking.exceptions import (
     SSPCallError,
     SSPForbiddenError,
     SSPNotFoundError,
+    SSPPermitNotFoundError,
     SSPResponseError,
+    SSPServerError,
 )
 from bridge.parking.services.ssp import ssp_api_call
 from core.pagination import CustomPagination
@@ -198,8 +200,13 @@ def ssp_openapi_decorator(
         "success_response": response_serializer_class,
         "exceptions": [
             SSPCallError,
+            SSPResponseError,
             SSPForbiddenError,
             SSPNotFoundError,
+            SSPPermitNotFoundError,
+            SSPServerError,
+            SSLMissingAccessTokenError,
+            SSPForbiddenError,
         ],
     }
     if exceptions:
