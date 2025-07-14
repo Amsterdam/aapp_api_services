@@ -19,10 +19,10 @@ class NotificationForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "image": ClientsideCroppingWidget(
-                width=400,
-                height=300,
-                preview_width=200,
-                preview_height=150,
+                width=1280,
+                height=720,
+                preview_width=320,
+                preview_height=180,
             ),
         }
 

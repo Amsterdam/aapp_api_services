@@ -3,7 +3,6 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "city-pass"
 INSTALLED_APPS += [
     "city_pass.apps.CityPassConfig",
-    "client_side_image_cropping",
 ]
 MEDIA_ROOT = BASE_DIR / "city-pass/media"
 MEDIA_URL = "/city-pass/media/"

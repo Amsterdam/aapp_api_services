@@ -30,7 +30,7 @@ COPY uwsgi.ini /app/
 COPY /core /app/core
 COPY /deploy /app/deploy
 
-RUN uv run python manage.py collectstatic --no-input
+RUN DJANGO_SETTINGS_MODULE=core.settings.base uv run python manage.py collectstatic --no-input
 RUN mkdir /home/app/.azure
 RUN chown app:app /home/app/.azure
 USER root

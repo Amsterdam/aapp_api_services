@@ -13,6 +13,7 @@ dependencies = [
   "django-debug-toolbar",
   "django-redis",
   "dos2unix",
+  "whitenoise",
   # modules
   "djangorestframework-simplejwt",
   "django-csp",

@@ -46,6 +46,12 @@ class SSPBalanceTooLowError(BaseApiException):
     default_code = "SSP_BALANCE_TOO_LOW"
 
 
+class SSPTimeBalanceInsufficientError(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Timebalance insufficient"
+    default_code = "SSP_TIME_BALANCE_INSUFFICIENT"
+
+
 class SSPStartTimeInPastError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Start time is in the past"
@@ -120,6 +126,7 @@ class SSPPermitNotFoundError(BaseApiException):
 
 SSP_COMMON_422_ERRORS = [
     SSPBalanceTooLowError,
+    SSPTimeBalanceInsufficientError,
     SSPStartTimeInPastError,
     SSPStartDateEndDateNotSameError,
     SSPMaxSessionsReachedError,
@@ -136,4 +143,3 @@ SSP_COMMON_422_ERRORS = [
 # De volgende errors mogen NIET afgevangen worden. Hier wordt er een json parsing gedaan door de app op de SSP content
 # - Start time in past
 # - Parking time outside available regime times
-# - Timebalance insufficient
