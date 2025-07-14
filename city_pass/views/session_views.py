@@ -1,7 +1,8 @@
+import logging
 from typing import Tuple
 
 from django.conf import settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
@@ -13,6 +14,8 @@ from city_pass.serializers import session_serializers as serializers
 from city_pass.views.extend_schema import extend_schema_with_access_token
 from core.utils.openapi_utils import extend_schema_for_api_key
 from core.views.mixins import DeviceIdMixin
+
+logger = logging.getLogger(__name__)
 
 
 class SessionInitView(DeviceIdMixin, generics.CreateAPIView):
@@ -46,18 +49,38 @@ class SessionInitView(DeviceIdMixin, generics.CreateAPIView):
             Tuple[models.AccessToken, models.RefreshToken]: a new token pair
         """
         if self.device_id:
-            old_sessions = models.Session.objects.filter(device_id=self.device_id).all()
-            old_sessions.delete()  # Remove old sessions for this device_id
+            # Remove any old sessions for device_id
+            (
+                models.Session.objects.select_for_update()  # row-lock to prevent deadlock
+                .filter(device_id=self.device_id)
+                .delete()
+            )
 
-        new_session = models.Session(device_id=self.device_id)
-        new_session.save()
+        if self.device_id:
+            new_session, created = models.Session.objects.get_or_create(
+                device_id=self.device_id
+            )
+            if not created:
+                logger.warning(
+                    "Race condition detected while creating session with device_id: %s",
+                    self.device_id,
+                )
+        else:
+            new_session = models.Session.objects.create(device_id=None)
 
-        access_token = models.AccessToken(session=new_session)
-        access_token.save()
-
-        refresh_token = models.RefreshToken(session=new_session)
-        refresh_token.save()
-
+        try:
+            access_token = models.AccessToken(session=new_session)
+            access_token.save()
+            refresh_token = models.RefreshToken(session=new_session)
+            refresh_token.save()
+        except IntegrityError:
+            # This can happen if multiple requests try to create a session at the same time
+            access_token = models.AccessToken.objects.filter(
+                session=new_session
+            ).first()
+            refresh_token = models.RefreshToken.objects.filter(
+                session=new_session
+            ).first()
         return access_token, refresh_token
 
 
@@ -85,7 +108,7 @@ class SessionPostCredentialView(generics.CreateAPIView):
         access_token.session.encrypted_adminstration_no = validated_data[
             "encrypted_administration_no"
         ]
-        access_token.session.save()
+        access_token.session.save(update_fields=["encrypted_adminstration_no"])
 
         return Response(data=detail_message("Success"), status=status.HTTP_200_OK)
 
@@ -135,25 +158,20 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         Returns:
             Tuple[str, str]: a new token pair in string format
         """
-        session: models.Session = incoming_refresh_token.session
+        session = models.Session.objects.select_for_update().get(  # row-lock to prevent deadlock
+            id=incoming_refresh_token.session_id
+        )
 
         # Incoming refresh token will stay valid for a little longer, so client can retry the request
         incoming_refresh_token.expire()
-
-        # Any remaining refresh tokens get removed
-        for rt in session.refreshtoken_set.all():
-            if rt == incoming_refresh_token:
-                continue
-            rt.delete()
+        session.refreshtoken_set.exclude(token=incoming_refresh_token.token).delete()
 
         # Create a new refresh token
         new_refresh_token = models.RefreshToken.objects.create(session=session)
 
-        # Remove the existing access token
+        # Remove the existing access token and create a new one
         session.accesstoken.delete()
-        # Then create a new access token
         new_access_token = models.AccessToken.objects.create(session=session)
-
         return new_access_token, new_refresh_token
 
 
@@ -166,7 +184,9 @@ class SessionLogoutView(generics.CreateAPIView):
         request=None,
     )
     def post(self, request, *args, **kwargs):
-        session = request.user
+        session = models.Session.objects.select_for_update().get(  # row-lock to prevent deadlock
+            pk=request.user.id
+        )
         session.delete()
         return Response(data=detail_message("Success"), status=status.HTTP_200_OK)
 
