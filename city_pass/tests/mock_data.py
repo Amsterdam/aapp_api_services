@@ -53,6 +53,31 @@ passes = [
         "actief": False,
         "transactionsKeyEncrypted": "a24WShplCZ7MRAVSMDyvi0kMuOUNQBsPNC8b4HePJl3iOfOPeg9oVOZ3PkpesC3c",
     },
+    {
+        "id": "201606",
+        "owner": {"firstname": "Pietje", "lastname": "Puk", "initials": "PP"},
+        "dateEnd": "2025-07-31T21:59:59.000Z",
+        "dateEndFormatted": "31 juli 2025",
+        "budgets": [
+            {
+                "title": "24/25 Kindtegoed 0 tm 3 jaar",
+                "description": "",
+                "code": "2024_AMSTEG_0-3",
+                "budgetAssigned": 125,
+                "budgetAssignedFormatted": "€125,00",
+                "budgetBalance": 125,
+                "budgetBalanceFormatted": "€125,00",
+                "dateEnd": "2025-07-31T21:59:59.000Z",
+                "dateEndFormatted": "31 juli 2025",
+            }
+        ],
+        "balanceFormatted": "€125,00",
+        "passNumber": 6011013117243,
+        "passNumberComplete": "6064366011013117243",
+        "securityCode": "1234",
+        "actief": True,
+        "transactionsKeyEncrypted": "somesupersecretstring123",
+    },
 ]
 
 budget_transactions = [

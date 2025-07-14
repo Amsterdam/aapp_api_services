@@ -2,7 +2,7 @@ import logging
 from typing import Tuple
 
 from django.conf import settings
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
@@ -50,13 +50,7 @@ class SessionInitView(DeviceIdMixin, generics.CreateAPIView):
         """
         if self.device_id:
             # Remove any old sessions for device_id
-            (
-                models.Session.objects.select_for_update()  # row-lock to prevent deadlock
-                .filter(device_id=self.device_id)
-                .delete()
-            )
-
-        if self.device_id:
+            models.Session.objects.filter(device_id=self.device_id).delete()
             new_session, created = models.Session.objects.get_or_create(
                 device_id=self.device_id
             )
@@ -68,19 +62,10 @@ class SessionInitView(DeviceIdMixin, generics.CreateAPIView):
         else:
             new_session = models.Session.objects.create(device_id=None)
 
-        try:
-            access_token = models.AccessToken(session=new_session)
-            access_token.save()
-            refresh_token = models.RefreshToken(session=new_session)
-            refresh_token.save()
-        except IntegrityError:
-            # This can happen if multiple requests try to create a session at the same time
-            access_token = models.AccessToken.objects.filter(
-                session=new_session
-            ).first()
-            refresh_token = models.RefreshToken.objects.filter(
-                session=new_session
-            ).first()
+        access_token, _ = models.AccessToken.objects.get_or_create(session=new_session)
+        refresh_token, _ = models.RefreshToken.objects.get_or_create(
+            session=new_session
+        )
         return access_token, refresh_token
 
 
@@ -88,6 +73,7 @@ class SessionPostCredentialView(generics.CreateAPIView):
     serializer_class = serializers.SessionCredentialInSerializer
     authentication_classes = [authentication.SessionCredentialsKeyAuthentication]
 
+    @transaction.atomic
     @extend_schema_for_api_key(
         success_response=serializers.DetailResultSerializer,
         exceptions=[TokenInvalidException, TokenExpiredException],
@@ -97,9 +83,13 @@ class SessionPostCredentialView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
 
-        access_token = models.AccessToken.objects.filter(
-            token=validated_data["session_token"]
-        ).first()
+        # row-lock the session to prevent deadlock and race conditions
+        access_token = (
+            models.AccessToken.objects.select_for_update(of=("session",))
+            .select_related("session")
+            .filter(token=validated_data["session_token"])
+            .first()
+        )
         if not access_token:
             raise TokenInvalidException()
 
@@ -116,6 +106,7 @@ class SessionPostCredentialView(generics.CreateAPIView):
 class SessionRefreshAccessView(generics.CreateAPIView):
     serializer_class = serializers.SessionRefreshInSerializer
 
+    @transaction.atomic
     @extend_schema_for_api_key(
         success_response=serializers.SessionTokensOutSerializer,
         exceptions=[TokenInvalidException, TokenExpiredException],
@@ -125,9 +116,13 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
 
-        refresh_token = models.RefreshToken.objects.filter(
-            token=validated_data["refresh_token"]
-        ).first()
+        # row-lock the session to prevent deadlock and race conditions
+        refresh_token = (
+            models.RefreshToken.objects.select_for_update(of=("session",))
+            .select_related("session")
+            .filter(token=validated_data["refresh_token"])
+            .first()
+        )
         if not refresh_token:
             raise TokenInvalidException()
 
@@ -139,7 +134,6 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         )
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @transaction.atomic
     def refresh_tokens(
         self, incoming_refresh_token: models.RefreshToken
     ) -> Tuple[models.AccessToken, models.RefreshToken]:
@@ -158,12 +152,10 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         Returns:
             Tuple[str, str]: a new token pair in string format
         """
-        session = models.Session.objects.select_for_update().get(  # row-lock to prevent deadlock
-            id=incoming_refresh_token.session_id
-        )
 
         # Incoming refresh token will stay valid for a little longer, so client can retry the request
         incoming_refresh_token.expire()
+        session = incoming_refresh_token.session
         session.refreshtoken_set.exclude(token=incoming_refresh_token.token).delete()
 
         # Create a new refresh token
@@ -179,14 +171,14 @@ class SessionLogoutView(generics.CreateAPIView):
     serializer_class = serializers.DetailResultSerializer
     authentication_classes = [authentication.AccessTokenAuthentication]
 
+    @transaction.atomic
     @extend_schema_with_access_token(
         success_response=serializers.DetailResultSerializer,
         request=None,
     )
     def post(self, request, *args, **kwargs):
-        session = models.Session.objects.select_for_update().get(  # row-lock to prevent deadlock
-            pk=request.user.id
-        )
+        # row-lock the session to prevent deadlock and race conditions
+        session = models.Session.objects.select_for_update().get(pk=request.user.id)
         session.delete()
         return Response(data=detail_message("Success"), status=status.HTTP_200_OK)
 

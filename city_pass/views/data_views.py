@@ -125,11 +125,17 @@ class PassesDataView(AbstractMijnAmsDataView):
 
     def process_response_content(self, content, request) -> None:
         session = request.user
-        passes, budgets = [], []
-        links = []
+        passes, links = [], []
         Through = models.PassData.budgets.through
         for pass_data in content:
-            budgets += [
+            pass_obj = models.PassData(
+                session=session,
+                pass_number=pass_data.get("passNumber"),
+                encrypted_transaction_key=pass_data.get("transactionsKeyEncrypted"),
+            )
+            passes.append(pass_obj)
+
+            budgets = [
                 models.Budget(
                     code=budget["code"],
                     title=budget["title"],
@@ -137,21 +143,15 @@ class PassesDataView(AbstractMijnAmsDataView):
                 )
                 for budget in pass_data["budgets"]
             ]
-            pass_obj = models.PassData(
-                session=session,
-                pass_number=pass_data.get("passNumber"),
-                encrypted_transaction_key=pass_data.get("transactionsKeyEncrypted"),
-            )
-            passes.append(pass_obj)
             links += [(Through(passdata=pass_obj, budget=b)) for b in budgets]
+            models.Budget.objects.bulk_create(
+                budgets,
+                update_conflicts=True,
+                update_fields=["title", "description"],
+                unique_fields=["code"],
+            )
 
         # Bulk update these passes in the database based on the passNumber field
-        models.Budget.objects.bulk_create(
-            budgets,
-            update_conflicts=True,
-            update_fields=["title", "description"],
-            unique_fields=["code"],
-        )
         models.PassData.objects.bulk_create(
             passes,
             update_conflicts=True,
