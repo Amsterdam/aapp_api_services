@@ -28,7 +28,7 @@ class AccessTokenAuthentication(BaseAuthentication):
         access_token = request.headers.get(settings.ACCESS_TOKEN_HEADER)
 
         access_token_obj = (
-            AccessToken.objects.select_for_update(of=("session",))
+            AccessToken.objects.select_for_update(of=("session", "self"))
             .select_related("session")
             .filter(token=access_token)
             .first()

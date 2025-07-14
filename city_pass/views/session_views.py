@@ -2,7 +2,8 @@ import logging
 from typing import Tuple
 
 from django.conf import settings
-from django.db import transaction
+from django.db import connection, transaction
+from django.utils.decorators import method_decorator
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
@@ -49,23 +50,26 @@ class SessionInitView(DeviceIdMixin, generics.CreateAPIView):
             Tuple[models.AccessToken, models.RefreshToken]: a new token pair
         """
         if self.device_id:
-            # Remove any old sessions for device_id
-            models.Session.objects.filter(device_id=self.device_id).delete()
-            new_session, created = models.Session.objects.get_or_create(
-                device_id=self.device_id
-            )
-            if not created:
-                logger.warning(
-                    "Race condition detected while creating session with device_id: %s",
-                    self.device_id,
+            with connection.cursor() as c:
+                # The advisory lock makes sure no two inits on the same device can run simultaneously
+                c.execute(
+                    "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                    [self.device_id],
                 )
+                # Remove any old sessions for device_id
+                models.Session.objects.select_for_update().filter(
+                    device_id=self.device_id
+                ).delete()
+                access_token, refresh_token = self.setup_new_session()
         else:
-            new_session = models.Session.objects.create(device_id=None)
+            # Do NOT use advisory lock, if no device_id is provided!
+            access_token, refresh_token = self.setup_new_session()
+        return access_token, refresh_token
 
-        access_token, _ = models.AccessToken.objects.get_or_create(session=new_session)
-        refresh_token, _ = models.RefreshToken.objects.get_or_create(
-            session=new_session
-        )
+    def setup_new_session(self):
+        new_session = models.Session.objects.create(device_id=self.device_id)
+        access_token = models.AccessToken.objects.create(session=new_session)
+        refresh_token = models.RefreshToken.objects.create(session=new_session)
         return access_token, refresh_token
 
 
@@ -85,7 +89,7 @@ class SessionPostCredentialView(generics.CreateAPIView):
 
         # row-lock the session to prevent deadlock and race conditions
         access_token = (
-            models.AccessToken.objects.select_for_update(of=("session",))
+            models.AccessToken.objects.select_for_update(of=("session", "self"))
             .select_related("session")
             .filter(token=validated_data["session_token"])
             .first()
@@ -118,7 +122,7 @@ class SessionRefreshAccessView(generics.CreateAPIView):
 
         # row-lock the session to prevent deadlock and race conditions
         refresh_token = (
-            models.RefreshToken.objects.select_for_update(of=("session",))
+            models.RefreshToken.objects.select_for_update(of=("session", "self"))
             .select_related("session")
             .filter(token=validated_data["refresh_token"])
             .first()
@@ -167,11 +171,11 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         return new_access_token, new_refresh_token
 
 
+@method_decorator(transaction.atomic, name="dispatch")
 class SessionLogoutView(generics.CreateAPIView):
     serializer_class = serializers.DetailResultSerializer
     authentication_classes = [authentication.AccessTokenAuthentication]
 
-    @transaction.atomic
     @extend_schema_with_access_token(
         success_response=serializers.DetailResultSerializer,
         request=None,
