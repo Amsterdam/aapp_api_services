@@ -4,7 +4,9 @@ from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
+from django.db import transaction
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, mixins, status
@@ -24,6 +26,7 @@ from city_pass.views.extend_schema import extend_schema_with_access_token
 logger = logging.getLogger(__name__)
 
 
+@method_decorator(transaction.atomic, name="dispatch")
 class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
     """
     Abstract class that can be used for all calls to the Mijn Amsterdam Stadspas API.

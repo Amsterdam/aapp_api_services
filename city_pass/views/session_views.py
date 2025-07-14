@@ -177,8 +177,8 @@ class SessionLogoutView(generics.CreateAPIView):
         request=None,
     )
     def post(self, request, *args, **kwargs):
-        # row-lock the session to prevent deadlock and race conditions
-        session = models.Session.objects.select_for_update().get(pk=request.user.id)
+        # row-lock happens in authentication class
+        session = request.user
         session.delete()
         return Response(data=detail_message("Success"), status=status.HTTP_200_OK)
 
