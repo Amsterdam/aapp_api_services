@@ -128,7 +128,7 @@ class SessionRefreshAccessView(generics.CreateAPIView):
             .first()
         )
         if not refresh_token:
-            raise TokenInvalidException()
+            raise TokenInvalidException("Invalid refresh token")
 
         refresh_token.is_valid()
 

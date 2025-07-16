@@ -93,7 +93,7 @@ class ModuleVersion(models.Model):
 
 class AppRelease(models.Model):
     version = models.CharField("Versie", max_length=100, unique=True)
-    release_notes = models.CharField(max_length=2000, blank=True, null=True)
+    release_notes = models.CharField(max_length=2000, blank=True)
     published = models.DateTimeField(
         "Gepubliceerd",
         null=True,
