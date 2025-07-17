@@ -110,7 +110,7 @@ AUTHENTICATION_BACKENDS = [
 
 ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
 
-ENTRA_TENANT_ID = os.getenv("TENANT_ID")
+ENTRA_TENANT_ID = os.getenv("TENANT_ID", "72fca1b1-2c2e-4376-a445-294d80196804")
 ENTRA_CLIENT_ID = os.getenv("CLIENT_ID")
 
 # Required by mozilla_django_oidc
@@ -147,10 +147,6 @@ OIDC_VERIFY_AUDIENCE = os.getenv("OIDC_VERIFY_AUDIENCE", True)
 OIDC_TRUSTED_AUDIENCES = os.getenv(
     "OIDC_TRUSTED_AUDIENCES", [f"api://{OIDC_RP_CLIENT_ID}"]
 )
-
-# Custom OIDC settings
-OIDC_TOKEN_EMAIL_CLAIM = os.getenv("OIDC_TOKEN_EMAIL_CLAIM", "upn")
-
 
 TEMPLATES = [
     {
