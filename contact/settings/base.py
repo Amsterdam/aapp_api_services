@@ -37,12 +37,3 @@ TIME_INPUT_FORMATS = ["%H:%M"]
 
 MOCK_ENTRA_AUTH = False
 ADMIN_ROLES += ["cbs-time-delegated", "cbs-time-publisher"]
-
-# OIDC settings
-AUTHENTICATION_BACKENDS = [
-    "amsterdam_django_oidc.OIDCAuthenticationBackend",
-    # "core.authentication.OIDCAuthenticationBackend",
-]
-
-LOGIN_REDIRECT_URL = "/contact/admin/"
-LOGIN_REDIRECT_URL_FAILURE = "/contact/admin/login/failure/"

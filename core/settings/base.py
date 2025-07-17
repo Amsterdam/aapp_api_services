@@ -105,7 +105,7 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
+    "core.authentication.OIDCAuthenticationBackend",
 ]
 
 ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
@@ -147,6 +147,7 @@ OIDC_VERIFY_AUDIENCE = os.getenv("OIDC_VERIFY_AUDIENCE", True)
 OIDC_TRUSTED_AUDIENCES = os.getenv(
     "OIDC_TRUSTED_AUDIENCES", [f"api://{OIDC_RP_CLIENT_ID}"]
 )
+
 
 TEMPLATES = [
     {
