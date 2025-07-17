@@ -1,21 +1,22 @@
-# Generated: 2025-07-11T09:59:21Z
+# Generated: 2025-07-17T12:00:02Z
 aiohappyeyeballs==2.6.1
 aiohttp==3.12.14
 aioresponses==0.7.8
 aiosignal==1.4.0
+amsterdam-django-oidc==0.2.0
 anyio==4.9.0
 asgiref==3.9.1
 attrs==25.3.0
 azure-ad-verify-token==0.4.0
 azure-core==1.35.0
 azure-core-tracing-opentelemetry==1.0.0b12
-azure-identity==1.23.0
+azure-identity==1.23.1
 azure-monitor-opentelemetry==1.6.10
 azure-monitor-opentelemetry-exporter==1.0.0b39
-azure-storage-blob==12.25.1
+azure-storage-blob==12.26.0
 cachecontrol==0.14.3
 cachetools==5.5.2
-certifi==2025.7.9
+certifi==2025.7.14
 cffi==1.17.1
 charset-normalizer==3.4.2
 coverage==7.9.2
@@ -34,7 +35,7 @@ dos2unix==1
 drf-spectacular==0.28.0
 firebase-admin==6.9.0
 fixedint==0.1.6
-freezegun==1.5.2
+freezegun==1.5.3
 frozenlist==1.7.0
 google-api-core==2.25.1
 google-api-python-client==2.176.0
@@ -60,9 +61,11 @@ importlib-metadata==8.6.1
 inflection==0.5.1
 iniconfig==2.1.0
 isodate==0.7.2
+josepy==2.1.0
 jsonschema==4.24.0
 jsonschema-specifications==2025.4.1
 model-bakery==1.20.5
+mozilla-django-oidc==4.0.1
 msal==1.32.3
 msal-extensions==1.3.1
 msgpack==1.1.1
@@ -101,7 +104,7 @@ pygments==2.19.2
 pyjwt==2.9.0
 pyparsing==3.2.3
 pytest==8.4.1
-pytest-asyncio==1.0.0
+pytest-asyncio==1.1.0
 pytest-django==4.11.1
 pytest-dotenv==0.5.2
 pytest-env==1.1.5
@@ -115,7 +118,7 @@ requests-oauthlib==2.0.0
 responses==0.25.7
 rpds-py==0.26.0
 rsa==4.9.1
-ruff==0.12.2
+ruff==0.12.3
 six==1.17.0
 sniffio==1.3.1
 sqlparse==0.5.3
