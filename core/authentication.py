@@ -8,6 +8,7 @@ from django.contrib.auth.models import Group, User
 from django.db import transaction
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
+from mozilla_django_oidc.auth import default_username_algo
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -124,28 +125,15 @@ class EntraTokenMixin:
             return False, {"error": "Error validating token"}
 
 
-class EntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
-    def authenticate(self, request):
-        token = self._read_token_from_cookies(request.COOKIES)
-        if not token:
-            raise AuthenticationFailed("Cookie not found")
-
-        token_data = self.validate_token(token)
-
-        user = self._create_user(token_data)
-
-        if token_data.get("roles"):
-            self._update_user_groups(user, token_data)
-
-        return (user, token_data)
-
-    def _create_user(self, token_data: dict):
-        token_data_email = token_data.get("upn")
+class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend):
+    def create_user(self, claims):
+        """Return object for a newly created user account."""
+        email = claims.get("upn")
         user, created = User.objects.update_or_create(
-            username=token_data_email,
-            email=token_data_email,
-            first_name=token_data.get("given_name"),
-            last_name=token_data.get("family_name"),
+            username=default_username_algo(email),
+            email=email,
+            first_name=claims.get("given_name"),
+            last_name=claims.get("family_name"),
             defaults={
                 "is_staff": True,
                 "is_superuser": True,
@@ -154,33 +142,18 @@ class EntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         if created:
             logger.info(f"User created: {user}")
 
+        self._update_user_groups(user, claims)
         return user
 
     @transaction.atomic
-    def _update_user_groups(self, user: User, token_data: dict):
+    def _update_user_groups(self, user: User, claims: dict):
         user.groups.clear()
-        for group_name in token_data.get("roles", []):
+        for group_name in claims.get("roles", []):
             group, _ = Group.objects.get_or_create(name=group_name)
             user.groups.add(group)
 
-    def _read_token_from_cookies(self, cookies) -> str | None:
-        base = settings.ENTRA_TOKEN_COOKIE_NAME
-        if base in cookies:  # old single-cookie path
-            return cookies[base]
 
-        # gather & sort chunks: AccessToken.0, AccessToken.1, …
-        chunks = {
-            int(k.split(".")[-1]): v
-            for k, v in cookies.items()
-            if k.startswith(f"{base}.")
-        }
-        if not chunks:
-            return None
-
-        return "".join(v for _, v in sorted(chunks.items()))
-
-
-class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
+class MockEntraTokenAuthentication(BaseAuthentication, EntraTokenMixin):
     def authenticate(self, request):  # pragma: no cover
         email = "mock.user@amsterdam.nl"
 
@@ -195,12 +168,3 @@ class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         user.groups.set(groups)
 
         return (user, None)
-
-
-class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend):
-    def authenticate(self, request, **kwargs):  # pragma: no cover
-        # This is the start of a custom OIDC authentication backend.
-        # Returning None will cause authentication to fail.
-        # This is to test the working of LOGIN_REDIRECT_URL_FAILURE.
-        # When implemented the "pragma: no cover" should be removed.
-        return None
