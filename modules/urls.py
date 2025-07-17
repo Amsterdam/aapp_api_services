@@ -1,6 +1,6 @@
 from django.urls import path
 
-from core.urls import get_swagger_paths, get_admin_paths
+from core.urls import get_admin_paths, get_swagger_paths
 from modules.views import ReleaseDetailView
 
 BASE_PATH = "modules/api/v1"

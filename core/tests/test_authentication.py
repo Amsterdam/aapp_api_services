@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from core.authentication import (
     AbstractAppAuthentication,
     APIKeyAuthentication,
-    EntraTokenMixin
+    EntraTokenMixin,
 )
 from core.utils.patch_utils import (
     apply_signing_key_patch,

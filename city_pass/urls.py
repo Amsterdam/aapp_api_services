@@ -3,7 +3,7 @@ from django.conf.urls.static import static
 from django.urls import path
 
 from city_pass.views import data_views, session_views
-from core.urls import get_swagger_paths, get_admin_paths
+from core.urls import get_admin_paths, get_swagger_paths
 
 BASE_PATH = "city-pass/api/v1"
 BASE_PATH_ADMIN = "city-pass/admin"
