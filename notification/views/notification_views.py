@@ -25,8 +25,10 @@ class NotificationListView(DeviceIdMixin, generics.ListAPIView):
     serializer_class = NotificationResultSerializer
 
     def get_queryset(self):
-        return Notification.objects.filter(device__external_id=self.device_id).order_by(
-            "-created_at"
+        return (
+            Notification.objects.select_related("device")
+            .filter(device__external_id=self.device_id)
+            .order_by("-created_at")
         )
 
     @extend_schema_for_device_id(
@@ -48,9 +50,11 @@ class NotificationMarkAllReadView(DeviceIdMixin, generics.UpdateAPIView):
     )
     def post(self, request, *args, **kwargs):
         # Perform the bulk update
-        updated_count = Notification.objects.filter(
-            device__external_id=self.device_id, is_read=False
-        ).update(is_read=True)
+        updated_count = (
+            Notification.objects.select_related("device")
+            .filter(device__external_id=self.device_id, is_read=False)
+            .update(is_read=True)
+        )
         return Response({"detail": f"{updated_count} notifications marked as read."})
 
 
@@ -61,7 +65,9 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
     http_method_names = ["get", "patch"]
 
     def get_queryset(self):
-        return Notification.objects.filter(device__external_id=self.device_id)
+        return Notification.objects.select_related("device").filter(
+            device__external_id=self.device_id
+        )
 
     @extend_schema_for_device_id(
         success_response=NotificationResultSerializer,

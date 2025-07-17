@@ -288,9 +288,9 @@ class TestResponseSerializerView(BaseSSPTestCase):
 
         request = self.factory.get("/", headers=self.api_headers)
         response = self.view.as_view()(request)
-        self.assertEqual(response.status_code, 400)
-        self.assertContains(response, "foobar", status_code=400)
-        self.assertContains(response, "This field is required", status_code=400)
+        self.assertEqual(response.status_code, 500)
+        self.assertContains(response, "foobar", status_code=500)
+        self.assertContains(response, "This field is required", status_code=500)
 
 
 class TestPaginatedSSPView(BaseSSPTestCase):
@@ -383,7 +383,7 @@ class TestPaginatedSSPView(BaseSSPTestCase):
         mock_request.return_value = self.create_ssp_response(200, {"foobar": []})
         request = self.factory.get("/", headers=self.api_headers)
         response = self.view.as_view()(request)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 500)
 
 
 class TestResponseKeySelection(BaseSSPTestCase):

@@ -4,7 +4,9 @@ from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
+from django.db import transaction
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, mixins, status
@@ -24,6 +26,7 @@ from city_pass.views.extend_schema import extend_schema_with_access_token
 logger = logging.getLogger(__name__)
 
 
+@method_decorator(transaction.atomic, name="dispatch")
 class AbstractMijnAmsDataView(generics.RetrieveAPIView, ABC):
     """
     Abstract class that can be used for all calls to the Mijn Amsterdam Stadspas API.
@@ -125,20 +128,42 @@ class PassesDataView(AbstractMijnAmsDataView):
 
     def process_response_content(self, content, request) -> None:
         session = request.user
-        passes = [
-            models.PassData(
+        passes, links = [], []
+        Through = models.PassData.budgets.through
+        for pass_data in content:
+            pass_obj = models.PassData(
                 session=session,
                 pass_number=pass_data.get("passNumber"),
                 encrypted_transaction_key=pass_data.get("transactionsKeyEncrypted"),
             )
-            for pass_data in content
-        ]
+            passes.append(pass_obj)
+
+            budgets = [
+                models.Budget(
+                    code=budget["code"],
+                    title=budget["title"],
+                    description=budget.get("description", ""),
+                )
+                for budget in pass_data["budgets"]
+            ]
+            links += [(Through(passdata=pass_obj, budget=b)) for b in budgets]
+            models.Budget.objects.bulk_create(
+                budgets,
+                update_conflicts=True,
+                update_fields=["title", "description"],
+                unique_fields=["code"],
+            )
+
         # Bulk update these passes in the database based on the passNumber field
         models.PassData.objects.bulk_create(
             passes,
             update_conflicts=True,
             update_fields=["encrypted_transaction_key"],
             unique_fields=["pass_number", "session_id"],
+        )
+        Through.objects.bulk_create(
+            links,
+            ignore_conflicts=True,
         )
 
 
@@ -240,24 +265,22 @@ class AanbiedingTransactionsView(AbstractTransactionsView):
 
 
 class PassBlockView(mixins.CreateModelMixin, AbstractTransactionsView):
-    serializer_class = serializers.MijnAmsPassBlockSerializer
     base_url = settings.MIJN_AMS_API_PATHS["PASS_BLOCK"]
-    serializer_many = False
-    http_method_names = ["post"]
+    http_method_names = ["put"]
 
     @extend_schema_with_access_token(
-        success_response=serializer_class,
+        success_response=serializers.MijnAmsPassBlockSerializer,
         exceptions=[
             MijnAMSAPIException,
             MijnAMSInvalidDataException,
             MijnAMSRequestException,
         ],
     )
-    def post(self, request, *args, **kwargs) -> Response:
+    def put(self, request, *args, **kwargs) -> Response:
         self.get_response_content(request, method="POST")
         data = {"status": "BLOCKED"}
         return Response(data, status=status.HTTP_200_OK)
 
     def get_pass_number(self, request):
-        pass_number = request.data.get("passNumber")
+        pass_number = self.kwargs["pass_number"]
         return pass_number

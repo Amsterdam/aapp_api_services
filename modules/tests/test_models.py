@@ -1,7 +1,8 @@
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
-from django.forms import ValidationError
 from django.test import TestCase
+from model_bakery import baker
 
 from modules.models import AppRelease, Module, ModuleVersion, ReleaseModuleStatus
 
@@ -131,67 +132,30 @@ class TestModuleVersionModel(TestCase):
         self.assertIsNotNone(parent_module_of_version)
 
 
-class TestAppReleaseModel(TestCase):
-    def test_module_order_slugs_must_be_unique(self):
-        """Test if all slugs in module order are unique"""
-        module_1 = Module(slug="foo")
-        module_1.save()
-        module_2 = Module(slug="bar")
-        module_2.save()
-
-        app_release = AppRelease(
-            version="1.0",
-            module_order=["foo", "bar", "foo"],
-        )
-
-        with self.assertRaises(ValidationError) as context:
-            app_release.save()
-
-        self.assertEqual(
-            context.exception.message, "Slugs in module_order are not unique"
-        )
-
-    def test_module_order_slugs_must_exist_as_module_slug(self):
-        """Test if slugs in module order exists as Modules"""
-        app_release = AppRelease(
-            version="1.0",
-            module_order=["foo", "bar"],
-        )
-
-        with self.assertRaises(ValidationError) as context:
-            app_release.save()
-
-        self.assertEqual(
-            context.exception.message,
-            "Given slug 'foo' in module_order does not exist as Module",
-        )
-
-
 class TestReleaseModuleStatusModel(TestCase):
     def setUp(self):
-        self.module = Module(slug="foo")
+        self.module = baker.make(Module, slug="foo")
         self.module.save()
 
-        self.app_release = AppRelease(
-            version="1.0",
-            module_order=["foo"],
-        )
-        self.app_release.save()
-
-        self.module_version = ModuleVersion(
+        self.module_version = baker.make(
+            ModuleVersion,
             module=self.module,
             version="1",
             title="foobar_title",
-            icon="foobar_icon",
-            description="foobar_desc",
         )
-        self.module_version.save()
+
+        self.app_release = baker.make(
+            AppRelease,
+            version="1.0",
+            modules=[],  # No modules initially
+        )
 
     def test_default_status_being_active(self):
         """Check if default status of a ReleaseModuleStatus is active"""
         rms = ReleaseModuleStatus(
             app_release=self.app_release,
             module_version=self.module_version,
+            sort_order=1,
         )
         rms.save()
         self.assertEqual(rms.status, ReleaseModuleStatus.Status.ACTIVE)
@@ -200,6 +164,7 @@ class TestReleaseModuleStatusModel(TestCase):
         rms_1 = ReleaseModuleStatus(
             app_release=self.app_release,
             module_version=self.module_version,
+            sort_order=1,
         )
         rms_1.save()
 
@@ -208,9 +173,9 @@ class TestReleaseModuleStatusModel(TestCase):
         rms_2 = ReleaseModuleStatus(
             app_release=self.app_release,
             module_version=self.module_version,
+            sort_order=2,
         )
-
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(ValidationError):
             rms_2.save()
 
     def test_on_delete_on_app_release(self):
@@ -218,30 +183,39 @@ class TestReleaseModuleStatusModel(TestCase):
         Test the on_delete function in case the referred app_release is deleted.
         """
         rms = ReleaseModuleStatus(
-            app_release=self.app_release, module_version=self.module_version
+            app_release=self.app_release,
+            module_version=self.module_version,
+            sort_order=1,
         )
         rms.save()
 
-        # delete the app_release
-        self.app_release.delete()
-
-        # Checks if the rms is deleted since the app_release is deleted.
-        deleted_rms = ReleaseModuleStatus.objects.filter(pk=rms.pk).first()
-        self.assertIsNone(deleted_rms)
+        with self.assertRaises(ProtectedError):
+            # Deleting the module_version is not allowed since it has a ReleaseModuleStatus
+            self.module_version.delete()
 
     def test_on_delete_on_module_version(self):
         """
         Test the on_delete function in case the referred module_version is deleted
         """
         rms = ReleaseModuleStatus(
-            app_release=self.app_release, module_version=self.module_version
+            app_release=self.app_release,
+            module_version=self.module_version,
+            sort_order=1,
         )
-
         rms.save()
 
-        # delete the module_version
-        self.module_version.delete()
+        with self.assertRaises(ProtectedError):
+            # Deleting the module_version is not allowed since it has a ReleaseModuleStatus
+            self.module_version.delete()
 
-        # Is the rms deleted since we deleted the module_version?
-        deleted_rms = ReleaseModuleStatus.objects.filter(pk=rms.pk).first()
-        self.assertIsNone(deleted_rms)
+    def test_sort_order_required(self):
+        """
+        Test the on_delete function in case the referred module_version is deleted
+        """
+        rms = ReleaseModuleStatus(
+            app_release=self.app_release,
+            module_version=self.module_version,
+        )
+
+        with self.assertRaises(ValidationError):
+            rms.save()

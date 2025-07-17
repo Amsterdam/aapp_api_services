@@ -27,7 +27,12 @@ class AccessTokenAuthentication(BaseAuthentication):
     def authenticate(self, request: HttpRequest):
         access_token = request.headers.get(settings.ACCESS_TOKEN_HEADER)
 
-        access_token_obj = AccessToken.objects.filter(token=access_token).first()
+        access_token_obj = (
+            AccessToken.objects.select_for_update(of=("session", "self"))
+            .select_related("session")
+            .filter(token=access_token)
+            .first()
+        )
         if not access_token_obj:
             raise TokenInvalidException()
 

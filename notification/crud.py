@@ -17,12 +17,6 @@ from notification.services.push import PushService
 logger = logging.getLogger(__name__)
 
 
-class NotificationCRUDDeviceLimitError(Exception):
-    """Raise when too many devices were passed"""
-
-    pass
-
-
 class NotificationCRUD:
     def __init__(self, source_notification: Notification, push_enabled: bool = True):
         """
@@ -54,8 +48,7 @@ class NotificationCRUD:
         device_ids (list[str]): All devices who want to receive a notification
         """
         device_list = self._collect_and_annotate_devices(device_qs)
-        self._assert_device_count(device_list)
-
+        self.total_device_count = len(device_list)
         notifications_with_push = self._create_notifications(device_list)
         self._update_last_timestamps(device_list)
 
@@ -107,14 +100,6 @@ class NotificationCRUD:
         self.devices_for_push = devices_for_push
         self.total_enabled_count = len(devices_for_push)
         return device_list
-
-    def _assert_device_count(self, device_list):
-        max_devices = settings.FIREBASE_DEVICE_LIMIT
-        if len(device_list) > max_devices:
-            raise NotificationCRUDDeviceLimitError(
-                f"Too many devices [{len(device_list)=}, {max_devices=}]"
-            )
-        self.total_device_count = len(device_list)
 
     def _create_notifications(self, device_list: list[Device]) -> list[Notification]:
         """

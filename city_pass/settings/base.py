@@ -4,7 +4,11 @@ SERVICE_NAME = "city-pass"
 INSTALLED_APPS += [
     "city_pass.apps.CityPassConfig",
 ]
+MEDIA_ROOT = BASE_DIR / "city-pass/media"
+MEDIA_URL = "/city-pass/media/"
+LANGUAGE_CODE = "nl-NL"
 
+X_FRAME_OPTIONS = "SAMEORIGIN"
 ROOT_URLCONF = "city_pass.urls"
 
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
@@ -42,7 +46,9 @@ TOKEN_CUT_OFF_DATETIME = os.getenv("CITY_PASS_TOKEN_CUT_OFF_DATETIME", "10-1 10:
 
 MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
 MIJN_AMS_API_KEY_INBOUND = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
-MIJN_AMS_API_DOMAIN = os.getenv("MIJN_AMS_API_DOMAIN")
+MIJN_AMS_API_DOMAIN = os.getenv(
+    "MIJN_AMS_API_DOMAIN", "https://mams-t-appservice-bff.azurewebsites.net/"
+)
 MIJN_AMS_API_PATHS = {
     "PASSES": "/private/api/v1/services/amsapp/stadspas/passen/",
     "BUDGET_TRANSACTIONS": "/private/api/v1/services/amsapp/stadspas/budget/transactions/",
@@ -50,4 +56,5 @@ MIJN_AMS_API_PATHS = {
     "PASS_BLOCK": "/private/api/v1/services/amsapp/stadspas/block/",
 }
 
-STATIC_URL = "/city-pass/static/"
+MOCK_ENTRA_AUTH = False
+ADMIN_ROLES += ["city-pass-delegated", "city-pass-publisher"]

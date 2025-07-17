@@ -20,9 +20,10 @@ class Command(BaseCommand):
                 # Select all scheduled notifications that have not been pushed yet.
                 # select_for_update() is used to lock the database rows one by one to prevent duplicate pushes.
                 # If another parallel process is running, it will skip the locked rows and move on to the next ones.
+                timezone_now = timezone.now()
                 notifications_to_push = ScheduledNotification.objects.select_for_update(
                     skip_locked=True
-                ).filter(pushed_at__isnull=True, scheduled_for__lte=timezone.now())[
+                ).filter(pushed_at__isnull=True, scheduled_for__lte=timezone_now)[
                     :BATCH_SIZE
                 ]
                 notifications_to_push = list(notifications_to_push)
@@ -36,7 +37,18 @@ class Command(BaseCommand):
 
     def push_notifications(self, notifications_to_push):
         for scheduled_notification in notifications_to_push:
-            self.push_notification(scheduled_notification)
+            if scheduled_notification.expires_at <= timezone.now():
+                logger.info(
+                    f"Skipping expired notification: {scheduled_notification.identifier}"
+                )
+                # Set to a far future date to indicate it was expired, but removed from database index
+                scheduled_notification.pushed_at = "3000-01-01"
+                scheduled_notification.save()
+            else:
+                self.push_notification(scheduled_notification)
+                # Update the pushed_at flag to prevent duplicate pushes!!!
+                scheduled_notification.pushed_at = timezone.now()
+                scheduled_notification.save()
 
     def push_notification(self, scheduled_notification):
         notification_obj = Notification(
@@ -55,7 +67,3 @@ class Command(BaseCommand):
             device_qs=scheduled_notification.devices.all()
         )
         logger.debug(response)
-
-        # Update the pushed_at flag to prevent duplicate pushes!!!
-        scheduled_notification.pushed_at = timezone.now()
-        scheduled_notification.save()

@@ -129,6 +129,26 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self._check_notification_count(1)
 
+    @responses.activate
+    def test_delete_scheduled_notification(self):
+        start_time, end_time = self._init_test()
+
+        response = self._delete_parking_session(start_time)
+        self.assertEqual(
+            response.data["notification_status"], NotificationStatus.CANCELLED.name
+        )
+        self._check_notification_count(0)
+
+    @responses.activate
+    def test_delete_scheduled_notification_not_started(self):
+        start_time, _ = self._init_test(start_session=False)
+
+        response = self._delete_parking_session(start_time)
+        self.assertEqual(
+            response.data["notification_status"], NotificationStatus.NO_CHANGE.name
+        )
+        self._check_notification_count(0)
+
     def _init_test(
         self, parking_duration=settings.PARKING_REMINDER_TIME + 1, start_session=True
     ):
@@ -165,11 +185,11 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self.assertEqual(response.status_code, 200)
         return response
 
-    def _patch_parking_session(self, start_time, end_time):
+    def _patch_parking_session(self, start_time, end_time, vehicle_id="FOOBAR"):
         session_payload = {
             "parking_session": {
                 "report_code": self.report_code,
-                "vehicle_id": "FOOBAR",
+                "vehicle_id": vehicle_id,
                 "start_date_time": start_time.isoformat(),
                 "end_date_time": end_time.isoformat(),
                 "ps_right_id": 123,
@@ -177,6 +197,22 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         }
         response = self.client.patch(
             self.url, session_payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        return response
+
+    def _delete_parking_session(self, start_time, vehicle_id="FOOBAR"):
+        session_payload = {
+            "report_code": self.report_code,
+            "vehicle_id": vehicle_id,
+            "start_date_time": start_time.isoformat(),
+            "ps_right_id": 123,
+        }
+        response = self.client.delete(
+            self.url,
+            query_params=session_payload,
+            format="json",
+            headers=self.api_headers,
         )
         self.assertEqual(response.status_code, 200)
         return response

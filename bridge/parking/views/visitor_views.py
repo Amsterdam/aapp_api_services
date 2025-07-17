@@ -11,6 +11,7 @@ from bridge.parking.serializers.visitor_serializers import (
 )
 from bridge.parking.services.ssp import SSPEndpoint
 from bridge.parking.views.base_ssp_view import BaseSSPView, ssp_openapi_decorator
+from bridge.parking.views.session_views import EXCEPTIONS
 
 
 class ParkingPinCodeVisitorView(BaseSSPView):
@@ -64,6 +65,7 @@ class ParkingVisitorSessionView(BaseSSPView):
         response_serializer_many=True,
         requires_access_token=True,
         serializer_as_params=VisitorSessionRequestSerializer,
+        exceptions=EXCEPTIONS,
     )
     def get(self, request, *args, **kwargs):
         """

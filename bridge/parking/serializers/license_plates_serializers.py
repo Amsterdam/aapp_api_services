@@ -12,7 +12,7 @@ class LicensePlatesGetRequestSerializer(SnakeToCamelCaseSerializer):
 
 class LicensePlatesGetResponseSerializer(CamelToSnakeCaseSerializer):
     vehicle_id = serializers.CharField()
-    visitor_name = serializers.CharField(required=False)
+    visitor_name = serializers.CharField(allow_blank=True, required=False)
 
 
 class LicensePlatesPostRequestSerializer(SnakeToCamelCaseSerializer):

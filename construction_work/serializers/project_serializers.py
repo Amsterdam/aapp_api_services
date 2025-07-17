@@ -142,6 +142,9 @@ class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
         media_url = self.context.get("media_url", "")
         images = []
         for warning_image in obj.warningimage_set.all():
+            if not warning_image.image_set.exists():
+                continue
+
             image_serializer = ImagePublicSerializer(
                 warning_image.image_set.all(),
                 many=True,

@@ -5,6 +5,11 @@ ALL_SERVICES = bridge city_pass construction_work contact image modules notifica
 ifdef SERVICE_NAME
 export SERVICE_NAME_HYPHEN=$(subst _,-,$(SERVICE_NAME))
 endif
+
+ifdef TARGET_MIGRATION
+export TARGET_MIGRATION_APP=$(SERVICE_NAME)
+endif
+
 API_AUTH_TOKENS ?= insecure-token
 
 dc = SERVICE_NAME=${SERVICE_NAME} docker compose
@@ -19,7 +24,6 @@ help:
 lock-packages:
     # Update uv.lock file and overwrite timestamp
 	$(lint) uv lock --upgrade
-	$(lint) uv pip freeze > requirements.txt
 	@timestamp=$$(date -u +"%Y-%m-%dT%H:%M:%SZ"); \
 	sed -i '/^# Generated:/d' uv.lock; \
 	sed -i "1s/^/# Generated: $${timestamp}\n/" uv.lock; \
@@ -127,7 +131,8 @@ migrations: check-service
 
 migrate: check-service
     # Run Django migrations on database
-	$(manage) migrate
+    # Use the "TARGET_MIGRATION" (e.g. 0015) only for rolling back migrations
+	$(manage) migrate $(TARGET_MIGRATION_APP) $(TARGET_MIGRATION)
 
 settings: check-service
     # Show Django settings for local
@@ -144,3 +149,7 @@ app: check-service
 shell: check-service
     # Start Django shell
 	$(manage) shell
+
+superuser:
+	# Create a superuser for the Django app
+	$(manage) createsuperuser --username jeroen --email app@amsterdam.nl

@@ -11,7 +11,7 @@ from city_pass.exceptions import (
     TokenNotReadyException,
 )
 from city_pass.models import AccessToken, Session
-from city_pass.tests.test_session_views import DATE_FORMAT
+from city_pass.tests.views.test_session_views import DATE_FORMAT
 
 
 class TestAuthenicateAccessToken(TestCase):

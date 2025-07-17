@@ -36,11 +36,14 @@ class PushService:
         """
 
         firebase_messages = [self._define_firebase_message(n) for n in notifications]
-        batch_response = messaging.send_each(firebase_messages)
-        if batch_response.failure_count > 0:
-            failed_token_count = self._log_failures(batch_response, firebase_messages)
-            return failed_token_count
-        return 0
+        firebase_batches = self._batch_messages(firebase_messages)
+        failed_token_count = 0
+        for batch in firebase_batches:
+            batch_response = messaging.send_each(batch)
+            if batch_response.failure_count > 0:
+                failed_token_count += batch_response.failure_count
+                self._log_failures(batch_response, firebase_messages)
+        return failed_token_count
 
     def _define_firebase_message(
         self, notification_obj: Notification
@@ -84,18 +87,22 @@ class PushService:
         )
         return android_image_config, ios_image_config
 
-    def _log_failures(
-        self, batch_response, firebase_messages: list[messaging.Message]
-    ) -> int:
-        failed_tokens = []
+    def _batch_messages(self, messages) -> list[list[messaging.Message]]:
+        """
+        Split the device list into batches of settings.MAX_DEVICES_PER_REQUEST devices.
+        """
+        max_devices = settings.MAX_DEVICES_PER_REQUEST
+        batches = [
+            messages[i : i + max_devices] for i in range(0, len(messages), max_devices)
+        ]
+        return batches
+
+    def _log_failures(self, batch_response, firebase_messages: list[messaging.Message]):
         responses = batch_response.responses
         for idx, resp in enumerate(responses):
             if not resp.success:
                 failed_token = firebase_messages[idx].token
-                failed_tokens.append(failed_token)
-
                 logger.error(
                     "Failed to send notification to device",
                     extra={"firebase_token": failed_token},
                 )
-        return len(failed_tokens)

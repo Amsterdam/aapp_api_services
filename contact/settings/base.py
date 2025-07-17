@@ -9,6 +9,7 @@ MIDDLEWARE += [
 ]
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
+LANGUAGE_CODE = "nl-NL"
 
 ROOT_URLCONF = "contact.urls"
 
@@ -32,11 +33,10 @@ CITY_OFFICE_LOOKUP_TABLE = {
     11: "d338d28f8e6132ea2cfcf3e61785454c",  # Zuidoost
 }
 
-CBS_TIME_PUBLISHER_GROUP = os.getenv("CBS_TIME_PUBLISHER_GROUP")
-
 TIME_INPUT_FORMATS = ["%H:%M"]
 
 MOCK_ENTRA_AUTH = False
+ADMIN_ROLES += ["cbs-time-delegated", "cbs-time-publisher"]
 
 # OIDC settings
 AUTHENTICATION_BACKENDS = [

@@ -17,10 +17,17 @@ class ReminderSchedulerError(Exception):
 
 
 class ParkingReminderScheduler:
-    def __init__(self, reminder_key: str, end_datetime: datetime, device_id: str):
+    def __init__(
+        self,
+        reminder_key: str,
+        end_datetime: datetime,
+        device_id: str,
+        report_code: str,
+    ):
         self.schedule_service = ScheduledNotificationService()
 
         self.device_id = device_id
+        self.report_code = report_code
         self.reminder_key = reminder_key
         self.identifier = self._create_identifier(reminder_key)
 
@@ -28,12 +35,17 @@ class ParkingReminderScheduler:
             "reminder_key": reminder_key,
             "end_datetime": end_datetime,
         }
+        self.end_datetime = end_datetime
         self.reminder_time = self._get_reminder_time(end_datetime)
         self.log_extra["reminder_time"] = self.reminder_time
 
     def process(self) -> NotificationStatus:
         reminder = self.schedule_service.get(self.identifier)
         if reminder:
+            if reminder.get("pushed_at") is not None:
+                logger.info("Reminder already pushed", extra=self.log_extra)
+                return NotificationStatus.NO_CHANGE
+
             if self.reminder_time:
                 logger.info("Updating reminder", extra=self.log_extra)
                 # Add the current device_id to the list of device_ids
@@ -73,7 +85,13 @@ class ParkingReminderScheduler:
             body=content.body,
             identifier=self.identifier,
             scheduled_for=self.reminder_time,
-            context={"reminderKey": self.reminder_key},
+            expires_at=self.end_datetime,
+            context={
+                "reminderKey": self.reminder_key,
+                "type": NotificationType.PARKING_REMINDER.value,
+                "module_slug": Module.PARKING.value,
+                "reportCode": self.report_code,
+            },
             device_ids=[self.device_id],
             notification_type=NotificationType.PARKING_REMINDER.value,
             module_slug=Module.PARKING.value,

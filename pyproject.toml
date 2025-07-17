@@ -4,7 +4,7 @@ version = "0.1.0"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-  "django",
+  "django==5.1",
   "djangorestframework",
   "psycopg2-binary",
   "uWSGI",
@@ -13,12 +13,15 @@ dependencies = [
   "django-debug-toolbar",
   "django-redis",
   "dos2unix",
+  "whitenoise",
   # modules
   "djangorestframework-simplejwt",
   "django-csp",
+  "django-admin-sortable2",
   # image
   "pillow",
   "pillow-heif",
+  "django-client-side-image-cropping",
   # construction work ETL
   "aiohttp",
   "tenacity",
@@ -76,6 +79,7 @@ omit = [
   "*/integration_tests/*",
   "*/urls.py",
   "*/admin.py",
+  "*/admin/*",
   "*/apps.py",
 ]
 

@@ -33,6 +33,7 @@ class ScheduledNotificationService:
         notification_type: str,
         module_slug: str = None,
         image: str = None,
+        expires_at: datetime = None,
     ):
         request_data = {
             "title": title,
@@ -47,6 +48,8 @@ class ScheduledNotificationService:
         }
         if image:
             request_data["image"] = image
+        if expires_at:
+            request_data["expires_at"] = expires_at.isoformat()
 
         try:
             url = settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"]
@@ -83,7 +86,7 @@ class ScheduledNotificationService:
                 url,
                 headers=self._headers,
             )
-            if response.status_code == 404:
+            if response.status_code == 204:
                 return None
             response.raise_for_status()
         except Exception as e:

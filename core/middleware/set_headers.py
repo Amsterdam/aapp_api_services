@@ -12,5 +12,4 @@ class DefaultHeadersMiddleware:
                 response["Content-Type"] += "; charset=UTF-8"
         else:
             response["Content-Type"] = "application/json; charset=UTF-8"
-        response["X-Content-Type-Options"] = "nosniff"
         return response

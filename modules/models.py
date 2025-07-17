@@ -1,8 +1,12 @@
 """Modules models for MBS"""
 
+import re
+
 from django.contrib.postgres.fields import ArrayField
-from django.db import models
+from django.db import models, transaction
 from django.forms import ValidationError
+
+from modules.icons import ModuleIconPath
 
 
 class Module(models.Model):
@@ -14,22 +18,58 @@ class Module(models.Model):
         INACTIVE = 0, "inactive"
         ACTIVE = 1, "active"
 
-    slug = models.CharField(max_length=100, blank=False, unique=True)
-    status = models.IntegerField(
-        blank=False, null=False, choices=Status.choices, default=Status.ACTIVE
+    slug = models.CharField(max_length=100, unique=True)
+    status = models.IntegerField(choices=Status.choices, default=Status.ACTIVE)
+    note = models.CharField(
+        "Notitie",
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Rede voor status wijziging. Alleen intern zichtbaar.",
     )
+    app_reason = models.CharField(
+        "App reden",
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Rede voor status wijziging. Zichtbaar in de app.",
+    )
+    fallback_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="URL om als backup te gebruiken.",
+    )
+
+    def __str__(self):
+        return f"{self.slug} ({self.get_status_display()})"
+
+    def clean(self):
+        super().clean()
+
+        if self.status == Module.Status.INACTIVE and not self.app_reason:
+            raise ValidationError(
+                "Een inactieve module moet een 'app reden' gedefinieerd hebben."
+            )
+
+        if self.status == Module.Status.ACTIVE:
+            self.fallback_url = None
+            self.app_reason = None
+            self.note = None
 
 
 class ModuleVersion(models.Model):
     """Module version definition"""
 
     module = models.ForeignKey(Module, on_delete=models.PROTECT)
-    version = models.CharField(max_length=100, blank=False, null=False)
-    title = models.CharField(max_length=500, blank=False, null=False)
-    icon = models.CharField(max_length=100, blank=False, null=False)
-    description = models.CharField(max_length=1000, blank=False, null=False)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
+    version = models.CharField("Versie", max_length=100)
+    title = models.CharField("Titel", max_length=500)
+    icon = models.CharField(
+        "Icoon", max_length=100, choices=((i, i) for i in ModuleIconPath.keys())
+    )
+    description = models.TextField("Omschrijving", max_length=1000)
+    created = models.DateTimeField("Aangemaakt", auto_now_add=True)
+    modified = models.DateTimeField("Laatste wijziging", auto_now=True)
 
     class Meta:
         """Constraints"""
@@ -40,48 +80,57 @@ class ModuleVersion(models.Model):
             )
         ]
 
+    def clean(self):
+        # check is version is semantic versioning like "1.0.0"
+        if not re.match(r"^\d+\.\d+\.\d+$", self.version):
+            raise ValidationError(
+                f"Versie '{self.version}' is geen semantic versioning format."
+            )
+
+    def __str__(self):
+        return f"{self.title} ({self.version})"
+
 
 class AppRelease(models.Model):
-    version = models.CharField(max_length=100, blank=False, null=False, unique=True)
-    release_notes = models.CharField(max_length=2000, blank=True, null=True)
-    published = models.DateTimeField(null=True)
-    unpublished = models.DateTimeField(null=True)
-    deprecated = models.DateTimeField(null=True)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
+    version = models.CharField("Versie", max_length=100, unique=True)
+    release_notes = models.CharField(max_length=2000, blank=True)
+    published = models.DateTimeField(
+        "Gepubliceerd",
+        null=True,
+        blank=True,
+        help_text="De publicatiedatum bepaalt vanaf wanneer de release niet meer als pre-release te zien is en de release in aanmerking komt voor voor gebruik als latest version in update meldingen.",
+    )
+    unpublished = models.DateTimeField(
+        "Ongepubliceerd",
+        null=True,
+        blank=True,
+        help_text="De ongepubliceerd datum bepaalt vanaf wanneer gebruikers van deze release een geforceerde update melding krijgen en de app voor deze gebruikers onbruikbaar is.",
+    )
+    deprecated = models.DateTimeField(
+        "Deprecated",
+        null=True,
+        blank=True,
+        help_text="De deprecateddatum bepaalt vanaf wanneer gebruikers van deze release een update suggestie melding krijgen.",
+    )
+    created = models.DateTimeField("Aangemaakt", auto_now_add=True)
+    modified = models.DateTimeField("Laatste bewerking", auto_now=True)
+    modules = models.ManyToManyField(
+        ModuleVersion,
+        through="ReleaseModuleStatus",
+        through_fields=("app_release", "module_version"),
+        verbose_name="Modules in deze release",
+    )
     module_order = ArrayField(
-        models.CharField(max_length=500, blank=False), blank=False
+        models.CharField(max_length=500, blank=False),
+        blank=True,
+        null=True,
     )
 
-    def save(self, *args, **kwargs):
-        # Check if slug exists as Module
-        for slug in self.module_order:
-            module = Module.objects.filter(slug=slug).first()
-            if module is None:
-                raise ValidationError(
-                    f"Given slug '{slug}' in module_order does not exist as Module"
-                )
-
-        # Check if slugs in module_order are unique
-        if len(set(self.module_order)) != len(self.module_order):
-            raise ValidationError("Slugs in module_order are not unique")
-
-        return super().save(*args, **kwargs)
+    def __str__(self):
+        return f"Release {self.version} ({self.created.date()})"
 
 
 class ReleaseModuleStatus(models.Model):
-    class Status(models.IntegerChoices):
-        """Enum for various statuses"""
-
-        INACTIVE = 0, "inactive"
-        ACTIVE = 1, "active"
-
-    app_release = models.ForeignKey(AppRelease, on_delete=models.CASCADE)
-    module_version = models.ForeignKey(ModuleVersion, on_delete=models.CASCADE)
-    status = models.IntegerField(
-        blank=False, null=False, choices=Status.choices, default=Status.ACTIVE
-    )
-
     class Meta:
         """Constraints"""
 
@@ -91,3 +140,69 @@ class ReleaseModuleStatus(models.Model):
                 name="unique_app_release_module_version",
             )
         ]
+        verbose_name = "Release Module State"
+        verbose_name_plural = "Release Module Status"
+        ordering = ["sort_order"]
+
+    class Status(models.IntegerChoices):
+        """Enum for various statuses"""
+
+        INACTIVE = 0, "inactive"
+        ACTIVE = 1, "active"
+
+    app_release = models.ForeignKey(AppRelease, on_delete=models.PROTECT)
+    module_version = models.ForeignKey(
+        ModuleVersion, on_delete=models.PROTECT, verbose_name="Module versie"
+    )
+    status = models.IntegerField(choices=Status.choices, default=Status.ACTIVE)
+    sort_order = models.PositiveIntegerField(db_index=True)
+    note = models.CharField(
+        "Notitie",
+        max_length=500,
+        blank=True,
+        null=True,
+    )
+    app_reason = models.CharField(
+        "App reden",
+        max_length=500,
+        blank=True,
+        null=True,
+    )
+    fallback_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return ""
+
+    def clean(self):
+        super().clean()
+
+        dup_exists = (
+            ReleaseModuleStatus.objects.filter(
+                app_release_id=self.app_release_id,
+                module_version__module_id=self.module_version.module_id,
+            )
+            .exclude(pk=self.pk)
+            .exists()
+        )
+
+        if dup_exists:
+            raise ValidationError("Deze module bestaat al in de release.")
+
+        if self.status == ReleaseModuleStatus.Status.INACTIVE and not self.app_reason:
+            raise ValidationError(
+                "In inactieve module moet een 'app reden' gedefinieerd hebben."
+            )
+
+        if self.status == ReleaseModuleStatus.Status.ACTIVE:
+            self.fallback_url = None
+            self.app_reason = None
+            self.note = None
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            self.full_clean()
+            super().save(*args, **kwargs)

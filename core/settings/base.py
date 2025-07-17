@@ -33,6 +33,17 @@ INTERNAL_IPS = [
 # Required for debug toolbar
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": BASE_DIR / "media",
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 DEBUG_TOOLBAR_CONFIG = {
     "UPDATE_ON_FETCH": True,
@@ -40,6 +51,14 @@ DEBUG_TOOLBAR_CONFIG = {
 
 # Environment settings
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local").lower()
+SLUG_MAPPING = {
+    "local": "o",
+    "development": "o",
+    "testing": "t",
+    "acceptance": "a",
+    "production": "p",
+}
+ENVIRONMENT_SLUG = SLUG_MAPPING.get(ENVIRONMENT, "o")
 
 # Host configuration per environment
 HOSTS = {
@@ -65,6 +84,8 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "debug_toolbar",
     "mozilla_django_oidc",
+    "adminsortable2",
+    "client_side_image_cropping",
     "core.apps.CoreConfig",
 ]
 
@@ -77,6 +98,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "core.middleware.db_retry_on_timeout.DatabaseRetryMiddleware",
     "core.middleware.set_headers.DefaultHeadersMiddleware",
     "core.middleware.log_4xx_status.Log4xxMiddleware",
@@ -296,3 +318,5 @@ CACHES = {
         },
     }
 }
+
+ADMIN_ROLES = []

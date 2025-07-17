@@ -47,7 +47,7 @@ class ParkingSessionResponseSerializer(CamelToSnakeCaseSerializer):
     vehicle_id = serializers.CharField()
     status = StatusTranslationSerializer(choices=STATUS_CHOICES)
     ps_right_id = serializers.CharField(required=False)
-    visitor_name = serializers.CharField(required=False)
+    visitor_name = serializers.CharField(allow_blank=True, required=False)
     remaining_time = serializers.IntegerField()
     report_code = serializers.CharField()
     payment_zone_id = serializers.CharField(required=False)
@@ -73,7 +73,7 @@ class ParkingSessionListPaginatedResponseSerializer(serializers.Serializer):
 
 
 class ParkingSessionOrderStartRequestSerializer(SnakeToCamelCaseSerializer):
-    report_code = serializers.IntegerField()
+    report_code = serializers.CharField()
     payment_zone_id = serializers.CharField(required=False)
     vehicle_id = serializers.CharField()
     start_date_time = FlexibleDateTimeSerializer()
@@ -103,8 +103,11 @@ class ParkingSessionStartRequestSerializer(SnakeToCamelCaseSerializer):
 
 
 class ParkingSessionOrderUpdateRequestSerializer(SnakeToCamelCaseSerializer):
-    report_code = serializers.IntegerField()
-    ps_right_id = serializers.IntegerField()
+    report_code = serializers.CharField()
+    ps_right_id = serializers.CharField()
+    vehicle_id = serializers.CharField(
+        required=False
+    )  # Zonder deze waarde werken notificaties niet juist
     start_date_time = FlexibleDateTimeSerializer()
     end_date_time = FlexibleDateTimeSerializer()
 
@@ -114,8 +117,11 @@ class ParkingSessionUpdateRequestSerializer(ParkingSessionStartRequestSerializer
 
 
 class ParkingSessionDeleteRequestSerializer(SnakeToCamelCaseSerializer):
-    report_code = serializers.IntegerField()
-    ps_right_id = serializers.IntegerField()
+    report_code = serializers.CharField()
+    ps_right_id = serializers.CharField()
+    vehicle_id = serializers.CharField(
+        required=False
+    )  # Zonder deze waarde werken notificaties niet juist
     start_date_time = FlexibleDateTimeSerializer()
 
     def to_representation(self, instance):
@@ -125,11 +131,12 @@ class ParkingSessionDeleteRequestSerializer(SnakeToCamelCaseSerializer):
 
 
 class ParkingSessionReceiptRequestSerializer(SnakeToCamelCaseSerializer):
-    report_code = serializers.IntegerField()
+    report_code = serializers.CharField()
     payment_zone_id = serializers.CharField()
     vehicle_id = serializers.CharField()
     start_date_time = FlexibleDateTimeSerializer()
     end_date_time = FlexibleDateTimeSerializer()
+    ps_right_id = serializers.CharField(required=False)
 
     def to_representation(self, instance):
         """
@@ -161,7 +168,7 @@ class ParkingSessionReceiptResponseSerializer(CamelToSnakeCaseSerializer):
     remaining_wallet_balance = ValueCurrencySerializer(required=False)
     regime_time = ReceiptRegimeTimeSerializer(many=True, required=False)
     remaining_time = MillisecondsToSecondsSerializer()
-    report_code = serializers.IntegerField()
+    report_code = serializers.CharField()
     payment_zone_id = serializers.CharField()
     payment_required = serializers.BooleanField()
     parking_cost = ValueCurrencySerializer()

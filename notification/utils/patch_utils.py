@@ -77,7 +77,7 @@ class MockFirebaseSendEach:
             logger.debug(log_message)
 
 
-def setup_local_development_patches():
+def setup_local_development_patches():  # pragma: no cover
     """Set up patches for local development to mock Firebase interactions."""
     cert_patcher, init_patcher, app_patcher = apply_init_firebase_patches()
     send_each_patcher = patch(

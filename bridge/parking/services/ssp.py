@@ -61,30 +61,27 @@ def ssp_api_call(method, endpoint, data, ssp_access_token=None):
         json=body_data,
         headers=headers,
     )
-
     if ssp_response.status_code == 200:
         return ssp_response
 
-    if ssp_response.status_code == 400:
-        try:
-            ssp_response_json = json.loads(ssp_response.text)
-        except json.JSONDecodeError:
-            raise exceptions.SSPCallError(detail=ssp_response.text)
+    try:
+        ssp_response_json = json.loads(ssp_response.text)
+        error = ssp_response_json.get("error", {})
+        content = error.get("content")
+    except json.JSONDecodeError:
+        content = ssp_response.text
 
-        ssp_response_error = ssp_response_json.get("error", {})
-        ssp_response_content = ssp_response_error.get("content")
-        # ssp_response_message = ssp_response_error.get("message")
-
-        for error in exceptions.SSP_COMMON_400_ERRORS:
-            if ssp_response_content and error.default_detail in ssp_response_content:
-                raise error()
-        raise exceptions.SSPCallError(detail=ssp_response.text)
-    elif ssp_response.status_code == 401:
-        raise exceptions.SSPForbiddenError(detail=ssp_response.text)
-    elif ssp_response.status_code == 403:
-        raise exceptions.SSPForbiddenError(detail=ssp_response.text)
-    elif ssp_response.status_code == 404:
-        raise exceptions.SSPNotFoundError(detail=ssp_response.text)
-    else:
-        logger.error(f"Unexpected SSP response: {ssp_response.text}")
-        raise exceptions.SSPCallError(detail=ssp_response.text)
+    if ssp_response.status_code == 500:
+        raise exceptions.SSPServerError(detail=content)  # Map to 500 status
+    if ssp_response.status_code == 401:
+        raise exceptions.SSPForbiddenError(detail=content)  # Map to 403 status
+    if ssp_response.status_code == 403:
+        raise exceptions.SSPForbiddenError(detail=content)  # Map to 403 status
+    for error in exceptions.SSP_COMMON_422_ERRORS:
+        if content and error.default_detail in content:
+            raise error()  # Map to 422 status
+    if ssp_response.status_code == 404:
+        raise exceptions.SSPNotFoundError(detail=content)  # Map to 400 status
+    raise exceptions.SSPCallError(
+        detail=ssp_response.text
+    )  # Map to 400 status and show full message

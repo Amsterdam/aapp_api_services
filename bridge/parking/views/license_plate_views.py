@@ -1,3 +1,8 @@
+from bridge.parking.exceptions import (
+    SSPLicensePlateExistsError,
+    SSPLicensePlateNotFoundError,
+    SSPVehicleIDNotAllowedError,
+)
 from bridge.parking.serializers.license_plates_serializers import (
     LicensePlatesDeleteRequestSerializer,
     LicensePlatesDeleteResponseSerializer,
@@ -8,6 +13,12 @@ from bridge.parking.serializers.license_plates_serializers import (
 )
 from bridge.parking.services.ssp import SSPEndpoint
 from bridge.parking.views.base_ssp_view import BaseSSPView, ssp_openapi_decorator
+
+EXCEPTIONS = [
+    SSPLicensePlateExistsError,
+    SSPLicensePlateNotFoundError,
+    SSPVehicleIDNotAllowedError,
+]
 
 
 class ParkingLicensePlateListView(BaseSSPView):
@@ -26,6 +37,7 @@ class ParkingLicensePlateListView(BaseSSPView):
         response_serializer_class=LicensePlatesGetResponseSerializer,
         serializer_as_params=LicensePlatesGetRequestSerializer,
         requires_access_token=True,
+        exceptions=EXCEPTIONS,
     )
     def get(self, request, *args, **kwargs):
         return self.call_ssp(request)
@@ -55,6 +67,7 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
         request=LicensePlatesPostRequestSerializer,
         response_serializer_class=LicensePlatesPostResponseSerializer,
         requires_access_token=True,
+        exceptions=EXCEPTIONS,
     )
     def post(self, request, *args, **kwargs):
         self.ssp_http_method = "post"
@@ -64,6 +77,7 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
         serializer_as_params=LicensePlatesDeleteRequestSerializer,
         response_serializer_class=LicensePlatesDeleteResponseSerializer,
         requires_access_token=True,
+        exceptions=EXCEPTIONS,
     )
     def delete(self, request, *args, **kwargs):
         self.ssp_http_method = "delete"

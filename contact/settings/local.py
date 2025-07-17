@@ -4,8 +4,6 @@
 from .base import *  # isort:skip
 from core.settings.local import *  # isort:skip
 
-STATIC_URL = "/contact/static/"
+STATIC_URL = "/contact/static/"  # Needs to be in local/otap.py, or it gets overwritten by core/settings/base.py!
 
 MOCK_ENTRA_AUTH = os.getenv("MOCK_ENTRA_AUTH", "true").lower() == "true"
-
-CBS_TIME_PUBLISHER_GROUP = "b02f476b-6f1d-4f9e-86e6-5a935310050b"

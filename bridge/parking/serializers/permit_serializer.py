@@ -32,7 +32,7 @@ class PermitZoneSerializer(CamelToSnakeCaseSerializer):
 
 
 class VisitorAccountSerializer(CamelToSnakeCaseSerializer):
-    report_code = serializers.IntegerField()
+    report_code = serializers.CharField()
     pin = serializers.CharField()
     seconds_remaining = serializers.IntegerField(required=False)
 
@@ -52,7 +52,7 @@ class PermitsRequestSerializer(SnakeToCamelCaseSerializer):
 
 
 class PermitItemSerializer(CamelToSnakeCaseSerializer):
-    report_code = serializers.IntegerField()
+    report_code = serializers.CharField()
     time_balance = MillisecondsToSecondsSerializer()
     time_valid_until = serializers.DateTimeField(required=False)
     permit_type = serializers.CharField()

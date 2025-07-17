@@ -49,9 +49,9 @@ class PinCodeResponseSerializer(CamelToSnakeCaseSerializer):
 class AddressSerializer(CamelToSnakeCaseSerializer):
     street = serializers.CharField()
     house_number = serializers.CharField()
-    house_letter = serializers.CharField(allow_blank=True)
+    house_letter = serializers.CharField(allow_blank=True, required=False)
     zip_code = serializers.CharField()
-    suffix = serializers.CharField(allow_blank=True)
+    suffix = serializers.CharField(allow_blank=True, required=False)
     city = serializers.CharField()
     concatenated_address = serializers.CharField()
 
@@ -63,7 +63,7 @@ class WalletSerializer(CamelToSnakeCaseSerializer):
 
 class AccountDetailsResponseSerializer(CamelToSnakeCaseSerializer):
     initials = serializers.CharField(allow_blank=True, required=False)
-    last_name = serializers.CharField()
+    last_name = serializers.CharField(allow_blank=True, required=False)
     email = serializers.CharField(allow_blank=True, required=False)
     address = AddressSerializer(required=False)
     phone_number = serializers.CharField(allow_blank=True, required=False)

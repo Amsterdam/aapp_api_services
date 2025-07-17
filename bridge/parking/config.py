@@ -7,11 +7,9 @@ class ReminderContent(NamedTuple):
 
 
 REMINDER_MESSAGES = {
-    "nl": ReminderContent(
-        title="Parkeeractie herinnering", body="Uw parkeersessie eindigt binnenkort"
-    ),
+    "nl": ReminderContent(title="Herinnering", body="Uw parkeersessie loopt bijna af"),
     "en": ReminderContent(
-        title="Parking session reminder", body="Your parking session is about to end"
+        title="Reminder", body="Your parking session is about to end"
     ),
 }
 
