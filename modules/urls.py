@@ -1,11 +1,10 @@
-from django.contrib import admin
 from django.urls import path
 
-from core.urls import get_swagger_paths
-from core.views.admin_views import AdminLoginView
+from core.urls import get_swagger_paths, get_admin_paths
 from modules.views import ReleaseDetailView
 
 BASE_PATH = "modules/api/v1"
+BASE_PATH_ADMIN = "modules/admin"
 
 urlpatterns = [
     path(
@@ -13,13 +12,7 @@ urlpatterns = [
         ReleaseDetailView.as_view(),
         name="modules-release-detail",
     ),
-    # Activate admin
-    path(
-        "modules/admin/login/",
-        AdminLoginView.as_view(),
-        name="modules-admin-login",
-    ),
-    path("modules/admin/", admin.site.urls),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH)
+urlpatterns += get_admin_paths(BASE_PATH_ADMIN)
