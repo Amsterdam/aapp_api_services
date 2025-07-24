@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from waste.models import NotificationSchedule
-from waste.services.notification import call_notification_service
+from waste.services.notification import NotificationService
 from waste.services.waste_collection import WasteCollectionService
 
 logger = logging.getLogger(__name__)
@@ -72,11 +72,9 @@ class Command(BaseCommand):
         return batched_notifications
 
     def send_notifications(self, batched_notifications):
+        notification_service = NotificationService()
         for type, device_ids in batched_notifications.items():
-            # Send in batches of 500 devices
-            for i in range(0, len(device_ids), 500):
-                batch = device_ids[i : i + 500]
-                call_notification_service(batch, type)
-                logger.info(
-                    "Sent notification", extra={"type": type, "device_ids": batch}
-                )
+            notification_service.send(device_ids=device_ids, type=type)
+            logger.info(
+                "Sent notification", extra={"type": type, "nr_devices": len(device_ids)}
+            )

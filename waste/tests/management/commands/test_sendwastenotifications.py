@@ -11,7 +11,7 @@ from waste.tests import data
 
 @freeze_time("2024-03-31")
 @override_settings(CALENDAR_LENGTH=14)
-@patch("waste.management.commands.sendwastenotifications.call_notification_service")
+@patch("waste.management.commands.sendwastenotifications.NotificationService.send")
 @patch("waste.services.waste_collection.requests.get")
 class SendWasteNotificationsTest(TestCase):
     def test_send_single_notification(
@@ -25,4 +25,6 @@ class SendWasteNotificationsTest(TestCase):
 
         call_command("sendwastenotifications")
 
-        mock_call_notification_service.assert_called_with([schedule.device_id], "GFT")
+        mock_call_notification_service.assert_called_with(
+            device_ids=[schedule.device_id], type="GFT"
+        )

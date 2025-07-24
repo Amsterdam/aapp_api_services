@@ -16,7 +16,7 @@ from bridge.parking.serializers.session_serializers import (
 )
 from bridge.parking.services.ssp import SSPEndpoint
 from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
-from core.services.notificiation import ScheduledNotificationService
+from core.services.scheduled_notification import ScheduledNotificationService
 from core.utils.serializer_utils import create_serializer_data
 
 logger = logging.getLogger(__name__)
