@@ -17,7 +17,9 @@ class DatabaseRetryMiddleware:
         self.get_response = get_response
         self.max_retries = 3
         self.initial_delay = 1  # seconds
-        self.timeout_pattern = re.compile(r"Operation timed out", re.IGNORECASE)
+        self.error_pattern = re.compile(
+            r"(Operation timed out|Connection refused)", re.IGNORECASE
+        )
 
     def __call__(self, request):
         retry_count = 0
@@ -29,11 +31,11 @@ class DatabaseRetryMiddleware:
                 return response
             except OperationalError as e:
                 exception_message = str(e)
-                if self.timeout_pattern.search(exception_message):
+                if self.error_pattern.search(exception_message):
                     if retry_count < self.max_retries:
                         retry_count += 1
                         logger.warning(
-                            f"OperationalError (timeout) encountered. Retrying request {retry_count}/{self.max_retries} after {delay} seconds."
+                            f"OperationalError encountered. Retrying request {retry_count}/{self.max_retries} after {delay} seconds."
                         )
                         time.sleep(delay)
                         delay *= 2  # Exponential backoff

@@ -11,6 +11,11 @@ timeout_error = OperationalError(
     "(10.225.95.68), port 5432 failed: Operation timed out\n"
     "Is the server running on that host and accepting TCP/IP connections?"
 )
+connection_error = OperationalError(
+    'connection to server at "aapp-p-asctypczqftak.postgres.database.azure.com" '
+    "(10.225.95.68), port 5432 failed: Connection refused\n"
+    "Is the server running on that host and accepting TCP/IP connections?"
+)
 
 
 @mock.patch("core.middleware.db_retry_on_timeout.time.sleep", return_value=None)
@@ -52,7 +57,7 @@ class DatabaseRetryMiddlewareTest(TestCase):
         self.assertEqual(self.mock_logger.warning.call_count, middleware.max_retries)
         for i in range(middleware.max_retries):
             self.mock_logger.warning.assert_any_call(
-                f"OperationalError (timeout) encountered. Retrying request {i + 1}/{middleware.max_retries} after {1 * (2**i)} seconds."
+                f"OperationalError encountered. Retrying request {i + 1}/{middleware.max_retries} after {1 * (2**i)} seconds."
             )
 
     def test_retry_on_timeout_then_succeed(self, mock_sleep):
@@ -68,27 +73,54 @@ class DatabaseRetryMiddlewareTest(TestCase):
                 raise response
             return response
 
-        middleware = DatabaseRetryMiddleware(get_response)
+        self._assert_success_after_retry(mock_sleep, get_response)
 
-        # Create a dummy request
+    def test_retry_on_connection_error_then_succeed(self, mock_sleep):
+        """
+        Test that the middleware retries the specified number of times
+        and succeeds if get_response eventually returns a response.
+        """
+        responses = [connection_error, connection_error, HttpResponse("Success")]
+
+        def get_response(request):
+            response = responses.pop(0)
+            if isinstance(response, Exception):
+                raise response
+            return response
+
+        self._assert_success_after_retry(mock_sleep, get_response)
+
+    def test_retry_on_combined_error_then_succeed(self, mock_sleep):
+        """
+        Test that the middleware retries the specified number of times
+        and succeeds if get_response eventually returns a response.
+        """
+        responses = [connection_error, timeout_error, HttpResponse("Success")]
+
+        def get_response(request):
+            response = responses.pop(0)
+            if isinstance(response, Exception):
+                raise response
+            return response
+
+        self._assert_success_after_retry(mock_sleep, get_response)
+
+    def _assert_success_after_retry(self, mock_sleep, get_response):
+        middleware = DatabaseRetryMiddleware(get_response)
         request = self.factory.get("/test-endpoint/")
 
-        # Invoke the middleware
         response = middleware(request)
 
-        # Assert that the final response is the successful one
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, b"Success")
-
         # Assert that sleep was called twice
         expected_sleep_calls = [mock.call(1), mock.call(2)]
         self.assertEqual(mock_sleep.call_args_list, expected_sleep_calls)
-
         # Assert that logger.warning was called twice
         self.assertEqual(self.mock_logger.warning.call_count, 2)
         for i in range(2):
             self.mock_logger.warning.assert_any_call(
-                f"OperationalError (timeout) encountered. Retrying request {i + 1}/{middleware.max_retries} after {1 * (2**i)} seconds."
+                f"OperationalError encountered. Retrying request {i + 1}/{middleware.max_retries} after {1 * (2**i)} seconds."
             )
 
     def test_no_retry_on_non_timeout_operational_error(self, mock_sleep):
@@ -176,5 +208,5 @@ class DatabaseRetryMiddlewareTest(TestCase):
 
         # Assert that logger.warning was called once
         self.mock_logger.warning.assert_called_once_with(
-            f"OperationalError (timeout) encountered. Retrying request 1/{middleware.max_retries} after 1 seconds."
+            f"OperationalError encountered. Retrying request 1/{middleware.max_retries} after 1 seconds."
         )
