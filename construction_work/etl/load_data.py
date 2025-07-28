@@ -169,8 +169,12 @@ def get_sections(data, project):
     for section_type, value in data.get("sections").items():
         for item in value:
             section = ProjectSection(
-                project=project, body=item.get("body"), type=section_type
+                project=project,
+                body=item.get("body"),
+                type=section_type,
             )
+            if title := item.get("title"):
+                section.title = title
             sections.append(section)
             section_urls += [
                 ProjectSectionUrl(section=section, **v) for v in item.get("links")
