@@ -32,3 +32,6 @@ pytest.ini
 
 # Spectacular
 openapi-schema.yaml
+
+# Media files from local runs
+media/
