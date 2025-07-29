@@ -129,12 +129,14 @@ class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend)
     def create_user(self, claims):
         """Return object for a newly created user account."""
         email = claims.get("upn")
+
+        # TODO: fix updating existing user, email is same but name changed
         user, created = User.objects.update_or_create(
             username=default_username_algo(email),
             email=email,
-            first_name=claims.get("given_name"),
-            last_name=claims.get("family_name"),
             defaults={
+                "first_name": claims.get("given_name"),
+                "last_name": claims.get("family_name"),
                 "is_staff": True,
                 "is_superuser": True,
             },

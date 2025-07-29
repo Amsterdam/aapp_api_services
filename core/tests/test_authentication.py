@@ -3,8 +3,10 @@ from unittest.mock import patch
 import jwt
 import responses
 from django.conf import settings
+from django.contrib.auth.models import Group, User
 from django.core.cache import cache
-from django.test import override_settings
+from django.db import IntegrityError
+from django.test import TestCase, override_settings
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, APITestCase
@@ -14,6 +16,7 @@ from core.authentication import (
     AbstractAppAuthentication,
     APIKeyAuthentication,
     EntraTokenMixin,
+    OIDCAuthenticationBackend,
 )
 from core.utils.patch_utils import (
     apply_signing_key_patch,
@@ -178,3 +181,160 @@ class TestEntraTokenMixin(APITestCase):
         self.assertEqual(
             token_data["iss"], f"https://sts.windows.net/{settings.ENTRA_TENANT_ID}/"
         )
+
+
+class TestOIDCAuthenticationBackend(TestCase):
+    def setUp(self):
+        self.backend = OIDCAuthenticationBackend()
+        self.sample_claims = {
+            "upn": "test.user@amsterdam.nl",
+            "given_name": "Test",
+            "family_name": "User",
+            "roles": ["mbs-admin", "cbs-time-publisher"],
+        }
+
+    def tearDown(self):
+        User.objects.all().delete()
+        Group.objects.all().delete()
+
+    @patch("core.authentication.default_username_algo")
+    def test_create_user_new_user(self, mock_algo):
+        """Test creating a new user with claims"""
+        mock_algo.return_value = "test.user@amsterdam.nl"
+
+        user = self.backend.create_user(self.sample_claims)
+
+        # Verify user was created with correct attributes
+        self.assertEqual(user.email, "test.user@amsterdam.nl")
+        self.assertEqual(user.first_name, "Test")
+        self.assertEqual(user.last_name, "User")
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+
+        # Verify groups were created and assigned
+        self.assertEqual(user.groups.count(), 2)
+        group_names = list(user.groups.values_list("name", flat=True))
+        self.assertIn("mbs-admin", group_names)
+        self.assertIn("cbs-time-publisher", group_names)
+
+    @patch("core.authentication.default_username_algo")
+    def test_create_user_existing_user(self, mock_algo):
+        """Test updating an existing user with new claims"""
+        existing_user = User.objects.create_user(
+            username="test.user@amsterdam.nl",
+            email="test.user@amsterdam.nl",
+            first_name="Old",
+            last_name="Name",
+            is_staff=False,
+            is_superuser=False,
+        )
+
+        mock_algo.return_value = "test.user@amsterdam.nl"
+
+        user = self.backend.create_user(self.sample_claims)
+
+        # Verify user was updated, not created
+        self.assertEqual(user.id, existing_user.id)
+        self.assertEqual(user.first_name, "Test")
+        self.assertEqual(user.last_name, "User")
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+
+    @patch("core.authentication.default_username_algo")
+    def test_create_user_no_roles(self, mock_algo):
+        """Test creating user with no roles in claims"""
+        claims_without_roles = {
+            "upn": "test.user@amsterdam.nl",
+            "given_name": "Test",
+            "family_name": "User",
+        }
+
+        mock_algo.return_value = "test.user@amsterdam.nl"
+
+        user = self.backend.create_user(claims_without_roles)
+
+        # Verify user was created but has no groups
+        self.assertEqual(user.email, "test.user@amsterdam.nl")
+        self.assertEqual(user.groups.count(), 0)
+
+    @patch("core.authentication.default_username_algo")
+    def test_create_user_empty_roles(self, mock_algo):
+        """Test creating user with empty roles list"""
+        claims_with_empty_roles = {
+            "upn": "test.user@amsterdam.nl",
+            "given_name": "Test",
+            "family_name": "User",
+            "roles": [],
+        }
+
+        mock_algo.return_value = "test.user@amsterdam.nl"
+
+        user = self.backend.create_user(claims_with_empty_roles)
+
+        # Verify user was created but has no groups
+        self.assertEqual(user.email, "test.user@amsterdam.nl")
+        self.assertEqual(user.groups.count(), 0)
+
+    @patch("core.authentication.default_username_algo")
+    def test_create_user_missing_fields(self, mock_algo):
+        """Test creating user with missing optional fields"""
+        minimal_claims = {"upn": "test.user@amsterdam.nl"}
+
+        mock_algo.return_value = "test.user@amsterdam.nl"
+
+        self.assertRaises(IntegrityError, self.backend.create_user, minimal_claims)
+
+    @patch("core.authentication.default_username_algo")
+    def test_update_user_groups_clears_existing_groups(self, mock_algo):
+        """Test that _update_user_groups clears existing groups before adding new ones"""
+        user = User.objects.create_user(
+            username="test.user@amsterdam.nl", email="test.user@amsterdam.nl"
+        )
+        old_group = Group.objects.create(name="old-group")
+        user.groups.add(old_group)
+
+        # Update with new roles
+        self.backend._update_user_groups(user, {"roles": ["new-role"]})
+
+        # Verify old group was removed and new group was added
+        self.assertEqual(user.groups.count(), 1)
+        self.assertEqual(user.groups.first().name, "new-role")
+
+    @patch("core.authentication.default_username_algo")
+    def test_update_user_groups_creates_groups_if_not_exist(self, mock_algo):
+        """Test that _update_user_groups creates groups if they don't exist"""
+        user = User.objects.create_user(
+            username="test.user@amsterdam.nl", email="test.user@amsterdam.nl"
+        )
+
+        # Update with roles that don't exist yet
+        self.backend._update_user_groups(
+            user, {"roles": ["new-group-1", "new-group-2"]}
+        )
+
+        # Verify groups were created and assigned
+        self.assertEqual(user.groups.count(), 2)
+        group_names = list(user.groups.values_list("name", flat=True))
+        self.assertIn("new-group-1", group_names)
+        self.assertIn("new-group-2", group_names)
+
+    @patch("core.authentication.default_username_algo")
+    @patch("django.contrib.auth.models.Group.objects.get_or_create")
+    def test_update_user_groups_transaction_rollback(
+        self, mock_algo, mock_get_or_create
+    ):
+        """Test that _update_user_groups uses transaction and can rollback on error"""
+        user = User.objects.create_user(
+            username="test.user@amsterdam.nl", email="test.user@amsterdam.nl"
+        )
+
+        # Mock Group.objects.get_or_create to raise an exception
+        mock_get_or_create.side_effect = IntegrityError("Database error")
+
+        # This should raise an exception and rollback any changes
+        with self.assertRaises(IntegrityError):
+            self.backend._update_user_groups(user, {"roles": ["test-role"]})
+
+        # Verify no groups were created or assigned
+        self.assertEqual(Group.objects.count(), 0)
+        self.assertEqual(user.groups.count(), 0)
