@@ -138,6 +138,7 @@ OIDC_OP_LOGOUT_ENDPOINT = os.getenv(
 )
 OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"prompt": "select_account"}
 OIDC_USE_NONCE = False
+OIDC_USE_PKCE = True
 
 # Required by amsterdam_django_oidc
 OIDC_OP_ISSUER = os.getenv(
