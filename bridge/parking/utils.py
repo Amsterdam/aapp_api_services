@@ -15,7 +15,9 @@ def parse_iso_datetime(date_time_str: str) -> datetime:
         raise ValueError(f"Invalid ISO 8601 datetime string: {date_time_str}") from e
 
 
-def mock_ssp_api_call(method, endpoint, data, ssp_access_token=None):
+def mock_ssp_api_call(
+    method, endpoint, data, ssp_access_token=None
+):  # pragma: no cover
     """Mock SSP API call"""
     mock_response = {}
     if endpoint == SSPEndpoint.ORDERS:
