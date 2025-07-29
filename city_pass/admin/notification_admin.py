@@ -71,7 +71,6 @@ class NotificationAdmin(DcsicAdminMixin, admin.ModelAdmin):
     def confirm_send(self, request, object_id):
         obj = self.get_object(request, object_id)
         notification_service = NotificationService()
-        notification_service.set_device_ids(obj)
 
         if request.method == "POST":
             if "confirm" in request.POST:
@@ -99,9 +98,10 @@ class NotificationAdmin(DcsicAdminMixin, admin.ModelAdmin):
                 reverse("admin:city_pass_notification_changelist")
             )
 
+        device_ids = notification_service.get_device_ids(obj)
         context = {
             **self.admin_site.each_context(request),
-            "nr_sessions": len(notification_service.device_ids),
+            "nr_sessions": len(device_ids),
         }
         return TemplateResponse(
             request, "admin/notification_confirm_send.html", context
