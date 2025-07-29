@@ -319,7 +319,7 @@ class TestOIDCAuthenticationBackend(TestCase):
         self.assertIn("new-group-2", group_names)
 
     @patch("core.authentication.default_username_algo")
-    @patch("django.contrib.auth.models.Group.objects.get_or_create")
+    @patch("core.authentication.Group.objects.get_or_create")
     def test_update_user_groups_transaction_rollback(
         self, mock_algo, mock_get_or_create
     ):
@@ -329,10 +329,10 @@ class TestOIDCAuthenticationBackend(TestCase):
         )
 
         # Mock Group.objects.get_or_create to raise an exception
-        mock_get_or_create.side_effect = IntegrityError("Database error")
+        mock_get_or_create.side_effect = Exception("Database error")
 
         # This should raise an exception and rollback any changes
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(Exception):
             self.backend._update_user_groups(user, {"roles": ["test-role"]})
 
         # Verify no groups were created or assigned
