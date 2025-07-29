@@ -6,7 +6,7 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from core.services.notificiation import (
+from core.services.scheduled_notification import (
     NotificationServiceError,
     ScheduledNotificationService,
 )

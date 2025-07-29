@@ -4,7 +4,6 @@ SERVICE_NAME = "city-pass"
 INSTALLED_APPS += [
     "city_pass.apps.CityPassConfig",
 ]
-MEDIA_ROOT = BASE_DIR / "city-pass/media"
 MEDIA_URL = "/city-pass/media/"
 LANGUAGE_CODE = "nl-NL"
 

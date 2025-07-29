@@ -39,6 +39,6 @@ def setup_opentelemetry():
             "urllib": {"enabled": True},
             "urllib3": {"enabled": True},
         },
-        resource=Resource.create({SERVICE_NAME: settings.SERVICE_NAME}),
+        resource=Resource.create({SERVICE_NAME: f"api-{settings.SERVICE_NAME}"}),
     )
     logger.debug("OpenTelemetry has been enabled!")

@@ -34,22 +34,22 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         notification = baker.make(Notification, budgets=[])
         service = NotificationService()
 
-        service.set_device_ids(notification)
+        device_ids = service.get_device_ids(notification)
 
-        self.assertEqual(len(service.device_ids), 3)
-        self.assertIn("device1", service.device_ids)
-        self.assertIn("device2", service.device_ids)
-        self.assertIn("device3", service.device_ids)
+        self.assertEqual(len(device_ids), 3)
+        self.assertIn("device1", device_ids)
+        self.assertIn("device2", device_ids)
+        self.assertIn("device3", device_ids)
 
     def test_set_device_ids_budgets(self):
         notification = baker.make(Notification, budgets=[self.budget_1, self.budget_2])
         service = NotificationService()
 
-        service.set_device_ids(notification)
+        device_ids = service.get_device_ids(notification)
 
-        self.assertEqual(len(service.device_ids), 2)
-        self.assertIn("device1", service.device_ids)
-        self.assertIn("device2", service.device_ids)
+        self.assertEqual(len(device_ids), 2)
+        self.assertIn("device1", device_ids)
+        self.assertIn("device2", device_ids)
 
     def test_call_everybody(self):
         notification = baker.make(Notification, budgets=[])

@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from core.serializers.error_serializers import get_error_response_serializers
-from core.services.notificiation import NotificationServiceError
+from core.services.scheduled_notification import NotificationServiceError
 from notification.crud import NotificationCRUD
 from notification.exceptions import PushServiceError
 from notification.models import Device, Notification, ScheduledNotification
