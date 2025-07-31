@@ -70,8 +70,9 @@ class AbstractNotificationService:
         return request_data
 
     def get_context(self) -> dict:
+        """Context can only contain string values!"""
         return {
-            "linkSourceid": self.link_source_id,
+            "linkSourceid": str(self.link_source_id),
             "type": self.notification_type,
             "module_slug": self.module_slug,
         }
