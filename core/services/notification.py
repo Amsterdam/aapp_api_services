@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import NamedTuple
 
 import requests
@@ -20,15 +21,45 @@ class NotificationData(NamedTuple):
     message: str
     device_ids: list[str]
     image_set_id: int = None
+    make_push: bool = True
+    notification_scope: str = None
 
 
 class AbstractNotificationService:
     module_slug: Module = None
     notification_type: NotificationType = None
-    post_notification_url = settings.NOTIFICATION_ENDPOINTS["INIT_NOTIFICATION"]
 
     def __init__(self):
         self.link_source_id = None
+        self.post_notification_url = settings.NOTIFICATION_ENDPOINTS[
+            "INIT_NOTIFICATION"
+        ]
+        self.last_notification_url = settings.NOTIFICATION_ENDPOINTS["LAST_TIMESTAMP"]
+        self.notifications_url = settings.NOTIFICATION_ENDPOINTS["NOTIFICATIONS"]
+
+    def get_last_timestamp(self, device_id: str) -> datetime | None:
+        headers = {"DeviceId": device_id}
+        response = self.make_request(
+            self.last_notification_url,
+            method="GET",
+            params={"module_slug": self.module_slug},
+            additional_headers=headers,
+        )
+        timestamps = [
+            datetime.fromisoformat(scope["last_create"])
+            for scope in response
+            if scope["last_create"] is not None
+        ]
+        return max(timestamps) if timestamps else None
+
+    def get_notifications(self, device_id: str) -> list[dict]:
+        headers = {
+            "DeviceId": device_id,
+        }
+        response = self.make_request(
+            self.notifications_url, method="GET", additional_headers=headers
+        )
+        return response
 
     def send(self, *args, **kwargs):
         """
@@ -50,7 +81,9 @@ class AbstractNotificationService:
         self.link_source_id = notification.link_source_id
         request_data = self.get_request_data(notification)
 
-        self.make_post_request(request_data)
+        self.make_request(
+            self.post_notification_url, method="POST", request_data=request_data
+        )
 
     def get_request_data(
         self,
@@ -64,6 +97,8 @@ class AbstractNotificationService:
             "created_at": timezone.now().isoformat(),
             "context": self.get_context(),
             "device_ids": notification.device_ids,
+            "make_push": notification.make_push,
+            "notification_scope": notification.notification_scope,
         }
         if notification.image_set_id:
             request_data["image"] = notification.image_set_id
@@ -77,26 +112,32 @@ class AbstractNotificationService:
             "module_slug": self.module_slug,
         }
 
-    def make_post_request(self, request_data=None) -> requests.Response:
+    def make_request(
+        self, url, method, request_data=None, additional_headers=None, params=None
+    ):
         try:
             headers = {
                 settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0],
             }
-            response = requests.post(
-                self.post_notification_url,
+            if additional_headers:
+                headers.update(additional_headers)
+            response = requests.request(
+                method,
+                url=url,
                 json=request_data,
                 headers=headers,
+                params=params,
             )
             response.raise_for_status()
-            return response
+            return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(
-                "Failed to make post request",
+                "Failed to make request",
                 extra={
                     "error": str(e),
                     "link_source_id": self.link_source_id,
-                    "api_url": self.post_notification_url,
+                    "api_url": url,
                 },
             )
-            error_message = "Failed posting notification"
+            error_message = f"Failed notification service {method} request"
             raise InternalServiceError(error_message) from e

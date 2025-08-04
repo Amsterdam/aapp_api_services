@@ -18,7 +18,12 @@ logger = logging.getLogger(__name__)
 
 
 class NotificationCRUD:
-    def __init__(self, source_notification: Notification, push_enabled: bool = True):
+    def __init__(
+        self,
+        source_notification: Notification,
+        push_enabled: bool = True,
+        notification_scope: str = None,
+    ):
         """
         The source notification is used to create a new notification for each device.
 
@@ -39,6 +44,7 @@ class NotificationCRUD:
         self.notifications_with_push, self.notifications_without_push = [], []
         self.devices_for_push = []
         self.push_service = PushService() if push_enabled else None
+        self.notification_scope = notification_scope
 
     def create(self, device_qs: QuerySet):
         """
@@ -128,7 +134,9 @@ class NotificationCRUD:
         Update the last timestamps for all devices.
         This is used to determine when the last notification was created
         """
-        notification_scope = self.source_notification.notification_type
+        notification_scope = (
+            self.notification_scope or self.source_notification.notification_type
+        )
         if notification_scope not in settings.NOTIFICATION_SCOPES:
             return
 
@@ -143,7 +151,8 @@ class NotificationCRUD:
         NotificationLast.objects.bulk_create(
             notifications_last,
             update_fields=["last_create"],
-            ignore_conflicts=True,
+            unique_fields=["device", "notification_scope"],
+            update_conflicts=True,
         )
 
     @property

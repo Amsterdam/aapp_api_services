@@ -48,10 +48,13 @@ class NotificationInitView(generics.CreateAPIView):
 
         device_ids = serializer.validated_data.pop("device_ids")
         make_push = serializer.validated_data.pop("make_push") or True
+        notification_scope = serializer.validated_data.pop("notification_scope", None)
 
         source_notification = Notification(**serializer.validated_data)
         notification_crud = NotificationCRUD(
-            source_notification, push_enabled=make_push
+            source_notification,
+            push_enabled=make_push,
+            notification_scope=notification_scope,
         )
         self.create_notifications(
             notification_crud=notification_crud, device_ids=device_ids

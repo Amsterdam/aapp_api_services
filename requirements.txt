@@ -1,6 +1,6 @@
-# Generated: 2025-07-28T08:05:16Z
+# Generated: 2025-07-29T11:59:14Z
 aiohappyeyeballs==2.6.1
-aiohttp==3.12.14
+aiohttp==3.12.15
 aioresponses==0.7.8
 aiosignal==1.4.0
 anyio==4.9.0

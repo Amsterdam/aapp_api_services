@@ -58,6 +58,7 @@ class NotificationResultSerializer(serializers.ModelSerializer):
 class NotificationCreateSerializer(serializers.ModelSerializer):
     device_ids = serializers.ListField(child=serializers.CharField(), write_only=True)
     make_push = serializers.BooleanField(default=True, write_only=True)
+    notification_scope = serializers.CharField(required=False, write_only=True)
 
     class Meta:
         model = Notification
@@ -71,6 +72,7 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
             "notification_type",
             "image",
             "make_push",
+            "notification_scope",
         ]
 
     def validate_device_ids(self, device_ids):

@@ -887,7 +887,7 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         self.assertEqual(result.status_code, 400)
 
     @patch(
-        "core.services.notification.requests.post",
+        "core.services.notification.requests.request",
     )
     def test_create_warning_with_push_notification(self, post_notification):
         project, publisher = self.create_project_and_publisher()
@@ -1112,7 +1112,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         self.assertEqual(image_count, 1)
 
     @patch(
-        "core.services.notification.requests.post",
+        "core.services.notification.requests.request",
     )
     def test_update_warning_send_push_ok(self, post_notification):
         project, publisher = self.create_project_and_publisher()
