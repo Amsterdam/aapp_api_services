@@ -37,3 +37,6 @@ TIME_INPUT_FORMATS = ["%H:%M"]
 
 MOCK_ENTRA_AUTH = False
 ADMIN_ROLES += ["cbs-time-delegated", "cbs-time-publisher"]
+
+LOGIN_REDIRECT_URL = "/contact/admin/"
+LOGIN_REDIRECT_URL_FAILURE = "/contact/admin/login/failure/"
