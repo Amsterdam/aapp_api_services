@@ -37,6 +37,7 @@ APP_LINKS = {
     "contactForm": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/Contactformulier.aspx",
     "feedbackForm": "https://formulier.amsterdam.nl/thema/burgerzaken/amsterdam-app/Uw-mening/",
     "elections": "https://www.amsterdam.nl/verkiezingen/",
+    "sail": "https://www.sail.nl/vaarregels",
 }
 
 

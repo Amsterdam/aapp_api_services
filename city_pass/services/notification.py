@@ -20,6 +20,7 @@ class NotificationService(AbstractNotificationService):
             message=notification.message,
             link_source_id=notification.pk,
             device_ids=device_ids,
+            notification_scope=NotificationType.CITY_PASS_NOTIFICATION.value,
         )
 
         self.process(notification_data)

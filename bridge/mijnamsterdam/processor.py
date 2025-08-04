@@ -10,7 +10,7 @@ from bridge.mijnamsterdam.serializers.general_serializers import (
     UserSerializer,
 )
 from bridge.mijnamsterdam.services.notifications import NotificationService
-from core.enums import Module
+from core.enums import NotificationType
 from core.services.notification import NotificationData
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,15 @@ class MijnAmsterdamNotificationProcessor:
                 message=notification["title"],
                 device_ids=device_ids_to_send,
                 make_push=make_push,
-                notification_scope=f"{Module.MIJN_AMS.value}:{user_data['service_ids'][0]}",
+                # TODO: using a custom scope does not work with the notification service!
+                # Since NotificationCRUD._update_last_timestamps checks is the notifiction scope is known in "settings.NOTIFICATION_SCOPES",
+                # so creating a scope in runtime does not match with that logic.
+                # Either have a static scope, which will disabled the option to check if notification for a specific type (e.g. belasying) has already been sent
+                # Or dynamically add scope to the settings.NOTIFICATION_SCOPES, which would go against it being a Enum
+                # Or something else...
+                # notification_scope=f"{Module.MIJN_AMS.value}:{user_data['service_ids'][0]}",
+                # This is TMP fix to make the integation test work so I can continue merging PRs for other services
+                notification_scope=NotificationType.MIJN_AMS_NOTIFICATION.value,
             )
             self.notification_service.send(notification_data=notification_data)
 
@@ -77,6 +85,10 @@ class MijnAmsterdamNotificationProcessor:
         return True  # Placeholder for push notification logic
 
     def _get_device_ids_to_send(self, device_ids: list[str], date_published: datetime):
+        """
+        Get device ids where the last time a notification was sent
+        is before the moment that the MijnAmsterdam notification was published.
+        """
         return [
             d for d in device_ids if self.last_timestamp_per_device[d] < date_published
         ]
