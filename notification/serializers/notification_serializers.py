@@ -170,3 +170,14 @@ class NotificationLastRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationLast
         fields = ["module_slug"]
+
+
+class NotificationTypeSerializer(serializers.Serializer):
+    type = serializers.CharField()
+    description = serializers.CharField()
+
+
+class ModuleNotificationTypeSerializer(serializers.Serializer):
+    module = serializers.CharField()
+    description = serializers.CharField()
+    types = NotificationTypeSerializer(many=True)

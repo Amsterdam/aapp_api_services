@@ -83,6 +83,11 @@ urlpatterns = [
         notification_views.NotificationLastView.as_view(),
         name="notification-last",
     ),
+    path(
+        BASE_PATH + "/modules",
+        notification_views.NotificationModulesView.as_view(),
+        name="notification-modules",
+    ),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH)
