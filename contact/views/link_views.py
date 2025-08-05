@@ -38,6 +38,7 @@ APP_LINKS = {
     "feedbackForm": "https://formulier.amsterdam.nl/thema/burgerzaken/amsterdam-app/Uw-mening/",
     "elections": "https://www.amsterdam.nl/verkiezingen/",
     "sail": "https://www.sail.nl/vaarregels",
+    "sailingAndMooring": "https://www.amsterdam.nl/verkeer-vervoer/varen/vaarvignet-aanvragen/",
 }
 
 
