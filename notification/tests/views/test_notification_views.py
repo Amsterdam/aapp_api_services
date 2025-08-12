@@ -273,16 +273,13 @@ class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
         )
 
 
-TEST_SCOPE_1, TEST_SCOPE_2, TEST_SCOPE_NOTIFICATION_TYPE = (
-    "mijn-amsterdam:scope-1",
-    "mijn-amsterdam:scope-2",
-    "mijn-amsterdam:type",
+MODULE_1, MODULE_2 = (
+    "mijn-amsterdam",
+    "parkeren",
 )
 
 
-@override_settings(
-    NOTIFICATION_SCOPES=[TEST_SCOPE_1, TEST_SCOPE_2, TEST_SCOPE_NOTIFICATION_TYPE]
-)
+@override_settings(NOTIFICATION_MODULE_SLUG_LAST_TIMESTAMP=[MODULE_1, MODULE_2])
 class NotificationLastViewTests(BaseNotificationViewGetTestCase):
     test_slug = "mijn-amsterdam"
     test_type = "mijn-amsterdam:type"
@@ -304,9 +301,7 @@ class NotificationLastViewTests(BaseNotificationViewGetTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(
-            response.data[0]["notification_scope"], TEST_SCOPE_NOTIFICATION_TYPE
-        )
+        self.assertEqual(response.data[0]["notification_scope"], self.test_type)
 
     def test_missing_module_slug_returns_400(self):
         response = self.client.get(self.url, headers=self.headers_with_device_id)
@@ -347,27 +342,6 @@ class NotificationLastViewTests(BaseNotificationViewGetTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
-    def test_multiple_scopes(self):
-        self._create_notification(device_id=self.device_id)
-        self._create_notification(
-            device_id=self.device_id,
-            notification_scope=TEST_SCOPE_1,
-        )
-        self._create_notification(
-            device_id=self.device_id, notification_scope=TEST_SCOPE_2
-        )
-
-        response = self.client.get(
-            self.url, query_params=self._params(), headers=self.headers_with_device_id
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
-        scopes = {n["notification_scope"] for n in response.data}
-        self.assertSetEqual(
-            scopes, {TEST_SCOPE_NOTIFICATION_TYPE, TEST_SCOPE_1, TEST_SCOPE_2}
-        )
-
     def test_timestamp_updated(self):
         self._create_notification(device_id=self.device_id)
 
@@ -393,7 +367,6 @@ class NotificationLastViewTests(BaseNotificationViewGetTestCase):
         device_id,
         module_slug="mijn-amsterdam",
         notification_type="mijn-amsterdam:type",
-        notification_scope=None,
     ):
         """Helper method to create a notification for testing."""
         device_qs = Device.objects.filter(external_id=device_id)
@@ -403,9 +376,7 @@ class NotificationLastViewTests(BaseNotificationViewGetTestCase):
             module_slug=module_slug,
             notification_type=notification_type,
         )
-        notification_crud = NotificationCRUD(
-            notification, notification_scope=notification_scope
-        )
+        notification_crud = NotificationCRUD(notification)
         notification_crud.create(device_qs)
 
     def _params(self, slug="mijn-amsterdam"):

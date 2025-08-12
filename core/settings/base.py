@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 from urllib.parse import urljoin
 
-from core.enums import NotificationType
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -250,9 +248,9 @@ NOTIFICATION_ENDPOINTS = {
     "NOTIFICATIONS": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "notifications"),
     "LAST_TIMESTAMP": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "notifications/last"),
 }
-NOTIFICATION_SCOPES = [
-    NotificationType.MIJN_AMS_NOTIFICATION.value,
-]
+NOTIFICATION_MODULE_SLUG_LAST_TIMESTAMP = [
+    "mijn-amsterdam"
+]  # Scopes for which notifications keep a last timestamp
 
 IMAGE_API = os.getenv("IMAGE_API", "http://api-image:8000")
 IMAGE_BASE_URL = urljoin(IMAGE_API, os.getenv("IMAGE_BASE_PATH", "/internal/api/v1/"))

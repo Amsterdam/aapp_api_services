@@ -35,6 +35,5 @@ class NotificationServiceTest(ResponsesActivatedAPITestCase):
             },
             "device_ids": ["device1", "device2"],
             "make_push": True,
-            "notification_scope": None,
         }
         self.assertEqual(json.loads(call.body), json_body)

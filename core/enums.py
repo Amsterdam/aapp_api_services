@@ -53,10 +53,10 @@ class NotificationType(ChoicesEnum):
         name="date-reminder",
         description="Herinnering buitenzetten container",
     )
-    MIJN_AMS_NOTIFICATION = NotificationTypeClass(
+    MIJN_AMS_BELASTING = NotificationTypeClass(
         module=Module.MIJN_AMS,
-        name="notification",
-        description="Nieuwe berichten in uw Mijn Amsterdam",
+        name="belasting",
+        description="Nieuwe berichten over belasting",
     )
     CITY_PASS_NOTIFICATION = NotificationTypeClass(
         module=Module.CITY_PASS,

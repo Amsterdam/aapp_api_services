@@ -22,7 +22,6 @@ class NotificationCRUD:
         self,
         source_notification: Notification,
         push_enabled: bool = True,
-        notification_scope: str = None,
     ):
         """
         The source notification is used to create a new notification for each device.
@@ -44,7 +43,6 @@ class NotificationCRUD:
         self.notifications_with_push, self.notifications_without_push = [], []
         self.devices_for_push = []
         self.push_service = PushService() if push_enabled else None
-        self.notification_scope = notification_scope
 
     def create(self, device_qs: QuerySet):
         """
@@ -134,17 +132,17 @@ class NotificationCRUD:
         Update the last timestamps for all devices.
         This is used to determine when the last notification was created
         """
-        notification_scope = (
-            self.notification_scope or self.source_notification.notification_type
-        )
-        if notification_scope not in settings.NOTIFICATION_SCOPES:
+        if (
+            self.source_notification.module_slug
+            not in settings.NOTIFICATION_MODULE_SLUG_LAST_TIMESTAMP
+        ):
             return
 
         notifications_last = [
             NotificationLast(
                 device=device,
                 module_slug=self.source_notification.module_slug,
-                notification_scope=notification_scope,
+                notification_scope=self.source_notification.notification_type,
             )
             for device in device_list
         ]

@@ -22,7 +22,6 @@ class NotificationData(NamedTuple):
     device_ids: list[str]
     image_set_id: int = None
     make_push: bool = True
-    notification_scope: str = None
 
 
 class AbstractNotificationService:
@@ -98,7 +97,6 @@ class AbstractNotificationService:
             "context": self.get_context(),
             "device_ids": notification.device_ids,
             "make_push": notification.make_push,
-            "notification_scope": notification.notification_scope,
         }
         if notification.image_set_id:
             request_data["image"] = notification.image_set_id

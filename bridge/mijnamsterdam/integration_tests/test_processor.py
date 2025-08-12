@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import NamedTuple
 from urllib.parse import urljoin
 
@@ -159,7 +159,9 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
                         {
                             "id": f"belasting-{i + 1}",
                             "title": "Betaal uw aanslag",
-                            "datePublished": timezone.now().isoformat(),
+                            "datePublished": (
+                                timezone.now() - timedelta(minutes=2)
+                            ).isoformat(),
                         }
                         for i in range(notification.nr_of_notifications)
                     ],

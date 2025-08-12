@@ -27,7 +27,7 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
                     "last_create": "2025-07-27T10:07:38.603Z",
                 },
                 {
-                    "notification_scope": "string",
+                    "notification_scope_2": "string",
                     "last_create": "2025-07-24T11:48:36.715Z",
                 },
             ],
