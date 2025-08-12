@@ -275,32 +275,12 @@ class ScheduledNotificationDetailTests(ScheduledNotificationBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["title"], "Updated Title")
 
-    def test_update_scheduled_notification_already_pushed(self):
-        notification = ScheduledNotification.objects.get(identifier=self.identifier)
-        notification.pushed_at = timezone.now()
-        notification.save()
-        patch_data = {"title": "Updated Title"}
-        response = self.client.patch(
-            self.url,
-            data=json.dumps(patch_data),
-            headers=self.api_headers,
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_delete_scheduled_notification_success(self):
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(
             ScheduledNotification.objects.filter(identifier=self.identifier).exists()
         )
-
-    def test_delete_scheduled_notification_already_pushed(self):
-        notification = ScheduledNotification.objects.get(identifier=self.identifier)
-        notification.pushed_at = timezone.now()
-        notification.save()
-        response = self.client.delete(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 @patch("notification.services.push.messaging.send_each")

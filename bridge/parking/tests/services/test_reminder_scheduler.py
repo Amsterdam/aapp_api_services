@@ -80,26 +80,6 @@ class TestReminderScheduler(TestCase):
     @patch(
         "bridge.parking.services.reminder_scheduler.ScheduledNotificationService.get"
     )
-    def test_ignore_already_pushed_reminder(self, mock_get_reminder):
-        mock_get_reminder.return_value = {"pushed_at": timezone.now()}
-
-        reminder_key = "test-reminder-key"
-        scheduler = ParkingReminderScheduler(
-            reminder_key=reminder_key,
-            end_datetime=timezone.now(),
-            device_id="foobar",
-            report_code="foobar",
-        )
-        notification_status = scheduler.process()
-
-        self.assertEqual(notification_status, NotificationStatus.NO_CHANGE)
-        mock_get_reminder.assert_called_once_with(
-            f"parking_parking-reminder_{reminder_key}"
-        )
-
-    @patch(
-        "bridge.parking.services.reminder_scheduler.ScheduledNotificationService.get"
-    )
     @patch(
         "bridge.parking.services.reminder_scheduler.ScheduledNotificationService.delete"
     )

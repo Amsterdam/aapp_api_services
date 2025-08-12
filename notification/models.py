@@ -50,7 +50,6 @@ class ScheduledNotification(BaseNotification):
     - identifier: the unique identifier of the schedule starting with the module_slug
     - scheduled_for: the timestamp the notification was scheduled to be pushed
     - device_ids: m2m to Device.id
-    - pushed_at: set to true when scheduled notification was processed successfully. Prevents duplicate pushes.
     """
 
     class Meta:
@@ -61,17 +60,12 @@ class ScheduledNotification(BaseNotification):
             models.Index(fields=["module_slug"]),
             models.Index(fields=["notification_type"]),
             models.Index(fields=["created_at"]),
-            models.Index(
-                fields=["scheduled_for"],
-                condition=models.Q(pushed_at__isnull=True),
-                name="idx_notif_sched_for_unpushed",
-            ),  # Do not index the expires_at column, as this will increase write operations and slow down the database
+            models.Index(fields=["scheduled_for"]),
         ]
 
     identifier = models.CharField()
     scheduled_for = models.DateTimeField()
     devices = models.ManyToManyField(Device, related_name="scheduled_notifications")
-    pushed_at = models.DateTimeField(null=True)
     expires_at = models.DateTimeField(default="3000-01-01")
 
     def __str__(self):
@@ -81,7 +75,6 @@ class ScheduledNotification(BaseNotification):
 class Notification(BaseNotification):
     """
     - created_at: the timestamp on which the service created the push request
-    - schedule: fk to ScheduledNotification.id, only filled when the notification originated from a schedule
     - device_id: fk to Device.id
     - is_read: to be set when device has read the notification
     - pushed_at: set to true when notification was pushed successfully
@@ -94,9 +87,6 @@ class Notification(BaseNotification):
             models.Index(fields=["created_at"]),
         ]
 
-    schedule = models.ForeignKey(
-        ScheduledNotification, on_delete=models.PROTECT, null=True
-    )
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False)
     pushed_at = models.DateTimeField(null=True)

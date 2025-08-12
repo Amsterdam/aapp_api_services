@@ -4,8 +4,6 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-from notification.models import ScheduledNotification
-
 logger = logging.getLogger(__name__)
 TABLE_NAME = "notification_notification"
 DAYS_TO_KEEP = 30
@@ -18,14 +16,9 @@ class Command(BaseCommand):
         start_date = datetime.date.today() - datetime.timedelta(days=DAYS_TO_KEEP)
 
         self.drop_old_notifications(start_date)
-        self.drop_old_scheduled_notifications(start_date)
 
     def drop_old_notifications(self, start_date):
         query = f"SELECT drop_chunks('{TABLE_NAME}', older_than => '{start_date}');"
         with connection.cursor() as cursor:
             cursor.execute(query)
         logger.info(f"Deleted old partitions of {TABLE_NAME}")
-
-    def drop_old_scheduled_notifications(self, start_date):
-        ScheduledNotification.objects.filter(pushed_at__lt=start_date).delete()
-        logger.info("Deleted old scheduled notifications")

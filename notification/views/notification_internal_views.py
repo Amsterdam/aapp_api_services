@@ -200,14 +200,6 @@ class ScheduledNotificationDetailView(RetrieveUpdateDestroyAPIView):
     lookup_field = "identifier"
     http_method_names = ["get", "patch", "delete"]
 
-    def initial(self, request, *args, **kwargs):
-        super().initial(request, *args, **kwargs)
-
-        if request.method in ["PATCH", "DELETE"]:
-            instance = self.get_object()
-            if instance.pushed_at:
-                raise ValidationError("Cannot modify a pushed notification.")
-
     def retrieve(self, request, *args, **kwargs):
         """Return 204 instead of 404 when not found."""
         try:

@@ -110,7 +110,6 @@ class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
             "notification_type",
             "image",
             "scheduled_for",
-            "pushed_at",
             "expires_at",
         ]
 
