@@ -15,11 +15,11 @@ class TestChoicesEnum(TestCase):
 
 class TestNotificationType(TestCase):
     def setUp(self):
-        self.module = Module.CONSTRUCTION_WORK
-        self.notification_type = NotificationType.CONSTRUCTION_WORK_WARNING_MESSAGE
+        self.module = Module.MIJN_AMS
+        self.notification_type = NotificationType.MIJN_AMS_BELASTING
 
     def test_get_value(self):
-        expected_value = "construction-work:warning-message"
+        expected_value = "mijn-amsterdam:belasting"
         self.assertEqual(self.notification_type.value, expected_value)
 
     def test_get_modules_with_types_and_descriptions(self):
