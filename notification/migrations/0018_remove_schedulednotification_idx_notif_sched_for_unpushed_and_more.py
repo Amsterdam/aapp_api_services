@@ -17,6 +17,9 @@ class Migration(migrations.Migration):
             model_name="notification",
             name="schedule",
         ),
+        migrations.RunSQL(
+            "delete from notification_schedulednotification ns where pushed_at is not null"
+        ),
         migrations.RemoveField(
             model_name="schedulednotification",
             name="pushed_at",
