@@ -1,6 +1,6 @@
 import logging
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta
 from random import randint
 from uuid import uuid4
 
@@ -102,11 +102,17 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
     def test_patch_parking_session(self):
         start_time, end_time = self._init_test()
 
+        end_time = end_time + timedelta(minutes=15)
         response = self._patch_parking_session(start_time=start_time, end_time=end_time)
         self.assertEqual(
             response.data["notification_status"], NotificationStatus.UPDATED.name
         )
-        self._check_notification_count(1)
+        notification = self._check_notification_count(1)[0]
+        self.assertEqual(
+            datetime.fromisoformat(notification["scheduled_for"]),
+            end_time - timedelta(minutes=settings.PARKING_REMINDER_TIME),
+        )
+        self.assertEqual(datetime.fromisoformat(notification["expires_at"]), end_time)
 
     @responses.activate
     def test_patch_parking_session_too_soon(self):

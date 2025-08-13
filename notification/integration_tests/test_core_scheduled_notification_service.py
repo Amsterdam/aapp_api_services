@@ -156,6 +156,7 @@ class TestCoreScheduledNotificationService(APITestCase):
         updated_notification = self.service.update(
             identifier=identifier,
             scheduled_for=new_scheduled_for,
+            expires_at=None,
             device_ids=new_device_ids,
         )
 

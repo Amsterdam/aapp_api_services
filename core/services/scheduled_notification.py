@@ -100,16 +100,20 @@ class ScheduledNotificationService:
         self,
         identifier: str,
         scheduled_for: datetime,
+        expires_at: datetime,
         device_ids: list[str],
     ):
         try:
             url = self._build_url(identifier)
+            payload = {
+                "scheduled_for": scheduled_for.isoformat(),
+                "device_ids": device_ids,
+            }
+            if expires_at:
+                payload["expires_at"] = expires_at.isoformat()
             response = requests.patch(
                 url,
-                json={
-                    "scheduled_for": scheduled_for.isoformat(),
-                    "device_ids": device_ids,
-                },
+                json=payload,
                 headers=self._headers,
             )
             response.raise_for_status()

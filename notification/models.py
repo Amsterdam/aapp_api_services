@@ -3,6 +3,7 @@ import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import F, Q
 
 
 class Device(models.Model):
@@ -54,7 +55,11 @@ class ScheduledNotification(BaseNotification):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["identifier"], name="unique_identifier")
+            models.UniqueConstraint(fields=["identifier"], name="unique_identifier"),
+            models.CheckConstraint(
+                check=Q(expires_at__gt=F("scheduled_for")),
+                name="expires_after_scheduled_for",
+            ),
         ]
         indexes = [
             models.Index(fields=["module_slug"]),

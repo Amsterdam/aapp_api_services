@@ -52,6 +52,7 @@ class ParkingReminderScheduler:
                 self.schedule_service.update(
                     identifier=self.identifier,
                     scheduled_for=self.reminder_time,
+                    expires_at=self.end_datetime,
                     device_ids=device_ids,
                 )
                 return NotificationStatus.UPDATED
