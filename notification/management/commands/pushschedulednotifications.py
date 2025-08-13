@@ -1,4 +1,5 @@
 import logging
+from time import sleep
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -14,6 +15,9 @@ BATCH_SIZE = 100
 class Command(BaseCommand):
     help = "Push scheduled notifications"
 
+    def add_arguments(self, parser):
+        parser.add_argument("--test-mode", action="store_true")
+
     def handle(self, *args, **options):
         while True:
             with transaction.atomic():
@@ -26,8 +30,11 @@ class Command(BaseCommand):
                 ).filter(scheduled_for__lte=timezone_now)[:BATCH_SIZE]
                 notifications_to_push = list(notifications_to_push)
                 if not notifications_to_push:
-                    logger.info("Finished pushing scheduled notifications")
-                    break
+                    logger.debug("No scheduled notifications found. Sleeping...")
+                    if options["test_mode"]:
+                        # In test mode, interrupt the loop when no notifications are found
+                        break
+                    sleep(5)  # Sleep for 5 seconds before checking again
                 logger.info(
                     f"Pushing {len(notifications_to_push)} scheduled notifications"
                 )

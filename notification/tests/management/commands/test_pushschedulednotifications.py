@@ -17,7 +17,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             devices=devices,
         )
 
-        call_command("pushschedulednotifications")
+        call_command("pushschedulednotifications", "--test-mode")
 
         self.assertEqual(ScheduledNotification.objects.count(), 0)
         self.assertEqual(Notification.objects.count(), 2)
@@ -31,7 +31,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             devices=devices,
         )
 
-        call_command("pushschedulednotifications")
+        call_command("pushschedulednotifications", "--test-mode")
 
         self.assertEqual(ScheduledNotification.objects.count(), 1)
         self.assertEqual(Notification.objects.count(), 0)
@@ -52,7 +52,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             devices=devices,
         )
 
-        call_command("pushschedulednotifications")
+        call_command("pushschedulednotifications", "--test-mode")
 
         self.assertEqual(ScheduledNotification.objects.count(), 1)
         self.assertEqual(Notification.objects.count(), 5)
@@ -84,7 +84,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             devices=devices,
         )
 
-        call_command("pushschedulednotifications")
+        call_command("pushschedulednotifications", "--test-mode")
 
         not_pushed_notifications = ScheduledNotification.objects.all()
         self.assertTrue(future_notification in not_pushed_notifications)
