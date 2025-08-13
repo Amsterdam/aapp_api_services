@@ -128,6 +128,11 @@ class ScheduledNotificationSerializer(ScheduledNotificationDetailSerializer):
             "identifier",
         ]
 
+    def validate(self, attrs):
+        if attrs.get("expires_at") and attrs["expires_at"] <= attrs["scheduled_for"]:
+            raise serializers.ValidationError("Expires at must be after scheduled for")
+        return attrs
+
     def validate_identifier(self, identifier):
         module_slug = self.initial_data.get("module_slug")
         if not identifier:

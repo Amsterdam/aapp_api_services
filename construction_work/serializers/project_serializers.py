@@ -1,7 +1,6 @@
 from datetime import timedelta
 from typing import Optional
 
-from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -336,32 +335,6 @@ class ArticleMinimalSerializer(ArticleSerializer):
     class Meta:
         model = Article
         fields = ["meta_id", "modification_date"]
-
-
-class ProjectFollowedArticlesSerializer(serializers.ModelSerializer):
-    project_id = serializers.IntegerField(source="pk")
-    recent_articles = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Project
-        fields = ["project_id", "recent_articles"]
-
-    @extend_schema_field(ArticleMinimalSerializer)
-    def get_recent_articles(self, obj: Project) -> list:
-        now = timezone.now()
-        start_date = now - timedelta(days=settings.ARTICLE_MAX_AGE)
-
-        recent_articles = obj.article_set.filter(publication_date__gte=start_date)
-        article_serializer = ArticleMinimalSerializer(recent_articles, many=True)
-
-        recent_warnings = obj.warningmessage_set.filter(
-            publication_date__gte=start_date
-        )
-        warning_serializer = WarningMessageMinimalSerializer(recent_warnings, many=True)
-
-        all_items = article_serializer.data + warning_serializer.data
-        all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
-        return all_items
 
 
 class FollowProjectPostDeleteSerializer(serializers.Serializer):

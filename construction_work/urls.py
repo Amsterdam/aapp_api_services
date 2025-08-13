@@ -37,11 +37,6 @@ _urlpatterns = [
         name="article-list",
     ),
     path(
-        "projects/followed/articles",
-        project_views.FollowedProjectsArticlesView.as_view(),
-        name="followed-projects-with-articles",
-    ),
-    path(
         "project/news",
         project_views.ArticleDetailView.as_view(),
         name="get-article",

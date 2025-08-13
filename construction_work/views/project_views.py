@@ -33,7 +33,6 @@ from construction_work.serializers.project_serializers import (
     FollowProjectPostDeleteSerializer,
     ProjectExtendedSerializer,
     ProjectExtendedWithFollowersSerializer,
-    ProjectFollowedArticlesSerializer,
     WarningMessageWithImagesSerializer,
 )
 from construction_work.services.geocoding import geocode_address
@@ -453,53 +452,6 @@ class FollowProjectView(DeviceIdMixin, generics.GenericAPIView):
         device.save()
 
         return Response(data="Subscription removed", status=status.HTTP_200_OK)
-
-
-class FollowedProjectsArticlesView(DeviceIdMixin, generics.GenericAPIView):
-    """
-    API view to get articles per followed projects
-    """
-
-    @extend_schema_for_device_id(
-        exceptions=[MissingDeviceIdHeader],
-        success_response=ProjectFollowedArticlesSerializer,
-        examples=[
-            OpenApiExample(
-                name="Example 1",
-                value={
-                    "1": [
-                        {
-                            "meta_id": {"type": "article", "id": 1},
-                            "modification_date": "2023-08-21T11:07:00+02:00",
-                        },
-                        {
-                            "meta_id": {"type": "warning", "id": 2},
-                            "modification_date": "2023-08-23T16:28:00+02:00",
-                        },
-                    ],
-                },
-            )
-        ],
-    )
-    def get(self, request, *args, **kwargs):
-        device = Device.objects.filter(device_id=self.device_id).first()
-        if not device:
-            # Return empty dictionary if device not found
-            return Response(data={}, status=status.HTTP_200_OK)
-
-        followed_projects = device.followed_projects.filter(hidden=False)
-        serializer = ProjectFollowedArticlesSerializer(
-            followed_projects,
-            many=True,
-            context={"article_max_age": settings.ARTICLE_MAX_AGE},
-        )
-
-        # Transform the list into a dictionary mapping project_id to recent_articles
-        result = {
-            item["project_id"]: item["recent_articles"] for item in serializer.data
-        }
-
-        return Response(data=result, status=status.HTTP_200_OK)
 
 
 class ArticleDetailView(generics.RetrieveAPIView):
