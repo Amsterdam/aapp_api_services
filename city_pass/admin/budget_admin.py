@@ -16,7 +16,7 @@ class BudgetAdmin(admin.ModelAdmin):
     actions = None
 
     def aantal_gebruiker_sessies(self, obj):
-        return Session.objects.filter(passdata__budgets=obj).count()
+        return Session.objects.filter(passdata__budgets=obj).distinct().count()
 
     def has_delete_permission(self, request, obj=None):
         return False

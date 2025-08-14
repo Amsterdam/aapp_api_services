@@ -82,7 +82,6 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "debug_toolbar",
     "adminsortable2",
-    "client_side_image_cropping",
     "core.apps.CoreConfig",
 ]
 
