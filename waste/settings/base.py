@@ -21,7 +21,7 @@ WASTE_GUIDE_URL = os.getenv(
 )
 WASTE_GUIDE_API_KEY = os.getenv("WASTE_GUIDE_API_KEY")
 CALENDAR_LENGTH = 60
-WASTE_TYPES = [
+WASTE_CODES = [
     "GFT",
     "Glas",
     "Papier",
