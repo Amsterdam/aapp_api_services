@@ -3,6 +3,13 @@
   <h1>Notificatie versturen?</h1>
   <p>De notificatie wordt verstuurd aan {{ nr_sessions }} gebruikers.</p>
 
+  <b>Voorbeeld weergave van bericht:</b>
+  <blockquote><b>{{ notification.title }}</b><br>{{ notification.message }}</blockquote>
+
+  <b>Budgetten selectie</b>
+  {{ budgets }}
+  <br>
+
   <form method="post">
     {% csrf_token %}
     <button type="submit" name="confirm" class="default">Nu versturen</button>

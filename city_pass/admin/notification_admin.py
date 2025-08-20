@@ -77,6 +77,8 @@ class NotificationAdmin(admin.ModelAdmin):
         context = {
             **self.admin_site.each_context(request),
             "nr_sessions": len(device_ids),
+            "notification": obj,
+            "budgets": self.budgets_display(obj),
         }
         return TemplateResponse(
             request, "admin/notification_confirm_send.html", context
