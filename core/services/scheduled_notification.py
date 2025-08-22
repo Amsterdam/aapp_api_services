@@ -2,9 +2,10 @@ import datetime
 import logging
 from urllib.parse import urljoin
 
-import requests
 from django.conf import settings
 from django.utils import timezone
+
+from core.services.internal_http_client import InternalServiceHttpClient
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +17,8 @@ class NotificationServiceError(Exception):
 
 
 class ScheduledNotificationService:
-    @property
-    def _headers(self):
-        return {
-            settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0],
-        }
+    def __init__(self):
+        self.client = InternalServiceHttpClient()
 
     def add(
         self,
@@ -53,10 +51,9 @@ class ScheduledNotificationService:
 
         try:
             url = settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"]
-            response = requests.post(
+            response = self.client.post(
                 url,
                 json=request_data,
-                headers=self._headers,
             )
             response.raise_for_status()
         except Exception as e:
@@ -68,9 +65,8 @@ class ScheduledNotificationService:
     def get_all(self):
         try:
             url = settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"]
-            response = requests.get(
+            response = self.client.get(
                 url,
-                headers=self._headers,
             )
             response.raise_for_status()
         except Exception as e:
@@ -82,9 +78,8 @@ class ScheduledNotificationService:
     def get(self, identifier: str):
         try:
             url = self._build_url(identifier)
-            response = requests.get(
+            response = self.client.get(
                 url,
-                headers=self._headers,
             )
             if response.status_code == 204:
                 return None
@@ -111,10 +106,9 @@ class ScheduledNotificationService:
             }
             if expires_at:
                 payload["expires_at"] = expires_at.isoformat()
-            response = requests.patch(
+            response = self.client.patch(
                 url,
                 json=payload,
-                headers=self._headers,
             )
             response.raise_for_status()
         except Exception as e:
@@ -127,9 +121,8 @@ class ScheduledNotificationService:
     def delete(self, identifier: str):
         try:
             url = self._build_url(identifier)
-            response = requests.delete(
+            response = self.client.delete(
                 url,
-                headers=self._headers,
             )
             response.raise_for_status()
         except Exception as e:

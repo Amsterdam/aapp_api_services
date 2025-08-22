@@ -13,6 +13,9 @@ SESSION_COOKIE_SECURE = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+DISABLE_SAFE_HTTP_INTERNAL = (
+    os.getenv("DISABLE_SAFE_HTTP_INTERNAL", "false").lower() == "true"
+)
 
 ALLOWED_HOSTS = [
     "ontw.app.amsterdam.nl",

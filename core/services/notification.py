@@ -7,6 +7,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from core.enums import Module, NotificationType
+from core.services.internal_http_client import InternalServiceHttpClient
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class AbstractNotificationService:
     notification_type: NotificationType = None
 
     def __init__(self):
+        self.client = InternalServiceHttpClient()
         self.link_source_id = None
         self.post_notification_url = settings.NOTIFICATION_ENDPOINTS[
             "INIT_NOTIFICATION"
@@ -114,16 +116,11 @@ class AbstractNotificationService:
         self, url, method, request_data=None, additional_headers=None, params=None
     ):
         try:
-            headers = {
-                settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0],
-            }
-            if additional_headers:
-                headers.update(additional_headers)
-            response = requests.request(
+            response = self.client.request(
                 method,
                 url=url,
                 json=request_data,
-                headers=headers,
+                headers=additional_headers,
                 params=params,
             )
             response.raise_for_status()
