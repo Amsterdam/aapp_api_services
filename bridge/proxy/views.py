@@ -42,6 +42,17 @@ class WasteGuideView(GenericAPIView):
         )
 
 
+class PollingStationsView(GenericAPIView):
+    def get(self, request):
+        url = settings.POLLING_STATIONS_URL
+        response = requests.get(url, params=request.GET)
+        return HttpResponse(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type"),
+        )
+
+
 @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
 class AddressSearchView(GenericAPIView):
     authentication_classes = []

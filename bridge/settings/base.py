@@ -21,6 +21,12 @@ WASTE_GUIDE_URL = os.getenv(
 )
 WASTE_GUIDE_API_KEY = os.getenv("WASTE_GUIDE_API_KEY")
 
+# Election locations
+POLLING_STATIONS_URL = os.getenv(
+    "POLLING_STATIONS_URL",
+    "https://stembureaus.amsterdam.nl/api/locations",
+)
+
 # Address search
 ADDRESS_SEARCH_URL = os.getenv(
     "ADDRESS_SEARCH_URL", "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free"
