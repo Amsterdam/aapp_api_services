@@ -56,7 +56,7 @@ class NotificationMarkAllReadView(DeviceIdMixin, generics.UpdateAPIView):
         # Perform the bulk update
         updated_count = (
             Notification.objects.select_related("device")
-            .filter(device__external_id=self.device_id, is_read=False)
+            .filter(device_external_id=self.device_id, is_read=False)
             .update(is_read=True)
         )
         return Response({"detail": f"{updated_count} notifications marked as read."})

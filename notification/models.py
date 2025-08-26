@@ -90,14 +90,20 @@ class Notification(BaseNotification):
             models.Index(fields=["module_slug"]),
             models.Index(fields=["notification_type"]),
             models.Index(fields=["created_at"]),
+            models.Index(fields=["device_external_id"]),
         ]
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    device_external_id = models.CharField(max_length=1000)
     is_read = models.BooleanField(default=False)
     pushed_at = models.DateTimeField(null=True)
 
     def __str__(self):
         return f"{self.module_slug} - {self.title}"
+
+    def save(self, *args, **kwargs):
+        self.device_external_id = self.device.external_id
+        super().save()
 
 
 class NotificationPushTypeDisabled(models.Model):
