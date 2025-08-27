@@ -41,13 +41,9 @@ class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
         """
         serializer = DeviceRegisterRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        device, created = Device.objects.get_or_create(
+        device, _ = Device.objects.update_or_create(
             external_id=self.device_id, defaults=serializer.validated_data
         )
-        if not created:
-            device.firebase_token = serializer.validated_data["firebase_token"]
-            device.os = serializer.validated_data["os"]
-            device.save(update_fields=["firebase_token", "os"])
         return Response(
             DeviceRegisterResponseSerializer(device).data, status=status.HTTP_200_OK
         )

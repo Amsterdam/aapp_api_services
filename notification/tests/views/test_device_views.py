@@ -46,6 +46,20 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         devices_with_token = Device.objects.filter(firebase_token__isnull=False)
         self.assertEqual(devices_with_token.count(), 1)
 
+    def test_update_existing_device(self):
+        """Test updating an existing device"""
+        baker.make(
+            Device, external_id=self.device_id, firebase_token="foobar_token", os="ios1"
+        )
+        new_data = {"firebase_token": "foobar_token2", "os": "ios2"}
+        response = self.client.post(
+            self.url, new_data, headers=self.headers_with_device_id
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["firebase_token"], new_data["firebase_token"])
+        self.assertEqual(response.data["os"], new_data["os"])
+
     def test_delete_registration(self):
         """Test removing a device registration"""
         device_id = "foobar_device"
