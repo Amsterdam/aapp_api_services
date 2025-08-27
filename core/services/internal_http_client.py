@@ -7,78 +7,54 @@ DEFAULT_CONNECT_TIMEOUT = 5
 DEFAULT_READ_TIMEOUT = 10
 DEFAULT_RETRIES = 2
 DEFAULT_BACKOFF_FACTOR = 0.5
+RETRY_ON_STATUS_CODES = (502, 503, 504)
 
 
-class TimeoutSession(requests.Session):
-    """requests.Session with a default timeout applied to every request."""
-
-    def request(self, method, url, **kwargs):
-        if "timeout" not in kwargs or kwargs["timeout"] is None:
-            kwargs["timeout"] = (DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT)
-        return super().request(method, url, **kwargs)
-
-
-def build_safe_session():
-    """Returns a Session with safe defaults."""
-    session = TimeoutSession()
-
-    retry = Retry(
-        total=DEFAULT_RETRIES,
-        backoff_factor=DEFAULT_BACKOFF_FACTOR,  # Exponential backoff
-        status_forcelist=(502, 503, 504),
-        allowed_methods=(
-            "GET",
-            "HEAD",
-            "OPTIONS",
-            "PUT",
-            "DELETE",
-            "POST",
-            "PATCH",
-        ),  # Assuming that our requests are always idempotent
-        raise_on_status=False,  # Let the client handle the status code
-    )
-
-    adapter = HTTPAdapter(max_retries=retry)
-
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-
-    return session
-
-
-class InternalServiceHttpClient:
+class InternalServiceSession(requests.Session):
     """A reusable HTTP client with safe defaults."""
 
     def __init__(self):
-        self.session = build_safe_session()
-        if getattr(settings, "DISABLE_SAFE_HTTP_INTERNAL", False):
-            self.session = requests.Session()
+        super().__init__()
 
-        self._base_headers = {
-            settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0],
-        }
+        adapter = HTTPAdapter(max_retries=self._retry_config)
+        self.mount("http://", adapter)
+        self.mount("https://", adapter)
+
+        self.headers.update(
+            {
+                settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0],
+            }
+        )
+
+    @property
+    def _retry_config(self):
+        return Retry(
+            total=DEFAULT_RETRIES,
+            backoff_factor=DEFAULT_BACKOFF_FACTOR,
+            status_forcelist=RETRY_ON_STATUS_CODES,
+            allowed_methods=(
+                "GET",
+                "HEAD",
+                "OPTIONS",
+                "PUT",
+                "DELETE",
+                "POST",
+                "PATCH",
+            ),
+            raise_on_status=False,
+        )
 
     def request(self, method, url, **kwargs):
         """Make a request with safe defaults."""
-        # Set default headers if not provided
-        final_headers = self._base_headers.copy()
-        if "headers" in kwargs and kwargs["headers"] is not None:
-            final_headers.update(kwargs["headers"])
-        kwargs["headers"] = final_headers
+        # Handle DISABLE_SAFE_HTTP_INTERNAL setting
+        if getattr(settings, "DISABLE_SAFE_HTTP_INTERNAL", False):  # pragma: no cover
+            # Create a temporary session without retries for this request
+            temp_session = requests.Session()
+            temp_session.headers.update(self.headers)
+            return temp_session.request(method, url, **kwargs)
 
-        return self.session.request(method, url, **kwargs)
+        # Apply default timeout if not provided
+        if "timeout" not in kwargs or kwargs["timeout"] is None:
+            kwargs["timeout"] = (DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT)
 
-    def get(self, url, **kwargs):
-        return self.request("GET", url, **kwargs)
-
-    def post(self, url, **kwargs):
-        return self.request("POST", url, **kwargs)
-
-    def patch(self, url, **kwargs):
-        return self.request("PATCH", url, **kwargs)
-
-    def delete(self, url, **kwargs):
-        return self.request("DELETE", url, **kwargs)
-
-    def put(self, url, **kwargs):
-        return self.request("PUT", url, **kwargs)
+        return super().request(method, url, **kwargs)

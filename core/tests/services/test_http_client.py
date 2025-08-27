@@ -5,13 +5,14 @@ from django.test import TestCase, override_settings
 from core.services.internal_http_client import (
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_READ_TIMEOUT,
-    InternalServiceHttpClient,
-    TimeoutSession,
+    DEFAULT_RETRIES,
+    RETRY_ON_STATUS_CODES,
+    InternalServiceSession,
 )
 
 
-class TestTimeoutSession(TestCase):
-    """Test the TimeoutSession class."""
+class TestInternalServiceSession(TestCase):
+    """Test the InternalServiceSession with responses mocking."""
 
     @responses.activate
     def test_default_timeout_applied(self):
@@ -21,7 +22,7 @@ class TestTimeoutSession(TestCase):
             json={"status": "success", "data": "test"},
             status=200,
         )
-        session = TimeoutSession()
+        session = InternalServiceSession()
         session.request("GET", "https://api.example.com/test")
         mocked_request = responses.calls[0].request
         self.assertEqual(
@@ -37,18 +38,14 @@ class TestTimeoutSession(TestCase):
             json={"status": "success", "data": "test"},
             status=200,
         )
-        session = TimeoutSession()
+        session = InternalServiceSession()
         session.request("GET", "https://api.example.com/test", timeout=1)
         mocked_request = responses.calls[0].request
         self.assertEqual(mocked_request.req_kwargs["timeout"], 1)
 
-
-class TestInternalServiceHttpClient(TestCase):
-    """Test the InternalServiceHttpClient with responses mocking."""
-
     @responses.activate
     def test_get_request_mocked(self):
-        """Test that responses intercepts GET requests from InternalServiceHttpClient."""
+        """Test that responses intercepts GET requests from InternalServiceSession."""
         # Mock the response - responses will intercept the actual HTTP request
         responses.get(
             "https://api.example.com/test",
@@ -56,7 +53,7 @@ class TestInternalServiceHttpClient(TestCase):
             status=200,
         )
 
-        client = InternalServiceHttpClient()
+        client = InternalServiceSession()
         response = client.get("https://api.example.com/test")
 
         # Verify the response
@@ -80,7 +77,7 @@ class TestInternalServiceHttpClient(TestCase):
             status=200,
         )
 
-        client = InternalServiceHttpClient()
+        client = InternalServiceSession()
         response = client.get(
             "https://api.example.com/test", headers={"X-Test": "test"}
         )
@@ -94,38 +91,47 @@ class TestInternalServiceHttpClient(TestCase):
         )
 
     @responses.activate
-    def test_all_methods_are_proxied(self):
-        """Test that all methods are proxied to the session."""
-        responses.get(
-            "http://test/get",
-            status=200,
-        )
-        responses.post(
-            "http://test/post",
-            status=200,
-        )
-        responses.patch(
-            "http://test/patch",
-            status=200,
-        )
-        responses.delete(
-            "http://test/delete",
-            status=200,
-        )
-        responses.put(
-            "http://test/put",
-            status=200,
-        )
+    def test_max_retries_reached(self):
+        url = "https://api.example.com/test"
 
-        client = InternalServiceHttpClient()
-        client.get("http://test/get")
-        client.post("http://test/post")
-        client.patch("http://test/patch")
-        client.delete("http://test/delete")
-        client.put("http://test/put")
+        # Prepare more requests than retries to test the retry logic
+        for _ in range(DEFAULT_RETRIES * 2):
+            responses.get(url, status=502)
 
-        self.assertEqual(responses.calls[0].request.method, "GET")
-        self.assertEqual(responses.calls[1].request.method, "POST")
-        self.assertEqual(responses.calls[2].request.method, "PATCH")
-        self.assertEqual(responses.calls[3].request.method, "DELETE")
-        self.assertEqual(responses.calls[4].request.method, "PUT")
+        session = InternalServiceSession()
+        response = session.get(url)
+
+        self.assertEqual(response.status_code, 502)
+        # Total calls should be initial request + retries
+        self.assertEqual(len(responses.calls), 1 + DEFAULT_RETRIES)
+
+    @responses.activate
+    def mock_retry_on_status_codes(self, retry_status_code: int):
+        url = "https://api.example.com/test"
+
+        responses.get(url, status=retry_status_code)
+        responses.get(url, status=200)
+
+        session = InternalServiceSession()
+        response = session.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(responses.calls), 2)
+
+    def test_retry_on_status_codes(self):
+        for retry_status_code in RETRY_ON_STATUS_CODES:
+            self.mock_retry_on_status_codes(retry_status_code)
+
+    @responses.activate
+    def test_retry_not_on_4xx_status_codes(self):
+        url = "https://api.example.com/test"
+
+        responses.get(url, status=400)
+        responses.get(url, status=200)
+
+        session = InternalServiceSession()
+        response = session.get(url)
+
+        # Request should not retry and return 400 status code
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(len(responses.calls), 1)

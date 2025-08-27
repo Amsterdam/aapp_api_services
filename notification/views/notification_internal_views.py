@@ -82,9 +82,10 @@ class NotificationInitView(generics.CreateAPIView):
         if not unknown_device_ids:
             return known_devices_qs
 
-        Device.objects.bulk_create(
+        unknown_devices = [
             Device(external_id=device_id) for device_id in unknown_device_ids
-        )
+        ]
+        Device.objects.bulk_create(unknown_devices, ignore_conflicts=True)
         new_devices_qs = Device.objects.filter(external_id__in=unknown_device_ids)
         logger.warning(f"Created {len(new_devices_qs)} unknown devices.")
         devices_qs = known_devices_qs | new_devices_qs

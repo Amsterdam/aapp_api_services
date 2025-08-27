@@ -7,7 +7,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from core.enums import Module, NotificationType
-from core.services.internal_http_client import InternalServiceHttpClient
+from core.services.internal_http_client import InternalServiceSession
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class AbstractNotificationService:
     notification_type: NotificationType = None
 
     def __init__(self):
-        self.client = InternalServiceHttpClient()
+        self.client = InternalServiceSession()
         self.link_source_id = None
         self.post_notification_url = settings.NOTIFICATION_ENDPOINTS[
             "INIT_NOTIFICATION"

@@ -4,7 +4,7 @@ import requests
 from django.conf import settings
 from django.core.cache import cache
 
-from core.services.internal_http_client import InternalServiceHttpClient
+from core.services.internal_http_client import InternalServiceSession
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ImageSetService:
     def __init__(self):
         self.data = None
-        self.client = InternalServiceHttpClient()
+        self.client = InternalServiceSession()
 
     def get(self, image_set_id):
         cache_key = f"{__name__}.get_from_id.{image_set_id}"

@@ -41,7 +41,7 @@ dependencies = [
   "model-bakery",
   "ruff",
   "aioresponses",
-  "pytest-asyncio",  # anyio pytest plugin?
+  "pytest-asyncio", # anyio pytest plugin?
   "coverage",
   "responses",
 ]

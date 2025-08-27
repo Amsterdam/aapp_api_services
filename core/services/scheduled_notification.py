@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.utils import timezone
 
-from core.services.internal_http_client import InternalServiceHttpClient
+from core.services.internal_http_client import InternalServiceSession
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class NotificationServiceError(Exception):
 
 class ScheduledNotificationService:
     def __init__(self):
-        self.client = InternalServiceHttpClient()
+        self.client = InternalServiceSession()
 
     def add(
         self,
