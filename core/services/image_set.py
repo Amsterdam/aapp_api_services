@@ -4,18 +4,15 @@ import requests
 from django.conf import settings
 from django.core.cache import cache
 
+from core.services.internal_http_client import InternalServiceSession
+
 logger = logging.getLogger(__name__)
 
 
 class ImageSetService:
     def __init__(self):
         self.data = None
-
-    @property
-    def _headers(self):
-        return {
-            settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0],
-        }
+        self.client = InternalServiceSession()
 
     def get(self, image_set_id):
         cache_key = f"{__name__}.get_from_id.{image_set_id}"
@@ -26,7 +23,7 @@ class ImageSetService:
 
         base_url = settings.IMAGE_ENDPOINTS["DETAIL"]
         url = f"{base_url}/{image_set_id}"
-        response = requests.get(url, headers=self._headers)
+        response = self.client.get(url)
         response.raise_for_status()
         self.data = response.json()
         cache.set(cache_key, self.data, timeout=60 * 60 * 24)
@@ -36,7 +33,7 @@ class ImageSetService:
         try:
             self.get(image_set_id)
             return True
-        except requests.HTTPError:
+        except requests.exceptions.HTTPError:
             return False
 
     def upload(self, image, description=None):
@@ -50,9 +47,7 @@ class ImageSetService:
             else {}
         )
 
-        response = requests.post(
-            image_upload_url, data=data, files=files, headers=self._headers
-        )
+        response = self.client.post(image_upload_url, data=data, files=files)
         response.raise_for_status()
         self.data = response.json()
         return self.data
@@ -73,7 +68,7 @@ class ImageSetService:
             "url": url,
             "description": description,
         }
-        response = requests.post(image_upload_url, data=data, headers=self._headers)
+        response = self.client.post(image_upload_url, data=data)
         response.raise_for_status()
         self.data = response.json()
         cache.set(cache_key, self.data, timeout=60 * 60 * 24)

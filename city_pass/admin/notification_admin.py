@@ -1,6 +1,3 @@
-from client_side_image_cropping import DcsicAdminMixin
-from client_side_image_cropping.widgets import ClientsideCroppingWidget
-from django import forms
 from django.contrib import admin
 from django.core.checks import messages
 from django.http import HttpResponseRedirect
@@ -8,26 +5,10 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
 
-from city_pass.models import Notification
 from city_pass.services.notification import NotificationService
-from core.services.image_set import ImageSetService
 
 
-class NotificationForm(forms.ModelForm):
-    class Meta:
-        model = Notification
-        fields = "__all__"
-        widgets = {
-            "image": ClientsideCroppingWidget(
-                width=1280,
-                height=720,
-                preview_width=320,
-                preview_height=180,
-            ),
-        }
-
-
-class NotificationAdmin(DcsicAdminMixin, admin.ModelAdmin):
+class NotificationAdmin(admin.ModelAdmin):
     list_display = [
         "title",
         "message",
@@ -41,15 +22,9 @@ class NotificationAdmin(DcsicAdminMixin, admin.ModelAdmin):
     ordering = ["-pk"]
     actions = None
     filter_horizontal = ("budgets",)
-    form = NotificationForm
 
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
-        if obj.image:
-            image = ImageSetService().upload(
-                image=obj.image, description=obj.image_description
-            )
-            obj.image_set_id = image["id"]
         super().save_model(request, obj, form, change)
 
     def get_urls(self):
@@ -71,7 +46,6 @@ class NotificationAdmin(DcsicAdminMixin, admin.ModelAdmin):
     def confirm_send(self, request, object_id):
         obj = self.get_object(request, object_id)
         notification_service = NotificationService()
-        notification_service.set_device_ids(obj)
 
         if request.method == "POST":
             if "confirm" in request.POST:
@@ -99,9 +73,12 @@ class NotificationAdmin(DcsicAdminMixin, admin.ModelAdmin):
                 reverse("admin:city_pass_notification_changelist")
             )
 
+        device_ids = notification_service.get_device_ids(obj)
         context = {
             **self.admin_site.each_context(request),
-            "nr_sessions": len(notification_service.device_ids),
+            "nr_sessions": len(device_ids),
+            "notification": obj,
+            "budgets": self.budgets_display(obj),
         }
         return TemplateResponse(
             request, "admin/notification_confirm_send.html", context
@@ -116,7 +93,6 @@ class NotificationAdmin(DcsicAdminMixin, admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         if obj:
             return [
-                "image_preview",
                 "send_at",
                 "nr_sessions",
                 "created_by",
@@ -125,10 +101,11 @@ class NotificationAdmin(DcsicAdminMixin, admin.ModelAdmin):
         return []
 
     def get_exclude(self, request, obj=None):
-        exclude = ["image_set_id"]
+        exclude = ["image", "image_set_id", "image_description"]
         if obj:
             return exclude + ["budgets"]
-        return exclude + ["send_at", "created_by"]
+        else:
+            return exclude + ["send_at", "created_by"]
 
     @admin.display(boolean=True, description="Verstuurd?")
     def send(self, obj) -> bool:
@@ -167,20 +144,6 @@ class NotificationAdmin(DcsicAdminMixin, admin.ModelAdmin):
         return count
 
     selected_budgets.short_description = "Geselecteerde budgetten"
-
-    def image_preview(self, obj):
-        if not obj.image:
-            return "(No image)"
-        return format_html(
-            '<div style="border:1px solid #ccc; '
-            "padding:5px; display:inline-block; "
-            'background:#f9f9f9;">'
-            '<img src="{}" style="max-width:200px; '
-            'max-height:200px;" /></div>',
-            obj.image.url,
-        )
-
-    image_preview.short_description = "Afbeelding Preview"
 
     def render_change_form(
         self, request, context, add=False, change=False, form_url="", obj=None

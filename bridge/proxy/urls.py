@@ -4,6 +4,7 @@ from bridge.proxy.views import (
     AddressSearchByCoordinateView,
     AddressSearchByNameView,
     AddressSearchView,
+    PollingStationsView,
     WasteGuideView,
 )
 
@@ -13,6 +14,12 @@ urlpatterns = [
         "waste-guide/api/v1/search",
         WasteGuideView.as_view(),
         name="waste-guide-search",
+    ),
+    # election locations
+    path(
+        "polling-stations/api/v1/locations",
+        PollingStationsView.as_view(),
+        name="polling-stations",
     ),
     # address search
     path(

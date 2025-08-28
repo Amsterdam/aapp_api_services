@@ -121,6 +121,10 @@ send_waste_notifications: check-service
 	# Django command for the Waste service
 	$(manage) sendwastenotifications
 
+send_mijnamsterdam_notifications: check-service
+	# Django command for the MijnAmsterdam service
+	$(manage) sendmijnamsterdamnotifications
+
 spectacular: check-service
     # Generate OpenAPI schema
 	$(manage) spectacular --file /app/${SERVICE_NAME}/openapi-schema.yaml

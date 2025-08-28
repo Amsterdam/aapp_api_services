@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 from urllib.parse import urljoin
 
-from core.enums import NotificationType
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -15,6 +13,9 @@ SESSION_COOKIE_SECURE = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+DISABLE_SAFE_HTTP_INTERNAL = (
+    os.getenv("DISABLE_SAFE_HTTP_INTERNAL", "false").lower() == "true"
+)
 
 ALLOWED_HOSTS = [
     "ontw.app.amsterdam.nl",
@@ -85,7 +86,6 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "mozilla_django_oidc",
     "adminsortable2",
-    "client_side_image_cropping",
     "core.apps.CoreConfig",
 ]
 
@@ -276,13 +276,18 @@ NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://api-notification:8000")
 NOTIFICATION_BASE_URL = urljoin(
     NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH", "/internal/api/v1/")
 )
+NOTIFICATION_BASE_URL_EXTERNAL = urljoin(
+    NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH_EXT", "/notification/api/v1/")
+)
 NOTIFICATION_ENDPOINTS = {
     "INIT_NOTIFICATION": urljoin(NOTIFICATION_BASE_URL, "notification"),
     "SCHEDULED_NOTIFICATION": urljoin(NOTIFICATION_BASE_URL, "scheduled-notification"),
+    "NOTIFICATIONS": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "notifications"),
+    "LAST_TIMESTAMP": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "notifications/last"),
 }
-NOTIFICATION_SCOPES = [
-    NotificationType.MIJN_AMS_NOTIFICATION.value,
-]
+NOTIFICATION_MODULE_SLUG_LAST_TIMESTAMP = [
+    "mijn-amsterdam"
+]  # Scopes for which notifications keep a last timestamp
 
 IMAGE_API = os.getenv("IMAGE_API", "http://api-image:8000")
 IMAGE_BASE_URL = urljoin(IMAGE_API, os.getenv("IMAGE_BASE_PATH", "/internal/api/v1/"))

@@ -80,8 +80,6 @@ services:
   lint:
     <<: *base-app
     volumes:
-      - ./requirements.txt:/app/requirements.txt
-      - ./uv.lock:/app/uv.lock
       - ./core:/app/core
       - ./manage.py:/app/manage.py
       - ./bridge:/app/bridge

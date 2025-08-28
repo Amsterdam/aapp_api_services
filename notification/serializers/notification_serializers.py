@@ -110,7 +110,6 @@ class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
             "notification_type",
             "image",
             "scheduled_for",
-            "pushed_at",
             "expires_at",
         ]
 
@@ -128,6 +127,11 @@ class ScheduledNotificationSerializer(ScheduledNotificationDetailSerializer):
         fields = ScheduledNotificationDetailSerializer.Meta.fields + [
             "identifier",
         ]
+
+    def validate(self, attrs):
+        if attrs.get("expires_at") and attrs["expires_at"] <= attrs["scheduled_for"]:
+            raise serializers.ValidationError("Expires at must be after scheduled for")
+        return attrs
 
     def validate_identifier(self, identifier):
         module_slug = self.initial_data.get("module_slug")
@@ -168,3 +172,14 @@ class NotificationLastRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationLast
         fields = ["module_slug"]
+
+
+class NotificationTypeSerializer(serializers.Serializer):
+    type = serializers.CharField()
+    description = serializers.CharField()
+
+
+class ModuleNotificationTypeSerializer(serializers.Serializer):
+    module = serializers.CharField()
+    description = serializers.CharField()
+    types = NotificationTypeSerializer(many=True)

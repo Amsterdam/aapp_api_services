@@ -1,4 +1,5 @@
 import logging
+from time import sleep
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -14,6 +15,9 @@ BATCH_SIZE = 100
 class Command(BaseCommand):
     help = "Push scheduled notifications"
 
+    def add_arguments(self, parser):
+        parser.add_argument("--test-mode", action="store_true")
+
     def handle(self, *args, **options):
         while True:
             with transaction.atomic():
@@ -23,13 +27,14 @@ class Command(BaseCommand):
                 timezone_now = timezone.now()
                 notifications_to_push = ScheduledNotification.objects.select_for_update(
                     skip_locked=True
-                ).filter(pushed_at__isnull=True, scheduled_for__lte=timezone_now)[
-                    :BATCH_SIZE
-                ]
+                ).filter(scheduled_for__lte=timezone_now)[:BATCH_SIZE]
                 notifications_to_push = list(notifications_to_push)
                 if not notifications_to_push:
-                    logger.info("Finished pushing scheduled notifications")
-                    break
+                    logger.debug("No scheduled notifications found. Sleeping...")
+                    if options["test_mode"]:
+                        # In test mode, interrupt the loop when no notifications are found
+                        break
+                    sleep(5)  # Sleep for 5 seconds before checking again
                 logger.info(
                     f"Pushing {len(notifications_to_push)} scheduled notifications"
                 )
@@ -39,16 +44,16 @@ class Command(BaseCommand):
         for scheduled_notification in notifications_to_push:
             if scheduled_notification.expires_at <= timezone.now():
                 logger.info(
-                    f"Skipping expired notification: {scheduled_notification.identifier}"
+                    "Skipping expired notification",
+                    extra={
+                        "notification_type": scheduled_notification.notification_type,
+                        "created_at": scheduled_notification.created_at,
+                        "scheduled_for": scheduled_notification.scheduled_for,
+                    },
                 )
-                # Set to a far future date to indicate it was expired, but removed from database index
-                scheduled_notification.pushed_at = "3000-01-01"
-                scheduled_notification.save()
             else:
                 self.push_notification(scheduled_notification)
-                # Update the pushed_at flag to prevent duplicate pushes!!!
-                scheduled_notification.pushed_at = timezone.now()
-                scheduled_notification.save()
+            scheduled_notification.delete()
 
     def push_notification(self, scheduled_notification):
         notification_obj = Notification(
@@ -59,7 +64,6 @@ class Command(BaseCommand):
             notification_type=scheduled_notification.notification_type,
             image=scheduled_notification.image,
             created_at=timezone.now(),
-            schedule=scheduled_notification,
         )
         scheduled_notification.devices.all()
         notification_crud = NotificationCRUD(source_notification=notification_obj)

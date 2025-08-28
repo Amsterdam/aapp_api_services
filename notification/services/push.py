@@ -14,15 +14,16 @@ logger = logging.getLogger(__name__)
 class PushService:
     def __init__(self) -> None:
         """
-        First the Firebase admin will be initialized.
-        Firebase manages its own connections, so when multiple services are initialized,
-        Firebase will check if there is already an active connection setup.
+        Initialize Firebase admin safely. Firebase's get_app() method handles
+        race conditions internally - if no app exists, it will raise a ValueError
+        which we catch and then initialize the app.
         """
-        if not firebase_admin._apps:
+        try:
+            firebase_admin.get_app()
+        except ValueError:
+            # No app exists, initialize it
             creds = credentials.Certificate(json.loads(settings.FIREBASE_CREDENTIALS))
             firebase_admin.initialize_app(creds)
-        else:
-            firebase_admin.get_app()
 
     def push(self, notifications: list[Notification]) -> int:
         """

@@ -31,10 +31,8 @@ class WasteCollectionService:
     def create_calendar(self):
         calendar = []
         for item in self.validated_data:
-            dates = self.filter_ophaaldagen(
-                ophaaldagen=item.get("afvalwijzerOphaaldagen")
-            )
-            frequency = item.get("afvalwijzerAfvalkalenderFrequentie") or ""
+            dates = self.filter_ophaaldagen(ophaaldagen=item.get("days"))
+            frequency = item.get("frequency") or ""
             if "oneven" in frequency:
                 dates = self.filter_even_oneven(dates, even=False)
             elif "even" in frequency:
@@ -45,11 +43,16 @@ class WasteCollectionService:
             calendar += [
                 {
                     "date": date,
-                    "label": item.get("afvalwijzerFractieNaam"),
-                    "type": item.get("afvalwijzerFractieCode"),
-                    "curb_rules_from": item.get("afvalwijzerBuitenzettenVanaf"),
-                    "curb_rules_to": item.get("afvalwijzerBuitenzettenTot"),
-                    "note": item.get("afvalwijzerAfvalkalenderMelding"),
+                    **{
+                        k: item.get(k)
+                        for k in [
+                            "label",
+                            "code",
+                            "curb_rules_from",
+                            "curb_rules_to",
+                            "alert",
+                        ]
+                    },
                 }
                 for date in dates
             ]
@@ -95,29 +98,38 @@ class WasteCollectionService:
     def get_next_dates(self, calendar):
         dates = defaultdict(list)
         for item in calendar:
-            type = item.get("type")
-            dates[type].append(item["date"])
+            code = item.get("code")
+            dates[code].append(item["date"])
 
-        next_dates = {type: None for type in settings.WASTE_TYPES}
-        for type in next_dates:
-            next_dates[type] = min(dates[type]) if dates[type] else None
+        next_dates = {code: None for code in settings.WASTE_CODES}
+        for code in next_dates:
+            next_dates[code] = min(dates[code]) if dates[code] else None
 
         return next_dates
 
     def get_waste_types(self, next_dates):
         waste_types = []
         for item in self.validated_data:
-            type = item.get("afvalwijzerFractieCode")
+            code = item.get("code")
             waste_types.append(
                 {
-                    "label": item.get("afvalwijzerFractieNaam"),
-                    "type": type,
-                    "curb_rules_from": item.get("afvalwijzerBuitenzettenVanaf"),
-                    "curb_rules_to": item.get("afvalwijzerBuitenzettenTot"),
-                    "remark": item.get("afvalwijzerAfvalkalenderOpmerking"),
-                    "note": item.get("afvalwijzerAfvalkalenderMelding"),
-                    "instruction": item.get("afvalwijzerInstructie2"),
-                    "next_date": next_dates.get(type),
+                    **{
+                        k: item.get(k)
+                        for k in [
+                            "label",
+                            "code",
+                            "curb_rules",
+                            "alert",
+                            "note",
+                            "days_array",
+                            "how",
+                            "where",
+                            "button_text",
+                            "url",
+                            "frequency",
+                        ]
+                    },
+                    "next_date": next_dates.get(code),
                 }
             )
         return waste_types

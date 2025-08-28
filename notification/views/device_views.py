@@ -17,10 +17,10 @@ from notification.serializers.device_serializers import (
     DeviceRegisterResponseSerializer,
 )
 from notification.serializers.notification_config_serializers import (
-    NotificationPushEnabledListSerializer,
-    NotificationPushEnabledSerializer,
-    NotificationPushModuleEnabledListSerializer,
-    NotificationPushModuleEnabledSerializer,
+    NotificationPushModuleDisabledListSerializer,
+    NotificationPushModuleDisabledSerializer,
+    NotificationPushTypeDisabledListSerializer,
+    NotificationPushTypeDisabledSerializer,
 )
 
 
@@ -41,13 +41,9 @@ class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
         """
         serializer = DeviceRegisterRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        device, created = Device.objects.get_or_create(
+        device, _ = Device.objects.update_or_create(
             external_id=self.device_id, defaults=serializer.validated_data
         )
-        if not created:
-            device.firebase_token = serializer.validated_data["firebase_token"]
-            device.os = serializer.validated_data["os"]
-            device.save()
         return Response(
             DeviceRegisterResponseSerializer(device).data, status=status.HTTP_200_OK
         )
@@ -74,20 +70,21 @@ class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
         return Response("Registration removed", status=status.HTTP_200_OK)
 
 
-class NotificationPushEnabledView(DeviceIdMixin, generics.GenericAPIView):
+class NotificationPushTypeDisabledView(DeviceIdMixin, generics.GenericAPIView):
     """
     Enable or disable a push for a notification type for a device.
     """
 
-    serializer_class = NotificationPushEnabledSerializer
+    serializer_class = NotificationPushTypeDisabledSerializer
     http_method_names = ["post", "delete"]
 
     @extend_schema_for_device_id(
-        request=NotificationPushEnabledSerializer,
-        success_response=NotificationPushEnabledSerializer,
+        request=NotificationPushTypeDisabledSerializer,
+        success_response=NotificationPushTypeDisabledSerializer,
         exceptions=[ValidationError, NotFound],
     )
     def post(self, request, *args, **kwargs):
+        """Creating the record disables push for the given type."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -100,10 +97,11 @@ class NotificationPushEnabledView(DeviceIdMixin, generics.GenericAPIView):
         return Response(self.serializer_class(config).data, status=status.HTTP_200_OK)
 
     @extend_schema_for_device_id(
-        additional_params=[NotificationPushEnabledSerializer],
+        additional_params=[NotificationPushTypeDisabledSerializer],
         exceptions=[NotFound],
     )
     def delete(self, request, *args, **kwargs):
+        """Deleting the record enables push for the given type again."""
         notification_type = request.query_params.get("notification_type")
         if not notification_type:
             raise ValidationError("Notification type is required")
@@ -116,12 +114,12 @@ class NotificationPushEnabledView(DeviceIdMixin, generics.GenericAPIView):
         return Response(status=status.HTTP_200_OK)
 
 
-class NotificationPushEnabledListView(DeviceIdMixin, generics.ListAPIView):
+class NotificationPushTypeDisabledListView(DeviceIdMixin, generics.ListAPIView):
     """
     List all enabled push types for a device.
     """
 
-    serializer_class = NotificationPushEnabledListSerializer
+    serializer_class = NotificationPushTypeDisabledListSerializer
 
     def get_queryset(self):
         return NotificationPushTypeDisabled.objects.filter(
@@ -129,7 +127,7 @@ class NotificationPushEnabledListView(DeviceIdMixin, generics.ListAPIView):
         )
 
     @extend_schema_for_device_id(
-        success_response=NotificationPushEnabledListSerializer,
+        success_response=NotificationPushTypeDisabledListSerializer,
         examples=[
             OpenApiExample(
                 name="Example 1",
@@ -141,17 +139,17 @@ class NotificationPushEnabledListView(DeviceIdMixin, generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class NotificationPushModuleEnabledView(DeviceIdMixin, generics.GenericAPIView):
+class NotificationPushModuleDisabledView(DeviceIdMixin, generics.GenericAPIView):
     """
     Enable or disable a push for a notification type for a device.
     """
 
-    serializer_class = NotificationPushModuleEnabledSerializer
+    serializer_class = NotificationPushModuleDisabledSerializer
     http_method_names = ["post", "delete"]
 
     @extend_schema_for_device_id(
-        request=NotificationPushModuleEnabledSerializer,
-        success_response=NotificationPushModuleEnabledSerializer,
+        request=NotificationPushModuleDisabledSerializer,
+        success_response=NotificationPushModuleDisabledSerializer,
         exceptions=[ValidationError, NotFound],
     )
     def post(self, request, *args, **kwargs):
@@ -167,7 +165,7 @@ class NotificationPushModuleEnabledView(DeviceIdMixin, generics.GenericAPIView):
         return Response(self.serializer_class(config).data, status=status.HTTP_200_OK)
 
     @extend_schema_for_device_id(
-        additional_params=[NotificationPushModuleEnabledSerializer],
+        additional_params=[NotificationPushModuleDisabledSerializer],
         exceptions=[NotFound],
     )
     def delete(self, request, *args, **kwargs):
@@ -183,12 +181,12 @@ class NotificationPushModuleEnabledView(DeviceIdMixin, generics.GenericAPIView):
         return Response(status=status.HTTP_200_OK)
 
 
-class NotificationPushModuleEnabledListView(DeviceIdMixin, generics.ListAPIView):
+class NotificationPushModuleDisabledListView(DeviceIdMixin, generics.ListAPIView):
     """
     List all enabled push types for a device.
     """
 
-    serializer_class = NotificationPushModuleEnabledListSerializer
+    serializer_class = NotificationPushModuleDisabledListSerializer
 
     def get_queryset(self):
         return NotificationPushModuleDisabled.objects.filter(
@@ -196,7 +194,7 @@ class NotificationPushModuleEnabledListView(DeviceIdMixin, generics.ListAPIView)
         )
 
     @extend_schema_for_device_id(
-        success_response=NotificationPushModuleEnabledListSerializer,
+        success_response=NotificationPushModuleDisabledListSerializer,
         examples=[
             OpenApiExample(
                 name="Example 1",

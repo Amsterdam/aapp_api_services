@@ -3,6 +3,7 @@ AFVALWIJZER_DATA_MINIMAL = {
         "afvalwijzer": [
             {
                 "afvalwijzerPerXWeken": None,
+                "afvalwijzerBuitenzetten": None,
                 "afvalwijzerBuitenzettenVanaf": None,
                 "afvalwijzerBuitenzettenTot": None,
                 "afvalwijzerAfvalkalenderOpmerking": None,
@@ -14,9 +15,13 @@ AFVALWIJZER_DATA_MINIMAL = {
                 "afvalwijzerAfvalkalenderVan": None,
                 "afvalwijzerAfvalkalenderTot": None,
                 "afvalwijzerAfvalkalenderFrequentie": None,
+                "afvalwijzerButtontekst": "Test",
+                "afvalwijzerUrl": "https://test.nl",
+                "afvalwijzerWaar": "Test",
             },
             {
                 "afvalwijzerPerXWeken": "1",
+                "afvalwijzerBuitenzetten": None,
                 "afvalwijzerBuitenzettenVanafTot": "",
                 "afvalwijzerBuitenzettenVanaf": None,
                 "afvalwijzerBuitenzettenTot": None,
@@ -29,6 +34,9 @@ AFVALWIJZER_DATA_MINIMAL = {
                 "afvalwijzerAfvalkalenderVan": "2025-01-17T00:00:00",
                 "afvalwijzerAfvalkalenderTot": "2025-01-31T00:00:00",
                 "afvalwijzerAfvalkalenderFrequentie": "null",
+                "afvalwijzerButtontekst": "Test",
+                "afvalwijzerUrl": "https://test.nl",
+                "afvalwijzerWaar": "Test",
             },
         ]
     }

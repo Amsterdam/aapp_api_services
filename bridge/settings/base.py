@@ -21,6 +21,12 @@ WASTE_GUIDE_URL = os.getenv(
 )
 WASTE_GUIDE_API_KEY = os.getenv("WASTE_GUIDE_API_KEY")
 
+# Election locations
+POLLING_STATIONS_URL = os.getenv(
+    "POLLING_STATIONS_URL",
+    "https://stembureaus.amsterdam.nl/api/locations",
+)
+
 # Address search
 ADDRESS_SEARCH_URL = os.getenv(
     "ADDRESS_SEARCH_URL", "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free"
@@ -35,3 +41,13 @@ SSP_GEOJSON_URL = os.getenv(
 SSP_GEOJSON_TOKEN = os.getenv("SSP_GEOJSON_TOKEN")
 SSP_GEOJSON_TOKEN_HEADER = "X-Auth-Token"
 PARKING_REMINDER_TIME = os.getenv("PARKING_REMINDER_TIME", 15)
+
+# Mijn Amsterdam API
+MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
+MIJN_AMS_API_KEY_INBOUND = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
+MIJN_AMS_API_DOMAIN = os.getenv(
+    "MIJN_AMS_API_DOMAIN", "https://mams-t-appservice-bff.azurewebsites.net/"
+)
+MIJN_AMS_API_PATHS = {
+    "NOTIFICATIONS": "/private/api/v1/services/amsapp/notifications",
+}

@@ -9,6 +9,7 @@ data/db/
 # Python cache
 __pycache__/
 **/pycache/
+**/migrations/*~
 
 # Python virtual environments
 venv/

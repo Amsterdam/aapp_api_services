@@ -83,26 +83,25 @@ class TestCoreScheduledNotificationService(APITestCase):
     def test_add_notification_with_specific_expiration(self):
         identifier = f"{settings.SERVICE_NAME}_test-notification"
         self.created_identifiers.append(identifier)
-        requested_expires_at = timezone.now() + timedelta(minutes=10)
+        scheduled_for = timezone.now() + timedelta(minutes=10)
+        expires_at = scheduled_for + timedelta(minutes=10)
 
         new_scheduled_notification = self.service.add(
             title="Test Notification",
             body="This is a test notification",
-            scheduled_for=timezone.now() + timedelta(minutes=10),
+            scheduled_for=scheduled_for,
             identifier=identifier,
             context={},
             device_ids=["device1", "device2"],
             notification_type="test",
-            expires_at=requested_expires_at,
+            expires_at=expires_at,
         )
 
         self.assertTrue(new_scheduled_notification)
         scheduled_expires_at = datetime.fromisoformat(
             new_scheduled_notification["expires_at"]
         )
-        self.assertEqual(
-            scheduled_expires_at.timestamp(), requested_expires_at.timestamp()
-        )
+        self.assertEqual(scheduled_expires_at.timestamp(), expires_at.timestamp())
 
     def test_get_notification(self):
         identifier = f"{settings.SERVICE_NAME}_test-notification"
@@ -156,6 +155,7 @@ class TestCoreScheduledNotificationService(APITestCase):
         updated_notification = self.service.update(
             identifier=identifier,
             scheduled_for=new_scheduled_for,
+            expires_at=None,
             device_ids=new_device_ids,
         )
 

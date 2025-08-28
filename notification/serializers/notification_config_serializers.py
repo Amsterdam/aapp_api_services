@@ -6,25 +6,27 @@ from notification.models import (
 )
 
 
-class NotificationPushEnabledSerializer(serializers.ModelSerializer):
+class NotificationPushTypeDisabledSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationPushTypeDisabled
         fields = ["notification_type"]
 
 
-class NotificationPushEnabledListSerializer(NotificationPushEnabledSerializer):
+class NotificationPushTypeDisabledListSerializer(
+    NotificationPushTypeDisabledSerializer
+):
     def to_representation(self, instance):
         return instance.notification_type
 
 
-class NotificationPushModuleEnabledSerializer(serializers.ModelSerializer):
+class NotificationPushModuleDisabledSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationPushModuleDisabled
         fields = ["module_slug"]
 
 
-class NotificationPushModuleEnabledListSerializer(
-    NotificationPushModuleEnabledSerializer
+class NotificationPushModuleDisabledListSerializer(
+    NotificationPushModuleDisabledSerializer
 ):
     def to_representation(self, instance):
         return instance.module_slug

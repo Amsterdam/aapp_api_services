@@ -23,12 +23,8 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         )
         baker.make("PassData", session=session_2, budgets=[self.budget_1])
 
-        responses.post(
-            settings.NOTIFICATION_ENDPOINTS["INIT_NOTIFICATION"],
-        )
-        responses.post(
-            settings.IMAGE_ENDPOINTS["POST_IMAGE"],
-        )
+        responses.post(settings.NOTIFICATION_ENDPOINTS["INIT_NOTIFICATION"], json={})
+        responses.post(settings.IMAGE_ENDPOINTS["POST_IMAGE"], json={})
 
     def test_set_device_ids_all(self):
         notification = baker.make(Notification, budgets=[])

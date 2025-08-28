@@ -51,7 +51,8 @@ class NotificationInitView(generics.CreateAPIView):
 
         source_notification = Notification(**serializer.validated_data)
         notification_crud = NotificationCRUD(
-            source_notification, push_enabled=make_push
+            source_notification,
+            push_enabled=make_push,
         )
         self.create_notifications(
             notification_crud=notification_crud, device_ids=device_ids
@@ -81,9 +82,10 @@ class NotificationInitView(generics.CreateAPIView):
         if not unknown_device_ids:
             return known_devices_qs
 
-        Device.objects.bulk_create(
+        unknown_devices = [
             Device(external_id=device_id) for device_id in unknown_device_ids
-        )
+        ]
+        Device.objects.bulk_create(unknown_devices, ignore_conflicts=True)
         new_devices_qs = Device.objects.filter(external_id__in=unknown_device_ids)
         logger.warning(f"Created {len(new_devices_qs)} unknown devices.")
         devices_qs = known_devices_qs | new_devices_qs
@@ -198,14 +200,6 @@ class ScheduledNotificationDetailView(RetrieveUpdateDestroyAPIView):
     serializer_class = ScheduledNotificationDetailSerializer
     lookup_field = "identifier"
     http_method_names = ["get", "patch", "delete"]
-
-    def initial(self, request, *args, **kwargs):
-        super().initial(request, *args, **kwargs)
-
-        if request.method in ["PATCH", "DELETE"]:
-            instance = self.get_object()
-            if instance.pushed_at:
-                raise ValidationError("Cannot modify a pushed notification.")
 
     def retrieve(self, request, *args, **kwargs):
         """Return 204 instead of 404 when not found."""

@@ -44,12 +44,12 @@ class TestImageService(ResponsesActivatedAPITestCase):
     def test_init(self):
         image_service = ImageSetService()
         image_service.get(1)
-        self.assertEquals(self.rsp_get.call_count, 1)
+        self.assertEqual(self.rsp_get.call_count, 1)
 
     def test_url_small(self):
         image_service = ImageSetService()
         image_service.get(1)
-        self.assertEquals(
+        self.assertEqual(
             image_service.url_small,
             "https://ontw.app.amsterdam.nl/media/image/small.JPEG",
         )

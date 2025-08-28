@@ -228,6 +228,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
                         "scheduled_for": (
                             end_time - timedelta(minutes=settings.PARKING_REMINDER_TIME)
                         ).isoformat(),
+                        "expires_at": end_time.isoformat(),
                         "device_ids": ["foobar"],
                     }
                 )
@@ -259,6 +260,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
                         "scheduled_for": (
                             end_time - timedelta(minutes=settings.PARKING_REMINDER_TIME)
                         ).isoformat(),
+                        "expires_at": end_time.isoformat(),
                         "device_ids": ["foobar", "other_device_id"],
                     }
                 )
