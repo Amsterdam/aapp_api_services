@@ -114,7 +114,7 @@ class NotificationPushTypeDisabled(models.Model):
 
     The current default settings for the Amsterdam App are:
     - In-app notifications enabled
-    - Push notifications disabled
+    - Push notifications enabled
 
     Values:
     - device: fk to Device.id
@@ -124,6 +124,9 @@ class NotificationPushTypeDisabled(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     notification_type = models.CharField()
 
+    class Meta:
+        unique_together = ("device", "notification_type")
+
 
 class NotificationPushModuleDisabled(models.Model):
     """
@@ -132,6 +135,9 @@ class NotificationPushModuleDisabled(models.Model):
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     module_slug = models.CharField()
+
+    class Meta:
+        unique_together = ("device", "module_slug")
 
 
 class NotificationLast(models.Model):

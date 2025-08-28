@@ -126,7 +126,7 @@ class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
         }
 
     def test_disable_push_notification_success(self):
-        """Test successfully enabling push notifications for a type."""
+        """Test successfully disabling push notifications for a type."""
         data = {"notification_type": self.valid_notification_type}
         response = self.client.post(self.url, data, headers=self.headers_with_device_id)
 
@@ -141,7 +141,7 @@ class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
         )
 
     def test_disable_push_notification_duplicate(self):
-        """Test enabling an already disabled notification type."""
+        """Test disabling an already disabled notification type."""
         baker.make(
             NotificationPushTypeDisabled,
             device=self.device,
@@ -160,7 +160,7 @@ class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
         )
 
     def test_disable_push_notification_missing_device_id(self):
-        """Test enabling push notifications without device ID header."""
+        """Test disabling push notifications without device ID header."""
         data = {"notification_type": self.valid_notification_type}
         response = self.client.post(self.url, data, headers=self.api_headers)
 
@@ -168,7 +168,7 @@ class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
         self.assertEqual(response.data["detail"], MissingDeviceIdHeader.default_detail)
 
     def test_disable_push_notification_invalid_device(self):
-        """Test enabling push notifications for non-existent device."""
+        """Test disabling push notifications for non-existent device."""
         headers = {settings.HEADER_DEVICE_ID: "non-existent-device", **self.api_headers}
         data = {"notification_type": self.valid_notification_type}
         response = self.client.post(self.url, data, headers=headers)
@@ -179,7 +179,7 @@ class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
         )
 
     def test_enable_push_notification_success(self):
-        """Test successfully disabling push notifications for a type."""
+        """Test successfully enabling push notifications for a type."""
         baker.make(
             NotificationPushTypeDisabled,
             device=self.device,
@@ -196,8 +196,8 @@ class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
             ).exists()
         )
 
-    def test_disable_push_notification_not_found(self):
-        """Test disabling a non-existent push notification configuration."""
+    def test_enable_push_notification_not_found(self):
+        """Test enabling a non-existent push notification configuration."""
         url = f"{self.url}?notification_type={self.valid_notification_type}"
         response = self.client.delete(url, headers=self.headers_with_device_id)
 
@@ -208,8 +208,8 @@ class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
             status_code=404,
         )
 
-    def test_disable_push_notification_missing_type(self):
-        """Test disabling push notifications without specifying type."""
+    def test_enable_push_notification_missing_type(self):
+        """Test enabling push notifications without specifying type."""
         response = self.client.delete(self.url, headers=self.headers_with_device_id)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

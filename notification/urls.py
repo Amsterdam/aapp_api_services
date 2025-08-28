@@ -45,22 +45,22 @@ urlpatterns = [
     ),
     path(
         BASE_PATH + "/device/disabled_push_type",
-        device_views.NotificationPushEnabledView.as_view(),
+        device_views.NotificationPushTypeDisabledView.as_view(),
         name="notification-device-push-type-disabled",
     ),
     path(
         BASE_PATH + "/device/disabled_push_types",
-        device_views.NotificationPushEnabledListView.as_view(),
+        device_views.NotificationPushTypeDisabledListView.as_view(),
         name="notification-device-push-type-disabled-list",
     ),
     path(
         BASE_PATH + "/device/disabled_push_module",
-        device_views.NotificationPushModuleEnabledView.as_view(),
+        device_views.NotificationPushModuleDisabledView.as_view(),
         name="notification-device-push-module-disabled",
     ),
     path(
         BASE_PATH + "/device/disabled_push_modules",
-        device_views.NotificationPushModuleEnabledListView.as_view(),
+        device_views.NotificationPushModuleDisabledListView.as_view(),
         name="notification-device-push-module-disabled-list",
     ),
     path(
