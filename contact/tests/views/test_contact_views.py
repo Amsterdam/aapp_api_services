@@ -5,7 +5,7 @@ import requests
 from django.test.utils import override_settings
 from django.urls import reverse
 
-from contact.models import (
+from contact.models.contact_models import (
     CityOffice,
     CityOfficeOpeningHours,
     OpeningHoursException,

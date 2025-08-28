@@ -11,7 +11,7 @@ from contact.exceptions import (
     FailedDependencyException,
     WaitingTimeSourceAvailabilityException,
 )
-from contact.models import CityOffice
+from contact.models.contact_models import CityOffice
 from contact.serializers.contact_serializers import CityOfficeResultSerializer
 from contact.serializers.waiting_time_serializers import WaitingTimeResultSerializer
 

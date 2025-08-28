@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from model_bakery import baker
 
-from contact.models import (
+from contact.models.contact_models import (
     CityOfficeOpeningHours,
     OpeningHoursException,
     RegularOpeningHours,

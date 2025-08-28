@@ -1,10 +1,8 @@
 from django import forms
 from django.contrib import admin
-from django.contrib.auth.models import Group, User
 from django.db.models import Case, F, IntegerField, Value, When
 
-from contact.models import (
-    CityOfficeOpeningHours,
+from contact.models.contact_models import (
     OpeningHoursException,
     RegularOpeningHours,
     WeekDay,
@@ -14,10 +12,6 @@ OPENING_TIME_WIDGET = {
     "opens_time": forms.TimeInput(format="%H:%M", attrs={"type": "time"}),
     "closes_time": forms.TimeInput(format="%H:%M", attrs={"type": "time"}),
 }
-
-admin.site.site_header = "Amsterdam App Admin"
-admin.site.site_title = "Amsterdam App"
-admin.site.index_title = "Openingstijden Admin"
 
 
 class OpeningHourExceptionsAdmin(admin.ModelAdmin):
@@ -190,11 +184,3 @@ class CityOfficeOpeningHoursAdmin(admin.ModelAdmin):
         return self.create_hours_string(obj, WeekDay.SUNDAY)
 
     get_sunday.short_description = WeekDay.SUNDAY.label
-
-
-admin.site.register(CityOfficeOpeningHours, CityOfficeOpeningHoursAdmin)
-admin.site.register(RegularOpeningHours, RegularOpeningHoursAdmin)
-admin.site.register(OpeningHoursException, OpeningHourExceptionsAdmin)
-admin.site.unregister(RegularOpeningHours)
-admin.site.unregister(User)
-admin.site.unregister(Group)
