@@ -5,9 +5,14 @@ from django.test import TransactionTestCase
 from model_bakery import baker
 
 from notification.models import Device, Notification, ScheduledNotification
+from notification.utils.patch_utils import apply_init_firebase_patches
 
 
 class UpdateScheduledNotificationsTest(TransactionTestCase):
+    def setUp(self):
+        super().setUp()
+        self.firebase_paths = apply_init_firebase_patches()
+
     def test_push_scheduled_notification(self):
         scheduled_date = datetime.now() - timedelta(days=1)
         devices = baker.make(Device, _quantity=2)

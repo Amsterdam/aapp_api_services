@@ -18,7 +18,7 @@ class Command(BaseCommand):
         self.drop_old_notifications(start_date)
 
     def drop_old_notifications(self, start_date):
-        query = f"SELECT drop_chunks('{TABLE_NAME}', older_than => '{start_date}');"
+        query = f"DELETE FROM {TABLE_NAME} WHERE created_at <= '{start_date}';"
         with connection.cursor() as cursor:
             cursor.execute(query)
-        logger.info(f"Deleted old partitions of {TABLE_NAME}")
+        logger.info(f"Deleted old records of {TABLE_NAME}")
