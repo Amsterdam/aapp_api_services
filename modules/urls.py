@@ -15,4 +15,4 @@ urlpatterns = [
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH)
-urlpatterns += get_admin_paths(BASE_PATH_ADMIN)
+urlpatterns += get_admin_paths(BASE_PATH_ADMIN, enable_oidc=False)

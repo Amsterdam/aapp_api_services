@@ -105,13 +105,16 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    "core.authentication.OIDCAuthenticationBackend",
+    "django.contrib.auth.backends.ModelBackend",
+    # "core.authentication.OIDCAuthenticationBackend",
 ]
 
 ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
 
 ENTRA_TENANT_ID = os.getenv("TENANT_ID", "72fca1b1-2c2e-4376-a445-294d80196804")
 ENTRA_CLIENT_ID = os.getenv("CLIENT_ID")
+
+ENTRA_TOKEN_COOKIE_NAME = "__Host-Access-Token"
 
 # Required by mozilla_django_oidc
 OIDC_BASE_URL = os.getenv(

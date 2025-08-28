@@ -125,6 +125,62 @@ class EntraTokenMixin:
             return False, {"error": "Error validating token"}
 
 
+class EntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
+    def authenticate(self, request):
+        token = self._read_token_from_cookies(request.COOKIES)
+        if not token:
+            raise AuthenticationFailed("Cookie not found")
+
+        token_data = self.validate_token(token)
+
+        user = self._create_user(token_data)
+
+        if token_data.get("roles"):
+            self._update_user_groups(user, token_data)
+
+        return (user, token_data)
+
+    def _create_user(self, token_data: dict):
+        token_data_email = token_data.get("upn")
+        user, created = User.objects.update_or_create(
+            username=token_data_email,
+            email=token_data_email,
+            first_name=token_data.get("given_name"),
+            last_name=token_data.get("family_name"),
+            defaults={
+                "is_staff": True,
+                "is_superuser": True,
+            },
+        )
+        if created:
+            logger.info(f"User created: {user}")
+
+        return user
+
+    @transaction.atomic
+    def _update_user_groups(self, user: User, token_data: dict):
+        user.groups.clear()
+        for group_name in token_data.get("roles", []):
+            group, _ = Group.objects.get_or_create(name=group_name)
+            user.groups.add(group)
+
+    def _read_token_from_cookies(self, cookies) -> str | None:
+        base = settings.ENTRA_TOKEN_COOKIE_NAME
+        if base in cookies:  # old single-cookie path
+            return cookies[base]
+
+        # gather & sort chunks: AccessToken.0, AccessToken.1, …
+        chunks = {
+            int(k.split(".")[-1]): v
+            for k, v in cookies.items()
+            if k.startswith(f"{base}.")
+        }
+        if not chunks:
+            return None
+
+        return "".join(v for _, v in sorted(chunks.items()))
+
+
 class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend):
     def create_user(self, claims):
         """Return object for a newly created user account."""

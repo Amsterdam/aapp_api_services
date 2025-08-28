@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from core.authentication import (
     AbstractAppAuthentication,
     APIKeyAuthentication,
+    EntraCookieTokenAuthentication,
     EntraTokenMixin,
     OIDCAuthenticationBackend,
 )
@@ -183,6 +184,108 @@ class TestEntraTokenMixin(APITestCase):
         )
 
 
+class DummyCookieView(APIView):
+    authentication_classes = [EntraCookieTokenAuthentication]
+
+    def get(self, request):
+        return Response("ok", status=200)
+
+
+class TestEntraCookieTokenAuthentication(APITestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.factory = APIRequestFactory()
+        self.signing_key_patcher = apply_signing_key_patch(self)
+
+    def tearDown(self):
+        self.signing_key_patcher.stop()
+
+    def test_successful_authentication(self):
+        token = create_jwt_token(
+            email="test@test.com", first_name="Test", last_name="Test"
+        )
+        headers = {"Cookie": f"{settings.ENTRA_TOKEN_COOKIE_NAME}={token}"}
+
+        request = self.factory.get("/", headers=headers)
+        response = DummyCookieView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, "ok")
+
+    def test_successful_authentication_cookie_chunks(self):
+        token = create_jwt_token(
+            email="test@test.com", first_name="Test", last_name="Test"
+        )
+        # Simulate cookie being split into chunks
+        token_chunks = [token[i : i + 100] for i in range(0, len(token), 100)]
+        token = "; ".join(
+            [
+                f"{settings.ENTRA_TOKEN_COOKIE_NAME}.{i}={chunk}"
+                for i, chunk in enumerate(token_chunks)
+            ]
+        )
+        headers = {"Cookie": token}
+
+        request = self.factory.get("/", headers=headers)
+        response = DummyCookieView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, "ok")
+
+    def test_missing_cookie(self):
+        request = self.factory.get("/")
+        response = DummyCookieView.as_view()(request)
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(response, "Cookie not found", status_code=403)
+
+    def test_superuser_is_created_if_not_exists(self):
+        token = create_jwt_token(
+            email="test@test.com", first_name="Foo", last_name="Bar"
+        )
+        headers = {"Cookie": f"{settings.ENTRA_TOKEN_COOKIE_NAME}={token}"}
+        request = self.factory.get("/", headers=headers)
+        response = DummyCookieView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, "ok")
+        self.assertEqual(User.objects.count(), 1)
+        self.assertTrue(User.objects.first().is_superuser)
+        self.assertEqual(User.objects.first().email, "test@test.com")
+        self.assertEqual(User.objects.first().username, "test@test.com")
+        self.assertEqual(User.objects.first().first_name, "Foo")
+        self.assertEqual(User.objects.first().last_name, "Bar")
+
+    def test_groups_are_added_to_user(self):
+        email = "test@test.com"
+
+        def get_token(roles):
+            return create_jwt_token(
+                email=email, first_name="Test", last_name="Test", roles=roles
+            )
+
+        def make_request(token):
+            headers = {"Cookie": f"{settings.ENTRA_TOKEN_COOKIE_NAME}={token}"}
+            request = self.factory.get("/", headers=headers)
+            response = DummyCookieView.as_view()(request)
+            self.assertEqual(response.status_code, 200)
+
+        def assert_user_has_groups(groups):
+            user = User.objects.get(email=email)
+            self.assertEqual([group.name for group in user.groups.all()], groups)
+
+        # First user has one group
+        roles = ["group1"]
+        make_request(get_token(roles))
+        assert_user_has_groups(roles)
+
+        # Then same user has extra group
+        roles.append("group2")
+        make_request(get_token(roles))
+        assert_user_has_groups(roles)
+
+        # Then user loses first group
+        roles.remove("group1")
+        make_request(get_token(roles))
+        assert_user_has_groups(roles)
+
+
 class TestOIDCAuthenticationBackend(TestCase):
     def setUp(self):
         self.backend = OIDCAuthenticationBackend()
@@ -285,7 +388,7 @@ class TestOIDCAuthenticationBackend(TestCase):
         self.assertRaises(IntegrityError, self.backend.create_user, minimal_claims)
 
     @patch("core.authentication.default_username_algo")
-    def test_update_user_groups_clears_existing_groups(self, mock_algo):
+    def test_update_user_groups_clears_existing_groups(self, _):
         """Test that _update_user_groups clears existing groups before adding new ones"""
         user = User.objects.create_user(
             username="test.user@amsterdam.nl", email="test.user@amsterdam.nl"
@@ -301,7 +404,7 @@ class TestOIDCAuthenticationBackend(TestCase):
         self.assertEqual(user.groups.first().name, "new-role")
 
     @patch("core.authentication.default_username_algo")
-    def test_update_user_groups_creates_groups_if_not_exist(self, mock_algo):
+    def test_update_user_groups_creates_groups_if_not_exist(self, _):
         """Test that _update_user_groups creates groups if they don't exist"""
         user = User.objects.create_user(
             username="test.user@amsterdam.nl", email="test.user@amsterdam.nl"
@@ -320,9 +423,7 @@ class TestOIDCAuthenticationBackend(TestCase):
 
     @patch("core.authentication.default_username_algo")
     @patch("core.authentication.Group.objects.get_or_create")
-    def test_update_user_groups_transaction_rollback(
-        self, mock_algo, mock_get_or_create
-    ):
+    def test_update_user_groups_transaction_rollback(self, _, mock_get_or_create):
         """Test that _update_user_groups uses transaction and can rollback on error"""
         user = User.objects.create_user(
             username="test.user@amsterdam.nl", email="test.user@amsterdam.nl"

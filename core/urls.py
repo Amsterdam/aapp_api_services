@@ -38,7 +38,6 @@ def get_swagger_paths(base_path):
 def get_admin_paths(
     base_path_admin,
     enable_oidc=True,
-    admin_login_view=admin_views.AdminLoginView,
 ):  # pragma: no cover
     service_name = base_path_admin.split("/")[0]
     urlpatterns = []
@@ -63,7 +62,7 @@ def get_admin_paths(
         urlpatterns += [
             path(
                 base_path_admin + "/login/",
-                admin_login_view.as_view(),
+                admin_views.AdminLoginView.as_view(),
                 name=f"{service_name}-admin-login",
             ),
         ]
