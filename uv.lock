@@ -1,4 +1,4 @@
-# Generated: 2025-08-26T09:37:29Z
+# Generated: 2025-08-29T13:28:19Z
 version = 1
 revision = 1
 requires-python = "==3.11.*"
@@ -160,9 +160,9 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mozilla-django-oidc" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/27/29/7cc997730e4ccacd6a0852575aeecab89de9fb863c9d531d3e3f242f2430/amsterdam_django_oidc-0.2.0.tar.gz", hash = "sha256:f8acb51479ae6ae46801b74547122a4baee6f357f93bf1a0e82fe4b17a38939b", size = 8185, upload-time = "2025-02-27T07:36:24.944Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/27/29/7cc997730e4ccacd6a0852575aeecab89de9fb863c9d531d3e3f242f2430/amsterdam_django_oidc-0.2.0.tar.gz", hash = "sha256:f8acb51479ae6ae46801b74547122a4baee6f357f93bf1a0e82fe4b17a38939b", size = 8185 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1a/84/86f64fb1a40d0205603a9ebba0eb72e257f37b7425246acc2740a3601b39/amsterdam_django_oidc-0.2.0-py3-none-any.whl", hash = "sha256:cb3406565882d30eeb41d06a99ad93fea6f03052d3bea593b1b0e77a8b8e5aaa", size = 9118, upload-time = "2025-02-27T07:36:23.02Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/84/86f64fb1a40d0205603a9ebba0eb72e257f37b7425246acc2740a3601b39/amsterdam_django_oidc-0.2.0-py3-none-any.whl", hash = "sha256:cb3406565882d30eeb41d06a99ad93fea6f03052d3bea593b1b0e77a8b8e5aaa", size = 9118 },
 ]
 
 [[package]]
@@ -942,9 +942,9 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9d/19/4ebe24c42c341c5868dff072b78d503fc1b0725d88ea619d2db68f5624a9/josepy-2.1.0.tar.gz", hash = "sha256:9beafbaa107ec7128e6c21d86b2bc2aea2f590158e50aca972dca3753046091f", size = 56189, upload-time = "2025-07-08T17:20:54.98Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9d/19/4ebe24c42c341c5868dff072b78d503fc1b0725d88ea619d2db68f5624a9/josepy-2.1.0.tar.gz", hash = "sha256:9beafbaa107ec7128e6c21d86b2bc2aea2f590158e50aca972dca3753046091f", size = 56189 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/47/0e/e248f059986e376b87e546cd840d244370b9f7ef2b336456f0c2cfb2fef0/josepy-2.1.0-py3-none-any.whl", hash = "sha256:0eadf09b96821bdae9a8b14145425cb9fe0bbee64c6fdfce3ccd4ceb7d7efbbd", size = 29065, upload-time = "2025-07-08T17:20:53.504Z" },
+    { url = "https://files.pythonhosted.org/packages/47/0e/e248f059986e376b87e546cd840d244370b9f7ef2b336456f0c2cfb2fef0/josepy-2.1.0-py3-none-any.whl", hash = "sha256:0eadf09b96821bdae9a8b14145425cb9fe0bbee64c6fdfce3ccd4ceb7d7efbbd", size = 29065 },
 ]
 
 [[package]]
@@ -996,9 +996,9 @@ dependencies = [
     { name = "josepy" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/90/f9/1ca554a62bf8a4fd31b68209df8603075c2b7436400ea3f7ddd597f204a5/mozilla-django-oidc-4.0.1.tar.gz", hash = "sha256:4ff8c64069e3e05c539cecf9345e73225a99641a25e13b7a5f933ec897b58918", size = 49027, upload-time = "2024-03-12T12:29:26.866Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/f9/1ca554a62bf8a4fd31b68209df8603075c2b7436400ea3f7ddd597f204a5/mozilla-django-oidc-4.0.1.tar.gz", hash = "sha256:4ff8c64069e3e05c539cecf9345e73225a99641a25e13b7a5f933ec897b58918", size = 49027 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ce/d6/2b75bf4e742c54028ae07a1fb5a2624e5a73e9cfd2185c2df0e22cbfe14e/mozilla_django_oidc-4.0.1-py2.py3-none-any.whl", hash = "sha256:04ef58759be69f22cdc402d082480aaebf193466cad385dc9e4f8df2a0b187ca", size = 29059, upload-time = "2024-03-12T12:29:24.978Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/d6/2b75bf4e742c54028ae07a1fb5a2624e5a73e9cfd2185c2df0e22cbfe14e/mozilla_django_oidc-4.0.1-py2.py3-none-any.whl", hash = "sha256:04ef58759be69f22cdc402d082480aaebf193466cad385dc9e4f8df2a0b187ca", size = 29059 },
 ]
 
 [[package]]

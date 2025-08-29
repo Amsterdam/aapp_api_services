@@ -125,6 +125,10 @@ send_mijnamsterdam_notifications: check-service
 	# Django command for the MijnAmsterdam service
 	$(manage) sendmijnamsterdamnotifications
 
+survey_mock_data: check-service
+	# Load mock data for the survey service
+	$(manage) surveymockdata
+
 spectacular: check-service
     # Generate OpenAPI schema
 	$(manage) spectacular --file /app/${SERVICE_NAME}/openapi-schema.yaml
@@ -157,3 +161,4 @@ shell: check-service
 superuser:
 	# Create a superuser for the Django app
 	$(manage) createsuperuser --username jeroen --email app@amsterdam.nl
+
