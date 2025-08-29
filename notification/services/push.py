@@ -19,11 +19,11 @@ class PushService:
         which we catch and then initialize the app.
         """
         try:
+            firebase_admin.get_app()
+        except ValueError:
+            # No app exists, initialize it
             creds = credentials.Certificate(json.loads(settings.FIREBASE_CREDENTIALS))
             firebase_admin.initialize_app(creds)
-        except ValueError:
-            # App already initialized, do nothing
-            pass
 
     def push(self, notifications: list[Notification]) -> int:
         """
