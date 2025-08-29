@@ -143,6 +143,21 @@ OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"prompt": "select_account"}
 OIDC_USE_NONCE = False
 OIDC_USE_PKCE = True
 
+### MONKEY PATCH
+# Add callback w/o trailing slash in mozilla_django_oidc
+# This is a workaround as long as the redirect uri is not updated in Entra
+import mozilla_django_oidc.urls  # noqa: E402
+from django.urls import path  # noqa: E402
+
+mozilla_django_oidc.urls.urlpatterns.append(
+    path(
+        "callback",
+        mozilla_django_oidc.views.OIDCAuthenticationCallbackView.as_view(),
+        name="oidc_authentication_callback",
+    ),  # noqa: E501, F541
+)
+### END OF MONKEY PATCH
+
 # Required by amsterdam_django_oidc
 OIDC_OP_ISSUER = os.getenv(
     "OIDC_OP_ISSUER", f"https://sts.windows.net/{ENTRA_TENANT_ID}/"
