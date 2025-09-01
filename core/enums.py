@@ -19,11 +19,11 @@ class Module(ChoicesEnum):
     @property
     def notification_description(self):
         descriptions = {
-            Module.CONSTRUCTION_WORK: "Nieuws van projecten die u volgt",
-            Module.PARKING: "Herinnering dat een parkeersessie afloopt of uw saldo bijna op is",
-            Module.WASTE: "Herinnering buitenzetten container en actuele meldingen (wijzigingen en vertragingen)",
-            Module.MIJN_AMS: "Blijf op de hoogte van uw aanvraag of klacht",
-            Module.CITY_PASS: "Over uw saldo, regelingen en tips",
+            Module.CONSTRUCTION_WORK: "Nieuws van projecten die u volgt.",
+            Module.PARKING: "Herinnering dat een parkeersessie afloopt of uw saldo bijna op is.",
+            Module.WASTE: "Herinnering buitenzetten container en actuele meldingen (wijzigingen en vertragingen).",
+            Module.MIJN_AMS: "Blijf op de hoogte van uw aanvragen of klachten.",
+            Module.CITY_PASS: "Over uw saldo, regelingen en tips.",
         }
         return descriptions[self]
 
