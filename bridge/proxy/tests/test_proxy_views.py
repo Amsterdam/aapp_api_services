@@ -9,6 +9,36 @@ from bridge.proxy.tests import mock_data
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
 
+class TestEgisProxyView(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("egis-proxy", args=["some/path"])
+
+    def test_proxy_view_get(self):
+        rsp_get = responses.get(
+            re.compile(settings.SSP_BASE_URL_V2 + "/some/path.*"),
+            json={"key": "value"},
+        )
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {"key": "value"})
+        self.assertEqual(rsp_get.call_count, 1)
+
+    def test_proxy_view_post(self):
+        rsp_post = responses.post(
+            re.compile(settings.SSP_BASE_URL_V2 + "/some/path.*"),
+            json={"key": "value"},
+        )
+        response = self.client.post(
+            self.url, {"param": "value"}, headers=self.api_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {"key": "value"})
+        self.assertEqual(rsp_post.call_count, 1)
+
+
 class BaseProxyViewTestCase(ResponsesActivatedAPITestCase):
     def assert_caching(self, request_body=None):
         # First call

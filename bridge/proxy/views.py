@@ -23,6 +23,46 @@ from core.utils.openapi_utils import extend_schema_for_api_key
 logger = logging.getLogger(__name__)
 
 
+class EgisProxyView(GenericAPIView):
+    http_method_names = ["get", "post", "patch", "delete"]
+
+    def get(self, r, *a, **k):
+        return self._forward(r, *a, **k)
+
+    def post(self, r, *a, **k):
+        return self._forward(r, *a, **k)
+
+    def patch(self, r, *a, **k):
+        return self._forward(r, *a, **k)
+
+    def delete(self, r, *a, **k):
+        return self._forward(r, *a, **k)
+
+    def _forward(self, request, path):
+        base_url = settings.SSP_BASE_URL_V2
+        url = f"{base_url.rstrip('/')}/{path.lstrip('/')}"
+        params = [
+            (k, v) for k, vs in request.query_params.lists() if k != "url" for v in vs
+        ]
+        headers = {
+            k: v
+            for k, v in request.headers.items()
+            if k.lower() not in {"host", "content-length"}
+        }
+        data = request.body if request.method in {"POST", "PATCH", "DELETE"} else None
+        r = requests.request(
+            request.method,
+            url,
+            params=params,
+            headers=headers,
+            data=data,
+            allow_redirects=True,
+            timeout=30,
+        )
+        resp = Response(r.json(), status=r.status_code)
+        return resp
+
+
 @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
 class WasteGuideView(GenericAPIView):
     authentication_classes = []
