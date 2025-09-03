@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import extend_schema
+from requests import JSONDecodeError
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 
@@ -47,7 +48,7 @@ class EgisProxyView(GenericAPIView):
         headers = {
             k: v
             for k, v in request.headers.items()
-            if k.lower() not in {"host", "content-length"}
+            if k.lower() not in {"host", "content-length", "x-api-key"}
         }
         data = request.body if request.method in {"POST", "PATCH", "DELETE"} else None
         r = requests.request(
@@ -59,7 +60,11 @@ class EgisProxyView(GenericAPIView):
             allow_redirects=True,
             timeout=30,
         )
-        resp = Response(r.json(), status=r.status_code)
+        try:
+            content = r.json()
+        except JSONDecodeError:
+            content = r.content
+        resp = Response(content, status=r.status_code)
         return resp
 
 
