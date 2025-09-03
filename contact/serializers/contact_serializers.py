@@ -31,7 +31,7 @@ class ExceptionOpeningHoursSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OpeningHoursException
-        fields = ("date", "opening", "closing")
+        fields = ("date", "opening", "closing", "description")
 
 
 class OpeningHoursSerializer(serializers.Serializer):

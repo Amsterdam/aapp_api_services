@@ -39,7 +39,7 @@ class OpeningHourExceptionsAdmin(admin.ModelAdmin):
             return obj.description
         return obj.date.strftime("%d-%m-%Y")
 
-    get_description.short_description = "Rede"
+    get_description.short_description = "Reden"
 
     def get_date(self, obj):
         return obj.date.strftime("%d-%m-%Y")

@@ -110,7 +110,7 @@ class OpeningHoursException(OpeningHourAbstract):
         max_length=200,
         blank=True,
         null=True,
-        verbose_name="Rede van de uitzondering",
+        verbose_name="Reden van de uitzondering",
     )
     date = models.DateField(verbose_name="Datum")
     affected_offices = models.ManyToManyField(

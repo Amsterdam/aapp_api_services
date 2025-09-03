@@ -57,6 +57,7 @@ class BaseContactTestCase(BasicAPITestCase):
             date=datetime.date.today(),
             opens_time="10:00",
             closes_time="16:00",
+            description="Test exception",
         )
         exception.affected_offices.add(self.city_office)
 
@@ -119,6 +120,7 @@ class TestCityOfficeView(BaseContactTestCase):
         self.assertEqual(exception["date"], datetime.date.today().isoformat())
         self.assertEqual(exception["opening"], {"hours": 10, "minutes": 0})
         self.assertEqual(exception["closing"], {"hours": 16, "minutes": 0})
+        self.assertEqual(exception["description"], "Test exception")
 
     def test_get_city_offices_empty(self):
         # Remove existing data
