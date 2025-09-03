@@ -173,9 +173,15 @@ class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
         data = {"notification_type": self.valid_notification_type}
         response = self.client.post(self.url, data, headers=headers)
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertContains(
-            response, "No Device matches the given query", status_code=404
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["notification_type"], self.valid_notification_type
+        )
+        self.assertTrue(
+            NotificationPushTypeDisabled.objects.filter(
+                device__external_id="non-existent-device",
+                notification_type=self.valid_notification_type,
+            ).exists()
         )
 
     def test_enable_push_notification_success(self):

@@ -88,7 +88,7 @@ class NotificationPushTypeDisabledView(DeviceIdMixin, generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        device = get_object_or_404(Device, external_id=self.device_id)
+        device = get_or_create_device(self.device_id)
         config, _ = NotificationPushTypeDisabled.objects.get_or_create(
             device=device,
             notification_type=serializer.validated_data["notification_type"],
@@ -156,7 +156,7 @@ class NotificationPushModuleDisabledView(DeviceIdMixin, generics.GenericAPIView)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        device = get_object_or_404(Device, external_id=self.device_id)
+        device = get_or_create_device(self.device_id)
         config, _ = NotificationPushModuleDisabled.objects.get_or_create(
             device=device,
             module_slug=serializer.validated_data["module_slug"],
@@ -204,3 +204,11 @@ class NotificationPushModuleDisabledListView(DeviceIdMixin, generics.ListAPIView
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+def get_or_create_device(device_id):
+    existing_device = Device.objects.filter(external_id=device_id).first()
+    if not existing_device:
+        return Device.objects.create(external_id=device_id)
+    else:
+        return existing_device
