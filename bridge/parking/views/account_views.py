@@ -55,6 +55,7 @@ class ParkingAccountLoginView(BaseSSPView):
         extended_data = {
             **ssp_response.data,
             "access_token_expiration": datetime.fromtimestamp(decoded_jwt["exp"]),
+            "version": 1,
         }
         extended_response = AccountLoginResponseExtendedSerializer(extended_data)
 

@@ -23,6 +23,7 @@ class AccountLoginResponseSerializer(CamelToSnakeCaseSerializer):
 
 class AccountLoginResponseExtendedSerializer(AccountLoginResponseSerializer):
     access_token_expiration = serializers.DateTimeField()
+    version = serializers.ChoiceField(choices=[1, 2])
 
 
 class PinCodeRequestSerializer(SnakeToCamelCaseSerializer):
