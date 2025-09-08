@@ -117,6 +117,7 @@ class NotificationCRUD:
         for c in device_list:
             new_notification: Notification = copy.copy(self.source_notification)
             new_notification.device = c
+            new_notification.device_external_id = c.external_id
             if c in self.devices_for_push and self.push_service:
                 new_notification.pushed_at = timezone.now()
                 with_push.append(new_notification)
