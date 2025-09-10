@@ -3,6 +3,7 @@ import re
 import time
 
 from django.db import OperationalError
+from psycopg2 import OperationalError as PsycopgOperationalError
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class DatabaseRetryMiddleware:
             try:
                 response = self.get_response(request)
                 return response
-            except OperationalError as e:
+            except (OperationalError, PsycopgOperationalError) as e:
                 exception_message = str(e)
                 if self.error_pattern.search(exception_message):
                     if retry_count < self.max_retries:
