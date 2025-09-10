@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class EgisProxyView(GenericAPIView):
     http_method_names = ["get", "post", "patch", "delete"]
+    base_url = settings.SSP_BASE_URL_V2
 
     def get(self, r, *a, **k):
         return self._forward(r, *a, **k)
@@ -40,8 +41,7 @@ class EgisProxyView(GenericAPIView):
         return self._forward(r, *a, **k)
 
     def _forward(self, request, path):
-        base_url = settings.SSP_BASE_URL_V2
-        url = f"{base_url.rstrip('/')}/{path.lstrip('/')}"
+        url = f"{self.base_url.rstrip('/')}/{path.lstrip('/')}"
         params = [
             (k, v) for k, vs in request.query_params.lists() if k != "url" for v in vs
         ]
@@ -66,6 +66,10 @@ class EgisProxyView(GenericAPIView):
             content = r.content
         resp = Response(content, status=r.status_code)
         return resp
+
+
+class EgisProxyExternalView(EgisProxyView):
+    base_url = settings.SSP_BASE_URL_EXTERNAL
 
 
 @method_decorator(cache_page(60 * 60 * 24), name="dispatch")

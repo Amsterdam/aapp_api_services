@@ -4,6 +4,7 @@ from bridge.proxy.views import (
     AddressSearchByCoordinateView,
     AddressSearchByNameView,
     AddressSearchView,
+    EgisProxyExternalView,
     EgisProxyView,
     PollingStationsView,
     WasteGuideView,
@@ -15,6 +16,11 @@ urlpatterns = [
         "parking/api/v1/egis-proxy/<path:path>",
         EgisProxyView.as_view(),
         name="egis-proxy",
+    ),
+    path(
+        "parking/api/v1/egis-ext-proxy/<path:path>",
+        EgisProxyExternalView.as_view(),
+        name="egis-ext-proxy",
     ),
     # afvalwijzer
     path(

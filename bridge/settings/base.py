@@ -37,6 +37,9 @@ SSP_BASE_URL = os.getenv("SSP_BASE_URL", "https://evs-ssp-accp.mendixcloud.com")
 SSP_BASE_URL_V2 = os.getenv(
     "SSP_BASE_URL_V2", "https://api-dev01-ams-fo.egis-group.dev"
 )
+SSP_BASE_URL_EXTERNAL = os.getenv(
+    "SSP_BASE_URL_EXTERNAL", "https://api-dev01-ams-rest.egis-group.dev"
+)
 SSP_ACCESS_TOKEN_HEADER = "SSP-Access-Token"
 SSP_GEOJSON_URL = os.getenv(
     "SSP_GEOJSON_URL", "https://api.staging01.ams.rest.geodeci.fr/api/v1/common/zone/"
