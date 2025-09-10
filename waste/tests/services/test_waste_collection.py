@@ -60,6 +60,8 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerButtontekst": self.paper_button_text,
                 "afvalwijzerUrl": self.paper_url,
                 "afvalwijzerWaar": self.paper_where,
+                "gebruiksdoelWoonfunctie": True,
+                "afvalwijzerBasisroutetypeCode": "",
             },
             {
                 "afvalwijzerOphaaldagen": self.gft_days,
@@ -76,6 +78,8 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerButtontekst": self.gft_button_text,
                 "afvalwijzerUrl": self.gft_url,
                 "afvalwijzerWaar": self.gft_where,
+                "gebruiksdoelWoonfunctie": True,
+                "afvalwijzerBasisroutetypeCode": "",
             },
         ]
 
@@ -177,6 +181,7 @@ class WasteCollectionServiceTest(TestCase):
                     "url": self.paper_url,
                     "frequency": self.paper_frequency,
                     "next_date": date(year=2025, month=3, day=31),
+                    "is_collection_by_appointment": False,
                 },
                 {
                     "label": self.gft_label,
@@ -191,6 +196,7 @@ class WasteCollectionServiceTest(TestCase):
                     "url": self.gft_url,
                     "frequency": self.gft_frequency,
                     "next_date": date(year=2025, month=4, day=1),
+                    "is_collection_by_appointment": False,
                 },
             ],
         )
@@ -212,6 +218,8 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerButtontekst": "Test",
                 "afvalwijzerUrl": "https://test.nl",
                 "afvalwijzerWaar": "Test",
+                "gebruiksdoelWoonfunctie": True,
+                "afvalwijzerBasisroutetypeCode": "",
             },
             {
                 "afvalwijzerOphaaldagen": "dinsdag",
@@ -227,6 +235,8 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerButtontekst": "Test",
                 "afvalwijzerUrl": "https://test.nl",
                 "afvalwijzerWaar": "Test",
+                "gebruiksdoelWoonfunctie": True,
+                "afvalwijzerBasisroutetypeCode": "",
             },
         ]
         self.set_validated_mock_data(waste_guide)
@@ -279,6 +289,8 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerButtontekst": "Test",
                 "afvalwijzerUrl": "https://test.nl",
                 "afvalwijzerWaar": "Test",
+                "gebruiksdoelWoonfunctie": True,
+                "afvalwijzerBasisroutetypeCode": "",
             }
         ]
         self.set_validated_mock_data(waste_guide)

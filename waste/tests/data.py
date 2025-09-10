@@ -18,6 +18,8 @@ AFVALWIJZER_DATA_MINIMAL = {
                 "afvalwijzerButtontekst": "Test",
                 "afvalwijzerUrl": "https://test.nl",
                 "afvalwijzerWaar": "Test",
+                "gebruiksdoelWoonfunctie": True,
+                "afvalwijzerBasisroutetypeCode": None,
             },
             {
                 "afvalwijzerPerXWeken": "1",
@@ -37,6 +39,8 @@ AFVALWIJZER_DATA_MINIMAL = {
                 "afvalwijzerButtontekst": "Test",
                 "afvalwijzerUrl": "https://test.nl",
                 "afvalwijzerWaar": "Test",
+                "gebruiksdoelWoonfunctie": True,
+                "afvalwijzerBasisroutetypeCode": None,
             },
         ]
     }

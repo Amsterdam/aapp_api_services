@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import requests
 from django.conf import settings
 
+from waste.constants import WASTE_TYPES_ORDER
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
 
 
@@ -111,28 +112,44 @@ class WasteCollectionService:
         waste_types = []
         for item in self.validated_data:
             code = item.get("code")
-            waste_types.append(
-                {
-                    **{
-                        k: item.get(k)
-                        for k in [
-                            "label",
-                            "code",
-                            "curb_rules",
-                            "alert",
-                            "note",
-                            "days_array",
-                            "how",
-                            "where",
-                            "button_text",
-                            "url",
-                            "frequency",
-                        ]
-                    },
-                    "next_date": next_dates.get(code),
-                }
-            )
+            if item.get("active"):
+                waste_types.append(
+                    {
+                        **{
+                            k: item.get(k)
+                            for k in [
+                                "label",
+                                "code",
+                                "curb_rules",
+                                "alert",
+                                "note",
+                                "days_array",
+                                "how",
+                                "where",
+                                "button_text",
+                                "url",
+                                "frequency",
+                                "is_collection_by_appointment",
+                            ]
+                        },
+                        "next_date": next_dates.get(code),
+                    }
+                )
+        waste_types.sort(
+            key=lambda x: WASTE_TYPES_ORDER.index(x["code"])
+            if x["code"] in WASTE_TYPES_ORDER
+            else 999
+        )
         return waste_types
+
+    def get_is_residential(self):
+        return self.validated_data[0].get("is_residential")
+
+    def get_is_collection_by_appointment(self):
+        for item in self.validated_data:
+            if item.get("code") == "Rest":
+                return item.get("is_collection_by_appointment")
+        return False
 
     def _get_dates(self):
         now = datetime.now()

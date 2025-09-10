@@ -38,9 +38,16 @@ class WasteGuideView(APIView):
         calendar = waste_service.create_calendar()
         next_dates = waste_service.get_next_dates(calendar)
         waste_types = waste_service.get_waste_types(next_dates=next_dates)
+        is_residential = waste_service.get_is_residential()
+        is_collection_by_appointment = waste_service.get_is_collection_by_appointment()
 
         response_serializer = self.response_serializer_class(
-            data={"waste_types": waste_types, "calendar": calendar}
+            data={
+                "waste_types": waste_types,
+                "calendar": calendar,
+                "is_residential": is_residential,
+                "is_collection_by_appointment": is_collection_by_appointment,
+            }
         )
         response_serializer.is_valid(raise_exception=True)
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)
