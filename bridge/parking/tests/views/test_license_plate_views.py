@@ -40,6 +40,7 @@ class TestParkingLicensePlatesGetView(BaseSSPTestCase):
             {
                 "vehicle_id": x["vehicleId"],
                 "visitor_name": x["visitorName"],
+                "id": x["vehicleId"],
             }
             for x in mock_response_content
         ]
@@ -64,6 +65,7 @@ class TestParkingLicensePlatesGetView(BaseSSPTestCase):
         expected_response = [
             {
                 "vehicle_id": x["vehicleId"],
+                "id": x["vehicleId"],
             }
             for x in mock_response_content
         ]
@@ -92,6 +94,7 @@ class TestParkingLicensePlatesGetView(BaseSSPTestCase):
         expected_response = [
             {
                 "vehicle_id": x["vehicleId"],
+                "id": x["vehicleId"],
             }
             for x in mock_unexpected_response_content
         ]
@@ -146,6 +149,7 @@ class TestParkingLicensePlatesPostView(BaseSSPTestCase):
             "vehicle_id": mock_response_content["vehicleId"],
             "visitor_name": mock_response_content["visitorName"],
             "report_code": mock_response_content["reportCode"],
+            "id": mock_response_content["vehicleId"],
         }
         self.assertEqual(response.data, expected_response)
 

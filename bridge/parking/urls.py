@@ -85,4 +85,9 @@ urlpatterns = [
         transaction_views.TransactionsListView.as_view(),
         name="parking-transactions",
     ),
+    path(
+        "parking/api/v1/sessions/history",
+        transaction_views.TransactionsListView.as_view(),
+        name="parking-session-history",
+    ),
 ]
