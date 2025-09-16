@@ -1,15 +1,15 @@
 from django.core.management import BaseCommand
 from django.db import transaction
 
-from contact.models.survey_models import (
+from survey.models import (
     Choice,
     Condition,
     Question,
     Survey,
     SurveyVersion,
 )
-from contact.survey.definition import survey, survey_version_1
-from contact.survey.named_tuples import QuestionType
+from survey.named_tuples import QuestionType
+from survey.survey.definition import survey, survey_version_1
 
 
 class Command(BaseCommand):

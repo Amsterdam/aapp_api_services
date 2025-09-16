@@ -90,6 +90,7 @@ services:
       - ./modules:/app/modules
       - ./notification:/app/notification
       - ./waste:/app/waste
+      - ./survey:/app/survey
 
   openapi-diff:
     image: openapitools/openapi-diff:latest

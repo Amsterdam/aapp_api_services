@@ -5,8 +5,8 @@ from django.contrib.admin import TabularInline
 from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
 from django.utils import timezone
 
-from contact.admin.survey_version_admin import InlineForm
-from contact.models.survey_models import Choice, Condition, Question, SurveyVersionEntry
+from survey.admin.survey_version_admin import InlineForm
+from survey.models import Choice, Condition, Question, SurveyVersionEntry
 
 
 def question_is_locked(question):

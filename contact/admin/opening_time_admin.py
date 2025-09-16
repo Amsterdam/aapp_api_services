@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.db.models import Case, F, IntegerField, Value, When
 
-from contact.models.contact_models import (
+from contact.models import (
     OpeningHoursException,
     RegularOpeningHours,
     WeekDay,

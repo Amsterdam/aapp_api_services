@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import ManyToManyField
 
-from contact.survey.named_tuples import (
+from survey.named_tuples import (
     ConditionType,
     Orientation,
     QuestionType,

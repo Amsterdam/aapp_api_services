@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from contact.models.contact_models import (
+from contact.models import (
     CityOffice,
     OpeningHoursException,
     RegularOpeningHours,

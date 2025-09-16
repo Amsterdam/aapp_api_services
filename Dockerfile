@@ -67,3 +67,7 @@ COPY image /app/image
 ### Waste stages
 FROM core AS app-waste
 COPY waste /app/waste
+
+### Waste stages
+FROM core AS app-survey
+COPY survey /app/survey

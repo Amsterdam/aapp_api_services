@@ -7,7 +7,7 @@ from django.contrib import admin
 from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
 from django.utils import timezone
 
-from contact.models.survey_models import (
+from survey.models import (
     SurveyVersion,
     SurveyVersionEntry,
     SurveyVersionQuestion,

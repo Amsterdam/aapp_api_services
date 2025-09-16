@@ -3,7 +3,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.admin import TabularInline
 
-from contact.models.survey_models import Answer, SurveyVersionEntry
+from survey.models import Answer, SurveyVersionEntry
 
 
 class SurveyVersionEntryAdmin(SortableAdminBase, admin.ModelAdmin):

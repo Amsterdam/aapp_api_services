@@ -7,14 +7,14 @@ from rest_framework.generics import (
     get_object_or_404,
 )
 
-from contact.models.survey_models import Survey, SurveyVersion
-from contact.serializers.survey_serializers import (
+from core.utils.openapi_utils import extend_schema_for_api_key
+from survey.models import Survey, SurveyVersion
+from survey.serializers.survey_serializers import (
     SurveySerializer,
     SurveyVersionDetailSerializer,
     SurveyVersionEntrySerializer,
     SurveyVersionSerializer,
 )
-from core.utils.openapi_utils import extend_schema_for_api_key
 
 
 class SurveyView(ListAPIView):

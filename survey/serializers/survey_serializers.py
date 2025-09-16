@@ -1,7 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from contact.models.survey_models import (
+from survey.models import (
     Answer,
     Choice,
     Condition,

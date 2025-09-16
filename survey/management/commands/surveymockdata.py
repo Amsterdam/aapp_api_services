@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.core.management import BaseCommand
 from django.utils import timezone
 
-from contact.models.survey_models import (
+from survey.models import (
     Choice,
     Condition,
     Question,
@@ -11,7 +11,7 @@ from contact.models.survey_models import (
     SurveyVersion,
     SurveyVersionQuestion,
 )
-from contact.survey.named_tuples import ConditionType, QuestionType, TeamCode
+from survey.named_tuples import ConditionType, QuestionType, TeamCode
 
 
 class Command(BaseCommand):
