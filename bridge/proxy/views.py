@@ -94,7 +94,11 @@ class WasteGuideView(GenericAPIView):
 class PollingStationsView(GenericAPIView):
     def get(self, request):
         url = settings.POLLING_STATIONS_URL
-        response = requests.get(url, params=request.GET)
+        response = requests.get(
+            url,
+            params=request.GET,
+            auth=(settings.POLLING_STATIONS_USER, settings.POLLING_STATIONS_PW),
+        )
         return HttpResponse(
             response.content,
             status=response.status_code,
