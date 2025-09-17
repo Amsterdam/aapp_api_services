@@ -7,15 +7,10 @@ from survey.models import (
     Condition,
     Question,
     Survey,
+    SurveyConfiguration,
     SurveyVersion,
     SurveyVersionEntry,
 )
-
-
-class SurveySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Survey
-        exclude = ["id"]
 
 
 class SurveyVersionSerializer(serializers.ModelSerializer):
@@ -58,6 +53,30 @@ class SurveyVersionDetailSerializer(serializers.ModelSerializer):
         exclude = ["id", "survey"]
 
 
+class SurveySerializer(serializers.ModelSerializer):
+    latest_version = serializers.SerializerMethodField()
+
+    def get_latest_version(self, obj) -> str:
+        latest_version = obj.surveyversion_set.order_by("-version").first()
+        return (
+            SurveyVersionDetailSerializer(latest_version).data
+            if latest_version
+            else None
+        )
+
+    class Meta:
+        model = Survey
+        exclude = ["id"]
+
+
+class SurveyConfigResponseSerializer(serializers.ModelSerializer):
+    survey = SurveySerializer()
+
+    class Meta:
+        model = SurveyConfiguration
+        fields = "__all__"
+
+
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
@@ -79,3 +98,15 @@ class SurveyVersionEntrySerializer(serializers.ModelSerializer):
             [Answer(survey_version_entry=entry, **a) for a in answers]
         )
         return entry
+
+
+class SurveyVersionEntryListSerializer(serializers.ModelSerializer):
+    answers = AnswerSerializer(many=True)
+    survey_unique_code = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SurveyVersionEntry
+        fields = "__all__"
+
+    def get_survey_unique_code(self, obj) -> str:
+        return obj.survey_version.survey.unique_code

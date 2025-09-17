@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import ManyToManyField
 
@@ -18,6 +19,20 @@ class Survey(models.Model):
     description = models.TextField("Beschrijving", max_length=1000)
     unique_code = models.CharField("Unieke code", max_length=100, unique=True)
     team = models.CharField("Team", choices=TeamCode)
+
+    def __str__(self):
+        return self.title
+
+
+class SurveyConfiguration(models.Model):
+    class Meta:
+        verbose_name = "Vragenlijst configuratie"
+        verbose_name_plural = "Vragenlijst configuraties"
+
+    survey = models.ForeignKey(
+        Survey, on_delete=models.CASCADE, related_name="configuration"
+    )
+    location = models.CharField("Locatie", max_length=200, unique=True)
     fraction = models.FloatField(
         "Fractie",
         default=1.0,
@@ -34,8 +49,15 @@ class Survey(models.Model):
         help_text="Minimaal aantal acties dat een gebruiker moet hebben uitgevoerd voordat deze vragenlijst wordt aangeboden.",
     )
 
+    def clean(self):
+        super().clean()
+        if self.pk:
+            old = type(self).objects.filter(pk=self.pk).values("location").first()
+            if old and self.location != old["location"]:
+                raise ValidationError({"location": "Cannot change once set."})
+
     def __str__(self):
-        return self.title
+        return f"{self.location}: {self.survey.title}"
 
 
 class SurveyVersion(models.Model):
@@ -47,7 +69,9 @@ class SurveyVersion(models.Model):
 
     version = models.PositiveIntegerField("Versie")
     survey = models.ForeignKey(
-        Survey, verbose_name="Vragenlijst", on_delete=models.PROTECT
+        Survey,
+        verbose_name="Vragenlijst",
+        on_delete=models.PROTECT,
     )
     created_at = models.DateTimeField("Aangemaakt op", auto_now_add=True)
     active_from = models.DateTimeField("Actief vanaf", null=True)

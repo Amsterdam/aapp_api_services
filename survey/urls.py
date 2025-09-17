@@ -15,6 +15,11 @@ urlpatterns = [
         name="survey-surveys",
     ),
     path(
+        BASE_PATH + "/config/<str:location>",
+        views.SurveyConfigView.as_view(),
+        name="survey-config",
+    ),
+    path(
         BASE_PATH + "/surveys/<str:unique_code>/versions",
         views.SurveyVersionView.as_view(),
         name="survey-versions",
@@ -33,6 +38,11 @@ urlpatterns = [
         BASE_PATH + "/surveys/<str:unique_code>/versions/<str:version>/entries",
         views.SurveyVersionEntryView.as_view(),
         name="survey-version-entries",
+    ),
+    path(
+        BASE_PATH + "/surveys/entries",
+        views.SurveyVersionEntryListView.as_view(),
+        name="survey-entries-list",
     ),
     path(
         "survey/admin/login/",
