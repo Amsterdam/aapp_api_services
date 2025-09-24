@@ -30,9 +30,9 @@ urlpatterns = [
     ),
     # election locations
     path(
-        "polling-stations/api/v1/locations",
+        "elections/api/v1/polling-stations",
         PollingStationsView.as_view(),
-        name="polling-stations",
+        name="elections-polling-stations",
     ),
     # address search
     path(
