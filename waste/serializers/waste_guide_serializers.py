@@ -36,7 +36,7 @@ class WasteDataSerializer(serializers.Serializer):
     )
     afvalwijzerButtontekst = serializers.CharField(allow_null=True, allow_blank=True)
     afvalwijzerInstructie2 = serializers.CharField(allow_null=True, allow_blank=True)
-    afvalwijzerOphaaldagen = serializers.CharField(allow_null=True, allow_blank=True)
+    afvalwijzerOphaaldagen2 = serializers.CharField(allow_null=True, allow_blank=True)
     afvalwijzerOphaaldagen2Array = serializers.ListField(
         child=serializers.CharField(), allow_null=True, required=False
     )
@@ -72,7 +72,7 @@ class WasteDataSerializer(serializers.Serializer):
                 "afvalwijzerBasisroutetypeCode"
             )
             == WASTE_COLLECTION_BY_APPOINTMENT_CODE,
-            "days": _convert("afvalwijzerOphaaldagen"),
+            "days": _convert("afvalwijzerOphaaldagen2"),
             "days_array": _convert("afvalwijzerOphaaldagen2Array"),
             "url": _convert("afvalwijzerUrl"),
             "where": _convert("afvalwijzerWaar"),

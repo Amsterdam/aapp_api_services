@@ -46,7 +46,7 @@ class WasteCollectionServiceTest(TestCase):
 
         self.default_waste_guide = [
             {
-                "afvalwijzerOphaaldagen": self.paper_days,
+                "afvalwijzerOphaaldagen2": self.paper_days,
                 "afvalwijzerOphaaldagen2Array": self.paper_days_array,
                 "afvalwijzerFractieNaam": self.paper_label,
                 "afvalwijzerFractieCode": self.paper_code,
@@ -64,7 +64,7 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerBasisroutetypeCode": "",
             },
             {
-                "afvalwijzerOphaaldagen": self.gft_days,
+                "afvalwijzerOphaaldagen2": self.gft_days,
                 "afvalwijzerOphaaldagen2Array": self.gft_days_array,
                 "afvalwijzerFractieNaam": self.gft_label,
                 "afvalwijzerFractieCode": self.gft_code,
@@ -205,7 +205,7 @@ class WasteCollectionServiceTest(TestCase):
     def test_calendar_even_oneven_weesp(self):
         waste_guide = [
             {
-                "afvalwijzerOphaaldagen": "maandag",
+                "afvalwijzerOphaaldagen2": "maandag",
                 "afvalwijzerFractieNaam": self.paper_label,
                 "afvalwijzerFractieCode": self.paper_code,
                 "afvalwijzerBuitenzetten": self.paper_curb_rules,
@@ -222,7 +222,7 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerBasisroutetypeCode": "",
             },
             {
-                "afvalwijzerOphaaldagen": "dinsdag",
+                "afvalwijzerOphaaldagen2": "dinsdag",
                 "afvalwijzerFractieNaam": self.gft_label,
                 "afvalwijzerFractieCode": self.gft_code,
                 "afvalwijzerBuitenzetten": self.gft_curb_rules,
@@ -276,7 +276,7 @@ class WasteCollectionServiceTest(TestCase):
     def test_calendar_specific_dates_weesp(self):
         waste_guide = [
             {
-                "afvalwijzerOphaaldagen": "vrijdag",
+                "afvalwijzerOphaaldagen2": "vrijdag",
                 "afvalwijzerFractieNaam": self.paper_label,
                 "afvalwijzerFractieCode": self.paper_code,
                 "afvalwijzerBuitenzetten": self.paper_curb_rules,
