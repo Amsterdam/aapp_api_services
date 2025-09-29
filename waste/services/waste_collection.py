@@ -32,31 +32,32 @@ class WasteCollectionService:
     def create_calendar(self):
         calendar = []
         for item in self.validated_data:
-            dates = self.filter_ophaaldagen(ophaaldagen=item.get("days"))
-            frequency = item.get("frequency") or ""
-            if "oneven" in frequency:
-                dates = self.filter_even_oneven(dates, even=False)
-            elif "even" in frequency:
-                dates = self.filter_even_oneven(dates, even=True)
-            elif "/" in frequency:
-                dates = self.filter_specific_dates(dates, frequency)
+            if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
+                dates = self.filter_ophaaldagen(ophaaldagen=item.get("days"))
+                frequency = item.get("frequency") or ""
+                if "oneven" in frequency:
+                    dates = self.filter_even_oneven(dates, even=False)
+                elif "even" in frequency:
+                    dates = self.filter_even_oneven(dates, even=True)
+                elif "/" in frequency:
+                    dates = self.filter_specific_dates(dates, frequency)
 
-            calendar += [
-                {
-                    "date": date,
-                    **{
-                        k: item.get(k)
-                        for k in [
-                            "label",
-                            "code",
-                            "curb_rules_from",
-                            "curb_rules_to",
-                            "alert",
-                        ]
-                    },
-                }
-                for date in dates
-            ]
+                calendar += [
+                    {
+                        "date": date,
+                        **{
+                            k: item.get(k)
+                            for k in [
+                                "label",
+                                "code",
+                                "curb_rules_from",
+                                "curb_rules_to",
+                                "alert",
+                            ]
+                        },
+                    }
+                    for date in dates
+                ]
         # sort calendar items by date
         calendar.sort(key=lambda x: x["date"])
         return calendar

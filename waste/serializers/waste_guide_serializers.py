@@ -82,6 +82,7 @@ class WasteDataSerializer(serializers.Serializer):
                 not in WASTE_TYPES_INACTIVE,
             ),
             "is_residential": _convert("gebruiksdoelWoonfunctie"),
+            "basisroutetypeCode": validated_data.get("afvalwijzerBasisroutetypeCode"),
         }
 
         return internal_data
