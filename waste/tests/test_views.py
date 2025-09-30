@@ -41,3 +41,26 @@ class TestWasteCalendarView(BasicAPITestCase):
         for waste_type in result["waste_types"]:
             if waste_type["code"] == "GFT":
                 self.assertEqual(waste_type["next_date"], "2024-04-01")
+
+        self.assertEqual(result["is_residential"], True)
+        self.assertEqual(result["is_collection_by_appointment"], False)
+
+    @freeze_time("2024-04-01")
+    @responses.activate
+    def test_calendar_no_result(self):
+        # Mock the response from the external API
+        responses.get(settings.WASTE_GUIDE_URL, json=data.AFVALWIJZER_DATA_NO_RESULT)
+
+        url = reverse("waste-guide-calendar")
+        response = self.client.get(
+            url,
+            data={"bag_nummeraanduiding_id": "12345"},
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+
+        self.assertEqual(result["calendar"], [])
+        self.assertEqual(result["waste_types"], [])
+        self.assertEqual(result["is_residential"], False)
+        self.assertEqual(result["is_collection_by_appointment"], False)

@@ -144,7 +144,9 @@ class WasteCollectionService:
         return waste_types
 
     def get_is_residential(self):
-        return self.validated_data[0].get("is_residential")
+        if self.validated_data and len(self.validated_data) > 0:
+            return self.validated_data[0].get("is_residential")
+        return False
 
     def get_is_collection_by_appointment(self):
         for item in self.validated_data:

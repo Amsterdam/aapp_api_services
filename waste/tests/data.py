@@ -45,3 +45,5 @@ AFVALWIJZER_DATA_MINIMAL = {
         ]
     }
 }
+
+AFVALWIJZER_DATA_NO_RESULT = {"_embedded": {"afvalwijzer": []}}
