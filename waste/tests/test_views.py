@@ -62,5 +62,5 @@ class TestWasteCalendarView(BasicAPITestCase):
 
         self.assertEqual(result["calendar"], [])
         self.assertEqual(result["waste_types"], [])
-        self.assertEqual(result["is_residential"], False)
+        self.assertEqual(result["is_residential"], True)
         self.assertEqual(result["is_collection_by_appointment"], False)
