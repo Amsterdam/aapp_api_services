@@ -39,6 +39,7 @@ APP_LINKS = {
     "elections": "https://www.amsterdam.nl/verkiezingen/",
     "sail": "https://www.sail.nl/vaarregels",
     "sailingAndMooring": "https://www.amsterdam.nl/verkeer-vervoer/varen/vaarvignet-aanvragen/",
+    "waste": "https://www.amsterdam.nl/afval/",
 }
 
 
