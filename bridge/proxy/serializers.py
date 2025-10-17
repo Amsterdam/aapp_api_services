@@ -41,11 +41,11 @@ class CoordinatesSerializer(serializers.Serializer):
         if hasattr(point, "coords"):
             lon, lat = point.coords
             return lat, lon
-        # string case: "POINT(lat lon)"
+        # string case: "POINT(lon lat)"
         m = re.match(r"POINT\(\s*([-0-9.]+)\s+([-0-9.]+)\s*\)", point)
         if not m:
             return None, None
-        lat, lon = m.groups()
+        lon, lat = m.groups()
         return float(lat), float(lon)
 
     def get_lat(self, obj) -> float:
