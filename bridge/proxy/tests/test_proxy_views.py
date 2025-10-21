@@ -178,3 +178,25 @@ class TestAddressSearchByCoordinateView(BaseProxyViewTestCase):
 
     def test_cache(self):
         self.assert_caching({"lat": "50.7", "lon": "3.15"})
+
+
+class TestPollingStationsView(BaseProxyViewTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("elections-polling-stations")
+        self.rsp_get = responses.get(
+            re.compile(settings.POLLING_STATIONS_URL + ".*"),
+            json=mock_data.POLLING_STATIONS_DATA,
+        )
+
+    def test_polling_stations_view(self):
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 5)
+        for polling_station in response.data:
+            self.assertNotIn("reading_aid", polling_station.get("categories", []))
+        self.assertEqual(self.rsp_get.call_count, 1)
+
+    # def test_cache(self):
+    #     self.assert_caching()

@@ -91,6 +91,7 @@ class WasteGuideView(GenericAPIView):
         )
 
 
+# @method_decorator(cache_page(1), name="dispatch")
 class PollingStationsView(GenericAPIView):
     def get(self, request):
         url = settings.POLLING_STATIONS_URL
@@ -98,11 +99,20 @@ class PollingStationsView(GenericAPIView):
             url,
             params=request.GET,
             auth=(settings.POLLING_STATIONS_USER, settings.POLLING_STATIONS_PW),
+            timeout=10,
         )
-        return HttpResponse(
-            response.content,
+        response.raise_for_status()
+        data = response.json()
+        for n, polling_station in enumerate(data):
+            if not polling_station.get("categories"):
+                continue
+            categories = [
+                p for p in polling_station["categories"] if p != "reading_aid"
+            ]
+            data[n]["categories"] = categories
+        return Response(
+            data,
             status=response.status_code,
-            content_type=response.headers.get("Content-Type"),
         )
 
 
