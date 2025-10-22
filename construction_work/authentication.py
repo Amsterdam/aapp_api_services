@@ -67,10 +67,7 @@ class MockEntraIDAuthentication(BaseAuthentication):
         token_data = {
             "aud": f"api://{settings.ENTRA_CLIENT_ID}",
             "iss": f"https://sts.windows.net/{settings.ENTRA_TENANT_ID}/",
-            "groups": [
-                settings.EDITOR_GROUP_ID,
-                # settings.PUBLISHER_GROUP_ID,
-            ],
+            "roles": ["o-pbs-editor-delegated"],
             "upn": email,
             "family_name": last_name,
             "given_name": first_name,
