@@ -194,6 +194,20 @@ class TestParkingLicensePlatesDeleteView(BaseSSPTestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    @patch("bridge.parking.services.ssp.requests.request")
+    def test_successful_license_plates_delete_with_id(self, mock_request):
+        mock_response = Response()
+        mock_response.status_code = 200
+        mock_response._content = "OK".encode("utf-8")
+        mock_request.return_value = mock_response
+
+        payload = self.test_payload.copy()
+        payload["id"] = "FOOBAR1"
+        response = self.client.delete(
+            self.url, query_params=payload, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_error_on_deleting_license_plate_with_invalid_payload(self):
         invalid_payload = {
             "vehicle_id": "FOOBAR1",

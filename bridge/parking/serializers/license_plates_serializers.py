@@ -42,7 +42,7 @@ class LicensePlatesPostResponseSerializer(CamelToSnakeCaseSerializer):
 class LicensePlatesDeleteRequestSerializer(SnakeToCamelCaseSerializer):
     report_code = serializers.CharField()
     vehicle_id = serializers.CharField()
-    id = serializers.IntegerField(required=False, help_text="New in V2")
+    id = serializers.CharField(required=False, help_text="New in V2")
 
 
 class LicensePlatesDeleteResponseSerializer(CamelToSnakeCaseSerializer):
