@@ -174,7 +174,7 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
     def _make_response(
         self,
         response,
-        notification_status: NotificationStatus = NotificationStatus.NO_CHANGE,
+        notification_status: NotificationStatus = NotificationStatus.CANCELLED,
     ):
         response.data["notification_status"] = notification_status.name
         return response

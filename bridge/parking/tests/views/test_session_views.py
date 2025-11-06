@@ -6,7 +6,6 @@ import responses
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
-from responses import matchers
 
 from bridge.parking.enums import NotificationStatus
 from bridge.parking.serializers.session_serializers import (
@@ -178,10 +177,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
 
     @responses.activate
     def test_create_scheduled_notification(self):
-        rsp_get = responses.get(
-            self.notifications_endpoint_regex_url,
-            status=204,
-        )
         rsp_post = responses.post(
             self.notifications_endpoint_regex_url,
             json={},
@@ -193,94 +188,57 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self.assertEqual(
             response.data["notification_status"], NotificationStatus.CREATED.name
         )
-        self.assertEqual(rsp_get.call_count, 1)
         self.assertEqual(rsp_post.call_count, 1)
 
     @responses.activate
     def test_no_scheduled_notification(self):
-        rsp_get = responses.get(
+        rsp_delete = responses.delete(
             self.notifications_endpoint_regex_url,
-            status=204,
+            json={},
         )
         start_time = timezone.now()
         end_time = start_time + timedelta(minutes=settings.PARKING_REMINDER_TIME - 1)
         response = self.start_parking_session(start_time, end_time)
 
         self.assertEqual(
-            response.data["notification_status"], NotificationStatus.NO_CHANGE.name
+            response.data["notification_status"], NotificationStatus.CANCELLED.name
         )
-        self.assertEqual(rsp_get.call_count, 1)
+        self.assertEqual(rsp_delete.call_count, 1)
 
     @responses.activate
     def test_patch_scheduled_notification(self):
         start_time = timezone.now()
         end_time = start_time + timedelta(minutes=settings.PARKING_REMINDER_TIME + 1)
 
-        rsp_get = responses.get(
+        rsp_post = responses.post(
             self.notifications_endpoint_regex_url,
-            json={"device_ids": ["foobar"]},
-        )
-        rsp_patch = responses.patch(
-            self.notifications_endpoint_regex_url,
-            match=[
-                matchers.json_params_matcher(
-                    {
-                        "scheduled_for": (
-                            end_time - timedelta(minutes=settings.PARKING_REMINDER_TIME)
-                        ).isoformat(),
-                        "expires_at": end_time.isoformat(),
-                        "device_ids": ["foobar"],
-                    }
-                )
-            ],
             json={},
         )
         response = self.start_parking_session(start_time, end_time)
 
         self.assertEqual(
-            response.data["notification_status"], NotificationStatus.UPDATED.name
+            response.data["notification_status"], NotificationStatus.CREATED.name
         )
-        self.assertEqual(rsp_get.call_count, 1)
-        self.assertEqual(rsp_patch.call_count, 1)
+        self.assertEqual(rsp_post.call_count, 1)
 
     @responses.activate
     def test_patch_scheduled_notification_extra_device(self):
         start_time = timezone.now()
         end_time = start_time + timedelta(minutes=settings.PARKING_REMINDER_TIME + 1)
 
-        rsp_get = responses.get(
+        rsp_post = responses.post(
             self.notifications_endpoint_regex_url,
-            json={"device_ids": ["other_device_id"]},
-        )
-        rsp_patch = responses.patch(
-            self.notifications_endpoint_regex_url,
-            match=[
-                matchers.json_params_matcher(
-                    {
-                        "scheduled_for": (
-                            end_time - timedelta(minutes=settings.PARKING_REMINDER_TIME)
-                        ).isoformat(),
-                        "expires_at": end_time.isoformat(),
-                        "device_ids": ["foobar", "other_device_id"],
-                    }
-                )
-            ],
             json={},
         )
         response = self.start_parking_session(start_time, end_time)
 
         self.assertEqual(
-            response.data["notification_status"], NotificationStatus.UPDATED.name
+            response.data["notification_status"], NotificationStatus.CREATED.name
         )
-        self.assertEqual(rsp_get.call_count, 1)
-        self.assertEqual(rsp_patch.call_count, 1)
+        self.assertEqual(rsp_post.call_count, 1)
 
     @responses.activate
     def test_delete_scheduled_notification(self):
-        rsp_get = responses.get(
-            self.notifications_endpoint_regex_url,
-            json={"device_ids": ["foobar"]},
-        )
         rsp_patch = responses.delete(
             self.notifications_endpoint_regex_url,
         )
@@ -291,7 +249,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self.assertEqual(
             response.data["notification_status"], NotificationStatus.CANCELLED.name
         )
-        self.assertEqual(rsp_get.call_count, 1)
         self.assertEqual(rsp_patch.call_count, 1)
 
     def start_parking_session(self, start_time, end_time):
@@ -319,10 +276,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
             SSPEndpoint.ORDERS.value,
             json=self.start_response_data,
         )
-        rsp_get = responses.get(
-            self.notifications_endpoint_regex_url,
-            json={"device_ids": ["foobar"]},
-        )
         rsp_patch = responses.delete(
             self.notifications_endpoint_regex_url,
         )
@@ -346,7 +299,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self.assertEqual(
             response.data["notification_status"], NotificationStatus.CANCELLED.name
         )
-        self.assertEqual(rsp_get.call_count, 1)
         self.assertEqual(rsp_patch.call_count, 1)
 
     @responses.activate
@@ -354,10 +306,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         responses.post(
             SSPEndpoint.ORDERS.value,
             json=self.start_response_data,
-        )
-        rsp_get = responses.get(
-            self.notifications_endpoint_regex_url,
-            json={"device_ids": ["foobar"]},
         )
         rsp_patch = responses.delete(
             self.notifications_endpoint_regex_url,
@@ -381,7 +329,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self.assertEqual(
             response.data["notification_status"], NotificationStatus.CANCELLED.name
         )
-        self.assertEqual(rsp_get.call_count, 1)
         self.assertEqual(rsp_patch.call_count, 1)
 
 

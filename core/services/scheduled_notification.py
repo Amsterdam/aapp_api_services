@@ -20,7 +20,7 @@ class ScheduledNotificationService:
     def __init__(self):
         self.client = InternalServiceSession()
 
-    def add(
+    def upsert(
         self,
         title: str,
         body: str,
@@ -87,33 +87,6 @@ class ScheduledNotificationService:
         except Exception as e:
             raise NotificationServiceError(
                 "Failed to get scheduled notification"
-            ) from e
-
-        return response.json()
-
-    def update(
-        self,
-        identifier: str,
-        scheduled_for: datetime,
-        expires_at: datetime,
-        device_ids: list[str],
-    ):
-        try:
-            url = self._build_url(identifier)
-            payload = {
-                "scheduled_for": scheduled_for.isoformat(),
-                "device_ids": device_ids,
-            }
-            if expires_at:
-                payload["expires_at"] = expires_at.isoformat()
-            response = self.client.patch(
-                url,
-                json=payload,
-            )
-            response.raise_for_status()
-        except Exception as e:
-            raise NotificationServiceError(
-                "Failed to update scheduled notification"
             ) from e
 
         return response.json()

@@ -33,7 +33,7 @@ class TestCoreScheduledNotificationService(APITestCase):
         identifier = f"{settings.SERVICE_NAME}_test-notification"
         self.created_identifiers.append(identifier)
 
-        new_scheduled_notification = self.service.add(
+        new_scheduled_notification = self.service.upsert(
             title="Test Notification",
             body="This is a test notification",
             scheduled_for=timezone.now() + timedelta(minutes=10),
@@ -50,7 +50,7 @@ class TestCoreScheduledNotificationService(APITestCase):
         identifier = f"{module_slug}_test-notification"
         self.created_identifiers.append(identifier)
 
-        new_scheduled_notification = self.service.add(
+        new_scheduled_notification = self.service.upsert(
             title="Test Notification",
             body="This is a test notification",
             scheduled_for=timezone.now() + timedelta(minutes=10),
@@ -69,7 +69,7 @@ class TestCoreScheduledNotificationService(APITestCase):
         unknown_image_id = 99999999
 
         with self.assertRaises(NotificationServiceError):
-            self.service.add(
+            self.service.upsert(
                 title="Test Notification",
                 body="This is a test notification",
                 scheduled_for=timezone.now() + timedelta(minutes=10),
@@ -86,7 +86,7 @@ class TestCoreScheduledNotificationService(APITestCase):
         scheduled_for = timezone.now() + timedelta(minutes=10)
         expires_at = scheduled_for + timedelta(minutes=10)
 
-        new_scheduled_notification = self.service.add(
+        new_scheduled_notification = self.service.upsert(
             title="Test Notification",
             body="This is a test notification",
             scheduled_for=scheduled_for,
@@ -107,7 +107,7 @@ class TestCoreScheduledNotificationService(APITestCase):
         identifier = f"{settings.SERVICE_NAME}_test-notification"
         self.created_identifiers.append(identifier)
 
-        new_notification = self.service.add(
+        new_notification = self.service.upsert(
             title="Test Notification",
             body="This is a test notification",
             scheduled_for=timezone.now() + timedelta(minutes=10),
@@ -140,7 +140,7 @@ class TestCoreScheduledNotificationService(APITestCase):
         identifier = f"{settings.SERVICE_NAME}_test-notification"
         self.created_identifiers.append(identifier)
 
-        self.service.add(
+        self.service.upsert(
             title="Test Notification",
             body="This is a test notification",
             scheduled_for=timezone.now() + timedelta(minutes=10),
@@ -152,24 +152,24 @@ class TestCoreScheduledNotificationService(APITestCase):
 
         new_scheduled_for = timezone.now() + timedelta(minutes=20)
         new_device_ids = ["device3", "device4"]
-        updated_notification = self.service.update(
-            identifier=identifier,
+        updated_notification = self.service.upsert(
+            title="Test Notification",
+            body="This is a test notification",
             scheduled_for=new_scheduled_for,
-            expires_at=None,
+            identifier=identifier,
+            context={},
             device_ids=new_device_ids,
+            notification_type="test",
         )
 
-        updated_scheduled_for = datetime.fromisoformat(
-            updated_notification["scheduled_for"]
-        )
         self.assertEqual(
-            updated_scheduled_for.timestamp(), new_scheduled_for.timestamp()
+            set(updated_notification["device_ids"]),
+            {"device1", "device2", "device3", "device4"},
         )
-        self.assertEqual(updated_notification["device_ids"], new_device_ids)
 
     def test_delete_notification(self):
         identifier = f"{settings.SERVICE_NAME}_test-notification"
-        self.service.add(
+        self.service.upsert(
             title="Test Notification",
             body="This is a test notification",
             scheduled_for=timezone.now() + timedelta(minutes=10),

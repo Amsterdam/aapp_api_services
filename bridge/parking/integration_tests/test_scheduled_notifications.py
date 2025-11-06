@@ -44,7 +44,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         start_time, end_time = self._init_test(parking_duration=1, start_session=False)
         response = self._start_parking_session(start_time, end_time)
         self.assertEqual(
-            response.data["notification_status"], NotificationStatus.NO_CHANGE.name
+            response.data["notification_status"], NotificationStatus.CANCELLED.name
         )
         self._check_notification_count(0)
 
@@ -55,7 +55,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         end_time = end_time + timedelta(minutes=5)
         response = self._start_parking_session(start_time, end_time)
         self.assertEqual(
-            response.data["notification_status"], NotificationStatus.UPDATED.name
+            response.data["notification_status"], NotificationStatus.CREATED.name
         )
         self._check_notification_count(1)
 
@@ -91,7 +91,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
 
         response = self._start_parking_session(start_time, end_time)
         self.assertEqual(
-            response.data["notification_status"], NotificationStatus.UPDATED.name
+            response.data["notification_status"], NotificationStatus.CREATED.name
         )
         notification = self._check_notification_count(1)[0]
         self.assertEqual(
@@ -105,7 +105,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         end_time = end_time + timedelta(minutes=15)
         response = self._patch_parking_session(start_time=start_time, end_time=end_time)
         self.assertEqual(
-            response.data["notification_status"], NotificationStatus.UPDATED.name
+            response.data["notification_status"], NotificationStatus.CREATED.name
         )
         notification = self._check_notification_count(1)[0]
         self.assertEqual(
@@ -151,7 +151,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
 
         response = self._delete_parking_session(start_time)
         self.assertEqual(
-            response.data["notification_status"], NotificationStatus.NO_CHANGE.name
+            response.data["notification_status"], NotificationStatus.CANCELLED.name
         )
         self._check_notification_count(0)
 

@@ -40,44 +40,21 @@ class ParkingReminderScheduler:
         self.log_extra["reminder_time"] = self.reminder_time
 
     def process(self) -> NotificationStatus:
-        reminder = self.schedule_service.get(self.identifier)
-        if reminder:
-            if self.reminder_time:
-                logger.info("Updating reminder", extra=self.log_extra)
-                # Add the current device_id to the list of device_ids
-                device_ids = list(
-                    set(reminder["device_ids"] + [self.device_id])
-                )  # use 'set' to avoid duplicates
-                device_ids.sort()  # sort to ensure consistent order
-                self.schedule_service.update(
-                    identifier=self.identifier,
-                    scheduled_for=self.reminder_time,
-                    expires_at=self.end_datetime,
-                    device_ids=device_ids,
-                )
-                return NotificationStatus.UPDATED
-            else:
-                logger.info("Deleting reminder", extra=self.log_extra)
-                self.schedule_service.delete(self.identifier)
-                return NotificationStatus.CANCELLED
+        if self.reminder_time:
+            self.schedule_reminder()
+            logger.info("Creating reminder", extra=self.log_extra)
+            return NotificationStatus.CREATED
         else:
-            if self.reminder_time:
-                self.schedule_reminder()
-                logger.info("Creating reminder", extra=self.log_extra)
-                return NotificationStatus.CREATED
-            else:
-                logger.info(
-                    "No changes to reminder",
-                    extra=self.log_extra,
-                )
-                return NotificationStatus.NO_CHANGE
+            logger.info("Deleting reminder", extra=self.log_extra)
+            self.schedule_service.delete(self.identifier)
+            return NotificationStatus.CANCELLED
 
     def schedule_reminder(
         self,
         locale: str = DEFAULT_LANGUAGE,
     ):
         content = REMINDER_MESSAGES.get(locale)
-        self.schedule_service.add(
+        self.schedule_service.upsert(
             title=content.title,
             body=content.body,
             identifier=self.identifier,
