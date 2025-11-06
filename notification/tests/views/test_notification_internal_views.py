@@ -168,17 +168,22 @@ class ScheduledNotificationTests(ScheduledNotificationBase):
         self.assertIn("SCHEDULED_NOTIFICATION_IN_PAST", response.content.decode())
 
     def test_create_scheduled_notification_duplicate_identifier(self):
-        response = self.client_post(self.notification_payload)
+        payload = self.notification_payload.copy()
+        response = self.client_post(payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(
             ScheduledNotification.objects.filter(identifier=self.identifier).exists()
         )
 
-        response = self.client_post(self.notification_payload)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn(
-            "SCHEDULED_NOTIFICATION_DUPLICATE_IDENTIFIER", response.content.decode()
+        payload["title"] = "Another title"
+        response = self.client_post(payload)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        scheduled_notifications = ScheduledNotification.objects.filter(
+            identifier=self.identifier
         )
+        self.assertEqual(scheduled_notifications.count(), 1)
+        self.assertEqual(scheduled_notifications.first().title, "Another title")
 
     def test_create_scheduled_notification_missing_device_id(self):
         payload = self.notification_payload.copy()
@@ -275,23 +280,15 @@ class ScheduledNotificationDetailTests(ScheduledNotificationBase):
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_update_scheduled_notification_success(self):
-        patch_data = {"title": "Updated Title"}
-        response = self.client.patch(
-            self.url,
-            data=json.dumps(patch_data),
-            headers=self.api_headers,
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()["title"], "Updated Title")
-
     def test_delete_scheduled_notification_success(self):
-        response = self.client.delete(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(
-            ScheduledNotification.objects.filter(identifier=self.identifier).exists()
-        )
+        for _i in range(3):  # Deleting multiple times should be idempotent
+            response = self.client.delete(self.url, headers=self.api_headers)
+            self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            self.assertFalse(
+                ScheduledNotification.objects.filter(
+                    identifier=self.identifier
+                ).exists()
+            )
 
 
 @patch("notification.services.push.messaging.send_each")
