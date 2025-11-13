@@ -1,53 +1,19 @@
 from rest_framework import serializers
 
-from bridge.parking.exceptions import SSPPinCodeCheckError
-from bridge.parking.serializers.general_serializers import (
-    AmountCurrencySerializer,
-    RedirectSerializer,
-)
-from core.utils.serializer_utils import (
-    CamelToSnakeCaseSerializer,
-    SnakeToCamelCaseSerializer,
-)
 
-
-class AccountLoginRequestSerializer(SnakeToCamelCaseSerializer):
+class AccountLoginRequestSerializer(serializers.Serializer):
     report_code = serializers.CharField()
     pin = serializers.CharField()
 
 
-class AccountLoginResponseSerializer(CamelToSnakeCaseSerializer):
+class AccountLoginResponseSerializer(serializers.Serializer):
     access_token = serializers.CharField()
-    scope = serializers.CharField()
-
-
-class AccountLoginResponseExtendedSerializer(AccountLoginResponseSerializer):
+    scope = serializers.ChoiceField(choices=["visitor", "permitHolder"])
     access_token_expiration = serializers.DateTimeField()
     version = serializers.ChoiceField(choices=[1, 2])
 
 
-class PinCodeRequestSerializer(SnakeToCamelCaseSerializer):
-    report_code = serializers.CharField()
-    phone_number = serializers.CharField()
-
-
-class PinCodeChangeRequestSerializer(SnakeToCamelCaseSerializer):
-    report_code = serializers.CharField()
-    pin_current = serializers.CharField()
-    pin_code = serializers.CharField()
-    pin_code_check = serializers.CharField()
-
-    def validate_pin_code_check(self, value):
-        if self.initial_data.get("pin_code") != value:
-            raise SSPPinCodeCheckError
-        return value
-
-
-class PinCodeResponseSerializer(CamelToSnakeCaseSerializer):
-    pass
-
-
-class AddressSerializer(CamelToSnakeCaseSerializer):
+class AddressSerializer(serializers.Serializer):
     street = serializers.CharField()
     house_number = serializers.CharField()
     house_letter = serializers.CharField(allow_blank=True, required=False)
@@ -57,23 +23,25 @@ class AddressSerializer(CamelToSnakeCaseSerializer):
     concatenated_address = serializers.CharField()
 
 
-class WalletSerializer(CamelToSnakeCaseSerializer):
+class WalletSerializer(serializers.Serializer):
     balance = serializers.FloatField()
-    currency = serializers.CharField()
+    currency = serializers.CharField(required=False, help_text="DEPRECATED")
 
 
-class AccountDetailsResponseSerializer(CamelToSnakeCaseSerializer):
-    initials = serializers.CharField(allow_blank=True, required=False)
-    last_name = serializers.CharField(allow_blank=True, required=False)
-    email = serializers.CharField(allow_blank=True, required=False)
-    address = AddressSerializer(required=False)
-    phone_number = serializers.CharField(allow_blank=True, required=False)
-    client_id = serializers.IntegerField(required=False)
-    wallet = WalletSerializer(required=False)
-    account_type = serializers.CharField()
-
-
-class BalanceRequestSerializer(SnakeToCamelCaseSerializer):
-    balance = AmountCurrencySerializer()
-    redirect = RedirectSerializer()
-    locale = serializers.CharField()
+class AccountDetailsResponseSerializer(serializers.Serializer):
+    initials = serializers.CharField(
+        allow_blank=True, required=False, help_text="DEPRECATED"
+    )
+    last_name = serializers.CharField(
+        allow_blank=True, required=False, help_text="DEPRECATED"
+    )
+    email = serializers.CharField(
+        allow_blank=True, required=False, help_text="DEPRECATED"
+    )
+    address = AddressSerializer(required=False, help_text="DEPRECATED")
+    phone_number = serializers.CharField(
+        allow_blank=True, required=False, help_text="DEPRECATED"
+    )
+    client_id = serializers.IntegerField(required=False, help_text="DEPRECATED")
+    wallet = WalletSerializer()
+    account_type = serializers.CharField(required=False, help_text="DEPRECATED")

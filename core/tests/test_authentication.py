@@ -59,6 +59,25 @@ class ResponsesActivatedAPITestCase(BasicAPITestCase):
         # this wraps setUp, each test, and tearDown
         super().run(result)
 
+    def assert_caching(self, url, rsp_get, request_body=None):
+        # First call
+        response = self.client.get(url, request_body, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            len(cache.keys("*")), 2
+        )  # The request and the headers are cached both as separate keys
+        self.assertEqual(rsp_get.call_count, 1)
+
+        # Second call
+        response = self.client.get(url, request_body, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(cache.keys("*")), 2)
+        self.assertEqual(
+            rsp_get.call_count, 1
+        )  # The request should not be called a second time!
+
 
 class ExampleAppAuthentication(AbstractAppAuthentication):
     api_keys = ["test-api-key", "other-api-key"]

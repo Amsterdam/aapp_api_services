@@ -1,210 +1,147 @@
-import datetime
-from unittest.mock import patch
-
-import jwt
+import responses
 from django.conf import settings
 from django.urls import reverse
-from django.utils import timezone
 
-from bridge.parking.exceptions import SSPForbiddenError, SSPResponseError
-from bridge.parking.serializers.account_serializers import (
-    AccountDetailsResponseSerializer,
-    PinCodeResponseSerializer,
-)
-from bridge.parking.serializers.permit_serializer import PermitItemSerializer
-from bridge.parking.serializers.session_serializers import (
-    ParkingOrderResponseSerializer,
-)
+from bridge.parking.exceptions import SSPResponseError
+from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
+from bridge.parking.tests.mock_data import permit, permits
 from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
-from core.utils.serializer_utils import create_serializer_data
 
 
-@patch("bridge.parking.services.ssp.requests.request")
 class TestParkingAccountLoginView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("parking-account-login")
+        self.test_payload = {"report_code": "10000000", "pin": "1234"}
 
-        self.test_payload = {
-            "report_code": "1234567890",
-            "pin": "123456",
+        self.test_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3NTY4MTYxOTQsImV4cCI6MTc1NjgxOTc5NCwicm9sZXMiOlsiUk9MRV9VU0VSX1NTUCJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiZmlwczp0RmswZlJMUDA3WERLUll4YXU3TTJ6MUJ2djZGZmlLYUpsSjlLaDUtaW1nTlAtRWlEVHBVeW9JYXp0Vkc3YkNxdks2X1VhQWkxN2NhZjF1d3Z6NmFsQXBIZ2xobzVQdlJvWHpadDlFVlF6MjhTZ1U3c3F0TnU4WmR2QlFORUR2MHEwV0Z2OF9leG9FPSIsImxvY2FsZSI6Im5sLU5MIn0.HatOyxHBqFjYXRb1DfaPWVZGwN3RQ3R_BTZEmKqge6eonxaDLgBCBMTUwaKppj7DtnLII4-DkIzKxj-LeP0sfMkqlpFoQKJTMPX2bidZr0_FwlQ7Dm1Mxd284EQqx132HK0Xke4jjqXxE7elR7iZYDjnDoYnXl85PkjEBMcYsSHRj0ibWvH1ChkGyXpEgfwCy4uqQYRM7iOF3-A6dvgV5ti9kSkcxP5IK_7Z7SRDuhbxMEdL_ON3eJdErs7HraxGowL_HlncKnwSZO82KHObUKpZeLvdSA4CHAiCmnyFlunCMOsH5hWM99ys00rEEMvha3AsXFhLTm5uRmmoA2nwvCR5BR4tu3olhm0NG9PAuWny2rmbCrFtz739-WOX1lzP6Xxuo6cC4lU_gy2AkI3QYtQ2Hj-rRQ-3peZcBpQ49nS-VNCnrMjLo6S2BW4I6SYamN3-0mhqFSnyUZ9YiQbwaLhmJJqXzou-kFuvtY6OX_afm5deh8CfFUO03O6C0bVJ-8oSC61QAEIEdNaJR0Vb2dqAM9qAJWPP-SNr_dqte9eCV05POf0XT0ZkjtHmrM678fzIjE-tGJSN-LrumrYXZU8zVTqNBw57sDhuUROhQLDSeqoLbKJHkoQYSFIMWlouhanAegSuHFzZRmb8SkHhZ0bLyUZkFM9Rvozy21M2YKU"
+        self.test_response = {
+            "token": self.test_token,
+        }
+        self.test_response_no_role = {
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjEwMzkxNTYsImV4cCI6MTc2MTA0Mjc1Niwicm9sZXMiOlsiT1RIRVJfUk9MRSJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiYmxhIiwibG9jYWxlIjoibmwtTkwiLCJjbGllbnRfcHJvZHVjdF9pZCI6MTB9.KRVI2yW-RpPhPeGmhAw3FnQ_nqQOHO2-rErWH4bE2pc"
         }
 
-    def test_successful_login(self, mock_request):
-        mock_access_token = jwt.encode(
-            {"exp": timezone.now() + datetime.timedelta(hours=1)},
-            "secret",
-            algorithm="HS256",
+    def test_successful_login(self):
+        post_resp = responses.post(SSPEndpoint.LOGIN.value, json=self.test_response)
+        post_resp_ext = responses.post(
+            SSPEndpointExternal.LOGIN.value, json=self.test_response
         )
-        mock_scope = "permitHolder"
-        mock_response_content = {
-            "access_token": mock_access_token,
-            "reportcode": 1234567890,
-            "family_name": " TestFamilyName",
-            "initials": "",
-            "scope": mock_scope,
-        }
-
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
 
         response = self.client.post(
             self.url, self.test_payload, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["access_token"], mock_access_token)
-        self.assertEqual(response.data["scope"], mock_scope)
-        self.assertIsNotNone(response.data["access_token_expiration"])
-
-    def test_missing_ssp_response_values(self, mock_request):
-        mock_reponse_missing_expected_values = {}
-
-        mock_request.return_value = self.create_ssp_response(
-            200, mock_reponse_missing_expected_values
+        self.assertEqual(post_resp.call_count, 1)
+        self.assertEqual(post_resp_ext.call_count, 1)
+        self.assertEqual(
+            response.data["access_token"],
+            self.test_token + "%AMSTERDAMAPP%" + self.test_token,
         )
+        self.assertEqual(response.data["scope"], "permitHolder")
+        expiration_datetime = "2025-09-02T15:29:54+02:00"
+        self.assertEqual(
+            response.data["access_token_expiration"],
+            expiration_datetime,
+        )
+
+    def test_missing_ssp_response_values(self):
+        post_resp = responses.post(SSPEndpoint.LOGIN.value, json={"not_token": "value"})
 
         response = self.client.post(
             self.url, self.test_payload, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 500)
+        self.assertEqual(post_resp.call_count, 1)
         self.assertEqual(response.data["code"], SSPResponseError.default_code)
 
-    def test_ssp_login_failed(self, mock_request):
-        ssp_login_failed_codes = [401, 403]
+    def test_unknown_role(self):
+        post_resp = responses.post(
+            SSPEndpoint.LOGIN.value, json=self.test_response_no_role
+        )
+        post_resp_ext = responses.post(
+            SSPEndpointExternal.LOGIN.value, json=self.test_response
+        )
 
-        for code in ssp_login_failed_codes:
-            mock_request.return_value = self.create_ssp_response(code, {})
+        response = self.client.post(
+            self.url, self.test_payload, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(post_resp.call_count, 1)
+        self.assertEqual(post_resp_ext.call_count, 1)
 
+    def test_no_ssp_token(self):
+        post_resp = responses.post(SSPEndpoint.LOGIN.value, json={"not_token": "value"})
+
+        del self.api_headers[settings.SSP_ACCESS_TOKEN_HEADER]
+
+        response = self.client.post(
+            self.url, self.test_payload, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(post_resp.call_count, 1)
+        self.assertEqual(response.data["code"], SSPResponseError.default_code)
+
+    def test_ssp_login_failed(self):
+        ssp_login_failed_messages = [
+            "The presented password is invalid.",
+            "Bad credentials.",
+        ]
+
+        for message in ssp_login_failed_messages:
+            json_response = {"code": 401, "message": message}
+            responses.post(SSPEndpoint.LOGIN.value, status=401, json=json_response)
+            responses.post(
+                SSPEndpointExternal.LOGIN.value, status=401, json=json_response
+            )
             response = self.client.post(
                 self.url, self.test_payload, headers=self.api_headers
             )
-            self.assertEqual(response.status_code, 403)
-            self.assertEqual(response.data["code"], SSPForbiddenError.default_code)
-
-
-@patch("bridge.parking.services.ssp.requests.request")
-class TestParkingPinCodeView(BaseSSPTestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("parking-pin-code")
-
-    def test_request_pin_code_successfully(self, mock_request):
-        # POST request
-        mock_response_content = create_serializer_data(PinCodeResponseSerializer)
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
-
-        data = {"report_code": "37613017", "phone_number": "8633"}
-        response = self.client.post(self.url, data=data, headers=self.api_headers)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, mock_response_content)
-
-    def test_request_pin_code_missing_payload(self, mock_request):
-        # POST request
-        response = self.client.post(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 400)
-
-    def test_change_pin_code_successfully(self, mock_request):
-        # PUT request
-        mock_response_content = create_serializer_data(PinCodeResponseSerializer)
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
-
-        data = {
-            "report_code": "37613017",
-            "pin_current": "1234",
-            "pin_code": "6543",
-            "pin_code_check": "6543",
-        }
-        response = self.client.put(self.url, data=data, headers=self.api_headers)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, mock_response_content)
-
-    def test_change_pin_code_missing_access_token(self, mock_request):
-        # PUT request
-        self.api_headers.pop(settings.SSP_ACCESS_TOKEN_HEADER)
-        response = self.client.put(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.data.get("code"), "SSP_MISSING_SSL_API_KEY")
-
-    def test_change_pin_code_pin_mismatch(self, mock_request):
-        # PUT request
-        data = {
-            "report_code": "37613017",
-            "pin_current": "1234",
-            "pin_code": "6543",
-            "pin_code_check": "3456",
-        }
-        response = self.client.put(self.url, data=data, headers=self.api_headers)
-        self.assertEqual(response.status_code, 422)
-        self.assertEqual(response.data.get("code"), "SSP_PIN_CODE_CHECK_ERROR")
-
-    def test_change_pin_code_missing_payload(self, mock_request):
-        # PUT request
-        response = self.client.put(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.status_code, 401)
+            self.assertEqual(response.data["code"], "SSP_BAD_CREDENTIALS")
 
 
 class TestParkingAccountDetailsView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("parking-account-details")
+        self.mock_permits_response = permits.MOCK_RESPONSE
+        self.mock_permit_detail_response = permit.MOCK_RESPONSE_VISITOR_HOLDER
+        self.test_permitholder_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjEwMzkxNTYsImV4cCI6MTc2MTA0Mjc1Niwicm9sZXMiOlsiUk9MRV9VU0VSX1NTUCJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiYmxhIiwibG9jYWxlIjoibmwtTkwiLCJjbGllbnRfcHJvZHVjdF9pZCI6MTB9.sRkWR4ZM3WFvg4B17QUStrWvkhsDH7xK7QfScGYt6yw%AMSTERDAMAPP%eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjEwMzkxNTYsImV4cCI6MTc2MTA0Mjc1Niwicm9sZXMiOlsiUk9MRV9VU0VSX1NTUCJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiYmxhIiwibG9jYWxlIjoibmwtTkwiLCJjbGllbnRfcHJvZHVjdF9pZCI6MTB9.sRkWR4ZM3WFvg4B17QUStrWvkhsDH7xK7QfScGYt6yw"
 
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_get_account_details_successfully(self, mock_request):
-        mock_response_content = create_serializer_data(AccountDetailsResponseSerializer)
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
+    def test_success_permitholder(self):
+        api_headers = self.api_headers.copy()
+        api_headers["SSP-Access-Token"] = f"{self.test_permitholder_token}"
 
-        response = self.client.get(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, mock_response_content)
-
-
-class TestParkingPermitsView(BaseSSPTestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("parking-permits")
-
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_get_permits_successfully(self, mock_request):
-        single_permit_item_dict = create_serializer_data(PermitItemSerializer)
-        permit_item_list = [single_permit_item_dict]
-        mock_response_content = {
-            "foobar": "this should be ignored",
-            "permits": permit_item_list,
-        }
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
-
-        response = self.client.get(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, permit_item_list)
-
-
-class TestParkingBalanceView(BaseSSPTestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("parking-balance")
-        self.test_payload = {
-            "balance": {
-                "amount": 100,
-                "currency": "EUR",
-            },
-            "redirect": {"merchant_return_url": "amsterdam://some/path"},
-            "locale": "nl",
-        }
-
-    @patch("bridge.parking.services.ssp.requests.request")
-    def test_successful_balance_upgrade(self, mock_request):
-        mock_response_content = create_serializer_data(ParkingOrderResponseSerializer)
-        mock_request.return_value = self.create_ssp_response(200, mock_response_content)
-
-        response = self.client.post(
-            self.url, self.test_payload, format="json", headers=self.api_headers
+        resp_list = responses.get(
+            SSPEndpoint.PERMITS.value, json=self.mock_permits_response
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, mock_response_content)
-
-    def test_invalid_deeplink(self):
-        self.test_payload["redirect"]["merchant_return_url"] = "invalid://deeplink"
-        response = self.client.post(
-            self.url, self.test_payload, format="json", headers=self.api_headers
+        permit_detail_template = SSPEndpoint.PERMIT.value
+        # Only mock the permit 10001 because it is a visitor permit
+        permit_detail_url = permit_detail_template.format(permit_id=10001)
+        resp_detail = responses.get(
+            permit_detail_url, json=self.mock_permit_detail_response
         )
-        self.assertEqual(response.status_code, 400)
-        self.assertContains(response, "Invalid deeplink", status_code=400)
+
+        response = self.client.get(self.url, headers=api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp_list.call_count, 1)
+        self.assertEqual(resp_detail.call_count, 1)
+
+    def test_success_visitor(self):
+        api_headers = self.api_headers.copy()
+        api_headers["SSP-Access-Token"] = self.test_visitor_token
+
+        response = self.client.get(self.url, headers=api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["wallet"]["balance"], 0)
+
+    def test_success_permitholder_no_permits(self):
+        api_headers = self.api_headers.copy()
+        api_headers["SSP-Access-Token"] = f"{self.test_permitholder_token}"
+        resp_list = responses.get(SSPEndpoint.PERMITS.value, json={"data": []})
+
+        response = self.client.get(self.url, headers=api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["wallet"]["balance"], 0)
+        self.assertEqual(resp_list.call_count, 1)

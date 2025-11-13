@@ -36,3 +36,6 @@ openapi-schema.yaml
 
 # Media files from local runs
 media/
+
+# docker-compose override files
+docker-compose.override.yml

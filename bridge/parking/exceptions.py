@@ -28,28 +28,64 @@ class SSLMissingAccessTokenError(BaseApiException):
     default_code = "SSP_MISSING_SSL_API_KEY"
 
 
+class SSPBadCredentials(BaseApiException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_detail = "Bad credentials"
+    default_code = "SSP_BAD_CREDENTIALS"
+
+
+class SSPBadPassword(BaseApiException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_detail = "The presented password is invalid"
+    default_code = "SSP_BAD_CREDENTIALS"
+
+
 class SSPForbiddenError(BaseApiException):
     status_code = status.HTTP_403_FORBIDDEN
     default_detail = "Call to SSP forbidden"
     default_code = "SSP_FORBIDDEN"
 
 
+class SSPTokenExpiredError(BaseApiException):
+    status_code = status.HTTP_403_FORBIDDEN
+    default_detail = "Token expired."
+    default_code = "SSP_TOKEN_EXPIRED"
+
+
 class SSPNotFoundError(BaseApiException):
     status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "Resouce not found by SSP"
+    default_detail = "Resource not found by SSP"
     default_code = "SSP_NOT_FOUND"
+
+
+class SSPBadRequest(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Unprocessable entity"
+    default_code = "SSP_BAD_REQUEST"
 
 
 class SSPBalanceTooLowError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-    default_detail = "Balance too low"
+    default_detail = "Client money balance is insufficient."
     default_code = "SSP_BALANCE_TOO_LOW"
 
 
 class SSPTimeBalanceInsufficientError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-    default_detail = "Timebalance insufficient"
+    default_detail = "Client time balance is insufficient"
     default_code = "SSP_TIME_BALANCE_INSUFFICIENT"
+
+
+class SSPTimeBalanceAllocationNotAllowedError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Cannot allocate time to the visitor account because this permit doesn't allow one."
+    default_code = "SSP_TIME_BALANCE_AllOCATION_NOT_ALLOWED"
+
+
+class SSPSEndTimeInPastError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "This value should be greater than or equal to"
+    default_code = "SSP_END_TIME_IN_PAST"
 
 
 class SSPStartTimeInPastError(BaseApiException):
@@ -58,10 +94,22 @@ class SSPStartTimeInPastError(BaseApiException):
     default_code = "SSP_START_TIME_IN_PAST"
 
 
+class SSPStartTimeInvalid(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Invalid start date"
+    default_code = "SSP_START_TIME_INVALID"
+
+
 class SSPStartDateEndDateNotSameError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Startdate and enddate not same date"
     default_code = "SSP_DATES_NOT_SAME_DAY"
+
+
+class SSPEndDateBeforeStartDateError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "The end date cannot be earlier than the start date."
+    default_code = "SSP_END_DATE_BEFORE_START_DATE"
 
 
 class SSPMaxSessionsReachedError(BaseApiException):
@@ -82,16 +130,22 @@ class SSPSessionDurationExceededError(BaseApiException):
     default_code = "SSP_SESSION_DURATION_EXCEEDED"
 
 
-class SSPPinCodeCheckError(BaseApiException):
+class SSPSessionNotAllowedError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-    default_detail = "The pin code and the pin code check do not match"
-    default_code = "SSP_PIN_CODE_CHECK_ERROR"
+    default_detail = "Cannot start a parking session on this permit."
+    default_code = "SSP_SESSION_NOT_ALLOWED"
 
 
 class SSPSessionNotActiveError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-    default_detail = "Parking session not active or upcoming"
+    default_detail = "Parking session is inactive. Please start a new one."
     default_code = "SSP_SESSION_NOT_ACTIVE"
+
+
+class SSPSessionAlreadyExistsError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "A Parking session in progress already exists for this vrn."
+    default_code = "SSP_SESSION_ALREADY_EXISTS"
 
 
 class SSPFreeParkingError(BaseApiException):
@@ -108,7 +162,7 @@ class SSPNoParkingFeeError(BaseApiException):
 
 class SSPLicensePlateExistsError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-    default_detail = "Vehicle ID already exists."
+    default_detail = "This license plate is already in your favorites."
     default_code = "SSP_LICENSE_PLATE_ALREADY_EXISTS"
 
 
@@ -118,28 +172,82 @@ class SSPLicensePlateNotFoundError(BaseApiException):
     default_code = "SSP_LICENSE_PLATE_NOT_FOUND"
 
 
+class SSPLicensePlateNoActivationError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Cannot activate license plate on this client product."
+    default_code = "SSP_LICENSE_PLATE_ACTIVATION_NOT_ALLOWED"
+
+
+class SSPParkingMachineNotInZoneError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "The chosen parking machine is not within the allowed zones."
+    default_code = "SSP_PARKING_MACHINE_NOT_IN_ZONE"
+
+
 class SSPPermitNotFoundError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-    default_detail = "Client permit not found"
+    default_detail = "Client product not found"
     default_code = "SSP_PERMIT_NOT_FOUND"
 
 
-SSP_COMMON_422_ERRORS = [
+class SSPTimeSlotOverbookedError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Time slot is overbooked."
+    default_code = "SSP_OVERBOOKED_TIME_SLOT"
+
+
+class SSPVisitorAccountExistsError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "A visitor account already exists for this client product."
+    default_code = "SSP_VISITOR_ACCOUNT_ALREADY_EXISTS"
+
+
+class SSPVisitorAccountNotAllowedError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Cannot create a visitor account for this permit"
+    default_code = "SSP_VISITOR_ACCOUNT_NOT_ALLOWED"
+
+
+class SSPVisitorAccountNotExistsError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "This client product does not have a visitor account."
+    default_code = "SSP_NO_VISITOR_ACCOUNT"
+
+
+class SSPTransactionAlreadyConfirmedError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Transaction not found"
+    default_code = "SSP_RECHARGE_TRANSACTION_ALREADY_CONFIRMED"
+
+
+SSP_COMMON_ERRORS = [
+    SSPBadCredentials,
+    SSPBadPassword,
     SSPBalanceTooLowError,
+    SSPTokenExpiredError,
     SSPTimeBalanceInsufficientError,
+    SSPTimeBalanceAllocationNotAllowedError,
+    SSPSEndTimeInPastError,
     SSPStartTimeInPastError,
+    SSPStartTimeInvalid,
     SSPStartDateEndDateNotSameError,
+    SSPEndDateBeforeStartDateError,
     SSPMaxSessionsReachedError,
     SSPVehicleIDNotAllowedError,
+    SSPSessionAlreadyExistsError,
     SSPSessionDurationExceededError,
-    SSPPinCodeCheckError,
     SSPSessionNotActiveError,
+    SSPSessionNotAllowedError,
     SSPFreeParkingError,
+    SSPParkingMachineNotInZoneError,
     SSPNoParkingFeeError,
     SSPLicensePlateExistsError,
     SSPLicensePlateNotFoundError,
+    SSPLicensePlateNoActivationError,
     SSPPermitNotFoundError,
+    SSPTimeSlotOverbookedError,
+    SSPVisitorAccountExistsError,
+    SSPVisitorAccountNotAllowedError,
+    SSPVisitorAccountNotExistsError,
+    SSPTransactionAlreadyConfirmedError,
 ]
-# De volgende errors mogen NIET afgevangen worden. Hier wordt er een json parsing gedaan door de app op de SSP content
-# - Start time in past
-# - Parking time outside available regime times

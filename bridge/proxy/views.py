@@ -91,7 +91,7 @@ class WasteGuideView(GenericAPIView):
         )
 
 
-# @method_decorator(cache_page(1), name="dispatch")
+@method_decorator(cache_page(60 * 5), name="dispatch")
 class PollingStationsView(GenericAPIView):
     def get(self, request):
         url = settings.POLLING_STATIONS_URL

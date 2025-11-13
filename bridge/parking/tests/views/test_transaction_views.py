@@ -1,17 +1,93 @@
-import re
-
 import responses
 from django.urls import reverse
 
-from bridge.parking.serializers.transaction_serializers import (
-    TransactionResponseSerializer,
+from bridge.parking.services.ssp import SSPEndpointExternal
+from bridge.parking.tests.mock_data import (
+    transactions,
 )
-from bridge.parking.services.ssp import SSPEndpoint
-from bridge.parking.tests.views.test_base_ssp_view import (
-    BaseSSPTestCase,
-    create_meta_pagination_data,
+from bridge.parking.tests.mock_data_external import (
+    wallet_transaction,
+    wallet_transaction_confirm,
 )
-from core.utils.serializer_utils import create_serializer_data
+from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.views.transaction_views import (
+    TransactionsBalanceView,
+    TransactionsListView,
+)
+
+
+class TestTransactionsRechargeView(BaseSSPTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("parking-balance")
+
+        self.test_payload = {
+            "balance": {"amount": "10"},
+            "payment_type": "IDEAL",
+            "locale": "nl",
+        }
+        self.test_response = wallet_transaction.MOCK_RESPONSE
+
+    def test_successful(self):
+        post_resp = responses.post(
+            TransactionsBalanceView.ssp_endpoint, json=self.test_response
+        )
+
+        response = self.client.post(
+            self.url, self.test_payload, headers=self.api_headers, format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(post_resp.call_count, 1)
+
+    def test_negative_fail(self):
+        test_payload = {
+            "balance": {"amount": "-5"},
+            "payment_type": "IDEAL",
+            "locale": "nl",
+        }
+
+        response = self.client.post(
+            self.url, test_payload, headers=self.api_headers, format="json"
+        )
+        self.assertEqual(response.status_code, 400)
+
+
+class TestTransactionsRechargeConfirmView(BaseSSPTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("parking-balance-confirm")
+
+        self.test_payload = {
+            "order_id": "SSP08",
+            "status": "COMPLETED",
+            "signature": "123supersignature456",
+        }
+        self.test_response = wallet_transaction_confirm.MOCK_RESPONSE
+
+    def test_successful_user(self):
+        post_resp = responses.post(
+            SSPEndpointExternal.RECHARGE_CONFIRM.value, json=self.test_response
+        )
+
+        response = self.client.post(
+            self.url, self.test_payload, headers=self.api_headers, format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(post_resp.call_count, 1)
+
+    def test_successful_visitor(self):
+        api_headers = self.api_headers.copy()
+        api_headers["SSP-Access-Token"] = self.test_visitor_token
+
+        post_resp = responses.post(
+            SSPEndpointExternal.RECHARGE_CONFIRM_VISITOR.value, json=self.test_response
+        )  # We are mocking a different URL for visitors!
+
+        response = self.client.post(
+            self.url, self.test_payload, headers=api_headers, format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(post_resp.call_count, 1)
 
 
 class TestTransactionsListView(BaseSSPTestCase):
@@ -19,27 +95,26 @@ class TestTransactionsListView(BaseSSPTestCase):
         super().setUp()
         self.url = reverse("parking-transactions")
 
-    @responses.activate
-    def test_get_list_result_successfully(self):
-        single_transaction_item_dict = create_serializer_data(
-            TransactionResponseSerializer
-        )
-        single_transaction_item_dict["orderType"] = "opwaarderen"
-        transaction_item_list = [single_transaction_item_dict]
-        mock_response_content = {
-            "data": transaction_item_list,
-            "meta": create_meta_pagination_data(),
-            "totalActiveParkingSessions": 1,
-            "totalUpcomingParkingSessions": 0,
-            "totalFinishedParkingSessions": 0,
+        self.test_payload = {
+            "page": 1,
+            "row_per_page": 10,
+            "sort": "paid_at:desc",
+            "filters[status]": "COMPLETED",
         }
-        responses.get(
-            re.compile(SSPEndpoint.TRANSACTIONS.value + ".*"),
-            json=mock_response_content,
-        )
+        self.test_response = transactions.MOCK_RESPONSE
+
+    def test_successful_without_params(self):
+        resp = responses.get(TransactionsListView.ssp_endpoint, json=self.test_response)
 
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        single_transaction_item_dict.pop("orderType")
-        single_transaction_item_dict["order_type"] = "RECHARGE"
-        self.assertEqual(response.data["result"], transaction_item_list)
+        self.assertEqual(resp.call_count, 1)
+
+    def test_successful_with_params(self):
+        resp = responses.get(TransactionsListView.ssp_endpoint, json=self.test_response)
+
+        response = self.client.get(
+            self.url, self.test_payload, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)

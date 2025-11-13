@@ -2,7 +2,6 @@ import re
 
 import responses
 from django.conf import settings
-from django.core.cache import cache
 from django.urls import reverse
 
 from bridge.proxy.tests import mock_data
@@ -69,28 +68,7 @@ class TestEgisExternalProxyView(ResponsesActivatedAPITestCase):
         self.assertEqual(rsp_post.call_count, 1)
 
 
-class BaseProxyViewTestCase(ResponsesActivatedAPITestCase):
-    def assert_caching(self, request_body=None):
-        # First call
-        response = self.client.get(self.url, request_body, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            len(cache.keys("*")), 2
-        )  # The request and the headers are cached both as separate keys
-        self.assertEqual(self.rsp_get.call_count, 1)
-
-        # Second call
-        response = self.client.get(self.url, request_body, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(cache.keys("*")), 2)
-        self.assertEqual(
-            self.rsp_get.call_count, 1
-        )  # The request should not be called a second time!
-
-
-class TestWasteGuideView(BaseProxyViewTestCase):
+class TestWasteGuideView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("waste-guide-search")
@@ -104,10 +82,10 @@ class TestWasteGuideView(BaseProxyViewTestCase):
         self.assertEqual(self.rsp_get.call_count, 1)
 
     def test_cache(self):
-        self.assert_caching()
+        self.assert_caching(self.url, rsp_get=self.rsp_get)
 
 
-class TestAddressSearchByNameView(BaseProxyViewTestCase):
+class TestAddressSearchByNameView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("address-search-by-name")
@@ -146,10 +124,12 @@ class TestAddressSearchByNameView(BaseProxyViewTestCase):
         self.assertEqual(self.rsp_get.call_count, 0)
 
     def test_cache(self):
-        self.assert_caching({"query": "amstel"})
+        self.assert_caching(
+            self.url, rsp_get=self.rsp_get, request_body={"query": "amstel"}
+        )
 
 
-class TestAddressSearchByCoordinateView(BaseProxyViewTestCase):
+class TestAddressSearchByCoordinateView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("address-search-by-coordinate")
@@ -177,10 +157,12 @@ class TestAddressSearchByCoordinateView(BaseProxyViewTestCase):
         self.assertEqual(self.rsp_get.call_count, 0)
 
     def test_cache(self):
-        self.assert_caching({"lat": "50.7", "lon": "3.15"})
+        self.assert_caching(
+            self.url, rsp_get=self.rsp_get, request_body={"lat": "50.7", "lon": "3.15"}
+        )
 
 
-class TestPollingStationsView(BaseProxyViewTestCase):
+class TestPollingStationsView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("elections-polling-stations")
@@ -198,5 +180,5 @@ class TestPollingStationsView(BaseProxyViewTestCase):
             self.assertNotIn("reading_aid", polling_station.get("categories", []))
         self.assertEqual(self.rsp_get.call_count, 1)
 
-    # def test_cache(self):
-    #     self.assert_caching()
+    def test_cache(self):
+        self.assert_caching(self.url, rsp_get=self.rsp_get)

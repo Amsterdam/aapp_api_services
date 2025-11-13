@@ -9,15 +9,16 @@ import responses
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
+from uritemplate import URITemplate
 
 from bridge.parking.enums import NotificationStatus
-from bridge.parking.serializers.session_serializers import (
-    ParkingOrderResponseSerializer,
+from bridge.parking.services.ssp import SSPEndpointExternal
+from bridge.parking.tests.mock_data_external import (
+    parking_session_edit,
+    parking_session_start,
 )
-from bridge.parking.services.ssp import SSPEndpoint
 from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
 from core.services.scheduled_notification import ScheduledNotificationService
-from core.utils.serializer_utils import create_serializer_data
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self.url = reverse("parking-session-start-update-delete")
         self.device_id = str(uuid4())
         self.api_headers[settings.HEADER_DEVICE_ID] = self.device_id
-        self.start_response_data = create_serializer_data(
-            ParkingOrderResponseSerializer
-        )
+        self.parking_session_id = 10000
         self.report_code = randint(1, 1000)
         self.notification_scheduler = ScheduledNotificationService()
 
@@ -75,7 +74,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         start_time, end_time = self._init_test()
 
         response = self._start_parking_session(
-            start_time, end_time, vehicle_id="SOME_NEW_ID"
+            start_time, end_time, vehicle_id="SOME_NEW_ID", parking_session_id=10001
         )
         self.assertEqual(
             response.data["notification_status"], NotificationStatus.CREATED.name
@@ -156,17 +155,16 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self._check_notification_count(0)
 
     def _init_test(
-        self, parking_duration=settings.PARKING_REMINDER_TIME + 1, start_session=True
+        self,
+        parking_session_id=None,
+        parking_duration=settings.PARKING_REMINDER_TIME + 1,
+        start_session=True,
     ):
         responses.add_passthru(
             re.compile(settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"] + ".*")
         )
         start_time = timezone.now()
         end_time = start_time + timedelta(minutes=parking_duration)
-        responses.post(
-            SSPEndpoint.ORDERS.value,
-            json=self.start_response_data,
-        )
 
         if start_session:
             response = self._start_parking_session(start_time, end_time)
@@ -176,7 +174,9 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
             self._check_notification_count(1)
         return start_time, end_time
 
-    def _start_parking_session(self, start_time, end_time, vehicle_id="FOOBAR"):
+    def _start_parking_session(
+        self, start_time, end_time, vehicle_id="FOOBAR", parking_session_id=None
+    ):
         start_session_payload = {
             "parking_session": {
                 "report_code": self.report_code,
@@ -185,6 +185,13 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
                 "end_date_time": end_time.isoformat(),
             }
         }
+        parking_session_id = parking_session_id or self.parking_session_id
+        response_json = parking_session_start.MOCK_RESPONSE_USER
+        response_json["data"]["id"] = parking_session_id
+
+        responses.post(
+            SSPEndpointExternal.PARKING_SESSION_START.value, json=response_json
+        )
         response = self.client.post(
             self.url, start_session_payload, format="json", headers=self.api_headers
         )
@@ -192,13 +199,14 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         return response
 
     def _patch_parking_session(self, start_time, end_time, vehicle_id="FOOBAR"):
+        self.mock_patch_call_responses(session_id=self.parking_session_id)
         session_payload = {
             "parking_session": {
                 "report_code": self.report_code,
                 "vehicle_id": vehicle_id,
                 "start_date_time": start_time.isoformat(),
                 "end_date_time": end_time.isoformat(),
-                "ps_right_id": 123,
+                "ps_right_id": self.parking_session_id,
             }
         }
         response = self.client.patch(
@@ -208,11 +216,12 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         return response
 
     def _delete_parking_session(self, start_time, vehicle_id="FOOBAR"):
+        self.mock_patch_call_responses(session_id=self.parking_session_id)
         session_payload = {
             "report_code": self.report_code,
             "vehicle_id": vehicle_id,
             "start_date_time": start_time.isoformat(),
-            "ps_right_id": 123,
+            "ps_right_id": self.parking_session_id,
         }
         response = self.client.delete(
             self.url,
@@ -222,6 +231,14 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self.assertEqual(response.status_code, 200)
         return response
+
+    def mock_patch_call_responses(self, session_id):
+        url_template = SSPEndpointExternal.PARKING_SESSION_EDIT.value
+        url = URITemplate(url_template).expand(session_id=session_id)
+        responses.patch(
+            url,
+            json=parking_session_edit.MOCK_RESPONSE,
+        )
 
     def _check_notification_count(self, count):
         notifications = self.notification_scheduler.get_all()

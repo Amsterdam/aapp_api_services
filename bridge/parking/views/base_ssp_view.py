@@ -1,11 +1,15 @@
-from urllib.parse import parse_qs, urlparse
+import json
+from datetime import datetime
 
+import requests
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
 from rest_framework.response import Response
 
+from bridge.parking import exceptions
+from bridge.parking.auth import get_access_token
 from bridge.parking.exceptions import (
     SSLMissingAccessTokenError,
     SSPCallError,
@@ -15,8 +19,6 @@ from bridge.parking.exceptions import (
     SSPResponseError,
     SSPServerError,
 )
-from bridge.parking.services.ssp import ssp_api_call
-from core.pagination import CustomPagination
 from core.utils.openapi_utils import extend_schema_for_api_key
 
 PAGINATION_DEFAULT_PAGE_SIZE = 10
@@ -41,153 +43,99 @@ class BaseSSPView(generics.GenericAPIView):
     requires_access_token = False
     paginated = False
 
-    def get_serializer_class(self):
-        return self.serializer_class
+    def ssp_api_call(
+        self,
+        method,
+        endpoint,
+        external_api=False,
+        body_data=None,
+        query_params=None,
+        wrap_body_data_with_token=False,
+    ):
+        """
+        Make the call to the SSP API.
+        Based on the method, the data is either passed as query params or as the body of the request.
 
-    def get_response_serializer_class(self):
-        return self.response_serializer_class
+        Args:
+            method: The HTTP method to use.
+            endpoint: The url of the endpoint to call.
+            external_api: Whether to call the external SSP API.
+            body_data: The data to send to the endpoint.
+            query_params: The query parameters to send to the endpoint.
+            wrap_body_data_with_token: Whether to wrap the body data with the access token.
+        """
+        query_params = serialize_datetimes(query_params) if query_params else None
+        body_data = serialize_datetimes(body_data) if body_data else None
 
-    def get_access_token(self, request):
-        return request.headers.get(settings.SSP_ACCESS_TOKEN_HEADER)
-
-    def _process_request_data(self, request):
-        request_data = {}
-
-        serializer_class = self.get_serializer_class()
-        if serializer_class:
-            if request.method in ["GET", "DELETE"]:
-                serializer_data = request.query_params
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0",  # necessary to get through Egis WAF
+            "X-Auth-Token": settings.SSP_API_KEY,
+        }
+        if settings.ENVIRONMENT == "local":
+            headers["X-Api-Key"] = settings.API_KEYS.split(",")[0]
+        ssp_access_token = get_access_token(self.request, external_api)
+        if wrap_body_data_with_token:
+            if not body_data:
+                body_data = {
+                    "token": ssp_access_token,
+                }
             else:
-                serializer_data = request.data
+                body_data = {
+                    "token": ssp_access_token,
+                    "data": body_data,
+                }
+        else:
+            headers["Authorization"] = f"Bearer {ssp_access_token}"
 
-            serializer = serializer_class(data=serializer_data)
-            serializer.is_valid(raise_exception=True)
-
-            request_data = serializer.data
-
-        if self.paginated:
-            request_data["page"] = request.query_params.get("page", 1)
-            request_data["itemsPerPage"] = request.query_params.get(
-                "page_size", PAGINATION_DEFAULT_PAGE_SIZE
-            )
-
-        return request_data
-
-    def _handle_pagination(self, request, ssp_response, response_data):
-        ssp_pagination_json = ssp_response.json().get("meta")
-        if not ssp_pagination_json:
-            raise SSPResponseError("Pagination meta data not found in response")
-
-        def get_page_number_and_size(pagination_url_key):
-            url = ssp_pagination_json["pagination"].get(pagination_url_key)
-            if not url:
-                return None
-
-            query_params = parse_qs(urlparse(url).query)
-            return int(query_params.get("page")[0]), int(
-                query_params.get("itemsPerPage")[0]
-            )
-
-        curr_numb_size = get_page_number_and_size("curr")
-        next_numb_size = get_page_number_and_size("next")
-        prev_numb_size = get_page_number_and_size("prev")
-
-        request_href = request.build_absolute_uri(request.path)
-
-        extra_query_params = []
-        for key, value in request.query_params.items():
-            if key == "page" or key == "page_size":
-                continue
-            extra_query_params.append(f"{key}={value}")
-
-        def build_href(page_number, page_size):
-            return (
-                request_href
-                + f"?page={page_number}&page_size={page_size}"
-                + "&"
-                + "&".join(extra_query_params)
-            )
-
-        self_href = build_href(curr_numb_size[0], curr_numb_size[1])
-        next_href = (
-            build_href(next_numb_size[0], next_numb_size[1]) if next_numb_size else None
+        ssp_response = requests.request(
+            method,
+            endpoint,
+            params=query_params,
+            json=body_data,
+            headers=headers,
         )
-        previous_href = (
-            build_href(prev_numb_size[0], prev_numb_size[1]) if prev_numb_size else None
-        )
+        if ssp_response.status_code == 200:
+            return Response(ssp_response.json(), status=status.HTTP_200_OK)
 
-        return CustomPagination.create_paginated_data(
-            data=response_data,
-            page_number=ssp_pagination_json["currentPage"],
-            page_size=ssp_pagination_json["itemsPerPage"],
-            total_elements=ssp_pagination_json["totalItems"],
-            total_pages=ssp_pagination_json["pages"],
-            self_href=self_href,
-            next_href=next_href,
-            previous_href=previous_href,
-        )
+        try:
+            ssp_response_json = json.loads(ssp_response.content)
+            content = ssp_response_json.get("message")
+        except Exception:
+            content = ssp_response.text
 
-    def call_ssp(self, request):
-        ssp_access_token = self.get_access_token(request)
-        if self.requires_access_token and not ssp_access_token:
-            raise SSLMissingAccessTokenError()
+        # cap error message on 150 tokens (but first check if its not None)
+        if isinstance(content, str) and len(content) > 150:
+            content = content[:150]
 
-        request_data = self._process_request_data(request)
+        if ssp_response.status_code == 500:
+            raise exceptions.SSPServerError(detail=content)  # Map to 500 status
+        for error in exceptions.SSP_COMMON_ERRORS:
+            if error.default_detail in content:
+                raise error()  # Map to common error status
+        if ssp_response.status_code == 403:
+            raise exceptions.SSPForbiddenError(detail=content)  # Map to 403 status
+        if ssp_response.status_code == 404:
+            raise exceptions.SSPNotFoundError(detail=content)  # Map to 400 status
+        message = content.split("(422 Unprocessable Content)")[0].strip()
+        message = message[5:] if message.startswith('"<!') else message
+        raise exceptions.SSPBadRequest(detail=f"[Unmapped error] {message}")
 
-        ssp_response = ssp_api_call(
-            method=self.ssp_http_method,
-            endpoint=self.ssp_endpoint,
-            data=request_data,
-            ssp_access_token=ssp_access_token,
-        )
 
-        # SSP returns "OK" if the request is successful
-        if (
-            ssp_response.content.decode("utf-8") == "OK"
-            or ssp_response.content.decode("utf-8") == ""
-        ):
-            return Response(status=status.HTTP_200_OK)
-
-        ssp_data_json = ssp_response.json()
-        if self.response_key_selection:
-            ssp_data_json = ssp_response.json().get(self.response_key_selection)
-            if ssp_data_json is None:
-                return_data = [] if self.response_serializer_many else {}
-                if self.paginated:
-                    data = CustomPagination.create_paginated_data(
-                        data=return_data,
-                        page_number=1,
-                        page_size=1,
-                        total_elements=0,
-                        total_pages=1,
-                        self_href=None,
-                        next_href=None,
-                        previous_href=None,
-                    )
-                else:
-                    data = return_data
-                return Response(data, status=status.HTTP_200_OK)
-
-        response_serializer = self.get_response_serializer_class()(
-            data=ssp_data_json, many=self.response_serializer_many
-        )
-        if not response_serializer.is_valid():
-            raise SSPResponseError(response_serializer.errors)
-
-        response_data = response_serializer.data
-
-        if self.paginated:
-            response_data = self._handle_pagination(
-                request, ssp_response, response_data
-            )
-
-        return Response(response_data, status=status.HTTP_200_OK)
+def serialize_datetimes(obj):
+    if isinstance(obj, dict):
+        return {k: serialize_datetimes(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [serialize_datetimes(v) for v in obj]
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    return obj
 
 
 def ssp_openapi_decorator(
     response_serializer_class,
     serializer_as_params=None,
-    requires_access_token=False,
+    requires_access_token=True,
     requires_device_id=False,
     paginated=False,
     exceptions=None,
