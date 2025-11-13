@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from contact.models.contact_models import (
+from contact.models import (
     CityOffice,
     CityOfficeOpeningHours,
     RegularOpeningHours,

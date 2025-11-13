@@ -1,57 +1,26 @@
 from rest_framework import serializers
 
-from bridge.parking.serializers.general_serializers import (
-    MillisecondsToSecondsSerializer,
-    SecondsToMillisecondsSerializer,
-    StatusTranslationSerializer,
-)
-from core.utils.serializer_utils import (
-    CamelToSnakeCaseSerializer,
-    SnakeToCamelCaseSerializer,
-)
+from bridge.parking.utils import validate_digits
 
 
-class VisitorTimeBalanceRequestSerializer(serializers.Serializer):
+class VisitorTimeBalancePostRequestSerializer(serializers.Serializer):
+    seconds_to_transfer = serializers.IntegerField()
     report_code = serializers.CharField()
-    seconds_to_transfer = SecondsToMillisecondsSerializer()
 
-    def to_representation(self, instance):
-        """Convert all keys from snake_case to camelCase"""
-        result = super().to_representation(instance)
-        mapping = {
-            "report_code": "reportCode",
-            "seconds_to_transfer": "millisecondsToTransfer",
-        }
-        return {mapping[key]: value for key, value in result.items()}
+    def validate_seconds_to_transfer(self, value):
+        # check that seconds_to_transfer is a non-zero integer
+        if value == 0:
+            raise serializers.ValidationError(
+                {"seconds_to_transfer": "seconds_to_transfer cannot be zero."}
+            )
+        return value
 
-
-class VisitorTimeBalanceResponseSerializer(CamelToSnakeCaseSerializer):
-    main_account = MillisecondsToSecondsSerializer()
-    visitor_account = MillisecondsToSecondsSerializer()
+    def validate_report_code(self, value):
+        # check that report_code contains only digits
+        value = validate_digits("report_code", value)
+        return value
 
 
-class VisitorSessionRequestSerializer(SnakeToCamelCaseSerializer):
-    vehicle_id = serializers.CharField()
-
-
-class VisitorSessionResponseSerializer(CamelToSnakeCaseSerializer):
-    STATUS_CHOICES = [
-        ("Actief", "ACTIVE"),
-        ("Gepland", "PLANNED"),
-        ("Toekomstig", "PLANNED"),
-        ("Voltooid", "COMPLETED"),
-        ("Geannuleerd", "CANCELLED"),
-    ]
-
-    start_date_time = serializers.DateTimeField()
-    end_date_time = serializers.DateTimeField()
-    vehicle_id = serializers.CharField()
-    status = StatusTranslationSerializer(choices=STATUS_CHOICES)
-    ps_right_id = serializers.CharField(required=False)
-    visitor_name = serializers.CharField(required=False)
-    remaining_time = serializers.IntegerField()
-    report_code = serializers.CharField()
-    payment_zone_id = serializers.CharField()
-    time_balance_applicable = serializers.BooleanField()
-    money_balance_applicable = serializers.BooleanField()
-    no_endtime = serializers.BooleanField()
+class VisitorTimeBalanceResponseSerializer(serializers.Serializer):
+    main_account = serializers.IntegerField()
+    visitor_account = serializers.IntegerField()

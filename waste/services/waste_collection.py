@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import requests
 from django.conf import settings
 
+from waste.constants import WASTE_TYPES_ORDER
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
 
 
@@ -31,31 +32,32 @@ class WasteCollectionService:
     def create_calendar(self):
         calendar = []
         for item in self.validated_data:
-            dates = self.filter_ophaaldagen(ophaaldagen=item.get("days"))
-            frequency = item.get("frequency") or ""
-            if "oneven" in frequency:
-                dates = self.filter_even_oneven(dates, even=False)
-            elif "even" in frequency:
-                dates = self.filter_even_oneven(dates, even=True)
-            elif "/" in frequency:
-                dates = self.filter_specific_dates(dates, frequency)
+            if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
+                dates = self.filter_ophaaldagen(ophaaldagen=item.get("days"))
+                frequency = item.get("frequency") or ""
+                if "oneven" in frequency:
+                    dates = self.filter_even_oneven(dates, even=False)
+                elif "even" in frequency:
+                    dates = self.filter_even_oneven(dates, even=True)
+                elif "/" in frequency:
+                    dates = self.filter_specific_dates(dates, frequency)
 
-            calendar += [
-                {
-                    "date": date,
-                    **{
-                        k: item.get(k)
-                        for k in [
-                            "label",
-                            "code",
-                            "curb_rules_from",
-                            "curb_rules_to",
-                            "alert",
-                        ]
-                    },
-                }
-                for date in dates
-            ]
+                calendar += [
+                    {
+                        "date": date,
+                        **{
+                            k: item.get(k)
+                            for k in [
+                                "label",
+                                "code",
+                                "curb_rules_from",
+                                "curb_rules_to",
+                                "alert",
+                            ]
+                        },
+                    }
+                    for date in dates
+                ]
         # sort calendar items by date
         calendar.sort(key=lambda x: x["date"])
         return calendar
@@ -111,28 +113,46 @@ class WasteCollectionService:
         waste_types = []
         for item in self.validated_data:
             code = item.get("code")
-            waste_types.append(
-                {
-                    **{
-                        k: item.get(k)
-                        for k in [
-                            "label",
-                            "code",
-                            "curb_rules",
-                            "alert",
-                            "note",
-                            "days_array",
-                            "how",
-                            "where",
-                            "button_text",
-                            "url",
-                            "frequency",
-                        ]
-                    },
-                    "next_date": next_dates.get(code),
-                }
-            )
+            if item.get("active"):
+                waste_types.append(
+                    {
+                        **{
+                            k: item.get(k)
+                            for k in [
+                                "label",
+                                "code",
+                                "curb_rules",
+                                "alert",
+                                "note",
+                                "days_array",
+                                "how",
+                                "where",
+                                "button_text",
+                                "url",
+                                "frequency",
+                                "is_collection_by_appointment",
+                            ]
+                        },
+                        "next_date": next_dates.get(code),
+                    }
+                )
+        waste_types.sort(
+            key=lambda x: WASTE_TYPES_ORDER.index(x["code"])
+            if x["code"] in WASTE_TYPES_ORDER
+            else 999
+        )
         return waste_types
+
+    def get_is_residential(self):
+        if self.validated_data and len(self.validated_data) > 0:
+            return self.validated_data[0].get("is_residential")
+        return True
+
+    def get_is_collection_by_appointment(self):
+        for item in self.validated_data:
+            if item.get("code") == "Rest":
+                return item.get("is_collection_by_appointment")
+        return False
 
     def _get_dates(self):
         now = datetime.now()

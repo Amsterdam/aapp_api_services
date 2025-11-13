@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import extend_schema
+from requests import JSONDecodeError
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 
@@ -21,6 +22,54 @@ from bridge.proxy.serializers import (
 from core.utils.openapi_utils import extend_schema_for_api_key
 
 logger = logging.getLogger(__name__)
+
+
+class EgisProxyView(GenericAPIView):
+    http_method_names = ["get", "post", "patch", "delete"]
+    base_url = settings.SSP_BASE_URL_V2
+
+    def get(self, r, *a, **k):
+        return self._forward(r, *a, **k)
+
+    def post(self, r, *a, **k):
+        return self._forward(r, *a, **k)
+
+    def patch(self, r, *a, **k):
+        return self._forward(r, *a, **k)
+
+    def delete(self, r, *a, **k):
+        return self._forward(r, *a, **k)
+
+    def _forward(self, request, path):
+        url = f"{self.base_url.rstrip('/')}/{path.lstrip('/')}"
+        params = [
+            (k, v) for k, vs in request.query_params.lists() if k != "url" for v in vs
+        ]
+        headers = {
+            k: v
+            for k, v in request.headers.items()
+            if k.lower() not in {"host", "content-length", "x-api-key"}
+        }
+        data = request.body if request.method in {"POST", "PATCH", "DELETE"} else None
+        r = requests.request(
+            request.method,
+            url,
+            params=params,
+            headers=headers,
+            data=data,
+            allow_redirects=True,
+            timeout=30,
+        )
+        try:
+            content = r.json()
+        except JSONDecodeError:
+            content = r.content
+        resp = Response(content, status=r.status_code)
+        return resp
+
+
+class EgisProxyExternalView(EgisProxyView):
+    base_url = settings.SSP_BASE_URL_EXTERNAL
 
 
 @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
@@ -42,14 +91,28 @@ class WasteGuideView(GenericAPIView):
         )
 
 
+@method_decorator(cache_page(60 * 5), name="dispatch")
 class PollingStationsView(GenericAPIView):
     def get(self, request):
         url = settings.POLLING_STATIONS_URL
-        response = requests.get(url, params=request.GET)
-        return HttpResponse(
-            response.content,
+        response = requests.get(
+            url,
+            params=request.GET,
+            auth=(settings.POLLING_STATIONS_USER, settings.POLLING_STATIONS_PW),
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+        for n, polling_station in enumerate(data):
+            if not polling_station.get("categories"):
+                continue
+            categories = [
+                p for p in polling_station["categories"] if p != "reading_aid"
+            ]
+            data[n]["categories"] = categories
+        return Response(
+            data,
             status=response.status_code,
-            content_type=response.headers.get("Content-Type"),
         )
 
 

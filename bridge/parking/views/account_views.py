@@ -1,34 +1,25 @@
+import logging
 from datetime import datetime
 
 import jwt
 from rest_framework import status
 from rest_framework.response import Response
+from uritemplate import URITemplate
 
+from bridge.parking.auth import Role, check_user_role
 from bridge.parking.exceptions import (
     SSPPermitNotFoundError,
-    SSPPinCodeCheckError,
+    SSPResponseError,
 )
 from bridge.parking.serializers.account_serializers import (
     AccountDetailsResponseSerializer,
     AccountLoginRequestSerializer,
-    AccountLoginResponseExtendedSerializer,
     AccountLoginResponseSerializer,
-    BalanceRequestSerializer,
-    PinCodeChangeRequestSerializer,
-    PinCodeRequestSerializer,
-    PinCodeResponseSerializer,
 )
-from bridge.parking.serializers.general_serializers import (
-    ParkingBalanceResponseSerializer,
-)
-from bridge.parking.serializers.permit_serializer import (
-    PermitItemSerializer,
-    PermitsRequestSerializer,
-)
-from bridge.parking.services.ssp import SSPEndpoint
+from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
 from bridge.parking.views.base_ssp_view import BaseSSPView, ssp_openapi_decorator
 
-PIN_EXCEPTIONS = [SSPPinCodeCheckError]
+logger = logging.getLogger(__name__)
 
 
 class ParkingAccountLoginView(BaseSSPView):
@@ -38,68 +29,76 @@ class ParkingAccountLoginView(BaseSSPView):
 
     serializer_class = AccountLoginRequestSerializer
     response_serializer_class = AccountLoginResponseSerializer
-    ssp_http_method = "post"
-    ssp_endpoint = SSPEndpoint.LOGIN
+    scope_mapping = {
+        "ROLE_VISITOR_SSP": "visitor",
+        "ROLE_USER_SSP": "permitHolder",
+    }
 
     @ssp_openapi_decorator(
-        response_serializer_class=AccountLoginResponseExtendedSerializer,
-        exceptions=PIN_EXCEPTIONS,
+        response_serializer_class=AccountLoginResponseSerializer,
+        requires_access_token=False,
     )
     def post(self, request, *args, **kwargs):
-        ssp_response = self.call_ssp(request)
-        if ssp_response.status_code != 200:
-            return ssp_response
+        request_serializer = self.serializer_class(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
 
-        access_jwt = ssp_response.data["access_token"]
-        decoded_jwt = jwt.decode(access_jwt, options={"verify_signature": False})
-        extended_data = {
-            **ssp_response.data,
-            "access_token_expiration": datetime.fromtimestamp(decoded_jwt["exp"]),
+        request_payload = {
+            "username": request_serializer.validated_data["report_code"],
+            "password": request_serializer.validated_data["pin"],
         }
-        extended_response = AccountLoginResponseExtendedSerializer(extended_data)
+        access_jwt, expiration_timestamp, scope_mapped = (
+            self._get_internal_access_token(request_payload)
+        )
+        access_jwt_external = self._get_external_access_token(request_payload)
+        access_jwt += "%AMSTERDAMAPP%" + access_jwt_external
 
+        response_payload = {
+            "access_token": access_jwt,
+            "scope": scope_mapped,
+            "access_token_expiration": expiration_timestamp,
+            "version": 2,
+        }
+        response_serializer = self.response_serializer_class(data=response_payload)
+        response_serializer.is_valid(raise_exception=True)
         return Response(
-            data=extended_response.data,
+            data=response_serializer.data,
             status=status.HTTP_200_OK,
         )
 
+    def _get_internal_access_token(self, request_payload):
+        response = self.ssp_api_call(
+            method="POST",
+            endpoint=SSPEndpoint.LOGIN.value,
+            body_data=request_payload,
+        )
+        access_jwt = response.data.get("token")
+        if not access_jwt:
+            raise SSPResponseError("No token in SSP response")
+        expiration_timestamp, scope_mapped = self._unpack_token(access_jwt)
+        return access_jwt, expiration_timestamp, scope_mapped
 
-class ParkingPinCodeView(BaseSSPView):
-    response_serializer_class = PinCodeResponseSerializer
+    def _unpack_token(self, access_jwt):
+        decoded_jwt = jwt.decode(access_jwt, options={"verify_signature": False})
+        expiration_timestamp = datetime.fromtimestamp(decoded_jwt["exp"])
+        try:
+            scope = decoded_jwt["roles"][0]
+            scope_mapped = self.scope_mapping[scope]
+        except KeyError:
+            logger.warning(f"Unknown SSP scope: {decoded_jwt.get('roles', '')}")
+            scope_mapped = "unknown"
+        return expiration_timestamp, scope_mapped
 
-    def get_serializer_class(self):
-        if self.request.method == "POST":
-            return PinCodeRequestSerializer
-        elif self.request.method == "PUT":
-            return PinCodeChangeRequestSerializer
-        return None
-
-    @ssp_openapi_decorator(
-        response_serializer_class=PinCodeResponseSerializer,
-        exceptions=PIN_EXCEPTIONS,
-    )
-    def post(self, request, *args, **kwargs):
-        """
-        Request a pin code from SSP API (via redirect)
-        """
-        self.ssp_endpoint = SSPEndpoint.REQUEST_PIN_CODE
-        self.ssp_http_method = "post"
-        self.requires_access_token = False
-        return self.call_ssp(request)
-
-    @ssp_openapi_decorator(
-        response_serializer_class=PinCodeResponseSerializer,
-        requires_access_token=True,
-        exceptions=PIN_EXCEPTIONS,
-    )
-    def put(self, request, *args, **kwargs):
-        """
-        Change a pin code from SSP API
-        """
-        self.ssp_endpoint = SSPEndpoint.CHANGE_PIN_CODE
-        self.ssp_http_method = "post"
-        self.requires_access_token = True
-        return self.call_ssp(request)
+    def _get_external_access_token(self, request_payload):
+        response = self.ssp_api_call(
+            method="POST",
+            endpoint=SSPEndpointExternal.LOGIN.value,
+            body_data=request_payload,
+            external_api=True,
+        )
+        access_jwt = response.data.get("token")
+        if not access_jwt:
+            raise SSPResponseError("No token in SSP response")
+        return access_jwt
 
 
 class ParkingAccountDetailsView(BaseSSPView):
@@ -107,70 +106,64 @@ class ParkingAccountDetailsView(BaseSSPView):
     Get account details from SSP API
     """
 
-    serializer_class = None
     response_serializer_class = AccountDetailsResponseSerializer
-    ssp_http_method = "get"
-    ssp_endpoint = SSPEndpoint.PERMITS
-    requires_access_token = True
+    permit_types_with_balance = ["visitor"]
 
+    @check_user_role(allowed_roles=[Role.USER.value, Role.VISITOR.value])
     @ssp_openapi_decorator(
         response_serializer_class=AccountDetailsResponseSerializer,
-        requires_access_token=True,
         exceptions=[SSPPermitNotFoundError],
     )
     def get(self, request, *args, **kwargs):
-        return self.call_ssp(request)
+        # check if user is visitor or permit holder
+        is_visitor = kwargs.get("is_visitor", False)
+        if is_visitor:
+            return self.make_response(
+                {
+                    "wallet": {
+                        "balance": 0.0,
+                        "currency": "EUR",
+                    }
+                }
+            )
 
+        response = self.ssp_api_call(
+            method="GET",
+            endpoint=SSPEndpoint.PERMITS.value,
+            query_params={"page": 1, "row_per_page": 250},
+        )
+        permits = response.data["data"]
+        permits = [
+            p
+            for p in permits
+            if p["status"] != "control"
+            and p["permit_type"] in self.permit_types_with_balance
+        ]
+        if permits:
+            url_template = SSPEndpoint.PERMIT.value
+            url = URITemplate(url_template).expand(permit_id=permits[0]["id"])
+            response = self.ssp_api_call(
+                method="GET",
+                endpoint=url,
+            )
+            balance_in_cents = response.data["ssp"]["main_account"]["money_balance"]
+            balance = (balance_in_cents or 0.0) / 100
+        else:
+            balance = 0.0
 
-class ParkingPermitsView(BaseSSPView):
-    """
-    Get permits from SSP API
-    """
+        return self.make_response(
+            {
+                "wallet": {
+                    "balance": balance,
+                    "currency": "EUR",
+                }
+            }
+        )
 
-    serializer_class = PermitsRequestSerializer
-    response_serializer_class = PermitItemSerializer
-    response_serializer_many = True
-    response_key_selection = "permits"
-    ssp_http_method = "get"
-    ssp_endpoint = SSPEndpoint.PERMITS
-    requires_access_token = True
-
-    @ssp_openapi_decorator(
-        serializer_as_params=PermitsRequestSerializer,
-        response_serializer_class=PermitItemSerializer(many=True),
-        requires_access_token=True,
-        exceptions=[SSPPermitNotFoundError],
-    )
-    def get(self, request, *args, **kwargs):
-        return self.call_ssp(request)
-
-
-class ParkingBalanceView(BaseSSPView):
-    """
-    Upgrade balance via SSP API
-
-    Redirect URL is passed to the payment service of SSP.
-    When the payment is finished, the user is redirected to the redirect URL.
-    So this URL should be the deeplink to the app: amsterdam://parking/something.
-    This URL will contain query parameters with the order details:
-    - order_id: this is the "frontend_id" as
-    - status: COMPLETED, EXPIRED, IN_PROGRESS or CANCELLED
-    - signature: not relevant for us
-
-    According to Egis, the status apart from COMPLETED is quite unreliable.
-    So we should only act on COMPLETED status.
-    If the status is not COMPLETED, we have to pull the status of the session manually.
-    """
-
-    serializer_class = BalanceRequestSerializer
-    response_serializer_class = ParkingBalanceResponseSerializer
-    ssp_http_method = "post"
-    ssp_endpoint = SSPEndpoint.ORDERS
-    requires_access_token = True
-
-    @ssp_openapi_decorator(
-        response_serializer_class=ParkingBalanceResponseSerializer,
-        requires_access_token=True,
-    )
-    def post(self, request, *args, **kwargs):
-        return self.call_ssp(request)
+    def make_response(self, response_payload):
+        response_serializer = self.response_serializer_class(data=response_payload)
+        response_serializer.is_valid(raise_exception=True)
+        return Response(
+            data=response_serializer.data,
+            status=status.HTTP_200_OK,
+        )

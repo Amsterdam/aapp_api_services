@@ -24,8 +24,10 @@ WASTE_GUIDE_API_KEY = os.getenv("WASTE_GUIDE_API_KEY")
 # Election locations
 POLLING_STATIONS_URL = os.getenv(
     "POLLING_STATIONS_URL",
-    "https://stembureaus.amsterdam.nl/api/locations",
+    "https://wachtrij-amsterdam.aubergine-it.nl/api/locations",
 )
+POLLING_STATIONS_USER = os.getenv("POLLING_STATIONS_USER", "")
+POLLING_STATIONS_PW = os.getenv("POLLING_STATIONS_PW", "")
 
 # Address search
 ADDRESS_SEARCH_URL = os.getenv(
@@ -34,12 +36,16 @@ ADDRESS_SEARCH_URL = os.getenv(
 
 # Parking
 SSP_BASE_URL = os.getenv("SSP_BASE_URL", "https://evs-ssp-accp.mendixcloud.com")
-SSP_ACCESS_TOKEN_HEADER = "SSP-Access-Token"
-SSP_GEOJSON_URL = os.getenv(
-    "SSP_GEOJSON_URL", "https://api.staging01.ams.rest.geodeci.fr/api/v1/common/zone/"
+SSP_BASE_URL_V2 = os.getenv(
+    "SSP_BASE_URL_V2", "https://api-preprod02-ams-fo.egis-group.io"
 )
-SSP_GEOJSON_TOKEN = os.getenv("SSP_GEOJSON_TOKEN")
-SSP_GEOJSON_TOKEN_HEADER = "X-Auth-Token"
+SSP_BASE_URL_EXTERNAL = os.getenv(
+    "SSP_BASE_URL_EXTERNAL",
+    "https://api-preprod02-ams-rest.egis-group.io",
+)
+SSP_API_KEY = os.getenv("SSP_API_KEY", "api-key-ssp")
+
+SSP_ACCESS_TOKEN_HEADER = "SSP-Access-Token"
 PARKING_REMINDER_TIME = os.getenv("PARKING_REMINDER_TIME", 15)
 
 # Mijn Amsterdam API

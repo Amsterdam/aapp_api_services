@@ -48,7 +48,7 @@ services:
     image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
-      DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.local'
+      DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.local"
       API_AUTH_TOKENS: insecure1,insecure2,insecure3
       MIJN_AMS_AUTH_TOKENS: mijn-ams-1,mijn-ams-2
       SECRET_KEY: secret-key-for-development
@@ -61,7 +61,7 @@ services:
     image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
-      DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.base'
+      DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.base"
       API_AUTH_TOKENS: insecure1,insecure2,insecure3
       MIJN_AMS_AUTH_TOKENS: mijn-ams-1,mijn-ams-2
       SECRET_KEY: secret-key-for-testing
@@ -74,7 +74,7 @@ services:
     image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
-      DJANGO_SETTINGS_MODULE: '${SERVICE_NAME}.settings.otap'
+      DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.otap"
     command: /app/deploy/docker-run.sh
 
   lint:
@@ -90,7 +90,7 @@ services:
       - ./modules:/app/modules
       - ./notification:/app/notification
       - ./waste:/app/waste
-
+      - ./survey:/app/survey
   openapi-diff:
     image: openapitools/openapi-diff:latest
     volumes:

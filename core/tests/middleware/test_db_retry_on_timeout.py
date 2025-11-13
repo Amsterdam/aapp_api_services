@@ -3,6 +3,7 @@ from unittest import mock
 from django.db import OperationalError
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
+from psycopg2 import OperationalError as PsycopgOperationalError
 
 from core.middleware.db_retry_on_timeout import DatabaseRetryMiddleware
 
@@ -12,6 +13,11 @@ timeout_error = OperationalError(
     "Is the server running on that host and accepting TCP/IP connections?"
 )
 connection_error = OperationalError(
+    'connection to server at "aapp-p-asctypczqftak.postgres.database.azure.com" '
+    "(10.225.95.68), port 5432 failed: Connection refused\n"
+    "Is the server running on that host and accepting TCP/IP connections?"
+)
+psycopg_connection_error = PsycopgOperationalError(
     'connection to server at "aapp-p-asctypczqftak.postgres.database.azure.com" '
     "(10.225.95.68), port 5432 failed: Connection refused\n"
     "Is the server running on that host and accepting TCP/IP connections?"
@@ -80,7 +86,11 @@ class DatabaseRetryMiddlewareTest(TestCase):
         Test that the middleware retries the specified number of times
         and succeeds if get_response eventually returns a response.
         """
-        responses = [connection_error, connection_error, HttpResponse("Success")]
+        responses = [
+            connection_error,
+            psycopg_connection_error,
+            HttpResponse("Success"),
+        ]
 
         def get_response(request):
             response = responses.pop(0)
@@ -95,7 +105,7 @@ class DatabaseRetryMiddlewareTest(TestCase):
         Test that the middleware retries the specified number of times
         and succeeds if get_response eventually returns a response.
         """
-        responses = [connection_error, timeout_error, HttpResponse("Success")]
+        responses = [psycopg_connection_error, timeout_error, HttpResponse("Success")]
 
         def get_response(request):
             response = responses.pop(0)

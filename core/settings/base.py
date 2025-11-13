@@ -90,6 +90,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "core.middleware.db_retry_on_timeout.DatabaseRetryMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -99,7 +100,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "core.middleware.db_retry_on_timeout.DatabaseRetryMiddleware",
     "core.middleware.set_headers.DefaultHeadersMiddleware",
     "core.middleware.log_4xx_status.Log4xxMiddleware",
 ]

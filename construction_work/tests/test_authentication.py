@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.response import Response
@@ -125,7 +124,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_bearer_token(groups=[settings.EDITOR_GROUP_ID])
+        jwt_token = create_bearer_token(roles=["o-pbs-editor-delegated"])
         headers = {
             "Authorization": jwt_token,
         }
@@ -146,7 +145,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_bearer_token(groups=["InvalidGroup"])
+        jwt_token = create_bearer_token(roles=["invalid-role"])
         headers = {
             "Authorization": jwt_token,
         }
@@ -167,7 +166,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_bearer_token(groups=[settings.PUBLISHER_GROUP_ID])
+        jwt_token = create_bearer_token(roles=["o-pbs-publisher"])
         headers = {
             "Authorization": jwt_token,
         }
@@ -188,7 +187,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_bearer_token(groups=[settings.PUBLISHER_GROUP_ID])
+        jwt_token = create_bearer_token(roles=["o-pbs-publisher"])
         headers = {
             "Authorization": jwt_token,
         }
@@ -209,7 +208,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_bearer_token(groups=["InvalidGroup"])
+        jwt_token = create_bearer_token(roles=["invalid-role"])
         headers = {
             "Authorization": jwt_token,
         }
@@ -230,7 +229,7 @@ class TestEntraIDAuthentication(TestCase):
             def post(self, request):
                 return Response({"message": "success"}, status=status.HTTP_200_OK)
 
-        jwt_token = create_bearer_token(groups=[settings.EDITOR_GROUP_ID])
+        jwt_token = create_bearer_token(roles=["o-pbs-editor-delegated"])
         headers = {
             "Authorization": jwt_token,
         }

@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.db.models import Case, F, IntegerField, Value, When
 
-from contact.models.contact_models import (
+from contact.models import (
     OpeningHoursException,
     RegularOpeningHours,
     WeekDay,
@@ -39,7 +39,7 @@ class OpeningHourExceptionsAdmin(admin.ModelAdmin):
             return obj.description
         return obj.date.strftime("%d-%m-%Y")
 
-    get_description.short_description = "Rede"
+    get_description.short_description = "Reden"
 
     def get_date(self, obj):
         return obj.date.strftime("%d-%m-%Y")

@@ -4,11 +4,24 @@ from bridge.proxy.views import (
     AddressSearchByCoordinateView,
     AddressSearchByNameView,
     AddressSearchView,
+    EgisProxyExternalView,
+    EgisProxyView,
     PollingStationsView,
     WasteGuideView,
 )
 
 urlpatterns = [
+    # egis dev proxy
+    path(
+        "parking/api/v1/egis-proxy/<path:path>",
+        EgisProxyView.as_view(),
+        name="egis-proxy",
+    ),
+    path(
+        "parking/api/v1/egis-ext-proxy/<path:path>",
+        EgisProxyExternalView.as_view(),
+        name="egis-ext-proxy",
+    ),
     # afvalwijzer
     path(
         "waste-guide/api/v1/search",
@@ -17,9 +30,9 @@ urlpatterns = [
     ),
     # election locations
     path(
-        "polling-stations/api/v1/locations",
+        "elections/api/v1/polling-stations",
         PollingStationsView.as_view(),
-        name="polling-stations",
+        name="elections-polling-stations",
     ),
     # address search
     path(

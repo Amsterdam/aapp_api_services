@@ -9,7 +9,7 @@ AFVALWIJZER_DATA_MINIMAL = {
                 "afvalwijzerAfvalkalenderOpmerking": None,
                 "afvalwijzerFractieNaam": "Glas",
                 "afvalwijzerFractieCode": "Glas",
-                "afvalwijzerOphaaldagen": None,
+                "afvalwijzerOphaaldagen2": None,
                 "afvalwijzerAfvalkalenderMelding": None,
                 "afvalwijzerInstructie2": None,
                 "afvalwijzerAfvalkalenderVan": None,
@@ -18,6 +18,8 @@ AFVALWIJZER_DATA_MINIMAL = {
                 "afvalwijzerButtontekst": "Test",
                 "afvalwijzerUrl": "https://test.nl",
                 "afvalwijzerWaar": "Test",
+                "gebruiksdoelWoonfunctie": True,
+                "afvalwijzerBasisroutetypeCode": None,
             },
             {
                 "afvalwijzerPerXWeken": "1",
@@ -28,7 +30,7 @@ AFVALWIJZER_DATA_MINIMAL = {
                 "afvalwijzerAfvalkalenderOpmerking": '<b>Tuinafval: </b> breng het naar <a href="https://maps.amsterdam.nl/tuinkorven/?LANG=nl">een tuinkorf in de buurt</a>, naar <a href="https://kaart.amsterdam.nl/afvalpunten">een Recyclepunt</a> of anders bij het grof afval.',
                 "afvalwijzerFractieNaam": "Groente, Fruit en Tuin Afval",
                 "afvalwijzerFractieCode": "GFT",
-                "afvalwijzerOphaaldagen": "maandag, dinsdag, woensdag",
+                "afvalwijzerOphaaldagen2": "maandag, dinsdag, woensdag",
                 "afvalwijzerAfvalkalenderMelding": "Breng uw kerstboom naar een <a href=http://amsterdam.nl/recyclepunten>Recyclepunt.  </a>",
                 "afvalwijzerInstructie2": None,
                 "afvalwijzerAfvalkalenderVan": "2025-01-17T00:00:00",
@@ -37,7 +39,11 @@ AFVALWIJZER_DATA_MINIMAL = {
                 "afvalwijzerButtontekst": "Test",
                 "afvalwijzerUrl": "https://test.nl",
                 "afvalwijzerWaar": "Test",
+                "gebruiksdoelWoonfunctie": True,
+                "afvalwijzerBasisroutetypeCode": None,
             },
         ]
     }
 }
+
+AFVALWIJZER_DATA_NO_RESULT = {"_embedded": {"afvalwijzer": []}}

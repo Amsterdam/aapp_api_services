@@ -8,6 +8,7 @@ Affected services
 - waste
 - image
 - notification
+- survey
 
 Definition of Done:
 - [ ] API is backwards compatible (`make openapi-diff`)

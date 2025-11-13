@@ -5,7 +5,6 @@ from rest_framework import serializers
 from core.services.image_set import ImageSetService
 from notification.exceptions import (
     ImageSetNotFoundError,
-    ScheduledNotificationDuplicateIdentifierError,
     ScheduledNotificationIdentifierError,
     ScheduledNotificationInPastError,
 )
@@ -139,8 +138,6 @@ class ScheduledNotificationSerializer(ScheduledNotificationDetailSerializer):
             raise serializers.ValidationError("Identifier is required.")
         if module_slug and not identifier.startswith(module_slug):
             raise ScheduledNotificationIdentifierError()
-        if ScheduledNotification.objects.filter(identifier=identifier).exists():
-            raise ScheduledNotificationDuplicateIdentifierError()
         return identifier
 
 

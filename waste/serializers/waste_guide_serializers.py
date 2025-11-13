@@ -1,6 +1,7 @@
 from django.conf import settings
 from rest_framework import serializers
 
+from waste.constants import WASTE_COLLECTION_BY_APPOINTMENT_CODE, WASTE_TYPES_INACTIVE
 from waste.models import NotificationSchedule
 
 
@@ -35,12 +36,19 @@ class WasteDataSerializer(serializers.Serializer):
     )
     afvalwijzerButtontekst = serializers.CharField(allow_null=True, allow_blank=True)
     afvalwijzerInstructie2 = serializers.CharField(allow_null=True, allow_blank=True)
-    afvalwijzerOphaaldagen = serializers.CharField(allow_null=True, allow_blank=True)
+    afvalwijzerOphaaldagen2 = serializers.CharField(allow_null=True, allow_blank=True)
     afvalwijzerOphaaldagen2Array = serializers.ListField(
         child=serializers.CharField(), allow_null=True, required=False
     )
     afvalwijzerUrl = serializers.CharField(allow_null=True, allow_blank=True)
     afvalwijzerWaar = serializers.CharField(allow_null=True, allow_blank=True)
+    afvalwijzerBasisroutetypeCode = serializers.CharField(
+        allow_null=True, allow_blank=True
+    )
+    afvalwijzerFractiecodeActief = serializers.BooleanField(
+        allow_null=True, required=False
+    )
+    gebruiksdoelWoonfunctie = serializers.BooleanField(allow_null=True, required=False)
 
     def to_internal_value(self, data):
         validated_data = super().to_internal_value(data)
@@ -60,10 +68,21 @@ class WasteDataSerializer(serializers.Serializer):
             "curb_rules_from": _convert("afvalwijzerBuitenzettenVanaf"),
             "curb_rules_to": _convert("afvalwijzerBuitenzettenTot"),
             "how": _convert("afvalwijzerInstructie2"),
-            "days": _convert("afvalwijzerOphaaldagen"),
+            "is_collection_by_appointment": validated_data.get(
+                "afvalwijzerBasisroutetypeCode"
+            )
+            == WASTE_COLLECTION_BY_APPOINTMENT_CODE,
+            "days": _convert("afvalwijzerOphaaldagen2"),
             "days_array": _convert("afvalwijzerOphaaldagen2Array"),
             "url": _convert("afvalwijzerUrl"),
             "where": _convert("afvalwijzerWaar"),
+            "active": validated_data.get(
+                "afvalwijzerFractiecodeActief",
+                validated_data.get("afvalwijzerFractieCode")
+                not in WASTE_TYPES_INACTIVE,
+            ),
+            "is_residential": _convert("gebruiksdoelWoonfunctie"),
+            "basisroutetypeCode": validated_data.get("afvalwijzerBasisroutetypeCode"),
         }
 
         return internal_data
@@ -96,3 +115,5 @@ class WasteCalendarSerializer(serializers.Serializer):
 class WasteResponseSerializer(serializers.Serializer):
     waste_types = WasteTypeSerializer(many=True)
     calendar = WasteCalendarSerializer(many=True)
+    is_residential = serializers.BooleanField()
+    is_collection_by_appointment = serializers.BooleanField()

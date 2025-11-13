@@ -78,6 +78,7 @@ class TestNotificationCRUD(TestCase):
             device__external_id=device.external_id
         ).first()
         self.assertIsNotNone(notification.pushed_at)
+        self.assertEqual(notification.device_external_id, device.external_id)
 
     @patch("notification.services.push.messaging.send_each")
     def test_push_missing_token(self, _):
@@ -90,6 +91,7 @@ class TestNotificationCRUD(TestCase):
         ).first()
         # Check that the notification was created but not pushed
         self.assertIsNone(notification.pushed_at)
+        self.assertEqual(notification.device_external_id, device.external_id)
 
     @patch("notification.services.push.messaging.send_each")
     def test_push_disabled(self, _):
@@ -102,6 +104,7 @@ class TestNotificationCRUD(TestCase):
         ).first()
         # Check that the notification was created but not pushed
         self.assertIsNone(notification.pushed_at)
+        self.assertEqual(notification.device_external_id, device.external_id)
 
     @patch("notification.services.push.messaging.send_each")
     def test_push_with_some_failed_tokens(self, multicast_mock):

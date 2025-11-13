@@ -23,7 +23,7 @@ APP_LINKS = {
     "cityPassRequest": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/HulpBijLaagInkomen.aspx",
     "cityPassChildBudget": "https://www.amsterdam.nl/stadspas/kindtegoed/",
     "cityPassUsage": "https://www.amsterdam.nl/stadspas/werkt-stadspas/",
-    "contactNewsletterSignup": "https://nieuwsbrieven.amsterdam.nl/x/plugin/?pName=subscribe&MIDRID=S7a1BAAA54&pLang=nl&Z=-689291310&pk_vid=ca1422ee24767a7a1739362040f8467b",
+    "contactNewsletterSignup": "https://cloud.nieuwsbrief.amsterdam.nl/nieuwsbrief-aanmelden?type=amsterdam",
     "acknowledgeChild": "https://www.amsterdam.nl/veelgevraagd/een-kind-erkennen-b0bd7",
     "birth": "https://www.amsterdam.nl/burgerzaken/geboorte-erkenning-kinderen/geboorteaangifte/",
     "immigration": "https://www.amsterdam.nl/burgerzaken/immigratie",
@@ -39,6 +39,7 @@ APP_LINKS = {
     "elections": "https://www.amsterdam.nl/verkiezingen/",
     "sail": "https://www.sail.nl/vaarregels",
     "sailingAndMooring": "https://www.amsterdam.nl/verkeer-vervoer/varen/vaarvignet-aanvragen/",
+    "waste": "https://www.amsterdam.nl/afval/",
 }
 
 

@@ -15,12 +15,6 @@ class ScheduledNotificationInPastError(BaseApiException):
     default_code = "SCHEDULED_NOTIFICATION_IN_PAST"
 
 
-class ScheduledNotificationDuplicateIdentifierError(BaseApiException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "Identifier already exists"
-    default_code = "SCHEDULED_NOTIFICATION_DUPLICATE_IDENTIFIER"
-
-
 class ScheduledNotificationIdentifierError(BaseApiException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Identifier is required"

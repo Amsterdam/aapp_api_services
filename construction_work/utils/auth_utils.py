@@ -6,28 +6,19 @@ from construction_work.models.manage_models import ProjectManager
 
 def get_manager_type(token_data) -> ManagerType:
     """Get manager type based on token data"""
-    token_groups = token_data.get("groups")
+    token_roles = token_data.get("roles")
 
-    if (
-        settings.EDITOR_GROUP_ID in token_groups
-        and settings.PUBLISHER_GROUP_ID in token_groups
-    ):
-        return ManagerType.EDITOR_PUBLISHER
-    elif (
-        settings.EDITOR_GROUP_ID in token_groups
-        and settings.PUBLISHER_GROUP_ID not in token_groups
-    ):
+    editor_role_deprecated = f"{settings.ENVIRONMENT_SLUG}-pbs-editor"
+    editor_role = f"{settings.ENVIRONMENT_SLUG}-pbs-editor-delegated"
+    publisher_role = f"{settings.ENVIRONMENT_SLUG}-pbs-publisher"
+    if editor_role_deprecated in token_roles or editor_role in token_roles:
         return ManagerType.EDITOR
-    elif (
-        settings.PUBLISHER_GROUP_ID in token_groups
-        and settings.EDITOR_GROUP_ID not in token_groups
-    ):
+    if publisher_role in token_roles:
         return ManagerType.PUBLISHER
-
     return ManagerType.NOT_FOUND
 
 
-def get_project_manager_from_token(token_data) -> ProjectManager:
+def get_project_manager_from_token(token_data) -> ProjectManager | None:
     """Retrieve the ProjectManager instance based on token data"""
     email = token_data.get("upn")
     try:

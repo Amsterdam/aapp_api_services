@@ -48,7 +48,7 @@ class BaseTestManageView(APITestCase):
         self, email="editor@amsterdam.nl", first_name=None, last_name=None
     ):
         jwt_token = create_bearer_token(
-            groups=[settings.EDITOR_GROUP_ID],
+            roles=["o-pbs-editor-delegated"],
             email=email,
             first_name=first_name,
             last_name=last_name,
@@ -57,9 +57,7 @@ class BaseTestManageView(APITestCase):
         self.api_headers["Authorization"] = jwt_token
 
     def update_headers_with_publisher_data(self, email="publisher@amsterdam.nl"):
-        jwt_token = create_bearer_token(
-            groups=[settings.PUBLISHER_GROUP_ID], email=email
-        )
+        jwt_token = create_bearer_token(roles=["o-pbs-publisher"], email=email)
         self.api_headers["Accept"] = "application/json"
         self.api_headers["Authorization"] = jwt_token
 
@@ -67,7 +65,7 @@ class BaseTestManageView(APITestCase):
         self, publisher_email="publisher@amsterdam.nl"
     ):
         jwt_token = create_bearer_token(
-            groups=[settings.EDITOR_GROUP_ID, settings.PUBLISHER_GROUP_ID],
+            roles=["o-pbs-editor-delegated", "o-pbs-publisher"],
             email=publisher_email,
         )
         self.api_headers["Accept"] = "application/json"

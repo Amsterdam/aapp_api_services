@@ -192,6 +192,22 @@ class ScheduledNotificationView(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         create_missing_device_ids(request)
+        identifier = request.data.get("identifier")
+        instance = self.get_queryset().filter(identifier=identifier).first()
+        if instance:
+            serializer = self.get_serializer(instance, data=request.data, partial=False)
+            serializer.is_valid(raise_exception=True)
+            validated_data = serializer.validated_data.copy()
+            devices = validated_data.pop("devices", [])
+            scheduled_notification_qs = ScheduledNotification.objects.filter(
+                identifier=identifier
+            )
+            scheduled_notification_qs.update(**validated_data)
+            instance = scheduled_notification_qs.first()
+            # Make sure to add any new devices to the existing ones
+            instance.devices.set(devices + list(instance.devices.all()))
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return super().create(request, *args, **kwargs)
 
 
@@ -215,6 +231,19 @@ class ScheduledNotificationDetailView(RetrieveUpdateDestroyAPIView):
     def update(self, request, *args, **kwargs):
         create_missing_device_ids(request)
         return super().update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            instance = ScheduledNotification.objects.get(
+                identifier=kwargs["identifier"]
+            )
+            instance.delete()
+        except ScheduledNotification.DoesNotExist:
+            logger.warning(
+                "ScheduledNotification with identifier %s does not exist.",
+                kwargs["identifier"],
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 def create_missing_device_ids(request):

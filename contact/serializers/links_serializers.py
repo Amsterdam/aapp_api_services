@@ -31,3 +31,4 @@ class LinksOutSerializer(serializers.Serializer):
     elections = serializers.URLField()
     sail = serializers.URLField()
     sailingAndMooring = serializers.URLField()
+    waste = serializers.URLField()

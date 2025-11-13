@@ -1,6 +1,6 @@
 .PHONY: deploy requirements
 
-ALL_SERVICES = bridge city_pass construction_work contact image modules notification waste
+ALL_SERVICES = bridge city_pass construction_work contact image modules notification waste survey
 
 ifdef SERVICE_NAME
 export SERVICE_NAME_HYPHEN=$(subst _,-,$(SERVICE_NAME))
