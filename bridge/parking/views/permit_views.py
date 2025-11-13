@@ -301,14 +301,7 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
             "description": zone.get("zone_description"),
             "hourly_rate": hourly_rate.group(0) if hourly_rate else None,
             "city": "Amsterdam",  # DEPRECATED
-            "days": [
-                {
-                    "day_of_week": self.weekdays[n],  # Guesswork!
-                    "start_time": f"{day[0].get('startTime')[:2]}:{day[0].get('startTime')[2:]}",  # Take first time frame only??
-                    "end_time": f"{day[0].get('endTime')[:2]}:{day[0].get('endTime')[2:]}",  # Take first time frame only??
-                }
-                for n, day in enumerate(zone["time_frame_data"])
-            ],
+            "days": self._interpret_days(payload=response.data),
         }
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
@@ -316,3 +309,33 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
             data=response_serializer.data,
             status=status.HTTP_200_OK,
         )
+
+    def _interpret_days(self, payload):
+        interpret_days = []
+        time_frame_data = payload["data"]["time_frame_data"]
+        assert len(time_frame_data) >= 7, "Expected 7 days in time_frame_data"
+        for n, weekday in enumerate(self.weekdays):
+            day = time_frame_data[n]
+            if day:
+                interpret_days.append(
+                    {
+                        "day_of_week": weekday,
+                        "start_time": self._format_machine_time(
+                            day[0].get("startTime")
+                        ),  # Take first time frame only
+                        "end_time": self._format_machine_time(
+                            day[0].get("endTime")
+                        ),  # Take first time frame only
+                    }
+                )
+        return interpret_days
+
+    def _format_machine_time(self, value):
+        if isinstance(value, str):
+            assert value.isdigit(), "Time string must be numeric"
+            value = value.zfill(4)
+            return value[:2] + ":" + value[2:]
+        if isinstance(value, int):
+            s = f"{value:04d}"
+            return s[:2] + ":" + s[2:]
+        raise TypeError("Value must be int or str")

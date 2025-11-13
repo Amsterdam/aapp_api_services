@@ -11,7 +11,10 @@ from bridge.parking.tests.mock_data import (
 )
 from bridge.parking.tests.mock_data_external import parking_zone_by_machine
 from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
-from bridge.parking.views.permit_views import ParkingPermitsView
+from bridge.parking.views.permit_views import (
+    ParkingPermitsView,
+    ParkingPermitZoneByMachineView,
+)
 
 
 class TestParkingPermitsView(BaseSSPTestCase):
@@ -92,3 +95,68 @@ class TestParkingPermitZoneByMachineView(BaseSSPTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(response.data["hourly_rate"], None)
+
+    def test_format_machine_time_string(self):
+        view = ParkingPermitZoneByMachineView()
+
+        # Test with leading zeros
+        self.assertEqual(view._format_machine_time("0900"), "09:00")
+        self.assertEqual(view._format_machine_time("0059"), "00:59")
+        # Test without leading zeros
+        self.assertEqual(view._format_machine_time("900"), "09:00")
+        self.assertEqual(view._format_machine_time("59"), "00:59")
+
+    def test_format_machine_time_int(self):
+        view = ParkingPermitZoneByMachineView()
+
+        self.assertEqual(view._format_machine_time(900), "09:00")
+        self.assertEqual(view._format_machine_time(59), "00:59")
+        self.assertEqual(view._format_machine_time(2359), "23:59")
+        self.assertEqual(view._format_machine_time(945), "09:45")
+
+    def test_interpret_days_integer(self):
+        view = ParkingPermitZoneByMachineView()
+
+        # Test with time frames for all days
+        days = view._interpret_days(parking_zone_by_machine.MOCK_RESPONSE_NO_RATE)
+        expected_days = [
+            {"day_of_week": "Maandag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Dinsdag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Woensdag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Donderdag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Vrijdag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Zaterdag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Zondag", "end_time": "24:00", "start_time": "12:00"},
+        ]
+        self.assertEqual(days, expected_days)
+
+    def test_interpret_days_no_sunday(self):
+        view = ParkingPermitZoneByMachineView()
+
+        # Test with time frames for all days
+        days = view._interpret_days(parking_zone_by_machine.MOCK_RESPONSE_SUNDAY_FREE)
+        expected_days = [
+            {"day_of_week": "Maandag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Dinsdag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Woensdag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Donderdag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Vrijdag", "end_time": "24:00", "start_time": "09:00"},
+            {"day_of_week": "Zaterdag", "end_time": "24:00", "start_time": "09:00"},
+        ]
+        self.assertEqual(days, expected_days)
+
+    def test_interpret_days_string(self):
+        view = ParkingPermitZoneByMachineView()
+
+        # Test with time frames for all days
+        days = view._interpret_days(parking_zone_by_machine.MOCK_RESPONSE_WITH_RATE)
+        expected_days = [
+            {"day_of_week": "Maandag", "end_time": "20:59", "start_time": "09:00"},
+            {"day_of_week": "Dinsdag", "end_time": "20:59", "start_time": "09:00"},
+            {"day_of_week": "Woensdag", "end_time": "20:59", "start_time": "09:00"},
+            {"day_of_week": "Donderdag", "end_time": "20:59", "start_time": "09:00"},
+            {"day_of_week": "Vrijdag", "end_time": "20:59", "start_time": "09:00"},
+            {"day_of_week": "Zaterdag", "end_time": "20:59", "start_time": "09:00"},
+            {"day_of_week": "Zondag", "end_time": "20:59", "start_time": "09:00"},
+        ]
+        self.assertEqual(days, expected_days)
