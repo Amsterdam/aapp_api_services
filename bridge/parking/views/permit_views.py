@@ -1,8 +1,8 @@
 import json
 import logging
 import math
-import re
 
+# import re
 import jwt
 from rest_framework import status
 from rest_framework.response import Response
@@ -294,7 +294,9 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
         zone = response.data["data"]
 
         # extract hourly rate from zone description
-        hourly_rate = re.search(r"€\s*\d{1,2},\d{2}", zone.get("zone_description"))
+        # TODO: uncomment statement below if hourly rate is valid
+        # hourly_rate = re.search(r"€\s*\d{1,2},\d{2}", zone.get("zone_description"))
+        hourly_rate = None
 
         response_payload = {
             "id": zone.get("zone_id"),
