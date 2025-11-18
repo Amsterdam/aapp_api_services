@@ -51,6 +51,7 @@ class BaseSSPView(generics.GenericAPIView):
         body_data=None,
         query_params=None,
         wrap_body_data_with_token=False,
+        requires_access_token=True,
     ):
         """
         Make the call to the SSP API.
@@ -74,19 +75,20 @@ class BaseSSPView(generics.GenericAPIView):
         }
         if settings.ENVIRONMENT == "local":
             headers["X-Api-Key"] = settings.API_KEYS.split(",")[0]
-        ssp_access_token = get_access_token(self.request, external_api)
-        if wrap_body_data_with_token:
-            if not body_data:
-                body_data = {
-                    "token": ssp_access_token,
-                }
+        if requires_access_token:
+            ssp_access_token = get_access_token(self.request, external_api)
+            if wrap_body_data_with_token:
+                if not body_data:
+                    body_data = {
+                        "token": ssp_access_token,
+                    }
+                else:
+                    body_data = {
+                        "token": ssp_access_token,
+                        "data": body_data,
+                    }
             else:
-                body_data = {
-                    "token": ssp_access_token,
-                    "data": body_data,
-                }
-        else:
-            headers["Authorization"] = f"Bearer {ssp_access_token}"
+                headers["Authorization"] = f"Bearer {ssp_access_token}"
 
         ssp_response = requests.request(
             method,

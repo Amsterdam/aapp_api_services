@@ -7,6 +7,8 @@ from requests import Request
 from rest_framework import status
 from rest_framework.response import Response
 
+from bridge.parking.exceptions import SSLMissingAccessTokenError
+
 
 class Role(Enum):
     USER = "ROLE_USER_SSP"
@@ -20,7 +22,7 @@ def get_access_token(request, external_api: bool = False):
     """
     tokens = request.headers.get(settings.SSP_ACCESS_TOKEN_HEADER)
     if not tokens:
-        return
+        raise SSLMissingAccessTokenError()
     tokens = tokens.split("%AMSTERDAMAPP%")
     internal_token = tokens[0]
     external_token = tokens[-1]

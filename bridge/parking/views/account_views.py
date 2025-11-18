@@ -80,6 +80,7 @@ class ParkingAccountLoginView(BaseSSPView):
             method="POST",
             endpoint=SSPEndpoint.LOGIN.value,
             body_data=request_payload,
+            requires_access_token=False,
         )
         access_jwt = response.data.get("token")
         if not access_jwt:
@@ -104,6 +105,7 @@ class ParkingAccountLoginView(BaseSSPView):
             endpoint=SSPEndpointExternal.LOGIN.value,
             body_data=request_payload,
             external_api=True,
+            requires_access_token=False,
         )
         access_jwt = response.data.get("token")
         if not access_jwt:
