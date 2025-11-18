@@ -94,7 +94,6 @@ class SurveyVersionQuestion(models.Model):
 
 class Question(models.Model):
     class Meta:
-        ordering = ["sort_order"]
         verbose_name = "Vraag"
         verbose_name_plural = "Vragen"
 
@@ -117,7 +116,6 @@ class Question(models.Model):
     orientation = models.CharField(choices=Orientation, max_length=20)
     min_characters = models.IntegerField(default=10)
     max_characters = models.IntegerField(default=500)
-    sort_order = models.PositiveIntegerField()
 
     def __str__(self):
         return f"Vraag {self.id}: {self.question_text}"

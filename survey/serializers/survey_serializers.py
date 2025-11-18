@@ -42,7 +42,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        exclude = ["sort_order", "survey_versions"]
+        exclude = ["survey_versions"]
 
 
 class SurveyVersionDetailSerializer(serializers.ModelSerializer):
