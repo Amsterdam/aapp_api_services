@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.urls import path
 
 from bridge.proxy.views import (
@@ -10,18 +11,23 @@ from bridge.proxy.views import (
     WasteGuideView,
 )
 
-urlpatterns = [
-    # egis dev proxy
-    path(
-        "parking/api/v1/egis-proxy/<path:path>",
-        EgisProxyView.as_view(),
-        name="egis-proxy",
-    ),
-    path(
-        "parking/api/v1/egis-ext-proxy/<path:path>",
-        EgisProxyExternalView.as_view(),
-        name="egis-ext-proxy",
-    ),
+urlpatterns = []
+if settings.ENVIRONMENT_SLUG in ["o", "t"]:
+    urlpatterns += [
+        # egis dev proxy
+        path(
+            "parking/api/v1/egis-proxy/<path:path>",
+            EgisProxyView.as_view(),
+            name="egis-proxy",
+        ),
+        path(
+            "parking/api/v1/egis-ext-proxy/<path:path>",
+            EgisProxyExternalView.as_view(),
+            name="egis-ext-proxy",
+        ),
+    ]
+
+urlpatterns += [
     # afvalwijzer
     path(
         "waste-guide/api/v1/search",

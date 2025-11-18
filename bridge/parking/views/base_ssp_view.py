@@ -104,12 +104,14 @@ class BaseSSPView(generics.GenericAPIView):
         except Exception:
             content = ssp_response.text
 
-        # cap error message on 150 tokens (but first check if its not None)
-        if isinstance(content, str) and len(content) > 150:
-            content = content[:150]
+        # cap error message length
+        if isinstance(content, str):
+            content = content[:500]
 
         if ssp_response.status_code == 500:
             raise exceptions.SSPServerError(detail=content)  # Map to 500 status
+        if ssp_response.status_code == 502:
+            raise exceptions.SSPBadGatewayError()  # Map to 502 status
         for error in exceptions.SSP_COMMON_ERRORS:
             if error.default_detail in content:
                 raise error()  # Map to common error status

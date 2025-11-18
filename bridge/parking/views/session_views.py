@@ -16,6 +16,7 @@ from bridge.parking.exceptions import (
     SSPFreeParkingError,
     SSPMaxSessionsReachedError,
     SSPNoParkingFeeError,
+    SSPParkingZoneError,
     SSPSessionDurationExceededError,
     SSPSessionNotActiveError,
     SSPStartDateEndDateNotSameError,
@@ -49,6 +50,7 @@ EXCEPTIONS = [
     SSPStartTimeInPastError,
     SSPFreeParkingError,
     SSPNoParkingFeeError,
+    SSPParkingZoneError,
 ]
 
 

@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from bridge.parking.auth import Role, check_user_role
+from bridge.parking.exceptions import SSPTransactionAlreadyConfirmedError
 from bridge.parking.serializers.transaction_serializers import (
     TransactionBalanceConfirmRequestSerializer,
     TransactionBalanceRequestSerializer,
@@ -69,6 +70,7 @@ class TransactionsBalanceConfirmView(BaseSSPView):
     @ssp_openapi_decorator(
         serializer=TransactionBalanceConfirmRequestSerializer,
         response_serializer_class=None,
+        exceptions=[SSPTransactionAlreadyConfirmedError],
     )
     def post(self, request, *args, **kwargs):
         request_serializer = self.serializer_class(data=request.data)

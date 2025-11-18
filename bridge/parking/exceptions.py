@@ -10,6 +10,12 @@ class SSPCallError(BaseApiException):
     default_code = "SSP_CALL_ERROR"
 
 
+class SSPBadGatewayError(BaseApiException):
+    status_code = status.HTTP_502_BAD_GATEWAY
+    default_detail = "SSP Bad Gateway"
+    default_code = "SSP_BAD_GATEWAY"
+
+
 class SSPResponseError(BaseApiException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = "SSP source response not in expected format"
@@ -32,6 +38,18 @@ class SSPBadCredentials(BaseApiException):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = "Bad credentials"
     default_code = "SSP_BAD_CREDENTIALS"
+
+
+class SSPAccountInactive(BaseApiException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_detail = "Account is not active"
+    default_code = "SSP_ACCOUNT_INACTIVE"
+
+
+class SSPAccountBlocked(BaseApiException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_detail = "Your account is blocked for 24 hours"
+    default_code = "SSP_ACCOUNT_BLOCKED"
 
 
 class SSPBadPassword(BaseApiException):
@@ -160,6 +178,12 @@ class SSPNoParkingFeeError(BaseApiException):
     default_code = "SSP_FREE_PARKING"
 
 
+class SSPAlreadyPaid(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "This order is already paid"
+    default_code = "SSP_PARKING_SESSION_ALREADY_PAID"
+
+
 class SSPLicensePlateExistsError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "This license plate is already in your favorites."
@@ -182,6 +206,12 @@ class SSPParkingMachineNotInZoneError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "The chosen parking machine is not within the allowed zones."
     default_code = "SSP_PARKING_MACHINE_NOT_IN_ZONE"
+
+
+class SSPParkingZoneError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Cannot start a parking session for the given zone code."
+    default_code = "SSP_PARKING_ZONE_INVALID"
 
 
 class SSPPermitNotFoundError(BaseApiException):
@@ -223,6 +253,8 @@ class SSPTransactionAlreadyConfirmedError(BaseApiException):
 SSP_COMMON_ERRORS = [
     SSPBadCredentials,
     SSPBadPassword,
+    SSPAccountInactive,
+    SSPAccountBlocked,
     SSPBalanceTooLowError,
     SSPTokenExpiredError,
     SSPTimeBalanceInsufficientError,
@@ -240,7 +272,9 @@ SSP_COMMON_ERRORS = [
     SSPSessionNotAllowedError,
     SSPFreeParkingError,
     SSPParkingMachineNotInZoneError,
+    SSPParkingZoneError,
     SSPNoParkingFeeError,
+    SSPAlreadyPaid,
     SSPLicensePlateExistsError,
     SSPLicensePlateNotFoundError,
     SSPLicensePlateNoActivationError,

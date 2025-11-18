@@ -8,6 +8,10 @@ from uritemplate import URITemplate
 
 from bridge.parking.auth import Role, check_user_role
 from bridge.parking.exceptions import (
+    SSPAccountBlocked,
+    SSPAccountInactive,
+    SSPBadCredentials,
+    SSPBadPassword,
     SSPPermitNotFoundError,
     SSPResponseError,
 )
@@ -37,6 +41,12 @@ class ParkingAccountLoginView(BaseSSPView):
     @ssp_openapi_decorator(
         response_serializer_class=AccountLoginResponseSerializer,
         requires_access_token=False,
+        exceptions=[
+            SSPBadCredentials,
+            SSPBadPassword,
+            SSPAccountInactive,
+            SSPAccountBlocked,
+        ],
     )
     def post(self, request, *args, **kwargs):
         request_serializer = self.serializer_class(data=request.data)
