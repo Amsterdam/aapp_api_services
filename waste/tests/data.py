@@ -29,7 +29,7 @@ AFVALWIJZER_DATA_MINIMAL = {
                 "afvalwijzerBuitenzettenTot": None,
                 "afvalwijzerAfvalkalenderOpmerking": '<b>Tuinafval: </b> breng het naar <a href="https://maps.amsterdam.nl/tuinkorven/?LANG=nl">een tuinkorf in de buurt</a>, naar <a href="https://kaart.amsterdam.nl/afvalpunten">een Recyclepunt</a> of anders bij het grof afval.',
                 "afvalwijzerFractieNaam": "Groente, Fruit en Tuin Afval",
-                "afvalwijzerFractieCode": "GFT",
+                "afvalwijzerFractieCode": "GFE",
                 "afvalwijzerOphaaldagen2": "maandag, dinsdag, woensdag",
                 "afvalwijzerAfvalkalenderMelding": "Breng uw kerstboom naar een <a href=http://amsterdam.nl/recyclepunten>Recyclepunt.  </a>",
                 "afvalwijzerInstructie2": None,

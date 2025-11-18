@@ -46,8 +46,18 @@ POSTAL_CODE_CONTAINER_NOT_PRESENT = {
     ("1019", "1100"): [],
 }
 
+WASTE_TYPES_MAPPING = {
+    "Grof": "GA",
+    "GA": "GA",
+    "GFET": "GFT",
+    "GFE": "GFT",
+    "GFT": "GFT",
+    "Glas": "Glas",
+    "Papier": "Papier",
+    "Plastic": "Plastic",
+    "Rest": "Rest",
+    "Textiel": "Textiel",
+}
 WASTE_TYPES_ORDER = ["Rest", "GA", "Papier", "GFT", "Glas", "Textiel"]
 
 WASTE_COLLECTION_BY_APPOINTMENT_CODE = "THUISAFSPR"
-
-WASTE_TYPES_INACTIVE = ["Plastic"]

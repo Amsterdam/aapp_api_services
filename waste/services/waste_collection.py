@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import requests
 from django.conf import settings
 
+from waste import constants
 from waste.constants import WASTE_TYPES_ORDER
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
 
@@ -27,7 +28,8 @@ class WasteCollectionService:
         data = resp.json().get("_embedded", {}).get("afvalwijzer", [])
         serializer = WasteDataSerializer(data=data, many=True)
         serializer.is_valid(raise_exception=True)
-        self.validated_data = serializer.validated_data
+        data = [d for d in serializer.validated_data if d.get("code")]
+        self.validated_data = data
 
     def create_calendar(self):
         calendar = []
@@ -103,7 +105,7 @@ class WasteCollectionService:
             code = item.get("code")
             dates[code].append(item["date"])
 
-        next_dates = {code: None for code in settings.WASTE_CODES}
+        next_dates = {code: None for code in WASTE_TYPES_ORDER}
         for code in next_dates:
             next_dates[code] = min(dates[code]) if dates[code] else None
 
@@ -113,7 +115,7 @@ class WasteCollectionService:
         waste_types = []
         for item in self.validated_data:
             code = item.get("code")
-            if item.get("active"):
+            if code in constants.WASTE_TYPES_ORDER:
                 waste_types.append(
                     {
                         **{
