@@ -24,93 +24,24 @@ from notification.services.push import PushService
 logger = logging.getLogger(__name__)
 
 
-class NotificationInitView(generics.CreateAPIView):
-    """
-    Endpoint to initialize a new notification. This endpoint is network isolated and only accessible from other backend services.
-
-    The supplied notification data does not represent a final notification object one-to-one.
-    The data will be passed to the push service which takes over from that point.
-
-    Response: notification data as posted with auto set fields
-    """
-
-    serializer_class = NotificationCreateSerializer
-
-    @extend_schema(
-        responses={
-            200: NotificationCreateResponseSerializer,
-            **get_error_response_serializers([PushServiceError, ValidationError]),
-        },
-    )
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        device_ids = serializer.validated_data.pop("device_ids")
-        make_push = serializer.validated_data.pop("make_push") or True
-
-        source_notification = Notification(**serializer.validated_data)
-        notification_crud = NotificationCRUD(
-            source_notification,
-            push_enabled=make_push,
-        )
-        self.create_notifications(
-            notification_crud=notification_crud, device_ids=device_ids
-        )
-
-        return Response(notification_crud.response_data, status=status.HTTP_200_OK)
-
-    def create_notifications(
-        self, *, notification_crud: NotificationCRUD, device_ids: list[str]
-    ):
-        try:
-            logger.info(
-                f"Processing new notification: {notification_crud.source_notification}",
-                extra={"device_ids": device_ids},
-            )
-            devices_qs = self.get_device_queryset(device_ids)
-            notification_crud.create(devices_qs)
-        except Exception:
-            logger.error("Failed to create notifications", exc_info=True)
-            raise NotificationServiceError("Failed to create notifications")
-
-    @staticmethod
-    def get_device_queryset(device_ids):
-        known_devices_qs = Device.objects.filter(external_id__in=device_ids).all()
-        known_device_ids = [device.external_id for device in known_devices_qs]
-        unknown_device_ids = set(device_ids) - set(known_device_ids)
-        if not unknown_device_ids:
-            return known_devices_qs
-
-        unknown_devices = [
-            Device(external_id=device_id) for device_id in unknown_device_ids
-        ]
-        Device.objects.bulk_create(unknown_devices, ignore_conflicts=True)
-        new_devices_qs = Device.objects.filter(external_id__in=unknown_device_ids)
-        logger.warning(f"Created {len(new_devices_qs)} unknown devices.")
-        devices_qs = known_devices_qs | new_devices_qs
-        return devices_qs
-
-
-class NotificationAggregateView(NotificationInitView):
+class NotificationAggregateView(generics.CreateAPIView):
     """
     Endpoint to initialize multiple notifications. This endpoint is network isolated and only accessible from other backend services.
     The "make_push" field is ignored in this endpoint, as a single push is made for the entire batch per device id.
     All notifications are required to contain the same module slug.
     """
 
-    def get_serializer(self, *args, **kwargs):
-        kwargs["many"] = True
-        return self.serializer_class(*args, **kwargs)
+    serializer_class = NotificationCreateSerializer
 
     @extend_schema(
+        request=NotificationCreateSerializer(many=True),
         responses={
             200: NotificationCreateResponseSerializer(many=True),
             **get_error_response_serializers([PushServiceError, ValidationError]),
         },
     )
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
 
@@ -184,6 +115,37 @@ class NotificationAggregateView(NotificationInitView):
 
     def _get_aggregate_body(self, occurrence):
         return f"Er staan {occurrence} berichten voor je klaar"
+
+    def create_notifications(
+        self, *, notification_crud: NotificationCRUD, device_ids: list[str]
+    ):
+        try:
+            logger.info(
+                f"Processing new notification: {notification_crud.source_notification}",
+                extra={"device_ids": device_ids},
+            )
+            devices_qs = self.get_device_queryset(device_ids)
+            notification_crud.create(devices_qs)
+        except Exception:
+            logger.error("Failed to create notifications", exc_info=True)
+            raise NotificationServiceError("Failed to create notifications")
+
+    @staticmethod
+    def get_device_queryset(device_ids):
+        known_devices_qs = Device.objects.filter(external_id__in=device_ids).all()
+        known_device_ids = [device.external_id for device in known_devices_qs]
+        unknown_device_ids = set(device_ids) - set(known_device_ids)
+        if not unknown_device_ids:
+            return known_devices_qs
+
+        unknown_devices = [
+            Device(external_id=device_id) for device_id in unknown_device_ids
+        ]
+        Device.objects.bulk_create(unknown_devices, ignore_conflicts=True)
+        new_devices_qs = Device.objects.filter(external_id__in=unknown_device_ids)
+        logger.warning(f"Created {len(new_devices_qs)} unknown devices.")
+        devices_qs = known_devices_qs | new_devices_qs
+        return devices_qs
 
 
 class ScheduledNotificationView(ModelViewSet):

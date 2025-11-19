@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import datetime
 from typing import NamedTuple
 
@@ -32,8 +33,8 @@ class AbstractNotificationService:
     def __init__(self):
         self.client = InternalServiceSession()
         self.link_source_id = None
-        self.post_notification_url = settings.NOTIFICATION_ENDPOINTS[
-            "INIT_NOTIFICATION"
+        self.post_scheduled_notification_url = settings.NOTIFICATION_ENDPOINTS[
+            "SCHEDULED_NOTIFICATION"
         ]
         self.last_notification_url = settings.NOTIFICATION_ENDPOINTS["LAST_TIMESTAMP"]
         self.notifications_url = settings.NOTIFICATION_ENDPOINTS["NOTIFICATIONS"]
@@ -75,21 +76,28 @@ class AbstractNotificationService:
     def process(
         self,
         notification: NotificationData,
+        expiry_minutes: int = 15,
     ):
         """
         Send notifications to users based on the notification type and budget codes.
         """
         self.link_source_id = notification.link_source_id
-        request_data = self.get_request_data(notification)
+        request_data = self.get_request_data(
+            notification, expiry_minutes=expiry_minutes
+        )
 
         self.make_request(
-            self.post_notification_url, method="POST", request_data=request_data
+            self.post_scheduled_notification_url,
+            method="POST",
+            request_data=request_data,
         )
 
     def get_request_data(
         self,
         notification: NotificationData,
+        expiry_minutes: int,
     ) -> dict:
+        now = timezone.now() + timezone.timedelta(seconds=5)
         request_data = {
             "title": notification.title,
             "body": notification.message,
@@ -99,6 +107,11 @@ class AbstractNotificationService:
             "context": self.get_context(),
             "device_ids": notification.device_ids,
             "make_push": notification.make_push,
+            "scheduled_for": now.isoformat(),
+            "expires_at": (
+                now + timezone.timedelta(minutes=expiry_minutes)
+            ).isoformat(),
+            "identifier": f"{self.module_slug}_{uuid.uuid4()}",
         }
         if notification.image_set_id:
             request_data["image"] = notification.image_set_id

@@ -25,23 +25,27 @@ class Command(BaseCommand):
                 # select_for_update() is used to lock the database rows one by one to prevent duplicate pushes.
                 # If another parallel process is running, it will skip the locked rows and move on to the next ones.
                 timezone_now = timezone.now()
-                notifications_to_push = ScheduledNotification.objects.select_for_update(
-                    skip_locked=True
-                ).filter(scheduled_for__lte=timezone_now)[:BATCH_SIZE]
-                notifications_to_push = list(notifications_to_push)
-                if not notifications_to_push:
+                notifications_to_process = (
+                    ScheduledNotification.objects.select_for_update(
+                        skip_locked=True
+                    ).filter(scheduled_for__lte=timezone_now)[:BATCH_SIZE]
+                )
+                notifications_to_process = list(notifications_to_process)
+                if not notifications_to_process:
                     logger.debug("No scheduled notifications found. Sleeping...")
                     if options["test_mode"]:
                         # In test mode, interrupt the loop when no notifications are found
                         break
                     sleep(5)  # Sleep for 5 seconds before checking again
                 logger.info(
-                    f"Pushing {len(notifications_to_push)} scheduled notifications"
+                    f"Pushing {len(notifications_to_process)} scheduled notifications"
                 )
-                self.push_notifications(notifications_to_push)
+                self.process_notifications(notifications_to_process)
 
-    def push_notifications(self, notifications_to_push):
-        for scheduled_notification in notifications_to_push:
+    def process_notifications(
+        self, notifications_to_process: list[ScheduledNotification]
+    ):
+        for scheduled_notification in notifications_to_process:
             if scheduled_notification.expires_at <= timezone.now():
                 logger.info(
                     "Skipping expired notification",
@@ -52,10 +56,10 @@ class Command(BaseCommand):
                     },
                 )
             else:
-                self.push_notification(scheduled_notification)
+                self.process(scheduled_notification)
             scheduled_notification.delete()
 
-    def push_notification(self, scheduled_notification):
+    def process(self, scheduled_notification: ScheduledNotification):
         notification_obj = Notification(
             title=scheduled_notification.title,
             body=scheduled_notification.body,
@@ -66,7 +70,10 @@ class Command(BaseCommand):
             created_at=timezone.now(),
         )
         scheduled_notification.devices.all()
-        notification_crud = NotificationCRUD(source_notification=notification_obj)
+        notification_crud = NotificationCRUD(
+            source_notification=notification_obj,
+            push_enabled=scheduled_notification.make_push,
+        )
         response = notification_crud.create(
             device_qs=scheduled_notification.devices.all()
         )

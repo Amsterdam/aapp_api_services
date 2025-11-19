@@ -72,6 +72,7 @@ class ScheduledNotification(BaseNotification):
     scheduled_for = models.DateTimeField()
     devices = models.ManyToManyField(Device, related_name="scheduled_notifications")
     expires_at = models.DateTimeField(default="3000-01-01")
+    make_push = models.BooleanField(default=True)
 
     def __str__(self):
         return f"[SCHEDULED] {self.module_slug} - {self.title}"

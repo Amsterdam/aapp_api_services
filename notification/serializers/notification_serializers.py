@@ -110,10 +110,12 @@ class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
             "image",
             "scheduled_for",
             "expires_at",
+            "make_push",
         ]
 
     def validate_scheduled_for(self, scheduled_date):
-        if scheduled_date < timezone.now():
+        # Subtract 1 minute to account for possible clock differences and delays
+        if scheduled_date < timezone.now() - timezone.timedelta(minutes=1):
             raise ScheduledNotificationInPastError()
         return scheduled_date
 

@@ -17,7 +17,7 @@ from core.services.notification import InternalServiceError
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from core.utils.image_utils import get_example_image_file
 
-POST_NOTIFICATION_URL = settings.NOTIFICATION_ENDPOINTS["INIT_NOTIFICATION"]
+POST_NOTIFICATION_URL = settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"]
 
 
 @override_settings(

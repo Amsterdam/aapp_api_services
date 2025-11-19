@@ -2,7 +2,6 @@ import json
 import pathlib
 from unittest.mock import Mock, patch
 
-from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -12,107 +11,10 @@ from rest_framework import status
 from core.tests.test_authentication import BasicAPITestCase
 from notification.models import Device, Notification, ScheduledNotification
 from notification.utils.patch_utils import (
-    MockFirebaseSendEach,
     apply_init_firebase_patches,
 )
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
-
-
-@patch("notification.services.push.messaging.send_each")
-class NotificationCreateViewTests(BasicAPITestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("notification-create-notification")
-        self.firebase_paths = apply_init_firebase_patches()
-
-    def test_init_notification_success(self, mock_send_each):
-        device = baker.make(Device, external_id="abc", firebase_token="abc_token")
-        data = {
-            "title": "foobar title",
-            "body": "foobar body",
-            "module_slug": "foobar module slug",
-            "context": {"foo": "bar"},
-            "created_at": "2024-10-31T15:00:00",
-            "device_ids": ["abc", "def", "ghi"],
-            "notification_type": "foobar-notification-type",
-        }
-        messages = mock_send_each([device], title=data["title"], body=data["body"])
-        mock_send_each.return_value = MockFirebaseSendEach(messages)
-
-        result = self.client.post(
-            self.url,
-            data=json.dumps(data),
-            headers=self.api_headers,
-            content_type="application/json",
-        )
-        self.assertEqual(result.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            result.json(),
-            {
-                "total_device_count": 3,
-                "total_token_count": 1,
-                "total_enabled_count": 1,
-                "failed_token_count": 0,
-            },
-        )
-
-    @patch("notification.serializers.notification_serializers.ImageSetService")
-    def test_init_notification_with_image_success(self, mock_image_service, _):
-        instance_image_service = mock_image_service.return_value
-        instance_image_service.exists.return_value = True
-        image_id = 3
-        data = {
-            "title": "foobar title",
-            "body": "foobar body",
-            "module_slug": "foobar module slug",
-            "context": {"foo": "bar"},
-            "created_at": "2024-10-31T15:00:00",
-            "device_ids": ["abc", "def", "ghi"],
-            "notification_type": "foobar-notification-type",
-            "image": image_id,
-        }
-
-        result = self.client.post(
-            self.url,
-            data=json.dumps(data),
-            headers=self.api_headers,
-            content_type="application/json",
-        )
-        self.assertEqual(result.status_code, status.HTTP_200_OK)
-        response = result.json()
-        self.assertEqual(
-            response,
-            {
-                "total_device_count": 3,
-                "total_token_count": 0,
-                "total_enabled_count": 0,
-                "failed_token_count": 0,
-            },
-        )
-        notifications = Notification.objects.all()
-        self.assertEqual(notifications[0].image, image_id)
-
-    @override_settings(MAX_DEVICES_PER_REQUEST=5)
-    def test_too_many_devices(self, _):
-        data = {
-            "title": "foobar title",
-            "body": "foobar body",
-            "module_slug": "foobar module slug",
-            "context": {"foo": "bar"},
-            "created_at": "2024-10-31T15:00:00",
-            "device_ids": [
-                f"device_{i}" for i in range(settings.MAX_DEVICES_PER_REQUEST + 1)
-            ],
-            "notification_type": "foobar-notification-type",
-        }
-        result = self.client.post(
-            self.url,
-            data=json.dumps(data),
-            headers=self.api_headers,
-            content_type="application/json",
-        )
-        self.assertEqual(result.status_code, status.HTTP_200_OK)
 
 
 class ScheduledNotificationBase(BasicAPITestCase):

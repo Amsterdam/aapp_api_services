@@ -12,7 +12,7 @@ from waste.services.notification import NotificationService
 class NotificationServiceTest(ResponsesActivatedAPITestCase):
     def test_call_notification_service(self):
         resp_post = responses.post(
-            settings.NOTIFICATION_ENDPOINTS["INIT_NOTIFICATION"],
+            settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"],
             json={"status": "success"},
         )
 
@@ -22,18 +22,11 @@ class NotificationServiceTest(ResponsesActivatedAPITestCase):
         self.assertEqual(resp_post.call_count, 1)
 
         call = responses.calls[0].request
-        json_body = {
-            "title": "Morgen wordt je glas afval opgehaald",
-            "body": "Denk er aan om je container buiten te zetten",
-            "module_slug": "waste",
-            "notification_type": "waste:date-reminder",
-            "created_at": "2021-08-01T00:00:00+00:00",
-            "context": {
-                "linkSourceid": "glas",
-                "type": "waste:date-reminder",
-                "module_slug": "waste",
-            },
-            "device_ids": ["device1", "device2"],
-            "make_push": True,
-        }
-        self.assertEqual(json.loads(call.body), json_body)
+        json_body = json.loads(call.body)
+        self.assertEqual(json_body["title"], "Morgen wordt je glas afval opgehaald")
+        self.assertEqual(
+            json_body["body"], "Denk er aan om je container buiten te zetten"
+        )
+        self.assertEqual(json_body["module_slug"], "waste")
+        self.assertEqual(json_body["notification_type"], "waste:date-reminder")
+        self.assertEqual(json_body["device_ids"], ["device1", "device2"])

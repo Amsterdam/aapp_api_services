@@ -245,7 +245,6 @@ NOTIFICATION_BASE_URL_EXTERNAL = urljoin(
     NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH_EXT", "/notification/api/v1/")
 )
 NOTIFICATION_ENDPOINTS = {
-    "INIT_NOTIFICATION": urljoin(NOTIFICATION_BASE_URL, "notification"),
     "SCHEDULED_NOTIFICATION": urljoin(NOTIFICATION_BASE_URL, "scheduled-notification"),
     "NOTIFICATIONS": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "notifications"),
     "LAST_TIMESTAMP": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "notifications/last"),

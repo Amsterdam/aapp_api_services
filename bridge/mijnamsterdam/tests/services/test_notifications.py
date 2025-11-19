@@ -25,13 +25,8 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
             ],
         )
         self.rsp_post_notification = responses.post(
-            settings.NOTIFICATION_ENDPOINTS["INIT_NOTIFICATION"],
-            json={
-                "total_device_count": 1,
-                "total_token_count": 1,
-                "total_enabled_count": 1,
-                "failed_token_count": 0,
-            },
+            settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"],
+            json={"status": "success"},
         )
 
     def test_send_notification(self):

@@ -13,11 +13,6 @@ BASE_PATH_INTERNAL = "internal/api/v1"
 urlpatterns = [
     # INTERNAL ENDPOINTS
     path(
-        BASE_PATH_INTERNAL + "/notification",
-        notification_internal_views.NotificationInitView.as_view(),
-        name="notification-create-notification",
-    ),
-    path(
         BASE_PATH_INTERNAL + "/notification/aggregate",
         notification_internal_views.NotificationAggregateView.as_view(),
         name="notification-aggregate-notification",
