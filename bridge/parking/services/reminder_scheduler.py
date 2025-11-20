@@ -54,18 +54,20 @@ class ParkingReminderScheduler:
         locale: str = DEFAULT_LANGUAGE,
     ):
         content = REMINDER_MESSAGES.get(locale)
+        context = {
+            "reminderKey": self.reminder_key,
+            "type": NotificationType.PARKING_REMINDER.value,
+            "module_slug": Module.PARKING.value,
+        }
+        if self.report_code:
+            context["reportCode"] = str(self.report_code)
         self.schedule_service.upsert(
             title=content.title,
             body=content.body,
             identifier=self.identifier,
             scheduled_for=self.reminder_time,
             expires_at=self.end_datetime,
-            context={
-                "reminderKey": self.reminder_key,
-                "type": NotificationType.PARKING_REMINDER.value,
-                "module_slug": Module.PARKING.value,
-                "reportCode": self.report_code,
-            },
+            context=context,
             device_ids=[self.device_id],
             notification_type=NotificationType.PARKING_REMINDER.value,
             module_slug=Module.PARKING.value,
