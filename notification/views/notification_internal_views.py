@@ -5,7 +5,7 @@ from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.generics import RetrieveDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -193,7 +193,7 @@ class ScheduledNotificationView(ModelViewSet):
         )
 
 
-class ScheduledNotificationDetailView(RetrieveUpdateDestroyAPIView):
+class ScheduledNotificationDetailView(RetrieveDestroyAPIView):
     queryset = ScheduledNotification.objects.all()
     serializer_class = ScheduledNotificationDetailSerializer
     lookup_field = "identifier"

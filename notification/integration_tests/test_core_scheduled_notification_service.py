@@ -66,7 +66,7 @@ class TestCoreScheduledNotificationService(APITestCase):
     def test_add_notification_with_unknown_image_id(self):
         identifier = f"{settings.SERVICE_NAME}_test-notification"
         self.created_identifiers.append(identifier)
-        unknown_image_id = 99999999
+        unknown_image_id = "99999999"
 
         with self.assertRaises(NotificationServiceError):
             self.service.upsert(

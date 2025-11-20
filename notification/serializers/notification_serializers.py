@@ -9,6 +9,7 @@ from notification.exceptions import (
     ScheduledNotificationInPastError,
 )
 from notification.models import (
+    Device,
     Notification,
     NotificationLast,
     ScheduledNotification,
@@ -89,6 +90,12 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
 
 class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
     scheduled_for = serializers.DateTimeField()
+    device_ids = serializers.SlugRelatedField(
+        many=True,
+        queryset=Device.objects.all(),
+        slug_field="external_id",
+        source="devices",
+    )
 
     class Meta:
         model = ScheduledNotification
@@ -98,6 +105,7 @@ class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
             "module_slug",
             "context",
             "created_at",
+            "device_ids",
             "notification_type",
             "image",
             "scheduled_for",
@@ -120,7 +128,6 @@ class ScheduledNotificationSerializer(ScheduledNotificationDetailSerializer):
         model = ScheduledNotification
         fields = ScheduledNotificationDetailSerializer.Meta.fields + [
             "identifier",
-            "device_ids",
         ]
 
     def validate(self, attrs):
