@@ -92,7 +92,8 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self.assertEqual(
             response.data["notification_status"], NotificationStatus.CREATED.name
         )
-        notification = self._check_notification_count(1)[0]
+        notifications = self._check_notification_count(1)
+        notification = self.notification_scheduler.get(notifications[0]["identifier"])
         self.assertEqual(
             set(notification["device_ids"]), {self.device_id, old_device_id}
         )  # notification should contain both devices!
@@ -242,16 +243,13 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
 
     def _check_notification_count(self, count):
         notifications = self.notification_scheduler.get_all()
-        device_notifications = [
-            n for n in notifications if self.device_id in n["device_ids"]
-        ]
+        device_notifications = [n for n in notifications]
         self.assertEqual(len(device_notifications), count)
         return device_notifications
 
     def tearDown(self):
         scheduled_notifications = self.notification_scheduler.get_all()
         for notification in scheduled_notifications:
-            if self.device_id in notification["device_ids"]:
-                identifier = notification["identifier"]
-                logger.info(f"Deleting scheduled notification [{identifier}]")
-                self.notification_scheduler.delete(identifier)
+            identifier = notification["identifier"]
+            logger.info(f"Deleting scheduled notification [{identifier}]")
+            self.notification_scheduler.delete(identifier)
