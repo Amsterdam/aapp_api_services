@@ -20,6 +20,7 @@ class TestReminderScheduler(TestCase):
             end_datetime=timezone.now()
             + timedelta(minutes=settings.PARKING_REMINDER_TIME + 1),
             device_id="foobar",
+            report_code="some-report-code",
         )
         notification_status = scheduler.process()
         self.assertEqual(notification_status, NotificationStatus.CREATED)
@@ -37,6 +38,7 @@ class TestReminderScheduler(TestCase):
             end_datetime=timezone.now()
             + timedelta(minutes=settings.PARKING_REMINDER_TIME - 1),
             device_id="foobar",
+            report_code="some-report-code",
         )
         notification_status = scheduler.process()
         self.assertEqual(notification_status, NotificationStatus.CANCELLED)
@@ -52,6 +54,7 @@ class TestReminderScheduler(TestCase):
             end_datetime=timezone.now()
             + timedelta(minutes=settings.PARKING_REMINDER_TIME + 1),
             device_id="foobar2",
+            report_code="some-report-code",
         )
         notification_status = scheduler.process()
         self.assertEqual(notification_status, NotificationStatus.CREATED)
@@ -66,6 +69,7 @@ class TestReminderScheduler(TestCase):
             reminder_key=reminder_key,
             end_datetime=timezone.now() - timedelta(minutes=1),
             device_id="foobar",
+            report_code="some-report-code",
         )
         notification_status = scheduler.process()
         self.assertEqual(notification_status, NotificationStatus.CANCELLED)

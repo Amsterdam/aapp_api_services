@@ -161,10 +161,19 @@ class ScheduledNotificationView(ModelViewSet):
             serializer.is_valid(raise_exception=True)
             validated_data = serializer.validated_data.copy()
             devices = validated_data.pop("devices", [])
+            fields_for_update = [
+                "title",
+                "body",
+                "image",
+                "scheduled_for",
+                "expires_at",
+            ]
             scheduled_notification_qs = ScheduledNotification.objects.filter(
                 identifier=identifier
             )
-            scheduled_notification_qs.update(**validated_data)
+            scheduled_notification_qs.update(
+                **{k: v for k, v in validated_data.items() if k in fields_for_update}
+            )
             instance = scheduled_notification_qs.first()
             # Make sure to add any new devices to the existing ones
             instance.devices.set(devices + list(instance.devices.all()))

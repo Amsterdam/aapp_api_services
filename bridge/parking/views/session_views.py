@@ -299,6 +299,7 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         notification_status = self._process_notification(
             ps_right_id=ps_right_id,
             end_datetime=end_datetime,
+            report_code=session_data["report_code"],
         )
         return self._make_response(response_data, notification_status)
 
@@ -359,7 +360,7 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         return dt_utc
 
     def _process_notification(
-        self, ps_right_id: str, end_datetime: datetime
+        self, ps_right_id: str, end_datetime: datetime, report_code: str = None
     ) -> NotificationStatus:
         try:
             assert ps_right_id is not None, (
@@ -371,6 +372,7 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
                 reminder_key=reminder_key,
                 end_datetime=end_datetime,
                 device_id=self.device_id,
+                report_code=report_code,
             )
             notification_status = scheduler.process()
             return notification_status
