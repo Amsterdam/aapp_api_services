@@ -1,6 +1,7 @@
 import logging
 from collections import Counter, defaultdict
 
+from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
@@ -151,35 +152,45 @@ class NotificationAggregateView(generics.CreateAPIView):
 class ScheduledNotificationView(ModelViewSet):
     serializer_class = ScheduledNotificationSerializer
     queryset = ScheduledNotification.objects.all()
+    update_fields = [
+        "title",
+        "body",
+        "image",
+        "scheduled_for",
+        "expires_at",
+        "make_push",
+    ]
 
     def create(self, request, *args, **kwargs):
-        create_missing_device_ids(request)
-        identifier = request.data.get("identifier")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+
+        new_device_ids = validated_data.pop("device_ids")
+        devices = create_missing_device_ids(new_device_ids)
+        identifier = validated_data["identifier"]
         instance = self.get_queryset().filter(identifier=identifier).first()
         if instance:
-            serializer = self.get_serializer(instance, data=request.data, partial=False)
-            serializer.is_valid(raise_exception=True)
-            validated_data = serializer.validated_data.copy()
-            devices = validated_data.pop("devices", [])
-            fields_for_update = [
-                "title",
-                "body",
-                "image",
-                "scheduled_for",
-                "expires_at",
-            ]
-            scheduled_notification_qs = ScheduledNotification.objects.filter(
-                identifier=identifier
-            )
-            scheduled_notification_qs.update(
-                **{k: v for k, v in validated_data.items() if k in fields_for_update}
-            )
-            instance = scheduled_notification_qs.first()
-            # Make sure to add any new devices to the existing ones
-            instance.devices.set(devices + list(instance.devices.all()))
+            # Perform UPDATE
+            old_device_ids = list(instance.devices.all())
+            devices = list(set(old_device_ids) | set(devices))  # Add new devices to old
 
+            for attr, value in validated_data.items():
+                if attr in self.update_fields:
+                    setattr(instance, attr, value)
+            with transaction.atomic():
+                instance.save()
+                instance.devices.set(devices)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return super().create(request, *args, **kwargs)
+
+        # Perform CREATE
+        with transaction.atomic():
+            notification = ScheduledNotification.objects.create(**validated_data)
+            notification.devices.set(devices)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
 
 class ScheduledNotificationDetailView(RetrieveUpdateDestroyAPIView):
@@ -199,10 +210,6 @@ class ScheduledNotificationDetailView(RetrieveUpdateDestroyAPIView):
         except ScheduledNotification.DoesNotExist:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def update(self, request, *args, **kwargs):
-        create_missing_device_ids(request)
-        return super().update(request, *args, **kwargs)
-
     def delete(self, request, *args, **kwargs):
         try:
             instance = ScheduledNotification.objects.get(
@@ -217,8 +224,7 @@ class ScheduledNotificationDetailView(RetrieveUpdateDestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-def create_missing_device_ids(request):
-    device_ids = request.data.get("device_ids", [])
+def create_missing_device_ids(device_ids: list[str]) -> list[Device]:
     existing_devices = Device.objects.filter(external_id__in=device_ids).values_list(
         "external_id", flat=True
     )
@@ -228,3 +234,4 @@ def create_missing_device_ids(request):
             Device(external_id=device_id) for device_id in missing_device_ids
         )
     logger.warning(f"Created {len(missing_device_ids)} missing devices.")
+    return Device.objects.filter(external_id__in=device_ids)
