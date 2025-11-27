@@ -21,8 +21,6 @@ SPECTACULAR_SETTINGS["TITLE"] = "Contact API"
 
 CSV_DIR = os.getenv("CSV_DIR", "/app/contact/csv")
 
-WAITING_TIME_API = "https://wachttijdenamsterdam.nl/data/"
-
 CITY_OFFICE_LOOKUP_TABLE = {
     5: "e9871a7716da02a4c20cfb06f9547005",  # Centrum
     6: "5d9637689a8b902fa1a13acdf0006d26",  # Nieuw-West
