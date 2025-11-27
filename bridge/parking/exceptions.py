@@ -112,7 +112,7 @@ class SSPStartTimeInPastError(BaseApiException):
     default_code = "SSP_START_TIME_IN_PAST"
 
 
-class SSPStartTimeInvalid(BaseApiException):
+class SSPStartTimeInvalidError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Invalid start date"
     default_code = "SSP_START_TIME_INVALID"
@@ -261,7 +261,7 @@ SSP_COMMON_ERRORS = [
     SSPTimeBalanceAllocationNotAllowedError,
     SSPSEndTimeInPastError,
     SSPStartTimeInPastError,
-    SSPStartTimeInvalid,
+    SSPStartTimeInvalidError,
     SSPStartDateEndDateNotSameError,
     SSPEndDateBeforeStartDateError,
     SSPMaxSessionsReachedError,

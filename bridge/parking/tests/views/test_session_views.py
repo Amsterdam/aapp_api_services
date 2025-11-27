@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 import responses
 from django.urls import reverse
+from freezegun import freeze_time
 from uritemplate import URITemplate
 
 from bridge.parking.services.ssp import SSPEndpointExternal
@@ -202,6 +203,28 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
                 datetime.fromisoformat(received_payload["started_at"]),
                 expected_started_utc,
             )
+
+    @freeze_time("2025-07-24T11:30:00.000Z")
+    def test_exception_start_time_in_past_within_limits(self):
+        payload = self.start_payload.copy()
+        payload["start_date_time"] = "2025-07-24T11:29:00.000Z"
+        self.start_session(
+            payload=self.start_payload,
+            api_headers=self.api_headers,
+            status_code=200,
+            resp_count=1,
+        )
+
+    @freeze_time("2025-07-24T11:30:00.000Z")
+    def test_exception_start_time_in_past_outside_limits(self):
+        payload = self.start_payload.copy()
+        payload["start_date_time"] = "2025-07-24T11:05:00.000Z"
+        self.start_session(
+            payload=self.start_payload,
+            api_headers=self.api_headers,
+            status_code=200,
+            resp_count=1,
+        )
 
     def test_successful_patch(self):
         url_template = SSPEndpointExternal.PARKING_SESSION_EDIT.value

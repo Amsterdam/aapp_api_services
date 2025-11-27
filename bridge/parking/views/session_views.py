@@ -54,10 +54,6 @@ EXCEPTIONS = [
 ]
 
 
-class ReminderTimeError(Exception):
-    pass
-
-
 class ParkingSessionListView(BaseSSPView):
     """
     Get parking sessions from SSP API
