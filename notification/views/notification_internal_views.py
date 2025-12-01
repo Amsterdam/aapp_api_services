@@ -1,7 +1,7 @@
 import logging
 from collections import Counter, defaultdict
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
@@ -169,28 +169,42 @@ class ScheduledNotificationView(ModelViewSet):
         new_device_ids = validated_data.pop("device_ids")
         devices = create_missing_device_ids(new_device_ids)
         identifier = validated_data["identifier"]
+        headers = self.get_success_headers(serializer.data)
+
+        instance = self._get_instance(identifier)
+        # Perform CREATE if object does not exist
+        if not instance:
+            try:
+                self._create_instance(devices, validated_data)
+                return Response(
+                    serializer.data, status=status.HTTP_201_CREATED, headers=headers
+                )
+            except IntegrityError:
+                # Handle race condition where another transaction created the same identifier
+                instance = self._get_instance(identifier)
+
+        # Perform UPDATE if object exists
+        self._update_instance(devices, instance, validated_data)
+        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+
+    def _get_instance(self, identifier):
         instance = self.get_queryset().filter(identifier=identifier).first()
-        if instance:
-            # Perform UPDATE
-            old_device_ids = list(instance.devices.all())
-            devices = list(set(old_device_ids) | set(devices))  # Add new devices to old
+        return instance
 
-            for attr, value in validated_data.items():
-                if attr in self.update_fields:
-                    setattr(instance, attr, value)
-            with transaction.atomic():
-                instance.save()
-                instance.devices.set(devices)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        # Perform CREATE
+    def _create_instance(self, devices, validated_data):
         with transaction.atomic():
             notification = ScheduledNotification.objects.create(**validated_data)
             notification.devices.set(devices)
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+
+    def _update_instance(self, devices, instance, validated_data):
+        old_device_ids = list(instance.devices.all())
+        devices = list(set(old_device_ids) | set(devices))  # Add new devices to old
+        for attr, value in validated_data.items():
+            if attr in self.update_fields:
+                setattr(instance, attr, value)
+        with transaction.atomic():
+            instance.save()
+            instance.devices.set(devices)
 
 
 class ScheduledNotificationDetailView(RetrieveDestroyAPIView):
@@ -212,10 +226,7 @@ class ScheduledNotificationDetailView(RetrieveDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         try:
-            instance = ScheduledNotification.objects.get(
-                identifier=kwargs["identifier"]
-            )
-            instance.delete()
+            ScheduledNotification.objects.get(identifier=kwargs["identifier"]).delete()
         except ScheduledNotification.DoesNotExist:
             logger.warning(
                 "ScheduledNotification with identifier %s does not exist.",
