@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import jwt
 from rest_framework import status
@@ -61,6 +61,9 @@ class ParkingAccountLoginView(BaseSSPView):
         )
         access_jwt_external = self._get_external_access_token(request_payload)
         access_jwt += "%AMSTERDAMAPP%" + access_jwt_external
+
+        # Manually set the expiration for the token on 15 minutes
+        expiration_timestamp = datetime.now() + timedelta(minutes=15)
 
         response_payload = {
             "access_token": access_jwt,

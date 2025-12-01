@@ -1,3 +1,4 @@
+import freezegun
 import responses
 from django.conf import settings
 from django.urls import reverse
@@ -22,6 +23,7 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
             "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjEwMzkxNTYsImV4cCI6MTc2MTA0Mjc1Niwicm9sZXMiOlsiT1RIRVJfUk9MRSJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiYmxhIiwibG9jYWxlIjoibmwtTkwiLCJjbGllbnRfcHJvZHVjdF9pZCI6MTB9.KRVI2yW-RpPhPeGmhAw3FnQ_nqQOHO2-rErWH4bE2pc"
         }
 
+    @freezegun.freeze_time("2024-09-02T15:30:00")
     def test_successful_login(self):
         post_resp = responses.post(SSPEndpoint.LOGIN.value, json=self.test_response)
         post_resp_ext = responses.post(
@@ -39,7 +41,7 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
             self.test_token + "%AMSTERDAMAPP%" + self.test_token,
         )
         self.assertEqual(response.data["scope"], "permitHolder")
-        expiration_datetime = "2025-09-02T15:29:54+02:00"
+        expiration_datetime = "2024-09-02T15:45:00+02:00"
         self.assertEqual(
             response.data["access_token_expiration"],
             expiration_datetime,
