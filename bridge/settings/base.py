@@ -34,6 +34,14 @@ ADDRESS_SEARCH_URL = os.getenv(
     "ADDRESS_SEARCH_URL", "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free"
 )
 
+BURNING_GUIDE_SERVICE_KEY = os.getenv("BURNING_GUIDE_SERVICE_KEY", "")
+BURNING_GUIDE_RIVM_URL = os.getenv(
+    "BURNING_GUIDE_RIVM_URL", "https://data.rivm.nl/geo/alo/wms"
+)
+BURNING_GUIDE_GEODAN_URL = os.getenv(
+    "BURNING_GUIDE_GEODAN_URL", "https://services.geodan.nl/geosearch/v2"
+)
+
 # Parking
 SSP_BASE_URL = os.getenv("SSP_BASE_URL", "https://evs-ssp-accp.mendixcloud.com")
 SSP_BASE_URL_V2 = os.getenv(

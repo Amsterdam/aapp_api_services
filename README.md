@@ -125,7 +125,6 @@ Here are some common issues and their solutions:
 
 
 ## External services
-
 - **Azure Application Insights:** A comprehensive monitoring service that provides real-time error logging, performance tracking, and diagnostic insights to ensure the stability and reliability of our app.
 - **Google Firebase Messaging:** Provides cloud messaging services to send push notifications and in-app messages, enabling real-time communication with users across platforms.
 
@@ -134,3 +133,6 @@ Here are some common issues and their solutions:
 To use the pre-commit hooks as specified in `.pre-commit-config.yml`, first install `pre-commit` by running: `pip install pre-commit` (inside your virtual environment). Then run: `pre-commit install`.
 
 If the `.pre-commit-config.yml` changes, you have to install the new pre-commit hooks. This will not update automatically.
+
+## Adding new packages
+If a new package is needed in the project, this has to be added in the `pryproject.toml` file. Then run

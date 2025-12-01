@@ -1,0 +1,35 @@
+MOCK_RESPONSE = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "id": "TkxELy8vL2FkZHJlc3MtMDM2MzEwMDAxMjA4MjIzNy0wMzYzMjAwMDAwMzM5MTk0",
+            "geometry": {"type": "Point", "coordinates": [4.8926316, 52.4206261]},
+            "properties": {
+                "area": 146.0,
+                "country": "The Netherlands",
+                "naturalId": "0363200000339194",
+                "exactMatch": True,
+                "city": "Amsterdam",
+                "constructionYear": 1920,
+                "purpose": "woonfunctie",
+                "addressType": "v",
+                "postalCode": "1035PG",
+                "municipality": "Amsterdam",
+                "houseNumber": 411,
+                "type": "address",
+                "building": "411",
+                "relatedId": "0363010000881165",
+                "buildingId": "0363100012082237",
+                "street": "Zuideinde",
+                "name": "Zuideinde 411, Amsterdam",
+                "state": "Noord-Holland",
+                "primaryAddress": True,
+                "buildingStatus": "Verblijfsobject in gebruik",
+            },
+            "centroid": {"type": "Point", "coordinates": [4.8926316, 52.4206261]},
+        }
+    ],
+    "numberMatched": 1,
+    "numberReturned": 1,
+}
