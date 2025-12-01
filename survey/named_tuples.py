@@ -9,6 +9,9 @@ class QuestionType(TextChoices):
     RADIO = "radio"
     SELECT = "select"
     CHECK = "checkbox"
+    TEXTAREA = "textarea"
+    RATING = "rating"
+    BUTTONS = "selection_buttons"
 
 
 class ConditionType(TextChoices):
@@ -60,6 +63,7 @@ class TextQuestion(NamedTuple):
     required: bool
     min_characters: int = 10
     max_characters: int = 500
+    textarea_rows: int = 4
     default: str = "open antwoord"
     description: str = ""
     question_type: QuestionType = QuestionType.TEXT.value

@@ -120,7 +120,7 @@ This will execute all test cases across the project. Ensure that the virtual env
 Here are some common issues and their solutions:
 
 - **Dependency Conflicts**: Ensure that the virtual environment is activated and dependencies are installed using the correct `requirements.txt` file.
-- **Migration Errors**: Run `make migrate` to apply any pending migrations.
+- **Migration Errors**: Run `make migrations` to check for needed migrations. Run `make migrate` to apply any pending migrations.
 - **Service Not Starting**: Check the logs for errors and ensure all environment variables are correctly set.
 
 

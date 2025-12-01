@@ -80,6 +80,7 @@ class QuestionAdmin(SortableAdminBase, admin.ModelAdmin):
         "orientation",
         "min_characters",
         "max_characters",
+        "textarea_rows",
         "conditions_type",
     ]
     exclude = ["id", "sort_order", "question_id"]
