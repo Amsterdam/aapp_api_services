@@ -40,6 +40,12 @@ class Module(models.Model):
         null=True,
         help_text="URL om als backup te gebruiken.",
     )
+    button_label = models.CharField(
+        "Knop label",
+        max_length=150,
+        default="Bekijk op Amsterdam.nl",
+        help_text="Label voor de knop die naar de fallback URL verwijst.",
+    )
 
     def __str__(self):
         return f"{self.slug} ({self.get_status_display()})"
@@ -172,6 +178,12 @@ class ReleaseModuleStatus(models.Model):
         max_length=500,
         blank=True,
         null=True,
+    )
+    button_label = models.CharField(
+        "Knop label",
+        max_length=150,
+        default="Bekijk op Amsterdam.nl",
+        help_text="Label voor de knop die naar de fallback URL verwijst.",
     )
 
     def __str__(self):
