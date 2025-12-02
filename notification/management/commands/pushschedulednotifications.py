@@ -56,7 +56,17 @@ class Command(BaseCommand):
                     },
                 )
             else:
-                self.process(scheduled_notification)
+                try:
+                    self.process(scheduled_notification)
+                except Exception as e:
+                    logger.error(
+                        "Error processing scheduled notification",
+                        exc_info=e,
+                        extra={
+                            "notification_type": scheduled_notification.notification_type,
+                            "context": scheduled_notification.context,
+                        },
+                    )
             scheduled_notification.delete()
 
     def process(self, scheduled_notification: ScheduledNotification):
