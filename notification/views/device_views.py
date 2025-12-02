@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiExample
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -106,12 +105,15 @@ class NotificationPushTypeDisabledView(DeviceIdMixin, generics.GenericAPIView):
         if not notification_type:
             raise ValidationError("Notification type is required")
 
-        get_object_or_404(
-            NotificationPushTypeDisabled,
-            device__external_id=self.device_id,
-            notification_type=notification_type,
-        ).delete()
-        return Response(status=status.HTTP_200_OK)
+        try:
+            NotificationPushTypeDisabled.objects.get(
+                device__external_id=self.device_id,
+                notification_type=notification_type,
+            ).delete()
+            return Response(status=status.HTTP_200_OK)
+        except NotificationPushTypeDisabled.DoesNotExist:
+            # Return 204 instead of 404 when not found
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class NotificationPushTypeDisabledListView(DeviceIdMixin, generics.ListAPIView):
@@ -173,12 +175,15 @@ class NotificationPushModuleDisabledView(DeviceIdMixin, generics.GenericAPIView)
         if not module_slug:
             raise ValidationError("Module name is required")
 
-        get_object_or_404(
-            NotificationPushModuleDisabled,
-            device__external_id=self.device_id,
-            module_slug=module_slug,
-        ).delete()
-        return Response(status=status.HTTP_200_OK)
+        try:
+            NotificationPushModuleDisabled.objects.get(
+                device__external_id=self.device_id,
+                module_slug=module_slug,
+            ).delete()
+            return Response(status=status.HTTP_200_OK)
+        except NotificationPushModuleDisabled.DoesNotExist:
+            # Return 204 instead of 404 when not found
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class NotificationPushModuleDisabledListView(DeviceIdMixin, generics.ListAPIView):

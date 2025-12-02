@@ -207,12 +207,7 @@ class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
         url = f"{self.url}?notification_type={self.valid_notification_type}"
         response = self.client.delete(url, headers=self.headers_with_device_id)
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertContains(
-            response,
-            "No NotificationPushTypeDisabled matches the given query",
-            status_code=404,
-        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_enable_push_notification_missing_type(self):
         """Test enabling push notifications without specifying type."""
@@ -389,7 +384,7 @@ class TestNotificationPushModuleDisabledView(AuthenticatedAPITestCase):
         url = f"{self.url}?module_slug={self.module_slugs[0]}"
         response = self.client.delete(url, headers=self.headers)
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_disable_push_module_missing_module_slug(self):
         """Test disabling push notifications without specifying module name."""

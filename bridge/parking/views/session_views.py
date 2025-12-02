@@ -359,8 +359,8 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         self, ps_right_id: str, end_datetime: datetime, report_code: str = None
     ) -> NotificationStatus:
         try:
-            assert ps_right_id is not None, (
-                "ps_right_id is required for scheduling parking reminders"
+            assert ps_right_id, (
+                f"ps_right_id is required for report_code [{report_code}] for reminders"
             )
             reminder_key = self._get_reminder_key(str(ps_right_id))
             end_datetime = end_datetime or timezone.now().isoformat()
