@@ -74,8 +74,30 @@ class ParkingPermitsView(BaseSSPView):
                 filtered_permits.append(permit)
         permits_data = filtered_permits
 
-        response_payload = [
-            {
+        response_payload = self.get_response_payload(is_visitor, permits_data)
+
+        response_serializer = self.response_serializer_class(
+            many=True, data=response_payload
+        )
+        response_serializer.is_valid(raise_exception=True)
+        return Response(
+            data=response_serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    def get_response_payload(self, is_visitor, permits_data):
+        response_payload = []
+        for permit in permits_data:
+            visitor_json = None
+            visitor_data = permit["details"]["ssp"]["visitor_account"]
+            if visitor_data["username"]:
+                visitor_json = {
+                    "report_code": visitor_data["username"],
+                    "pin": visitor_data["pin"],
+                    "seconds_remaining": visitor_data.get("seconds_remaining", 0),
+                }
+
+            permit_json = {
                 "report_code": permit.get("id"),
                 "time_balance": permit["details"]["ssp"][
                     "visitor_account" if is_visitor else "main_account"
@@ -105,25 +127,17 @@ class ParkingPermitsView(BaseSSPView):
                         "days": [
                             {
                                 "day_of_week": self.weekdays[n],  # Guesswork!
-                                "start_time": f"{day[0].get('startTime')[:2]}:{day[0].get('startTime')[2:]}",  # Take first time frame only??
-                                "end_time": f"{day[0].get('endTime')[:2]}:{day[0].get('endTime')[2:]}",  # Take first time frame only??
+                                "start_time": f"{day[0].get('startTime')[:2]}:{day[0].get('startTime')[2:]}",
+                                # Take first time frame only??
+                                "end_time": f"{day[0].get('endTime')[:2]}:{day[0].get('endTime')[2:]}",
+                                # Take first time frame only??
                             }
                             for n, day in enumerate(zone["time_frame_data"])
                         ],
                     }
                     for zone in permit.get("payment_zones", [])
                 ],
-                "visitor_account": {
-                    "report_code": permit["details"]["ssp"]["visitor_account"][
-                        "username"
-                    ],
-                    "pin": permit["details"]["ssp"]["visitor_account"]["pin"],
-                    "seconds_remaining": permit["details"]["ssp"]["visitor_account"][
-                        "time_balance"
-                    ],
-                }
-                if permit["details"]["ssp"]["visitor_account"]["username"]
-                else None,
+                "visitor_account": visitor_json,
                 "parking_rate": {
                     "value": (permit["details"]["permit"]["cost"] or 0) / 100,
                     "currency": "EUR",  # DEPRECATED
@@ -148,16 +162,8 @@ class ParkingPermitsView(BaseSSPView):
                 "max_session_length_in_days": self.get_max_session_length(permit),
                 "can_select_zone": permit["details"]["config"]["can_select_zone"],
             }
-            for permit in permits_data
-        ]
-        response_serializer = self.response_serializer_class(
-            many=True, data=response_payload
-        )
-        response_serializer.is_valid(raise_exception=True)
-        return Response(
-            data=response_serializer.data,
-            status=status.HTTP_200_OK,
-        )
+            response_payload.append(permit_json)
+        return response_payload
 
     def get_mapped_permit_type(self, permit_details):
         permit_type_mapping = {
