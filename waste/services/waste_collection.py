@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import requests
 from django.conf import settings
@@ -11,7 +11,7 @@ from waste.serializers.waste_guide_serializers import WasteDataSerializer
 
 
 class WasteCollectionService:
-    def __init__(self, bag_nummeraanduiding_id):
+    def __init__(self, bag_nummeraanduiding_id: str):
         self.bag_nummeraanduiding_id = bag_nummeraanduiding_id
         self.validated_data = []
         self.all_dates = self._get_dates()
@@ -35,7 +35,9 @@ class WasteCollectionService:
         calendar = []
         for item in self.validated_data:
             if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
-                dates = self.filter_ophaaldagen(ophaaldagen=item.get("days"))
+                ophaaldagen_list, dates = self.filter_ophaaldagen(
+                    ophaaldagen=item.get("days")
+                )
                 frequency = item.get("frequency") or ""
                 if "oneven" in frequency:
                     dates = self.filter_even_oneven(dates, even=False)
@@ -43,6 +45,10 @@ class WasteCollectionService:
                     dates = self.filter_even_oneven(dates, even=True)
                 elif "/" in frequency:
                     dates = self.filter_specific_dates(dates, frequency)
+                elif "van de maand" in frequency:
+                    dates = self.filter_nth_weekday_dates(
+                        dates, weekday=ophaaldagen_list[0], frequency=frequency
+                    )
 
                 calendar += [
                     {
@@ -68,7 +74,7 @@ class WasteCollectionService:
         ophaaldagen_list = self._interpret_ophaaldagen(ophaaldagen)
         all_dates = self._get_dates()
         dates = [date for date in all_dates if date.weekday() in ophaaldagen_list]
-        return dates
+        return ophaaldagen_list, dates
 
     @staticmethod
     def _interpret_ophaaldagen(ophaaldagen: str) -> list[int]:
@@ -87,9 +93,46 @@ class WasteCollectionService:
         ophaaldagen_mapped = [days_of_week[d.strip()] for d in ophaaldagen_list]
         return ophaaldagen_mapped
 
-    def filter_even_oneven(self, dates, even):
+    def filter_even_oneven(self, dates: list[date], even: bool) -> list[date]:
         filtered_dates = [d for d in dates if d.isocalendar()[1] % 2 != even]
         return filtered_dates
+
+    def filter_nth_weekday_dates(
+        self, dates: list[date], weekday: int, frequency: str
+    ) -> list[date]:
+        # get nth from frequency string
+        n = int(frequency[0])
+        filtered_dates = [
+            d
+            for d in dates
+            if self.determine_nth_weekday_date(dt=d, weekday=weekday, n=n)
+        ]
+        return filtered_dates
+
+    def determine_nth_weekday_date(self, dt: date, weekday: int, n: int) -> bool:
+        """
+        Return True if date `dt` is the `n`-th occurrence of `weekday` in its month.
+
+        Making use of the difference in days between date and first occurence
+        # For example:
+        #   n=1 → diff_days in [0, 6]
+        #   n=2 → diff_days in [7, 13]
+        #   n=3 → diff_days in [14, 20], etc.
+
+        weekday: Monday=0, ..., Sunday=7
+        n: occurrence number (1=1st, 2=2nd, 3=3rd, ...)
+        """
+        # First day of the month
+        first = dt.replace(day=1)
+
+        # First occurrence of target weekday in the month
+        days_until_target = (weekday - first.weekday()) % 7
+        first_occurrence = first + timedelta(days=days_until_target)
+
+        # Compute which occurrence dt is
+        diff_days = (dt - first_occurrence).days
+
+        return 7 * (n - 1) <= diff_days <= 7 * n - 1
 
     def filter_specific_dates(self, dates, frequency):
         parts = re.findall(r"\d{1,2}-\d{1,2}-\d{2}", frequency)
@@ -139,9 +182,11 @@ class WasteCollectionService:
                     }
                 )
         waste_types.sort(
-            key=lambda x: WASTE_TYPES_ORDER.index(x["code"])
-            if x["code"] in WASTE_TYPES_ORDER
-            else 999
+            key=lambda x: (
+                WASTE_TYPES_ORDER.index(x["code"])
+                if x["code"] in WASTE_TYPES_ORDER
+                else 999
+            )
         )
         return waste_types
 
@@ -156,7 +201,7 @@ class WasteCollectionService:
                 return item.get("is_collection_by_appointment")
         return False
 
-    def _get_dates(self):
+    def _get_dates(self) -> list[date]:
         now = datetime.now()
         end_date = now + timedelta(days=settings.CALENDAR_LENGTH - 1)
         dates = [(now + timedelta(n)).date() for n in range((end_date - now).days + 1)]
