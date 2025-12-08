@@ -17,7 +17,7 @@ STATIC_URL = "/waste/static/"
 
 # Waste guide
 WASTE_GUIDE_URL = os.getenv(
-    "WASTE_GUIDE_URL", "https://api.data.amsterdam.nl/v1/afvalwijzer/afvalwijzer/"
+    "WASTE_GUIDE_URL", "https://acc.api.data.amsterdam.nl/v1/afvalwijzer/afvalwijzer/"
 )
 WASTE_GUIDE_API_KEY = os.getenv("WASTE_GUIDE_API_KEY")
 CALENDAR_LENGTH = 42
