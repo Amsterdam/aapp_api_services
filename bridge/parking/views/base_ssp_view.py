@@ -1,8 +1,11 @@
+import hashlib
 import json
+import logging
 from datetime import datetime
 
 import requests
 from django.conf import settings
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
@@ -10,6 +13,7 @@ from rest_framework.response import Response
 
 from bridge.parking import exceptions
 from bridge.parking.auth import get_access_token
+from bridge.parking.enums import NotificationStatus
 from bridge.parking.exceptions import (
     SSLMissingAccessTokenError,
     SSPCallError,
@@ -19,9 +23,12 @@ from bridge.parking.exceptions import (
     SSPResponseError,
     SSPServerError,
 )
+from bridge.parking.services.reminder_scheduler import ParkingReminderScheduler
 from core.utils.openapi_utils import extend_schema_for_api_key
+from core.views.mixins import DeviceIdMixin
 
 PAGINATION_DEFAULT_PAGE_SIZE = 10
+logger = logging.getLogger(__name__)
 
 
 class BaseSSPView(generics.GenericAPIView):
@@ -124,6 +131,31 @@ class BaseSSPView(generics.GenericAPIView):
         message = content.split("(422 Unprocessable Content)")[0].strip()
         message = message[5:] if message.startswith('"<!') else message
         raise exceptions.SSPBadRequest(detail=f"[Unmapped error] {message}")
+
+
+class BaseNotificationView(DeviceIdMixin, BaseSSPView):
+    def _process_notification(
+        self, ps_right_id: str, end_datetime: datetime, report_code: str = None
+    ) -> NotificationStatus:
+        try:
+            assert ps_right_id, "ps_right_id is required for reminders"
+            reminder_key = self._get_reminder_key(str(ps_right_id))
+            end_datetime = end_datetime or timezone.now().isoformat()
+            scheduler = ParkingReminderScheduler(
+                reminder_key=reminder_key,
+                end_datetime=end_datetime,
+                device_id=self.device_id,
+                report_code=report_code,
+            )
+            notification_status = scheduler.process()
+            return notification_status
+        except Exception as e:
+            logger.error(f"Error when calling parking reminder scheduler: {str(e)}")
+            return NotificationStatus.ERROR
+
+    def _get_reminder_key(self, ps_right_id: str) -> str:
+        """Create a hashed reminder key"""
+        return hashlib.sha256(ps_right_id.encode()).hexdigest()
 
 
 def serialize_datetimes(obj):

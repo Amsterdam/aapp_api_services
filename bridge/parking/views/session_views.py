@@ -1,10 +1,8 @@
-import hashlib
 import logging
 import math
 from datetime import datetime
 from datetime import timezone as dt_timezone
 
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -35,10 +33,12 @@ from bridge.parking.serializers.session_serializers import (
     ParkingSessionStartRequestSerializer,
     ParkingSessionUpdateRequestSerializer,
 )
-from bridge.parking.services.reminder_scheduler import ParkingReminderScheduler
 from bridge.parking.services.ssp import SSPEndpointExternal
-from bridge.parking.views.base_ssp_view import BaseSSPView, ssp_openapi_decorator
-from core.views.mixins import DeviceIdMixin
+from bridge.parking.views.base_ssp_view import (
+    BaseNotificationView,
+    BaseSSPView,
+    ssp_openapi_decorator,
+)
 
 logger = logging.getLogger(__name__)
 EXCEPTIONS = [
@@ -226,7 +226,7 @@ class ParkingSessionActivateView(BaseSSPView):
         )
 
 
-class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
+class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
     """
     Start or update a parking session with SSP API
     """
@@ -292,11 +292,15 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         response_data = response.data["data"]
         ps_right_id = response_data.get("id")
         response_data["ps_right_id"] = ps_right_id
-        notification_status = self._process_notification(
-            ps_right_id=ps_right_id,
-            end_datetime=end_datetime,
-            report_code=session_data["report_code"],
-        )
+        if not kwargs["is_visitor"]:
+            # ps_right_id is required for reminders, but visitors only get a ps_right_id after the confirmation call
+            notification_status = self._process_notification(
+                ps_right_id=ps_right_id,
+                end_datetime=end_datetime,
+                report_code=session_data["report_code"],
+            )
+        else:
+            notification_status = NotificationStatus.NO_ACTION
         return self._make_response(response_data, notification_status)
 
     @check_user_role(allowed_roles=[Role.USER.value, Role.VISITOR.value])
@@ -354,31 +358,6 @@ class ParkingSessionStartUpdateDeleteView(DeviceIdMixin, BaseSSPView):
         So we need to convert the local time to UTC and give the UTC ISO string without timezone info."""
         dt_utc = dt_local.astimezone(dt_timezone.utc)
         return dt_utc
-
-    def _process_notification(
-        self, ps_right_id: str, end_datetime: datetime, report_code: str = None
-    ) -> NotificationStatus:
-        try:
-            assert ps_right_id, (
-                f"ps_right_id is required for report_code [{report_code}] for reminders"
-            )
-            reminder_key = self._get_reminder_key(str(ps_right_id))
-            end_datetime = end_datetime or timezone.now().isoformat()
-            scheduler = ParkingReminderScheduler(
-                reminder_key=reminder_key,
-                end_datetime=end_datetime,
-                device_id=self.device_id,
-                report_code=report_code,
-            )
-            notification_status = scheduler.process()
-            return notification_status
-        except Exception as e:
-            logger.error(f"Error when calling parking reminder scheduler: {str(e)}")
-            return NotificationStatus.ERROR
-
-    def _get_reminder_key(self, session_id: str) -> str:
-        """Create a hashed reminder key"""
-        return hashlib.sha256(session_id.encode()).hexdigest()
 
     def _make_response(
         self,

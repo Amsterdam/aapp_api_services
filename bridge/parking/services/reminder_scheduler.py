@@ -22,7 +22,7 @@ class ParkingReminderScheduler:
         reminder_key: str,
         end_datetime: datetime,
         device_id: str,
-        report_code: str,
+        report_code: str | None,
     ):
         self.schedule_service = ScheduledNotificationService()
 

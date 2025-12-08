@@ -1,3 +1,4 @@
+import logging
 import math
 
 from rest_framework import status
@@ -13,7 +14,13 @@ from bridge.parking.serializers.transaction_serializers import (
     TransactionsListPaginatedResponseSerializer,
 )
 from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
-from bridge.parking.views.base_ssp_view import BaseSSPView, ssp_openapi_decorator
+from bridge.parking.views.base_ssp_view import (
+    BaseNotificationView,
+    BaseSSPView,
+    ssp_openapi_decorator,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class TransactionsBalanceView(BaseSSPView):
@@ -59,17 +66,21 @@ class TransactionsBalanceView(BaseSSPView):
         )
 
 
-class TransactionsBalanceConfirmView(BaseSSPView):
+class TransactionsBalanceConfirmView(BaseNotificationView):
     """
     Top up wallet via SSP API
     """
 
     serializer_class = TransactionBalanceConfirmRequestSerializer
+    device_id_required = (
+        False  # TODO: deze regel verwijderen als app versie 1.21.0 deprecated is
+    )
 
     @check_user_role(allowed_roles=[Role.USER.value, Role.VISITOR.value])
     @ssp_openapi_decorator(
         serializer=TransactionBalanceConfirmRequestSerializer,
         response_serializer_class=None,
+        requires_device_id=True,
         exceptions=[SSPTransactionAlreadyConfirmedError],
     )
     def post(self, request, *args, **kwargs):
@@ -86,13 +97,26 @@ class TransactionsBalanceConfirmView(BaseSSPView):
             url = SSPEndpointExternal.RECHARGE_CONFIRM_VISITOR.value
         else:
             url = SSPEndpointExternal.RECHARGE_CONFIRM.value
-        self.ssp_api_call(
+        response = self.ssp_api_call(
             method="POST",
             endpoint=url,
             body_data=request_payload,
             wrap_body_data_with_token=True,
             external_api=True,
         )
+        if kwargs["is_visitor"]:
+            try:
+                assert self.device_id, (
+                    "Device ID is required for visitor session notifications"
+                )
+                data = response.data["data"]
+                self._process_notification(
+                    ps_right_id=data["id"],
+                    end_datetime=data["ended_at"],
+                    report_code=kwargs["report_code"],  # Extracted from internal token
+                )
+            except Exception:
+                logger.error("Could not start notification for visitor session")
         return Response(status=status.HTTP_200_OK)
 
 

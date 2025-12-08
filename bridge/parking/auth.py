@@ -41,6 +41,13 @@ def get_role(request: Request) -> str | None:
     return roles[0]
 
 
+def get_report_code(request: Request) -> str | None:
+    token = get_access_token(request)  # internal token
+    decoded_jwt = jwt.decode(token, options={"verify_signature": False})
+    report_code = decoded_jwt.get("client_product_id")
+    return report_code
+
+
 def check_user_role(allowed_roles: list[Role]):
     def decorator(view_func):
         @wraps(view_func)
@@ -58,6 +65,7 @@ def check_user_role(allowed_roles: list[Role]):
                 )
 
             kwargs["is_visitor"] = role == Role.VISITOR.value
+            kwargs["report_code"] = get_report_code(request)
             return view_func(*args, **kwargs)
 
         return wrapper
