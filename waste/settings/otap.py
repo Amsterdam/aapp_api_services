@@ -3,3 +3,5 @@
 # isort wants to change this order, which has to be skipped.
 from .base import *  # isort:skip
 from core.settings.otap import *  # isort:skip
+
+STATIC_URL = "/waste/static/"  # Needs to be in local/otap.py, or it gets overwritten by core/settings/base.py!

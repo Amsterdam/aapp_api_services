@@ -4,6 +4,8 @@ SERVICE_NAME = "waste"
 INSTALLED_APPS += [
     "waste.apps.WasteConfig",
 ]
+MEDIA_URL = "/waste/media/"
+LANGUAGE_CODE = "nl-NL"
 
 ROOT_URLCONF = "waste.urls"
 
@@ -21,3 +23,6 @@ WASTE_GUIDE_URL = os.getenv(
 )
 WASTE_GUIDE_API_KEY = os.getenv("WASTE_GUIDE_API_KEY")
 CALENDAR_LENGTH = 42
+
+MOCK_ENTRA_AUTH = False
+ADMIN_ROLES += ["waste-delegated", "waste-publisher"]

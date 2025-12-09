@@ -12,7 +12,7 @@ class ChoicesEnum(Enum):
 class Module(ChoicesEnum):
     CONSTRUCTION_WORK = "construction-work"
     PARKING = "parking"
-    WASTE = "waste"
+    WASTE = "waste-guide"
     MIJN_AMS = "mijn-amsterdam"
     CITY_PASS = "city-pass"
 
@@ -52,6 +52,11 @@ class NotificationType(ChoicesEnum):
         module=Module.WASTE,
         name="date-reminder",
         description="Herinnering buitenzetten container",
+    )
+    WASTE_MANUAL_NOTIFICATION = NotificationTypeClass(
+        module=Module.WASTE,
+        name="manual-notification",
+        description="A&G meldingen over afvalinzameling",
     )
     MIJN_AMS_BELASTING = NotificationTypeClass(
         module=Module.MIJN_AMS,
