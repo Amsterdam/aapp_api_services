@@ -1,20 +1,12 @@
-import json
-
 import responses
+from django.conf import settings
 from django.urls import reverse
 from requests.models import PreparedRequest
 
-from bridge.burning_guide.clients.geodan import GeoDanClient
 from bridge.burning_guide.clients.rivm import RIVMClient
-from bridge.burning_guide.tests.mock_data import (
-    address_coordinates,
-    address_id,
-    address_properties,
-)
-from bridge.burning_guide.utils import calculate_bbox_from_wsg_coordinates
+from bridge.burning_guide.tests.mock_data import address_properties, postal_codes
 from core.tests.test_authentication import BasicAPITestCase
 
-geodan_client = GeoDanClient()
 rivm_client = RIVMClient()
 
 
@@ -22,12 +14,6 @@ class BurningGuideView(BasicAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("burning-guide")
-        self.mock_address_id_response = json.dumps(address_id.MOCK_RESPONSE).encode(
-            "utf-8"
-        )
-        self.mock_address_coordinates_response = json.dumps(
-            address_coordinates.MOCK_RESPONSE
-        ).encode("utf-8")
         self.mock_address_properties_response = address_properties.MOCK_RESPONSE
 
     def test_postal_code_invalid(self):
@@ -46,29 +32,15 @@ class BurningGuideView(BasicAPITestCase):
 
     @responses.activate
     def test_success(self):
-        postal_code = "1011AB"
+        postal_code = "1091GW"
 
-        address_id_url = create_url_address_id(postal_code)
-
-        address_id_resp = responses.get(
-            address_id_url, body=self.mock_address_id_response
-        )
-
-        address_id = geodan_client._get_address_id_from_response_data(
-            address_id_resp.body
-        )
-
-        address_coordinates_url = create_url_address_coordinates(address_id)
-        address_coordinates_resp = responses.get(
-            address_coordinates_url, body=self.mock_address_coordinates_response
-        )
-
-        address_coordinates = geodan_client._get_coordinates_from_response_data(
-            address_coordinates_resp.body
+        resp_postal_codes = responses.get(
+            f"{settings.BURNING_GUIDE_AMSTERDAM_MAPS_URL}?KAARTLAAG=PC4_BUURTEN&THEMA=postcode",
+            json=postal_codes.MOCK_RESPONSE,
         )
 
         address_properties_url = create_url_address_properties(
-            address_coordinates[0], address_coordinates[1]
+            postal_code=postal_code[:4]
         )
         address_properties_resp = responses.get(
             address_properties_url, json=self.mock_address_properties_response
@@ -79,39 +51,20 @@ class BurningGuideView(BasicAPITestCase):
             headers=self.api_headers,
         )
 
-        self.assertEqual(address_id_resp.call_count, 1)
-        self.assertEqual(address_coordinates_resp.call_count, 1)
         self.assertEqual(address_properties_resp.call_count, 1)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp_postal_codes.call_count, 1)
 
 
 def build_url_with_params(url, params):
     req = PreparedRequest()
     req.prepare_url(url, params)
-    print(req.url)
     return req.url
 
 
-def create_url_address_id(postal_code):
-    payload = {
-        "servicekey": geodan_client.service_key,
-        "country": "NLD",
-        "type": "address",
-        "query": postal_code,
-    }
-    formatted_url = build_url_with_params(f"{geodan_client.base_url}/suggest", payload)
-    return formatted_url
-
-
-def create_url_address_coordinates(address_id):
-    payload = {"servicekey": geodan_client.service_key, "id": address_id}
-    formatted_url = build_url_with_params(f"{geodan_client.base_url}/lookup", payload)
-    return formatted_url
-
-
-def create_url_address_properties(address_lon, address_lat):
+def create_url_address_properties(postal_code: str):
     # get i and j value for address coordinates
-    bbox = calculate_bbox_from_wsg_coordinates(address_lon, address_lat)
+    bbox = rivm_client.get_bbox_from_postal_code(postal_code=postal_code)
 
     payload = {
         "service": "WMS",

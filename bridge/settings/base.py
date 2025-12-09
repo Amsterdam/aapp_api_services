@@ -38,8 +38,9 @@ BURNING_GUIDE_SERVICE_KEY = os.getenv("BURNING_GUIDE_SERVICE_KEY", "")
 BURNING_GUIDE_RIVM_URL = os.getenv(
     "BURNING_GUIDE_RIVM_URL", "https://data.rivm.nl/geo/alo/wms"
 )
-BURNING_GUIDE_GEODAN_URL = os.getenv(
-    "BURNING_GUIDE_GEODAN_URL", "https://services.geodan.nl/geosearch/v2"
+BURNING_GUIDE_AMSTERDAM_MAPS_URL = os.getenv(
+    "BURNING_GUIDE_AMSTERDAM_MAPS_URL",
+    "https://maps.amsterdam.nl/open_geodata/geojson_lnglat.php",
 )
 
 # Parking

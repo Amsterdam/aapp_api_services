@@ -1,13 +1,61 @@
 import json
 
 import requests
+import shapely
 from django.conf import settings
+from django.core.cache import cache
+
+from bridge.burning_guide.utils import calculate_rd_bbox_from_wsg_coordinates
+
+
+def load_postal_data():
+    """
+    Function to load the postal data:
+    - make request to amsterdam maps data
+    - for each postal code:
+        - calculate midpoint (this is in wsg)
+        - transform to rijksdriehoek
+        - calculate bbox
+        - save to dict
+    """
+    cache_key = f"{__name__}.load_postal_data"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return cached_data
+    url = settings.BURNING_GUIDE_AMSTERDAM_MAPS_URL
+    params = {"KAARTLAAG": "PC4_BUURTEN", "THEMA": "postcode"}
+    response = requests.get(url, params=params)
+
+    response.raise_for_status()
+    data_json = response.json()
+    postal_codes_raw = data_json["features"]
+
+    final_dict = {}
+    for postal_code_features in postal_codes_raw:
+        # get postal code and geometry
+        postal_code = postal_code_features["properties"]["Postcode4"]
+        polygon_object = shapely.geometry.shape(postal_code_features["geometry"])
+
+        # calculate centroid
+        centroid_object = polygon_object.centroid
+
+        # calculate bbox in rijksdriehoek coordinates
+        bbox = calculate_rd_bbox_from_wsg_coordinates(
+            lon=centroid_object.x, lat=centroid_object.y
+        )
+
+        # add bbox to final dict
+        final_dict[postal_code] = bbox
+
+    cache.set(cache_key, final_dict, timeout=60 * 60 * 24)
+    return final_dict
 
 
 class RIVMClient:
     def __init__(self) -> None:
         self.service_key = settings.BURNING_GUIDE_SERVICE_KEY
         self.base_url = settings.BURNING_GUIDE_RIVM_URL
+        self.model_runtime = None
 
     def get_burning_guide_information(self, bbox: dict[str, float]) -> dict:
         payload = {
@@ -54,3 +102,9 @@ class RIVMClient:
         response_payload["wind_direction"] = response_payload["windrichting"]
 
         return response_payload
+
+    def get_bbox_from_postal_code(self, postal_code: str) -> dict:
+        data = load_postal_data()
+        # only use the first 4 characters of the postal code
+        bbox = data[postal_code[:4]]
+        return bbox

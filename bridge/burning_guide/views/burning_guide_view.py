@@ -3,14 +3,10 @@ import logging
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from bridge.burning_guide.clients.geodan import GeoDanClient
 from bridge.burning_guide.clients.rivm import RIVMClient
 from bridge.burning_guide.serializers.burning_guide import (
     BruningGuideResponseSerializer,
     BurningGuideRequestSerializer,
-)
-from bridge.burning_guide.utils import (
-    calculate_bbox_from_wsg_coordinates,
 )
 from bridge.burning_guide.utils import (
     extend_schema_for_burning_guide as extend_schema,
@@ -18,7 +14,6 @@ from bridge.burning_guide.utils import (
 
 logger = logging.getLogger(__name__)
 
-geodan_client = GeoDanClient()
 rivm_client = RIVMClient()
 
 
@@ -42,18 +37,9 @@ class BurningGuideView(generics.GenericAPIView):
         if not postal_code:
             raise Exception("Postal code should be provided")
 
-        # get address coordinates for given postal code
-        address_id = geodan_client.get_address_id(postal_code=postal_code)
-        address_coordinates = geodan_client.get_address_coordinates(
-            address_id=address_id
-        )
+        bbox = rivm_client.get_bbox_from_postal_code(postal_code=postal_code)
 
-        # get i and j value for address coordinates
-        bbox = calculate_bbox_from_wsg_coordinates(
-            address_coordinates[0], address_coordinates[1]
-        )
-
-        # use i and je value to get address information
+        # use bbox to get address information
         response_payload = rivm_client.get_burning_guide_information(bbox=bbox)
 
         response_serializer = BruningGuideResponseSerializer(data=response_payload)

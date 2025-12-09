@@ -14,7 +14,8 @@ dependencies = [
   "django-redis",
   "dos2unix",
   "whitenoise",
-  "pyproj==3.7.2",
+  "pyproj",
+  "shapely",
   # modules
   "djangorestframework-simplejwt",
   "django-csp",

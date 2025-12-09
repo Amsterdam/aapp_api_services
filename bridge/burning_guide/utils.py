@@ -3,18 +3,27 @@ from core.utils.coordinates_utils import wgs_to_rd
 from core.utils.openapi_utils import custom_extend_schema
 
 
-def calculate_bbox_from_wsg_coordinates(lon: float, lat: float) -> dict[str, float]:
+def calculate_rd_bbox_from_wsg_coordinates(lon: float, lat: float) -> dict[str, float]:
     """
-    Calculates small box around given coordinates in Rijksdriehoek values.
+    Given WGS84 coordinates (longitude, latitude), calculate a bounding box in Rijksdriehoek coordinates.
+    The bounding box is defined as a square of 200m x 200m centered around the given point.
+
+    Args:
+        lon (float): Longitude in decimal degrees.
+        lat (float): Latitude in decimal degrees.
+
+    Returns:
+        tuple: A tuple representing the bounding box in Rijksdriehoek coordinates
+               (min_x, min_y, max_x, max_y).
     """
-    # convert coordinates to rijksdriehoek coordinates
-    address_rd_x, address_rd_y = wgs_to_rd(lon, lat)
+    center_x, center_y = wgs_to_rd(lon, lat)
+    half_size = 100  # 100 meters in each direction to make a 200m x 200m box
 
     return {
-        "min_x": address_rd_x - 100,
-        "min_y": address_rd_y - 100,
-        "max_x": address_rd_x + 100,
-        "max_y": address_rd_y + 100,
+        "min_x": center_x - half_size,
+        "min_y": center_y - half_size,
+        "max_x": center_x + half_size,
+        "max_y": center_y + half_size,
     }
 
 
