@@ -4,6 +4,11 @@ SERVICE_NAME = "waste"
 INSTALLED_APPS += [
     "waste.apps.WasteConfig",
 ]
+MIDDLEWARE += [
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+X_FRAME_OPTIONS = "SAMEORIGIN"
 MEDIA_URL = "/waste/media/"
 LANGUAGE_CODE = "nl-NL"
 
@@ -25,4 +30,9 @@ WASTE_GUIDE_API_KEY = os.getenv("WASTE_GUIDE_API_KEY")
 CALENDAR_LENGTH = 42
 
 MOCK_ENTRA_AUTH = False
-ADMIN_ROLES += ["waste-delegated", "waste-publisher"]
+ADMIN_ROLES += [
+    "waste-delegated",
+    "waste-publisher",
+    "cbs-time-delegated",
+    "cbs-time-publisher",
+]
