@@ -164,7 +164,7 @@ class ParkingAccountDetailsView(BaseSSPView):
             balance_in_cents = response.data["ssp"]["main_account"]["money_balance"]
             balance = (balance_in_cents or 0.0) / 100
         else:
-            balance = 0.0
+            balance = None
 
         return self.make_response(
             {

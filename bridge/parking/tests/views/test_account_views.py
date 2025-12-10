@@ -145,5 +145,5 @@ class TestParkingAccountDetailsView(BaseSSPTestCase):
 
         response = self.client.get(self.url, headers=api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["wallet"]["balance"], 0)
+        self.assertEqual(response.data["wallet"]["balance"], None)
         self.assertEqual(resp_list.call_count, 1)

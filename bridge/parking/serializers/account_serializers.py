@@ -24,7 +24,7 @@ class AddressSerializer(serializers.Serializer):
 
 
 class WalletSerializer(serializers.Serializer):
-    balance = serializers.FloatField()
+    balance = serializers.FloatField(allow_null=True)
     currency = serializers.CharField(required=False, help_text="DEPRECATED")
 
 
