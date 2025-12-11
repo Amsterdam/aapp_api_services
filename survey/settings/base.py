@@ -23,4 +23,4 @@ SPECTACULAR_SETTINGS["TITLE"] = "Vragenlijsten API"
 TIME_INPUT_FORMATS = ["%H:%M"]
 
 MOCK_ENTRA_AUTH = False
-ADMIN_ROLES += ["cbs-time-delegated", "cbs-time-publisher"]
+ADMIN_ROLES += ["survey-delegated", "survey-publisher"]
