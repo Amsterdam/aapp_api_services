@@ -31,7 +31,7 @@ class BurningGuideAdviceView(generics.GenericAPIView):
         request_serializer = self.serializer_class(data=request.query_params)
         request_serializer.is_valid(raise_exception=True)
         data = request_serializer.validated_data
-        postal_code = data.get("postal_code")
+        postal_code = data.get("postal_code")[:4]
         if not postal_code:
             raise Exception("Postal code should be provided")
 

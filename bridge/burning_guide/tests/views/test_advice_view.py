@@ -44,3 +44,22 @@ class BurningGuideView(ResponsesActivatedAPITestCase):
             headers=self.api_headers,
         )
         self.assertEqual(response.status_code, 200)
+
+    @patch("bridge.burning_guide.views.advice_view.rivm_client")
+    def test_success_full_postal_code(self, patched_rivm_service):
+        patched_rivm_service.get_bbox_from_postal_code.return_value = {
+            "min_x": 121000,
+            "min_y": 487000,
+            "max_x": 122000,
+            "max_y": 488000,
+        }
+        patched_rivm_service.get_burning_guide_information.return_value = {
+            "validated": "data"
+        }
+
+        postal_code = "1091BX"
+        response = self.client.get(
+            self.url + f"?postal_code={postal_code}",
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, 200)

@@ -5,10 +5,9 @@ from bridge.utils import validate_digits
 
 class PostalCodeValidationMixin:
     def validate_postal_code(self, value):
-        value = validate_digits("postal_code", value)
-
+        postal_code = value[:4]
         # get digits from postal_code
-        postal_code_digits = int(value)
+        postal_code_digits = int(validate_digits("postal_code", postal_code))
         if (
             postal_code_digits < 1011 or postal_code_digits > 1109
         ) and postal_code_digits not in [1380, 1381, 1382, 1383, 1384]:
