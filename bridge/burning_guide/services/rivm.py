@@ -5,6 +5,7 @@ import shapely
 from django.conf import settings
 from django.core.cache import cache
 
+from bridge.burning_guide.serializers.advice import AdviceResponseSerializer
 from bridge.burning_guide.utils import calculate_rd_bbox_from_wsg_coordinates
 
 
@@ -51,13 +52,28 @@ def load_postal_data():
     return final_dict
 
 
-class RIVMClient:
+class RIVMService:
     def __init__(self) -> None:
         self.service_key = settings.BURNING_GUIDE_SERVICE_KEY
         self.base_url = settings.BURNING_GUIDE_RIVM_URL
         self.model_runtime = None
 
-    def get_burning_guide_information(self, bbox: dict[str, float]) -> dict:
+    def has_new_red_status(self, postal_code):
+        bbox = self.get_bbox_from_postal_code(postal_code)
+        data = self.get_burning_guide_information(bbox=bbox)
+
+        if data["advice_0"] == 2 or not data["definitive_0"]:
+            # current status is already red or not definitive
+            return False
+        elif data["advice_6"] == 2 and data["definitive_6"]:
+            # new red status in 6 hours
+            return True
+        else:
+            return False
+
+    def get_burning_guide_information(
+        self, bbox: dict[str, float]
+    ) -> AdviceResponseSerializer:
         payload = {
             "service": "WMS",
             "REQUEST": "GetFeatureInfo",
@@ -90,7 +106,7 @@ class RIVMClient:
         response_payload = json_data["features"][0]["properties"]
 
         # change naming of fields
-        response_payload["postal_code"] = response_payload["pc4"]
+        response_payload["postal_code"] = response_payload["pc4"][:4]  # first 4 digits
         response_payload["advice_0"] = response_payload["advies_0"]
         response_payload["advice_6"] = response_payload["advies_6"]
         response_payload["advice_12"] = response_payload["advies_12"]
@@ -101,10 +117,14 @@ class RIVMClient:
         response_payload["definitive_18"] = response_payload["definitief_18"]
         response_payload["wind_direction"] = response_payload["windrichting"]
 
-        return response_payload
+        request_serializer = AdviceResponseSerializer(data=response_payload)
+        request_serializer.is_valid(raise_exception=True)
+        return request_serializer.validated_data
 
     def get_bbox_from_postal_code(self, postal_code: str) -> dict:
         data = load_postal_data()
         # only use the first 4 characters of the postal code
-        bbox = data[postal_code[:4]]
+        bbox = data.get(postal_code)
+        if not bbox:
+            raise ValueError("Unknown postal code")
         return bbox

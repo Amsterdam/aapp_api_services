@@ -1,4 +1,4 @@
-# Generated: 2025-12-09T08:19:24Z
+# Generated: 2025-12-10T11:58:21Z
 aiohappyeyeballs==2.6.1
 aiohttp==3.13.2
 aioresponses==0.7.8
@@ -37,7 +37,7 @@ google-api-core==2.28.1
 google-auth==2.43.0
 google-cloud-core==2.5.0
 google-cloud-firestore==2.21.0
-google-cloud-storage==3.6.0
+google-cloud-storage==3.7.0
 google-crc32c==1.7.1
 google-resumable-media==2.8.0
 googleapis-common-protos==1.72.0

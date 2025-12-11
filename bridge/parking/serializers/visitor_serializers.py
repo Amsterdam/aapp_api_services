@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from bridge.parking.utils import validate_digits
+from bridge.utils import validate_digits
 
 
 class VisitorTimeBalancePostRequestSerializer(serializers.Serializer):

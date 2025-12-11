@@ -19,7 +19,7 @@ class ManualNotification(models.Model):
         verbose_name = "Notificatie"
         verbose_name_plural = "Notificaties"
 
-    title = models.CharField("Titel", max_length=255)
+    title = models.CharField("Titel", default="Afvalwijzer", max_length=255)
     message = models.TextField("Bericht")
     created_by = ForeignKey(
         User,

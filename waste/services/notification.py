@@ -13,11 +13,11 @@ class NotificationService(AbstractNotificationService):
     module_slug = Module.WASTE.value
     notification_type = NotificationType.WASTE_DATE_REMINDER.value
 
-    def send(self, device_ids: list[str], type: str):
+    def send(self, device_ids: list[str], waste_type: str):
         notification_data = NotificationData(
-            title=f"Morgen wordt je {type} afval opgehaald",
-            message="Denk er aan om je container buiten te zetten",
-            link_source_id=type,
+            title="Afvalwijzer",
+            message=f"Morgen halen we {waste_type.replace('GA', 'grof afval').lower()} in uw buurt op. Ga naar Afvalwijzer.",
+            link_source_id=waste_type,
             device_ids=device_ids,
         )
         self.process(notification_data, expiry_minutes=15)

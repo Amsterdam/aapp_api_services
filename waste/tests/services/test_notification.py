@@ -19,16 +19,14 @@ class NotificationServiceTest(ResponsesActivatedAPITestCase):
         )
 
         notification_service = NotificationService()
-        notification_service.send(device_ids=["device1", "device2"], type="glas")
+        notification_service.send(device_ids=["device1", "device2"], waste_type="glas")
 
         self.assertEqual(resp_post.call_count, 1)
 
         call = responses.calls[0].request
         json_body = json.loads(call.body)
-        self.assertEqual(json_body["title"], "Morgen wordt je glas afval opgehaald")
-        self.assertEqual(
-            json_body["body"], "Denk er aan om je container buiten te zetten"
-        )
+        self.assertEqual(json_body["title"], "Afvalwijzer")
+        self.assertIn("Morgen halen we glas in uw buurt op.", json_body["body"])
         self.assertEqual(json_body["module_slug"], "waste-guide")
         self.assertEqual(json_body["notification_type"], "waste-guide:date-reminder")
         self.assertEqual(json_body["device_ids"], ["device1", "device2"])

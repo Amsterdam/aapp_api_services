@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 
-def validate_digits(variable_name: str, value: str) -> dict:
+def validate_digits(variable_name: str, value: str) -> str:
     # check that variable contains only digits
     if not value.isdigit():
         raise serializers.ValidationError(
