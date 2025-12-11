@@ -8,7 +8,7 @@ from freezegun import freeze_time
 from model_bakery import baker
 
 from waste.models import NotificationSchedule
-from waste.tests import data
+from waste.tests.mock_data import frequency_none
 
 
 @freeze_time("2024-03-31")
@@ -17,7 +17,7 @@ from waste.tests import data
 class SendWasteNotificationsTest(TestCase):
     @responses.activate
     def test_send_single_notification(self, mock_call_notification_service):
-        responses.get(settings.WASTE_GUIDE_URL, json=data.AFVALWIJZER_DATA_MINIMAL)
+        responses.get(settings.WASTE_GUIDE_URL, json=frequency_none.MOCK_DATA)
         schedule = baker.make(
             NotificationSchedule, bag_nummeraanduiding_id="12345", updated_at=None
         )

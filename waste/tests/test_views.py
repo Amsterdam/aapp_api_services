@@ -5,7 +5,10 @@ from django.urls import reverse
 from freezegun import freeze_time
 
 from core.tests.test_authentication import BasicAPITestCase
-from waste.tests import data
+from waste.tests.mock_data import (
+    frequency_none,
+    no_result,
+)
 
 
 class TestWasteCalendarView(BasicAPITestCase):
@@ -14,7 +17,7 @@ class TestWasteCalendarView(BasicAPITestCase):
     @responses.activate
     def test_calendar_simple_success(self):
         # Mock the response from the external API
-        responses.get(settings.WASTE_GUIDE_URL, json=data.AFVALWIJZER_DATA_MINIMAL)
+        responses.get(settings.WASTE_GUIDE_URL, json=frequency_none.MOCK_DATA)
 
         url = reverse("waste-guide-calendar")
         response = self.client.get(
@@ -49,7 +52,7 @@ class TestWasteCalendarView(BasicAPITestCase):
     @responses.activate
     def test_calendar_no_result(self):
         # Mock the response from the external API
-        responses.get(settings.WASTE_GUIDE_URL, json=data.AFVALWIJZER_DATA_NO_RESULT)
+        responses.get(settings.WASTE_GUIDE_URL, json=no_result.MOCK_DATA)
 
         url = reverse("waste-guide-calendar")
         response = self.client.get(
@@ -62,37 +65,5 @@ class TestWasteCalendarView(BasicAPITestCase):
 
         self.assertEqual(result["calendar"], [])
         self.assertEqual(result["waste_types"], [])
-        self.assertEqual(result["is_residential"], True)
-        self.assertEqual(result["is_collection_by_appointment"], False)
-
-    @freeze_time("2024-04-01")
-    @override_settings(CALENDAR_LENGTH=21)
-    @responses.activate
-    def test_calendar_montly_frequency_success(self):
-        # Mock the response from the external API
-        responses.get(
-            settings.WASTE_GUIDE_URL, json=data.AFVALWIJZER_DATA_MONTHLY_FREQUENCY
-        )
-
-        url = reverse("waste-guide-calendar")
-        response = self.client.get(
-            url,
-            data={"bag_nummeraanduiding_id": "12345"},
-            headers=self.api_headers,
-        )
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-
-        expected_calendar = [
-            {
-                "date": "2024-04-08",
-                "label": "Papier en karton",
-                "code": "Papier",
-                "curb_rules_from": "Zondag vanaf 21.00",
-                "curb_rules_to": "tot maandag 07.00 uur",
-                "alert": None,
-            }
-        ]
-        self.assertEqual(result["calendar"], expected_calendar)
         self.assertEqual(result["is_residential"], True)
         self.assertEqual(result["is_collection_by_appointment"], False)

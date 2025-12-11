@@ -1,3 +1,4 @@
+import logging
 import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
@@ -8,6 +9,8 @@ from django.conf import settings
 from waste import constants
 from waste.constants import WASTE_TYPES_ORDER
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
+
+montly_pattern = re.compile(r"\d{1}(?:e|de|ste) van de maand")
 
 
 class WasteCollectionService:
@@ -42,16 +45,23 @@ class WasteCollectionService:
                     ophaaldagen=item.get("days")
                 )
                 frequency = item.get("frequency") or ""
-                if "oneven" in frequency:
+                if frequency == "":
+                    pass  # no filtering needed
+                elif "oneven" in frequency:
                     dates = self.filter_even_oneven(dates, even=False)
                 elif "even" in frequency:
                     dates = self.filter_even_oneven(dates, even=True)
                 elif "/" in frequency:
                     dates = self.filter_specific_dates(dates, frequency)
-                elif "van de maand" in frequency:
+                elif montly_pattern.match(frequency) is not None:
                     dates = self.filter_nth_weekday_dates(
                         dates, weekday=ophaaldagen_list[0], frequency=frequency
                     )
+                else:
+                    logging.error(
+                        f"Unknown frequency pattern '{frequency}' for waste type {item.get('code')}"
+                    )
+                    dates = []
 
                 calendar += [
                     {
@@ -137,9 +147,27 @@ class WasteCollectionService:
 
         return 7 * (n - 1) <= diff_days <= 7 * n - 1
 
-    def filter_specific_dates(self, dates, frequency):
-        parts = re.findall(r"\d{1,2}-\d{1,2}-\d{2}", frequency)
+    def filter_specific_dates(self, dates: list[date], frequency: str) -> list[date]:
+        # get parts without a year
+        parts = re.findall(r"\d{1,2}-\d{1,2}", frequency)
         specific_dates = []
+        today = datetime.today()
+        year = today.year
+        for part in parts:
+            day, month = map(int, part.split("-"))
+
+            # Create a mock date for the current year
+            year_date = datetime(year, month, day)
+
+            # If this date has passed already, put it in next year
+            if year_date < today:
+                year += 1
+                year_date = year_date.replace(year=year)
+
+            specific_dates.append(year_date.date())
+
+        # get parts with a year
+        parts = re.findall(r"\d{1,2}-\d{1,2}-\d{2}", frequency)
         for part in parts:
             date = datetime.strptime(part.strip(), "%d-%m-%y").date()
             specific_dates.append(date)

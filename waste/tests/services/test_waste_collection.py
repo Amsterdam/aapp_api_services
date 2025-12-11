@@ -7,9 +7,10 @@ from django.conf import settings
 from django.test import TestCase, override_settings
 
 from waste.services.waste_collection import WasteCollectionService
+from waste.tests.mock_data import frequency_hardcoded, frequency_monthly
 
 
-@freezegun.freeze_time("2025-03-27")
+@freezegun.freeze_time("2025-12-09")
 class WasteCollectionServiceTest(TestCase):
     def setUp(self):
         self.service = WasteCollectionService(bag_nummeraanduiding_id="1234")
@@ -27,7 +28,7 @@ class WasteCollectionServiceTest(TestCase):
         self.paper_where = "Straat"
         self.paper_button_text = "Recyclepunt"
         self.paper_url = "https://recyclepunt.nl"
-        self.paper_frequency = "null"
+        self.paper_frequency = None
 
         self.gft_days = "dinsdag"
         self.gft_days_array = ["dinsdag"]
@@ -42,7 +43,7 @@ class WasteCollectionServiceTest(TestCase):
         self.gft_where = "Straat"
         self.gft_button_text = "Recyclepunt"
         self.gft_url = "https://recyclepunt.nl"
-        self.gft_frequency = "null"
+        self.gft_frequency = None
 
         self.default_waste_guide = [
             {
@@ -56,7 +57,7 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerAfvalkalenderMelding": self.paper_alert,
                 "afvalwijzerAfvalkalenderOpmerking": self.paper_note,
                 "afvalwijzerInstructie2": self.paper_how,
-                "afvalwijzerAfvalkalenderFrequentie": "null",
+                "afvalwijzerAfvalkalenderFrequentie": None,
                 "afvalwijzerButtontekst": self.paper_button_text,
                 "afvalwijzerUrl": self.paper_url,
                 "afvalwijzerWaar": self.paper_where,
@@ -74,7 +75,7 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerAfvalkalenderMelding": self.gft_alert,
                 "afvalwijzerAfvalkalenderOpmerking": self.gft_note,
                 "afvalwijzerInstructie2": self.gft_how,
-                "afvalwijzerAfvalkalenderFrequentie": "null",
+                "afvalwijzerAfvalkalenderFrequentie": None,
                 "afvalwijzerButtontekst": self.gft_button_text,
                 "afvalwijzerUrl": self.gft_url,
                 "afvalwijzerWaar": self.gft_where,
@@ -106,36 +107,36 @@ class WasteCollectionServiceTest(TestCase):
             calendar,
             [
                 {
-                    "date": date(year=2025, month=3, day=31),
-                    "label": self.paper_label,
-                    "code": self.paper_code,
-                    "curb_rules_from": self.paper_curb_rules_from,
-                    "curb_rules_to": self.paper_curb_rules_to,
-                    "alert": self.paper_alert,
+                    "date": date(2025, 12, 9),
+                    "label": "Groente fruit en tuin",
+                    "code": "GFT",
+                    "curb_rules_from": "22:00",
+                    "curb_rules_to": "7:00",
+                    "alert": "Test melding",
                 },
                 {
-                    "date": date(year=2025, month=4, day=1),
-                    "label": self.gft_label,
-                    "code": self.gft_code,
-                    "curb_rules_from": self.gft_curb_rules_from,
-                    "curb_rules_to": self.gft_curb_rules_to,
-                    "alert": self.gft_alert,
+                    "date": date(2025, 12, 15),
+                    "label": "Papier",
+                    "code": "Papier",
+                    "curb_rules_from": "21:00",
+                    "curb_rules_to": "7:00",
+                    "alert": "Geen melding",
                 },
                 {
-                    "date": date(year=2025, month=4, day=7),
-                    "label": self.paper_label,
-                    "code": self.paper_code,
-                    "curb_rules_from": self.paper_curb_rules_from,
-                    "curb_rules_to": self.paper_curb_rules_to,
-                    "alert": self.paper_alert,
+                    "date": date(2025, 12, 16),
+                    "label": "Groente fruit en tuin",
+                    "code": "GFT",
+                    "curb_rules_from": "22:00",
+                    "curb_rules_to": "7:00",
+                    "alert": "Test melding",
                 },
                 {
-                    "date": date(year=2025, month=4, day=8),
-                    "label": self.gft_label,
-                    "code": self.gft_code,
-                    "curb_rules_from": self.gft_curb_rules_from,
-                    "curb_rules_to": self.gft_curb_rules_to,
-                    "alert": self.gft_alert,
+                    "date": date(2025, 12, 22),
+                    "label": "Papier",
+                    "code": "Papier",
+                    "curb_rules_from": "21:00",
+                    "curb_rules_to": "7:00",
+                    "alert": "Geen melding",
                 },
             ],
         )
@@ -148,11 +149,11 @@ class WasteCollectionServiceTest(TestCase):
         self.assertDictEqual(
             next_dates,
             {
-                "Papier": date(year=2025, month=3, day=31),
-                "GFT": date(year=2025, month=4, day=1),
-                "Glas": None,
-                "GA": None,
                 "Rest": None,
+                "GA": None,
+                "Papier": date(2025, 12, 15),
+                "GFT": date(2025, 12, 9),
+                "Glas": None,
                 "Textiel": None,
             },
         )
@@ -167,34 +168,34 @@ class WasteCollectionServiceTest(TestCase):
             waste_types,
             [
                 {
-                    "label": self.paper_label,
-                    "code": self.paper_code,
-                    "curb_rules": self.paper_curb_rules,
-                    "alert": self.paper_alert,
-                    "note": self.paper_note,
-                    "days_array": self.paper_days_array,
-                    "how": self.paper_how,
-                    "where": self.paper_where,
-                    "button_text": self.paper_button_text,
-                    "url": self.paper_url,
-                    "frequency": self.paper_frequency,
-                    "next_date": date(year=2025, month=3, day=31),
+                    "label": "Papier",
+                    "code": "Papier",
+                    "curb_rules": "Van 21:00 tot 07:00",
+                    "alert": "Geen melding",
+                    "note": "Met hetzelfde gemak",
+                    "days_array": ["maandag"],
+                    "how": "Gooi het in de bak",
+                    "where": "Straat",
+                    "button_text": "Recyclepunt",
+                    "url": "https://recyclepunt.nl",
+                    "frequency": None,
                     "is_collection_by_appointment": False,
+                    "next_date": date(2025, 12, 15),
                 },
                 {
-                    "label": self.gft_label,
-                    "code": self.gft_code,
-                    "curb_rules": self.gft_curb_rules,
-                    "alert": self.gft_alert,
-                    "note": self.gft_note,
-                    "days_array": self.gft_days_array,
-                    "how": self.gft_how,
-                    "where": self.gft_where,
-                    "button_text": self.gft_button_text,
-                    "url": self.gft_url,
-                    "frequency": self.gft_frequency,
-                    "next_date": date(year=2025, month=4, day=1),
+                    "label": "Groente fruit en tuin",
+                    "code": "GFT",
+                    "curb_rules": "Van 22:00 tot 07:00",
+                    "alert": "Test melding",
+                    "note": "Met hetzelfde gemak",
+                    "days_array": ["dinsdag"],
+                    "how": "Gooi het in de bak",
+                    "where": "Straat",
+                    "button_text": "Recyclepunt",
+                    "url": "https://recyclepunt.nl",
+                    "frequency": None,
                     "is_collection_by_appointment": False,
+                    "next_date": date(2025, 12, 9),
                 },
             ],
         )
@@ -244,15 +245,15 @@ class WasteCollectionServiceTest(TestCase):
             calendar,
             [
                 {
-                    "date": date(year=2025, month=4, day=1),
-                    "label": self.gft_label,
-                    "code": self.gft_code,
-                    "curb_rules_from": self.gft_curb_rules_from,
-                    "curb_rules_to": self.gft_curb_rules_to,
-                    "alert": self.gft_alert,
+                    "date": date(2025, 12, 9),
+                    "label": "Groente fruit en tuin",
+                    "code": "GFT",
+                    "curb_rules_from": "22:00",
+                    "curb_rules_to": "7:00",
+                    "alert": "Test melding",
                 },
                 {
-                    "date": date(year=2025, month=4, day=7),
+                    "date": date(2025, 12, 15),
                     "label": "Papier",
                     "code": "Papier",
                     "curb_rules_from": "21:00",
@@ -260,7 +261,7 @@ class WasteCollectionServiceTest(TestCase):
                     "alert": "Geen melding",
                 },
                 {
-                    "date": date(year=2025, month=4, day=15),
+                    "date": date(2025, 12, 23),
                     "label": "Groente fruit en tuin",
                     "code": "GFT",
                     "curb_rules_from": "22:00",
@@ -270,30 +271,14 @@ class WasteCollectionServiceTest(TestCase):
             ],
         )
 
-    @override_settings(CALENDAR_LENGTH=150)
+    @override_settings(CALENDAR_LENGTH=380)
     def test_calendar_specific_dates_weesp(self):
-        waste_guide = [
-            {
-                "afvalwijzerOphaaldagen2": "vrijdag",
-                "afvalwijzerFractieNaam": self.paper_label,
-                "afvalwijzerFractieCode": self.paper_code,
-                "afvalwijzerBuitenzetten": self.paper_curb_rules,
-                "afvalwijzerBuitenzettenVanaf": self.paper_curb_rules_from,
-                "afvalwijzerBuitenzettenTot": self.paper_curb_rules_to,
-                "afvalwijzerAfvalkalenderMelding": self.paper_alert,
-                "afvalwijzerAfvalkalenderOpmerking": self.paper_note,
-                "afvalwijzerInstructie2": self.paper_how,
-                "afvalwijzerAfvalkalenderFrequentie": "10-1-25 / 7-2-25 / 7-3-25 / 4-4-25 / 2-5-25 / 30-5-25 / 27-6-25 25-7-25 / 22-8-25 / 19-9-25 / 17-10-25 / 14-11-25 / 12-12-25",
-                "afvalwijzerButtontekst": "Test",
-                "afvalwijzerUrl": "https://test.nl",
-                "afvalwijzerWaar": "Test",
-                "gebruiksdoelWoonfunctie": True,
-                "afvalwijzerBasisroutetypeCode": "",
-            }
-        ]
-        self.set_validated_mock_data(waste_guide)
-
+        self.set_validated_mock_data(
+            frequency_hardcoded.MOCK_DATA["_embedded"]["afvalwijzer"]
+        )
         calendar = self.service.create_calendar()
+
+        print(f"\n--\n{calendar=}")
 
         # interpret date string as datetime
         self.assertEqual(
@@ -301,19 +286,50 @@ class WasteCollectionServiceTest(TestCase):
             [
                 {
                     "date": datetime.strptime(d, "%Y-%m-%d").date(),
-                    "label": self.paper_label,
-                    "code": self.paper_code,
-                    "curb_rules_from": self.paper_curb_rules_from,
-                    "curb_rules_to": self.paper_curb_rules_to,
-                    "alert": self.paper_alert,
+                    "label": "Papier en karton",
+                    "code": "Papier",
+                    "curb_rules_from": "Donderdag 21.00",
+                    "curb_rules_to": "tot vrijdag 07.00 uur",
+                    "alert": None,
                 }
                 for d in [
-                    "2025-04-04",
-                    "2025-05-02",
-                    "2025-05-30",
-                    "2025-06-27",
-                    "2025-07-25",
-                    "2025-08-22",
+                    "2025-12-12",
+                    "2026-01-09",
+                    "2026-02-06",
+                    "2026-03-06",
+                    "2026-04-03",
+                    "2026-05-01",
+                    "2026-05-29",
+                    "2026-06-26",
+                    "2026-07-24",
+                    "2026-08-21",
+                    "2026-09-18",
+                    "2026-10-16",
+                    "2026-11-13",
+                    "2026-12-11",
                 ]
+            ],
+        )
+
+    @override_settings(CALENDAR_LENGTH=42)
+    @responses.activate
+    def test_calendar_montly_frequency_success(self):
+        self.set_validated_mock_data(
+            frequency_monthly.MOCK_DATA["_embedded"]["afvalwijzer"]
+        )
+        calendar = self.service.create_calendar()
+
+        # interpret date string as datetime
+        self.assertEqual(
+            calendar,
+            [
+                {
+                    "date": date(2026, 1, 12),
+                    "label": "Papier en karton",
+                    "code": "Papier",
+                    "curb_rules_from": "Zondag vanaf 21.00",
+                    "curb_rules_to": "tot maandag 07.00 uur",
+                    "alert": None,
+                }
             ],
         )
