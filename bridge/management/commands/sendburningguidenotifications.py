@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
 
@@ -10,6 +11,7 @@ from bridge.burning_guide.services.rivm import RIVMService
 from bridge.models import BurningGuideNotification
 from core.services.notification import NotificationData
 
+logger = logging.getLogger(__name__)
 rivm_client = RIVMService()
 
 
@@ -31,16 +33,25 @@ class Command(BaseCommand):
         )
         batched_notifications = self.collect_batched_notifications(notification_devices)
         for postal_code, device_ids in batched_notifications.items():
-            if rivm_client.has_new_red_status(postal_code):
-                next_timestamp = self._next_fixed_timestamp()
-                self.send_notification_for_single_postal_code(
-                    device_ids, next_timestamp
-                )
+            try:
+                if rivm_client.has_new_red_status(postal_code):
+                    next_timestamp = self._next_fixed_timestamp()
+                    self.send_notification_for_single_postal_code(
+                        device_ids, next_timestamp
+                    )
 
-            # Mark devices within postal code as updated, to prevent sending the same notification multiple times
-            BurningGuideNotification.objects.filter(pk__in=device_ids).update(
-                send_at=timezone.now()
-            )
+                # Mark devices within postal code as updated, to prevent sending the same notification multiple times
+                BurningGuideNotification.objects.filter(pk__in=device_ids).update(
+                    send_at=timezone.now()
+                )
+            except Exception as e:
+                logger.error(
+                    f"Error sending notifications: {e}",
+                    exc_info=True,
+                    extra={
+                        "postal_code": postal_code,
+                    },
+                )
 
     def collect_batched_notifications(
         self,
