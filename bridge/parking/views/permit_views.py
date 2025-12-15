@@ -94,7 +94,7 @@ class ParkingPermitsView(BaseSSPView):
                 visitor_json = {
                     "report_code": visitor_data["username"],
                     "pin": visitor_data["pin"],
-                    "seconds_remaining": visitor_data.get("seconds_remaining", 0),
+                    "seconds_remaining": visitor_data.get("time_balance", 0) or 0,
                 }
 
             permit_json = {

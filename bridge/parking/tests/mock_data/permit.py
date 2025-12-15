@@ -36,7 +36,7 @@ MOCK_RESPONSE_VISITOR_HOLDER = {
         "visitor_account": {
             "username": "V1370110",
             "pin": "3830",
-            "time_balance": None,
+            "time_balance": 3600,
         },
     },
     "validity": {

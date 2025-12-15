@@ -45,7 +45,7 @@ class TestParkingPermitsView(BaseSSPTestCase):
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(response.data[0]["parking_machine_favorite"], "10526")
         self.assertEqual(response.data[0]["permit_type"], "Bezoekersvergunning")
-        self.assertEqual(response.data[0]["visitor_account"]["seconds_remaining"], 0)
+        self.assertEqual(response.data[0]["visitor_account"]["seconds_remaining"], 3600)
 
 
 class TestParkingPermitZoneView(BaseSSPTestCase):
