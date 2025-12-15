@@ -37,12 +37,10 @@ def load_postal_data():
         postal_code = postal_code_features["properties"]["Postcode4"]
         polygon_object = shapely.geometry.shape(postal_code_features["geometry"])
 
-        # calculate centroid
-        centroid_object = polygon_object.centroid
-
+        point_object = polygon_object.representative_point()
         # calculate bbox in rijksdriehoek coordinates
         bbox = calculate_rd_bbox_from_wsg_coordinates(
-            lon=centroid_object.x, lat=centroid_object.y
+            lon=point_object.x, lat=point_object.y
         )
 
         # add bbox to final dict
@@ -83,7 +81,6 @@ class RIVMService:
             "FORMAT": "image/png",
             "TRANSPARENT": "true",
             "LAYERS": "stookwijzer_v2",
-            "servicekey": self.service_key,
             "BUFFER": "1",
             "EXCEPTIONS": "INIMAGE",
             "info_format": "application/json",
