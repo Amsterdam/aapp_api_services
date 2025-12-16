@@ -6,7 +6,7 @@ from django.urls import reverse
 from bridge.parking.exceptions import SSPResponseError
 from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
 from bridge.parking.tests.mock_data import permit, permits
-from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 
 
 class TestParkingAccountLoginView(BaseSSPTestCase):

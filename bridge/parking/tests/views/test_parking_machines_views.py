@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from bridge.parking.services.ssp import SSPEndpointExternal
 from bridge.parking.tests.mock_data import parking_machines
-from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 
 
 class TestParkingVisitorTimeBalanceView(BaseSSPTestCase):

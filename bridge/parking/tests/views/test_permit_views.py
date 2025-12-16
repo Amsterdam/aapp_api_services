@@ -10,7 +10,7 @@ from bridge.parking.tests.mock_data import (
     permits,
 )
 from bridge.parking.tests.mock_data_external import parking_zone_by_machine
-from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 from bridge.parking.views.permit_views import (
     ParkingPermitsView,
     ParkingPermitZoneByMachineView,

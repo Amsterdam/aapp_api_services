@@ -1,6 +1,8 @@
 import json
 from datetime import datetime, timezone
+from unittest.mock import patch
 
+import requests
 import responses
 from django.urls import reverse
 from freezegun import freeze_time
@@ -14,7 +16,7 @@ from bridge.parking.tests.mock_data_external import (
     parking_session_list,
     parking_session_start,
 )
-from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 from bridge.parking.views.session_views import (
     ParkingSessionActivateView,
     ParkingSessionListView,
@@ -23,6 +25,7 @@ from bridge.parking.views.session_views import (
 )
 
 
+@patch("time.sleep", return_value=None)
 class TestParkingSessionActivateView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
@@ -30,7 +33,7 @@ class TestParkingSessionActivateView(BaseSSPTestCase):
         self.payload = {"report_code": "1001", "vehicle_id": "SSP123"}
         self.test_response = parking_session_activate.MOCK_RESPONSE
 
-    def test_successful(self):
+    def test_successful(self, _):
         resp = responses.post(
             ParkingSessionActivateView.ssp_endpoint, json=self.test_response
         )
@@ -40,6 +43,74 @@ class TestParkingSessionActivateView(BaseSSPTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+
+    def test_3_retries_on_exception(self, _):
+        resp = responses.post(
+            ParkingSessionActivateView.ssp_endpoint,
+            json={"message": "server error"},
+            status=500,
+        )
+        response = self.client.post(
+            self.url, data=self.payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(resp.call_count, 3)
+
+    def test_3_retries_on_gateway_timeout(self, _):
+        resp = responses.post(
+            ParkingSessionActivateView.ssp_endpoint,
+            json={"message": "server error"},
+            status=502,
+        )
+        response = self.client.post(
+            self.url, data=self.payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(resp.call_count, 3)
+
+    def test_exception_before_success(self, _):
+        responses.post(
+            ParkingSessionActivateView.ssp_endpoint,
+            json={"message": "server error"},
+            status=500,
+        )
+        responses.post(ParkingSessionActivateView.ssp_endpoint, json=self.test_response)
+
+        response = self.client.post(
+            self.url, data=self.payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(responses.calls), 2)
+
+    def test_timeout_retry(self, _):
+        responses.post(
+            ParkingSessionActivateView.ssp_endpoint,
+            body=requests.exceptions.Timeout(),
+        )
+        responses.post(
+            ParkingSessionActivateView.ssp_endpoint,
+            json={"message": "server error"},
+            status=500,
+        )
+        responses.post(ParkingSessionActivateView.ssp_endpoint, json=self.test_response)
+
+        response = self.client.post(
+            self.url, data=self.payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(responses.calls), 3)
+
+    def test_do_not_retry_on_client_error(self, _):
+        resp = responses.post(
+            ParkingSessionActivateView.ssp_endpoint,
+            json={"message": "client error"},
+            status=400,
+        )
+        response = self.client.post(
+            self.url, data=self.payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 400)
         self.assertEqual(resp.call_count, 1)
 
 

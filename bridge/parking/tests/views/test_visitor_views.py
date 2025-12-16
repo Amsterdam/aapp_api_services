@@ -9,7 +9,7 @@ from bridge.parking.tests.mock_data import (
     visitor_deactivate,
     visitor_withdraw,
 )
-from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 
 
 class TestParkingVisitorTimeBalanceView(BaseSSPTestCase):

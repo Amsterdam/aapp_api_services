@@ -8,14 +8,17 @@ from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
+from requests import Timeout
 from rest_framework import generics, status
 from rest_framework.response import Response
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from bridge.parking import exceptions
 from bridge.parking.auth import get_access_token
 from bridge.parking.enums import NotificationStatus
 from bridge.parking.exceptions import (
     SSLMissingAccessTokenError,
+    SSPBadGatewayError,
     SSPCallError,
     SSPForbiddenError,
     SSPNotFoundError,
@@ -97,12 +100,29 @@ class BaseSSPView(generics.GenericAPIView):
             else:
                 headers["Authorization"] = f"Bearer {ssp_access_token}"
 
+        ssp_response = self.make_ssp_request(
+            method=method,
+            endpoint=endpoint,
+            headers=headers,
+            query_params=query_params,
+            body_data=body_data,
+        )
+        return ssp_response
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(1),
+        retry=retry_if_exception_type((SSPServerError, SSPBadGatewayError, Timeout)),
+        reraise=True,  # reraise error after retries are exhausted
+    )
+    def make_ssp_request(self, *, body_data, endpoint, headers, method, query_params):
         ssp_response = requests.request(
             method,
             endpoint,
             params=query_params,
             json=body_data,
             headers=headers,
+            timeout=settings.SSP_API_TIMEOUT_SECONDS,
         )
         if ssp_response.status_code == 200:
             return Response(ssp_response.json(), status=status.HTTP_200_OK)

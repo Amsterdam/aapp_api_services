@@ -9,7 +9,7 @@ from bridge.parking.tests.mock_data_external import (
     wallet_transaction,
     wallet_transaction_confirm,
 )
-from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 from bridge.parking.views.transaction_views import (
     TransactionsBalanceView,
     TransactionsListView,

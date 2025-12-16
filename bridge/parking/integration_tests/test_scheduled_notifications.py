@@ -17,7 +17,7 @@ from bridge.parking.tests.mock_data_external import (
     parking_session_edit,
     parking_session_start,
 )
-from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 from core.services.scheduled_notification import ScheduledNotificationService
 
 logger = logging.getLogger(__name__)
