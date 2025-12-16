@@ -35,9 +35,18 @@ class Command(BaseCommand):
         for postal_code, device_ids in batched_notifications.items():
             try:
                 if rivm_client.has_new_red_status(postal_code):
+                    logger.info(
+                        "Sending notifications for postal code",
+                        extra={"postal_code": postal_code},
+                    )
                     next_timestamp = self._next_fixed_timestamp()
                     self.send_notification_for_single_postal_code(
                         device_ids, next_timestamp
+                    )
+                else:
+                    logger.info(
+                        "No new red status for postal code, skipping notification",
+                        extra={"postal_code": postal_code},
                     )
 
                 # Mark devices within postal code as updated, to prevent sending the same notification multiple times
@@ -73,7 +82,7 @@ class Command(BaseCommand):
         self.notification_service.send(notification_data)
 
     def _last_fixed_timestamp(self):
-        now = datetime.now()
+        now = timezone.now()
         hours = [22, 16, 10, 4]
         # Find the most recent hour <= now.hour
         for h in hours:

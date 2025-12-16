@@ -6,7 +6,7 @@ from django.conf import settings
 from requests.models import PreparedRequest
 
 from bridge.burning_guide.serializers.advice import AdviceResponseSerializer
-from bridge.burning_guide.services.rivm import RIVMService
+from bridge.burning_guide.services.rivm import RIVMService, UnknownPostalcodeError
 from bridge.burning_guide.tests.mock_data import address_properties, postal_codes
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
@@ -104,7 +104,7 @@ class TestRIVMService(ResponsesActivatedAPITestCase):
         self.assertEqual(len(bbox.items()), 4)
 
     def test_get_bbox_from_postal_code_unknown(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(UnknownPostalcodeError):
             self.rivm_service.get_bbox_from_postal_code(postal_code="1234")
         self.assertEqual(self.resp_postal_codes.call_count, 1)
 

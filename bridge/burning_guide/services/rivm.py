@@ -1,15 +1,26 @@
 import json
+import logging
 
 import requests
 import shapely
 from django.conf import settings
 from django.core.cache import cache
+from rest_framework import status
 
 from bridge.burning_guide.serializers.advice import AdviceResponseSerializer
 from bridge.burning_guide.utils import (
     cache_until_expiry_hour,
     calculate_rd_bbox_from_wsg_coordinates,
 )
+from core.exceptions import BaseApiException
+
+logger = logging.getLogger(__name__)
+
+
+class UnknownPostalcodeError(BaseApiException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Unknown postal code"
+    default_code = "RIVM_UNKNOWN_POSTAL_CODE"
 
 
 def load_postal_data():
@@ -128,5 +139,8 @@ class RIVMService:
         # only use the first 4 characters of the postal code
         bbox = data.get(postal_code)
         if not bbox:
-            raise ValueError("Unknown postal code")
+            logger.error(
+                "Unknown postal code requested", extra={"postal_code": postal_code}
+            )
+            raise UnknownPostalcodeError("Unknown postal code")
         return bbox

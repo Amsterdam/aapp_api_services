@@ -108,19 +108,25 @@ class TestCommand(ResponsesActivatedAPITestCase):
     @freezegun.freeze_time("2024-06-01 12:00:00")
     def test_last_fixed_timestamp(self):
         last_timestamp = self.command._last_fixed_timestamp()
-        expected_timestamp = datetime(2024, 6, 1, 10, 0, 0)
+        expected_timestamp = datetime(
+            2024, 6, 1, 10, 0, 0, tzinfo=last_timestamp.tzinfo
+        )
         self.assertEqual(last_timestamp, expected_timestamp)
 
     @freezegun.freeze_time("2024-06-01 16:00:00")
     def test_last_fixed_timestamp_exact_time(self):
         last_timestamp = self.command._last_fixed_timestamp()
-        expected_timestamp = datetime(2024, 6, 1, 16, 0, 0)
+        expected_timestamp = datetime(
+            2024, 6, 1, 16, 0, 0, tzinfo=last_timestamp.tzinfo
+        )
         self.assertEqual(last_timestamp, expected_timestamp)
 
     @freezegun.freeze_time("2024-06-02 3:00:00")
     def test_last_fixed_timestamp_previous_day(self):
         last_timestamp = self.command._last_fixed_timestamp()
-        expected_timestamp = datetime(2024, 6, 1, 22, 0, 0)
+        expected_timestamp = datetime(
+            2024, 6, 1, 22, 0, 0, tzinfo=last_timestamp.tzinfo
+        )
         self.assertEqual(last_timestamp, expected_timestamp)
 
     @freezegun.freeze_time("2024-06-01 12:00:00")
