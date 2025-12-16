@@ -6,7 +6,10 @@ from django.conf import settings
 from django.core.cache import cache
 
 from bridge.burning_guide.serializers.advice import AdviceResponseSerializer
-from bridge.burning_guide.utils import calculate_rd_bbox_from_wsg_coordinates
+from bridge.burning_guide.utils import (
+    cache_until_expiry_hour,
+    calculate_rd_bbox_from_wsg_coordinates,
+)
 
 
 def load_postal_data():
@@ -69,6 +72,7 @@ class RIVMService:
         else:
             return False
 
+    @cache_until_expiry_hour(expiry_hours=[4, 10, 16, 22])
     def get_burning_guide_information(
         self, bbox: dict[str, float]
     ) -> AdviceResponseSerializer:
@@ -118,6 +122,7 @@ class RIVMService:
         request_serializer.is_valid(raise_exception=True)
         return request_serializer.validated_data
 
+    @cache_until_expiry_hour(expiry_hours=[4, 10, 16, 22])
     def get_bbox_from_postal_code(self, postal_code: str) -> dict:
         data = load_postal_data()
         # only use the first 4 characters of the postal code
