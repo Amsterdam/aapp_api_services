@@ -12,10 +12,12 @@ class WasteRequestSerializer(serializers.Serializer):
     bag_nummeraanduiding_id = serializers.CharField()
 
 
-class WasteNotificationResponseSerializer(serializers.ModelSerializer):
+class WasteNotificationSerializer(serializers.ModelSerializer):
+    updated_at = serializers.DateTimeField(read_only=True)
+
     class Meta:
         model = NotificationSchedule
-        fields = "__all__"
+        fields = ["bag_nummeraanduiding_id", "updated_at"]
 
 
 class WasteDataSerializer(serializers.Serializer):

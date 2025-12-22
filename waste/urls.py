@@ -6,7 +6,10 @@ from django.urls import path
 from core.urls import get_swagger_paths
 from core.views.admin_views import AdminLoginView
 from waste.views.container_views import WasteContainerPassNumberView
-from waste.views.notification_views import WasteGuideNotificationView
+from waste.views.notification_views import (
+    WasteNotificationCreateView,
+    WasteNotificationDetailView,
+)
 from waste.views.waste_views import WasteGuideView
 
 BASE_PATH = "waste/api/v1"
@@ -18,9 +21,14 @@ urlpatterns = [
         name="waste-guide-calendar",
     ),
     path(
+        BASE_PATH + "/guide/notifications",
+        WasteNotificationCreateView.as_view(),
+        name="waste-guide-notification-create",
+    ),
+    path(
         BASE_PATH + "/guide/notification",
-        WasteGuideNotificationView.as_view(),
-        name="waste-guide-notification",
+        WasteNotificationDetailView.as_view(),
+        name="waste-guide-notification-detail",
     ),
     # container-pass
     path(
