@@ -8,7 +8,8 @@ class TestBurningGuideNotificationCreateView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("burning-guide-notification-create")
-        self.api_headers["DeviceId"] = "test-device-id"
+        self.device_id = "test-device-id"
+        self.api_headers["DeviceId"] = self.device_id
 
     def test_success(self):
         payload = {
@@ -16,8 +17,7 @@ class TestBurningGuideNotificationCreateView(ResponsesActivatedAPITestCase):
         }
         response = self.client.post(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 201)
-        notification_records = BurningGuideNotification.objects.all()
-        self.assertEqual(notification_records.count(), 1)
+        BurningGuideNotification.objects.get(device_id=self.device_id)
 
     def test_invalid_postal_code(self):
         payload = {
@@ -48,7 +48,8 @@ class TestBurningGuideNotificationView(ResponsesActivatedAPITestCase):
     def test_retrieve_no_content(self):
         BurningGuideNotification.objects.all().delete()
         response = self.client.get(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"error": "not found"})
 
     def test_update_success(self):
         payload = {

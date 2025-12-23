@@ -19,6 +19,16 @@ class WasteNotificationSerializer(serializers.ModelSerializer):
         model = NotificationSchedule
         fields = ["bag_nummeraanduiding_id", "updated_at"]
 
+    def create(self, validated_data):
+        device_id = self.context.get("device_id")
+        if not device_id:
+            raise serializers.ValidationError("Device ID header missing")
+
+        return NotificationSchedule.objects.create(
+            device_id=device_id,
+            **validated_data,
+        )
+
 
 class WasteDataSerializer(serializers.Serializer):
     afvalwijzerFractieNaam = serializers.CharField()

@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
@@ -15,12 +16,17 @@ class BurningGuideNotificationCreateView(DeviceIdMixin, CreateAPIView):
     serializer_class = NotificationSerializer
 
     def create(self, request, *args, **kwargs):
-        data = request.data.copy()
-        data["device_id"] = self.device_id
-
-        serializer = self.get_serializer(data=data)
+        serializer = self.get_serializer(
+            data=request.data, context={"device_id": self.device_id}
+        )
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        try:
+            self.perform_create(serializer)
+        except IntegrityError:
+            return Response(
+                {"detail": "Notification schedule for this device already exists."},
+                status=status.HTTP_409_CONFLICT,
+            )
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
@@ -41,7 +47,7 @@ class BurningGuideNotificationView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
         try:
             instance = self.get_object()
         except BurningGuideNotification.DoesNotExist:
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(data={"error": "not found"})
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)

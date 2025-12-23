@@ -10,3 +10,13 @@ class NotificationSerializer(serializers.ModelSerializer, PostalCodeValidationMi
     class Meta:
         model = BurningGuideNotification
         fields = ["postal_code", "send_at"]
+
+    def create(self, validated_data):
+        device_id = self.context.get("device_id")
+        if not device_id:
+            raise serializers.ValidationError("Device ID header missing")
+
+        return BurningGuideNotification.objects.create(
+            device_id=device_id,
+            **validated_data,
+        )
