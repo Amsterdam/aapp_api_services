@@ -40,7 +40,7 @@ class TestBurningGuideNotificationView(ResponsesActivatedAPITestCase):
         NotificationSchedule.objects.all().delete()
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"error": "not found"})
+        self.assertEqual(response.json(), {"status": "error", "message": "not found"})
 
     def test_update_success(self):
         payload = {

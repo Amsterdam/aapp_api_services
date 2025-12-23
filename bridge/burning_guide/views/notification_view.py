@@ -29,7 +29,7 @@ class BurningGuideNotificationCreateView(DeviceIdMixin, CreateAPIView):
             )
         headers = self.get_success_headers(serializer.data)
         return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+            {"status": "success"}, status=status.HTTP_201_CREATED, headers=headers
         )
 
 
@@ -45,12 +45,10 @@ class BurningGuideNotificationView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         try:
-            instance = self.get_object()
+            self.get_object()
         except BurningGuideNotification.DoesNotExist:
-            return Response(data={"error": "not found"})
-
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+            return Response(data={"status": "error", "message": "not found"})
+        return Response({"status": "success"})
 
     def update(self, request, *args, **kwargs):
         try:
@@ -61,7 +59,7 @@ class BurningGuideNotificationView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return Response(serializer.data)
+        return Response({"status": "success"})
 
     def destroy(self, request, *args, **kwargs):
         try:
