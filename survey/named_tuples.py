@@ -5,13 +5,19 @@ from django.db.models import TextChoices
 
 
 class QuestionType(TextChoices):
-    TEXT = "text"
-    RADIO = "radio"
-    SELECT = "select"
-    CHECK = "checkbox"
-    TEXTAREA = "textarea"
-    RATING = "rating"
     BUTTONS = "selection_buttons"
+    CHECK = "checkbox"
+    DATE = "date"
+    EMAIL = "email"
+    NUMERIC = "numeric"
+    RADIO = "radio"
+    RATING = "rating"
+    SELECT = "select"
+    TELEPHONE = "tel"
+    TEXT = "text"
+    TEXTAREA = "textarea"
+    TIME = "time"
+    URL = "url"
 
 
 class ConditionType(TextChoices):
