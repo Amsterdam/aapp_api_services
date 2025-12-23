@@ -8,6 +8,7 @@ from bridge.proxy.views import (
     AddressSearchView,
     EgisProxyExternalView,
     EgisProxyView,
+    HealthCheckView,
     PollingStationsView,
     WasteGuideView,
 )
@@ -29,6 +30,12 @@ if settings.ENVIRONMENT_SLUG in ["o", "t"]:
     ]
 
 urlpatterns += [
+    # health check
+    path(
+        "bridge/api/v1/health-check",
+        HealthCheckView.as_view(),
+        name="health-check",
+    ),
     # afvalwijzer
     path(
         "waste-guide/api/v1/search",
