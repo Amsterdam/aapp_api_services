@@ -1,9 +1,9 @@
 from django.conf import settings
 
-from core.tests.test_authentication import ResponsesActivatedAPITestCase
+from core.tests.test_authentication import RespxActivatedAPITestCase
 
 
-class BaseSSPTestCase(ResponsesActivatedAPITestCase):
+class BaseSSPTestCase(RespxActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.api_headers[settings.SSP_ACCESS_TOKEN_HEADER] = (

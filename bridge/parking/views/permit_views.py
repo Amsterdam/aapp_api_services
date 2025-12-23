@@ -193,12 +193,11 @@ class ParkingPermitsView(BaseSSPView):
                 "page": page_count,
                 "row_per_page": 250,
             }
-            response = self.ssp_api_call(
+            response_data = self.ssp_api_call(
                 method="GET",
                 endpoint=self.ssp_endpoint,
                 query_params=data,
             )
-            response_data = response.data
             total_pages = math.ceil(response_data["count"] / data["row_per_page"])
             permits_data += response_data["data"]
         return permits_data
@@ -206,11 +205,11 @@ class ParkingPermitsView(BaseSSPView):
     def collect_permit_details(self, permit):
         url_template = SSPEndpoint.PERMIT.value
         url = URITemplate(url_template).expand(permit_id=permit["id"])
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="GET",
             endpoint=url,
         )
-        return response.data
+        return response_data
 
     def get_no_end_time(self, permit):
         return permit["details"]["config"]["can_activate_vrn"]
@@ -241,17 +240,17 @@ class ParkingPermitZoneView(BaseSSPView):
         permit_id = kwargs.get("permit_id")
         url_template = SSPEndpoint.PERMIT.value
         url = URITemplate(url_template).expand(permit_id=permit_id)
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="GET",
             endpoint=url,
         )
 
         # geo_json field can be None, change it to empty dictionary, otherwise json loads fails
-        if response.data["permit"]["geo_json"] is None:
-            response.data["permit"]["geo_json"] = "{}"
+        if response_data["permit"]["geo_json"] is None:
+            response_data["permit"]["geo_json"] = "{}"
 
         response_payload = {
-            "geojson": json.loads(response.data["permit"]["geo_json"]),
+            "geojson": json.loads(response_data["permit"]["geo_json"]),
         }
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
@@ -286,7 +285,7 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
     def get(self, request, *args, **kwargs):
         permit_id = kwargs.get("permit_id")
         parking_machine = kwargs.get("parking_machine_id")
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data={
@@ -297,7 +296,7 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
             wrap_body_data_with_token=True,
         )
 
-        zone = response.data["data"]
+        zone = response_data["data"]
 
         # extract hourly rate from zone description
         # TODO: uncomment statement below if hourly rate is valid
@@ -309,7 +308,7 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
             "description": zone.get("zone_description"),
             "hourly_rate": hourly_rate.group(0) if hourly_rate else None,
             "city": "Amsterdam",  # DEPRECATED
-            "days": self._interpret_days(payload=response.data),
+            "days": self._interpret_days(payload=response_data),
         }
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)

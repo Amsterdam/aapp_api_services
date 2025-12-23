@@ -87,14 +87,13 @@ class ParkingSessionListView(BaseSSPView):
             request_payload["filters[status]"] = self.map_filter_status(filter_status)
         if data.get("vehicle_id"):
             request_payload["filters[vrn]"] = data["vehicle_id"]
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             query_params=request_payload,
             external_api=True,
             wrap_body_data_with_token=True,
         )
-        response_data = response.data
         sessions_data = response_data.get("data", [])
         results = [
             {
@@ -206,7 +205,7 @@ class ParkingSessionActivateView(BaseSSPView):
             "vrn": session_data["vehicle_id"],
         }
 
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data=request_payload,
@@ -216,7 +215,7 @@ class ParkingSessionActivateView(BaseSSPView):
 
         # convert SSP response to our API response format and validate
         response_payload = {
-            "ps_right_id": response.data["data"]["parking_session_id"],
+            "ps_right_id": response_data["data"]["parking_session_id"],
         }
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
@@ -282,14 +281,14 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
             request_payload["is_new_favorite_machine_number"] = session_data.get(
                 "parking_machine_favorite"
             )
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="POST",
             endpoint=SSPEndpointExternal.PARKING_SESSION_START.value,
             body_data=request_payload,
             external_api=True,
             wrap_body_data_with_token=True,
         )
-        response_data = response.data["data"]
+        response_data = response_data["data"]
         ps_right_id = response_data.get("id")
         response_data["ps_right_id"] = ps_right_id
         if not kwargs["is_visitor"]:
@@ -339,18 +338,18 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         payload = {
             "new_ended_at": self.get_utc_datetime(end_datetime),
         }
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="PATCH",
             endpoint=url,
             body_data=payload,
             external_api=True,
             wrap_body_data_with_token=True,
         )
-        response.data["ps_right_id"] = ps_right_id
+        response_data["ps_right_id"] = ps_right_id
         notification_status = self._process_notification(
             ps_right_id=ps_right_id, end_datetime=end_datetime
         )
-        return self._make_response(response.data, notification_status)
+        return self._make_response(response_data, notification_status)
 
     @staticmethod
     def get_utc_datetime(dt_local: datetime) -> datetime:
@@ -409,14 +408,14 @@ class ParkingSessionReceiptView(BaseSSPView):
             request_payload["paid_parking_zone_id"] = int(data["payment_zone_id"])
         elif data.get("parking_machine"):
             request_payload["machine_number"] = int(data["parking_machine"])
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data=request_payload,
             external_api=True,
             wrap_body_data_with_token=True,
         )
-        response_data = response.data["data"]
+        response_data = response_data["data"]
 
         response_payload = {
             "parking_time": response_data["duration"],

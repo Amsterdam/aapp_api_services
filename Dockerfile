@@ -27,6 +27,7 @@ RUN addgroup -S app && adduser -S app -G app
 COPY manage.py /app/
 RUN dos2unix /app/manage.py
 COPY uwsgi.ini /app/
+COPY gunicorn.conf.py /app/
 COPY /core /app/core
 COPY /deploy /app/deploy
 

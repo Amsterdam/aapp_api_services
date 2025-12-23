@@ -79,13 +79,13 @@ class ParkingAccountLoginView(BaseSSPView):
         )
 
     def _get_internal_access_token(self, request_payload):
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="POST",
             endpoint=SSPEndpoint.LOGIN.value,
             body_data=request_payload,
             requires_access_token=False,
         )
-        access_jwt = response.data.get("token")
+        access_jwt = response_data.get("token")
         if not access_jwt:
             raise SSPResponseError("No token in SSP response")
         expiration_timestamp, scope_mapped = self._unpack_token(access_jwt)
@@ -103,14 +103,14 @@ class ParkingAccountLoginView(BaseSSPView):
         return expiration_timestamp, scope_mapped
 
     def _get_external_access_token(self, request_payload):
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="POST",
             endpoint=SSPEndpointExternal.LOGIN.value,
             body_data=request_payload,
             external_api=True,
             requires_access_token=False,
         )
-        access_jwt = response.data.get("token")
+        access_jwt = response_data.get("token")
         if not access_jwt:
             raise SSPResponseError("No token in SSP response")
         return access_jwt
@@ -142,12 +142,12 @@ class ParkingAccountDetailsView(BaseSSPView):
                 }
             )
 
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="GET",
             endpoint=SSPEndpoint.PERMITS.value,
             query_params={"page": 1, "row_per_page": 250},
         )
-        permits = response.data["data"]
+        permits = response_data["data"]
         permits = [
             p
             for p in permits
@@ -157,11 +157,11 @@ class ParkingAccountDetailsView(BaseSSPView):
         if permits:
             url_template = SSPEndpoint.PERMIT.value
             url = URITemplate(url_template).expand(permit_id=permits[0]["id"])
-            response = self.ssp_api_call(
+            response_data = self.ssp_api_call(
                 method="GET",
                 endpoint=url,
             )
-            balance_in_cents = response.data["ssp"]["main_account"]["money_balance"]
+            balance_in_cents = response_data["ssp"]["main_account"]["money_balance"]
             balance = (balance_in_cents or 0.0) / 100
         else:
             balance = None

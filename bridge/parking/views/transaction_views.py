@@ -47,7 +47,7 @@ class TransactionsBalanceView(BaseSSPView):
             "brand": data.get("payment_type", "IDEAL"),
             "lang": data.get("locale", "NL").upper(),
         }
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data=request_payload,
@@ -56,7 +56,7 @@ class TransactionsBalanceView(BaseSSPView):
         )
 
         response_payload = {
-            "redirect_url": response.data["url"],
+            "redirect_url": response_data["url"],
         }
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
@@ -146,7 +146,7 @@ class TransactionsListView(BaseSSPView):
             "filters[status]": data.get("filter_status", "COMPLETED"),
         }
 
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="GET",
             endpoint=self.ssp_endpoint,
             query_params=request_payload,
@@ -163,14 +163,14 @@ class TransactionsListView(BaseSSPView):
                     "is_paid": transaction["paid_at"] is not None,
                     "order_type": "RECHARGE",
                 }
-                for transaction in response.data["data"]
+                for transaction in response_data["data"]
             ],
             "page": {
-                "number": response.data["page"],
-                "size": response.data["row_per_page"],
-                "totalElements": response.data["count"],
+                "number": response_data["page"],
+                "size": response_data["row_per_page"],
+                "totalElements": response_data["count"],
                 "totalPages": math.ceil(
-                    response.data["count"] / response.data["row_per_page"]
+                    response_data["count"] / response_data["row_per_page"]
                 ),
             },
         }

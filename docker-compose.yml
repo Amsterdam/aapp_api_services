@@ -75,7 +75,7 @@ services:
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.otap"
-    command: /app/deploy/docker-run.sh
+    command: /app/deploy/docker-run-async.sh
 
   lint:
     <<: *base-app

@@ -3,14 +3,13 @@ import json
 import logging
 from datetime import datetime
 
-import requests
+import httpx
+from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
-from requests import Timeout
-from rest_framework import generics, status
-from rest_framework.response import Response
+from rest_framework import generics
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from bridge.parking import exceptions
@@ -100,32 +99,35 @@ class BaseSSPView(generics.GenericAPIView):
             else:
                 headers["Authorization"] = f"Bearer {ssp_access_token}"
 
-        ssp_response = self.make_ssp_request(
+        ssp_payload = async_to_sync(self.make_ssp_request)(
             method=method,
             endpoint=endpoint,
             headers=headers,
             query_params=query_params,
             body_data=body_data,
         )
-        return ssp_response
+        return ssp_payload
 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_fixed(1),
-        retry=retry_if_exception_type((SSPServerError, SSPBadGatewayError, Timeout)),
+        retry=retry_if_exception_type(
+            (SSPServerError, SSPBadGatewayError, httpx.TimeoutException)
+        ),
         reraise=True,  # reraise error after retries are exhausted
     )
-    def make_ssp_request(self, *, body_data, endpoint, headers, method, query_params):
-        ssp_response = requests.request(
-            method,
-            endpoint,
+    async def make_ssp_request(
+        self, *, body_data, endpoint, headers, method, query_params
+    ):
+        ssp_response = await self.ssp_client.request(
+            method=method,
+            url=endpoint,
             params=query_params,
             json=body_data,
             headers=headers,
-            timeout=settings.SSP_API_TIMEOUT_SECONDS,
         )
         if ssp_response.status_code == 200:
-            return Response(ssp_response.json(), status=status.HTTP_200_OK)
+            return ssp_response.json()
 
         try:
             ssp_response_json = json.loads(ssp_response.content)
@@ -151,6 +153,23 @@ class BaseSSPView(generics.GenericAPIView):
         message = content.split("(422 Unprocessable Content)")[0].strip()
         message = message[5:] if message.startswith('"<!') else message
         raise exceptions.SSPBadRequest(detail=f"[Unmapped error] {message}")
+
+    @property
+    def ssp_client(self):
+        if not hasattr(self, "_ssp_client"):
+            self._ssp_client = httpx.AsyncClient(
+                timeout=httpx.Timeout(settings.SSP_API_TIMEOUT_SECONDS),
+                limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
+            )
+        return self._ssp_client
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        try:
+            return super().finalize_response(request, response, *args, **kwargs)
+        finally:
+            client = getattr(self, "_ssp_client", None)
+            if client:
+                async_to_sync(client.aclose)()
 
 
 class BaseNotificationView(DeviceIdMixin, BaseSSPView):

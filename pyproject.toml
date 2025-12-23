@@ -8,6 +8,8 @@ dependencies = [
   "djangorestframework",
   "psycopg2-binary",
   "uWSGI",
+  "gunicorn",
+  "uvicorn",
   "drf_spectacular",
   "python-dotenv",
   "django-debug-toolbar",
@@ -47,6 +49,7 @@ dependencies = [
   "pytest-asyncio", # anyio pytest plugin?
   "coverage",
   "responses",
+  "respx",
 ]
 
 [tool.pytest.ini_options]

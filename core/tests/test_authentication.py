@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import jwt
 import responses
+import respx
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -52,13 +53,6 @@ class AuthenticatedAPITestCase(APITestCase):
 class BasicAPITestCase(AuthenticatedAPITestCase):
     authentication_class = APIKeyAuthentication
 
-
-class ResponsesActivatedAPITestCase(BasicAPITestCase):
-    @responses.activate
-    def run(self, result=None):
-        # this wraps setUp, each test, and tearDown
-        super().run(result)
-
     def assert_caching(self, url, rsp_get, request_body=None):
         # First call
         response = self.client.get(url, request_body, headers=self.api_headers)
@@ -77,6 +71,20 @@ class ResponsesActivatedAPITestCase(BasicAPITestCase):
         self.assertEqual(
             rsp_get.call_count, 1
         )  # The request should not be called a second time!
+
+
+class ResponsesActivatedAPITestCase(BasicAPITestCase):
+    @responses.activate
+    def run(self, result=None):
+        # this wraps setUp, each test, and tearDown
+        super().run(result)
+
+
+class RespxActivatedAPITestCase(BasicAPITestCase):
+    @respx.mock
+    def run(self, result=None):
+        # this wraps setUp, each test, and tearDown
+        super().run(result)
 
 
 class ExampleAppAuthentication(AbstractAppAuthentication):

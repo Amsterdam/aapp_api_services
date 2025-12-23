@@ -1,4 +1,5 @@
-import responses
+import httpx
+import respx
 from django.urls import reverse
 
 from bridge.parking.services.ssp import SSPEndpointExternal
@@ -29,8 +30,8 @@ class TestTransactionsRechargeView(BaseSSPTestCase):
         self.test_response = wallet_transaction.MOCK_RESPONSE
 
     def test_successful(self):
-        post_resp = responses.post(
-            TransactionsBalanceView.ssp_endpoint, json=self.test_response
+        post_resp = respx.post(TransactionsBalanceView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.test_response)
         )
 
         response = self.client.post(
@@ -65,8 +66,8 @@ class TestTransactionsRechargeConfirmView(BaseSSPTestCase):
         self.test_response = wallet_transaction_confirm.MOCK_RESPONSE
 
     def test_successful_user(self):
-        post_resp = responses.post(
-            SSPEndpointExternal.RECHARGE_CONFIRM.value, json=self.test_response
+        post_resp = respx.post(SSPEndpointExternal.RECHARGE_CONFIRM.value).mock(
+            return_value=httpx.Response(200, json=self.test_response)
         )
 
         response = self.client.post(
@@ -79,8 +80,8 @@ class TestTransactionsRechargeConfirmView(BaseSSPTestCase):
         api_headers = self.api_headers.copy()
         api_headers["SSP-Access-Token"] = self.test_visitor_token
 
-        post_resp = responses.post(
-            SSPEndpointExternal.RECHARGE_CONFIRM_VISITOR.value, json=self.test_response
+        post_resp = respx.post(SSPEndpointExternal.RECHARGE_CONFIRM_VISITOR.value).mock(
+            return_value=httpx.Response(200, json=self.test_response)
         )  # We are mocking a different URL for visitors!
 
         response = self.client.post(
@@ -104,14 +105,18 @@ class TestTransactionsListView(BaseSSPTestCase):
         self.test_response = transactions.MOCK_RESPONSE
 
     def test_successful_without_params(self):
-        resp = responses.get(TransactionsListView.ssp_endpoint, json=self.test_response)
+        resp = respx.get(TransactionsListView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.test_response)
+        )
 
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
 
     def test_successful_with_params(self):
-        resp = responses.get(TransactionsListView.ssp_endpoint, json=self.test_response)
+        resp = respx.get(TransactionsListView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.test_response)
+        )
 
         response = self.client.get(
             self.url, self.test_payload, headers=self.api_headers

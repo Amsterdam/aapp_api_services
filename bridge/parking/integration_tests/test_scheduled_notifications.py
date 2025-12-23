@@ -1,11 +1,11 @@
 import logging
-import re
 from datetime import datetime, timedelta
 from random import randint
 from uuid import uuid4
 
+import httpx
 import pytest
-import responses
+import respx
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
@@ -34,11 +34,9 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self.report_code = randint(1, 1000)
         self.notification_scheduler = ScheduledNotificationService()
 
-    @responses.activate
     def test_create_scheduled_notification(self):
         self._init_test()
 
-    @responses.activate
     def test_create_scheduled_notification_too_soon(self):
         start_time, end_time = self._init_test(parking_duration=1, start_session=False)
         response = self._start_parking_session(start_time, end_time)
@@ -47,7 +45,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self._check_notification_count(0)
 
-    @responses.activate
     def test_update_scheduled_notification(self):
         start_time, end_time = self._init_test()
 
@@ -58,7 +55,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self._check_notification_count(1)
 
-    @responses.activate
     def test_update_scheduled_notification_too_soon(self):
         start_time, end_time = self._init_test()
 
@@ -69,7 +65,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self._check_notification_count(0)
 
-    @responses.activate
     def test_create_second_scheduled_notification(self):
         start_time, end_time = self._init_test()
 
@@ -81,7 +76,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self._check_notification_count(2)
 
-    @responses.activate
     def test_update_scheduled_notification_new_device(self):
         start_time, end_time = self._init_test()
         old_device_id = self.device_id
@@ -98,7 +92,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
             set(notification["device_ids"]), {self.device_id, old_device_id}
         )  # notification should contain both devices!
 
-    @responses.activate
     def test_patch_parking_session(self):
         start_time, end_time = self._init_test()
 
@@ -114,7 +107,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self.assertEqual(datetime.fromisoformat(notification["expires_at"]), end_time)
 
-    @responses.activate
     def test_patch_parking_session_too_soon(self):
         start_time, end_time = self._init_test()
 
@@ -125,7 +117,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self._check_notification_count(0)
 
-    @responses.activate
     def test_patch_parking_session_missing_reminder(self):
         start_time, end_time = self._init_test(start_session=False)
 
@@ -135,7 +126,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self._check_notification_count(1)
 
-    @responses.activate
     def test_delete_scheduled_notification(self):
         start_time, end_time = self._init_test()
 
@@ -145,7 +135,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         self._check_notification_count(0)
 
-    @responses.activate
     def test_delete_scheduled_notification_not_started(self):
         start_time, _ = self._init_test(start_session=False)
 
@@ -161,9 +150,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         parking_duration=settings.PARKING_REMINDER_TIME + 1,
         start_session=True,
     ):
-        responses.add_passthru(
-            re.compile(settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"] + ".*")
-        )
+        respx.route(host=settings.NOTIFICATION_API).pass_through()
         start_time = timezone.now()
         end_time = start_time + timedelta(minutes=parking_duration)
 
@@ -190,8 +177,8 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         response_json = parking_session_start.MOCK_RESPONSE_USER
         response_json["data"]["id"] = parking_session_id
 
-        responses.post(
-            SSPEndpointExternal.PARKING_SESSION_START.value, json=response_json
+        respx.post(SSPEndpointExternal.PARKING_SESSION_START.value).mock(
+            return_value=httpx.Response(200, json=response_json)
         )
         response = self.client.post(
             self.url, start_session_payload, format="json", headers=self.api_headers
@@ -236,9 +223,8 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
     def mock_patch_call_responses(self, session_id):
         url_template = SSPEndpointExternal.PARKING_SESSION_EDIT.value
         url = URITemplate(url_template).expand(session_id=session_id)
-        responses.patch(
-            url,
-            json=parking_session_edit.MOCK_RESPONSE,
+        respx.patch(url).mock(
+            return_value=httpx.Response(200, json=parking_session_edit.MOCK_RESPONSE)
         )
 
     def _check_notification_count(self, count):

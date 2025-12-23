@@ -35,7 +35,6 @@ class ParkingVisitorView(BaseSSPView):
             method="POST",
             endpoint=url,
         )
-
         return Response(
             status=status.HTTP_200_OK,
         )
@@ -91,15 +90,15 @@ class ParkingVisitorTimeBalanceView(BaseSSPView):
         request_payload = {
             "amount": hours,
         }
-        response = self.ssp_api_call(
+        response_data = self.ssp_api_call(
             method="POST",
             endpoint=url,
             body_data=request_payload,
         )
 
         response_payload = {
-            "main_account": response.data["main_balance"],
-            "visitor_account": response.data["visitor_balance"],
+            "main_account": response_data["main_balance"],
+            "visitor_account": response_data["visitor_balance"],
         }
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
