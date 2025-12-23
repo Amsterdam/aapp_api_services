@@ -2,6 +2,7 @@ from django.conf import settings
 from django.urls import path
 
 from bridge.proxy.views import (
+    AddressPostalAreaByCoordinateView,
     AddressSearchByCoordinateView,
     AddressSearchByNameView,
     AddressSearchView,
@@ -55,5 +56,10 @@ urlpatterns += [
         "address/api/v1/coordinate",
         AddressSearchByCoordinateView.as_view(),
         name="address-search-by-coordinate",
+    ),
+    path(
+        "address/api/v1/postal_area",
+        AddressPostalAreaByCoordinateView.as_view(),
+        name="address-postal-area-by-coordinate",
     ),
 ]

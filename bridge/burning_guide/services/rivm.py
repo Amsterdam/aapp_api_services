@@ -2,7 +2,6 @@ import json
 import logging
 
 import requests
-import shapely
 from django.conf import settings
 from django.core.cache import cache
 from rest_framework import status
@@ -12,6 +11,7 @@ from bridge.burning_guide.utils import (
     cache_until_expiry_hour,
     calculate_rd_bbox_from_wsg_coordinates,
 )
+from bridge.utils import load_postal_area_shapes
 from core.exceptions import BaseApiException
 
 logger = logging.getLogger(__name__)
@@ -37,21 +37,12 @@ def load_postal_data():
     cached_data = cache.get(cache_key)
     if cached_data:
         return cached_data
-    url = settings.BURNING_GUIDE_AMSTERDAM_MAPS_URL
-    params = {"KAARTLAAG": "PC4_BUURTEN", "THEMA": "postcode"}
-    response = requests.get(url, params=params)
 
-    response.raise_for_status()
-    data_json = response.json()
-    postal_codes_raw = data_json["features"]
+    postal_area_shapes = load_postal_area_shapes()
 
     final_dict = {}
-    for postal_code_features in postal_codes_raw:
-        # get postal code and geometry
-        postal_code = postal_code_features["properties"]["Postcode4"]
-        polygon_object = shapely.geometry.shape(postal_code_features["geometry"])
-
-        point_object = polygon_object.representative_point()
+    for postal_code, shape in postal_area_shapes.items():
+        point_object = shape.representative_point()
         # calculate bbox in rijksdriehoek coordinates
         bbox = calculate_rd_bbox_from_wsg_coordinates(
             lon=point_object.x, lat=point_object.y

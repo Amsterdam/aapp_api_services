@@ -9,16 +9,20 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import extend_schema
 from requests import JSONDecodeError
+from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
+from shapely.geometry import Point
 
 from bridge.proxy.serializers import (
+    AddressPostalAreaResponseSerializer,
     AddressSearchByCoordinateSerializer,
     AddressSearchByNameSerializer,
     AddressSearchRequestSerializer,
     AddressSearchResponseSerializer,
     WasteGuideRequestSerializer,
 )
+from bridge.utils import load_postal_area_shapes
 from core.utils.openapi_utils import extend_schema_for_api_key
 
 logger = logging.getLogger(__name__)
@@ -225,3 +229,37 @@ class AddressSearchByCoordinateView(AddressSearchAbstractView):
         params.append(("fq", "type:adres"))
         params.append(("rows", "5"))
         return params
+
+
+class AddressPostalAreaByCoordinateView(GenericAPIView):
+    serializer_class = AddressSearchByCoordinateSerializer
+    response_serializer_class = AddressPostalAreaResponseSerializer
+
+    @extend_schema_for_api_key(
+        success_response=AddressPostalAreaResponseSerializer,
+        additional_params=[AddressSearchByCoordinateSerializer],
+    )
+    def get(self, request):
+        serializer = self.get_serializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        location_point = Point(data["lon"], data["lat"])
+
+        postal_area_data = load_postal_area_shapes()
+
+        for postal_area, shape in postal_area_data.items():
+            if shape.contains(location_point):
+                response_serializer = self.response_serializer_class(
+                    data={"postal_area": postal_area}
+                )
+                response_serializer.is_valid(raise_exception=True)
+                return Response(
+                    data=response_serializer.data,
+                    status=status.HTTP_200_OK,
+                )
+
+        return Response(
+            data={"postal_area": None},
+            status=status.HTTP_204_NO_CONTENT,
+        )

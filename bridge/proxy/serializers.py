@@ -67,3 +67,7 @@ class AddressSearchResponseSerializer(serializers.Serializer):
         required=False, source="huisnummertoevoeging"
     )
     postcode = serializers.CharField(required=False)
+
+
+class AddressPostalAreaResponseSerializer(serializers.Serializer):
+    postal_area = serializers.CharField()
