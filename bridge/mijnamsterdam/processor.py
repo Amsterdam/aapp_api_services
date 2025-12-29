@@ -7,7 +7,6 @@ from django.conf import settings
 
 from bridge.mijnamsterdam.serializers.general_serializers import (
     MijnAmsNotificationResponseSerializer,
-    UserSerializer,
 )
 from bridge.mijnamsterdam.services.notifications import NotificationService
 from core.enums import Module, NotificationType
@@ -26,12 +25,12 @@ class MijnAmsterdamNotificationProcessor:
         data = self.collect_notification_data()
         for user_data in data:
             device_ids = user_data[
-                "consumer_ids"
+                "consumerIds"
             ]  # Multiple devices are possible per user (BSN)
             self.get_last_timestamp_per_device(device_ids)
             self.send_notifications(user_data=user_data, device_ids=device_ids)
 
-    def collect_notification_data(self) -> MijnAmsNotificationResponseSerializer:
+    def collect_notification_data(self) -> list[dict]:
         url = urljoin(
             settings.MIJN_AMS_API_DOMAIN, settings.MIJN_AMS_API_PATHS["NOTIFICATIONS"]
         )
@@ -52,15 +51,20 @@ class MijnAmsterdamNotificationProcessor:
                 logger.warning(
                     "Device id linked to multiple users", extra={"device_id": id}
                 )
-            last_timestamp = self.notification_service.get_last_timestamp(id)
+            last_timestamp = self.notification_service.get_last_timestamp(device_id=id)
             self.last_timestamp_per_device[id] = last_timestamp or datetime(
                 1900, 1, 1, tzinfo=timezone.utc
             )
 
-    def send_notifications(self, *, user_data: UserSerializer, device_ids: list[str]):
+    def send_notifications(self, *, user_data: dict, device_ids: list[str]):
         make_push = self._get_push_enabled()
-        for notification in user_data["notifications"]:
-            notification_type = f"{Module.MIJN_AMS.value}:{user_data['service_ids'][0]}"
+        for service in user_data["services"]:
+            nr_messages = len(service["content"])
+            if nr_messages == 0:
+                continue
+
+            service_id = service["serviceId"]
+            notification_type = f"{Module.MIJN_AMS.value}:{service_id}"
             if notification_type not in self.notification_types:
                 logger.warning(
                     "Received notification type not supported",
@@ -69,18 +73,24 @@ class MijnAmsterdamNotificationProcessor:
                 continue
 
             device_ids_to_send = self._get_device_ids_to_send(
-                device_ids, date_published=notification["datePublished"]
+                device_ids, date_published=service["dateUpdated"]
             )
+            compounded_id = "-".join(
+                [notification["id"] for notification in service["content"]]
+            )[:150]
+            if nr_messages == 1:
+                message = f"U heeft een nieuw bericht over {service_id}"
+            else:
+                message = f"U heeft {nr_messages} nieuwe berichten over {service_id}"
+            message += ". Ga naar Mijn Amsterdam."
             notification_data = NotificationData(
-                link_source_id=notification["id"],
-                title="Mijn Amsterdam melding",
-                message=notification["title"],
+                link_source_id=compounded_id,
+                title="Mijn Amsterdam",
+                message=message,
                 device_ids=device_ids_to_send,
                 make_push=make_push,
             )
-            self.notification_service.notification_type = (
-                f"{Module.MIJN_AMS.value}:{user_data['service_ids'][0]}"
-            )
+            self.notification_service.notification_type = notification_type
             self.notification_service.send(notification_data=notification_data)
 
     def _get_push_enabled(self):

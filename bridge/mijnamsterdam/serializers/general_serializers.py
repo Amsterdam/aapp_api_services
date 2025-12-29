@@ -5,16 +5,22 @@ from rest_framework.serializers import Serializer
 class NotificationSerializer(Serializer):
     id = serializers.CharField()
     title = serializers.CharField()
+    themaId = serializers.CharField()
     datePublished = serializers.DateTimeField()
-    isTip = serializers.BooleanField(required=False)
+
+
+class ServiceSerializer(Serializer):
+    status = serializers.ChoiceField(choices=["OK", "ERROR"])
+    content = NotificationSerializer(many=True)
+    serviceId = serializers.CharField()
+    dateUpdated = serializers.DateTimeField()
 
 
 class UserSerializer(Serializer):
     # A unique user is defined per BSN
-    service_ids = serializers.ListField(child=serializers.CharField())
-    consumer_ids = serializers.ListField(child=serializers.CharField())  # Device IDs
-    date_updated = serializers.DateTimeField()
-    notifications = NotificationSerializer(many=True, required=False)
+    services = ServiceSerializer(many=True)
+    consumerIds = serializers.ListField(child=serializers.CharField())  # Device IDs
+    dateUpdated = serializers.DateTimeField()
 
 
 class MijnAmsNotificationResponseSerializer(Serializer):

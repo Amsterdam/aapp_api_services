@@ -39,15 +39,16 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
 
     def test_run_processor(self):
         self.processor.run()
-
-        self.assertEqual(len(self.rsp_get_last_timestamp.calls), 2)
         self.assertEqual(len(self.rsp_get_notifications.calls), 1)
+        self.assertEqual(len(self.rsp_get_last_timestamp.calls), 4)
+        self.assertEqual(len(self.rsp_post_notification.calls), 2)
 
     def test_get_data(self):
         data = self.processor.collect_notification_data()
-        self.assertEqual(len(data), 2)
-        self.assertEqual(data[0]["consumer_ids"], ["123"])
-        self.assertEqual(data[1]["consumer_ids"], ["wesley"])
+        self.assertEqual(len(data), 3)
+        self.assertEqual(data[0]["consumerIds"], ["123"])
+        self.assertEqual(data[1]["consumerIds"], ["wesley"])
+        self.assertEqual(data[2]["consumerIds"], ["456", "jeroen"])
 
     def test_get_last_timestamp_per_device(self):
         self.processor.get_last_timestamp_per_device(["foobar"])
