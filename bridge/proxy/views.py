@@ -261,8 +261,8 @@ class AddressPostalAreaByCoordinateView(GenericAPIView):
                 )
 
         return Response(
-            data={"postal_area": None},
-            status=status.HTTP_204_NO_CONTENT,
+            data="No postal area found.",
+            status=status.HTTP_404_NOT_FOUND,
         )
 
 

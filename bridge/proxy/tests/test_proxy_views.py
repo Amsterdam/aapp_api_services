@@ -190,7 +190,7 @@ class TestAddressPostalAreaByCoordinateView(ResponsesActivatedAPITestCase):
             headers=self.api_headers,
         )
 
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 404)
 
 
 class TestPollingStationsView(ResponsesActivatedAPITestCase):
