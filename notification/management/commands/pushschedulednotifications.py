@@ -9,7 +9,7 @@ from notification.crud import NotificationCRUD
 from notification.models import Notification, ScheduledNotification
 
 logger = logging.getLogger(__name__)
-BATCH_SIZE = 100
+BATCH_SIZE = 1  # Don't batch and let the multiple worker pods handle parallelism
 
 
 class Command(BaseCommand):
