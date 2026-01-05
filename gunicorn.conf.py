@@ -18,7 +18,7 @@ graceful_timeout = 60  # uwsgi: worker-reload-mercy = 60
 keepalive = 2
 
 # --- Recycling / memory ---
-max_requests = 5000  # uwsgi: max-requests = 5000
+max_requests = 2000  # uwsgi: max-requests = 2000
 max_requests_jitter = 200
 max_worker_lifetime = 3600  # uwsgi: max-worker-lifetime = 3600
 

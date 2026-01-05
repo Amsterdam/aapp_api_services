@@ -111,7 +111,7 @@ class ParkingSessionOrderStartRequestSerializer(serializers.Serializer):
     parking_machine_favorite = serializers.BooleanField(required=False, default=False)
 
     def validate_start_date_time(self, value):
-        if value < timezone.now() - timedelta(minutes=1):
+        if value < timezone.now() - timedelta(minutes=5):
             raise serializers.ValidationError("Start time cannot be in the past.")
         return value
 
