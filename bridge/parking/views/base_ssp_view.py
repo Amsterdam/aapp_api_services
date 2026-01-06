@@ -3,6 +3,7 @@ import json
 import logging
 from datetime import datetime
 
+import anyio
 import httpx
 from asgiref.sync import async_to_sync
 from django.conf import settings
@@ -119,16 +120,19 @@ class BaseSSPView(generics.GenericAPIView):
     async def make_ssp_request(
         self, *, body_data, endpoint, headers, method, query_params
     ):
-        ssp_response = await self.ssp_client.request(
-            method=method,
-            url=endpoint,
-            params=query_params,
-            json=body_data,
-            headers=headers,
-        )
+        with anyio.fail_after(settings.SSP_API_TIMEOUT_SECONDS):
+            ssp_response = await self.ssp_client.request(
+                method=method,
+                url=endpoint,
+                params=query_params,
+                json=body_data,
+                headers=headers,
+            )
         if ssp_response.status_code == 200:
             return ssp_response.json()
+        await self.raise_exception(ssp_response)
 
+    async def raise_exception(self, ssp_response):
         try:
             ssp_response_json = json.loads(ssp_response.content)
             content = ssp_response_json.get("message")
