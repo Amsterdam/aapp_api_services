@@ -43,12 +43,12 @@ class NotificationType(ChoicesEnum):
     CONSTRUCTION_WORK_WARNING_MESSAGE = NotificationTypeClass(
         module=Module.CONSTRUCTION_WORK,
         name="warning-message",
-        description="Belangrijke berichten over een werkzaamheid",
+        description="Nieuws van projecten die u volgt",
     )
     PARKING_REMINDER = NotificationTypeClass(
         module=Module.PARKING,
         name="parking-reminder",
-        description="Herinnering bij aflopen van parkeersessie",
+        description="Parkeersessie loopt af",
     )
     WASTE_DATE_REMINDER = NotificationTypeClass(
         module=Module.WASTE,
@@ -68,7 +68,7 @@ class NotificationType(ChoicesEnum):
     CITY_PASS_NOTIFICATION = NotificationTypeClass(
         module=Module.CITY_PASS,
         name="notification",
-        description="Informatie m.b.t. uw stadspas",
+        description="Nieuws over regelingen",
     )
     BURNING_GUIDE_NOTIFICATION = NotificationTypeClass(
         module=Module.BURNING_GUIDE,
