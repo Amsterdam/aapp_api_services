@@ -1,9 +1,11 @@
+import asyncio
 import json
 import logging
 import math
 
 # import re
 import jwt
+from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -60,8 +62,8 @@ class ParkingPermitsView(BaseSSPView):
             permits_data = self.collect_all_pages()
             permits_data = [p for p in permits_data if p["status"] != "control"]
 
-        for n, permit in enumerate(permits_data):
-            permit_details = self.collect_permit_details(permit)
+        all_permits_details = async_to_sync(self.fetch_all_permit_details)(permits_data)
+        for n, permit_details in enumerate(all_permits_details):
             permit_details["permit"]["mapped_type"] = self.get_mapped_permit_type(
                 permit_details
             )
@@ -193,7 +195,7 @@ class ParkingPermitsView(BaseSSPView):
                 "page": page_count,
                 "row_per_page": 250,
             }
-            response_data = self.ssp_api_call(
+            response_data = async_to_sync(self.ssp_api_call)(
                 method="GET",
                 endpoint=self.ssp_endpoint,
                 query_params=data,
@@ -202,10 +204,14 @@ class ParkingPermitsView(BaseSSPView):
             permits_data += response_data["data"]
         return permits_data
 
-    def collect_permit_details(self, permit):
+    async def fetch_all_permit_details(self, permits_data):
+        tasks = [self.collect_permit_details(permit) for permit in permits_data]
+        return await asyncio.gather(*tasks)
+
+    async def collect_permit_details(self, permit):
         url_template = SSPEndpoint.PERMIT.value
         url = URITemplate(url_template).expand(permit_id=permit["id"])
-        response_data = self.ssp_api_call(
+        response_data = await self.ssp_api_call(
             method="GET",
             endpoint=url,
         )
@@ -240,7 +246,7 @@ class ParkingPermitZoneView(BaseSSPView):
         permit_id = kwargs.get("permit_id")
         url_template = SSPEndpoint.PERMIT.value
         url = URITemplate(url_template).expand(permit_id=permit_id)
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="GET",
             endpoint=url,
         )
@@ -285,7 +291,7 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
     def get(self, request, *args, **kwargs):
         permit_id = kwargs.get("permit_id")
         parking_machine = kwargs.get("parking_machine_id")
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data={

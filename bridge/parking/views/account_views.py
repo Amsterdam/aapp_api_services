@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 import jwt
+from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -79,7 +80,7 @@ class ParkingAccountLoginView(BaseSSPView):
         )
 
     def _get_internal_access_token(self, request_payload):
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=SSPEndpoint.LOGIN.value,
             body_data=request_payload,
@@ -103,7 +104,7 @@ class ParkingAccountLoginView(BaseSSPView):
         return expiration_timestamp, scope_mapped
 
     def _get_external_access_token(self, request_payload):
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=SSPEndpointExternal.LOGIN.value,
             body_data=request_payload,
@@ -142,7 +143,7 @@ class ParkingAccountDetailsView(BaseSSPView):
                 }
             )
 
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="GET",
             endpoint=SSPEndpoint.PERMITS.value,
             query_params={"page": 1, "row_per_page": 250},
@@ -157,7 +158,7 @@ class ParkingAccountDetailsView(BaseSSPView):
         if permits:
             url_template = SSPEndpoint.PERMIT.value
             url = URITemplate(url_template).expand(permit_id=permits[0]["id"])
-            response_data = self.ssp_api_call(
+            response_data = async_to_sync(self.ssp_api_call)(
                 method="GET",
                 endpoint=url,
             )

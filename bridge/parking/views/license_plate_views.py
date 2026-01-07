@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -49,7 +50,7 @@ class ParkingLicensePlateListView(BaseSSPView):
 
         # try to get license plates from permit vrns first
         url = URITemplate(SSPEndpoint.PERMIT.value).expand(permit_id=report_code)
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="GET",
             endpoint=url,
         )
@@ -75,7 +76,7 @@ class ParkingLicensePlateListView(BaseSSPView):
         # if it is a permit that has a free choice of number plates (can_input_vrn
         # is False), check for favorite vrns
         if not response_data["config"].get("can_input_vrn", True):
-            license_plates = self.ssp_api_call(
+            license_plates = async_to_sync(self.ssp_api_call)(
                 method="GET",
                 endpoint=SSPEndpoint.LICENSE_PLATES.value,
             )
@@ -135,7 +136,7 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
             "vrn": data["vehicle_id"],
             "description": data["visitor_name"],
         }
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=SSPEndpoint.LICENSE_PLATE_ADD.value,
             body_data=request_payload,
@@ -168,7 +169,7 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
         data = serializer.validated_data
         url_template = SSPEndpoint.LICENSE_PLATE_DELETE.value
         url = URITemplate(url_template).expand(license_plate_id=data["id"])
-        self.ssp_api_call(
+        async_to_sync(self.ssp_api_call)(
             method="DELETE",
             endpoint=url,
         )

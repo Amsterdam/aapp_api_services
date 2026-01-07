@@ -53,7 +53,7 @@ class BaseSSPView(generics.GenericAPIView):
     requires_access_token = False
     paginated = False
 
-    def ssp_api_call(
+    async def ssp_api_call(
         self,
         method,
         endpoint,
@@ -74,6 +74,7 @@ class BaseSSPView(generics.GenericAPIView):
             body_data: The data to send to the endpoint.
             query_params: The query parameters to send to the endpoint.
             wrap_body_data_with_token: Whether to wrap the body data with the access token.
+            requires_access_token: Whether the access token is required for the call.
         """
         query_params = serialize_datetimes(query_params) if query_params else None
         body_data = serialize_datetimes(body_data) if body_data else None
@@ -100,7 +101,7 @@ class BaseSSPView(generics.GenericAPIView):
             else:
                 headers["Authorization"] = f"Bearer {ssp_access_token}"
 
-        ssp_payload = async_to_sync(self.make_ssp_request)(
+        ssp_payload = await self.make_ssp_request(
             method=method,
             endpoint=endpoint,
             headers=headers,

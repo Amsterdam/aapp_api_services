@@ -1,6 +1,7 @@
 import logging
 import math
 
+from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -47,7 +48,7 @@ class TransactionsBalanceView(BaseSSPView):
             "brand": data.get("payment_type", "IDEAL"),
             "lang": data.get("locale", "NL").upper(),
         }
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data=request_payload,
@@ -97,7 +98,7 @@ class TransactionsBalanceConfirmView(BaseNotificationView):
             url = SSPEndpointExternal.RECHARGE_CONFIRM_VISITOR.value
         else:
             url = SSPEndpointExternal.RECHARGE_CONFIRM.value
-        response = self.ssp_api_call(
+        response = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=url,
             body_data=request_payload,
@@ -146,7 +147,7 @@ class TransactionsListView(BaseSSPView):
             "filters[status]": data.get("filter_status", "COMPLETED"),
         }
 
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="GET",
             endpoint=self.ssp_endpoint,
             query_params=request_payload,

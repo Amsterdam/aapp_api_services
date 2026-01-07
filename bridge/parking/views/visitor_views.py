@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -31,7 +32,7 @@ class ParkingVisitorView(BaseSSPView):
 
         url_template = SSPEndpoint.VISITOR_CREATE.value
         url = URITemplate(url_template).expand(permit_id=permit_id)
-        self.ssp_api_call(
+        async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=url,
         )
@@ -49,7 +50,7 @@ class ParkingVisitorView(BaseSSPView):
 
         url_template = SSPEndpoint.VISITOR_DELETE.value
         url = URITemplate(url_template).expand(permit_id=permit_id)
-        self.ssp_api_call(
+        async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=url,
         )
@@ -90,7 +91,7 @@ class ParkingVisitorTimeBalanceView(BaseSSPView):
         request_payload = {
             "amount": hours,
         }
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=url,
             body_data=request_payload,

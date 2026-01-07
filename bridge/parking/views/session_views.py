@@ -3,6 +3,7 @@ import math
 from datetime import datetime
 from datetime import timezone as dt_timezone
 
+from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -87,7 +88,7 @@ class ParkingSessionListView(BaseSSPView):
             request_payload["filters[status]"] = self.map_filter_status(filter_status)
         if data.get("vehicle_id"):
             request_payload["filters[vrn]"] = data["vehicle_id"]
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=self.ssp_endpoint,
             query_params=request_payload,
@@ -205,7 +206,7 @@ class ParkingSessionActivateView(BaseSSPView):
             "vrn": session_data["vehicle_id"],
         }
 
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data=request_payload,
@@ -281,7 +282,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
             request_payload["is_new_favorite_machine_number"] = session_data.get(
                 "parking_machine_favorite"
             )
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=SSPEndpointExternal.PARKING_SESSION_START.value,
             body_data=request_payload,
@@ -338,7 +339,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         payload = {
             "new_ended_at": self.get_utc_datetime(end_datetime),
         }
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="PATCH",
             endpoint=url,
             body_data=payload,
@@ -408,7 +409,7 @@ class ParkingSessionReceiptView(BaseSSPView):
             request_payload["paid_parking_zone_id"] = int(data["payment_zone_id"])
         elif data.get("parking_machine"):
             request_payload["machine_number"] = int(data["parking_machine"])
-        response_data = self.ssp_api_call(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data=request_payload,
