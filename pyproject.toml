@@ -37,6 +37,7 @@ dependencies = [
   "azure-identity",
   "azure-monitor-opentelemetry",
   "azure-monitor-opentelemetry-exporter",
+  "opentelemetry-instrumentation-httpx",
   "opentelemetry-api==1.38",  # Temp fix: https://github.com/Azure/azure-sdk-for-python/issues/44237
   # Integration and unit testing
   "freezegun",

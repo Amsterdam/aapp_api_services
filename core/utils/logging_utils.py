@@ -36,6 +36,7 @@ def setup_opentelemetry():
             "django": {"enabled": True},
             "psycopg2": {"enabled": True},
             "requests": {"enabled": True},
+            "httpx": {"enabled": True},
             "urllib": {"enabled": True},
             "urllib3": {"enabled": True},
         },
