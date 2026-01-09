@@ -41,6 +41,7 @@ MOCK_DATA = {
                 "afvalwijzerWaar": "Test",
                 "gebruiksdoelWoonfunctie": True,
                 "afvalwijzerBasisroutetypeCode": None,
+                "bagNummeraanduidingId": "12345",
             },
         ]
     }

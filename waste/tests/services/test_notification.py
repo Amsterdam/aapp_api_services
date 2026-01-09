@@ -19,7 +19,10 @@ class NotificationServiceTest(ResponsesActivatedAPITestCase):
         )
 
         notification_service = NotificationService()
-        notification_service.send(device_ids=["device1", "device2"], waste_type="glas")
+        notification_service.send_waste_notification(
+            device_ids=["device1", "device2"],
+            waste_type="glas",
+        )
 
         self.assertEqual(resp_post.call_count, 1)
 
