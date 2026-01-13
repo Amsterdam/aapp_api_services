@@ -18,6 +18,7 @@ APP_LINKS = {
     "cityPassRequest": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/HulpBijLaagInkomen.aspx",
     "cityPassChildBudget": "https://www.amsterdam.nl/stadspas/kindtegoed/",
     "cityPassUsage": "https://www.amsterdam.nl/stadspas/werkt-stadspas/",
+    "cityPassLowIncomeSupport": "https://www.amsterdam.nl/werk-en-inkomen/regelingen-bij-laag-inkomen-pak-je-kans/",
     "contactNewsletterSignup": "https://cloud.nieuwsbrief.amsterdam.nl/nieuwsbrief-aanmelden?type=amsterdam",
     "documents": "https://www.amsterdam.nl/burgerzaken/akten-uittreksels/",
     "elections": "https://www.amsterdam.nl/verkiezingen/",
