@@ -1,6 +1,8 @@
+from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import status
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -51,3 +53,31 @@ class WasteGuideView(APIView):
         )
         response_serializer.is_valid(raise_exception=True)
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)
+
+
+class WasteGuideCalendarIcsView(RetrieveAPIView):
+    authentication_classes = []  # Disable authentication
+
+    def get(self, request, *args, **kwargs):
+        bag_nummeraanduiding_id = kwargs.get("bag_nummeraanduiding_id")
+        if bag_nummeraanduiding_id is None:
+            return Response(
+                data={"detail": "bag_nummeraanduiding_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not isinstance(bag_nummeraanduiding_id, str):
+            return Response(
+                data={"detail": "bag_nummeraanduiding_id must be a string."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        waste_service = WasteCollectionService(bag_nummeraanduiding_id)
+        waste_service.get_validated_data()
+        calendar = waste_service.create_ics_calendar()
+
+        response = HttpResponse(
+            str(calendar), content_type="text/calendar; charset=utf-8"
+        )
+        response["Content-Disposition"] = 'inline; filename="calendar.ics"'
+        return response

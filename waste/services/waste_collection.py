@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 
 import requests
 from django.conf import settings
+from ics import Calendar, Event
 
 from waste import constants
 from waste.constants import WASTE_TYPES_ORDER
@@ -37,32 +38,34 @@ class WasteCollectionService:
         data = [d for d in serializer.validated_data if d.get("code")]
         self.validated_data = data
 
+    def _get_dates_for_waste_item(self, item) -> list[date]:
+        ophaaldagen_list, dates = self.filter_ophaaldagen(ophaaldagen=item.get("days"))
+        frequency = item.get("frequency") or ""
+        if frequency == "":
+            pass  # no filtering needed
+        elif "oneven" in frequency:
+            dates = self.filter_even_oneven(dates, even=False)
+        elif "even" in frequency:
+            dates = self.filter_even_oneven(dates, even=True)
+        elif "/" in frequency:
+            dates = self.filter_specific_dates(dates, frequency)
+        elif montly_pattern.match(frequency) is not None:
+            dates = self.filter_nth_weekday_dates(
+                dates, weekday=ophaaldagen_list[0], frequency=frequency
+            )
+        else:
+            logging.error(
+                f"Unknown frequency pattern '{frequency}' for waste type {item.get('code')}"
+            )
+            dates = []
+
+        return dates
+
     def create_calendar(self):
         calendar = []
         for item in self.validated_data:
             if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
-                ophaaldagen_list, dates = self.filter_ophaaldagen(
-                    ophaaldagen=item.get("days")
-                )
-                frequency = item.get("frequency") or ""
-                if frequency == "":
-                    pass  # no filtering needed
-                elif "oneven" in frequency:
-                    dates = self.filter_even_oneven(dates, even=False)
-                elif "even" in frequency:
-                    dates = self.filter_even_oneven(dates, even=True)
-                elif "/" in frequency:
-                    dates = self.filter_specific_dates(dates, frequency)
-                elif montly_pattern.match(frequency) is not None:
-                    dates = self.filter_nth_weekday_dates(
-                        dates, weekday=ophaaldagen_list[0], frequency=frequency
-                    )
-                else:
-                    logging.error(
-                        f"Unknown frequency pattern '{frequency}' for waste type {item.get('code')}"
-                    )
-                    dates = []
-
+                dates = self._get_dates_for_waste_item(item)
                 calendar += [
                     {
                         "date": date,
@@ -82,6 +85,35 @@ class WasteCollectionService:
         # sort calendar items by date
         calendar.sort(key=lambda x: x["date"])
         return calendar
+
+    def create_ics_calendar(self):
+        calendar = Calendar()
+        for item in self.validated_data:
+            if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
+                dates = self._get_dates_for_waste_item(item)
+                for date in dates:
+                    calendar = self._add_event_to_calendar(calendar, date, item)
+
+        return calendar
+
+    def _add_event_to_calendar(self, calendar: Calendar, date: date, item: dict):
+        event = self._create_ics_event(date, item)
+        calendar.events.add(event)
+        return calendar
+
+    def _create_ics_event(self, date: date, item: dict) -> Event:
+        event = Event(
+            uid=f"{item.get('label')}-{date.isoformat()}@app.amsterdam.nl",
+            name=item.get("label", "Afval ophalen"),
+            begin=datetime.combine(date, datetime.min.time()),
+            description=f"Afval ophalen voor type: {item.get('label')}",
+        )
+        event.make_all_day()
+        if item.get("curb_rules_from") and item.get("curb_rules_to"):
+            event.description += f"\nAfval aanbieden: {item.get('curb_rules_from', '')} {item.get('curb_rules_to', '')}"
+        if item.get("alert"):
+            event.description += f"\nAlert: {item.get('alert')}"
+        return event
 
     def filter_ophaaldagen(self, ophaaldagen):
         ophaaldagen_list = self._interpret_ophaaldagen(ophaaldagen)

@@ -17,7 +17,10 @@ dependencies = [
   "dos2unix",
   "whitenoise",
   "pyproj",
+  # polygon operations
   "shapely",
+  # waste calendar
+  "ics",
   # modules
   "djangorestframework-simplejwt",
   "django-csp",

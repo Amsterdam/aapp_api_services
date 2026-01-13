@@ -5,9 +5,15 @@ import freezegun
 import responses
 from django.conf import settings
 from django.test import TestCase, override_settings
+from ics import Calendar
 
 from waste.services.waste_collection import WasteCollectionService
-from waste.tests.mock_data import frequency_hardcoded, frequency_monthly
+from waste.tests.mock_data import (
+    frequency_hardcoded_with_year,
+    frequency_hardcoded_wo_year,
+    frequency_monthly,
+    frequency_unknown,
+)
 
 
 @freezegun.freeze_time("2025-12-09")
@@ -98,6 +104,11 @@ class WasteCollectionServiceTest(TestCase):
         self.set_validated_mock_data(self.default_waste_guide)
         self.assertIsNotNone(self.service.validated_data)
 
+    def test_get_dates_for_waste_item_unknown_frequency(self):
+        item = frequency_unknown.MOCK_DATA["_embedded"]["afvalwijzer"][0]
+        dates = self.service._get_dates_for_waste_item(item=item)
+        self.assertEqual(len(dates), 0)
+
     @override_settings(CALENDAR_LENGTH=14)
     def test_create_calendar(self):
         self.set_validated_mock_data(self.default_waste_guide)
@@ -140,6 +151,14 @@ class WasteCollectionServiceTest(TestCase):
                 },
             ],
         )
+
+    @override_settings(CALENDAR_LENGTH=14)
+    def test_create_ics_calendar(self):
+        self.set_validated_mock_data(self.default_waste_guide)
+        calendar = self.service.create_ics_calendar()
+
+        self.assertIn("BEGIN:VEVENT", str(calendar))
+        self.assertIn("DTSTART;VALUE=DATE:20251215", str(calendar))
 
     def test_get_next_dates(self):
         self.set_validated_mock_data(self.default_waste_guide)
@@ -274,7 +293,38 @@ class WasteCollectionServiceTest(TestCase):
     @override_settings(CALENDAR_LENGTH=180)
     def test_calendar_specific_dates_weesp(self):
         self.set_validated_mock_data(
-            frequency_hardcoded.MOCK_DATA["_embedded"]["afvalwijzer"]
+            frequency_hardcoded_wo_year.MOCK_DATA["_embedded"]["afvalwijzer"]
+        )
+        calendar = self.service.create_calendar()
+
+        # interpret date string as datetime
+        self.assertEqual(
+            calendar,
+            [
+                {
+                    "date": datetime.strptime(d, "%Y-%m-%d").date(),
+                    "label": "Papier en karton",
+                    "code": "Papier",
+                    "curb_rules_from": "Donderdag 21.00",
+                    "curb_rules_to": "tot vrijdag 07.00 uur",
+                    "alert": None,
+                }
+                for d in [
+                    "2025-12-12",
+                    "2026-01-09",
+                    "2026-02-06",
+                    "2026-03-06",
+                    "2026-04-03",
+                    "2026-05-01",
+                    "2026-05-29",
+                ]
+            ],
+        )
+
+    @override_settings(CALENDAR_LENGTH=380)
+    def test_calendar_specific_dates_weesp_with_year(self):
+        self.set_validated_mock_data(
+            frequency_hardcoded_with_year.MOCK_DATA["_embedded"]["afvalwijzer"]
         )
         calendar = self.service.create_calendar()
 
@@ -300,6 +350,13 @@ class WasteCollectionServiceTest(TestCase):
                     "2026-04-03",
                     "2026-05-01",
                     "2026-05-29",
+                    "2026-06-26",
+                    "2026-07-24",
+                    "2026-08-21",
+                    "2026-09-18",
+                    "2026-10-16",
+                    "2026-11-13",
+                    "2026-12-11",
                 ]
             ],
         )
@@ -326,3 +383,24 @@ class WasteCollectionServiceTest(TestCase):
                 }
             ],
         )
+
+    @override_settings(CALENDAR_LENGTH=42)
+    def test_create_ics_event(self):
+        item = frequency_monthly.MOCK_DATA["_embedded"]["afvalwijzer"][0]
+        date_object = date(2026, 1, 12)
+        event = self.service._create_ics_event(item=item, date=date_object)
+
+        self.assertIn("BEGIN:VEVENT", str(event))
+        self.assertIn("DTSTART;VALUE=DATE:20260112", str(event))
+
+    @override_settings(CALENDAR_LENGTH=42)
+    def test_add_event_to_calendar(self):
+        calendar = Calendar()
+        item = frequency_monthly.MOCK_DATA["_embedded"]["afvalwijzer"][0]
+        date_object = date(2026, 1, 12)
+
+        calendar = self.service._add_event_to_calendar(
+            item=item, date=date_object, calendar=calendar
+        )
+
+        self.assertIn("BEGIN:VEVENT", str(calendar))
