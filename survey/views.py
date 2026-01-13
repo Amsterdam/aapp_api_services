@@ -1,5 +1,5 @@
-from datetime import datetime
-
+from django.db.models import Prefetch
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.generics import (
@@ -11,7 +11,13 @@ from rest_framework.generics import (
 from rest_framework.pagination import PageNumberPagination
 
 from core.utils.openapi_utils import extend_schema_for_api_key
-from survey.models import Survey, SurveyConfiguration, SurveyVersion, SurveyVersionEntry
+from survey.models import (
+    Question,
+    Survey,
+    SurveyConfiguration,
+    SurveyVersion,
+    SurveyVersionEntry,
+)
 from survey.serializers.survey_serializers import (
     SurveyConfigResponseSerializer,
     SurveySerializer,
@@ -37,9 +43,23 @@ class SurveyConfigView(RetrieveAPIView):
     serializer_class = SurveyConfigResponseSerializer
     lookup_field = "location"
     lookup_url_kwarg = "location"
-    queryset = SurveyConfiguration.objects.all().prefetch_related(
-        "survey__surveyversion_set"
-    )
+
+    def get_queryset(self):
+        return SurveyConfiguration.objects.all().prefetch_related(
+            Prefetch(
+                "survey__surveyversion_set",
+                queryset=SurveyVersion.objects.filter(
+                    active_from__lt=timezone.now()
+                ).prefetch_related(
+                    Prefetch(
+                        "questions",
+                        queryset=Question.objects.order_by(
+                            "surveyversionquestion__sort_order"
+                        ).prefetch_related("choices", "conditions"),
+                    )
+                ),
+            )
+        )
 
     @extend_schema_for_api_key(
         success_response=SurveyConfigResponseSerializer,
@@ -57,7 +77,14 @@ class SurveyVersionView(ListAPIView):
     def get_queryset(self):
         unique_code = self.kwargs.get("unique_code")
         survey = get_object_or_404(Survey, unique_code=unique_code)
-        return SurveyVersion.objects.filter(survey=survey)
+        return SurveyVersion.objects.filter(survey=survey).prefetch_related(
+            Prefetch(
+                "questions",
+                queryset=Question.objects.order_by(
+                    "surveyversionquestion__sort_order"
+                ).prefetch_related("choices", "conditions"),
+            )
+        )
 
     @extend_schema_for_api_key(
         success_response=SurveyVersionSerializer,
@@ -74,7 +101,14 @@ class SurveyVersionDetailView(RetrieveAPIView):
     def get_queryset(self):
         unique_code = self.kwargs.get("unique_code")
         survey = get_object_or_404(Survey, unique_code=unique_code)
-        return SurveyVersion.objects.filter(survey=survey)
+        return SurveyVersion.objects.filter(survey=survey).prefetch_related(
+            Prefetch(
+                "questions",
+                queryset=Question.objects.order_by(
+                    "surveyversionquestion__sort_order"
+                ).prefetch_related("choices", "conditions"),
+            )
+        )
 
     @extend_schema_for_api_key(
         success_response=SurveyVersionDetailSerializer,
@@ -87,7 +121,7 @@ class SurveyVersionLatestView(SurveyVersionDetailView):
     def get_object(self):
         return (
             self.get_queryset()
-            .filter(active_from__lt=datetime.now())
+            .filter(active_from__lt=timezone.now())
             .order_by("version")
             .last()
         )

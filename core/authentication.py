@@ -193,6 +193,7 @@ class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
             "cbs-time-publisher",
             "city-pass-publisher",
             "waste-publisher",
+            "survey-publisher",
         ]:
             group, _ = Group.objects.get_or_create(name=f"o-{role_name}")
             groups.append(group)
