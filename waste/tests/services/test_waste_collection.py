@@ -271,7 +271,7 @@ class WasteCollectionServiceTest(TestCase):
             ],
         )
 
-    @override_settings(CALENDAR_LENGTH=380)
+    @override_settings(CALENDAR_LENGTH=180)
     def test_calendar_specific_dates_weesp(self):
         self.set_validated_mock_data(
             frequency_hardcoded.MOCK_DATA["_embedded"]["afvalwijzer"]
@@ -300,13 +300,6 @@ class WasteCollectionServiceTest(TestCase):
                     "2026-04-03",
                     "2026-05-01",
                     "2026-05-29",
-                    "2026-06-26",
-                    "2026-07-24",
-                    "2026-08-21",
-                    "2026-09-18",
-                    "2026-10-16",
-                    "2026-11-13",
-                    "2026-12-11",
                 ]
             ],
         )

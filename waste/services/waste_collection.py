@@ -161,8 +161,7 @@ class WasteCollectionService:
 
             # If this date has passed already, put it in next year
             if year_date < today:
-                year += 1
-                year_date = year_date.replace(year=year)
+                year_date = year_date.replace(year=year + 1)
 
             specific_dates.append(year_date.date())
 
