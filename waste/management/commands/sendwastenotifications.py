@@ -75,6 +75,7 @@ class Command(BaseCommand):
             f"[waste-notification] Initialized command."
             f"\nReady to send notifications for '{self.tomorrow_weekday_name}'."
             f"\nNotifications will be send at {self.notification_datetime}"
+            f"\nTotal devices registered: {len(self.notification_schedules)}"
         )
 
     def handle(self, *args, **options):
@@ -91,12 +92,18 @@ class Command(BaseCommand):
                     waste_type=waste_type_route, page_size=20000
                 )
             )
-
+        logger.info("[waste-notification] Fetched all waste data from Waste Guide API.")
         filtered_data = self._filter_waste_data_on_day(data=full_data)
         fraction_device_ids = self._get_devices_per_waste_type(
             filtered_data=filtered_data
         )
+        logger.info(
+            f"[waste-notification] Got all device IDs for {len(fraction_device_ids.items())} waste types."
+        )
         self._send_notifications(fraction_device_ids=fraction_device_ids)
+        logger.info(
+            "[waste-notification] Sent all notifications, now update schedules."
+        )
 
         # Mark all schedules as updated, to prevent sending the same notification multiple times
         ids_to_update = [schedule.pk for schedule in self.notification_schedules]
