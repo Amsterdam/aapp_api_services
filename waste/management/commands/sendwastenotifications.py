@@ -93,10 +93,7 @@ class Command(BaseCommand):
                 )
             )
         logger.info("[waste-notification] Fetched all waste data from Waste Guide API.")
-        filtered_data = self._filter_waste_data_on_day(data=full_data)
-        fraction_device_ids = self._get_devices_per_waste_type(
-            filtered_data=filtered_data
-        )
+        fraction_device_ids = self._get_devices_per_waste_type(filtered_data=full_data)
         logger.info(
             f"[waste-notification] Got all device IDs for {len(fraction_device_ids.items())} waste types."
         )
@@ -153,8 +150,25 @@ class Command(BaseCommand):
             return [], None
 
         waste_data = response_json.get("_embedded", {}).get("afvalwijzer", [])
+
+        # filter waste data to only keep records with a pickup day
+        waste_data = self._filter_waste_data_on_day(data=waste_data)
         next_link = response_json.get("_links", {}).get("next", {}).get("href")
         return waste_data, next_link
+
+    def _filter_waste_data_on_day(self, data: list[dict]) -> list[dict]:
+        """filter on day, to only keep the records where pickupday is tomorrow, also only keep relevant fields"""
+        filtered_data = [
+            {
+                "bagNummeraanduidingId": d.get("bagNummeraanduidingId", ""),
+                "afvalwijzerFractieNaam": d.get("afvalwijzerFractieNaam", ""),
+                "afvalwijzerOphaaldagen2": d.get("afvalwijzerOphaaldagen2", ""),
+            }
+            for d in data
+            if self.tomorrow_weekday_name
+            in (d.get("afvalwijzerOphaaldagen2", "") or "")
+        ]
+        return filtered_data
 
     @retry(
         stop=stop_after_attempt(3),  # Retry up to 3 times
@@ -183,16 +197,6 @@ class Command(BaseCommand):
                 f"[waste-notification] Error fetching data from Waste Guide API for {url}: {e}"
             )
             raise WasteCollectionError from e
-
-    def _filter_waste_data_on_day(self, data: list[dict]) -> list[dict]:
-        """filter on day, to only keep the records where pickupday is tomorrow"""
-        filtered_data = [
-            d
-            for d in data
-            if self.tomorrow_weekday_name
-            in (d.get("afvalwijzerOphaaldagen2", "") or "")
-        ]
-        return filtered_data
 
     def _get_devices_per_waste_type(
         self, filtered_data: list[dict]
