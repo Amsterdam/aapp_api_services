@@ -25,6 +25,12 @@ class Command(BaseCommand):
         self.notification_service = NotificationService()
 
     def handle(self, *args, **kwargs):
+        # check if command should run at this hour
+        if not self._should_command_run_by_hour(timezone.now().hour):
+            logger.info(
+                "Skipping sending burning guide notifications, not scheduled hour"
+            )
+            return
         last_timestamp = self._last_fixed_timestamp()
         notification_devices = list(
             BurningGuideNotification.objects.filter(
@@ -80,6 +86,9 @@ class Command(BaseCommand):
             device_ids=device_ids,
         )
         self.notification_service.send(notification_data)
+
+    def _should_command_run_by_hour(self, hour: int) -> bool:
+        return hour in [7, 10, 16, 22]
 
     def _last_fixed_timestamp(self):
         now = timezone.now()

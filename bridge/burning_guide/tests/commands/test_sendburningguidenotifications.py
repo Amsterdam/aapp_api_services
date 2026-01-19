@@ -33,6 +33,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
             json={},
         )
 
+    @freezegun.freeze_time("2024-06-02 07:15:00")
     @patch(
         "bridge.management.commands.sendburningguidenotifications.RIVMService.has_new_red_status"
     )
@@ -45,6 +46,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
             len(self.post_rsp.calls), 2
         )  # Two postal codes, so two notifications sent
 
+    @freezegun.freeze_time("2024-06-02 07:15:00")
     @patch(
         "bridge.management.commands.sendburningguidenotifications.RIVMService.has_new_red_status"
     )
@@ -57,6 +59,20 @@ class TestCommand(ResponsesActivatedAPITestCase):
             len(self.post_rsp.calls), 0
         )  # Two postal codes, so two notifications sent
 
+    @freezegun.freeze_time("2024-06-02 08:15:00")
+    @patch(
+        "bridge.management.commands.sendburningguidenotifications.RIVMService.has_new_red_status"
+    )
+    def test_command_hour_outside_scope(self, patched_has_new_red_status):
+        patched_has_new_red_status.return_value = True
+
+        call_command("sendburningguidenotifications")
+
+        self.assertEqual(
+            len(self.post_rsp.calls), 0
+        )  # Even though there are postal codes, no notifications sent
+
+    @freezegun.freeze_time("2024-06-02 07:15:00")
     @patch(
         "bridge.management.commands.sendburningguidenotifications.RIVMService.has_new_red_status"
     )
