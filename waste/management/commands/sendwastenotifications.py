@@ -19,7 +19,7 @@ class WasteCollectionError(Exception):
 
 logger = logging.getLogger(__name__)
 WASTE_COLLECTION_ROUTE_TYPES = [
-    "GROFAFSPR",
+    "GROFVAST",
     "GROFVASTPR",
     "ZAKKENRT",
     "ROLCONTAIN",
