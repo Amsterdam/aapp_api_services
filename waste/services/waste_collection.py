@@ -19,6 +19,14 @@ class WasteCollectionService:
         self.bag_nummeraanduiding_id = bag_nummeraanduiding_id
         self.validated_data = []
         self.all_dates = self._get_dates()
+        self.waste_links = {
+            "Glas": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/glas-potten-flessen-en-ander-glas/",
+            "Papier": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/papier-en-karton/",
+            "GFT": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/groente-fruit-en-tuinafval-gft/",
+            "Rest": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/restafval/",
+            "GA": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/grofvuil/",
+            "Textiel": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/kleding-textiel-en-schoenen/",
+        }
 
     def get_validated_data(self):
         url = settings.WASTE_GUIDE_URL
@@ -241,6 +249,7 @@ class WasteCollectionService:
                             ]
                         },
                         "next_date": next_dates.get(code),
+                        "info_link": self.waste_links.get(code),
                     }
                 )
         waste_types.sort(

@@ -10,7 +10,10 @@ from waste.views.notification_views import (
     WasteNotificationCreateView,
     WasteNotificationDetailView,
 )
-from waste.views.waste_views import WasteGuideCalendarIcsView, WasteGuideView
+from waste.views.waste_views import (
+    WasteGuideCalendarIcsView,
+    WasteGuideView,
+)
 
 BASE_PATH = "waste/api/v1"
 

@@ -200,6 +200,7 @@ class WasteCollectionServiceTest(TestCase):
                     "frequency": None,
                     "is_collection_by_appointment": False,
                     "next_date": date(2025, 12, 15),
+                    "info_link": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/papier-en-karton/",
                 },
                 {
                     "label": "Groente fruit en tuin",
@@ -215,6 +216,7 @@ class WasteCollectionServiceTest(TestCase):
                     "frequency": None,
                     "is_collection_by_appointment": False,
                     "next_date": date(2025, 12, 9),
+                    "info_link": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/groente-fruit-en-tuinafval-gft/",
                 },
             ],
         )

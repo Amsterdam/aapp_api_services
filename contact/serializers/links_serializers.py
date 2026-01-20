@@ -33,3 +33,4 @@ class LinksOutSerializer(serializers.Serializer):
     rivm_report = serializers.URLField()
     sailingAndMooring = serializers.URLField()
     waste = serializers.URLField()
+    waste_extra_info = serializers.URLField()

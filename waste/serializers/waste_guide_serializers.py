@@ -111,6 +111,7 @@ class WasteTypeSerializer(serializers.Serializer):
     url = serializers.CharField(allow_null=True, default="")
     frequency = serializers.CharField(allow_null=True, default="")
     next_date = serializers.DateField(allow_null=True)
+    info_link = serializers.URLField(allow_null=True)
 
 
 class WasteCalendarSerializer(serializers.Serializer):

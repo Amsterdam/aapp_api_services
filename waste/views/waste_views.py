@@ -1,3 +1,5 @@
+import logging
+
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
@@ -12,6 +14,8 @@ from waste.serializers.waste_guide_serializers import (
     WasteResponseSerializer,
 )
 from waste.services.waste_collection import WasteCollectionService
+
+logger = logging.getLogger(__name__)
 
 
 class WasteGuideView(APIView):
