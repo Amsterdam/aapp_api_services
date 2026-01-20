@@ -70,6 +70,12 @@ class SSPTokenExpiredError(BaseApiException):
     default_code = "SSP_TOKEN_EXPIRED"
 
 
+class SSPJWTTokenExpiredError(BaseApiException):
+    status_code = status.HTTP_403_FORBIDDEN
+    default_detail = "Expired JWT Token"
+    default_code = "SSP_JWT_TOKEN_EXPIRED"
+
+
 class SSPNotFoundError(BaseApiException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Resource not found by SSP"
@@ -92,6 +98,20 @@ class SSPTimeBalanceInsufficientError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Client time balance is insufficient"
     default_code = "SSP_TIME_BALANCE_INSUFFICIENT"
+
+
+class SSPTimeAllocationBalanceInsufficientError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "The requested time allocation exceeds the available balance."
+    default_code = "SSP_TIME_ALLOCATION_BALANCE_INSUFFICIENT"
+
+
+class SSPTimeAllocationVisitorBalanceInsufficientError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = (
+        "The requested time withdrawal exceeds the available visitor balance"
+    )
+    default_code = "SSP_TIME_ALLOCATION_VISITOR_BALANCE_INSUFFICIENT"
 
 
 class SSPTimeBalanceAllocationNotAllowedError(BaseApiException):
@@ -134,6 +154,12 @@ class SSPMaxSessionsReachedError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Session maximum reached"
     default_code = "SSP_MAX_SESSIONS_REACHED"
+
+
+class SSPVehicleOpenChangePlateError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Vehicle have an open change plate request"
+    default_code = "SSP_VEHICLE_OPEN_CHANGE_PLATE"
 
 
 class SSPVehicleIDNotAllowedError(BaseApiException):
@@ -257,7 +283,10 @@ SSP_COMMON_ERRORS = [
     SSPAccountBlocked,
     SSPBalanceTooLowError,
     SSPTokenExpiredError,
+    SSPJWTTokenExpiredError,
     SSPTimeBalanceInsufficientError,
+    SSPTimeAllocationBalanceInsufficientError,
+    SSPTimeAllocationVisitorBalanceInsufficientError,
     SSPTimeBalanceAllocationNotAllowedError,
     SSPSEndTimeInPastError,
     SSPStartTimeInPastError,
@@ -266,6 +295,7 @@ SSP_COMMON_ERRORS = [
     SSPEndDateBeforeStartDateError,
     SSPMaxSessionsReachedError,
     SSPVehicleIDNotAllowedError,
+    SSPVehicleOpenChangePlateError,
     SSPSessionAlreadyExistsError,
     SSPSessionDurationExceededError,
     SSPSessionNotActiveError,
