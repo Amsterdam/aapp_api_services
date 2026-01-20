@@ -6,9 +6,11 @@
   <b>Voorbeeld weergave van bericht:</b>
   <blockquote><b>{{ notification.title }}</b><br>{{ notification.message }}</blockquote>
 
+{% if budgets %}
   <b>Budgetten selectie</b>
   {{ budgets }}
   <br>
+{% endif %}
 
   <form method="post">
     {% csrf_token %}
