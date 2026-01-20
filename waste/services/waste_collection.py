@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 
 import requests
 from django.conf import settings
+from django.utils import timezone
 from ics import Calendar, Event
 
 from waste import constants
@@ -96,6 +97,7 @@ class WasteCollectionService:
 
     def create_ics_calendar(self):
         calendar = Calendar()
+        calendar.creator = "-//Amsterdam App//Afvalwijzer Kalender//NL"
         for item in self.validated_data:
             if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
                 dates = self._get_dates_for_waste_item(item)
@@ -110,13 +112,22 @@ class WasteCollectionService:
         return calendar
 
     def _create_ics_event(self, date: date, item: dict) -> Event:
-        event = Event(
-            uid=f"{item.get('label')}-{date.isoformat()}@app.amsterdam.nl",
-            name=item.get("label", "Afval ophalen"),
-            begin=datetime.combine(date, datetime.min.time()),
-            description=f"Afval ophalen voor type: {item.get('label')}",
-        )
+        event = Event()
+
+        # set unique id and name
+        event.uid = f"{item.get('label', '').replace(',', '').replace(' ', '')}-{date.isoformat()}@app.amsterdam.nl"
+        event.name = item.get("label", "Afval ophalen")
+
+        # set date of event
+        event.begin = date
         event.make_all_day()
+
+        # set created and dtstamp to now (required for iCalendar)
+        event.created = timezone.now()
+        event.dtstamp = timezone.now()
+
+        # set description
+        event.description = f"Afval ophalen voor type: {item.get('label')}"
         if item.get("curb_rules_from") and item.get("curb_rules_to"):
             event.description += f"\nAfval aanbieden: {item.get('curb_rules_from', '')} {item.get('curb_rules_to', '')}"
         if item.get("alert"):

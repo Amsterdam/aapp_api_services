@@ -159,6 +159,9 @@ class WasteCollectionServiceTest(TestCase):
 
         self.assertIn("BEGIN:VEVENT", str(calendar))
         self.assertIn("DTSTART;VALUE=DATE:20251215", str(calendar))
+        # PRODID and DTSTAMP are required for iCalendar standard
+        self.assertIn("PRODID", str(calendar))
+        self.assertIn("DTSTAMP", str(calendar))
 
     def test_get_next_dates(self):
         self.set_validated_mock_data(self.default_waste_guide)
