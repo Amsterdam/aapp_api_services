@@ -1,10 +1,10 @@
 import logging
 
 from django.http import HttpResponse
+from django.views import View
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import status
-from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -59,21 +59,21 @@ class WasteGuideView(APIView):
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)
 
 
-class WasteGuideCalendarIcsView(RetrieveAPIView):
-    authentication_classes = []  # Disable authentication
-
+class WasteGuideCalendarIcsView(View):
     def get(self, request, *args, **kwargs):
         bag_nummeraanduiding_id = kwargs.get("bag_nummeraanduiding_id")
         if bag_nummeraanduiding_id is None:
-            return Response(
-                data={"detail": "bag_nummeraanduiding_id is required."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return HttpResponse(
+                '{"detail":"bag_nummeraanduiding_id is required."}',
+                content_type="application/json",
+                status=400,
             )
 
         if not isinstance(bag_nummeraanduiding_id, str):
-            return Response(
-                data={"detail": "bag_nummeraanduiding_id must be a string."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return HttpResponse(
+                '{"detail":"bag_nummeraanduiding_id must be a string."}',
+                content_type="application/json",
+                status=400,
             )
 
         waste_service = WasteCollectionService(bag_nummeraanduiding_id)
