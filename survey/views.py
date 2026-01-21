@@ -38,6 +38,23 @@ class SurveyView(ListAPIView):
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
+    def get_queryset(self):
+        return Survey.objects.all().prefetch_related(
+            Prefetch(
+                "surveyversion_set",
+                queryset=SurveyVersion.objects.filter(
+                    active_from__lt=timezone.now()
+                ).prefetch_related(
+                    Prefetch(
+                        "questions",
+                        queryset=Question.objects.order_by(
+                            "surveyversionquestion__sort_order"
+                        ).prefetch_related("choices", "conditions"),
+                    )
+                ),
+            )
+        )
+
 
 class SurveyConfigView(RetrieveAPIView):
     serializer_class = SurveyConfigResponseSerializer
