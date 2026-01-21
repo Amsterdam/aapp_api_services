@@ -9,6 +9,7 @@ from bridge.parking.tests.mock_data import (
 from bridge.parking.tests.mock_data_external import (
     wallet_transaction,
     wallet_transaction_confirm,
+    wallet_transaction_visitor_confirm,
 )
 from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 from bridge.parking.views.transaction_views import (
@@ -17,7 +18,7 @@ from bridge.parking.views.transaction_views import (
 )
 
 
-class TestTransactionsRechargeView(BaseSSPTestCase):
+class TestTransactionsBalanceView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("parking-balance")
@@ -53,7 +54,7 @@ class TestTransactionsRechargeView(BaseSSPTestCase):
         self.assertEqual(response.status_code, 400)
 
 
-class TestTransactionsRechargeConfirmView(BaseSSPTestCase):
+class TestTransactionsBalanceConfirmView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("parking-balance-confirm")
@@ -79,9 +80,12 @@ class TestTransactionsRechargeConfirmView(BaseSSPTestCase):
     def test_successful_visitor(self):
         api_headers = self.api_headers.copy()
         api_headers["SSP-Access-Token"] = self.test_visitor_token
+        api_headers["DeviceId"] = "visitor-device-id-123"
 
         post_resp = respx.post(SSPEndpointExternal.RECHARGE_CONFIRM_VISITOR.value).mock(
-            return_value=httpx.Response(200, json=self.test_response)
+            return_value=httpx.Response(
+                200, json=wallet_transaction_visitor_confirm.MOCK_RESPONSE
+            )
         )  # We are mocking a different URL for visitors!
 
         response = self.client.post(

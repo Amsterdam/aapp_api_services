@@ -1,5 +1,6 @@
 import logging
 import math
+from datetime import datetime
 
 from asgiref.sync import async_to_sync
 from rest_framework import status
@@ -98,7 +99,7 @@ class TransactionsBalanceConfirmView(BaseNotificationView):
             url = SSPEndpointExternal.RECHARGE_CONFIRM_VISITOR.value
         else:
             url = SSPEndpointExternal.RECHARGE_CONFIRM.value
-        response = async_to_sync(self.ssp_api_call)(
+        response_data = async_to_sync(self.ssp_api_call)(
             method="POST",
             endpoint=url,
             body_data=request_payload,
@@ -110,10 +111,10 @@ class TransactionsBalanceConfirmView(BaseNotificationView):
                 assert self.device_id, (
                     "Device ID is required for visitor session notifications"
                 )
-                data = response.data["data"]
+                data = response_data["data"]
                 self._process_notification(
                     ps_right_id=data["id"],
-                    end_datetime=data["ended_at"],
+                    end_datetime=datetime.fromisoformat(data["ended_at"]),
                     report_code=kwargs["report_code"],  # Extracted from internal token
                 )
             except Exception:
