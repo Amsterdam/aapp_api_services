@@ -101,20 +101,23 @@ class BaseSSPView(generics.GenericAPIView):
             else:
                 headers["Authorization"] = f"Bearer {ssp_access_token}"
 
-        ssp_payload = await self.make_ssp_request(
-            method=method,
-            endpoint=endpoint,
-            headers=headers,
-            query_params=query_params,
-            body_data=body_data,
-        )
+        try:
+            ssp_payload = await self.make_ssp_request(
+                method=method,
+                endpoint=endpoint,
+                headers=headers,
+                query_params=query_params,
+                body_data=body_data,
+            )
+        except TimeoutError as e:
+            raise SSPCallError(detail="Request timed out") from e
         return ssp_payload
 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_fixed(1),
         retry=retry_if_exception_type(
-            (SSPServerError, SSPBadGatewayError, httpx.TimeoutException)
+            (SSPServerError, SSPBadGatewayError, httpx.TimeoutException, TimeoutError)
         ),
         reraise=True,  # reraise error after retries are exhausted
     )
