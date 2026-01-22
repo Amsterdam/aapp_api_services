@@ -5,7 +5,6 @@ from datetime import datetime
 
 import anyio
 import httpx
-from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
@@ -27,6 +26,7 @@ from bridge.parking.exceptions import (
     SSPServerError,
 )
 from bridge.parking.services.reminder_scheduler import ParkingReminderScheduler
+from bridge.parking.ssp_client import ssp_client
 from core.utils.openapi_utils import extend_schema_for_api_key
 from core.views.mixins import DeviceIdMixin
 
@@ -121,8 +121,10 @@ class BaseSSPView(generics.GenericAPIView):
     async def make_ssp_request(
         self, *, body_data, endpoint, headers, method, query_params
     ):
-        with anyio.fail_after(settings.SSP_API_TIMEOUT_SECONDS):
-            ssp_response = await self.ssp_client.request(
+        with anyio.fail_after(
+            settings.SSP_API_TIMEOUT_SECONDS * 2
+        ):  # cancel request when ssp_client does not timeout
+            ssp_response = await ssp_client.request(
                 method=method,
                 url=endpoint,
                 params=query_params,
@@ -158,23 +160,6 @@ class BaseSSPView(generics.GenericAPIView):
         message = content.split("(422 Unprocessable Content)")[0].strip()
         message = message[5:] if message.startswith('"<!') else message
         raise exceptions.SSPBadRequest(detail=f"[Unmapped error] {message}")
-
-    @property
-    def ssp_client(self):
-        if not hasattr(self, "_ssp_client"):
-            self._ssp_client = httpx.AsyncClient(
-                timeout=httpx.Timeout(settings.SSP_API_TIMEOUT_SECONDS),
-                limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
-            )
-        return self._ssp_client
-
-    def finalize_response(self, request, response, *args, **kwargs):
-        try:
-            return super().finalize_response(request, response, *args, **kwargs)
-        finally:
-            client = getattr(self, "_ssp_client", None)
-            if client:
-                async_to_sync(client.aclose)()
 
 
 class BaseNotificationView(DeviceIdMixin, BaseSSPView):

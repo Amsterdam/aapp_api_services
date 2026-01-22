@@ -57,11 +57,9 @@ class ParkingAccountLoginView(BaseSSPView):
             "username": request_serializer.validated_data["report_code"],
             "password": request_serializer.validated_data["pin"],
         }
-        access_jwt, expiration_timestamp, scope_mapped = (
-            self._get_internal_access_token(request_payload)
+        access_jwt, expiration_timestamp, scope_mapped = self.get_tokens(
+            request_payload
         )
-        access_jwt_external = self._get_external_access_token(request_payload)
-        access_jwt += "%AMSTERDAMAPP%" + access_jwt_external
 
         # Manually set the expiration for the token on 15 minutes
         expiration_timestamp = datetime.now() + timedelta(minutes=15)
@@ -79,8 +77,19 @@ class ParkingAccountLoginView(BaseSSPView):
             status=status.HTTP_200_OK,
         )
 
-    def _get_internal_access_token(self, request_payload):
-        response_data = async_to_sync(self.ssp_api_call)(
+    @async_to_sync
+    async def get_tokens(self, request_payload):
+        (
+            access_jwt,
+            expiration_timestamp,
+            scope_mapped,
+        ) = await self._get_internal_access_token(request_payload)
+        access_jwt_external = await self._get_external_access_token(request_payload)
+        access_jwt += "%AMSTERDAMAPP%" + access_jwt_external
+        return access_jwt, expiration_timestamp, scope_mapped
+
+    async def _get_internal_access_token(self, request_payload):
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=SSPEndpoint.LOGIN.value,
             body_data=request_payload,
@@ -103,8 +112,8 @@ class ParkingAccountLoginView(BaseSSPView):
             scope_mapped = "unknown"
         return expiration_timestamp, scope_mapped
 
-    def _get_external_access_token(self, request_payload):
-        response_data = async_to_sync(self.ssp_api_call)(
+    async def _get_external_access_token(self, request_payload):
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=SSPEndpointExternal.LOGIN.value,
             body_data=request_payload,

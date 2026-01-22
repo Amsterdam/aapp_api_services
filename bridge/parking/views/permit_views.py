@@ -3,7 +3,7 @@ import json
 import logging
 import math
 
-# import re
+import anyio
 import jwt
 from asgiref.sync import async_to_sync
 from rest_framework import status
@@ -41,6 +41,7 @@ class ParkingPermitsView(BaseSSPView):
         "Zaterdag",
         "Zondag",
     ]
+    permit_detail_concurrency = 10
 
     @check_user_role(allowed_roles=[Role.USER.value, Role.VISITOR.value])
     @ssp_openapi_decorator(
@@ -51,18 +52,8 @@ class ParkingPermitsView(BaseSSPView):
     def get(self, request, *args, **kwargs):
         # check role of user in jwt token
         is_visitor = kwargs.get("is_visitor", False)
-        if is_visitor:
-            ssp_access_token = get_access_token(self.request)
-            decoded_jwt = jwt.decode(
-                ssp_access_token, options={"verify_signature": False}
-            )
-            client_product_id = decoded_jwt.get("client_product_id", "")
-            permits_data = [{"id": client_product_id}]
-        else:
-            permits_data = self.collect_all_pages()
-            permits_data = [p for p in permits_data if p["status"] != "control"]
+        all_permits_details, permits_data = self.get_permit_details(is_visitor)
 
-        all_permits_details = async_to_sync(self.fetch_all_permit_details)(permits_data)
         for n, permit_details in enumerate(all_permits_details):
             permit_details["permit"]["mapped_type"] = self.get_mapped_permit_type(
                 permit_details
@@ -86,6 +77,21 @@ class ParkingPermitsView(BaseSSPView):
             data=response_serializer.data,
             status=status.HTTP_200_OK,
         )
+
+    @async_to_sync
+    async def get_permit_details(self, is_visitor):
+        if is_visitor:
+            ssp_access_token = get_access_token(self.request)
+            decoded_jwt = jwt.decode(
+                ssp_access_token, options={"verify_signature": False}
+            )
+            client_product_id = decoded_jwt.get("client_product_id", "")
+            permits_data = [{"id": client_product_id}]
+        else:
+            permits_data = await self.collect_all_pages()
+            permits_data = [p for p in permits_data if p["status"] != "control"]
+        all_permits_details = await self.fetch_all_permit_details(permits_data)
+        return all_permits_details, permits_data
 
     def get_response_payload(self, is_visitor, permits_data):
         response_payload = []
@@ -186,7 +192,7 @@ class ParkingPermitsView(BaseSSPView):
             # - GA-parkeervergunning voor bezoekers (bestuurders)
         return mapped_type
 
-    def collect_all_pages(self):
+    async def collect_all_pages(self):
         total_pages, page_count = 1, 0
         permits_data = []
         while page_count < total_pages:
@@ -195,7 +201,7 @@ class ParkingPermitsView(BaseSSPView):
                 "page": page_count,
                 "row_per_page": 250,
             }
-            response_data = async_to_sync(self.ssp_api_call)(
+            response_data = await self.ssp_api_call(
                 method="GET",
                 endpoint=self.ssp_endpoint,
                 query_params=data,
@@ -205,8 +211,13 @@ class ParkingPermitsView(BaseSSPView):
         return permits_data
 
     async def fetch_all_permit_details(self, permits_data):
-        tasks = [self.collect_permit_details(permit) for permit in permits_data]
-        return await asyncio.gather(*tasks)
+        limiter = anyio.CapacityLimiter(self.permit_detail_concurrency)
+
+        async def _bounded_collect(permit):
+            async with limiter:
+                return await self.collect_permit_details(permit)
+
+        return await asyncio.gather(*(_bounded_collect(p) for p in permits_data))
 
     async def collect_permit_details(self, permit):
         url_template = SSPEndpoint.PERMIT.value
