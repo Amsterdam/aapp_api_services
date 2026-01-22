@@ -2,7 +2,6 @@ import logging
 import math
 from datetime import datetime
 
-from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -39,7 +38,7 @@ class TransactionsBalanceView(BaseSSPView):
         serializer=TransactionBalanceRequestSerializer,
         response_serializer_class=TransactionBalanceResponseSerializer,
     )
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         request_serializer = self.serializer_class(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
@@ -49,7 +48,7 @@ class TransactionsBalanceView(BaseSSPView):
             "brand": data.get("payment_type", "IDEAL"),
             "lang": data.get("locale", "NL").upper(),
         }
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data=request_payload,
@@ -85,7 +84,7 @@ class TransactionsBalanceConfirmView(BaseNotificationView):
         requires_device_id=True,
         exceptions=[SSPTransactionAlreadyConfirmedError],
     )
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         request_serializer = self.serializer_class(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
@@ -99,7 +98,7 @@ class TransactionsBalanceConfirmView(BaseNotificationView):
             url = SSPEndpointExternal.RECHARGE_CONFIRM_VISITOR.value
         else:
             url = SSPEndpointExternal.RECHARGE_CONFIRM.value
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=url,
             body_data=request_payload,
@@ -136,7 +135,7 @@ class TransactionsListView(BaseSSPView):
         serializer_as_params=TransactionListRequestSerializer,
         response_serializer_class=TransactionsListPaginatedResponseSerializer,
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         request_serializer = self.serializer_class(data=request.query_params)
         request_serializer.is_valid(raise_exception=True)
 
@@ -148,7 +147,7 @@ class TransactionsListView(BaseSSPView):
             "filters[status]": data.get("filter_status", "COMPLETED"),
         }
 
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="GET",
             endpoint=self.ssp_endpoint,
             query_params=request_payload,

@@ -9,7 +9,7 @@ TIMEOUT = httpx.Timeout(
 )
 
 LIMITS = httpx.Limits(
-    max_connections=50,
+    max_connections=100,
     max_keepalive_connections=20,
     keepalive_expiry=30.0,
 )

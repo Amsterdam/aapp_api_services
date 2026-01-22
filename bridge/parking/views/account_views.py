@@ -2,7 +2,6 @@ import logging
 from datetime import datetime, timedelta
 
 import jwt
-from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -49,7 +48,7 @@ class ParkingAccountLoginView(BaseSSPView):
             SSPAccountBlocked,
         ],
     )
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         request_serializer = self.serializer_class(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
@@ -57,7 +56,7 @@ class ParkingAccountLoginView(BaseSSPView):
             "username": request_serializer.validated_data["report_code"],
             "password": request_serializer.validated_data["pin"],
         }
-        access_jwt, expiration_timestamp, scope_mapped = self.get_tokens(
+        access_jwt, expiration_timestamp, scope_mapped = await self.get_tokens(
             request_payload
         )
 
@@ -77,7 +76,6 @@ class ParkingAccountLoginView(BaseSSPView):
             status=status.HTTP_200_OK,
         )
 
-    @async_to_sync
     async def get_tokens(self, request_payload):
         (
             access_jwt,
@@ -139,7 +137,7 @@ class ParkingAccountDetailsView(BaseSSPView):
         response_serializer_class=AccountDetailsResponseSerializer,
         exceptions=[SSPPermitNotFoundError],
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         # check if user is visitor or permit holder
         is_visitor = kwargs.get("is_visitor", False)
         if is_visitor:
@@ -152,7 +150,7 @@ class ParkingAccountDetailsView(BaseSSPView):
                 }
             )
 
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="GET",
             endpoint=SSPEndpoint.PERMITS.value,
             query_params={"page": 1, "row_per_page": 250},
@@ -167,7 +165,7 @@ class ParkingAccountDetailsView(BaseSSPView):
         if permits:
             url_template = SSPEndpoint.PERMIT.value
             url = URITemplate(url_template).expand(permit_id=permits[0]["id"])
-            response_data = async_to_sync(self.ssp_api_call)(
+            response_data = await self.ssp_api_call(
                 method="GET",
                 endpoint=url,
             )

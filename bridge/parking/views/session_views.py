@@ -3,7 +3,6 @@ import math
 from datetime import datetime
 from datetime import timezone as dt_timezone
 
-from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -71,7 +70,7 @@ class ParkingSessionListView(BaseSSPView):
         paginated=True,
         exceptions=EXCEPTIONS,
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         request_serializer = self.serializer_class(data=request.query_params)
         request_serializer.is_valid(raise_exception=True)
         data = request_serializer.validated_data
@@ -88,7 +87,7 @@ class ParkingSessionListView(BaseSSPView):
             request_payload["filters[status]"] = self.map_filter_status(filter_status)
         if data.get("vehicle_id"):
             request_payload["filters[vrn]"] = data["vehicle_id"]
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             query_params=request_payload,
@@ -168,8 +167,8 @@ class ParkingSessionVisitorListView(ParkingSessionListView):
         paginated=True,
         exceptions=EXCEPTIONS,
     )
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+    async def get(self, request, *args, **kwargs):
+        return await super().get(request, *args, **kwargs)
 
     def get_serialized_response(self, _, results):
         response_payload = results
@@ -196,7 +195,7 @@ class ParkingSessionActivateView(BaseSSPView):
         response_serializer_class=ParkingSessionActivateResponseSerializer,
         exceptions=EXCEPTIONS,
     )
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         request_serializer = self.get_serializer_class()(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         session_data = request_serializer.validated_data
@@ -206,7 +205,7 @@ class ParkingSessionActivateView(BaseSSPView):
             "vrn": session_data["vehicle_id"],
         }
 
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data=request_payload,
@@ -251,7 +250,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         requires_device_id=True,
         exceptions=EXCEPTIONS,
     )
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         """
         Note: starting a session is not possible for 'Mantelzorg' permits but this is not catched. They can only activate a session.
 
@@ -282,7 +281,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
             request_payload["is_new_favorite_machine_number"] = session_data.get(
                 "parking_machine_favorite"
             )
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=SSPEndpointExternal.PARKING_SESSION_START.value,
             body_data=request_payload,
@@ -309,14 +308,14 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         requires_device_id=True,
         exceptions=EXCEPTIONS,
     )
-    def patch(self, request, *args, **kwargs):
+    async def patch(self, request, *args, **kwargs):
         request_serializer = self.get_serializer_class()(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         session_data = request_serializer.validated_data["parking_session"]
 
         end_datetime = session_data["end_date_time"]
         ps_right_id = session_data["ps_right_id"]
-        return self.update_session_end_time(end_datetime, ps_right_id)
+        return await self.update_session_end_time(end_datetime, ps_right_id)
 
     @check_user_role(allowed_roles=[Role.USER.value, Role.VISITOR.value])
     @ssp_openapi_decorator(
@@ -325,21 +324,21 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         requires_device_id=True,
         exceptions=EXCEPTIONS,
     )
-    def delete(self, request, *args, **kwargs):
+    async def delete(self, request, *args, **kwargs):
         request_serializer = self.get_serializer_class()(data=request.query_params)
         request_serializer.is_valid(raise_exception=True)
         ps_right_id = request_serializer.validated_data["ps_right_id"]
 
         end_datetime = datetime.now(dt_timezone.utc)
-        return self.update_session_end_time(end_datetime, ps_right_id)
+        return await self.update_session_end_time(end_datetime, ps_right_id)
 
-    def update_session_end_time(self, end_datetime, ps_right_id):
+    async def update_session_end_time(self, end_datetime, ps_right_id):
         url_template = SSPEndpointExternal.PARKING_SESSION_EDIT.value
         url = URITemplate(url_template).expand(session_id=ps_right_id)
         payload = {
             "new_ended_at": self.get_utc_datetime(end_datetime),
         }
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="PATCH",
             endpoint=url,
             body_data=payload,
@@ -395,7 +394,7 @@ class ParkingSessionReceiptView(BaseSSPView):
         serializer_as_params=ParkingSessionReceiptRequestSerializer,
         exceptions=EXCEPTIONS,
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         request_serializer = self.serializer_class(data=request.query_params)
         request_serializer.is_valid(raise_exception=True)
 
@@ -409,7 +408,7 @@ class ParkingSessionReceiptView(BaseSSPView):
             request_payload["paid_parking_zone_id"] = int(data["payment_zone_id"])
         elif data.get("parking_machine"):
             request_payload["machine_number"] = int(data["parking_machine"])
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data=request_payload,

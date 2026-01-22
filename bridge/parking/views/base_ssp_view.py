@@ -5,11 +5,11 @@ from datetime import datetime
 
 import anyio
 import httpx
+from adrf import generics
 from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
-from rest_framework import generics
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from bridge.parking import exceptions

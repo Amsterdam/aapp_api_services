@@ -6,6 +6,7 @@ requires-python = ">=3.11,<3.12"
 dependencies = [
   "django==5.1",  # Later versions were not supported by django-admin-sortable2
   "djangorestframework",
+  "adrf",
   "psycopg2-binary",
   "uWSGI",
   "gunicorn",

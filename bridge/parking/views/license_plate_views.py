@@ -1,4 +1,3 @@
-from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -41,7 +40,7 @@ class ParkingLicensePlateListView(BaseSSPView):
         serializer_as_params=LicensePlatesGetRequestSerializer,
         exceptions=EXCEPTIONS,
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         # obtain report code from request
         request_serializer = self.serializer_class(data=request.query_params)
         request_serializer.is_valid(raise_exception=True)
@@ -50,7 +49,7 @@ class ParkingLicensePlateListView(BaseSSPView):
 
         # try to get license plates from permit vrns first
         url = URITemplate(SSPEndpoint.PERMIT.value).expand(permit_id=report_code)
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="GET",
             endpoint=url,
         )
@@ -76,7 +75,7 @@ class ParkingLicensePlateListView(BaseSSPView):
         # if it is a permit that has a free choice of number plates (can_input_vrn
         # is False), check for favorite vrns
         if not response_data["config"].get("can_input_vrn", True):
-            license_plates = async_to_sync(self.ssp_api_call)(
+            license_plates = await self.ssp_api_call(
                 method="GET",
                 endpoint=SSPEndpoint.LICENSE_PLATES.value,
             )
@@ -127,7 +126,7 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
         response_serializer_class=LicensePlatesPostResponseSerializer,
         exceptions=EXCEPTIONS,
     )
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         serializer = self.get_serializer_class()(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -136,7 +135,7 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
             "vrn": data["vehicle_id"],
             "description": data["visitor_name"],
         }
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=SSPEndpoint.LICENSE_PLATE_ADD.value,
             body_data=request_payload,
@@ -162,14 +161,14 @@ class ParkingLicensePlatePostDeleteView(BaseSSPView):
         response_serializer_class=LicensePlatesDeleteResponseSerializer,
         exceptions=EXCEPTIONS,
     )
-    def delete(self, request, *args, **kwargs):
+    async def delete(self, request, *args, **kwargs):
         serializer = self.get_serializer_class()(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
         data = serializer.validated_data
         url_template = SSPEndpoint.LICENSE_PLATE_DELETE.value
         url = URITemplate(url_template).expand(license_plate_id=data["id"])
-        async_to_sync(self.ssp_api_call)(
+        await self.ssp_api_call(
             method="DELETE",
             endpoint=url,
         )

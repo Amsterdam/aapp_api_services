@@ -5,7 +5,6 @@ import math
 
 import anyio
 import jwt
-from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -49,10 +48,10 @@ class ParkingPermitsView(BaseSSPView):
         response_serializer_class=PermitItemSerializer(many=True),
         exceptions=[SSPPermitNotFoundError],
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         # check role of user in jwt token
         is_visitor = kwargs.get("is_visitor", False)
-        all_permits_details, permits_data = self.get_permit_details(is_visitor)
+        all_permits_details, permits_data = await self.get_permit_details(is_visitor)
 
         for n, permit_details in enumerate(all_permits_details):
             permit_details["permit"]["mapped_type"] = self.get_mapped_permit_type(
@@ -78,7 +77,6 @@ class ParkingPermitsView(BaseSSPView):
             status=status.HTTP_200_OK,
         )
 
-    @async_to_sync
     async def get_permit_details(self, is_visitor):
         if is_visitor:
             ssp_access_token = get_access_token(self.request)
@@ -253,11 +251,11 @@ class ParkingPermitZoneView(BaseSSPView):
         response_serializer_class=PermitGeoJSONSerializer,
         exceptions=[SSPPermitNotFoundError],
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         permit_id = kwargs.get("permit_id")
         url_template = SSPEndpoint.PERMIT.value
         url = URITemplate(url_template).expand(permit_id=permit_id)
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="GET",
             endpoint=url,
         )
@@ -299,10 +297,10 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
         response_serializer_class=PaymentZoneSerializer,
         exceptions=[SSPPermitNotFoundError],
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         permit_id = kwargs.get("permit_id")
         parking_machine = kwargs.get("parking_machine_id")
-        response_data = async_to_sync(self.ssp_api_call)(
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data={

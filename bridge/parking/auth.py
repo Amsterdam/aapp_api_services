@@ -51,7 +51,7 @@ def get_report_code(request: Request) -> str | None:
 def check_user_role(allowed_roles: list[Role]):
     def decorator(view_func):
         @wraps(view_func)
-        def wrapper(*args, **kwargs):
+        async def wrapper(*args, **kwargs):
             request = getattr(args[0], "request", None)
             role = get_role(request)
             if not role:
@@ -66,7 +66,7 @@ def check_user_role(allowed_roles: list[Role]):
 
             kwargs["is_visitor"] = role == Role.VISITOR.value
             kwargs["report_code"] = get_report_code(request)
-            return view_func(*args, **kwargs)
+            return await view_func(*args, **kwargs)
 
         return wrapper
 
