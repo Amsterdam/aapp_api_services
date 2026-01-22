@@ -205,6 +205,11 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "httpx": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
         "django.db.backends": {
             "handlers": ["console"],
             "level": "WARNING",  # Needs debug to export traces to Application Insights

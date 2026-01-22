@@ -1,9 +1,9 @@
 import hashlib
 import json
 import logging
+from asyncio import CancelledError
 from datetime import datetime
 
-import anyio
 import httpx
 from adrf import generics
 from django.conf import settings
@@ -19,6 +19,7 @@ from bridge.parking.exceptions import (
     SSLMissingAccessTokenError,
     SSPBadGatewayError,
     SSPCallError,
+    SSPCancelledError,
     SSPForbiddenError,
     SSPNotFoundError,
     SSPPermitNotFoundError,
@@ -109,31 +110,40 @@ class BaseSSPView(generics.GenericAPIView):
                 query_params=query_params,
                 body_data=body_data,
             )
-        except TimeoutError as e:
-            raise SSPCallError(detail="Request timed out") from e
+        except CancelledError as exc:
+            logger.warning(
+                "Task is cancelled by client (%s)",
+                type(exc).__name__,
+                exc_info=True,
+            )
+            raise SSPCancelledError from exc
+        except httpx.HTTPError as exc:
+            logger.warning(
+                "SSP request failed before response (%s)",
+                type(exc).__name__,
+                exc_info=True,
+            )
+            raise SSPServerError("SSP request failed before response") from exc
         return ssp_payload
 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_fixed(1),
         retry=retry_if_exception_type(
-            (SSPServerError, SSPBadGatewayError, httpx.TimeoutException, TimeoutError)
+            (SSPServerError, SSPBadGatewayError, httpx.HTTPError)
         ),
         reraise=True,  # reraise error after retries are exhausted
     )
     async def make_ssp_request(
         self, *, body_data, endpoint, headers, method, query_params
     ):
-        with anyio.fail_after(
-            settings.SSP_API_TIMEOUT_SECONDS * 2
-        ):  # cancel request when ssp_client does not timeout
-            ssp_response = await ssp_client.request(
-                method=method,
-                url=endpoint,
-                params=query_params,
-                json=body_data,
-                headers=headers,
-            )
+        ssp_response = await ssp_client.request(
+            method=method,
+            url=endpoint,
+            params=query_params,
+            json=body_data,
+            headers=headers,
+        )
         if ssp_response.status_code == 200:
             return ssp_response.json()
         await self.raise_exception(ssp_response)

@@ -273,7 +273,7 @@ class HealthCheckView(GenericAPIView):
         """Health Check"""
         try:
             connections["default"].cursor()
-        except Exception:
+        except BaseException:
             return Response(
                 {"status": "unready"}, status=status.HTTP_503_SERVICE_UNAVAILABLE
             )

@@ -8,9 +8,9 @@ wsgi_app = "core.asgi:application"
 
 # --- Worker model ---
 worker_class = "uvicorn.workers.UvicornWorker"
-workers = 1  # uwsgi: processes = 1
-threads = 4  # uwsgi: threads = 4
-worker_connections = 1000  # async-ready, ignored for sync views
+workers = 2
+threads = 1
+worker_connections = 500  # async-ready, ignored for sync views
 
 # --- Timeouts ---
 timeout = 30  # uwsgi: harakiri = 30
@@ -18,8 +18,8 @@ graceful_timeout = 60  # uwsgi: worker-reload-mercy = 60
 keepalive = 2
 
 # --- Recycling / memory ---
-max_requests = 2000  # uwsgi: max-requests = 2000
-max_requests_jitter = 200
+max_requests = 5000  # uwsgi: max-requests = 2000
+max_requests_jitter = 500
 max_worker_lifetime = 3600  # uwsgi: max-worker-lifetime = 3600
 
 # worker_tmp_dir = "/tmp/shm"

@@ -28,6 +28,12 @@ class SSPServerError(BaseApiException):
     default_code = "SSP_SERVER_ERROR"
 
 
+class SSPCancelledError(BaseApiException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = "SSP request was cancelled"
+    default_code = "SSP_REQUEST_CANCELLED"
+
+
 class SSLMissingAccessTokenError(BaseApiException):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = f"Missing required {settings.SSP_ACCESS_TOKEN_HEADER} header"

@@ -2,15 +2,15 @@ import httpx
 from django.conf import settings
 
 TIMEOUT = httpx.Timeout(
-    connect=2.0,
+    connect=5.0,
     read=settings.SSP_API_TIMEOUT_SECONDS,
     write=settings.SSP_API_TIMEOUT_SECONDS,
-    pool=1.0,
+    pool=5.0,
 )
 
 LIMITS = httpx.Limits(
-    max_connections=100,
-    max_keepalive_connections=20,
+    max_connections=150,
+    max_keepalive_connections=50,
     keepalive_expiry=30.0,
 )
 

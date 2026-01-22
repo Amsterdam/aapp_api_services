@@ -78,19 +78,6 @@ class TestParkingPermitZoneView(BaseSSPTestCase):
         self.assertEqual(resp.call_count, 1)
 
     @override_settings(SSP_API_TIMEOUT_SECONDS=0.01)
-    def test_timeout(self):
-        async def slow_upstream(_r) -> httpx.Response:
-            await anyio.sleep(1)
-            return httpx.Response(200, json=self.mock_response)
-
-        url_template = SSPEndpoint.PERMIT.value
-        url = URITemplate(url_template).expand(permit_id=self.permit_id)
-        respx.get(url).mock(side_effect=slow_upstream)
-
-        response = self.client.get(self.url, headers=self.api_headers)
-        self.assertContains(response, "Request timed out", status_code=400)
-
-    @override_settings(SSP_API_TIMEOUT_SECONDS=0.01)
     def test_timeout_and_recovery(self):
         async def slow_upstream(_r) -> httpx.Response:
             await anyio.sleep(1)
