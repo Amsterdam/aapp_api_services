@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 import requests
 from django.conf import settings
 from django.utils import timezone
-from ics import Calendar, Event
+from ics import Calendar, DisplayAlarm, Event
 
 from waste import constants
 from waste.constants import WASTE_TYPES_ORDER
@@ -116,7 +116,7 @@ class WasteCollectionService:
 
         # set unique id and name
         event.uid = f"{item.get('label', '').replace(',', '').replace(' ', '')}-{date.isoformat()}@app.amsterdam.nl"
-        event.name = item.get("label", "Afval ophalen")
+        event.name = f"Ophaaldag {item.get('label', '').lower()}"
 
         # set date of event
         event.begin = date
@@ -127,11 +127,17 @@ class WasteCollectionService:
         event.dtstamp = timezone.now()
 
         # set description
-        event.description = f"Afval ophalen voor type: {item.get('label')}"
+        event.description = ""
         if item.get("curb_rules_from") and item.get("curb_rules_to"):
-            event.description += f"\nAfval aanbieden: {item.get('curb_rules_from', '')} {item.get('curb_rules_to', '')}"
-        if item.get("alert"):
-            event.description += f"\nAlert: {item.get('alert')}"
+            event.description += f"Buiten zetten: {item.get('curb_rules_from', '')} {item.get('curb_rules_to', '')}"
+
+        # add alarm
+        event.alarms = [
+            DisplayAlarm(
+                trigger=timedelta(hours=-3),
+                display_text=f"{event.name}\n{event.description}",
+            )
+        ]
         return event
 
     def filter_ophaaldagen(self, ophaaldagen):
