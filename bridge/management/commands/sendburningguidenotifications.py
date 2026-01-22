@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.core.management.base import BaseCommand
 from django.db.models import Q
@@ -26,7 +26,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # check if command should run at this hour
-        if not self._should_command_run_by_hour(timezone.now().hour):
+        if not self._should_command_run_by_hour(timezone.localtime().hour):
             logger.info(
                 "Skipping sending burning guide notifications, not scheduled hour"
             )
@@ -91,7 +91,7 @@ class Command(BaseCommand):
         return hour in [7, 10, 16, 22]
 
     def _last_fixed_timestamp(self):
-        now = timezone.now()
+        now = timezone.localtime()
         hours = [22, 16, 10, 4]
         # Find the most recent hour <= now.hour
         for h in hours:
@@ -104,7 +104,7 @@ class Command(BaseCommand):
         )
 
     def _next_fixed_timestamp(self):
-        now = datetime.now()
+        now = timezone.localtime()
         hours = [4, 10, 16, 22]
         # Find the next hour > now.hour
         for h in hours:

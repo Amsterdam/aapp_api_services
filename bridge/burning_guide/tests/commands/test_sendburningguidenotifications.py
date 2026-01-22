@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 import freezegun
 import responses
@@ -11,6 +12,8 @@ from model_bakery import baker
 from bridge.management.commands.sendburningguidenotifications import Command
 from bridge.models import BurningGuideNotification
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+
+tz = ZoneInfo(settings.TIME_ZONE)
 
 
 class TestCommand(ResponsesActivatedAPITestCase):
@@ -33,7 +36,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
             json={},
         )
 
-    @freezegun.freeze_time("2024-06-02 07:15:00")
+    @freezegun.freeze_time(datetime(2024, 6, 2, 7, 15, 0, tzinfo=tz))
     @patch(
         "bridge.management.commands.sendburningguidenotifications.RIVMService.has_new_red_status"
     )
@@ -46,7 +49,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
             len(self.post_rsp.calls), 2
         )  # Two postal codes, so two notifications sent
 
-    @freezegun.freeze_time("2024-06-02 07:15:00")
+    @freezegun.freeze_time(datetime(2024, 6, 2, 7, 15, 0, tzinfo=tz))
     @patch(
         "bridge.management.commands.sendburningguidenotifications.RIVMService.has_new_red_status"
     )
@@ -59,7 +62,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
             len(self.post_rsp.calls), 0
         )  # Two postal codes, so two notifications sent
 
-    @freezegun.freeze_time("2024-06-02 08:15:00")
+    @freezegun.freeze_time(datetime(2024, 6, 2, 8, 15, 0, tzinfo=tz))
     @patch(
         "bridge.management.commands.sendburningguidenotifications.RIVMService.has_new_red_status"
     )
@@ -72,7 +75,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
             len(self.post_rsp.calls), 0
         )  # Even though there are postal codes, no notifications sent
 
-    @freezegun.freeze_time("2024-06-02 07:15:00")
+    @freezegun.freeze_time(datetime(2024, 6, 2, 7, 15, 0, tzinfo=tz))
     @patch(
         "bridge.management.commands.sendburningguidenotifications.RIVMService.has_new_red_status"
     )
@@ -98,13 +101,13 @@ class TestCommand(ResponsesActivatedAPITestCase):
         }
         self.assertEqual(batched, expected)
 
-    @freezegun.freeze_time("2024-06-02 23:00:00")
+    @freezegun.freeze_time(datetime(2024, 6, 2, 23, 0, 0, tzinfo=tz))
     @responses.activate
     def test_send_notification(self):
         json_data = self._send_notification()
         self.assertIn("Vanaf 4.00 uur is het Code Rood", json_data["body"])
 
-    @freezegun.freeze_time("2024-06-02 16:00:00")
+    @freezegun.freeze_time(datetime(2024, 6, 2, 16, 15, 0, tzinfo=tz))
     @responses.activate
     def test_send_notification_2(self):
         json_data = self._send_notification()
@@ -121,7 +124,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         self.assertEqual(json_data["title"], "Stookwijzer")
         return json_data
 
-    @freezegun.freeze_time("2024-06-01 12:00:00")
+    @freezegun.freeze_time(datetime(2024, 6, 1, 12, 0, 0, tzinfo=tz))
     def test_last_fixed_timestamp(self):
         last_timestamp = self.command._last_fixed_timestamp()
         expected_timestamp = datetime(
@@ -129,7 +132,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         )
         self.assertEqual(last_timestamp, expected_timestamp)
 
-    @freezegun.freeze_time("2024-06-01 16:00:00")
+    @freezegun.freeze_time(datetime(2024, 6, 1, 16, 0, 0, tzinfo=tz))
     def test_last_fixed_timestamp_exact_time(self):
         last_timestamp = self.command._last_fixed_timestamp()
         expected_timestamp = datetime(
@@ -137,7 +140,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         )
         self.assertEqual(last_timestamp, expected_timestamp)
 
-    @freezegun.freeze_time("2024-06-02 3:00:00")
+    @freezegun.freeze_time(datetime(2024, 6, 2, 3, 0, 0, tzinfo=tz))
     def test_last_fixed_timestamp_previous_day(self):
         last_timestamp = self.command._last_fixed_timestamp()
         expected_timestamp = datetime(
@@ -145,20 +148,24 @@ class TestCommand(ResponsesActivatedAPITestCase):
         )
         self.assertEqual(last_timestamp, expected_timestamp)
 
-    @freezegun.freeze_time("2024-06-01 12:00:00")
+    @freezegun.freeze_time(datetime(2024, 6, 1, 12, 0, 0, tzinfo=tz))
     def test_next_fixed_timestamp(self):
         next_timestamp = self.command._next_fixed_timestamp()
-        expected_timestamp = datetime(2024, 6, 1, 16, 0, 0)
+        expected_timestamp = datetime(
+            2024, 6, 1, 16, 0, 0, tzinfo=next_timestamp.tzinfo
+        )
         self.assertEqual(next_timestamp, expected_timestamp)
 
-    @freezegun.freeze_time("2024-06-01 16:00:00")
+    @freezegun.freeze_time(datetime(2024, 6, 1, 16, 0, 0, tzinfo=tz))
     def test_next_fixed_timestamp_exact_time(self):
         next_timestamp = self.command._next_fixed_timestamp()
-        expected_timestamp = datetime(2024, 6, 1, 22, 0, 0)
+        expected_timestamp = datetime(
+            2024, 6, 1, 22, 0, 0, tzinfo=next_timestamp.tzinfo
+        )
         self.assertEqual(next_timestamp, expected_timestamp)
 
-    @freezegun.freeze_time("2024-06-02 23:00:00")
+    @freezegun.freeze_time(datetime(2024, 6, 2, 23, 0, 0, tzinfo=tz))
     def test_next_fixed_timestamp_next_day(self):
         next_timestamp = self.command._next_fixed_timestamp()
-        expected_timestamp = datetime(2024, 6, 3, 4, 0, 0)
+        expected_timestamp = datetime(2024, 6, 3, 4, 0, 0, tzinfo=next_timestamp.tzinfo)
         self.assertEqual(next_timestamp, expected_timestamp)
