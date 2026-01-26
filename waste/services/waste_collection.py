@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 import requests
 from django.conf import settings
 from django.utils import timezone
-from ics import Calendar, DisplayAlarm, Event
+from ics import Calendar, Event
 from ics.grammar.parse import ContentLine
 
 from waste import constants
@@ -129,11 +129,8 @@ class WasteCollectionService:
         event.name = f"Ophaaldag {item.get('label', '').lower()}"
 
         # set date of event
-        event.begin = timezone.make_aware(
-            datetime.combine(date, datetime.min.time()),
-            tz,
-        )
-        event.end = event.begin + timedelta(days=1)
+        event.begin = date
+        event.make_all_day()
 
         # set created and dtstamp to now (required for iCalendar)
         event.created = timezone.now()
@@ -143,14 +140,6 @@ class WasteCollectionService:
         event.description = ""
         if item.get("curb_rules_from") and item.get("curb_rules_to"):
             event.description += f"Buiten zetten: {item.get('curb_rules_from', '')} {item.get('curb_rules_to', '')}"
-
-        # add alarm
-        event.alarms.append(
-            DisplayAlarm(
-                trigger=timedelta(hours=-3),
-                display_text=f"{event.name}\n{event.description}",
-            )
-        )
 
         return event
 
