@@ -7,12 +7,14 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 from ics import Calendar, DisplayAlarm, Event
+from ics.grammar.parse import ContentLine
 
 from waste import constants
 from waste.constants import WASTE_TYPES_ORDER
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
 
 montly_pattern = re.compile(r"\d{1}(?:e|de|ste) van de maand")
+tz = timezone.get_current_timezone()
 
 
 class WasteCollectionService:
@@ -97,7 +99,15 @@ class WasteCollectionService:
 
     def create_ics_calendar(self):
         calendar = Calendar()
-        calendar.creator = "-//Amsterdam App//Afvalwijzer Kalender//NL"
+        calendar.creator = "-//Amsterdam App//Afvalwijzer kalender//NL"
+        calendar.scale = "GREGORIAN"
+        calendar.method = "PUBLISH"
+        calendar.extra.append(
+            ContentLine(
+                name="X-WR-CALNAME",
+                value="Afvalwijzer kalender",
+            )
+        )
         for item in self.validated_data:
             if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
                 dates = self._get_dates_for_waste_item(item)
@@ -119,8 +129,11 @@ class WasteCollectionService:
         event.name = f"Ophaaldag {item.get('label', '').lower()}"
 
         # set date of event
-        event.begin = date
-        event.make_all_day()
+        event.begin = timezone.make_aware(
+            datetime.combine(date, datetime.min.time()),
+            tz,
+        )
+        event.end = event.begin + timedelta(days=1)
 
         # set created and dtstamp to now (required for iCalendar)
         event.created = timezone.now()
@@ -132,12 +145,13 @@ class WasteCollectionService:
             event.description += f"Buiten zetten: {item.get('curb_rules_from', '')} {item.get('curb_rules_to', '')}"
 
         # add alarm
-        event.alarms = [
+        event.alarms.append(
             DisplayAlarm(
                 trigger=timedelta(hours=-3),
                 display_text=f"{event.name}\n{event.description}",
             )
-        ]
+        )
+
         return event
 
     def filter_ophaaldagen(self, ophaaldagen):
