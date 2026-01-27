@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from urllib.error import HTTPError
 
 import requests
@@ -165,8 +166,13 @@ class AddressSearchAbstractView(GenericAPIView):
             logger.error(f"Invalid response: {data}")
             return Response({"detail": "Upstream address service error"}, status=502)
 
+        response_data = [
+            self._rename_fields_for_serializer(data=data_item)
+            for data_item in data["response"]["docs"]
+        ]
+
         response_serializer = AddressSearchResponseSerializer(
-            data=data["response"]["docs"], many=True
+            data=response_data, many=True
         )
         response_serializer.is_valid()
         return Response(response_serializer.data)
@@ -185,6 +191,32 @@ class AddressSearchAbstractView(GenericAPIView):
             ("bq", "type:weg^1.5"),
             ("bq", "type:adres^1"),
         ]
+
+    def _rename_fields_for_serializer(self, data):
+        # get lat and long from coordinates
+        coordinates = self._get_lat_and_lon_from_coordinates(data["centroide_ll"])
+        # change naming of fields
+        data["city"] = data["woonplaatsnaam"]
+        data["street"] = data["straatnaam"]
+        data["lat"] = coordinates[0]
+        data["lon"] = coordinates[1]
+        data["number"] = data.get("huisnummer", "")
+        data["additionLetter"] = data.get("huisletter", "")
+        data["additionNumber"] = data.get("huisnummertoevoeging", "")
+        data["bagId"] = data.get("nummeraanduiding_id", "")
+
+        return data
+
+    @staticmethod
+    def _get_lat_and_lon_from_coordinates(coordinates):
+        if hasattr(coordinates, "coords"):
+            lon, lat = coordinates.coords
+            return lat, lon
+        m = re.match(r"POINT\(\s*([-0-9.]+)\s+([-0-9.]+)\s*\)", coordinates)
+        if not m:
+            return None, None
+        lon, lat = m.groups()
+        return float(lat), float(lon)
 
 
 class AddressSearchByNameView(AddressSearchAbstractView):

@@ -10,10 +10,8 @@ from waste.views.notification_views import (
     WasteNotificationCreateView,
     WasteNotificationDetailView,
 )
-from waste.views.waste_views import (
-    WasteGuideCalendarIcsView,
-    WasteGuideView,
-)
+from waste.views.recycle_views import RecycleLocationsView
+from waste.views.waste_views import WasteGuideCalendarIcsView, WasteGuideView
 
 BASE_PATH = "waste/api/v1"
 
@@ -43,6 +41,12 @@ urlpatterns = [
         BASE_PATH + "/container/pass-number",
         WasteContainerPassNumberView.as_view(),
         name="waste-container-pass-number",
+    ),
+    # recycle locations
+    path(
+        BASE_PATH + "/recycle-locations",
+        RecycleLocationsView.as_view(),
+        name="waste-recycle-locations",
     ),
     # Activate admin
     path(
