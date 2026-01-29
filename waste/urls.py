@@ -11,7 +11,11 @@ from waste.views.notification_views import (
     WasteNotificationDetailView,
 )
 from waste.views.recycle_views import RecycleLocationsView
-from waste.views.waste_views import WasteGuideCalendarIcsView, WasteGuideView
+from waste.views.waste_views import (
+    WasteGuideCalendarIcsView,
+    WasteGuidePDFView,
+    WasteGuideView,
+)
 
 BASE_PATH = "waste/api/v1"
 
@@ -20,6 +24,11 @@ urlpatterns = [
         BASE_PATH + "/guide",
         WasteGuideView.as_view(),
         name="waste-guide-calendar",
+    ),
+    path(
+        BASE_PATH + "/guide/pdf",
+        WasteGuidePDFView.as_view(),
+        name="waste-guide-calendar-pdf",
     ),
     path(
         BASE_PATH + "/guide/<str:bag_nummeraanduiding_id>.ics",

@@ -38,6 +38,12 @@ MOCK_DATA = {
                 "gbdBuurtCode": "buurtCode",
                 "afvalwijzerInzamelgebiedNaam": "gebiedNaam",
                 "afvalwijzerInzamelgebiedCode": "gebiedCode",
+                "straatnaam": "straatNaam",
+                "huisnummer": "10",
+                "huisletter": None,
+                "huisnummertoevoeging": None,
+                "postcode": "1020AB",
+                "woonplaatsnaam": "Amsterdam",
             },
         ]
     }

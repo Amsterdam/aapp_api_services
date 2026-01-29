@@ -59,6 +59,38 @@ class WasteGuideView(APIView):
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)
 
 
+class WasteGuidePDFView(View):
+    serializer_class = WasteRequestSerializer
+
+    @extend_schema_for_api_key(
+        request=WasteRequestSerializer,
+        additional_params=[
+            OpenApiParameter(
+                "bag_nummeraanduiding_id",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                required=True,
+            )
+        ],
+    )
+    def get(self, request):
+        serializer = self.serializer_class(data=request.GET)
+        serializer.is_valid(raise_exception=True)
+        bag_nummeraanduiding_id = serializer.validated_data["bag_nummeraanduiding_id"]
+
+        waste_service = WasteCollectionService(bag_nummeraanduiding_id)
+        waste_service.get_validated_data()
+        pdf = waste_service.get_pdf_calendar()
+
+        pdf_bytes = bytes(pdf.output())
+
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            'attachment; filename="afvalwijzer_kalender.pdf"'
+        )
+        return response
+
+
 class WasteGuideCalendarIcsView(View):
     def get(self, request, *args, **kwargs):
         bag_nummeraanduiding_id = kwargs.get("bag_nummeraanduiding_id")

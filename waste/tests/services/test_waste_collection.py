@@ -69,6 +69,12 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerWaar": self.paper_where,
                 "gebruiksdoelWoonfunctie": True,
                 "afvalwijzerBasisroutetypeCode": "",
+                "straatnaam": "straatNaam",
+                "huisnummer": "10",
+                "huisletter": None,
+                "huisnummertoevoeging": None,
+                "postcode": "1020AB",
+                "woonplaatsnaam": "Amsterdam",
             },
             {
                 "afvalwijzerOphaaldagen2": self.gft_days,
@@ -87,6 +93,12 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerWaar": self.gft_where,
                 "gebruiksdoelWoonfunctie": True,
                 "afvalwijzerBasisroutetypeCode": "",
+                "straatnaam": "straatNaam",
+                "huisnummer": "10",
+                "huisletter": None,
+                "huisnummertoevoeging": None,
+                "postcode": "1020AB",
+                "woonplaatsnaam": "Amsterdam",
             },
         ]
 
@@ -246,6 +258,12 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerWaar": "Test",
                 "gebruiksdoelWoonfunctie": True,
                 "afvalwijzerBasisroutetypeCode": "",
+                "straatnaam": "straatNaam",
+                "huisnummer": "10",
+                "huisletter": None,
+                "huisnummertoevoeging": None,
+                "postcode": "1020AB",
+                "woonplaatsnaam": "Amsterdam",
             },
             {
                 "afvalwijzerOphaaldagen2": "dinsdag",
@@ -263,6 +281,12 @@ class WasteCollectionServiceTest(TestCase):
                 "afvalwijzerWaar": "Test",
                 "gebruiksdoelWoonfunctie": True,
                 "afvalwijzerBasisroutetypeCode": "",
+                "straatnaam": "straatNaam",
+                "huisnummer": "10",
+                "huisletter": None,
+                "huisnummertoevoeging": None,
+                "postcode": "1020AB",
+                "woonplaatsnaam": "Amsterdam",
             },
         ]
         self.set_validated_mock_data(waste_guide)

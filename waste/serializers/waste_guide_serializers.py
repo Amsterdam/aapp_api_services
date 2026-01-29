@@ -64,6 +64,12 @@ class WasteDataSerializer(serializers.Serializer):
         allow_null=True, required=False
     )
     gebruiksdoelWoonfunctie = serializers.BooleanField(allow_null=True, required=False)
+    straatnaam = serializers.CharField(allow_null=True, allow_blank=True)
+    huisnummer = serializers.CharField(allow_null=True, allow_blank=True)
+    huisletter = serializers.CharField(allow_null=True, allow_blank=True)
+    huisnummertoevoeging = serializers.CharField(allow_null=True, allow_blank=True)
+    postcode = serializers.CharField(allow_null=True, allow_blank=True)
+    woonplaatsnaam = serializers.CharField(allow_null=True, allow_blank=True)
 
     def to_internal_value(self, data):
         validated_data = super().to_internal_value(data)
@@ -93,6 +99,12 @@ class WasteDataSerializer(serializers.Serializer):
             "where": _convert("afvalwijzerWaar"),
             "is_residential": _convert("gebruiksdoelWoonfunctie"),
             "basisroutetypeCode": validated_data.get("afvalwijzerBasisroutetypeCode"),
+            "street_name": _convert("straatnaam"),
+            "house_number": _convert("huisnummer"),
+            "house_letter": _convert("huisletter"),
+            "house_number_addition": _convert("huisnummertoevoeging"),
+            "postal_code": _convert("postcode"),
+            "city_name": _convert("woonplaatsnaam"),
         }
 
         return internal_data

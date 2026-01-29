@@ -20,6 +20,10 @@ dependencies = [
   "pyproj",
   # polygon operations
   "shapely",
+  # pdf
+  "fpdf2",
+  "babel",
+  "qrcode",
   # waste calendar
   "ics",
   # modules

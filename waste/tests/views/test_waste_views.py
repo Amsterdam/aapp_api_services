@@ -30,7 +30,7 @@ class TestWasteCalendarView(ResponsesActivatedAPITestCase):
         expected_calendar = [
             {
                 "date": f"2024-04-{day}",
-                "label": "Groente, Fruit en Tuin Afval",
+                "label": "Groente, fruit, etensresten en tuinafval",
                 "code": "GFT",
                 "curb_rules_from": None,
                 "curb_rules_to": None,
@@ -104,3 +104,22 @@ class TestWasteGuideCalendarIcsView(ResponsesActivatedAPITestCase):
 
         self.assertIn("BEGIN:VCALENDAR", result)
         self.assertIn("END:VCALENDAR", result)
+
+
+class TestWasteGuideCalendarPDFView(ResponsesActivatedAPITestCase):
+    @freeze_time("2026-01-29")
+    @override_settings(CALENDAR_LENGTH=14)
+    def test_calendar_simple_success(self):
+        # Mock the response from the external API
+        responses.get(settings.WASTE_GUIDE_URL, json=frequency_none.MOCK_DATA)
+
+        url = reverse("waste-guide-calendar-pdf")
+        response = self.client.get(
+            url,
+            data={"bag_nummeraanduiding_id": "12345"},
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        result = str(response.content)
+
+        assert result.startswith("b'%PDF")
