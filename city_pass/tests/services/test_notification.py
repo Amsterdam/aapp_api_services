@@ -1,10 +1,9 @@
-import responses
-from django.conf import settings
 from model_bakery import baker
 
 from city_pass.models import Notification, Session
 from city_pass.services.notification import NotificationService
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+from notification.models import ScheduledNotification
 
 
 class TestNotificationService(ResponsesActivatedAPITestCase):
@@ -22,11 +21,6 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
             "PassData", session=session_1, budgets=[self.budget_1, self.budget_2]
         )
         baker.make("PassData", session=session_2, budgets=[self.budget_1])
-
-        responses.post(
-            settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"], json={}
-        )
-        responses.post(settings.IMAGE_ENDPOINTS["POST_IMAGE"], json={})
 
     def test_set_device_ids_all(self):
         notification = baker.make(Notification, budgets=[])
@@ -57,7 +51,7 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
 
         self.assertIsNotNone(notification.send_at)
         self.assertEqual(notification.nr_sessions, 3)
-        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
 
     def test_call_budget1(self):
         notification = baker.make(Notification, budgets=[self.budget_1])
@@ -67,7 +61,7 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
 
         self.assertIsNotNone(notification.send_at)
         self.assertEqual(notification.nr_sessions, 2)
-        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
 
     def test_call_budget2(self):
         notification = baker.make(Notification, budgets=[self.budget_2])
@@ -77,7 +71,7 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
 
         self.assertIsNotNone(notification.send_at)
         self.assertEqual(notification.nr_sessions, 1)
-        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
 
     def test_call_with_image(self):
         notification = baker.make(
@@ -91,4 +85,4 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
 
         self.assertIsNotNone(notification.send_at)
         self.assertEqual(notification.nr_sessions, 1)
-        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(ScheduledNotification.objects.count(), 1)

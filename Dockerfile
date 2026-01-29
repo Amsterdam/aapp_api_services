@@ -36,6 +36,7 @@ RUN mkdir /home/app/.azure
 RUN chown app:app /home/app/.azure
 USER root
 WORKDIR /app
+COPY notification /app/notification
 
 ### City Pass stages
 FROM core AS app-city_pass
@@ -59,7 +60,6 @@ COPY bridge /app/bridge
 
 ### Notification stages
 FROM core AS app-notification
-COPY notification /app/notification
 
 ### Image stages
 FROM core AS app-image

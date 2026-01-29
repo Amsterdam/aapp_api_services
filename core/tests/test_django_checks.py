@@ -1,4 +1,5 @@
 import pytest
+from django.conf import settings
 from django.core.management import call_command
 
 
@@ -7,7 +8,7 @@ def test_all_migrations():
     call_command("migrate", "--check")
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(databases=list(d for d in settings.DATABASES.keys()))
 def test_missing_migrations():
     call_command("makemigrations", "--check")
 

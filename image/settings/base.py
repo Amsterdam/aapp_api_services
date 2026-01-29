@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "image"
 INSTALLED_APPS += [
     "image.apps.ImageConfig",
+    "notification.apps.NotificationsConfig",
 ]
 
 ROOT_URLCONF = "image.urls"

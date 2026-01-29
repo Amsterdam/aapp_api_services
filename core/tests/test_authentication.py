@@ -27,6 +27,7 @@ from core.utils.patch_utils import (
 
 class AuthenticatedAPITestCase(APITestCase):
     authentication_class: AbstractAppAuthentication = None
+    databases = set(d for d in settings.DATABASES.keys())
 
     def setUp(self) -> None:
         if self.authentication_class is None:

@@ -1,5 +1,5 @@
 from core.enums import Module, NotificationType
-from core.services.notification import AbstractNotificationService
+from core.services.notification_service import AbstractNotificationService
 
 
 class NotificationService(AbstractNotificationService):

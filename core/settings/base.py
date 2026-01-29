@@ -154,7 +154,7 @@ POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_DB = os.getenv("POSTGRES_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-
+NOTIFICATION_POSTGRES_DB = os.getenv("NOTIFICATION_POSTGRES_DB", "notification")
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -163,8 +163,23 @@ DATABASES = {
         "PASSWORD": POSTGRES_PASSWORD,
         "HOST": POSTGRES_HOST,
         "PORT": POSTGRES_PORT,
-    }
+    },
+    "notification": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": NOTIFICATION_POSTGRES_DB,
+        "USER": POSTGRES_USER,
+        "PASSWORD": POSTGRES_PASSWORD,
+        "HOST": POSTGRES_HOST,
+        "PORT": POSTGRES_PORT,
+    },
 }
+
+DATABASE_ROUTERS = [
+    "core.routers.NotificationRouter",
+]
+ALLOW_NOTIFICATION_DB_MIGRATE = (
+    os.getenv("ALLOW_NOTIFICATION_DB_MIGRATE", "false").lower() == "true"
+)
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -243,18 +258,6 @@ API_KEYS = os.getenv("API_AUTH_TOKENS")
 
 HEADER_DEVICE_ID = "DeviceId"
 
-NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://api-notification:8000")
-NOTIFICATION_BASE_URL = urljoin(
-    NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH", "/internal/api/v1/")
-)
-NOTIFICATION_BASE_URL_EXTERNAL = urljoin(
-    NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH_EXT", "/notification/api/v1/")
-)
-NOTIFICATION_ENDPOINTS = {
-    "SCHEDULED_NOTIFICATION": urljoin(NOTIFICATION_BASE_URL, "scheduled-notification"),
-    "NOTIFICATIONS": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "notifications"),
-    "LAST_TIMESTAMP": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "notifications/last"),
-}
 NOTIFICATION_MODULE_SLUG_LAST_TIMESTAMP = [
     "mijn-amsterdam"
 ]  # Scopes for which notifications keep a last timestamp
@@ -291,3 +294,4 @@ CACHES = {
 }
 
 ADMIN_ROLES = []
+MOCK_FIREBASE = False

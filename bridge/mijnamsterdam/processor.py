@@ -10,7 +10,7 @@ from bridge.mijnamsterdam.serializers.general_serializers import (
 )
 from bridge.mijnamsterdam.services.notifications import NotificationService
 from core.enums import Module, NotificationType
-from core.services.notification import NotificationData
+from core.services.notification_service import NotificationData
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class MijnAmsterdamNotificationProcessor:
                 continue
 
             service_id = service["serviceId"]
-            notification_type = f"{Module.MIJN_AMS.value}:{service_id}"
+            notification_type = f"{Module.MIJN_AMS.value}:mijn-ams-notification"
             if notification_type not in self.notification_types:
                 logger.warning(
                     "Received notification type not supported",

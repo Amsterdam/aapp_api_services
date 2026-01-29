@@ -60,10 +60,10 @@ class NotificationType(ChoicesEnum):
         name="manual-notification",
         description="A&G meldingen over afvalinzameling",
     )
-    MIJN_AMS_BELASTING = NotificationTypeClass(
+    MIJN_AMS_NOTIFICATION = NotificationTypeClass(
         module=Module.MIJN_AMS,
-        name="belasting",
-        description="Nieuwe berichten over belasting",
+        name="mijn-ams-notification",
+        description="Nieuwe berichten op Mijn Amsterdam",
     )
     CITY_PASS_NOTIFICATION = NotificationTypeClass(
         module=Module.CITY_PASS,

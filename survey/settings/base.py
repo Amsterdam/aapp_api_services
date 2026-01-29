@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "survey"
 INSTALLED_APPS += [
     "survey.apps.SurveyConfig",
+    "notification.apps.NotificationsConfig",
 ]
 MIDDLEWARE += [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

@@ -3,6 +3,7 @@ import math
 from datetime import datetime
 from datetime import timezone as dt_timezone
 
+from asgiref.sync import sync_to_async
 from rest_framework import status
 from rest_framework.response import Response
 from uritemplate import URITemplate
@@ -293,7 +294,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         response_data["ps_right_id"] = ps_right_id
         if not kwargs["is_visitor"]:
             # ps_right_id is required for reminders, but visitors only get a ps_right_id after the confirmation call
-            notification_status = self._process_notification(
+            notification_status = await sync_to_async(self._process_notification)(
                 ps_right_id=ps_right_id,
                 end_datetime=end_datetime,
                 report_code=session_data["report_code"],
@@ -346,7 +347,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
             wrap_body_data_with_token=True,
         )
         response_data["ps_right_id"] = ps_right_id
-        notification_status = self._process_notification(
+        notification_status = await sync_to_async(self._process_notification)(
             ps_right_id=ps_right_id, end_datetime=end_datetime
         )
         return self._make_response(response_data, notification_status)

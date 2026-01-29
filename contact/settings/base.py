@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "contact"
 INSTALLED_APPS += [
     "contact.apps.ContactConfig",
+    "notification.apps.NotificationsConfig",
 ]
 MIDDLEWARE += [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "waste"
 INSTALLED_APPS += [
     "waste.apps.WasteConfig",
+    "notification.apps.NotificationsConfig",
 ]
 MIDDLEWARE += [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

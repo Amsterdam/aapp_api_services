@@ -61,9 +61,7 @@ dependencies = [
 DJANGO_SETTINGS_MODULE = "core.settings.base"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 cache_dir = "/tmp/pytest_cache"
-markers = [
-  "integration: integration tests that require the k8s cluster",
-]
+markers = []
 addopts = "-m 'not integration'"
 
 [tool.ruff]
@@ -90,6 +88,7 @@ omit = [
   "*/admin.py",
   "*/admin/*",
   "*/apps.py",
+  "notification/utils/patch_utils.py"
 ]
 
 [tool.coverage.report]

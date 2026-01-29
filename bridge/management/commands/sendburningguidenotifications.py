@@ -9,7 +9,7 @@ from django.utils import timezone
 from bridge.burning_guide.services.notifications import NotificationService
 from bridge.burning_guide.services.rivm import RIVMService
 from bridge.models import BurningGuideNotification
-from core.services.notification import NotificationData
+from core.services.notification_service import NotificationData
 
 logger = logging.getLogger(__name__)
 rivm_client = RIVMService()

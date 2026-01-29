@@ -3,36 +3,12 @@ from django.urls import path
 from core.urls import get_swagger_paths
 from notification.views import (
     device_views,
-    notification_internal_views,
     notification_views,
 )
 
 BASE_PATH = "notification/api/v1"
-BASE_PATH_INTERNAL = "internal/api/v1"
 
 urlpatterns = [
-    # INTERNAL ENDPOINTS
-    path(
-        BASE_PATH_INTERNAL + "/notification/aggregate",
-        notification_internal_views.NotificationAggregateView.as_view(),
-        name="notification-aggregate-notification",
-    ),
-    path(
-        BASE_PATH_INTERNAL + "/scheduled-notification",
-        notification_internal_views.ScheduledNotificationView.as_view(
-            {
-                "post": "create",
-                "get": "list",
-            }
-        ),
-        name="notification-scheduled-notification",
-    ),
-    path(
-        BASE_PATH_INTERNAL + "/scheduled-notification/<str:identifier>",
-        notification_internal_views.ScheduledNotificationDetailView.as_view(),
-        name="notification-scheduled-notification-detail",
-    ),
-    # EXTERNAL ENDPOINTS
     path(
         BASE_PATH + "/device/register",
         device_views.DeviceRegisterView.as_view(),
@@ -72,11 +48,6 @@ urlpatterns = [
         BASE_PATH + "/notifications/mark_all_read",
         notification_views.NotificationMarkAllReadView.as_view(),
         name="notification-read-notifications",
-    ),
-    path(
-        BASE_PATH + "/notifications/last",
-        notification_views.NotificationLastView.as_view(),
-        name="notification-last",
     ),
     path(
         BASE_PATH + "/modules",

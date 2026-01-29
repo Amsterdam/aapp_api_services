@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
@@ -12,6 +11,7 @@ from model_bakery import baker
 from bridge.management.commands.sendburningguidenotifications import Command
 from bridge.models import BurningGuideNotification
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+from notification.models import ScheduledNotification
 
 tz = ZoneInfo(settings.TIME_ZONE)
 
@@ -30,11 +30,6 @@ class TestCommand(ResponsesActivatedAPITestCase):
             )
             for device_id, postal_code in self.zipped_devices
         ]
-        self.post_rsp = responses.post(
-            settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"],
-            status=200,
-            json={},
-        )
 
     @freezegun.freeze_time(datetime(2024, 6, 2, 7, 15, 0, tzinfo=tz))
     @patch(
@@ -46,7 +41,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         call_command("sendburningguidenotifications")
 
         self.assertEqual(
-            len(self.post_rsp.calls), 2
+            ScheduledNotification.objects.count(), 2
         )  # Two postal codes, so two notifications sent
 
     @freezegun.freeze_time(datetime(2024, 6, 2, 7, 15, 0, tzinfo=tz))
@@ -59,7 +54,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         call_command("sendburningguidenotifications")
 
         self.assertEqual(
-            len(self.post_rsp.calls), 0
+            ScheduledNotification.objects.count(), 0
         )  # Two postal codes, so two notifications sent
 
     @freezegun.freeze_time(datetime(2024, 6, 2, 8, 15, 0, tzinfo=tz))
@@ -72,7 +67,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         call_command("sendburningguidenotifications")
 
         self.assertEqual(
-            len(self.post_rsp.calls), 0
+            ScheduledNotification.objects.count(), 0
         )  # Even though there are postal codes, no notifications sent
 
     @freezegun.freeze_time(datetime(2024, 6, 2, 7, 15, 0, tzinfo=tz))
@@ -87,11 +82,12 @@ class TestCommand(ResponsesActivatedAPITestCase):
         call_command("sendburningguidenotifications")
 
         self.assertEqual(
-            len(self.post_rsp.calls), 1
+            ScheduledNotification.objects.count(), 1
         )  # Two devices for postal code 1234
-        data = self.post_rsp.calls[0].request.body
-        json_data = json.loads(data)
-        self.assertEqual(len(json_data["device_ids"]), 2)
+        notification = ScheduledNotification.objects.first()
+        device_ids = list(notification.devices.values_list("external_id", flat=True))
+        self.assertIn("device1", device_ids)
+        self.assertIn("device2", device_ids)
 
     def test_collect_batched_notifications(self):
         batched = self.command.collect_batched_notifications(self.notifications)
@@ -104,25 +100,25 @@ class TestCommand(ResponsesActivatedAPITestCase):
     @freezegun.freeze_time(datetime(2024, 6, 2, 23, 0, 0, tzinfo=tz))
     @responses.activate
     def test_send_notification(self):
-        json_data = self._send_notification()
-        self.assertIn("Vanaf 4.00 uur is het Code Rood", json_data["body"])
+        notification = self._send_notification()
+        self.assertIn("Vanaf 4.00 uur is het Code Rood", notification.body)
 
     @freezegun.freeze_time(datetime(2024, 6, 2, 16, 15, 0, tzinfo=tz))
     @responses.activate
     def test_send_notification_2(self):
-        json_data = self._send_notification()
-        self.assertIn("Vanaf 22.00 uur is het Code Rood", json_data["body"])
+        notification = self._send_notification()
+        self.assertIn("Vanaf 22.00 uur is het Code Rood", notification.body)
 
     def _send_notification(self):
         next_timestamp = self.command._next_fixed_timestamp()
         self.command.send_notification_for_single_postal_code(
             ["device1", "device2"], next_timestamp
         )
-        self.assertEqual(len(self.post_rsp.calls), 1)
-        post_body = self.post_rsp.calls[0].request.body
-        json_data = json.loads(post_body)
-        self.assertEqual(json_data["title"], "Stookwijzer")
-        return json_data
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
+        notification = ScheduledNotification.objects.first()
+        self.assertIsNotNone(notification)
+        self.assertEqual(notification.title, "Stookwijzer")
+        return notification
 
     @freezegun.freeze_time(datetime(2024, 6, 1, 12, 0, 0, tzinfo=tz))
     def test_last_fixed_timestamp(self):

@@ -2,7 +2,10 @@ import logging
 
 from construction_work.models.manage_models import WarningMessage
 from core.enums import Module, NotificationType
-from core.services.notification import AbstractNotificationService, NotificationData
+from core.services.notification_service import (
+    AbstractNotificationService,
+    NotificationData,
+)
 
 logger = logging.getLogger(__name__)
 

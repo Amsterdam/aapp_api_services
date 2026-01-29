@@ -144,13 +144,6 @@ class ScheduledNotificationSerializer(ScheduledNotificationDetailSerializer):
         return identifier
 
 
-class NotificationCreateResponseSerializer(serializers.Serializer):
-    total_device_count = serializers.IntegerField()
-    total_token_count = serializers.IntegerField()
-    total_enabled_count = serializers.IntegerField()
-    failed_token_count = serializers.IntegerField()
-
-
 class NotificationUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification

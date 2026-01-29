@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "construction-work"
 INSTALLED_APPS += [
     "construction_work.apps.ConstructionWorkConfig",
+    "notification.apps.NotificationsConfig",
 ]
 
 ROOT_URLCONF = "construction_work.urls"

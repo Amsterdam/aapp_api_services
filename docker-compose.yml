@@ -11,6 +11,7 @@ x-app: &base-app
     REDIS_HOST: redis
     REDIS_PORT: 6379
     REDIS_PASSWORD: password
+    ALLOW_NOTIFICATION_DB_MIGRATE: "true"
   volumes:
     - ./core:/app/core
     - ./${SERVICE_NAME}:/app/${SERVICE_NAME}
@@ -35,6 +36,7 @@ services:
       POSTGRES_PASSWORD: dev
     volumes:
       - ./deploy/init_pgtrgm.sql:/docker-entrypoint-initdb.d/init_pgtrgm.sql
+      - ./deploy/init_notification_database.sql:/docker-entrypoint-initdb.d/init_notification_database.sql
     ports:
       - "5435:5432"
     healthcheck:

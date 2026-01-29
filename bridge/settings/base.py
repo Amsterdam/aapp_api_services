@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "bridge"
 INSTALLED_APPS += [
     "bridge.apps.BridgeConfig",
+    "notification.apps.NotificationsConfig",
 ]
 
 ROOT_URLCONF = "bridge.urls"

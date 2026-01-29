@@ -1,10 +1,9 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 from random import randint
 from uuid import uuid4
 
 import httpx
-import pytest
 import respx
 from django.conf import settings
 from django.urls import reverse
@@ -23,7 +22,6 @@ from core.services.scheduled_notification import ScheduledNotificationService
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.integration
 class TestParkingSessionProcessNotification(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
@@ -87,9 +85,9 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
             response.data["notification_status"], NotificationStatus.CREATED.name
         )
         notifications = self._check_notification_count(1)
-        notification = self.notification_scheduler.get(notifications[0]["identifier"])
         self.assertEqual(
-            set(notification["device_ids"]), {self.device_id, old_device_id}
+            set(d.external_id for d in notifications[0].devices.all()),
+            {self.device_id, old_device_id},
         )  # notification should contain both devices!
 
     def test_patch_parking_session(self):
@@ -102,10 +100,10 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
         notification = self._check_notification_count(1)[0]
         self.assertEqual(
-            datetime.fromisoformat(notification["scheduled_for"]),
+            notification.scheduled_for,
             end_time - timedelta(minutes=settings.PARKING_REMINDER_TIME),
         )
-        self.assertEqual(datetime.fromisoformat(notification["expires_at"]), end_time)
+        self.assertEqual(notification.expires_at, end_time)
 
     def test_patch_parking_session_too_soon(self):
         start_time, end_time = self._init_test()
@@ -150,7 +148,6 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         parking_duration=settings.PARKING_REMINDER_TIME + 1,
         start_session=True,
     ):
-        respx.route(host=settings.NOTIFICATION_API).pass_through()
         start_time = timezone.now()
         end_time = start_time + timedelta(minutes=parking_duration)
 
@@ -229,13 +226,12 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
 
     def _check_notification_count(self, count):
         notifications = self.notification_scheduler.get_all()
-        device_notifications = [n for n in notifications]
-        self.assertEqual(len(device_notifications), count)
-        return device_notifications
+        self.assertEqual(len(notifications), count)
+        return notifications
 
     def tearDown(self):
         scheduled_notifications = self.notification_scheduler.get_all()
         for notification in scheduled_notifications:
-            identifier = notification["identifier"]
+            identifier = notification.identifier
             logger.info(f"Deleting scheduled notification [{identifier}]")
             self.notification_scheduler.delete(identifier)

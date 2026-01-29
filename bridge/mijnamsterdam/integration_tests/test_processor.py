@@ -17,7 +17,6 @@
 #     nr_of_notifications: int
 #
 #
-# @pytest.mark.integration
 # class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
 #     def setUp(self):
 #         self.processor = MijnAmsterdamNotificationProcessor()

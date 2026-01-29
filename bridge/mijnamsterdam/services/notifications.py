@@ -1,9 +1,10 @@
-from core.enums import Module
-from core.services.notification import AbstractNotificationService
+from core.enums import Module, NotificationType
+from core.services.notification_service import AbstractNotificationService
 
 
 class NotificationService(AbstractNotificationService):
     module_slug = Module.MIJN_AMS.value
+    notification_type = NotificationType.MIJN_AMS_NOTIFICATION.value
 
     def send(self, notification_data):
         """

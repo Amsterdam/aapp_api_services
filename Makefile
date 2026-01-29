@@ -161,4 +161,3 @@ shell: check-service
 superuser:
 	# Create a superuser for the Django app
 	$(manage) createsuperuser --username jeroen --email app@amsterdam.nl
-

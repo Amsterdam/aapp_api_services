@@ -21,7 +21,6 @@ from construction_work.models.manage_models import (
 from construction_work.models.project_models import Project
 from construction_work.tests import mock_data
 from construction_work.utils.patch_utils import (
-    MockNotificationResponse,
     create_bearer_token,
 )
 from core.utils.patch_utils import apply_signing_key_patch
@@ -30,6 +29,8 @@ ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
 
 class BaseTestManageView(APITestCase):
+    databases = {"default", "notification"}
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -884,10 +885,7 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         )
         self.assertEqual(result.status_code, 400)
 
-    @patch(
-        "core.services.notification.InternalServiceSession.request",
-    )
-    def test_create_warning_with_push_notification(self, post_notification):
+    def test_create_warning_with_push_notification(self):
         project, publisher = self.create_project_and_publisher()
         self.update_headers_with_publisher_data(publisher.email)
 
@@ -901,10 +899,6 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         device_data = mock_data.devices[0].copy()
         new_device = Device.objects.create(**device_data)
         new_device.followed_projects.add(project)
-
-        post_notification.return_value = MockNotificationResponse(
-            title=request_data["title"], body=request_data["body"]
-        )
 
         result = self.client.post(
             reverse(self.api_url_str, kwargs={"pk": project.pk}),
@@ -1109,10 +1103,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         image_count = WarningImage.objects.filter(warning=warning).all().count()
         self.assertEqual(image_count, 1)
 
-    @patch(
-        "core.services.notification.InternalServiceSession.request",
-    )
-    def test_update_warning_send_push_ok(self, post_notification):
+    def test_update_warning_send_push_ok(self):
         project, publisher = self.create_project_and_publisher()
         self.update_headers_with_publisher_data(publisher.email)
 
@@ -1127,10 +1118,6 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
             "body": warning.body,
             "send_push_notification": True,
         }
-
-        post_notification.return_value = MockNotificationResponse(
-            warning_id=warning.pk, title=new_data["title"], body=new_data["body"]
-        )
 
         result = self.client.patch(
             reverse(self.api_url_str, kwargs={"pk": warning.pk}),

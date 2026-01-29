@@ -1,11 +1,13 @@
 import datetime
 import logging
-from urllib.parse import urljoin
 
-from django.conf import settings
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from core.services.image_set import ImageSetService
 from core.services.internal_http_client import InternalServiceSession
+from core.services.notification_service import create_missing_device_ids
+from notification.models import ScheduledNotification
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +21,7 @@ class NotificationServiceError(Exception):
 class ScheduledNotificationService:
     def __init__(self):
         self.client = InternalServiceSession()
+        self.image_service = ImageSetService()
 
     def upsert(
         self,
@@ -33,78 +36,71 @@ class ScheduledNotificationService:
         image: str = None,
         expires_at: datetime = None,
     ):
-        request_data = {
-            "title": title,
-            "body": body,
-            "scheduled_for": scheduled_for.isoformat(),
-            "context": context,
-            "identifier": identifier,
-            "device_ids": device_ids,
-            "notification_type": notification_type,
-            "module_slug": module_slug or settings.SERVICE_NAME,
-            "created_at": timezone.now().isoformat(),
-        }
+        devices = create_missing_device_ids(device_ids)
+        if expires_at and expires_at <= scheduled_for:
+            raise NotificationServiceError(
+                "Expires_at must be later than scheduled_for"
+            )
+        if module_slug and not identifier.startswith(module_slug):
+            raise NotificationServiceError("Identifier must start with module_slug")
         if image:
-            request_data["image"] = image
+            if not self.image_service.exists(image):
+                raise NotificationServiceError(f"Image with id {image} does not exist")
+
+        instance = self._get_instance(identifier)
+        # Perform CREATE if object does not exist
+        if not instance:
+            try:
+                instance = ScheduledNotification(
+                    title=title,
+                    body=body,
+                    scheduled_for=scheduled_for,
+                    identifier=identifier,
+                    context=context,
+                    notification_type=notification_type,
+                    module_slug=module_slug,
+                    image=image,
+                    created_at=timezone.now(),
+                    expires_at=expires_at or "3000-01-01",
+                )
+                instance.save()
+                instance.devices.set(devices)
+                return instance
+            except IntegrityError:
+                # Handle race condition where another transaction created the same identifier
+                instance = self._get_instance(identifier)
+
+        # Perform UPDATE if object exists
+        old_device_ids = list(instance.devices.all())
+        devices = list(set(old_device_ids) | set(devices))  # Add new devices to old
+        instance.title = title
+        instance.body = body
+        instance.scheduled_for = scheduled_for
+        if image:
+            instance.image = image
         if expires_at:
-            request_data["expires_at"] = expires_at.isoformat()
+            instance.expires_at = expires_at
+        with transaction.atomic():
+            instance.save()
+            instance.devices.set(devices)
+        return instance
 
+    def _get_instance(self, identifier):
+        instance = ScheduledNotification.objects.filter(identifier=identifier).first()
+        return instance
+
+    def get_all(self) -> list[ScheduledNotification]:
+        return list(ScheduledNotification.objects.all())
+
+    def get(self, identifier: str) -> ScheduledNotification | None:
         try:
-            url = settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"]
-            response = self.client.post(
-                url,
-                json=request_data,
-            )
-            response.raise_for_status()
-        except Exception as e:
-            raise NotificationServiceError(
-                "Failed to create scheduled notification"
-            ) from e
-        return response.json()
-
-    def get_all(self):
-        try:
-            url = settings.NOTIFICATION_ENDPOINTS["SCHEDULED_NOTIFICATION"]
-            response = self.client.get(
-                url,
-            )
-            response.raise_for_status()
-        except Exception as e:
-            raise NotificationServiceError(
-                "Failed to collect scheduled notifications"
-            ) from e
-        return response.json()
-
-    def get(self, identifier: str):
-        try:
-            url = self._build_url(identifier)
-            response = self.client.get(
-                url,
-            )
-            if response.status_code == 204:
-                return None
-            response.raise_for_status()
-        except Exception as e:
-            raise NotificationServiceError(
-                "Failed to get scheduled notification"
-            ) from e
-
-        return response.json()
+            instance = ScheduledNotification.objects.get(identifier=identifier)
+            return instance
+        except ScheduledNotification.DoesNotExist:
+            return None
 
     def delete(self, identifier: str):
         try:
-            url = self._build_url(identifier)
-            response = self.client.delete(
-                url,
-            )
-            response.raise_for_status()
-        except Exception as e:
-            raise NotificationServiceError(
-                "Failed to delete scheduled notification"
-            ) from e
-
-    def _build_url(self, identifier):
-        return urljoin(
-            f"{settings.NOTIFICATION_ENDPOINTS['SCHEDULED_NOTIFICATION']}/",
-            identifier,
-        )
+            ScheduledNotification.objects.get(identifier=identifier).delete()
+        except ScheduledNotification.DoesNotExist:
+            return None

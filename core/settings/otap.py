@@ -7,6 +7,7 @@ azure = Azure()
 
 POSTGRES_PASSWORD = azure.auth.db_password
 DATABASES["default"]["PASSWORD"] = POSTGRES_PASSWORD
+DATABASES["notification"]["PASSWORD"] = POSTGRES_PASSWORD
 
 # Enables persistent connections to the database
 # Helps smooth over database connection issues
