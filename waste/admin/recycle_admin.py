@@ -81,11 +81,20 @@ class RecycleLocationOpeningHoursAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
 
-        if not obj.regularopeninghours_set.exists():
-            for day in WeekDay:
-                RegularOpeningHours.objects.create(
-                    recycle_location_opening_hours=obj, day_of_week=day.value
-                )
+        # Keep for compatibility: do not create defaults here because inlines
+        # are saved after the parent and may cause duplicate creation when the
+        # admin inline also submits the same days. Actual initialization of
+        # missing `RegularOpeningHours` is handled in `save_related` below.
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+
+        # After related inlines are saved, ensure every weekday has an entry.
+        obj = form.instance
+        for day in WeekDay:
+            RegularOpeningHours.objects.get_or_create(
+                recycle_location_opening_hours=obj, day_of_week=day.value
+            )
 
 
 class RecycleLocationOpeningHoursInline(admin.StackedInline):

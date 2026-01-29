@@ -2,8 +2,8 @@ from rest_framework import serializers
 
 
 class CoordinatesSerializer(serializers.Serializer):
-    lat = serializers.CharField()
-    lon = serializers.CharField()
+    lat = serializers.FloatField()
+    lon = serializers.FloatField()
 
 
 class AddressSerializer(serializers.Serializer):

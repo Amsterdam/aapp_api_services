@@ -64,8 +64,8 @@ class RecycleLocation(models.Model):
     addition_letter = models.CharField("Huisletter", blank=True, null=True)
     addition_number = models.CharField("Huisnummertoevoeging", blank=True, null=True)
     postal_code = models.CharField("Postcode", max_length=7)
-    latitude = models.DecimalField("Latitude", max_digits=9, decimal_places=7)
-    longitude = models.DecimalField("Longitude", max_digits=9, decimal_places=7)
+    latitude = models.DecimalField("Latitude", max_digits=10, decimal_places=8)
+    longitude = models.DecimalField("Longitude", max_digits=10, decimal_places=8)
     commercial_waste = models.BooleanField("Bedrijfsafval", default=False)
 
     def __str__(self) -> str:
