@@ -4,7 +4,7 @@ from core.settings.otap import *  # isort:skip
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_PASSWORD = azure.auth.db_password
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_DB = os.getenv("POSTGRES_DB", "notification")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")

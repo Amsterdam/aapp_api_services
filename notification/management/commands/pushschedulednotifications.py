@@ -37,6 +37,9 @@ class Command(BaseCommand):
                         # In test mode, interrupt the loop when no notifications are found
                         break
                     sleep(5)  # Sleep for 5 seconds before checking again
+                if options["test_mode"]:
+                    for n in notifications_to_process:
+                        n.make_push = False
                 logger.info(
                     f"Pushing {len(notifications_to_process)} scheduled notifications"
                 )

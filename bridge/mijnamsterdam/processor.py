@@ -63,15 +63,7 @@ class MijnAmsterdamNotificationProcessor:
             if nr_messages == 0:
                 continue
 
-            service_id = service["serviceId"]
             notification_type = f"{Module.MIJN_AMS.value}:mijn-ams-notification"
-            if notification_type not in self.notification_types:
-                logger.warning(
-                    "Received notification type not supported",
-                    extra={"type": notification_type},
-                )
-                continue
-
             device_ids_to_send = self._get_device_ids_to_send(
                 device_ids, date_published=service["dateUpdated"]
             )
@@ -79,9 +71,9 @@ class MijnAmsterdamNotificationProcessor:
                 [notification["id"] for notification in service["content"]]
             )[:150]
             if nr_messages == 1:
-                message = f"U heeft een nieuw bericht over {service_id}"
+                message = "U heeft een nieuw bericht op Mijn Amsterdam"
             else:
-                message = f"U heeft {nr_messages} nieuwe berichten over {service_id}"
+                message = f"U heeft {nr_messages} nieuwe berichten op Mijn Amsterdam"
             message += ". Ga naar Mijn Amsterdam."
             notification_data = NotificationData(
                 link_source_id=compounded_id,
