@@ -170,7 +170,7 @@ class WasteCollectionServiceTest(TestCase):
         calendar = self.service.create_ics_calendar()
 
         self.assertIn("BEGIN:VEVENT", str(calendar))
-        self.assertIn("DTSTART;VALUE=DATE:20251215", str(calendar))
+        self.assertIn("DTSTART:20251214T230000Z", str(calendar))
         # PRODID and DTSTAMP are required for iCalendar standard
         self.assertIn("PRODID", str(calendar))
         self.assertIn("DTSTAMP", str(calendar))
@@ -423,7 +423,7 @@ class WasteCollectionServiceTest(TestCase):
         event = self.service._create_ics_event(item=item, date=date_object)
 
         self.assertIn("BEGIN:VEVENT", str(event))
-        self.assertIn("DTSTART;VALUE=DATE:20260112", str(event))
+        self.assertIn("DTSTART:20260111T230000Z", str(event))
 
     @override_settings(CALENDAR_LENGTH=42)
     def test_add_event_to_calendar(self):

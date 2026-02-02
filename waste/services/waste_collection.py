@@ -145,8 +145,11 @@ class WasteCollectionService:
         event.name = f"Ophaaldag {item.get('label', '').lower()}"
 
         # set date of event
-        event.begin = date
-        event.make_all_day()
+        event.begin = timezone.make_aware(
+            datetime.combine(date, datetime.min.time()),
+            tz,
+        )
+        event.end = event.begin + timedelta(days=1)
 
         # start of day timestamp
         start_of_day_utc = timezone.make_aware(
