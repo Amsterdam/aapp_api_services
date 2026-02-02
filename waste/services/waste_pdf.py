@@ -2,6 +2,7 @@ import calendar
 import os
 from datetime import date
 from io import BytesIO
+from urllib.parse import quote
 
 import qrcode
 from babel.dates import format_date
@@ -51,7 +52,7 @@ class WastePDF(FPDF):
         self.cell(
             0,
             PDF_HEADER_CELL_HEIGHT,
-            f"{format_date(start_date, 'D MMMM YYYY', locale='nl')}",
+            f"{format_date(start_date, 'd MMMM YYYY', locale='nl')}",
             align="R",
             new_x="LMARGIN",
             new_y="NEXT",
@@ -74,7 +75,9 @@ class WastePDF(FPDF):
 
         # draw qr code
         qr = qrcode.QRCode(border=0)
-        qr.add_data("https://example.com")
+        qr.add_data(
+            f"https://www.amsterdam.nl/afval/afvalinformatie/?adres={quote(self.address)}"
+        )
         qr.make(fit=True)
 
         img = qr.make_image(fill_color="black", back_color="white")
@@ -125,8 +128,13 @@ class WastePDF(FPDF):
             self.ln(3)
 
         # Printing page number:
-        self.set_font(PDF_FONT, "", PDF_REGULAR_FONT_SIZE)
-        self.cell(0, 10, f"Pagina {self.page_no()} van {{nb}}", align="R")
+        self.set_font(PDF_FONT, "", PDF_HEADER_FONT_SIZE)
+        self.cell(
+            0,
+            PDF_HEADER_CELL_HEIGHT - 2,
+            f"Pagina {self.page_no()} van {{nb}}",
+            align="R",
+        )
 
     def add_title(self):
         start_date = date.today()
