@@ -30,6 +30,11 @@ class Article(models.Model):
         """Get id dict"""
         return create_id_dict(self)
 
+    def deactivate(self, *args, **kwargs):
+        """Deactivate & save"""
+        self.active = False
+        super(Article, self).save(*args, **kwargs)
+
 
 class ArticleImage(BaseImage):
     parent = models.OneToOneField(

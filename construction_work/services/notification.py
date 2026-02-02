@@ -10,7 +10,15 @@ from core.services.notification_service import (
 logger = logging.getLogger(__name__)
 
 
-class NotificationService(AbstractNotificationService):
+class ArticleNotificationService(AbstractNotificationService):
+    module_slug = Module.CONSTRUCTION_WORK.value
+    notification_type = NotificationType.CONSTRUCTION_WORK_ARTICLE_MESSAGE.value
+
+    def send(self, notification_data: NotificationData):
+        self.process(notification_data)
+
+
+class WarningNotificationService(AbstractNotificationService):
     module_slug = Module.CONSTRUCTION_WORK.value
     notification_type = NotificationType.CONSTRUCTION_WORK_WARNING_MESSAGE.value
 

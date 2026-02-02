@@ -7,7 +7,7 @@ from construction_work.models.manage_models import (
     WarningImage,
     WarningMessage,
 )
-from construction_work.services.notification import NotificationService
+from construction_work.services.notification import WarningNotificationService
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from core.utils.image_utils import get_example_image_file
 from notification.models import ScheduledNotification
@@ -16,13 +16,13 @@ from notification.models import ScheduledNotification
 @override_settings(
     STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
 )
-class TestNotificationService(ResponsesActivatedAPITestCase):
+class TestWarningNotificationService(ResponsesActivatedAPITestCase):
     def setUp(self):
         self.project = baker.make(Project, title="Test Project")
         self.warning = baker.make(
             WarningMessage, project=self.project, title="Test Warning"
         )
-        self.notification_service = NotificationService()
+        self.notification_service = WarningNotificationService()
 
     def test_call_notification_service_success_no_image(self):
         self.notification_service.send(self.warning)

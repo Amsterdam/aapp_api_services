@@ -45,7 +45,7 @@ def garbage_collector(found_projects, found_articles):
 
     _deactivate_unseen_projects(found_projects)
     _cleanup_inactive_projects()
-    initial_article_count = _remove_unseen_articles(found_articles)
+    _deactivate_unseen_articles(found_articles)
 
     garbage_collector_status = {
         "projects": {
@@ -55,7 +55,8 @@ def garbage_collector(found_projects, found_articles):
             "count": Project.objects.all().count(),
         },
         "articles": {
-            "deleted": initial_article_count - Article.objects.all().count(),
+            "active": Article.objects.filter(active=True).count(),
+            "inactive": Article.objects.filter(active=False).count(),
             "count": Article.objects.all().count(),
         },
     }
@@ -78,7 +79,8 @@ def _cleanup_inactive_projects():
     ).delete()
 
 
-def _remove_unseen_articles(found_articles):
-    initial_article_count = Article.objects.all().count()
-    Article.objects.exclude(foreign_id__in=found_articles).delete()
-    return initial_article_count
+def _deactivate_unseen_articles(found_articles):
+    unseen_articles = Article.objects.exclude(foreign_id__in=found_articles)
+    with transaction.atomic():
+        for article in unseen_articles:
+            article.deactivate()
