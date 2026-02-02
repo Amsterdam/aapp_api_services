@@ -110,5 +110,5 @@ def create_missing_device_ids(device_ids: list[str]) -> list[Device]:
         Device.objects.bulk_create(
             Device(external_id=device_id) for device_id in missing_device_ids
         )
-    logger.warning(f"Created {len(missing_device_ids)} missing devices.")
+        logger.info(f"Created {len(missing_device_ids)} missing devices.")
     return Device.objects.filter(external_id__in=device_ids)
