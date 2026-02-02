@@ -11,9 +11,14 @@ class NotificationSerializer(Serializer):
 
 class ServiceSerializer(Serializer):
     status = serializers.ChoiceField(choices=["OK", "ERROR"])
-    content = NotificationSerializer(many=True)
+    content = NotificationSerializer(many=True, allow_null=True)
     serviceId = serializers.CharField()
     dateUpdated = serializers.DateTimeField()
+
+    def validate_content(self, value):
+        if value is None:
+            return []
+        return value
 
 
 class UserSerializer(Serializer):
