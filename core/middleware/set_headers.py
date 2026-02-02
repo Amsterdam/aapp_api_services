@@ -4,6 +4,9 @@ class DefaultHeadersMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
+        if request.path.endswith(".ics"):
+            # Leave caching to the view
+            return response
         response["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response["Pragma"] = "no-cache"
         response["Expires"] = "0"

@@ -1,7 +1,7 @@
 import logging
 import re
 from collections import OrderedDict, defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 
 import requests
 from django.conf import settings
@@ -148,9 +148,14 @@ class WasteCollectionService:
         event.begin = date
         event.make_all_day()
 
-        # set created and dtstamp to now (required for iCalendar)
-        event.created = timezone.now()
-        event.dtstamp = timezone.now()
+        # start of day timestamp
+        start_of_day_utc = timezone.make_aware(
+            datetime.combine(date.today(), time.min), timezone.get_current_timezone()
+        )
+
+        # set created and dtstamp (required for iCalendar)
+        event.created = start_of_day_utc
+        event.dtstamp = start_of_day_utc
 
         # set description
         event.description = ""

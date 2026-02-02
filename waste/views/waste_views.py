@@ -1,7 +1,9 @@
 import logging
 
 from django.http import HttpResponse
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.cache import cache_control, cache_page
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import status
@@ -91,6 +93,8 @@ class WasteGuidePDFView(View):
         return response
 
 
+@method_decorator(cache_control(public=True, max_age=3600), name="dispatch")
+@method_decorator(cache_page(60 * 60), name="dispatch")
 class WasteGuideCalendarIcsView(View):
     def get(self, request, *args, **kwargs):
         bag_nummeraanduiding_id = kwargs.get("bag_nummeraanduiding_id")
