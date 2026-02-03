@@ -420,7 +420,7 @@ class WasteCollectionServiceTest(TestCase):
     def test_create_ics_event(self):
         item = frequency_monthly.MOCK_DATA["_embedded"]["afvalwijzer"][0]
         date_object = date(2026, 1, 12)
-        event = self.service._create_ics_event(item=item, date=date_object)
+        event = self.service._create_ics_event(item=item, event_date=date_object)
 
         self.assertIn("BEGIN:VEVENT", str(event))
         self.assertIn("DTSTART:20260111T230000Z", str(event))

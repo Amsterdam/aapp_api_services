@@ -114,7 +114,8 @@ class WasteGuideCalendarIcsView(View):
 
         waste_service = WasteCollectionService(bag_nummeraanduiding_id)
         waste_service.get_validated_data()
-        calendar = waste_service.create_ics_calendar()
+
+        calendar = waste_service.create_ics_text_calendar()
 
         response = HttpResponse(
             str(calendar), content_type="text/calendar; charset=utf-8"

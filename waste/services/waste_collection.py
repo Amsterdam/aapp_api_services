@@ -13,6 +13,7 @@ from ics.grammar.parse import ContentLine
 from waste import constants
 from waste.constants import WASTE_TYPES_ORDER
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
+from waste.services.waste_ics import WasteICS
 from waste.services.waste_pdf import (
     WastePDF,
 )
@@ -120,6 +121,18 @@ class WasteCollectionService:
 
         return calendar
 
+    def create_ics_text_calendar(self) -> Calendar:
+        waste_calendar = WasteICS()
+        for item in self.validated_data:
+            if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
+                dates = self._get_dates_for_waste_item(item)
+                for date in dates:
+                    waste_calendar.add_event_to_calendar(date, item)
+
+        waste_calendar.add_calendar_ending()
+
+        return waste_calendar.calendar
+
     def create_pdf_calendar_dates(self) -> dict[date, list[str]]:
         waste_collection_by_date = {}
         for item in self.validated_data:
@@ -137,16 +150,16 @@ class WasteCollectionService:
         calendar.events.add(event)
         return calendar
 
-    def _create_ics_event(self, date: date, item: dict) -> Event:
+    def _create_ics_event(self, event_date: date, item: dict) -> Event:
         event = Event()
 
         # set unique id and name
-        event.uid = f"{item.get('label', '').replace(',', '').replace(' ', '')}-{date.isoformat()}@app.amsterdam.nl"
+        event.uid = f"{item.get('label', '').replace(',', '').replace(' ', '')}-{event_date.isoformat()}@app.amsterdam.nl"
         event.name = f"Ophaaldag {item.get('label', '').lower()}"
 
         # set date of event
         event.begin = timezone.make_aware(
-            datetime.combine(date, datetime.min.time()),
+            datetime.combine(event_date, datetime.min.time()),
             tz,
         )
         event.end = event.begin + timedelta(days=1)
