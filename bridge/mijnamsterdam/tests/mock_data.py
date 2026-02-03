@@ -50,6 +50,31 @@ MIJN_AMS_NOTIFICATIONS_RESPONSE = {
                 }
             ],
         },
+        {
+            "consumerIds": ["foobar"],
+            "dateUpdated": "2025-08-19T07:42:15.845Z",
+            "services": [
+                {
+                    "status": "OK",
+                    "content": [
+                        {
+                            "id": "belasting-4",
+                            "title": "Betaal uw aanslag",
+                            "themaId": "BELASTINGEN",
+                            "datePublished": "2025-11-12T14:14:40Z",
+                        },
+                        {
+                            "id": "belasting-5",
+                            "title": "Betaal uw aanslag",
+                            "themaId": "BELASTINGEN",
+                            "datePublished": "2026-03-24T03:16:40Z",
+                        },
+                    ],
+                    "serviceId": "belasting",
+                    "dateUpdated": "2026-03-24T03:16:40Z",
+                }
+            ],
+        },
     ],
     "status": "OK",
 }

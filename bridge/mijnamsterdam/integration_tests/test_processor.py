@@ -32,10 +32,12 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
         self._set_mock_data(
             [NotificationData(device_ids=[device_id], nr_of_notifications=1)]
         )
+        self.assertEqual(Notification.objects.count(), 0)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
 
         self._process_mijn_amsterdam_notifications()
 
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
         self.assertEqual(Notification.objects.count(), 1)
         notifications = self.notification_service.get_notifications(device_id)
         self.assertEqual(len(notifications), 1)
@@ -89,13 +91,6 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
             notifications = self.notification_service.get_notifications(device_id_2)
             self.assertEqual(len(notifications), 1)
 
-    def _process_mijn_amsterdam_notifications(self):
-        self.processor.run()
-        # Let 10 seconds pass to make sure scheduled notifications are processed
-        self.time += timedelta(seconds=10)
-        with freezegun.freeze_time(self.time):
-            call_command("pushschedulednotifications", "--test-mode")
-
     def test_run_processor_consecutive(self):
         device_id = f"integration_test_{datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]}"
         mock_data = self._set_mock_data(
@@ -109,7 +104,7 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
 
             # Set a new datePublished for each iteration, so every run has a new notification
             self.time += timedelta(seconds=5)
-            mock_data["content"][0]["services"][0]["dateUpdated"] = (
+            mock_data["content"][0]["services"][0]["content"][-1]["datePublished"] = (
                 self.time.isoformat()
             )
             responses.get(
@@ -155,6 +150,14 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
         notifications = self.notification_service.get_notifications(device_id)
         self.assertEqual(len(notifications), 2)
 
+    def _process_mijn_amsterdam_notifications(self):
+        self.processor.run()
+        # Let 10 seconds pass to make sure scheduled notifications are processed
+        self.time += timedelta(seconds=10)
+        with freezegun.freeze_time(self.time):
+            call_command("pushschedulednotifications", "--test-mode")
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
+
     def _set_mock_data(self, data: list[NotificationData]):
         mock_data = {
             "content": [
@@ -176,7 +179,9 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
                                 for i in range(notification.nr_of_notifications)
                             ],
                             "serviceId": "belasting",
-                            "dateUpdated": "2025-12-12T14:14:40.196Z",
+                            "dateUpdated": (
+                                timezone.now() - timedelta(minutes=2)
+                            ).isoformat(),
                         }
                     ],
                 }
