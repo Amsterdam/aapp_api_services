@@ -1,3 +1,4 @@
+from django.db.models import Case, IntegerField, When
 from django.forms.models import model_to_dict
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -16,7 +17,17 @@ class RecycleLocationsView(generics.ListAPIView):
     serializer_class = RecycleLocationResponseSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        qs = self.filter_queryset(self.get_queryset())
+        # Annotate records where `city_district` is an empty string so we can
+        # order those last. `_is_empty` will be 1 for empty strings, 0 otherwise.
+        qs = qs.annotate(
+            _is_empty=Case(
+                When(city_district="", then=1),
+                default=0,
+                output_field=IntegerField(),
+            )
+        )
+        queryset = qs.order_by("_is_empty", "city_district", "name")
         recycle_location_objects = list(queryset)
         recycle_location_dicts = [
             model_to_dict(location) for location in recycle_location_objects

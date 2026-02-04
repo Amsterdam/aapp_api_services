@@ -30,11 +30,11 @@ lock-packages:
 
 pip-freeze:
     # Run pip-freeze for human readable requirements.txt
-	$(lint) uv pip freeze > requirements.txt
+	$(lint) uv export --format requirements-txt --no-hashes --no-annotate > requirements.txt
 	@timestamp=$$(date -u +"%Y-%m-%dT%H:%M:%SZ"); \
 	sed -i "1s/^/# Generated: $${timestamp}\n/" requirements.txt;
 
-requirements: lock-packages build pip-freeze
+requirements: lock-packages pip-freeze
     # Update dependencies and generate requirements.txt
 
 ### MAKEFILE TARGETS THAT CAN LOOP THROUGH ALL SERVICES ###

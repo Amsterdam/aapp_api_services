@@ -93,6 +93,9 @@ services:
       - ./notification:/app/notification
       - ./waste:/app/waste
       - ./survey:/app/survey
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./requirements.txt:/app/requirements.txt
+      - ./uv.lock:/app/uv.lock
   openapi-diff:
     image: openapitools/openapi-diff:latest
     volumes:

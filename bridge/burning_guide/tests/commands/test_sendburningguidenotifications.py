@@ -75,8 +75,8 @@ class TestCommand(ResponsesActivatedAPITestCase):
         "bridge.management.commands.sendburningguidenotifications.RIVMService.has_new_red_status"
     )
     def test_command_complex_case_1(self, patched_has_new_red_status):
-        patched_has_new_red_status.side_effect = (
-            lambda postal_code: postal_code == "1234"
+        patched_has_new_red_status.side_effect = lambda postal_code: (
+            postal_code == "1234"
         )
 
         call_command("sendburningguidenotifications")
