@@ -25,7 +25,14 @@ class MijnAmsterdamNotificationProcessor:
         notification_type = f"{Module.MIJN_AMS.value}:mijn-ams-notification"
         self.notification_service.notification_type = notification_type
         for user_data in data:
-            self.send_notification(user_data=user_data)
+            try:
+                logger.info(f"Processing user device_ids {user_data['consumerIds']}")
+                self.send_notification(user_data=user_data)
+            except Exception as e:
+                logger.error(
+                    f"Error processing notifications for user {user_data['consumerIds']}",
+                    exc_info=e,
+                )
 
     def collect_notification_data(self) -> list[dict]:
         url = urljoin(
@@ -51,6 +58,7 @@ class MijnAmsterdamNotificationProcessor:
 
         for device in device_ids:
             last_timestamp = last_timestamp_per_device[device]
+            logger.info(f"Last notification pushed: {last_timestamp}")
             nr_messages = self._get_nr_new_messages(last_timestamp, user_data)
 
             if nr_messages == 0:
@@ -67,6 +75,7 @@ class MijnAmsterdamNotificationProcessor:
                 device_ids=[device],
                 make_push=make_push,
             )
+            logger.info(f"Sending notification for {nr_messages} new messages")
             self.notification_service.send(notification_data=notification_data)
 
     def _get_push_enabled(self):
@@ -87,8 +96,11 @@ class MijnAmsterdamNotificationProcessor:
     def _get_nr_new_messages(self, last_timestamp, user_data):
         nr_messages = 0
         for service in user_data["services"]:
-            nr_messages = len(
-                [c for c in service["content"] if c["datePublished"] > last_timestamp]
-            )
-            nr_messages += nr_messages
+            for c in service["content"]:
+                if c["datePublished"] > last_timestamp:
+                    nr_messages += 1
+                    logger.debug(
+                        f"New message found: {service['serviceId']} published at {c['datePublished']}"
+                    )
+
         return nr_messages

@@ -20,7 +20,8 @@ RUN apk add --no-cache \
     curl
 
 COPY pyproject.toml /app/pyproject.toml
-RUN uv sync
+COPY uv.lock /app/uv.lock
+RUN uv sync --frozen
 
 RUN addgroup -S app && adduser -S app -G app
 

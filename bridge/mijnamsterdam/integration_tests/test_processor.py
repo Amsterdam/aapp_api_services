@@ -173,7 +173,7 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
                                     "title": "Betaal uw aanslag",
                                     "themaId": "BELASTINGEN",
                                     "datePublished": (
-                                        timezone.now() - timedelta(minutes=2)
+                                        datetime.now() - timedelta(minutes=2)
                                     ).isoformat(),
                                 }
                                 for i in range(notification.nr_of_notifications)
