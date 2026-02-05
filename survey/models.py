@@ -124,7 +124,7 @@ class Question(models.Model):
 
 class Condition(models.Model):
     class Meta:
-        unique_together = ("question", "value")
+        unique_together = ("question", "reference_question", "value")
         verbose_name = "Conditie"
         verbose_name_plural = "Condities"
 
