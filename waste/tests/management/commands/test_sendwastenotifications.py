@@ -28,6 +28,6 @@ class SendWasteNotificationsTest(TestCase):
 
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
-            waste_type="Groente, fruit, etensresten en tuinafval",
+            waste_type="Groente-, fruit-, etensresten en tuinafval",
             notification_datetime=datetime.datetime(2025, 3, 31, 21, 0),
         )

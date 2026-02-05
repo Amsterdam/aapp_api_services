@@ -9,6 +9,11 @@ from django.db.models import Q
 from django.utils import timezone
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
+from waste.constants import (
+    WASTE_COLLECTION_ROUTE_TYPES,
+    WASTE_TYPES_MAPPING_READABLE,
+    WEEKDAYS,
+)
 from waste.models import NotificationSchedule
 from waste.services.notification import NotificationService
 
@@ -18,28 +23,6 @@ class WasteCollectionError(Exception):
 
 
 logger = logging.getLogger(__name__)
-WASTE_COLLECTION_ROUTE_TYPES = [
-    "GROFVAST",
-    "GROFVASTPR",
-    "ZAKKENRT",
-    "ROLCONTAIN",
-    "ROLCONTPR",
-    "ZAKKENROOD",
-    "PKPAKKET",
-    "PKPAKKETpr",
-    "ZAKWITROOD",
-    "ZAKKENRT24",
-]
-
-WEEKDAYS = {
-    0: "maandag",
-    1: "dinsdag",
-    2: "woensdag",
-    3: "donderdag",
-    4: "vrijdag",
-    5: "zaterdag",
-    6: "zondag",
-}
 
 
 class Command(BaseCommand):
@@ -161,7 +144,7 @@ class Command(BaseCommand):
         filtered_data = [
             {
                 "bagNummeraanduidingId": d.get("bagNummeraanduidingId", ""),
-                "afvalwijzerFractieNaam": d.get("afvalwijzerFractieNaam", ""),
+                "afvalwijzerFractieCode": d.get("afvalwijzerFractieCode", ""),
                 "afvalwijzerOphaaldagen2": d.get("afvalwijzerOphaaldagen2", ""),
             }
             for d in data
@@ -211,7 +194,9 @@ class Command(BaseCommand):
             )
             for scheduled_notification in scheduled_notifications:
                 # get waste type from data
-                waste_type = data.get("afvalwijzerFractieNaam")
+                waste_type = WASTE_TYPES_MAPPING_READABLE.get(
+                    data.get("afvalwijzerFractieCode")
+                )
                 if waste_type not in fraction_device_ids.keys():
                     fraction_device_ids[waste_type] = [scheduled_notification.device_id]
                 else:
