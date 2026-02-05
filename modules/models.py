@@ -5,6 +5,9 @@ import re
 from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.forms import ValidationError
+from core.validators import AappDeeplinkValidator
+from django.contrib.auth.models import User
+from django.db.models import ForeignKey
 
 from modules.icons import ModuleIconPath
 
@@ -218,3 +221,28 @@ class ReleaseModuleStatus(models.Model):
         with transaction.atomic():
             self.full_clean()
             super().save(*args, **kwargs)
+
+
+class Notification(models.Model):
+    class Meta:
+        verbose_name = "Notificatie"
+        verbose_name_plural = "Notificaties"
+
+    title = models.CharField("Titel", max_length=255)
+    message = models.TextField("Bericht")
+    url = models.URLField(null=True, blank=True)
+    deeplink = models.CharField(null=True, blank=True, validators=[AappDeeplinkValidator()])
+    created_by = ForeignKey(
+        User,
+        verbose_name="Aangemaakt door",
+        on_delete=models.PROTECT,
+        related_name="notifications",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    send_at = models.DateTimeField("Verstuurd op", null=True, blank=True)
+    nr_sessions = models.PositiveIntegerField(
+        "Aantal berichten verstuurd", default=0, editable=False
+    )
+
+    def __str__(self) -> str:
+        return f"Notificatie: {self.title[:50]}"
