@@ -2,13 +2,13 @@
 
 import re
 
+from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
-from django.forms import ValidationError
-from core.validators import AappDeeplinkValidator
-from django.contrib.auth.models import User
 from django.db.models import ForeignKey
+from django.forms import ValidationError
 
+from core.validators import AappDeeplinkValidator
 from modules.icons import ModuleIconPath
 
 
@@ -231,7 +231,9 @@ class Notification(models.Model):
     title = models.CharField("Titel", max_length=255)
     message = models.TextField("Bericht")
     url = models.URLField(null=True, blank=True)
-    deeplink = models.CharField(null=True, blank=True, validators=[AappDeeplinkValidator()])
+    deeplink = models.CharField(
+        null=True, blank=True, validators=[AappDeeplinkValidator()]
+    )
     created_by = ForeignKey(
         User,
         verbose_name="Aangemaakt door",
