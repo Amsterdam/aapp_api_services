@@ -3,7 +3,7 @@ from django.contrib.auth.models import Group, User
 
 from modules.admin.app_release_admin import AppReleaseAdmin
 from modules.admin.module_admin import ModuleAdmin
-from modules.models import AppRelease, Module
+from modules.models import AppRelease, Module, Notification
 
 admin.site.unregister(User)
 admin.site.unregister(Group)
@@ -14,3 +14,4 @@ admin.site.index_title = "Modules Admin"
 
 admin.site.register(Module, ModuleAdmin)
 admin.site.register(AppRelease, AppReleaseAdmin)
+admin.site.register(Notification)
