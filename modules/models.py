@@ -242,9 +242,7 @@ class Notification(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     send_at = models.DateTimeField("Versturen op", null=True, blank=True)
-    nr_sessions = models.PositiveIntegerField(
-        "Aantal berichten verstuurd", default=0, editable=False
-    )
+    nr_sessions = models.PositiveIntegerField("Bereik", default=0, editable=False)
 
     def __str__(self) -> str:
         return f"Notificatie: {self.title[:50]}"

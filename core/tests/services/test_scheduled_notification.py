@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 from model_bakery import baker
 
 from core.services.scheduled_notification import (
@@ -110,7 +112,7 @@ class TestScheduledNotificationService(ResponsesActivatedAPITestCase):
                 module_slug="different_slug",
             )
 
-    def test_upsert_no_devices(self):
+    def test_upsert_empty_devices(self):
         notification = self.service.upsert(
             title="No Devices Notification",
             body="This notification has no devices.",
@@ -135,3 +137,31 @@ class TestScheduledNotificationService(ResponsesActivatedAPITestCase):
         notification = self.service.get("notif_2")
         self.assertEqual(notification.devices.count(), 3)
         self.assertEqual(Device.objects.count(), 3)  # One new device created
+
+    def test_upsert_no_devices(self):
+        with self.assertRaises(NotificationServiceError):
+            self.service.upsert(
+                title="No Devices Notification",
+                body="This notification has no devices.",
+                scheduled_for="2024-07-01T10:00:00Z",
+                identifier="notif_1",
+                context={},
+                notification_type="info",
+            )
+
+    def test_upsert_image_doesnt_exist(self):
+        patched_image_service = Mock()
+        patched_image_service.exists.return_value = False
+        self.service.image_service = patched_image_service
+
+        with self.assertRaises(NotificationServiceError):
+            self.service.upsert(
+                title="No Devices Notification",
+                body="This notification has no devices.",
+                scheduled_for="2024-07-01T10:00:00Z",
+                identifier="notif_1",
+                device_ids=["device_2"],
+                context={},
+                notification_type="info",
+                image="image_str",
+            )
