@@ -68,4 +68,5 @@ MIJN_AMS_API_DOMAIN = os.getenv(
 )
 MIJN_AMS_API_PATHS = {
     "NOTIFICATIONS": "/private/api/v1/services/amsapp/notifications",
+    "DEVICES": "/api/v1/services/amsapp/notifications/consumer/",
 }

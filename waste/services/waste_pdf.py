@@ -13,7 +13,7 @@ LABEL_TO_IMAGE = {
     "Papier en karton": "paper.svg",
     "Grof afval": "grof.svg",
     "Restafval": "rest.svg",
-    "Groente, fruit, etensresten en tuinafval": "gft.svg",
+    "Groente-, fruit-, etensresten en tuinafval": "gft.svg",
 }
 PDF_ICON_SIZE = 6
 PDF_ROW_HEIGHT = 20
@@ -115,16 +115,22 @@ class WastePDF(FPDF):
         self.set_y(-(required_height + 10))
 
         # draw legend
-        for label, image_filename in LABEL_TO_IMAGE.items():
+        for waste_name, waste_icon in LABEL_TO_IMAGE.items():
             self.image(
-                f"{DIR_PATH}/pdf_icons/{image_filename}",
+                f"{DIR_PATH}/pdf_icons/{waste_icon}",
                 x=self.get_x(),
                 y=self.get_y(),
                 w=PDF_ICON_SIZE,
                 h=PDF_ICON_SIZE,
             )
             self.set_x(self.get_x() + PDF_ICON_SIZE + 1)
-            self.cell(0, PDF_REGULAR_CELL_HEIGHT, label, new_x="LMARGIN", new_y="NEXT")
+            self.cell(
+                0,
+                PDF_REGULAR_CELL_HEIGHT,
+                waste_name,
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
             self.ln(3)
 
         # Printing page number:
@@ -189,8 +195,6 @@ class WastePDF(FPDF):
 
         day_map = {d.day: d for d in days}
 
-        # pdf.set_font(PDF_FONT, "B", PDF_REGULAR_FONT_SIZE)
-
         row_y = self.get_y() + 2
         col = first_weekday
         n_icons_list = []
@@ -228,9 +232,9 @@ class WastePDF(FPDF):
             n_icons_list.append(len(waste_by_date.get(current, [])))
 
             # Icons
-            for i, label in enumerate(waste_by_date.get(current, [])):
+            for i, waste_name in enumerate(waste_by_date.get(current, [])):
                 self.image(
-                    f"{DIR_PATH}/pdf_icons/{LABEL_TO_IMAGE[label]}",
+                    f"{DIR_PATH}/pdf_icons/{LABEL_TO_IMAGE[waste_name]}",
                     x + (self.col_width - PDF_ICON_SIZE) / 2,
                     self.get_y() + (PDF_ICON_SIZE + 1) * i,
                     w=PDF_ICON_SIZE,

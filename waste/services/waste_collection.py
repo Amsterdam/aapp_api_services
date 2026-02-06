@@ -11,7 +11,7 @@ from ics import Calendar, Event
 from ics.grammar.parse import ContentLine
 
 from waste import constants
-from waste.constants import WASTE_TYPES_ORDER
+from waste.constants import WASTE_TYPES_MAPPING_READABLE, WASTE_TYPES_ORDER
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
 from waste.services.waste_ics import WasteICS
 from waste.services.waste_pdf import (
@@ -140,7 +140,7 @@ class WasteCollectionService:
                 dates = self._get_dates_for_waste_item(item)
                 for date in dates:
                     waste_collection_by_date.setdefault(date, []).append(
-                        item.get("label")
+                        WASTE_TYPES_MAPPING_READABLE.get(item.get("code"))
                     )
 
         return waste_collection_by_date
