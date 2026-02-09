@@ -70,6 +70,7 @@ class Command(BaseCommand):
         """
         full_data = []
         for waste_type_route in WASTE_COLLECTION_ROUTE_TYPES:
+            logger.info(f"[waste-notification] Fetching data for {waste_type_route}")
             full_data.extend(
                 self._get_records_for_waste_type(
                     waste_type=waste_type_route, page_size=20000
@@ -104,6 +105,9 @@ class Command(BaseCommand):
         waste_data, next_link = self._get_response_data(
             url=self.url, headers=self.headers, params=params
         )
+        logger.info(
+            f"[waste-notification] Fetched {len(waste_data)} records for {waste_type}, next_link: {next_link}"
+        )
 
         # get data of all the next pages
         while next_link:
@@ -111,6 +115,9 @@ class Command(BaseCommand):
                 url=next_link, headers=self.headers
             )
             waste_data.extend(data_part)
+            logger.info(
+                f"[waste-notification] Fetched {len(waste_data)} records for {waste_type}, next_link: {next_link}"
+            )
 
         return waste_data
 
