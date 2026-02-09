@@ -18,6 +18,7 @@ class TestScheduledNotificationService(ResponsesActivatedAPITestCase):
         self.notification_1 = baker.make(
             ScheduledNotification,
             identifier="notif_1",
+            title="Test Notification 1",
             devices=[self.device_1, self.device_2],
         )
         self.notification_2 = baker.make(
@@ -70,7 +71,7 @@ class TestScheduledNotificationService(ResponsesActivatedAPITestCase):
         self.assertEqual(Device.objects.count(), 3)  # One new device created
 
     def test_upsert_update(self):
-        self.service.upsert(
+        instance = self.service.upsert(
             title="Updated Notification",
             body="This notification has been updated.",
             scheduled_for="2024-07-01T10:00:00Z",
@@ -79,6 +80,7 @@ class TestScheduledNotificationService(ResponsesActivatedAPITestCase):
             device_ids=["device_1", "device_2"],
             notification_type="info",
         )
+        self.assertEqual(instance.pk, self.notification_1.pk)
         notifications = self.service.get_all()
         self.assertEqual(len(notifications), 2)
         notification = self.service.get("notif_1")
@@ -148,6 +150,18 @@ class TestScheduledNotificationService(ResponsesActivatedAPITestCase):
                 context={},
                 notification_type="info",
             )
+
+    def test_upsert_all_devices(self):
+        instance = self.service.upsert(
+            title="No Devices Notification",
+            body="This notification has no devices.",
+            scheduled_for="2024-07-01T10:00:00Z",
+            identifier="notif_1",
+            context={},
+            notification_type="info",
+            send_all_devices=True,
+        )
+        self.assertEqual(instance.devices.count(), 2)  # All devices included
 
     def test_upsert_image_doesnt_exist(self):
         patched_image_service = Mock()
