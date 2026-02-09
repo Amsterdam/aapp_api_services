@@ -28,6 +28,8 @@ class NotificationData(NamedTuple):
     device_ids: list[str]
     image_set_id: int = None
     make_push: bool = True
+    url: str = None
+    deeplink: str = None
 
 
 class AbstractNotificationService:
@@ -71,9 +73,11 @@ class AbstractNotificationService:
         expiry_minutes: int = 15,
     ):
         """
-        Send notifications to users based on the notification type and budget codes.
+        Send notifications to users.
         """
         self.link_source_id = notification.link_source_id
+        self.notification_url = notification.url
+        self.notification_deeplink = notification.deeplink
         devices = create_missing_device_ids(notification.device_ids)
         now = timezone.now() + timezone.timedelta(seconds=5)
         instance = ScheduledNotification(
@@ -98,6 +102,8 @@ class AbstractNotificationService:
             "linkSourceid": str(self.link_source_id),
             "type": self.notification_type,
             "module_slug": self.module_slug,
+            "url": str(self.notification_url),
+            "deeplink": str(self.notification_deeplink),
         }
 
 

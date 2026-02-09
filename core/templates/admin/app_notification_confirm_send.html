@@ -1,7 +1,13 @@
 {% extends "admin/base_site.html" %}
 {% block content %}
   <h1>Weet je zeker dat je deze notificatie wil versturen?</h1>
-  <p>De notificatie wordt verstuurd aan <b>alle app gebruikers.</b></p>
+{% if is_test_notification %}
+  <p>De notificatie wordt verstuurd aan {{ nr_sessions }} test gebruikers.</p>
+  {% else %}
+  <p><b>LET OP!</b></p>
+<p><b>De notificatie wordt verstuurd aan alle app gebruikers.</b></p>
+<p><b>LET OP!</b></p> 
+{% endif %}
   <p>De notificatie wordt verstuurd op {{ notification.send_at }}.</p>
 
   <b>Voorbeeld weergave van bericht:</b>

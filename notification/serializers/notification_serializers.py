@@ -28,8 +28,24 @@ class NotificationImageSerializer(serializers.Serializer):
     sources = NotificationImageSourceSerializer(many=True, source="variants")
 
 
+class NotificationContextSerializer(serializers.Serializer):
+    linkSourceid = serializers.CharField()
+    type = serializers.CharField()
+    module_slug = serializers.CharField()
+    url = serializers.CharField(allow_null=True)
+    deeplink = serializers.CharField(allow_null=True)
+
+    def validate(self, data):
+        if data.get("url") and data.get("deeplink"):
+            raise serializers.ValidationError(
+                "URL and deeplink cannot both be set. Please choose one or the other."
+            )
+        return data
+
+
 class NotificationResultSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
+    context = NotificationContextSerializer()
 
     class Meta:
         model = Notification
@@ -96,6 +112,7 @@ class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
         slug_field="external_id",
         source="devices",
     )
+    context = NotificationContextSerializer()
 
     class Meta:
         model = ScheduledNotification

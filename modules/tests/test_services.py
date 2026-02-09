@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from model_bakery import baker
 
@@ -20,10 +21,16 @@ class TestScheduledNotificationService(TestCase):
         )
         self.notification_2 = baker.make(Notification)
         self.service = NotificationService()
+        self.user = baker.make(User, username="testuser")
 
     def test_identifier(self):
-        identifier = self.service._create_identifier()
+        identifier = self.service._create_identifier(
+            created_at=self.notification_1.created_at, created_by=self.user
+        )
         self.assertEqual(identifier.startswith(self.service.module_slug), True)
+        self.assertEqual(
+            self.notification_1.created_at.strftime("%Y%m%d%H%M%S") in identifier, True
+        )
 
     def test_send_notification(self):
         self.service.send_notification(self.notification_1)

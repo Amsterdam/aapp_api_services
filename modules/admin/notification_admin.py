@@ -7,6 +7,7 @@ from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.translation import ngettext
 
+from modules.models import TestDevice
 from modules.services.notification import NotificationService
 
 
@@ -19,10 +20,10 @@ class NotificationAdmin(admin.ModelAdmin):
         "send_at",
         "nr_sessions",
         "created_by",
-        "created_at",
         "can_change_notification",
+        "real_notification",
     ]
-    fields = ["title", "message", "url", "deeplink", "send_at"]
+    fields = ["title", "message", "url", "deeplink", "send_at", "is_test"]
     actions = ["copy_notification"]
     ordering = ["-send_at"]
 
@@ -65,11 +66,19 @@ class NotificationAdmin(admin.ModelAdmin):
 
     def confirm_send(self, request, object_id):
         obj = self.get_object(request, object_id)
+        is_test_notification = obj.is_test
         notification_service = NotificationService()
+
+        if is_test_notification:
+            nr_sessions = TestDevice.objects.count()
+        else:
+            nr_sessions = None
 
         if request.method == "POST":
             if "confirm" in request.POST:
-                notification_service.send_notification(obj)
+                notification_service.send_notification(
+                    obj, is_test_notification=is_test_notification
+                )
                 self.message_user(
                     request,
                     "Bericht aangemaakt voor het versturen.",
@@ -90,6 +99,8 @@ class NotificationAdmin(admin.ModelAdmin):
         # device_ids = notification_service.get_device_ids(obj)
         context = {
             **self.admin_site.each_context(request),
+            "is_test_notification": is_test_notification,
+            "nr_sessions": nr_sessions,
             "notification": obj,
             "notification_deadline": max(
                 obj.send_at - timedelta(minutes=15), timezone.now()
@@ -106,6 +117,10 @@ class NotificationAdmin(admin.ModelAdmin):
     @admin.display(boolean=True, description="Heeft url")
     def has_url(self, obj) -> bool:
         return obj.url is not None
+
+    @admin.display(boolean=True, description="Echte notificatie")
+    def real_notification(self, obj) -> bool:
+        return not obj.is_test
 
     @admin.display(boolean=True, description="Kan gewijzigd worden")
     def can_change_notification(self, obj) -> bool:

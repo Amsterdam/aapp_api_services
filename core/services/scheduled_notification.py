@@ -31,18 +31,19 @@ class ScheduledNotificationService:
         identifier: str,
         context: dict,
         notification_type: str,
-        device_ids: list[str] = None,
+        device_ids: list[str] | None = None,
         module_slug: str = None,
         image: str = None,
         expires_at: datetime = None,
+        send_all_devices: bool = False,
     ):
         # for app wide notifications, no devices are passed, but all devices are used
-        if module_slug == "app" and "app-notification" in notification_type:
+        if send_all_devices:
             devices = Device.objects.all()
         else:
             if device_ids is None:
                 raise NotificationServiceError(
-                    "Device ids must be defined for module specific notifications"
+                    "Device ids must be defined if send_all_devices is False"
                 )
             devices = create_missing_device_ids(device_ids)
         if expires_at and expires_at <= scheduled_for:
