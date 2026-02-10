@@ -45,6 +45,11 @@ class BaseNotification(models.Model):
     image = models.IntegerField(default=None, null=True)
     created_at = models.DateTimeField()
 
+    def save(self, *args, **kwargs):
+        # make sure validation is actually triggered when saving a notification instance
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class ScheduledNotification(BaseNotification):
     """

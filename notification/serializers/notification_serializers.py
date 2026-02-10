@@ -29,7 +29,7 @@ class NotificationImageSerializer(serializers.Serializer):
 
 
 class NotificationContextSerializer(serializers.Serializer):
-    linkSourceid = serializers.CharField()
+    linkSourceid = serializers.CharField(allow_null=True, required=False)
     type = serializers.CharField()
     module_slug = serializers.CharField()
     url = serializers.CharField(allow_null=True)
