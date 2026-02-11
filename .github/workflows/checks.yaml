@@ -15,7 +15,7 @@ env:
 
 jobs:
   qa:
-    name: QA - ${{ matrix.service }}
+    name: ${{ matrix.service }}
     runs-on: ubuntu-latest
 
     strategy:
