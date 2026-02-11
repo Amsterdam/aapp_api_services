@@ -34,7 +34,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: make build
-        working-directory: source
         run: make build
         env:
           REGISTRY: ${{ env.REGISTRY }}
@@ -76,14 +75,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull built image
-        working-directory: source
         run: make pull
         env:
           REGISTRY: ${{ env.REGISTRY }}
           VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
 
       - name: make test
-        working-directory: source
         run: make test
         env:
           SERVICE_NAME: ${{ matrix.service }}
@@ -91,7 +88,6 @@ jobs:
           VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
 
       - name: make openapi-diff (non-blocking)
-        working-directory: source
         run: make openapi-diff
         continue-on-error: true
         env:
