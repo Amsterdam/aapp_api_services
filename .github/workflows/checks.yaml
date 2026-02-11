@@ -8,16 +8,29 @@ permissions:
   contents: read
   pull-requests: write
   checks: write
-  packages: write   # required to push to GHCR with GITHUB_TOKEN
 
 env:
   REGISTRY: ghcr.io
   REPOSITORY: amsterdam/aapp/images
 
 jobs:
-  build-image:
-    name: Build & push image (once)
+  qa:
+    name: QA - ${{ matrix.service }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - bridge
+          - city_pass
+          - construction_work
+          - contact
+          - image
+          - modules
+          - notification
+          - waste
+          - survey
 
     steps:
       - uses: actions/checkout@v4
@@ -37,47 +50,7 @@ jobs:
       - name: make build
         run: make build
         env:
-          REGISTRY: ${{ env.REGISTRY }}
-          VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
-
-      - name: Push image to GHCR
-        run: make push
-        env:
-          REGISTRY: ${{ env.REGISTRY }}
-          VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
-
-  qa-services:
-    name: QA - ${{ matrix.service }}
-    runs-on: ubuntu-latest
-    needs: build-image
-
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - bridge
-          - city_pass
-          - construction_work
-          - contact
-          - image
-          - modules
-          - notification
-          - waste
-          - survey
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull built image
-        run: make pull
-        env:
+          SERVICE_NAME: ${{ matrix.service }}
           REGISTRY: ${{ env.REGISTRY }}
           VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
 
