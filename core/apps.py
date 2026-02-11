@@ -6,7 +6,6 @@ from core.utils.logging_utils import setup_opentelemetry
 
 class CoreConfig(AppConfig):
     name = "core"
-    verbose_name = "Core"
 
     def ready(self):
         register_heif_opener()
