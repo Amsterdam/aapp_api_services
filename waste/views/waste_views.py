@@ -16,6 +16,8 @@ from waste.serializers.waste_guide_serializers import (
     WasteResponseSerializer,
 )
 from waste.services.waste_collection import WasteCollectionService
+from waste.services.waste_collection_ics import WasteCollectionICSService
+from waste.services.waste_collection_pdf import WasteCollectionPDFService
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +82,7 @@ class WasteGuidePDFView(View):
         serializer.is_valid(raise_exception=True)
         bag_nummeraanduiding_id = serializer.validated_data["bag_nummeraanduiding_id"]
 
-        waste_service = WasteCollectionService(bag_nummeraanduiding_id)
+        waste_service = WasteCollectionPDFService(bag_nummeraanduiding_id)
         waste_service.get_validated_data()
         pdf = waste_service.get_pdf_calendar()
 
@@ -112,10 +114,10 @@ class WasteGuideCalendarIcsView(View):
                 status=400,
             )
 
-        waste_service = WasteCollectionService(bag_nummeraanduiding_id)
+        waste_service = WasteCollectionICSService(bag_nummeraanduiding_id)
         waste_service.get_validated_data()
 
-        calendar = waste_service.create_ics_text_calendar()
+        calendar = waste_service.create_ics_calendar()
 
         response = HttpResponse(
             str(calendar), content_type="text/calendar; charset=utf-8"
