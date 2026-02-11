@@ -12,6 +12,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
+  REPOSITORY: amsterdam/aapp/images
 
 jobs:
   build-image:
