@@ -12,6 +12,8 @@ CONTEXT_SCHEMA = {
         "module_slug": {"type": "string"},
         "url": {"type": "string"},
         "deeplink": {"type": "string"},
+        "reminderKey": {"type": "string"},
+        "reportCode": {"type": "string"},
     },
     "additionalProperties": False,
     "not": {
