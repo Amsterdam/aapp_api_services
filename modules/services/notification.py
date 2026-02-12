@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 class NotificationService(ScheduledNotificationService):
     def __init__(self):
         super().__init__()
-        self.notification_type = "app:app-notification"
-        self.module_slug = "app"
+        self.notification_type = "modules:general-notification"
+        self.module_slug = "modules"
 
     def send_notification(
         self, notification: Notification, is_test_notification: bool = True

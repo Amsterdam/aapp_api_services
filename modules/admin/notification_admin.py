@@ -10,6 +10,8 @@ from django.utils.translation import ngettext
 from modules.models import TestDevice
 from modules.services.notification import NotificationService
 
+DEADLINE_BUFFER_MINUTES = 15
+
 
 class NotificationAdmin(admin.ModelAdmin):
     list_display = [
@@ -40,7 +42,8 @@ class NotificationAdmin(admin.ModelAdmin):
     def _notification_is_locked(notification):
         if (
             notification.send_at is not None
-            and notification.send_at < timezone.now() - timedelta(minutes=15)
+            and notification.send_at
+            < timezone.now() - timedelta(minutes=DEADLINE_BUFFER_MINUTES)
         ):
             return True
         return False
@@ -96,14 +99,13 @@ class NotificationAdmin(admin.ModelAdmin):
                 reverse("admin:modules_notification_changelist")
             )
 
-        # device_ids = notification_service.get_device_ids(obj)
         context = {
             **self.admin_site.each_context(request),
             "is_test_notification": is_test_notification,
             "nr_sessions": nr_sessions,
             "notification": obj,
             "notification_deadline": max(
-                obj.send_at - timedelta(minutes=15), timezone.now()
+                obj.send_at - timedelta(minutes=DEADLINE_BUFFER_MINUTES), timezone.now()
             ),
         }
         return TemplateResponse(
