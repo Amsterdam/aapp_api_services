@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
 
+from core.validators import context_validator
+
 
 class Device(models.Model):
     """
@@ -38,10 +40,22 @@ class BaseNotification(models.Model):
     title = models.CharField(max_length=1000)
     body = models.CharField(max_length=1000)
     module_slug = models.CharField()
-    context = models.JSONField()
+    context = models.JSONField(validators=[context_validator], blank=True)
     notification_type = models.CharField()
-    image = models.IntegerField(default=None, null=True)
+    image = models.IntegerField(default=None, null=True, blank=True)
     created_at = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        # note: save is not called when using bulk_create or bulk_update
+        if not self.context:
+            self.context = {
+                "type": self.notification_type,
+                "module_slug": self.module_slug,
+            }
+
+        # make sure validation is actually triggered when saving a notification instance,
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class ScheduledNotification(BaseNotification):
@@ -97,7 +111,7 @@ class Notification(BaseNotification):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     device_external_id = models.CharField(max_length=1000)
     is_read = models.BooleanField(default=False)
-    pushed_at = models.DateTimeField(null=True)
+    pushed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.module_slug} - {self.title}"

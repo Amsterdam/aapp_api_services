@@ -1,4 +1,27 @@
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
+from jsonschema import ValidationError as SchemaError
+from jsonschema import validate
+
+CONTEXT_SCHEMA = {
+    "type": "object",
+    "required": ["type", "module_slug"],
+    "properties": {
+        "linkSourceid": {"type": "string"},
+        "type": {"type": "string"},
+        "module_slug": {"type": "string"},
+        "url": {"type": "string"},
+        "deeplink": {"type": "string"},
+    },
+    "additionalProperties": False,
+    "not": {
+        "required": ["url", "deeplink"],
+        "properties": {
+            "url": {"not": {"const": "None"}},
+            "deeplink": {"not": {"const": "None"}},
+        },
+    },
+}
 
 
 class AappDeeplinkValidator(RegexValidator):
@@ -14,3 +37,10 @@ class AappDeeplinkValidator(RegexValidator):
 
     regex = r"^amsterdam://[\w-]+(?:/[\w-]+)*/?(?:\?[\w-]+=[\w-]+(?:&[\w-]+=[\w-]+)*)?$"
     message = "Invalid deeplink. Must at least start with 'amsterdam://'."
+
+
+def context_validator(value):
+    try:
+        validate(value, CONTEXT_SCHEMA)
+    except SchemaError as e:
+        raise ValidationError(f"Invalid context: {e.message}")

@@ -36,7 +36,8 @@ class TestNotificationCRUD(TestCase):
             title="foobar title",
             body="foobar body",
             module_slug="foobar-slug",
-            context={"some": "context"},
+            notification_type="foobar-type",
+            context={},
             created_at="2024-10-31T16:30",
         )
 

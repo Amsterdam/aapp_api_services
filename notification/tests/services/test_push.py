@@ -39,9 +39,7 @@ class TestPushService(TestCase):
     @patch("firebase_admin.messaging.send_each")
     def test_push_success(self, mock_send_each):
         device = baker.make(Device, firebase_token="test_token")
-        notification = baker.make(
-            Notification, device=device, context={"key": "value"}, image=None
-        )
+        notification = baker.make(Notification, device=device, image=None)
         mock_send_each.return_value.failure_count = 0
 
         self.push_service.push([notification])
@@ -51,9 +49,7 @@ class TestPushService(TestCase):
     @override_settings(MAX_DEVICES_PER_REQUEST=3)
     def test_push_success_batches(self, mock_send_each):
         device = baker.make(Device, firebase_token="test_token")
-        notification = baker.make(
-            Notification, device=device, context={"key": "value"}, image=None
-        )
+        notification = baker.make(Notification, device=device, image=None)
         notifications = [notification] * 8
         mock_send_each.return_value.failure_count = 0
 
@@ -66,9 +62,7 @@ class TestPushService(TestCase):
     @override_settings(MAX_DEVICES_PER_REQUEST=3)
     def test_push_failed_tokens(self, mock_send_each):
         device = baker.make(Device, firebase_token="test_token")
-        notification = baker.make(
-            Notification, device=device, context={"key": "value"}, image=None
-        )
+        notification = baker.make(Notification, device=device, image=None)
         notifications = [notification] * 8
         mock_send_each.return_value.failure_count = 2
 
