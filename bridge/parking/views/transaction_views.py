@@ -2,6 +2,7 @@ import logging
 import math
 from datetime import datetime
 
+from asgiref.sync import sync_to_async
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -111,7 +112,7 @@ class TransactionsBalanceConfirmView(BaseNotificationView):
                     "Device ID is required for visitor session notifications"
                 )
                 data = response_data["data"]
-                self._process_notification(
+                await sync_to_async(self._process_notification)(
                     ps_right_id=data["id"],
                     end_datetime=datetime.fromisoformat(data["ended_at"]),
                     report_code=kwargs["report_code"],  # Extracted from internal token

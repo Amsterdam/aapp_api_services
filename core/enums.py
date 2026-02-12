@@ -45,11 +45,6 @@ class NotificationType(ChoicesEnum):
         name="warning-message",
         description="Nieuws van projecten die u volgt",
     )
-    CONSTRUCTION_WORK_ARTICLE_MESSAGE = NotificationTypeClass(
-        module=Module.CONSTRUCTION_WORK,
-        name="article-message",
-        description="Nieuws van projecten die u volgt",
-    )
     PARKING_REMINDER = NotificationTypeClass(
         module=Module.PARKING,
         name="parking-reminder",
@@ -85,8 +80,6 @@ class NotificationType(ChoicesEnum):
     def value(self):
         if str(self._value_) == "construction-work:warning-message":
             return "ProjectWarningCreatedByProjectManager"
-        elif str(self._value_) == "construction-work:article-message":
-            return "NewsUpdatedByProjectManager"
         return str(self._value_)
 
     @classmethod
