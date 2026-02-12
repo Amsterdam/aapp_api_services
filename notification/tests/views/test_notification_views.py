@@ -1,8 +1,7 @@
 from datetime import timedelta
 from unittest.mock import patch
-import logging
+
 from django.urls import reverse
-from django.forms import model_to_dict
 from django.utils import timezone
 from model_bakery import baker
 from rest_framework import status
@@ -44,24 +43,10 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
         super().setUp()
         self.url = reverse("notification-list-notifications")
 
-    def test_create_notification_without_context(self):
-        notification = Notification.objects.create(
-            title="Test Notification",
-            body="This is a test notification.",
-            module_slug="test_module",
-            context={},  # Empty context
-            notification_type="test_type",
-            device=baker.make(Device, external_id=self.device_id),
-            created_at=timezone.now(),
-        )
-        self.assertIsNotNone(notification)
-
     def test_list_notifications(self):
         device_1 = baker.make(Device, external_id=self.device_id)
-        notif_1 = baker.make(Notification, device=device_1, context={"type": "test", "module_slug": "test_module"})
-        baker.make(Notification, device=baker.make(Device), context={"type": "test", "module_slug": "test_module"})
-        logging.info(model_to_dict(notif_1))
-        logging.info(f"Created notifications: {[model_to_dict(n) for n in Notification.objects.all()]}")
+        baker.make(Notification, device=device_1)
+        baker.make(Notification, device=baker.make(Device))
 
         response = self.client.get(self.url, headers=self.headers_with_device_id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -74,11 +59,29 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
 
     def test_list_notifications_without_context(self):
         device_1 = baker.make(Device, external_id=self.device_id)
-        baker.make(Notification, device=device_1, context={})
+        baker.make(
+            Notification, device=device_1, context={}, notification_type="test_type"
+        )
 
         response = self.client.get(self.url, headers=self.headers_with_device_id)
-        logging.info(f"Response status: {response.status_code}")
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["context"].get("type"), "test_type")
+
+    def test_list_notifications_with_url_and_deeplink_context(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        baker.make(
+            Notification,
+            device=device_1,
+            context={
+                "type": "test_type",
+                "module_slug": "test_slug",
+                "deeplink": "amsterdam://test",
+                "url": "https://example.com",
+            },
+            notification_type="test_type",
+        )
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch("notification.serializers.notification_serializers.ImageSetService")
     def test_list_notifications_with_and_without_image(self, mock_image_set_service):

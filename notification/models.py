@@ -5,8 +5,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
 
-from core.validators import context_validator
-
 
 class Device(models.Model):
     """
@@ -40,15 +38,10 @@ class BaseNotification(models.Model):
     title = models.CharField(max_length=1000)
     body = models.CharField(max_length=1000)
     module_slug = models.CharField()
-    context = models.JSONField(validators=[context_validator])
+    context = models.JSONField()
     notification_type = models.CharField()
     image = models.IntegerField(default=None, null=True)
     created_at = models.DateTimeField()
-
-    def save(self, *args, **kwargs):
-        # make sure validation is actually triggered when saving a notification instance
-        self.full_clean()
-        super().save(*args, **kwargs)
 
 
 class ScheduledNotification(BaseNotification):
