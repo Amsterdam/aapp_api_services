@@ -104,9 +104,9 @@ class AbstractNotificationService:
             "module_slug": self.module_slug,
         }
         if self.notification_url:
-            context["url"] = self.notification_url
+            context["url"] = str(self.notification_url)
         if self.notification_deeplink:
-            context["deeplink"] = self.notification_deeplink
+            context["deeplink"] = str(self.notification_deeplink)
         return context
 
 
