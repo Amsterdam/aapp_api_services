@@ -1,16 +1,11 @@
 import logging
 
 from django.utils.decorators import method_decorator
-from django.views import View
 from django.views.decorators.cache import cache_control, cache_page
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter
 from rest_framework import status
-from rest_framework.decorators import (
-    api_view,
-    authentication_classes,
-    renderer_classes,
-)
+from rest_framework.decorators import renderer_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -68,15 +63,21 @@ class WasteGuideView(APIView):
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)
 
 
-class WasteGuidePDFView(View):
-    """
-    Because we are using a View instead of an APIView, we have to use the function based
-    view below to be able to use the extend_schema decorator.
-    We want to use a View because we are returning a PDF file and not a JSON response
-    """
-
+@renderer_classes([PDFCalendarRenderer])
+class WasteGuidePDFView(APIView):
     serializer_class = WasteRequestSerializer
 
+    @extend_schema_for_api_key(
+        request=WasteRequestSerializer,
+        additional_params=[
+            OpenApiParameter(
+                "bag_nummeraanduiding_id",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                required=True,
+            )
+        ],
+    )
     def get(self, request):
         serializer = self.serializer_class(data=request.GET)
         serializer.is_valid(raise_exception=True)
@@ -95,32 +96,10 @@ class WasteGuidePDFView(View):
         return response
 
 
-@extend_schema(
-    parameters=[
-        OpenApiParameter(
-            "bag_nummeraanduiding_id",
-            OpenApiTypes.STR,
-            OpenApiParameter.QUERY,
-            required=True,
-        )
-    ]
-)
-@api_view(["GET"])
-@renderer_classes([PDFCalendarRenderer])
-def pdf_guide_view(request):
-    view = WasteGuidePDFView()
-    return view.get(request)
-
-
 @method_decorator(cache_control(public=True, max_age=3600), name="dispatch")
 @method_decorator(cache_page(60 * 60), name="dispatch")
-class WasteGuideCalendarIcsView(View):
-    """
-    Because we are using a View instead of an APIView, we have to use the function based
-    view below to be able to use the extend_schema decorator.
-    We want to use a View because we are returning a calendar file and not a JSON response
-    """
-
+@renderer_classes([ICSCalendarRenderer])
+class WasteGuideCalendarIcsView(APIView):
     def get(self, request, *args, **kwargs):
         bag_nummeraanduiding_id = kwargs.get("bag_nummeraanduiding_id")
         if bag_nummeraanduiding_id is None:
@@ -143,11 +122,3 @@ class WasteGuideCalendarIcsView(View):
         response = Response(calendar, content_type="text/calendar; charset=utf-8")
         response["Content-Disposition"] = 'inline; filename="calendar.ics"'
         return response
-
-
-@api_view(["GET"])
-@renderer_classes([ICSCalendarRenderer])
-@authentication_classes([])
-def ics_guide_view(request, **kwargs):
-    view = WasteGuideCalendarIcsView()
-    return view.get(request, **kwargs)
