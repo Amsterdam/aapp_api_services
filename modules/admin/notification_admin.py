@@ -7,7 +7,7 @@ from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.translation import ngettext
 
-from modules.models import TestDevice
+from modules.models import Notification, TestDevice
 from modules.services.notification import NotificationService
 
 DEADLINE_BUFFER_MINUTES = 15
@@ -39,11 +39,11 @@ class NotificationAdmin(admin.ModelAdmin):
         return True
 
     @staticmethod
-    def _notification_is_locked(notification):
+    def _notification_is_locked(notification: Notification) -> bool:
         if (
             notification.send_at is not None
             and notification.send_at
-            < timezone.now() - timedelta(minutes=DEADLINE_BUFFER_MINUTES)
+            <= timezone.now() + timedelta(minutes=DEADLINE_BUFFER_MINUTES)
         ):
             return True
         return False
@@ -59,7 +59,9 @@ class NotificationAdmin(admin.ModelAdmin):
         ]
         return custom + urls
 
-    def response_change(self, request, obj, post_url_continue=None):
+    def response_change(
+        self, request, obj: Notification, post_url_continue: str = None
+    ):
         # only ask for confirmation if notification has send date
         if obj.send_at is not None:
             return HttpResponseRedirect(
@@ -67,7 +69,15 @@ class NotificationAdmin(admin.ModelAdmin):
             )
         return super().response_change(request, obj, post_url_continue)
 
-    def confirm_send(self, request, object_id):
+    def response_add(self, request, obj: Notification, post_url_continue: str = None):
+        # only ask for confirmation if notification has send date
+        if obj.send_at is not None:
+            return HttpResponseRedirect(
+                reverse("admin:notification_confirm_send", args=[obj.pk])
+            )
+        return super().response_add(request, obj, post_url_continue)
+
+    def confirm_send(self, request, object_id: str):
         obj = self.get_object(request, object_id)
         is_test_notification = obj.is_test
         notification_service = NotificationService()
@@ -113,19 +123,19 @@ class NotificationAdmin(admin.ModelAdmin):
         )
 
     @admin.display(boolean=True, description="Heeft deeplink")
-    def has_deeplink(self, obj) -> bool:
+    def has_deeplink(self, obj: Notification) -> bool:
         return obj.deeplink is not None
 
     @admin.display(boolean=True, description="Heeft url")
-    def has_url(self, obj) -> bool:
+    def has_url(self, obj: Notification) -> bool:
         return obj.url is not None
 
     @admin.display(boolean=True, description="Echte notificatie")
-    def real_notification(self, obj) -> bool:
+    def real_notification(self, obj: Notification) -> bool:
         return not obj.is_test
 
     @admin.display(boolean=True, description="Kan gewijzigd worden")
-    def can_change_notification(self, obj) -> bool:
+    def can_change_notification(self, obj: Notification) -> bool:
         return not self._notification_is_locked(obj)
 
     @admin.action(description="Kopieer notificatie zonder verstuurdatum")

@@ -18,10 +18,6 @@ CONTEXT_SCHEMA = {
     "additionalProperties": False,
     "not": {
         "required": ["url", "deeplink"],
-        "properties": {
-            "url": {"not": {"const": "None"}},
-            "deeplink": {"not": {"const": "None"}},
-        },
     },
 }
 
