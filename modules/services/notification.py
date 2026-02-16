@@ -24,6 +24,14 @@ class NotificationService(ScheduledNotificationService):
             if is_test_notification
             else None
         )
+        context = {
+            "type": self.notification_type,
+            "module_slug": self.module_slug,
+        }
+        if notification.deeplink:
+            context["deeplink"] = notification.deeplink
+        if notification.url:
+            context["url"] = notification.url
         scheduled_notification = self.upsert(
             title=notification.title,
             body=notification.message,
@@ -31,12 +39,7 @@ class NotificationService(ScheduledNotificationService):
             identifier=self._create_identifier(
                 created_at=notification.created_at, created_by=notification.created_by
             ),
-            context={
-                "type": self.notification_type,
-                "module_slug": self.module_slug,
-                "deeplink": notification.deeplink,
-                "url": notification.url,
-            },
+            context=context,
             notification_type=self.notification_type,
             module_slug=self.module_slug,
             device_ids=device_ids,

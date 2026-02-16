@@ -40,7 +40,7 @@ class BaseNotification(models.Model):
     title = models.CharField(max_length=1000)
     body = models.CharField(max_length=1000)
     module_slug = models.CharField()
-    context = models.JSONField(validators=[context_validator], blank=True)
+    context = models.JSONField(validators=[context_validator])
     notification_type = models.CharField()
     image = models.IntegerField(default=None, null=True, blank=True)
     created_at = models.DateTimeField()

@@ -26,6 +26,13 @@ CONTEXT_SCHEMA = {
 }
 
 
+def context_validator(value):
+    try:
+        validate(value, CONTEXT_SCHEMA)
+    except SchemaError as e:
+        raise ValidationError(f"Invalid context: {e.message}")
+
+
 class AappDeeplinkValidator(RegexValidator):
     """Validates amsterdam:// deeplinks.
 
@@ -39,10 +46,3 @@ class AappDeeplinkValidator(RegexValidator):
 
     regex = r"^amsterdam://[\w-]+(?:/[\w-]+)*/?(?:\?[\w-]+=[\w-]+(?:&[\w-]+=[\w-]+)*)?$"
     message = "Invalid deeplink. Must at least start with 'amsterdam://'."
-
-
-def context_validator(value):
-    try:
-        validate(value, CONTEXT_SCHEMA)
-    except SchemaError as e:
-        raise ValidationError(f"Invalid context: {e.message}")
