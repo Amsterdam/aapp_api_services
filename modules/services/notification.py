@@ -34,8 +34,8 @@ class NotificationService(ScheduledNotificationService):
             context={
                 "type": self.notification_type,
                 "module_slug": self.module_slug,
-                "deeplink": str(notification.deeplink),
-                "url": str(notification.url),
+                "deeplink": notification.deeplink,
+                "url": notification.url,
             },
             notification_type=self.notification_type,
             module_slug=self.module_slug,

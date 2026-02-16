@@ -98,13 +98,16 @@ class AbstractNotificationService:
 
     def get_context(self) -> dict:
         """Context can only contain string values!"""
-        return {
+        context = {
             "linkSourceid": str(self.link_source_id),
             "type": self.notification_type,
             "module_slug": self.module_slug,
-            "url": str(self.notification_url),
-            "deeplink": str(self.notification_deeplink),
         }
+        if self.notification_url:
+            context["url"] = self.notification_url
+        if self.notification_deeplink:
+            context["deeplink"] = self.notification_deeplink
+        return context
 
 
 def create_missing_device_ids(device_ids: list[str]) -> list[Device]:
