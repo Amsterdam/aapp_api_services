@@ -3,7 +3,7 @@ from unittest import mock
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
 
-from core.middleware.log_4xx_status import Log4xxMiddleware
+from core.middleware.log_4xx_status import log_4xx_middleware
 
 
 class DatabaseRetryMiddlewareTest(TestCase):
@@ -15,7 +15,7 @@ class DatabaseRetryMiddlewareTest(TestCase):
 
     def _run(self, body, status=200, release_version=None):
         response = HttpResponse(body, status=status)
-        mw = Log4xxMiddleware(lambda _req: response)
+        mw = log_4xx_middleware(lambda _req: response)
         headers = {}
         if release_version:
             headers["RELEASEVERSION"] = release_version

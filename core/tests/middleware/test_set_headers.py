@@ -1,13 +1,13 @@
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
 
-from core.middleware.set_headers import DefaultHeadersMiddleware
+from core.middleware.set_headers import default_headers_middleware
 
 
 class TestDefaultHeadersMiddleware(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
-        self.middleware = DefaultHeadersMiddleware(self.get_response)
+        self.middleware = default_headers_middleware(self.get_response)
 
     def get_response(self, request):
         return HttpResponse()
