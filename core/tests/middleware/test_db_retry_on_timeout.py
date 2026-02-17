@@ -1,3 +1,4 @@
+import unittest
 from unittest import mock
 
 from django.db import OperationalError
@@ -220,3 +221,38 @@ class DatabaseRetryMiddlewareTest(TestCase):
         self.mock_logger.warning.assert_called_once_with(
             "OperationalError encountered. Retrying request 1/3 after 1 seconds."
         )
+
+
+@mock.patch("core.middleware.db_retry_on_timeout.asyncio.sleep", return_value=None)
+class AsyncDatabaseRetryMiddlewareTest(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.logger_patcher = mock.patch("core.middleware.db_retry_on_timeout.logger")
+        self.mock_logger = self.logger_patcher.start()
+
+    def tearDown(self):
+        self.logger_patcher.stop()
+
+    async def test_async_call(self, mock_sleep):
+        async def get_response(request):
+            raise timeout_error
+
+        middleware = database_retry_middleware(get_response)
+        request = self.factory.get("/test-endpoint/")
+
+        with self.assertRaises(OperationalError) as context:
+            await middleware(request)
+
+        # Assert that the exception is the timeout error
+        self.assertEqual(str(context.exception), str(timeout_error))
+
+        # Assert that sleep was called the correct number of times
+        expected_sleep_calls = [mock.call(1), mock.call(2), mock.call(4)]
+        self.assertEqual(mock_sleep.call_args_list, expected_sleep_calls)
+
+        # Assert that logger.warning was called for each retry
+        self.assertEqual(self.mock_logger.warning.call_count, 3)
+        for i in range(3):
+            self.mock_logger.warning.assert_any_call(
+                f"OperationalError encountered. Retrying request {i + 1}/3 after {1 * (2**i)} seconds."
+            )
