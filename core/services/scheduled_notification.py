@@ -5,7 +5,6 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from core.services.image_set import ImageSetService
-from core.services.internal_http_client import InternalServiceSession
 from core.services.notification_service import create_missing_device_ids
 from notification.models import Device, ScheduledNotification
 
@@ -19,9 +18,11 @@ class NotificationServiceError(Exception):
 
 
 class ScheduledNotificationService:
-    def __init__(self):
-        self.client = InternalServiceSession()
-        self.image_service = ImageSetService()
+    def __init__(self, use_image_service: bool = False):
+        if use_image_service:
+            self.image_service = ImageSetService()
+        else:
+            self.image_service = None
 
     def upsert(
         self,

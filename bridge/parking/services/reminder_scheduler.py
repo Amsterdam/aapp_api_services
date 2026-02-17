@@ -24,7 +24,8 @@ class ParkingReminderScheduler:
         device_id: str,
         report_code: str | None,
     ):
-        self.schedule_service = ScheduledNotificationService()
+        # no image service needed for parking reminders
+        self.schedule_service = ScheduledNotificationService(use_image_service=False)
 
         self.device_id = device_id
         self.report_code = report_code
