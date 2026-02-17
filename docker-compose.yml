@@ -47,7 +47,7 @@ services:
 
   dev:
     <<: *base-app
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/dev-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.local"
@@ -60,7 +60,7 @@ services:
 
   test:
     <<: *base-app
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/test-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.base"

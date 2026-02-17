@@ -43,6 +43,14 @@ class NotificationCRUD:
         self.notifications_with_push, self.notifications_without_push = [], []
         self.devices_for_push = []
         self.push_service = PushService() if push_enabled else None
+        self._build_default_context()
+
+    def _build_default_context(self):
+        if not self.source_notification.context:
+            self.source_notification.context = {
+                "type": self.source_notification.notification_type,
+                "module_slug": self.source_notification.module_slug,
+            }
 
     def create(self, device_qs: QuerySet):
         """

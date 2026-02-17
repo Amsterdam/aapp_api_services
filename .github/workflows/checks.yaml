@@ -52,14 +52,14 @@ jobs:
         env:
           SERVICE_NAME: ${{ matrix.service }}
           REGISTRY: ${{ env.REGISTRY }}
-          VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
+          VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}-${{ github.run_id }}
 
       - name: make test
         run: make test
         env:
           SERVICE_NAME: ${{ matrix.service }}
           REGISTRY: ${{ env.REGISTRY }}
-          VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
+          VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}-${{ github.run_id }}
 
       - name: make openapi-diff (non-blocking)
         run: make openapi-diff
@@ -68,4 +68,4 @@ jobs:
           SERVICE_NAME: ${{ matrix.service }}
           API_AUTH_TOKENS: ${{ secrets.API_AUTH_TOKENS }}
           REGISTRY: ${{ env.REGISTRY }}
-          VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}
+          VERSION: pr-${{ github.event.pull_request.number }}-${{ github.sha }}-${{ github.run_id }}
