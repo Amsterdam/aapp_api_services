@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import time
+from asyncio import iscoroutinefunction
 
 from django.db import OperationalError
 from django.utils.decorators import sync_and_async_middleware
@@ -59,4 +60,4 @@ def database_retry_middleware(get_response):
                     continue
                 raise
 
-    return _async if asyncio.iscoroutinefunction(get_response) else _sync
+    return _async if iscoroutinefunction(get_response) else _sync

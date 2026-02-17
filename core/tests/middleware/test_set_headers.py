@@ -7,7 +7,6 @@ from core.middleware.set_headers import default_headers_middleware
 class TestDefaultHeadersMiddleware(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
-        self.middleware = default_headers_middleware(self.get_response)
 
     def get_response(self, request):
         return HttpResponse()
@@ -17,8 +16,8 @@ class TestDefaultHeadersMiddleware(TestCase):
         response = HttpResponse()
         response["Content-Type"] = "application/json"
 
-        self.middleware.get_response = lambda r: response
-        processed_response = self.middleware(request)
+        middleware = default_headers_middleware(lambda r: response)
+        processed_response = middleware(request)
 
         self.assertEqual(
             processed_response["Content-Type"],
@@ -30,8 +29,8 @@ class TestDefaultHeadersMiddleware(TestCase):
         response = HttpResponse()
         response["Content-Type"] = "application/json; charset=ISO-8859-1"
 
-        self.middleware.get_response = lambda r: response
-        processed_response = self.middleware(request)
+        middleware = default_headers_middleware(lambda r: response)
+        processed_response = middleware(request)
 
         self.assertEqual(
             processed_response["Content-Type"],
@@ -43,8 +42,8 @@ class TestDefaultHeadersMiddleware(TestCase):
         response = HttpResponse()
         response["Content-Type"] = ""  # or don't set it at all
 
-        self.middleware.get_response = lambda r: response
-        processed_response = self.middleware(request)
+        middleware = default_headers_middleware(lambda r: response)
+        processed_response = middleware(request)
 
         self.assertEqual(
             processed_response["Content-Type"],
