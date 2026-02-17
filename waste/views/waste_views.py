@@ -10,8 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.utils.openapi_utils import extend_schema_for_api_key
-from waste.renderers import ICSCalendarRenderer, PDFCalendarRenderer
 from waste.exceptions import WasteGuideException
+from waste.renderers import ICSCalendarRenderer, PDFCalendarRenderer
 from waste.serializers.waste_guide_serializers import (
     WasteRequestSerializer,
     WasteResponseSerializer,
