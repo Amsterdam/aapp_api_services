@@ -1,6 +1,7 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 from model_bakery import baker
@@ -56,6 +57,31 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
         self.assertIn("title", response.data[0])
         self.assertIn("body", response.data[0])
         self.assertIn("module_slug", response.data[0])
+
+    def test_list_notifications_without_context(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        baker.make(
+            Notification, device=device_1, context={}, notification_type="test_type"
+        )
+
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["context"].get("type"), "test_type")
+
+    def test_list_notifications_with_url_and_deeplink_context(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        with self.assertRaises(ValidationError):
+            baker.make(
+                Notification,
+                device=device_1,
+                context={
+                    "type": "test_type",
+                    "module_slug": "test_slug",
+                    "deeplink": "amsterdam://test",
+                    "url": "https://example.com",
+                },
+                notification_type="test_type",
+            )
 
     @patch("notification.serializers.notification_serializers.ImageSetService")
     def test_list_notifications_with_and_without_image(self, mock_image_set_service):
