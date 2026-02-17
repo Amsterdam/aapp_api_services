@@ -24,13 +24,13 @@ def geocode_address(address: str) -> Tuple[Optional[float], Optional[float]]:
         response.raise_for_status()
 
         data = response.json()
-        results = data.get("results", [])
+        results = data.get("value", [])
         if not results:
             logging.warning(f"No results found for address: {address}")
             return None, None
 
-        lon = results[0]["centroid"][0]
-        lat = results[0]["centroid"][1]
+        lon = results[0]["longitude"]
+        lat = results[0]["latitude"]
         return lat, lon
     except requests.RequestException as e:
         logging.error(f"Error while geocoding address '{address}': {e}")

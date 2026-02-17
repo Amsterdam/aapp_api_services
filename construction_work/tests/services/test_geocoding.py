@@ -4,43 +4,37 @@ import requests
 from django.test import TestCase
 
 from construction_work.services.geocoding import geocode_address
+from construction_work.tests.mock_data import address_search
 
 
 class TestGeocodeAddress(TestCase):
     @patch("requests.get")
     def test_successful_geocoding(self, mock_get):
         mock_response = mock_get.return_value
-        result = [4.893604, 52.373169]
-        mock_response.json.return_value = {
-            "results": [{"centroid": result}]  # longitude, latitude for Dam Square
-        }
+        mock_response.json.return_value = address_search.MOCK_DATA_SINGLE
 
         lat, lon = geocode_address("Dam 1")
 
-        assert lat == result[1]
-        assert lon == result[0]
+        assert lat == 52.395811189
+        assert lon == 4.952262942
         mock_get.assert_called_once()
 
     @patch("requests.get")
     def test_multiple_results_returns_first_result(self, mock_get):
         mock_response = mock_get.return_value
-        first_result = [4.89371756804882, 52.37329259746784]  # Dam Square
-        mock_response.json.return_value = {
-            "results": [
-                {"centroid": first_result},
-                {"centroid": [4.894108670308143, 52.37307409090358]},  # Nieuwe Kerk
-            ]
-        }
+        mock_response.json.return_value = address_search.MOCK_DATA_MULTIPLE
+
+        first_result = address_search.MOCK_DATA_MULTIPLE["value"][0]
 
         lat, lon = geocode_address("Dam")  # Ambiguous address
 
-        assert lat == first_result[1]  # First result's latitude
-        assert lon == first_result[0]  # First result's longitude
+        assert lat == first_result["latitude"]
+        assert lon == first_result["longitude"]
 
     @patch("requests.get")
     def test_no_results_returns_none(self, mock_get):
         mock_response = mock_get.return_value
-        mock_response.json.return_value = {"results": []}
+        mock_response.json.return_value = address_search.MOCK_DATA_NONE
 
         lat, lon = geocode_address("Niet Bestaande Straat 123")
 
