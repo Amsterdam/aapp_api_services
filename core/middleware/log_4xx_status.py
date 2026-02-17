@@ -1,6 +1,6 @@
 import logging
-from asyncio import iscoroutinefunction
 
+from asgiref.sync import iscoroutinefunction
 from django.utils.decorators import sync_and_async_middleware
 
 logger = logging.getLogger(__name__)

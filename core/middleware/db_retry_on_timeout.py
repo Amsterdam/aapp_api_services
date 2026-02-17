@@ -2,8 +2,8 @@ import asyncio
 import logging
 import re
 import time
-from asyncio import iscoroutinefunction
 
+from asgiref.sync import iscoroutinefunction
 from django.db import OperationalError
 from django.utils.decorators import sync_and_async_middleware
 from psycopg2 import OperationalError as PsycopgOperationalError
