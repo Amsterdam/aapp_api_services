@@ -1,11 +1,17 @@
+import logging
 import re
 from datetime import date, datetime, timedelta
+from typing import Literal
 
 import requests
 from django.conf import settings
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
+from waste.exceptions import WasteGuideException
 from waste.interpret_frequencies import interpret_frequencies
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class WasteCollectionAbstractService:
@@ -35,17 +41,43 @@ class WasteCollectionAbstractService:
         headers = None
         if settings.ENVIRONMENT_SLUG in ["a", "p"]:
             headers = {"X-Api-Key": api_key}
-        resp = requests.get(
-            url,
-            params={"bagNummeraanduidingId": self.bag_nummeraanduiding_id},
-            headers=headers,
-        )
-        resp.raise_for_status()
-        data = resp.json().get("_embedded", {}).get("afvalwijzer", [])
+        try:
+            resp = self.make_request(
+                method="GET",
+                url=url,
+                headers=headers,
+                params={"bagNummeraanduidingId": self.bag_nummeraanduiding_id},
+            )
+            data = resp.json().get("_embedded", {}).get("afvalwijzer", [])
+        except requests.RequestException as e:
+            logger.error(f"Error fetching waste data: {e}")
+            raise WasteGuideException() from e
         serializer = WasteDataSerializer(data=data, many=True)
         serializer.is_valid(raise_exception=True)
         data = [d for d in serializer.validated_data if d.get("code")]
         self.validated_data = data
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(2),
+        retry=retry_if_exception_type(requests.exceptions.RequestException),
+        reraise=True,  # Reraise the RequestException after retries
+    )
+    def make_request(
+        self,
+        method: Literal["GET", "POST"],
+        url: str,
+        headers: dict | None = None,
+        params: dict | None = None,
+    ) -> requests.Response:
+        response = requests.request(
+            method=method,
+            url=url,
+            headers=headers,
+            params=params,
+        )
+        response.raise_for_status()
+        return response
 
     def get_dates_for_waste_item(self, item) -> list[date]:
         ophaaldagen_list, dates = self.filter_ophaaldagen(ophaaldagen=item.get("days"))

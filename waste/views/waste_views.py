@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from core.utils.openapi_utils import extend_schema_for_api_key
 from waste.renderers import ICSCalendarRenderer, PDFCalendarRenderer
+from waste.exceptions import WasteGuideException
 from waste.serializers.waste_guide_serializers import (
     WasteRequestSerializer,
     WasteResponseSerializer,
@@ -27,6 +28,7 @@ class WasteGuideView(APIView):
     response_serializer_class = WasteResponseSerializer
 
     @extend_schema_for_api_key(
+        exceptions=[WasteGuideException],
         success_response=WasteResponseSerializer,
         request=WasteRequestSerializer,
         additional_params=[
