@@ -25,7 +25,6 @@ class TestAappDeeplinkValidator(TestCase):
             try:
                 self.validator(deeplink)
             except ValidationError as e:
-                print(e)
                 self.fail(
                     f"AappDeeplinkValidator raised ValidationError unexpectedly for {deeplink}: {e}"
                 )

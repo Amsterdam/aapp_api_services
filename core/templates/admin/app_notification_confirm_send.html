@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+  <h1>Weet je zeker dat je deze notificatie wil versturen?</h1>
+{% if is_test_notification %}
+  <p>De notificatie wordt verstuurd aan {{ nr_sessions }} test gebruikers.</p>
+  {% else %}
+  <p><b>LET OP!</b></p>
+<p><b>De notificatie wordt verstuurd aan alle app gebruikers.</b></p>
+<p><b>LET OP!</b></p> 
+{% endif %}
+  <p>De notificatie wordt verstuurd op {{ notification.send_at }}.</p>
+
+  <b>Voorbeeld weergave van bericht:</b>
+  <blockquote><b>{{ notification.title }}</b><br>{{ notification.message }}</blockquote>
+
+  <p>Het is niet meer mogelijk om deze notificatie te wijzigen na {{ notification_deadline }}.</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" name="confirm" class="default">Ja</button>
+    <button type="submit" name="cancel" class="deletelink">Nee</button>
+  </form>
+{% endblock %}
