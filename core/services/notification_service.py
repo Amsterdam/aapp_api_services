@@ -28,6 +28,8 @@ class NotificationData(NamedTuple):
     device_ids: list[str]
     image_set_id: int = None
     make_push: bool = True
+    url: str = None
+    deeplink: str = None
 
 
 class AbstractNotificationService:
@@ -71,9 +73,11 @@ class AbstractNotificationService:
         expiry_minutes: int = 15,
     ):
         """
-        Send notifications to users based on the notification type and budget codes.
+        Send notifications to users.
         """
         self.link_source_id = notification.link_source_id
+        self.notification_url = notification.url
+        self.notification_deeplink = notification.deeplink
         devices = create_missing_device_ids(notification.device_ids)
         now = timezone.now() + timezone.timedelta(seconds=5)
         instance = ScheduledNotification(
@@ -94,11 +98,16 @@ class AbstractNotificationService:
 
     def get_context(self) -> dict:
         """Context can only contain string values!"""
-        return {
+        context = {
             "linkSourceid": str(self.link_source_id),
             "type": self.notification_type,
             "module_slug": self.module_slug,
         }
+        if self.notification_url:
+            context["url"] = str(self.notification_url)
+        if self.notification_deeplink:
+            context["deeplink"] = str(self.notification_deeplink)
+        return context
 
 
 def create_missing_device_ids(device_ids: list[str]) -> list[Device]:
