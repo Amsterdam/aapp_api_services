@@ -73,19 +73,19 @@ stages:
                   displayName: Setup kubectl
 
                 - ${{ if eq(parameters.force, true) }}:
-                  - script: helm uninstall ${{ variables.service_name }}
-                    displayName: Helm uninstall ${{ variables.service_name }}
+                  - script: helm uninstall $(service_name)
+                    displayName: Helm uninstall $(service_name)
 
                 - ${{ if ne(parameters.migrationRollbackTarget, ' ') }}:
-                  - script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/${{ variables.service_name }}
-                    displayName: Rollback migration (${{ variables.service_name }})
+                  - script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/$(service_name)
+                    displayName: Rollback migration ($(service_name))
 
-                - script: make deploy/${{ variables.service_name }}
-                  displayName: Deploy ${{ variables.service_name }}
+                - script: make deploy/$(service_name)
+                  displayName: Deploy $(service_name)
 
                 - ${{ if eq(parameters.environment, 'acc') }}:
                   - script: |
-                      docker run --rm openapitools/openapi-diff:latest "https://app.amsterdam.nl/${{ variables.service_name }}/api/v1/openapi" "https://acc.app.amsterdam.nl/${{ variables.service_name }}/api/v1/openapi" | tee diff_output.txt
+                      docker run --rm openapitools/openapi-diff:latest "https://app.amsterdam.nl/$(service_name)/api/v1/openapi" "https://acc.app.amsterdam.nl/$(service_name)/api/v1/openapi" | tee diff_output.txt
                       cat diff_output.txt
                       if grep -q "API changes broke backward compatibility" diff_output.txt; then
                         echo "##vso[task.complete result=SucceededWithIssues;]Breaking OpenAPI changes detected!"
