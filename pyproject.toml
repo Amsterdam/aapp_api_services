@@ -50,8 +50,6 @@ dependencies = [
   # Integration and unit testing
   "freezegun",
   "pytest-django",
-  "pytest-dotenv",
-  "pytest-env",
   "model-bakery",
   "ruff",
   "aioresponses",
