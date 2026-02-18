@@ -1,0 +1,260 @@
+#################################################
+#
+# Deployment pipeline
+#
+#################################################
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - deployments
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      endpoint: Amsterdam
+      name: Amsterdam/common-azure-pipelines
+      ref: refs/tags/1.20.3
+    - repository: source
+      type: git
+      name: Amsterdam-App/aapp_infra_azure
+      ref: main
+      trigger:
+        batch: true
+        branches:
+          include:
+            - main
+        paths:
+          include:
+            - deployments
+
+parameters:
+  - name: versionOverride
+    type: string
+    default: ' '
+  - name: migrationRollbackTarget
+    type: string
+    default: ' '
+  - name: forceDeploy
+    type: boolean
+    default: false
+  - name: lockProducedImages
+    type: boolean
+    default: true
+  - name: services
+    type: object
+    default:
+      - bridge
+      - city_pass
+      - construction_work
+      - contact
+      - image
+      - modules
+      - notification
+      - waste
+      - survey
+
+variables:
+  - name: Docker.Buildkit
+    value: "1"
+  - name: Source.Ref
+    value: $[ coalesce(resources.repositories['source'].ref, variables['Build.SourceBranch']) ]
+  - name: Source.BranchName
+    value: $[ replace(replace(variables['Source.Ref'], 'refs/heads/', ''), 'refs/tags/', '') ]
+  - name: registry
+    value: saks01weuacrpgpgo5qvmwo.azurecr.io
+  - name: version
+    ${{ if eq(parameters.versionOverride, ' ') }}:
+      value: $[ format('{0}-{1}', replace(variables['Source.BranchName'], '/', '-'), resources.repositories.source.version) ]
+    ${{ else }}:
+      value: ${{ parameters.versionOverride }}
+
+stages:
+# --------------------
+# BUILD
+# --------------------
+- stage: build
+  displayName: Build, test, analyze & push
+  jobs:
+    - job: build
+      pool: ManagedDevOpsPools
+      steps:
+        - checkout: self
+
+        - script: env | sort
+          displayName: Show ENV vars
+
+        - task: Docker@2
+          inputs:
+            command: login
+            containerRegistry: Shared-Dockerhub-Datapunt
+          displayName: Docker hub login
+
+        - script: |
+            az login --identity
+            az acr login -n $(registry)
+          displayName: ACR login
+
+        - ${{ each svc in parameters.services }}:
+          # BUILD
+          - script: SERVICE_NAME=${{svc}} make build
+            displayName: make build (${{svc}})
+
+          # PUSH IMAGE
+          - script: |
+              SERVICE_NAME=${{svc}} make push || echo "Image already exists, ignoring"
+            displayName: make push (${{svc}})
+
+    - job: QA
+      pool: ManagedDevOpsPools
+      dependsOn: build
+      strategy:
+        matrix:
+          ${{ each service in parameters.services }}:
+            ${{ service }}:
+              SERVICE_NAME: ${{ service }}
+      steps:
+        - script: echo "Running QA for $(SERVICE_NAME)"
+          displayName: "Set SERVICE_NAME to $(SERVICE_NAME)"
+
+        - checkout: self
+
+        - task: Docker@2
+          inputs:
+            command: login
+            containerRegistry: Shared-Dockerhub-Datapunt
+          displayName: Docker hub login
+
+        - script: |
+            az login --identity
+            az acr login -n $(registry)
+          displayName: ACR login
+
+        # UNITTESTING & LINTING
+        - script: make test
+          displayName: make test
+
+        # BACKWARDS COMPATIBILITY TESTING
+        - script: |
+            make openapi-diff | tee diff_output.txt
+            if grep -q "API changes broke backward compatibility" diff_output.txt; then
+              echo "##vso[task.complete result=SucceededWithIssues;]Breaking OpenAPI changes detected!"
+            fi
+          displayName: make openapi-diff
+
+        # SECURITY SCANNER
+        - template: pipelines/aks/analyze.job.yaml@templates
+          parameters:
+            registry: $(registry)
+            images:
+            - aapp/images/app-$(SERVICE_NAME)
+            version: $(version)
+            trivyImage: docker.io/aquasec/trivy:0.62.1
+            trivyDbImage: docker.io/aquasec/trivy-db:2
+            trivyJavaDbImage: docker.io/aquasec/trivy-java-db:1
+            trivySkipFiles:
+            - '**/site-packages/PyJWT-*/METADATA'
+            - '**/site-packages/pyjwt-*/METADATA'
+            trivySkipDirectories: []
+            trivyTimeout: 5m0s
+
+        # LOCK PRODUCED IMAGES
+        - ${{ if parameters.lockProducedImages }}:
+          - script: |
+              az acr repository update --write-enabled false --name $(registry) --image aapp/images/app-$(SERVICE_NAME):$(version)
+            displayName: "Lock image: aapp/images/app-$(SERVICE_NAME)"
+
+# --------------------
+# DEV
+# --------------------
+- template: deploy.stage.yaml
+  parameters:
+    environment: dev
+    devopsEnvironment: api-dev
+    pool: ManagedDevOpsPools
+    namespace: ns-ccc-aapp-ont-01-aapp-ontw
+    kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-ont-01-aapp-ontw
+    services: ${{ parameters.services }}
+    force: ${{ parameters.forceDeploy }}
+    migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
+    condition: |
+      and(
+        not(or(failed(), canceled())),
+        or(
+          eq(variables['Source.Ref'], 'refs/heads/main'),
+          eq(variables['Build.Reason'], 'Manual')
+        )
+      )
+
+# --------------------
+# TEST
+# --------------------
+- template: deploy.stage.yaml
+  parameters:
+    environment: test
+    devopsEnvironment: api-test
+    pool: ManagedDevOpsPools
+    namespace: ns-ccc-aapp-tst-01-aapp-test
+    kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-tst-01-aapp-test
+    services: ${{ parameters.services }}
+    force: ${{ parameters.forceDeploy }}
+    migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
+    condition: |
+      and(
+        not(or(failed(), canceled())),
+        or(
+          eq(variables['Source.Ref'], 'refs/heads/main'),
+          eq(variables['Build.Reason'], 'Manual')
+        )
+      )
+
+# --------------------
+# ACC
+# --------------------
+- template: deploy.stage.yaml
+  parameters:
+    environment: acc
+    devopsEnvironment: api-acc
+    pool: ManagedDevOpsPools
+    namespace: ns-ccc-aapp-acc-01-aapp-acc
+    kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-acc-01-aapp-acc
+    services: ${{ parameters.services }}
+    force: ${{ parameters.forceDeploy }}
+    migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
+    condition: |
+      and(
+        not(or(failed(), canceled())),
+        or(
+          eq(variables['Source.Ref'], 'refs/heads/main'),
+          startsWith(variables['Source.Ref'], 'refs/tags/'),
+          eq(variables['Build.Reason'], 'Manual')
+        )
+      )
+
+# --------------------
+# PROD
+# --------------------
+- template: deploy.stage.yaml
+  parameters:
+    environment: prod
+    devopsEnvironment: api-prod
+    pool: ManagedDevOpsPools
+    namespace: ns-ccc-aapp-prd-01-aapp-prd
+    kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-prd-01-aapp-prd
+    services: ${{ parameters.services }}
+    force: ${{ parameters.forceDeploy }}
+    migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
+    condition: |
+      and(
+        succeeded(),
+        or(
+          eq(variables['Source.Ref'], 'refs/heads/main'),
+          startsWith(variables['Source.Ref'], 'refs/tags/'),
+          eq(variables['Build.Reason'], 'Manual')
+        )
+      )
