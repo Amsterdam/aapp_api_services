@@ -5,10 +5,19 @@ from django.db.models import TextChoices
 
 
 class QuestionType(TextChoices):
-    TEXT = "text"
-    RADIO = "radio"
-    SELECT = "select"
+    BUTTONS = "selection_buttons"
     CHECK = "checkbox"
+    DATE = "date"
+    EMAIL = "email"
+    NUMERIC = "numeric"
+    RADIO = "radio"
+    RATING = "rating"
+    SELECT = "select"
+    TELEPHONE = "tel"
+    TEXT = "text"
+    TEXTAREA = "textarea"
+    TIME = "time"
+    URL = "url"
 
 
 class ConditionType(TextChoices):
@@ -60,6 +69,7 @@ class TextQuestion(NamedTuple):
     required: bool
     min_characters: int = 10
     max_characters: int = 500
+    textarea_rows: int = 4
     default: str = "open antwoord"
     description: str = ""
     question_type: QuestionType = QuestionType.TEXT.value

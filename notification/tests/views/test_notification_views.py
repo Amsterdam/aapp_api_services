@@ -1,8 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest.mock import patch
 
-from django.conf import settings
-from django.test import override_settings
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 from model_bakery import baker
@@ -10,9 +9,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from core.tests.test_authentication import BasicAPITestCase
-from notification.crud import NotificationCRUD
 from notification.models import Device, Notification
-from notification.utils.patch_utils import apply_init_firebase_patches
 
 
 class BaseNotificationViewTestCase(BasicAPITestCase):
@@ -60,6 +57,31 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
         self.assertIn("title", response.data[0])
         self.assertIn("body", response.data[0])
         self.assertIn("module_slug", response.data[0])
+
+    def test_list_notifications_without_context(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        baker.make(
+            Notification, device=device_1, context={}, notification_type="test_type"
+        )
+
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["context"].get("type"), "test_type")
+
+    def test_list_notifications_with_url_and_deeplink_context(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        with self.assertRaises(ValidationError):
+            baker.make(
+                Notification,
+                device=device_1,
+                context={
+                    "type": "test_type",
+                    "module_slug": "test_slug",
+                    "deeplink": "amsterdam://test",
+                    "url": "https://example.com",
+                },
+                notification_type="test_type",
+            )
 
     @patch("notification.serializers.notification_serializers.ImageSetService")
     def test_list_notifications_with_and_without_image(self, mock_image_set_service):
@@ -271,113 +293,3 @@ class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
             "Missing header: DeviceId",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-
-
-MODULE_1, MODULE_2 = (
-    "mijn-amsterdam",
-    "parkeren",
-)
-
-
-@override_settings(NOTIFICATION_MODULE_SLUG_LAST_TIMESTAMP=[MODULE_1, MODULE_2])
-class NotificationLastViewTests(BaseNotificationViewGetTestCase):
-    test_slug = "mijn-amsterdam"
-    test_type = "mijn-amsterdam:type"
-
-    def setUp(self):
-        super().setUp()
-        self.base_notification = baker.make(Notification)
-        self.device = baker.make(Device, external_id=self.device_id)
-        self.other_device = baker.make(Device, external_id="999")
-        self.url = reverse("notification-last")
-        self.firebase_paths = apply_init_firebase_patches()
-
-    def test_success(self):
-        self._create_notification(device_id=self.device_id)
-
-        response = self.client.get(
-            self.url, query_params=self._params(), headers=self.headers_with_device_id
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["notification_scope"], self.test_type)
-
-    def test_missing_module_slug_returns_400(self):
-        response = self.client.get(self.url, headers=self.headers_with_device_id)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_only_get_own_device(self):
-        self._create_notification(device_id=self.other_device.external_id)
-
-        response = self.client.get(
-            self.url, query_params=self._params(), headers=self.headers_with_device_id
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
-
-        headers_other = {
-            **self.headers_with_device_id,
-            settings.HEADER_DEVICE_ID: self.other_device.external_id,
-        }
-        response = self.client.get(
-            self.url, query_params=self._params(), headers=headers_other
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-
-    def test_other_scope_not_active(self):
-        self._create_notification(
-            device_id=self.device_id,
-            module_slug="other_module",
-            notification_type="other_module:type",
-        )
-
-        response = self.client.get(
-            self.url,
-            query_params=self._params(slug="other_module"),
-            headers=self.headers_with_device_id,
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
-
-    def test_timestamp_updated(self):
-        self._create_notification(device_id=self.device_id)
-
-        response = self.client.get(
-            self.url, query_params=self._params(), headers=self.headers_with_device_id
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        first_timestamp = datetime.fromisoformat(response.data[0]["last_create"])
-        self.assertLess(first_timestamp, timezone.now())
-
-        # Now create a new notification and check if the timestamp is updated
-        self._create_notification(device_id=self.device_id)
-        response = self.client.get(
-            self.url, query_params=self._params(), headers=self.headers_with_device_id
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        second_timestamp = datetime.fromisoformat(response.data[0]["last_create"])
-        self.assertGreater(second_timestamp, first_timestamp)
-
-    def _create_notification(
-        self,
-        device_id,
-        module_slug="mijn-amsterdam",
-        notification_type="mijn-amsterdam:type",
-    ):
-        """Helper method to create a notification for testing."""
-        device_qs = Device.objects.filter(external_id=device_id)
-        notification = baker.make(
-            Notification,
-            device=device_qs.first(),
-            module_slug=module_slug,
-            notification_type=notification_type,
-        )
-        notification_crud = NotificationCRUD(notification)
-        notification_crud.create(device_qs)
-
-    def _params(self, slug="mijn-amsterdam"):
-        return {"module_slug": slug}

@@ -49,6 +49,7 @@ class ReleaseModuleStatusInline(SortableTabularInline, ModuleAdminMixin):
         "note",
         "app_reason",
         "fallback_url",
+        "button_label",
     ]
     extra = 0
 

@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "survey"
 INSTALLED_APPS += [
     "survey.apps.SurveyConfig",
+    "notification.apps.NotificationsConfig",
 ]
 MIDDLEWARE += [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -23,4 +24,4 @@ SPECTACULAR_SETTINGS["TITLE"] = "Vragenlijsten API"
 TIME_INPUT_FORMATS = ["%H:%M"]
 
 MOCK_ENTRA_AUTH = False
-ADMIN_ROLES += ["cbs-time-delegated", "cbs-time-publisher"]
+ADMIN_ROLES += ["survey-delegated", "survey-publisher"]

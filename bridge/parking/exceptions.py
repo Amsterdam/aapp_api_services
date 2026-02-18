@@ -10,6 +10,12 @@ class SSPCallError(BaseApiException):
     default_code = "SSP_CALL_ERROR"
 
 
+class SSPBadGatewayError(BaseApiException):
+    status_code = status.HTTP_502_BAD_GATEWAY
+    default_detail = "SSP Bad Gateway"
+    default_code = "SSP_BAD_GATEWAY"
+
+
 class SSPResponseError(BaseApiException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = "SSP source response not in expected format"
@@ -22,6 +28,12 @@ class SSPServerError(BaseApiException):
     default_code = "SSP_SERVER_ERROR"
 
 
+class SSPCancelledError(BaseApiException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = "SSP request was cancelled"
+    default_code = "SSP_REQUEST_CANCELLED"
+
+
 class SSLMissingAccessTokenError(BaseApiException):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = f"Missing required {settings.SSP_ACCESS_TOKEN_HEADER} header"
@@ -32,6 +44,18 @@ class SSPBadCredentials(BaseApiException):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = "Bad credentials"
     default_code = "SSP_BAD_CREDENTIALS"
+
+
+class SSPAccountInactive(BaseApiException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_detail = "Account is not active"
+    default_code = "SSP_ACCOUNT_INACTIVE"
+
+
+class SSPAccountBlocked(BaseApiException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_detail = "Your account is blocked for 24 hours"
+    default_code = "SSP_ACCOUNT_BLOCKED"
 
 
 class SSPBadPassword(BaseApiException):
@@ -50,6 +74,12 @@ class SSPTokenExpiredError(BaseApiException):
     status_code = status.HTTP_403_FORBIDDEN
     default_detail = "Token expired."
     default_code = "SSP_TOKEN_EXPIRED"
+
+
+class SSPJWTTokenExpiredError(BaseApiException):
+    status_code = status.HTTP_403_FORBIDDEN
+    default_detail = "Expired JWT Token"
+    default_code = "SSP_JWT_TOKEN_EXPIRED"
 
 
 class SSPNotFoundError(BaseApiException):
@@ -76,6 +106,20 @@ class SSPTimeBalanceInsufficientError(BaseApiException):
     default_code = "SSP_TIME_BALANCE_INSUFFICIENT"
 
 
+class SSPTimeAllocationBalanceInsufficientError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "The requested time allocation exceeds the available balance."
+    default_code = "SSP_TIME_ALLOCATION_BALANCE_INSUFFICIENT"
+
+
+class SSPTimeAllocationVisitorBalanceInsufficientError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = (
+        "The requested time withdrawal exceeds the available visitor balance"
+    )
+    default_code = "SSP_TIME_ALLOCATION_VISITOR_BALANCE_INSUFFICIENT"
+
+
 class SSPTimeBalanceAllocationNotAllowedError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Cannot allocate time to the visitor account because this permit doesn't allow one."
@@ -94,7 +138,7 @@ class SSPStartTimeInPastError(BaseApiException):
     default_code = "SSP_START_TIME_IN_PAST"
 
 
-class SSPStartTimeInvalid(BaseApiException):
+class SSPStartTimeInvalidError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Invalid start date"
     default_code = "SSP_START_TIME_INVALID"
@@ -116,6 +160,12 @@ class SSPMaxSessionsReachedError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Session maximum reached"
     default_code = "SSP_MAX_SESSIONS_REACHED"
+
+
+class SSPVehicleOpenChangePlateError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Vehicle have an open change plate request"
+    default_code = "SSP_VEHICLE_OPEN_CHANGE_PLATE"
 
 
 class SSPVehicleIDNotAllowedError(BaseApiException):
@@ -160,6 +210,12 @@ class SSPNoParkingFeeError(BaseApiException):
     default_code = "SSP_FREE_PARKING"
 
 
+class SSPAlreadyPaid(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "This order is already paid"
+    default_code = "SSP_PARKING_SESSION_ALREADY_PAID"
+
+
 class SSPLicensePlateExistsError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "This license plate is already in your favorites."
@@ -182,6 +238,12 @@ class SSPParkingMachineNotInZoneError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "The chosen parking machine is not within the allowed zones."
     default_code = "SSP_PARKING_MACHINE_NOT_IN_ZONE"
+
+
+class SSPParkingZoneError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Cannot start a parking session for the given zone code."
+    default_code = "SSP_PARKING_ZONE_INVALID"
 
 
 class SSPPermitNotFoundError(BaseApiException):
@@ -223,24 +285,32 @@ class SSPTransactionAlreadyConfirmedError(BaseApiException):
 SSP_COMMON_ERRORS = [
     SSPBadCredentials,
     SSPBadPassword,
+    SSPAccountInactive,
+    SSPAccountBlocked,
     SSPBalanceTooLowError,
     SSPTokenExpiredError,
+    SSPJWTTokenExpiredError,
     SSPTimeBalanceInsufficientError,
+    SSPTimeAllocationBalanceInsufficientError,
+    SSPTimeAllocationVisitorBalanceInsufficientError,
     SSPTimeBalanceAllocationNotAllowedError,
     SSPSEndTimeInPastError,
     SSPStartTimeInPastError,
-    SSPStartTimeInvalid,
+    SSPStartTimeInvalidError,
     SSPStartDateEndDateNotSameError,
     SSPEndDateBeforeStartDateError,
     SSPMaxSessionsReachedError,
     SSPVehicleIDNotAllowedError,
+    SSPVehicleOpenChangePlateError,
     SSPSessionAlreadyExistsError,
     SSPSessionDurationExceededError,
     SSPSessionNotActiveError,
     SSPSessionNotAllowedError,
     SSPFreeParkingError,
     SSPParkingMachineNotInZoneError,
+    SSPParkingZoneError,
     SSPNoParkingFeeError,
+    SSPAlreadyPaid,
     SSPLicensePlateExistsError,
     SSPLicensePlateNotFoundError,
     SSPLicensePlateNoActivationError,

@@ -2,12 +2,25 @@ import logging
 
 from construction_work.models.manage_models import WarningMessage
 from core.enums import Module, NotificationType
-from core.services.notification import AbstractNotificationService, NotificationData
+from core.services.notification_service import (
+    AbstractNotificationService,
+    NotificationData,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class NotificationService(AbstractNotificationService):
+class ArticleNotificationService(AbstractNotificationService):
+    module_slug = Module.CONSTRUCTION_WORK.value
+    notification_type = (
+        NotificationType.CONSTRUCTION_WORK_WARNING_MESSAGE.value
+    )  # same type as warning message, as there is no difference for the user
+
+    def send(self, notification_data: NotificationData):
+        self.process(notification_data)
+
+
+class WarningNotificationService(AbstractNotificationService):
     module_slug = Module.CONSTRUCTION_WORK.value
     notification_type = NotificationType.CONSTRUCTION_WORK_WARNING_MESSAGE.value
 

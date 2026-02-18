@@ -146,7 +146,7 @@ class Notification(models.Model):
         verbose_name = "Notificatie"
         verbose_name_plural = "Notificaties"
 
-    title = models.CharField("Titel", max_length=255)
+    title = models.CharField("Titel", default="Stadspas", max_length=255)
     message = models.TextField("Bericht")
     url = models.URLField(null=True, blank=True)
     budgets = models.ManyToManyField(Budget, verbose_name="Budgetten", blank=True)

@@ -11,6 +11,7 @@ x-app: &base-app
     REDIS_HOST: redis
     REDIS_PORT: 6379
     REDIS_PASSWORD: password
+    ALLOW_NOTIFICATION_DB_MIGRATE: "true"
   volumes:
     - ./core:/app/core
     - ./${SERVICE_NAME}:/app/${SERVICE_NAME}
@@ -35,6 +36,7 @@ services:
       POSTGRES_PASSWORD: dev
     volumes:
       - ./deploy/init_pgtrgm.sql:/docker-entrypoint-initdb.d/init_pgtrgm.sql
+      - ./deploy/init_notification_database.sql:/docker-entrypoint-initdb.d/init_notification_database.sql
     ports:
       - "5435:5432"
     healthcheck:
@@ -45,7 +47,7 @@ services:
 
   dev:
     <<: *base-app
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/dev-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.local"
@@ -58,7 +60,7 @@ services:
 
   test:
     <<: *base-app
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/test-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.base"
@@ -75,7 +77,7 @@ services:
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.otap"
-    command: /app/deploy/docker-run.sh
+    command: /app/deploy/docker-run-async.sh
 
   lint:
     <<: *base-app
@@ -91,6 +93,9 @@ services:
       - ./notification:/app/notification
       - ./waste:/app/waste
       - ./survey:/app/survey
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./requirements.txt:/app/requirements.txt
+      - ./uv.lock:/app/uv.lock
   openapi-diff:
     image: openapitools/openapi-diff:latest
     volumes:

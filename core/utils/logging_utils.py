@@ -2,6 +2,7 @@ import logging
 
 from azure.monitor.opentelemetry import configure_azure_monitor
 from django.conf import settings
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,9 @@ def setup_opentelemetry():
             "requests": {"enabled": True},
             "urllib": {"enabled": True},
             "urllib3": {"enabled": True},
+            # "httpx": {"enabled": True},  # Doesn't work via configure_azure_monitor
         },
         resource=Resource.create({SERVICE_NAME: f"api-{settings.SERVICE_NAME}"}),
     )
+    HTTPXClientInstrumentor().instrument()
     logger.debug("OpenTelemetry has been enabled!")

@@ -1,4 +1,5 @@
 import re
+from unittest.mock import patch
 
 import responses
 from django.conf import settings
@@ -162,6 +163,36 @@ class TestAddressSearchByCoordinateView(ResponsesActivatedAPITestCase):
         )
 
 
+class TestAddressPostalAreaByCoordinateView(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("address-postal-area-by-coordinate")
+
+    @patch("bridge.proxy.views.load_postal_area_shapes")
+    def test_success(self, patched_load_data):
+        patched_load_data.return_value = mock_data.MOCK_POSTAL_AREA_SHAPES
+
+        response = self.client.get(
+            self.url,
+            {"lat": "52.37148701", "lon": "4.85838607"},
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {"postal_area": "1056"})
+
+    @patch("bridge.proxy.views.load_postal_area_shapes")
+    def test_not_found(self, patched_load_data):
+        patched_load_data.return_value = mock_data.MOCK_POSTAL_AREA_SHAPES
+        response = self.client.get(
+            self.url,
+            {"lat": "52.4574236", "lon": "4.6111981"},
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+
 class TestPollingStationsView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
@@ -182,3 +213,13 @@ class TestPollingStationsView(ResponsesActivatedAPITestCase):
 
     def test_cache(self):
         self.assert_caching(self.url, rsp_get=self.rsp_get)
+
+
+class TestHealthCheckView(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("health-check")
+
+    def test_health_check(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)

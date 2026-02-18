@@ -26,16 +26,15 @@ class ParkingVisitorView(BaseSSPView):
         response_serializer_class=None,
         exceptions=EXCEPTIONS,
     )
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         permit_id = kwargs.get("permit_id")
 
         url_template = SSPEndpoint.VISITOR_CREATE.value
         url = URITemplate(url_template).expand(permit_id=permit_id)
-        self.ssp_api_call(
+        await self.ssp_api_call(
             method="POST",
             endpoint=url,
         )
-
         return Response(
             status=status.HTTP_200_OK,
         )
@@ -45,12 +44,12 @@ class ParkingVisitorView(BaseSSPView):
         response_serializer_class=None,
         exceptions=EXCEPTIONS,
     )
-    def delete(self, request, *args, **kwargs):
+    async def delete(self, request, *args, **kwargs):
         permit_id = kwargs.get("permit_id")
 
         url_template = SSPEndpoint.VISITOR_DELETE.value
         url = URITemplate(url_template).expand(permit_id=permit_id)
-        self.ssp_api_call(
+        await self.ssp_api_call(
             method="POST",
             endpoint=url,
         )
@@ -73,7 +72,7 @@ class ParkingVisitorTimeBalanceView(BaseSSPView):
         response_serializer_class=VisitorTimeBalanceResponseSerializer,
         exceptions=EXCEPTIONS,
     )
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         serializer = self.get_serializer_class()(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -91,15 +90,15 @@ class ParkingVisitorTimeBalanceView(BaseSSPView):
         request_payload = {
             "amount": hours,
         }
-        response = self.ssp_api_call(
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=url,
             body_data=request_payload,
         )
 
         response_payload = {
-            "main_account": response.data["main_balance"],
-            "visitor_account": response.data["visitor_balance"],
+            "main_account": response_data["main_balance"],
+            "visitor_account": response_data["visitor_balance"],
         }
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)

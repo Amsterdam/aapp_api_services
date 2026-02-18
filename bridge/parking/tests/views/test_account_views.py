@@ -1,11 +1,13 @@
-import responses
+import freezegun
+import httpx
+import respx
 from django.conf import settings
 from django.urls import reverse
 
 from bridge.parking.exceptions import SSPResponseError
 from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
 from bridge.parking.tests.mock_data import permit, permits
-from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 
 
 class TestParkingAccountLoginView(BaseSSPTestCase):
@@ -22,10 +24,13 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
             "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjEwMzkxNTYsImV4cCI6MTc2MTA0Mjc1Niwicm9sZXMiOlsiT1RIRVJfUk9MRSJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiYmxhIiwibG9jYWxlIjoibmwtTkwiLCJjbGllbnRfcHJvZHVjdF9pZCI6MTB9.KRVI2yW-RpPhPeGmhAw3FnQ_nqQOHO2-rErWH4bE2pc"
         }
 
+    @freezegun.freeze_time("2024-09-02T15:30:00")
     def test_successful_login(self):
-        post_resp = responses.post(SSPEndpoint.LOGIN.value, json=self.test_response)
-        post_resp_ext = responses.post(
-            SSPEndpointExternal.LOGIN.value, json=self.test_response
+        post_resp = respx.post(SSPEndpoint.LOGIN.value).mock(
+            return_value=httpx.Response(200, json=self.test_response)
+        )
+        post_resp_ext = respx.post(SSPEndpointExternal.LOGIN.value).mock(
+            return_value=httpx.Response(200, json=self.test_response)
         )
 
         response = self.client.post(
@@ -39,14 +44,16 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
             self.test_token + "%AMSTERDAMAPP%" + self.test_token,
         )
         self.assertEqual(response.data["scope"], "permitHolder")
-        expiration_datetime = "2025-09-02T15:29:54+02:00"
+        expiration_datetime = "2024-09-02T15:45:00+02:00"
         self.assertEqual(
             response.data["access_token_expiration"],
             expiration_datetime,
         )
 
     def test_missing_ssp_response_values(self):
-        post_resp = responses.post(SSPEndpoint.LOGIN.value, json={"not_token": "value"})
+        post_resp = respx.post(SSPEndpoint.LOGIN.value).mock(
+            return_value=httpx.Response(200, json={"not_token": "value"})
+        )
 
         response = self.client.post(
             self.url, self.test_payload, headers=self.api_headers
@@ -56,11 +63,11 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
         self.assertEqual(response.data["code"], SSPResponseError.default_code)
 
     def test_unknown_role(self):
-        post_resp = responses.post(
-            SSPEndpoint.LOGIN.value, json=self.test_response_no_role
+        post_resp = respx.post(SSPEndpoint.LOGIN.value).mock(
+            return_value=httpx.Response(200, json=self.test_response_no_role)
         )
-        post_resp_ext = responses.post(
-            SSPEndpointExternal.LOGIN.value, json=self.test_response
+        post_resp_ext = respx.post(SSPEndpointExternal.LOGIN.value).mock(
+            return_value=httpx.Response(200, json=self.test_response)
         )
 
         response = self.client.post(
@@ -71,7 +78,9 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
         self.assertEqual(post_resp_ext.call_count, 1)
 
     def test_no_ssp_token(self):
-        post_resp = responses.post(SSPEndpoint.LOGIN.value, json={"not_token": "value"})
+        post_resp = respx.post(SSPEndpoint.LOGIN.value).mock(
+            return_value=httpx.Response(200, json={"not_token": "value"})
+        )
 
         del self.api_headers[settings.SSP_ACCESS_TOKEN_HEADER]
 
@@ -90,9 +99,11 @@ class TestParkingAccountLoginView(BaseSSPTestCase):
 
         for message in ssp_login_failed_messages:
             json_response = {"code": 401, "message": message}
-            responses.post(SSPEndpoint.LOGIN.value, status=401, json=json_response)
-            responses.post(
-                SSPEndpointExternal.LOGIN.value, status=401, json=json_response
+            respx.post(SSPEndpoint.LOGIN.value).mock(
+                return_value=httpx.Response(401, json=json_response)
+            )
+            respx.post(SSPEndpointExternal.LOGIN.value).mock(
+                return_value=httpx.Response(401, json=json_response)
             )
             response = self.client.post(
                 self.url, self.test_payload, headers=self.api_headers
@@ -113,14 +124,14 @@ class TestParkingAccountDetailsView(BaseSSPTestCase):
         api_headers = self.api_headers.copy()
         api_headers["SSP-Access-Token"] = f"{self.test_permitholder_token}"
 
-        resp_list = responses.get(
-            SSPEndpoint.PERMITS.value, json=self.mock_permits_response
+        resp_list = respx.get(SSPEndpoint.PERMITS.value).mock(
+            return_value=httpx.Response(200, json=self.mock_permits_response)
         )
         permit_detail_template = SSPEndpoint.PERMIT.value
         # Only mock the permit 10001 because it is a visitor permit
         permit_detail_url = permit_detail_template.format(permit_id=10001)
-        resp_detail = responses.get(
-            permit_detail_url, json=self.mock_permit_detail_response
+        resp_detail = respx.get(permit_detail_url).mock(
+            return_value=httpx.Response(200, json=self.mock_permit_detail_response)
         )
 
         response = self.client.get(self.url, headers=api_headers)
@@ -139,9 +150,11 @@ class TestParkingAccountDetailsView(BaseSSPTestCase):
     def test_success_permitholder_no_permits(self):
         api_headers = self.api_headers.copy()
         api_headers["SSP-Access-Token"] = f"{self.test_permitholder_token}"
-        resp_list = responses.get(SSPEndpoint.PERMITS.value, json={"data": []})
+        resp_list = respx.get(SSPEndpoint.PERMITS.value).mock(
+            return_value=httpx.Response(200, json={"data": []})
+        )
 
         response = self.client.get(self.url, headers=api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["wallet"]["balance"], 0)
+        self.assertEqual(response.data["wallet"]["balance"], None)
         self.assertEqual(resp_list.call_count, 1)

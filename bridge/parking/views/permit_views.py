@@ -1,8 +1,9 @@
+import asyncio
 import json
 import logging
 import math
-import re
 
+import anyio
 import jwt
 from rest_framework import status
 from rest_framework.response import Response
@@ -39,6 +40,7 @@ class ParkingPermitsView(BaseSSPView):
         "Zaterdag",
         "Zondag",
     ]
+    permit_detail_concurrency = 10
 
     @check_user_role(allowed_roles=[Role.USER.value, Role.VISITOR.value])
     @ssp_openapi_decorator(
@@ -46,22 +48,12 @@ class ParkingPermitsView(BaseSSPView):
         response_serializer_class=PermitItemSerializer(many=True),
         exceptions=[SSPPermitNotFoundError],
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         # check role of user in jwt token
         is_visitor = kwargs.get("is_visitor", False)
-        if is_visitor:
-            ssp_access_token = get_access_token(self.request)
-            decoded_jwt = jwt.decode(
-                ssp_access_token, options={"verify_signature": False}
-            )
-            client_product_id = decoded_jwt.get("client_product_id", "")
-            permits_data = [{"id": client_product_id}]
-        else:
-            permits_data = self.collect_all_pages()
-            permits_data = [p for p in permits_data if p["status"] != "control"]
+        all_permits_details, permits_data = await self.get_permit_details(is_visitor)
 
-        for n, permit in enumerate(permits_data):
-            permit_details = self.collect_permit_details(permit)
+        for n, permit_details in enumerate(all_permits_details):
             permit_details["permit"]["mapped_type"] = self.get_mapped_permit_type(
                 permit_details
             )
@@ -74,8 +66,44 @@ class ParkingPermitsView(BaseSSPView):
                 filtered_permits.append(permit)
         permits_data = filtered_permits
 
-        response_payload = [
-            {
+        response_payload = self.get_response_payload(is_visitor, permits_data)
+
+        response_serializer = self.response_serializer_class(
+            many=True, data=response_payload
+        )
+        response_serializer.is_valid(raise_exception=True)
+        return Response(
+            data=response_serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    async def get_permit_details(self, is_visitor):
+        if is_visitor:
+            ssp_access_token = get_access_token(self.request)
+            decoded_jwt = jwt.decode(
+                ssp_access_token, options={"verify_signature": False}
+            )
+            client_product_id = decoded_jwt.get("client_product_id", "")
+            permits_data = [{"id": client_product_id}]
+        else:
+            permits_data = await self.collect_all_pages()
+            permits_data = [p for p in permits_data if p["status"] != "control"]
+        all_permits_details = await self.fetch_all_permit_details(permits_data)
+        return all_permits_details, permits_data
+
+    def get_response_payload(self, is_visitor, permits_data):
+        response_payload = []
+        for permit in permits_data:
+            visitor_json = None
+            visitor_data = permit["details"]["ssp"]["visitor_account"]
+            if visitor_data["username"]:
+                visitor_json = {
+                    "report_code": visitor_data["username"],
+                    "pin": visitor_data["pin"],
+                    "seconds_remaining": visitor_data.get("time_balance", 0) or 0,
+                }
+
+            permit_json = {
                 "report_code": permit.get("id"),
                 "time_balance": permit["details"]["ssp"][
                     "visitor_account" if is_visitor else "main_account"
@@ -105,25 +133,17 @@ class ParkingPermitsView(BaseSSPView):
                         "days": [
                             {
                                 "day_of_week": self.weekdays[n],  # Guesswork!
-                                "start_time": f"{day[0].get('startTime')[:2]}:{day[0].get('startTime')[2:]}",  # Take first time frame only??
-                                "end_time": f"{day[0].get('endTime')[:2]}:{day[0].get('endTime')[2:]}",  # Take first time frame only??
+                                "start_time": f"{day[0].get('startTime')[:2]}:{day[0].get('startTime')[2:]}",
+                                # Take first time frame only??
+                                "end_time": f"{day[0].get('endTime')[:2]}:{day[0].get('endTime')[2:]}",
+                                # Take first time frame only??
                             }
                             for n, day in enumerate(zone["time_frame_data"])
                         ],
                     }
                     for zone in permit.get("payment_zones", [])
                 ],
-                "visitor_account": {
-                    "report_code": permit["details"]["ssp"]["visitor_account"][
-                        "username"
-                    ],
-                    "pin": permit["details"]["ssp"]["visitor_account"]["pin"],
-                    "seconds_remaining": permit["details"]["ssp"]["visitor_account"][
-                        "time_balance"
-                    ],
-                }
-                if permit["details"]["ssp"]["visitor_account"]["username"]
-                else None,
+                "visitor_account": visitor_json,
                 "parking_rate": {
                     "value": (permit["details"]["permit"]["cost"] or 0) / 100,
                     "currency": "EUR",  # DEPRECATED
@@ -148,16 +168,8 @@ class ParkingPermitsView(BaseSSPView):
                 "max_session_length_in_days": self.get_max_session_length(permit),
                 "can_select_zone": permit["details"]["config"]["can_select_zone"],
             }
-            for permit in permits_data
-        ]
-        response_serializer = self.response_serializer_class(
-            many=True, data=response_payload
-        )
-        response_serializer.is_valid(raise_exception=True)
-        return Response(
-            data=response_serializer.data,
-            status=status.HTTP_200_OK,
-        )
+            response_payload.append(permit_json)
+        return response_payload
 
     def get_mapped_permit_type(self, permit_details):
         permit_type_mapping = {
@@ -178,7 +190,7 @@ class ParkingPermitsView(BaseSSPView):
             # - GA-parkeervergunning voor bezoekers (bestuurders)
         return mapped_type
 
-    def collect_all_pages(self):
+    async def collect_all_pages(self):
         total_pages, page_count = 1, 0
         permits_data = []
         while page_count < total_pages:
@@ -187,24 +199,32 @@ class ParkingPermitsView(BaseSSPView):
                 "page": page_count,
                 "row_per_page": 250,
             }
-            response = self.ssp_api_call(
+            response_data = await self.ssp_api_call(
                 method="GET",
                 endpoint=self.ssp_endpoint,
                 query_params=data,
             )
-            response_data = response.data
             total_pages = math.ceil(response_data["count"] / data["row_per_page"])
             permits_data += response_data["data"]
         return permits_data
 
-    def collect_permit_details(self, permit):
+    async def fetch_all_permit_details(self, permits_data):
+        limiter = anyio.CapacityLimiter(self.permit_detail_concurrency)
+
+        async def _bounded_collect(permit):
+            async with limiter:
+                return await self.collect_permit_details(permit)
+
+        return await asyncio.gather(*(_bounded_collect(p) for p in permits_data))
+
+    async def collect_permit_details(self, permit):
         url_template = SSPEndpoint.PERMIT.value
         url = URITemplate(url_template).expand(permit_id=permit["id"])
-        response = self.ssp_api_call(
+        response_data = await self.ssp_api_call(
             method="GET",
             endpoint=url,
         )
-        return response.data
+        return response_data
 
     def get_no_end_time(self, permit):
         return permit["details"]["config"]["can_activate_vrn"]
@@ -231,21 +251,21 @@ class ParkingPermitZoneView(BaseSSPView):
         response_serializer_class=PermitGeoJSONSerializer,
         exceptions=[SSPPermitNotFoundError],
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         permit_id = kwargs.get("permit_id")
         url_template = SSPEndpoint.PERMIT.value
         url = URITemplate(url_template).expand(permit_id=permit_id)
-        response = self.ssp_api_call(
+        response_data = await self.ssp_api_call(
             method="GET",
             endpoint=url,
         )
 
         # geo_json field can be None, change it to empty dictionary, otherwise json loads fails
-        if response.data["permit"]["geo_json"] is None:
-            response.data["permit"]["geo_json"] = "{}"
+        if response_data["permit"]["geo_json"] is None:
+            response_data["permit"]["geo_json"] = "{}"
 
         response_payload = {
-            "geojson": json.loads(response.data["permit"]["geo_json"]),
+            "geojson": json.loads(response_data["permit"]["geo_json"]),
         }
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
@@ -277,10 +297,10 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
         response_serializer_class=PaymentZoneSerializer,
         exceptions=[SSPPermitNotFoundError],
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         permit_id = kwargs.get("permit_id")
         parking_machine = kwargs.get("parking_machine_id")
-        response = self.ssp_api_call(
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             body_data={
@@ -291,24 +311,19 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
             wrap_body_data_with_token=True,
         )
 
-        zone = response.data["data"]
+        zone = response_data["data"]
 
         # extract hourly rate from zone description
-        hourly_rate = re.search(r"€\s*\d{1,2},\d{2}", zone.get("zone_description"))
+        # TODO: uncomment statement below if hourly rate is valid
+        # hourly_rate = re.search(r"€\s*\d{1,2},\d{2}", zone.get("zone_description"))
+        hourly_rate = None
 
         response_payload = {
             "id": zone.get("zone_id"),
             "description": zone.get("zone_description"),
             "hourly_rate": hourly_rate.group(0) if hourly_rate else None,
             "city": "Amsterdam",  # DEPRECATED
-            "days": [
-                {
-                    "day_of_week": self.weekdays[n],  # Guesswork!
-                    "start_time": f"{day[0].get('startTime')[:2]}:{day[0].get('startTime')[2:]}",  # Take first time frame only??
-                    "end_time": f"{day[0].get('endTime')[:2]}:{day[0].get('endTime')[2:]}",  # Take first time frame only??
-                }
-                for n, day in enumerate(zone["time_frame_data"])
-            ],
+            "days": self._interpret_days(payload=response_data),
         }
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
@@ -316,3 +331,33 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
             data=response_serializer.data,
             status=status.HTTP_200_OK,
         )
+
+    def _interpret_days(self, payload):
+        interpret_days = []
+        time_frame_data = payload["data"]["time_frame_data"]
+        assert len(time_frame_data) >= 7, "Expected 7 days in time_frame_data"
+        for n, weekday in enumerate(self.weekdays):
+            day = time_frame_data[n]
+            if day:
+                interpret_days.append(
+                    {
+                        "day_of_week": weekday,
+                        "start_time": self._format_machine_time(
+                            day[0].get("startTime")
+                        ),  # Take first time frame only
+                        "end_time": self._format_machine_time(
+                            day[0].get("endTime")
+                        ),  # Take first time frame only
+                    }
+                )
+        return interpret_days
+
+    def _format_machine_time(self, value):
+        if isinstance(value, str):
+            assert value.isdigit(), "Time string must be numeric"
+            value = value.zfill(4)
+            return value[:2] + ":" + value[2:]
+        if isinstance(value, int):
+            s = f"{value:04d}"
+            return s[:2] + ":" + s[2:]
+        raise TypeError("Value must be int or str")

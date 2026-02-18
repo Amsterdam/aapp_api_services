@@ -12,9 +12,10 @@ class ChoicesEnum(Enum):
 class Module(ChoicesEnum):
     CONSTRUCTION_WORK = "construction-work"
     PARKING = "parking"
-    WASTE = "waste"
+    WASTE = "waste-guide"
     MIJN_AMS = "mijn-amsterdam"
     CITY_PASS = "city-pass"
+    BURNING_GUIDE = "burning-guide"
 
     @property
     def notification_description(self):
@@ -24,6 +25,7 @@ class Module(ChoicesEnum):
             Module.WASTE: "Herinnering buitenzetten container en actuele meldingen (wijzigingen en vertragingen).",
             Module.MIJN_AMS: "Blijf op de hoogte van uw aanvragen of klachten.",
             Module.CITY_PASS: "Over uw saldo, regelingen en tips.",
+            Module.BURNING_GUIDE: "U ontvangt meldingen als het code rood is voor 'Mijn adres'.",
         }
         return descriptions[self]
 
@@ -41,27 +43,37 @@ class NotificationType(ChoicesEnum):
     CONSTRUCTION_WORK_WARNING_MESSAGE = NotificationTypeClass(
         module=Module.CONSTRUCTION_WORK,
         name="warning-message",
-        description="Belangrijke berichten over een werkzaamheid",
+        description="Nieuws van projecten die u volgt",
     )
     PARKING_REMINDER = NotificationTypeClass(
         module=Module.PARKING,
         name="parking-reminder",
-        description="Herinnering bij aflopen van parkeersessie",
+        description="Parkeersessie loopt af",
     )
     WASTE_DATE_REMINDER = NotificationTypeClass(
         module=Module.WASTE,
         name="date-reminder",
         description="Herinnering buitenzetten container",
     )
-    MIJN_AMS_BELASTING = NotificationTypeClass(
+    WASTE_MANUAL_NOTIFICATION = NotificationTypeClass(
+        module=Module.WASTE,
+        name="manual-notification",
+        description="A&G meldingen over afvalinzameling",
+    )
+    MIJN_AMS_NOTIFICATION = NotificationTypeClass(
         module=Module.MIJN_AMS,
-        name="belasting",
-        description="Nieuwe berichten over belasting",
+        name="mijn-ams-notification",
+        description="Nieuwe berichten op Mijn Amsterdam",
     )
     CITY_PASS_NOTIFICATION = NotificationTypeClass(
         module=Module.CITY_PASS,
         name="notification",
-        description="Informatie m.b.t. uw stadspas",
+        description="Nieuws over regelingen",
+    )
+    BURNING_GUIDE_NOTIFICATION = NotificationTypeClass(
+        module=Module.BURNING_GUIDE,
+        name="notification",
+        description="U ontvangt meldingen als het code rood is voor 'Mijn adres'",
     )
 
     @property

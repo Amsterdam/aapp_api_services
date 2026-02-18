@@ -5,7 +5,6 @@ from adminsortable2.admin import (
 from django import forms
 from django.contrib import admin
 from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
-from django.utils import timezone
 
 from survey.models import (
     SurveyVersion,
@@ -29,8 +28,6 @@ class InlineForm(forms.ModelForm):
 def survey_version_is_locked(survey_version):
     if not survey_version:
         return False
-    if survey_version.active_from <= timezone.now():
-        return True
     if SurveyVersionEntry.objects.filter(survey_version=survey_version).exists():
         return True
     return False

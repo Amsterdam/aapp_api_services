@@ -1,7 +1,10 @@
-from django.conf import settings
 from rest_framework import serializers
 
-from waste.constants import WASTE_COLLECTION_BY_APPOINTMENT_CODE, WASTE_TYPES_INACTIVE
+from waste.constants import (
+    WASTE_COLLECTION_BY_APPOINTMENT_CODE,
+    WASTE_TYPES_MAPPING,
+    WASTE_TYPES_ORDER,
+)
 from waste.models import NotificationSchedule
 
 
@@ -9,15 +12,27 @@ class WasteRequestSerializer(serializers.Serializer):
     bag_nummeraanduiding_id = serializers.CharField()
 
 
-class WasteNotificationResponseSerializer(serializers.ModelSerializer):
+class WasteNotificationSerializer(serializers.ModelSerializer):
+    updated_at = serializers.DateTimeField(read_only=True)
+
     class Meta:
         model = NotificationSchedule
-        fields = "__all__"
+        fields = ["bag_nummeraanduiding_id", "updated_at"]
+
+    def create(self, validated_data):
+        device_id = self.context.get("device_id")
+        if not device_id:
+            raise serializers.ValidationError("Device ID header missing")
+
+        return NotificationSchedule.objects.create(
+            device_id=device_id,
+            **validated_data,
+        )
 
 
 class WasteDataSerializer(serializers.Serializer):
     afvalwijzerFractieNaam = serializers.CharField()
-    afvalwijzerFractieCode = serializers.ChoiceField(choices=settings.WASTE_CODES)
+    afvalwijzerFractieCode = serializers.CharField()
     afvalwijzerAfvalkalenderFrequentie = serializers.CharField(
         allow_null=True, allow_blank=True
     )
@@ -49,6 +64,12 @@ class WasteDataSerializer(serializers.Serializer):
         allow_null=True, required=False
     )
     gebruiksdoelWoonfunctie = serializers.BooleanField(allow_null=True, required=False)
+    straatnaam = serializers.CharField(allow_null=True, allow_blank=True)
+    huisnummer = serializers.CharField(allow_null=True, allow_blank=True)
+    huisletter = serializers.CharField(allow_null=True, allow_blank=True)
+    huisnummertoevoeging = serializers.CharField(allow_null=True, allow_blank=True)
+    postcode = serializers.CharField(allow_null=True, allow_blank=True)
+    woonplaatsnaam = serializers.CharField(allow_null=True, allow_blank=True)
 
     def to_internal_value(self, data):
         validated_data = super().to_internal_value(data)
@@ -59,7 +80,7 @@ class WasteDataSerializer(serializers.Serializer):
 
         internal_data = {
             "label": _convert("afvalwijzerFractieNaam"),
-            "code": _convert("afvalwijzerFractieCode"),
+            "code": WASTE_TYPES_MAPPING.get(_convert("afvalwijzerFractieCode")),
             "alert": _convert("afvalwijzerAfvalkalenderMelding"),
             "frequency": _convert("afvalwijzerAfvalkalenderFrequentie"),
             "note": _convert("afvalwijzerAfvalkalenderOpmerking"),
@@ -76,13 +97,14 @@ class WasteDataSerializer(serializers.Serializer):
             "days_array": _convert("afvalwijzerOphaaldagen2Array"),
             "url": _convert("afvalwijzerUrl"),
             "where": _convert("afvalwijzerWaar"),
-            "active": validated_data.get(
-                "afvalwijzerFractiecodeActief",
-                validated_data.get("afvalwijzerFractieCode")
-                not in WASTE_TYPES_INACTIVE,
-            ),
             "is_residential": _convert("gebruiksdoelWoonfunctie"),
             "basisroutetypeCode": validated_data.get("afvalwijzerBasisroutetypeCode"),
+            "street_name": _convert("straatnaam"),
+            "house_number": _convert("huisnummer"),
+            "house_letter": _convert("huisletter"),
+            "house_number_addition": _convert("huisnummertoevoeging"),
+            "postal_code": _convert("postcode"),
+            "city_name": _convert("woonplaatsnaam"),
         }
 
         return internal_data
@@ -90,7 +112,7 @@ class WasteDataSerializer(serializers.Serializer):
 
 class WasteTypeSerializer(serializers.Serializer):
     label = serializers.CharField()
-    code = serializers.ChoiceField(choices=settings.WASTE_CODES)
+    code = serializers.ChoiceField(choices=WASTE_TYPES_ORDER)
     curb_rules = serializers.CharField(allow_null=True, default="")
     alert = serializers.CharField(allow_null=True, default="")
     note = serializers.CharField(allow_null=True, default="")
@@ -101,12 +123,13 @@ class WasteTypeSerializer(serializers.Serializer):
     url = serializers.CharField(allow_null=True, default="")
     frequency = serializers.CharField(allow_null=True, default="")
     next_date = serializers.DateField(allow_null=True)
+    info_link = serializers.URLField(allow_null=True)
 
 
 class WasteCalendarSerializer(serializers.Serializer):
     date = serializers.DateField()
     label = serializers.CharField()
-    code = serializers.ChoiceField(choices=settings.WASTE_CODES)
+    code = serializers.ChoiceField(choices=WASTE_TYPES_ORDER)
     curb_rules_from = serializers.CharField(allow_null=True, default="")
     curb_rules_to = serializers.CharField(allow_null=True, default="")
     alert = serializers.CharField(allow_null=True, default="")

@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "modules"
 INSTALLED_APPS += [
     "modules.apps.ModulesConfig",
+    "notification.apps.NotificationsConfig",
 ]
 MIDDLEWARE += [
     "csp.middleware.CSPMiddleware",

@@ -17,9 +17,9 @@ urlpatterns = [
         name="contact-city-offices",
     ),
     path(
-        BASE_PATH_API + "/waiting-times",
-        contact_views.WaitingTimesView.as_view(),
-        name="contact-waiting-times",
+        BASE_PATH_API + "/links",
+        link_views.LinksView.as_view(),
+        name="contact-links",
     ),
     path(
         BASE_PATH_API + "/links", link_views.LinksView.as_view(), name="contact-links"

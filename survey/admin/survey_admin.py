@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib import admin
 from django.contrib.admin import TabularInline
-from django.utils import timezone
 
 from survey.admin.survey_version_admin import InlineForm
 from survey.models import (
@@ -15,8 +14,6 @@ from survey.models import (
 def survey_is_locked(survey):
     survey_versions = SurveyVersion.objects.filter(survey=survey)
     for sv in survey_versions:
-        if sv.active_from <= timezone.now():
-            return True
         if SurveyVersionEntry.objects.filter(survey_version=sv).exists():
             return True
     return False

@@ -7,6 +7,8 @@ from requests import Request
 from rest_framework import status
 from rest_framework.response import Response
 
+from bridge.parking.exceptions import SSLMissingAccessTokenError
+
 
 class Role(Enum):
     USER = "ROLE_USER_SSP"
@@ -20,7 +22,7 @@ def get_access_token(request, external_api: bool = False):
     """
     tokens = request.headers.get(settings.SSP_ACCESS_TOKEN_HEADER)
     if not tokens:
-        return
+        raise SSLMissingAccessTokenError()
     tokens = tokens.split("%AMSTERDAMAPP%")
     internal_token = tokens[0]
     external_token = tokens[-1]
@@ -39,10 +41,17 @@ def get_role(request: Request) -> str | None:
     return roles[0]
 
 
+def get_report_code(request: Request) -> str | None:
+    token = get_access_token(request)  # internal token
+    decoded_jwt = jwt.decode(token, options={"verify_signature": False})
+    report_code = decoded_jwt.get("client_product_id")
+    return report_code
+
+
 def check_user_role(allowed_roles: list[Role]):
     def decorator(view_func):
         @wraps(view_func)
-        def wrapper(*args, **kwargs):
+        async def wrapper(*args, **kwargs):
             request = getattr(args[0], "request", None)
             role = get_role(request)
             if not role:
@@ -56,7 +65,8 @@ def check_user_role(allowed_roles: list[Role]):
                 )
 
             kwargs["is_visitor"] = role == Role.VISITOR.value
-            return view_func(*args, **kwargs)
+            kwargs["report_code"] = get_report_code(request)
+            return await view_func(*args, **kwargs)
 
         return wrapper
 

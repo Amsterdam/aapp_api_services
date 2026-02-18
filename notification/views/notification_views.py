@@ -11,11 +11,9 @@ from core.utils.openapi_utils import (
     extend_schema_for_device_id,
 )
 from core.views.mixins import DeviceIdMixin
-from notification.models import Notification, NotificationLast
+from notification.models import Notification
 from notification.serializers.notification_serializers import (
     ModuleNotificationTypeSerializer,
-    NotificationLastRequestSerializer,
-    NotificationLastResultSerializer,
     NotificationResultSerializer,
     NotificationUpdateSerializer,
 )
@@ -92,34 +90,6 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
-
-
-class NotificationLastView(DeviceIdMixin, generics.ListAPIView):
-    """
-    Retrieve the last push notification for a device_id.
-    This is used to determine if the last push notification was read or not.
-    """
-
-    serializer_class = NotificationLastResultSerializer
-    request_serializer_class = NotificationLastRequestSerializer
-    http_method_names = ["get"]
-
-    def get_queryset(self):
-        request = self.request_serializer_class(data=self.request.query_params)
-        request.is_valid(raise_exception=True)
-
-        return NotificationLast.objects.select_related("device").filter(
-            device__external_id=self.device_id,
-            module_slug=request.validated_data["module_slug"],
-        )
-
-    @extend_schema_for_device_id(
-        success_response=NotificationLastResultSerializer(many=True),
-        additional_params=[NotificationLastRequestSerializer],
-    )
-    def get(self, request, *args, **kwargs):
-        """Retrieve the last push notification."""
-        return super().get(request, *args, **kwargs)
 
 
 class NotificationModulesView(generics.ListAPIView):

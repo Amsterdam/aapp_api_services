@@ -34,7 +34,7 @@ from construction_work.serializers.project_serializers import (
     ProjectManagerNameEmailSerializer,
     WarningMessageSerializer,
 )
-from construction_work.services.notification import NotificationService
+from construction_work.services.notification import WarningNotificationService
 from construction_work.utils.auth_utils import (
     get_manager_type,
     get_project_manager_from_token,
@@ -315,7 +315,7 @@ class WarningMessageCreateView(AutoExtendSchemaMixin, generics.CreateAPIView):
         )
         push_code, push_message = None, None
         if send_push_notification:
-            notification_service = NotificationService()
+            notification_service = WarningNotificationService()
             notification_service.send(new_warning)
             push_code, push_message = 200, "ok"
 
@@ -400,7 +400,7 @@ class WarningMessageDetailView(
         push_code, push_message = None, None
         send_push_notification = serializer.validated_data.get("send_push_notification")
         if send_push_notification and not warning.notification_sent:
-            notification_service = NotificationService()
+            notification_service = WarningNotificationService()
             notification_service.send(warning)
             push_code, push_message = 200, "ok"
 

@@ -220,7 +220,13 @@ class MockEntraTokenAuthentication(BaseAuthentication, EntraTokenMixin):
             user = User.objects.create_superuser(username="Mock User", email=email)
 
         groups = []
-        for role_name in ["mbs-admin", "cbs-time-publisher", "city-pass-publisher"]:
+        for role_name in [
+            "mbs-admin",
+            "cbs-time-publisher",
+            "city-pass-publisher",
+            "waste-publisher",
+            "survey-publisher",
+        ]:
             group, _ = Group.objects.get_or_create(name=f"o-{role_name}")
             groups.append(group)
         user.groups.set(groups)

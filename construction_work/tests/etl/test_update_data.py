@@ -6,8 +6,8 @@ from model_bakery import baker
 
 from construction_work.etl.update_data import (
     _cleanup_inactive_projects,
+    _deactivate_unseen_articles,
     _deactivate_unseen_projects,
-    _remove_unseen_articles,
     extract_transform_load,
     garbage_collector,
 )
@@ -123,13 +123,13 @@ class GarbageCollectorTestCase(TestCase):
         self.project2_exists = Project.objects.filter(foreign_id=2).exists()
         self.project_hidden.refresh_from_db()
         self.article1.refresh_from_db()
-        self.article2_exists = Article.objects.filter(foreign_id=2).exists()
+        self.article2.refresh_from_db()
 
         self.assertTrue(self.project1.active)
         self.assertFalse(self.project2_exists)  # Should be deleted
         self.assertTrue(self.project_hidden.active)  # Should remain active
         self.assertTrue(self.article1 in Article.objects.all())
-        self.assertFalse(self.article2_exists)  # Should be deleted
+        self.assertFalse(self.article2.active)  # Should be inactive
 
     def test_deactivate_unseen_projects(self):
         found_projects = [self.project1.foreign_id]
@@ -157,16 +157,15 @@ class GarbageCollectorTestCase(TestCase):
         project1_exists = Project.objects.filter(foreign_id=1).exists()
         self.assertTrue(project1_exists)
 
-    def test_remove_unseen_articles(self):
+    def test_deactivate_unseen_articles(self):
         found_articles = [1]
-        initial_article_count = _remove_unseen_articles(found_articles)
+        _deactivate_unseen_articles(found_articles)
+        self.article2.refresh_from_db()
 
         # Check that article2 is deleted
         article2_exists = Article.objects.filter(foreign_id=2).exists()
-        self.assertFalse(article2_exists)
-
-        self.assertEqual(initial_article_count, 2)
-        self.assertEqual(Article.objects.count(), 1)
+        self.assertTrue(article2_exists)
+        self.assertFalse(self.article2.active)
 
     def test_garbage_collector_status_logging(self):
         found_projects = [self.project1.foreign_id]

@@ -1,95 +1,71 @@
-from django.conf import settings
-from django.shortcuts import get_object_or_404
+from django.db import IntegrityError
 from rest_framework import status
-from rest_framework.exceptions import NotFound
+from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from core.exceptions import MissingDeviceIdHeader
 from core.utils.openapi_utils import extend_schema_for_device_id
+from core.views.mixins import DeviceIdMixin
 from waste.models import NotificationSchedule
 from waste.serializers.waste_guide_serializers import (
-    WasteNotificationResponseSerializer,
-    WasteRequestSerializer,
+    WasteNotificationSerializer,
 )
 
 
-class WasteGuideNotificationView(APIView):
-    serializer_class = WasteRequestSerializer
+@extend_schema_for_device_id(success_response=WasteNotificationSerializer)
+class WasteNotificationCreateView(DeviceIdMixin, CreateAPIView):
+    serializer_class = WasteNotificationSerializer
 
-    @extend_schema_for_device_id(
-        success_response=WasteNotificationResponseSerializer,
-        exceptions=[NotFound],
-    )
-    def get(self, request):
-        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
-        if not device_id:
-            raise MissingDeviceIdHeader
-        scheduled_notification = get_object_or_404(
-            NotificationSchedule, device_id=device_id
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(
+            data=request.data, context={"device_id": self.device_id}
         )
-
-        return Response(
-            WasteNotificationResponseSerializer(scheduled_notification).data
-        )
-
-    @extend_schema_for_device_id(
-        request=WasteRequestSerializer,
-        success_response=WasteNotificationResponseSerializer,
-    )
-    def post(self, request):
-        bag_nummeraanduiding_id, device_id = self.assert_request(request)
-        scheduled_notification = NotificationSchedule.objects.filter(
-            device_id=device_id
-        ).first()
-        if scheduled_notification:
-            scheduled_notification.bag_nummeraanduiding_id = bag_nummeraanduiding_id
-        else:
-            scheduled_notification = NotificationSchedule(
-                device_id=device_id, bag_nummeraanduiding_id=bag_nummeraanduiding_id
-            )
-        scheduled_notification.save()
-        return Response(
-            WasteNotificationResponseSerializer(scheduled_notification).data
-        )
-
-    @extend_schema_for_device_id(
-        request=WasteRequestSerializer,
-        success_response=WasteNotificationResponseSerializer,
-        exceptions=[NotFound],
-    )
-    def patch(self, request):
-        bag_nummeraanduiding_id, device_id = self.assert_request(request)
-        scheduled_notification = get_object_or_404(
-            NotificationSchedule, device_id=device_id
-        )
-        scheduled_notification.bag_nummeraanduiding_id = bag_nummeraanduiding_id
-        scheduled_notification.save()
-
-        return Response(
-            WasteNotificationResponseSerializer(scheduled_notification).data
-        )
-
-    @extend_schema_for_device_id(exceptions=[NotFound])
-    def delete(self, request):
-        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
-        if not device_id:
-            raise MissingDeviceIdHeader
-        scheduled_notification = get_object_or_404(
-            NotificationSchedule, device_id=device_id
-        )
-        scheduled_notification.delete()
-
-        return Response(
-            data={"message": "Notification deleted successfully"},
-            status=status.HTTP_200_OK,
-        )
-
-    def assert_request(self, request):
-        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        device_id = self.request.headers.get(settings.HEADER_DEVICE_ID)
-        if not device_id:
-            raise MissingDeviceIdHeader
+        try:
+            self.perform_create(serializer)
+        except IntegrityError:
+            return Response(
+                {"detail": "Notification schedule for this device already exists."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            {"status": "success"}, status=status.HTTP_201_CREATED, headers=headers
+        )
 
-        return serializer.validated_data["bag_nummeraanduiding_id"], device_id
+
+@extend_schema_for_device_id(success_response=WasteNotificationSerializer)
+class WasteNotificationDetailView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
+    queryset = NotificationSchedule.objects.all()
+    serializer_class = WasteNotificationSerializer
+    lookup_field = "device_id"
+    http_method_names = ["get", "patch", "delete"]
+
+    def get_object(self):
+        return self.get_queryset().get(device_id=self.device_id)
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            self.get_object()
+        except NotificationSchedule.DoesNotExist:
+            return Response(data={"status": "error", "message": "not found"})
+        return Response({"status": "success"})
+
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except NotificationSchedule.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({"status": "success"})
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except NotificationSchedule.DoesNotExist:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

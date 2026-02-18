@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import jwt
 from rest_framework import status
@@ -8,6 +8,10 @@ from uritemplate import URITemplate
 
 from bridge.parking.auth import Role, check_user_role
 from bridge.parking.exceptions import (
+    SSPAccountBlocked,
+    SSPAccountInactive,
+    SSPBadCredentials,
+    SSPBadPassword,
     SSPPermitNotFoundError,
     SSPResponseError,
 )
@@ -37,8 +41,14 @@ class ParkingAccountLoginView(BaseSSPView):
     @ssp_openapi_decorator(
         response_serializer_class=AccountLoginResponseSerializer,
         requires_access_token=False,
+        exceptions=[
+            SSPBadCredentials,
+            SSPBadPassword,
+            SSPAccountInactive,
+            SSPAccountBlocked,
+        ],
     )
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         request_serializer = self.serializer_class(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
@@ -46,11 +56,12 @@ class ParkingAccountLoginView(BaseSSPView):
             "username": request_serializer.validated_data["report_code"],
             "password": request_serializer.validated_data["pin"],
         }
-        access_jwt, expiration_timestamp, scope_mapped = (
-            self._get_internal_access_token(request_payload)
+        access_jwt, expiration_timestamp, scope_mapped = await self.get_tokens(
+            request_payload
         )
-        access_jwt_external = self._get_external_access_token(request_payload)
-        access_jwt += "%AMSTERDAMAPP%" + access_jwt_external
+
+        # Manually set the expiration for the token on 15 minutes
+        expiration_timestamp = datetime.now() + timedelta(minutes=15)
 
         response_payload = {
             "access_token": access_jwt,
@@ -65,13 +76,24 @@ class ParkingAccountLoginView(BaseSSPView):
             status=status.HTTP_200_OK,
         )
 
-    def _get_internal_access_token(self, request_payload):
-        response = self.ssp_api_call(
+    async def get_tokens(self, request_payload):
+        (
+            access_jwt,
+            expiration_timestamp,
+            scope_mapped,
+        ) = await self._get_internal_access_token(request_payload)
+        access_jwt_external = await self._get_external_access_token(request_payload)
+        access_jwt += "%AMSTERDAMAPP%" + access_jwt_external
+        return access_jwt, expiration_timestamp, scope_mapped
+
+    async def _get_internal_access_token(self, request_payload):
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=SSPEndpoint.LOGIN.value,
             body_data=request_payload,
+            requires_access_token=False,
         )
-        access_jwt = response.data.get("token")
+        access_jwt = response_data.get("token")
         if not access_jwt:
             raise SSPResponseError("No token in SSP response")
         expiration_timestamp, scope_mapped = self._unpack_token(access_jwt)
@@ -88,14 +110,15 @@ class ParkingAccountLoginView(BaseSSPView):
             scope_mapped = "unknown"
         return expiration_timestamp, scope_mapped
 
-    def _get_external_access_token(self, request_payload):
-        response = self.ssp_api_call(
+    async def _get_external_access_token(self, request_payload):
+        response_data = await self.ssp_api_call(
             method="POST",
             endpoint=SSPEndpointExternal.LOGIN.value,
             body_data=request_payload,
             external_api=True,
+            requires_access_token=False,
         )
-        access_jwt = response.data.get("token")
+        access_jwt = response_data.get("token")
         if not access_jwt:
             raise SSPResponseError("No token in SSP response")
         return access_jwt
@@ -114,7 +137,7 @@ class ParkingAccountDetailsView(BaseSSPView):
         response_serializer_class=AccountDetailsResponseSerializer,
         exceptions=[SSPPermitNotFoundError],
     )
-    def get(self, request, *args, **kwargs):
+    async def get(self, request, *args, **kwargs):
         # check if user is visitor or permit holder
         is_visitor = kwargs.get("is_visitor", False)
         if is_visitor:
@@ -127,12 +150,12 @@ class ParkingAccountDetailsView(BaseSSPView):
                 }
             )
 
-        response = self.ssp_api_call(
+        response_data = await self.ssp_api_call(
             method="GET",
             endpoint=SSPEndpoint.PERMITS.value,
             query_params={"page": 1, "row_per_page": 250},
         )
-        permits = response.data["data"]
+        permits = response_data["data"]
         permits = [
             p
             for p in permits
@@ -142,14 +165,14 @@ class ParkingAccountDetailsView(BaseSSPView):
         if permits:
             url_template = SSPEndpoint.PERMIT.value
             url = URITemplate(url_template).expand(permit_id=permits[0]["id"])
-            response = self.ssp_api_call(
+            response_data = await self.ssp_api_call(
                 method="GET",
                 endpoint=url,
             )
-            balance_in_cents = response.data["ssp"]["main_account"]["money_balance"]
+            balance_in_cents = response_data["ssp"]["main_account"]["money_balance"]
             balance = (balance_in_cents or 0.0) / 100
         else:
-            balance = 0.0
+            balance = None
 
         return self.make_response(
             {

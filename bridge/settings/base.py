@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "bridge"
 INSTALLED_APPS += [
     "bridge.apps.BridgeConfig",
+    "notification.apps.NotificationsConfig",
 ]
 
 ROOT_URLCONF = "bridge.urls"
@@ -34,6 +35,16 @@ ADDRESS_SEARCH_URL = os.getenv(
     "ADDRESS_SEARCH_URL", "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free"
 )
 
+# Burning guide
+BURNING_GUIDE_SERVICE_KEY = os.getenv("BURNING_GUIDE_SERVICE_KEY", "")
+BURNING_GUIDE_RIVM_URL = os.getenv(
+    "BURNING_GUIDE_RIVM_URL", "https://data.rivm.nl/geo/alo/wms"
+)
+BURNING_GUIDE_AMSTERDAM_MAPS_URL = os.getenv(
+    "BURNING_GUIDE_AMSTERDAM_MAPS_URL",
+    "https://maps.amsterdam.nl/open_geodata/geojson_lnglat.php",
+)
+
 # Parking
 SSP_BASE_URL = os.getenv("SSP_BASE_URL", "https://evs-ssp-accp.mendixcloud.com")
 SSP_BASE_URL_V2 = os.getenv(
@@ -47,6 +58,7 @@ SSP_API_KEY = os.getenv("SSP_API_KEY", "api-key-ssp")
 
 SSP_ACCESS_TOKEN_HEADER = "SSP-Access-Token"
 PARKING_REMINDER_TIME = os.getenv("PARKING_REMINDER_TIME", 15)
+SSP_API_TIMEOUT_SECONDS = int(os.getenv("SSP_API_TIMEOUT_SECONDS", 10))
 
 # Mijn Amsterdam API
 MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
@@ -56,4 +68,5 @@ MIJN_AMS_API_DOMAIN = os.getenv(
 )
 MIJN_AMS_API_PATHS = {
     "NOTIFICATIONS": "/private/api/v1/services/amsapp/notifications",
+    "DEVICES": "/api/v1/services/amsapp/notifications/consumer/",
 }

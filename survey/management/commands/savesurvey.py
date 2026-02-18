@@ -31,13 +31,17 @@ class Command(BaseCommand):
         )
 
         for q in survey_version_1.questions:
-            if q.question_type == QuestionType.TEXT.value:
+            if (
+                q.question_type == QuestionType.TEXT.value
+                or q.question_type == QuestionType.TEXTAREA.value
+            ):
                 new_question = Question(
                     id=q.question_id,
                     question_text=q.question_text,
                     required=q.required,
                     min_characters=q.min_characters,
                     max_characters=q.max_characters,
+                    textarea_rows=q.textarea_rows,
                     default=q.default,
                     description=q.description,
                     question_type=q.question_type,
@@ -46,7 +50,10 @@ class Command(BaseCommand):
                 )
                 conditions += self.get_conditions(q)
                 questions.append(new_question)
-            elif q.question_type != QuestionType.TEXT.value:
+            elif (
+                q.question_type != QuestionType.TEXT.value
+                and q.question_type != QuestionType.TEXTAREA.value
+            ):
                 new_question = Question(
                     id=q.question_id,
                     question_text=q.question_text,

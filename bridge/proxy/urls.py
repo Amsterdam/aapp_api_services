@@ -1,26 +1,40 @@
+from django.conf import settings
 from django.urls import path
 
 from bridge.proxy.views import (
+    AddressPostalAreaByCoordinateView,
     AddressSearchByCoordinateView,
     AddressSearchByNameView,
     AddressSearchView,
     EgisProxyExternalView,
     EgisProxyView,
+    HealthCheckView,
     PollingStationsView,
     WasteGuideView,
 )
 
-urlpatterns = [
-    # egis dev proxy
+urlpatterns = []
+if settings.ENVIRONMENT_SLUG in ["o", "t"]:
+    urlpatterns += [
+        # egis dev proxy
+        path(
+            "parking/api/v1/egis-proxy/<path:path>",
+            EgisProxyView.as_view(),
+            name="egis-proxy",
+        ),
+        path(
+            "parking/api/v1/egis-ext-proxy/<path:path>",
+            EgisProxyExternalView.as_view(),
+            name="egis-ext-proxy",
+        ),
+    ]
+
+urlpatterns += [
+    # health check
     path(
-        "parking/api/v1/egis-proxy/<path:path>",
-        EgisProxyView.as_view(),
-        name="egis-proxy",
-    ),
-    path(
-        "parking/api/v1/egis-ext-proxy/<path:path>",
-        EgisProxyExternalView.as_view(),
-        name="egis-ext-proxy",
+        "bridge/api/v1/health-check",
+        HealthCheckView.as_view(),
+        name="health-check",
     ),
     # afvalwijzer
     path(
@@ -49,5 +63,10 @@ urlpatterns = [
         "address/api/v1/coordinate",
         AddressSearchByCoordinateView.as_view(),
         name="address-search-by-coordinate",
+    ),
+    path(
+        "address/api/v1/postal_area",
+        AddressPostalAreaByCoordinateView.as_view(),
+        name="address-postal-area-by-coordinate",
     ),
 ]

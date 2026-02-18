@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "city-pass"
 INSTALLED_APPS += [
     "city_pass.apps.CityPassConfig",
+    "notification.apps.NotificationsConfig",
 ]
 MEDIA_URL = "/city-pass/media/"
 LANGUAGE_CODE = "nl-NL"

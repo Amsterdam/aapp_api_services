@@ -1,4 +1,3 @@
-import pytest
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
@@ -6,8 +5,9 @@ from city_pass.models import Notification, Session
 from city_pass.services.notification import NotificationService
 
 
-@pytest.mark.integration
 class TestNotificationService(APITestCase):
+    databases = {"default", "notification"}
+
     def setUp(self):
         session_1 = baker.make(Session, device_id="device1")
         session_2 = baker.make(Session, device_id="device2")

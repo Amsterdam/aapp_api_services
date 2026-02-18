@@ -20,13 +20,15 @@ RUN apk add --no-cache \
     curl
 
 COPY pyproject.toml /app/pyproject.toml
-RUN uv sync
+COPY uv.lock /app/uv.lock
+RUN uv sync --frozen
 
 RUN addgroup -S app && adduser -S app -G app
 
 COPY manage.py /app/
 RUN dos2unix /app/manage.py
 COPY uwsgi.ini /app/
+COPY gunicorn.conf.py /app/
 COPY /core /app/core
 COPY /deploy /app/deploy
 
@@ -35,6 +37,7 @@ RUN mkdir /home/app/.azure
 RUN chown app:app /home/app/.azure
 USER root
 WORKDIR /app
+COPY notification /app/notification
 
 ### City Pass stages
 FROM core AS app-city_pass
@@ -58,7 +61,6 @@ COPY bridge /app/bridge
 
 ### Notification stages
 FROM core AS app-notification
-COPY notification /app/notification
 
 ### Image stages
 FROM core AS app-image

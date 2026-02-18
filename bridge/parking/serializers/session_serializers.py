@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import serializers
 
 from bridge.parking.enums import NotificationStatus
@@ -10,7 +13,7 @@ from bridge.parking.serializers.pagination_serializers import (
     PaginationLinksSerializer,
     PaginationPageSerializer,
 )
-from bridge.parking.utils import validate_digits
+from bridge.utils import validate_digits
 
 
 class ParkingSessionListRequestSerializer(serializers.Serializer):
@@ -106,6 +109,11 @@ class ParkingSessionOrderStartRequestSerializer(serializers.Serializer):
     end_date_time = serializers.DateTimeField(required=False)
     parking_machine = serializers.CharField(required=False)
     parking_machine_favorite = serializers.BooleanField(required=False, default=False)
+
+    def validate_start_date_time(self, value):
+        if value < timezone.now() - timedelta(minutes=5):
+            raise serializers.ValidationError("Start time cannot be in the past.")
+        return value
 
     def validate(self, data):
         # check that end_date_time is after start_date_time

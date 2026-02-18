@@ -22,10 +22,12 @@ class ParkingReminderScheduler:
         reminder_key: str,
         end_datetime: datetime,
         device_id: str,
+        report_code: str | None,
     ):
         self.schedule_service = ScheduledNotificationService()
 
         self.device_id = device_id
+        self.report_code = report_code
         self.reminder_key = reminder_key
         self.identifier = self._create_identifier(reminder_key)
 
@@ -52,17 +54,20 @@ class ParkingReminderScheduler:
         locale: str = DEFAULT_LANGUAGE,
     ):
         content = REMINDER_MESSAGES.get(locale)
+        context = {
+            "reminderKey": self.reminder_key,
+            "type": NotificationType.PARKING_REMINDER.value,
+            "module_slug": Module.PARKING.value,
+        }
+        if self.report_code:
+            context["reportCode"] = str(self.report_code)
         self.schedule_service.upsert(
             title=content.title,
             body=content.body,
             identifier=self.identifier,
             scheduled_for=self.reminder_time,
             expires_at=self.end_datetime,
-            context={
-                "reminderKey": self.reminder_key,
-                "type": NotificationType.PARKING_REMINDER.value,
-                "module_slug": Module.PARKING.value,
-            },
+            context=context,
             device_ids=[self.device_id],
             notification_type=NotificationType.PARKING_REMINDER.value,
             module_slug=Module.PARKING.value,

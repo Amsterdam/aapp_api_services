@@ -1,8 +1,11 @@
 import json
 from datetime import datetime, timezone
+from unittest.mock import patch
 
-import responses
+import httpx
+import respx
 from django.urls import reverse
+from freezegun import freeze_time
 from uritemplate import URITemplate
 
 from bridge.parking.services.ssp import SSPEndpointExternal
@@ -13,7 +16,7 @@ from bridge.parking.tests.mock_data_external import (
     parking_session_list,
     parking_session_start,
 )
-from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 from bridge.parking.views.session_views import (
     ParkingSessionActivateView,
     ParkingSessionListView,
@@ -22,6 +25,7 @@ from bridge.parking.views.session_views import (
 )
 
 
+@patch("time.sleep", return_value=None)
 class TestParkingSessionActivateView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
@@ -29,9 +33,9 @@ class TestParkingSessionActivateView(BaseSSPTestCase):
         self.payload = {"report_code": "1001", "vehicle_id": "SSP123"}
         self.test_response = parking_session_activate.MOCK_RESPONSE
 
-    def test_successful(self):
-        resp = responses.post(
-            ParkingSessionActivateView.ssp_endpoint, json=self.test_response
+    def test_successful(self, _):
+        resp = respx.post(ParkingSessionActivateView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.test_response)
         )
 
         response = self.client.post(
@@ -39,6 +43,65 @@ class TestParkingSessionActivateView(BaseSSPTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+
+    def test_3_retries_on_exception(self, _):
+        resp = respx.post(ParkingSessionActivateView.ssp_endpoint).mock(
+            return_value=httpx.Response(500, json={"message": "server error"})
+        )
+        response = self.client.post(
+            self.url, data=self.payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(resp.call_count, 3)
+
+    def test_3_retries_on_gateway_timeout(self, _):
+        resp = respx.post(ParkingSessionActivateView.ssp_endpoint).mock(
+            return_value=httpx.Response(502, json={"message": "server error"})
+        )
+        response = self.client.post(
+            self.url, data=self.payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(resp.call_count, 3)
+
+    def test_exception_before_success(self, _):
+        respx.post(ParkingSessionActivateView.ssp_endpoint).mock(
+            side_effect=[
+                httpx.Response(500, json={"message": "server error"}),
+                httpx.Response(200, json=self.test_response),
+            ]
+        )
+
+        response = self.client.post(
+            self.url, data=self.payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(respx.calls), 2)
+
+    def test_timeout_retry(self, _):
+        respx.post(ParkingSessionActivateView.ssp_endpoint).mock(
+            side_effect=[
+                httpx.TimeoutException("request timed out"),
+                httpx.Response(500, json={"message": "server error"}),
+                httpx.Response(200, json=self.test_response),
+            ]
+        )
+
+        response = self.client.post(
+            self.url, data=self.payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(respx.calls), 3)
+
+    def test_do_not_retry_on_client_error(self, _):
+        resp = respx.post(ParkingSessionActivateView.ssp_endpoint).mock(
+            return_value=httpx.Response(400, json={"message": "client error"})
+        )
+        response = self.client.post(
+            self.url, data=self.payload, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 400)
         self.assertEqual(resp.call_count, 1)
 
 
@@ -54,8 +117,8 @@ class TestParkingSessionListView(BaseSSPTestCase):
         self.test_response = parking_session_list.MOCK_RESPONSE
 
     def test_successful(self):
-        resp = responses.post(
-            ParkingSessionListView.ssp_endpoint, json=self.test_response
+        resp = respx.post(ParkingSessionListView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.test_response)
         )
 
         response = self.client.get(self.url, headers=self.api_headers)
@@ -63,8 +126,8 @@ class TestParkingSessionListView(BaseSSPTestCase):
         self.assertEqual(resp.call_count, 1)
 
     def test_successful_with_params(self):
-        resp = responses.post(
-            ParkingSessionListView.ssp_endpoint, json=self.test_response
+        resp = respx.post(ParkingSessionListView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.test_response)
         )
 
         response = self.client.get(self.url, self.payload, headers=self.api_headers)
@@ -84,8 +147,8 @@ class TestParkingSessionVisitorListView(BaseSSPTestCase):
         self.test_response = parking_session_list.MOCK_RESPONSE
 
     def test_successful(self):
-        resp = responses.post(
-            ParkingSessionVisitorListView.ssp_endpoint, json=self.test_response
+        resp = respx.post(ParkingSessionVisitorListView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.test_response)
         )
 
         response = self.client.get(self.url, headers=self.api_headers)
@@ -93,8 +156,8 @@ class TestParkingSessionVisitorListView(BaseSSPTestCase):
         self.assertEqual(resp.call_count, 1)
 
     def test_successful_with_params(self):
-        resp = responses.post(
-            ParkingSessionVisitorListView.ssp_endpoint, json=self.test_response
+        resp = respx.post(ParkingSessionVisitorListView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.test_response)
         )
 
         response = self.client.get(self.url, self.payload, headers=self.api_headers)
@@ -173,14 +236,12 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
         self, payload, api_headers, status_code, resp_count, is_visitor=False
     ):
         if is_visitor:
-            resp = responses.post(
-                SSPEndpointExternal.PARKING_SESSION_START.value,
-                json=self.start_response_visitor,
+            resp = respx.post(SSPEndpointExternal.PARKING_SESSION_START.value).mock(
+                return_value=httpx.Response(200, json=self.start_response_visitor)
             )
         else:
-            resp = responses.post(
-                SSPEndpointExternal.PARKING_SESSION_START.value,
-                json=self.start_response_user,
+            resp = respx.post(SSPEndpointExternal.PARKING_SESSION_START.value).mock(
+                return_value=httpx.Response(200, json=self.start_response_user)
             )
         response = self.client.post(
             self.url, data=payload, format="json", headers=api_headers
@@ -188,7 +249,7 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
         self.assertEqual(response.status_code, status_code)
         self.assertEqual(resp.call_count, resp_count)
         if status_code == 200:
-            received_payload = resp.calls[0].request.body
+            received_payload = resp.calls[0].request.content
             received_payload = json.loads(received_payload)["data"]
             expected_started_at = datetime.fromisoformat(
                 payload["parking_session"]["start_date_time"]
@@ -203,10 +264,34 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
                 expected_started_utc,
             )
 
+    @freeze_time("2025-07-24T11:30:00.000Z")
+    def test_exception_start_time_in_past_within_limits(self):
+        payload = self.start_payload.copy()
+        payload["start_date_time"] = "2025-07-24T11:29:00.000Z"
+        self.start_session(
+            payload=self.start_payload,
+            api_headers=self.api_headers,
+            status_code=200,
+            resp_count=1,
+        )
+
+    @freeze_time("2025-07-24T11:30:00.000Z")
+    def test_exception_start_time_in_past_outside_limits(self):
+        payload = self.start_payload.copy()
+        payload["start_date_time"] = "2025-07-24T11:05:00.000Z"
+        self.start_session(
+            payload=self.start_payload,
+            api_headers=self.api_headers,
+            status_code=200,
+            resp_count=1,
+        )
+
     def test_successful_patch(self):
         url_template = SSPEndpointExternal.PARKING_SESSION_EDIT.value
         url = URITemplate(url_template).expand(session_id=10000)
-        resp = responses.patch(url, json=self.patch_response)
+        resp = respx.patch(url).mock(
+            return_value=httpx.Response(200, json=self.patch_response)
+        )
 
         response = self.client.patch(
             self.url,
@@ -220,7 +305,9 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
     def test_successful_delete(self):
         url_template = SSPEndpointExternal.PARKING_SESSION_EDIT.value
         url = URITemplate(url_template).expand(session_id=10000)
-        resp = responses.patch(url, json=self.patch_response)
+        resp = respx.patch(url).mock(
+            return_value=httpx.Response(200, json=self.patch_response)
+        )
 
         response = self.client.delete(
             self.url, query_params=self.patch_payload, headers=self.api_headers
@@ -241,8 +328,8 @@ class TestParkingSessionReceiptView(BaseSSPTestCase):
         self.mock_response = cost_calculator.MOCK_RESPONSE
 
     def test_successful_payment_zone(self):
-        resp = responses.post(
-            ParkingSessionReceiptView.ssp_endpoint, json=self.mock_response
+        resp = respx.post(ParkingSessionReceiptView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.mock_response)
         )
         payload = self.payload.copy()
         payload["payment_zone_id"] = 37
@@ -254,8 +341,8 @@ class TestParkingSessionReceiptView(BaseSSPTestCase):
         self.assertEqual(resp.call_count, 1)
 
     def test_successful_parking_machine(self):
-        resp = responses.post(
-            ParkingSessionReceiptView.ssp_endpoint, json=self.mock_response
+        resp = respx.post(ParkingSessionReceiptView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.mock_response)
         )
         payload = self.payload.copy()
         payload["parking_machine"] = 1037
@@ -267,7 +354,9 @@ class TestParkingSessionReceiptView(BaseSSPTestCase):
         self.assertEqual(resp.call_count, 1)
 
     def test_exception_both(self):
-        responses.post(ParkingSessionReceiptView.ssp_endpoint, json=self.mock_response)
+        respx.post(ParkingSessionReceiptView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.mock_response)
+        )
         payload = self.payload.copy()
         payload["payment_zone_id"] = 37
         payload["parking_machine"] = 1037

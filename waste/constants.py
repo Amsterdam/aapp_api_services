@@ -46,8 +46,54 @@ POSTAL_CODE_CONTAINER_NOT_PRESENT = {
     ("1019", "1100"): [],
 }
 
+WASTE_TYPES_MAPPING = {
+    "Grof": "GA",
+    "GA": "GA",
+    "GFET": "GFT",
+    "GFE": "GFT",
+    "GFT": "GFT",
+    "Glas": "Glas",
+    "Papier": "Papier",
+    "Plastic": "Plastic",
+    "Rest": "Rest",
+    "Textiel": "Textiel",
+}
+
+WASTE_TYPES_MAPPING_READABLE = {
+    "Grof": "Grof afval",
+    "GA": "Grof afval",
+    "GFET": "Groente-, fruit-, etensresten en tuinafval",
+    "GFE": "Groente-, fruit-, etensresten en tuinafval",
+    "GFT": "Groente-, fruit-, etensresten en tuinafval",
+    "Glas": "Glas",
+    "Papier": "Papier en karton",
+    "Plastic": "Plastic",
+    "Rest": "Restafval",
+    "Textiel": "Textiel",
+}
+
+WASTE_COLLECTION_ROUTE_TYPES = [
+    "GROFVAST",
+    "GROFVASTPR",
+    "ZAKKENRT",
+    "ROLCONTAIN",
+    "ROLCONTPR",
+    "ZAKKENROOD",
+    "PKPAKKET",
+    "PKPAKKETpr",
+    "ZAKWITROOD",
+    "ZAKKENRT24",
+]
+
+WEEKDAYS = {
+    0: "maandag",
+    1: "dinsdag",
+    2: "woensdag",
+    3: "donderdag",
+    4: "vrijdag",
+    5: "zaterdag",
+    6: "zondag",
+}
 WASTE_TYPES_ORDER = ["Rest", "GA", "Papier", "GFT", "Glas", "Textiel"]
 
 WASTE_COLLECTION_BY_APPOINTMENT_CODE = "THUISAFSPR"
-
-WASTE_TYPES_INACTIVE = ["Plastic"]

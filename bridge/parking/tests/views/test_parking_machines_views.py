@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from bridge.parking.services.ssp import SSPEndpointExternal
 from bridge.parking.tests.mock_data import parking_machines
-from bridge.parking.tests.views.test_base_ssp_view import BaseSSPTestCase
+from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 
 
 class TestParkingVisitorTimeBalanceView(BaseSSPTestCase):
@@ -16,6 +16,7 @@ class TestParkingVisitorTimeBalanceView(BaseSSPTestCase):
             headers={"Content-Type": "text/plain"},
         )
 
+    @responses.activate
     def test_success(self):
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
@@ -23,5 +24,6 @@ class TestParkingVisitorTimeBalanceView(BaseSSPTestCase):
             len(response.json()), 43
         )  # Only Amsterdam machines are returned. Data contains 3 other machines
 
+    @responses.activate
     def test_cache(self):
         self.assert_caching(self.url, rsp_get=self.rsp_get)

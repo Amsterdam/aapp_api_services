@@ -36,7 +36,6 @@ class Command(BaseCommand):
             question_type=QuestionType.RADIO.value,
             required=True,
             default="q1_10",
-            sort_order=1,
         )
         choices = [
             Choice(label=str(i), text=str(i), sort_order=i, question=q1)
@@ -48,7 +47,6 @@ class Command(BaseCommand):
             question_text="Kunt u toelichten waarom u dit cijfer geeft?",
             question_type=QuestionType.TEXT.value,
             required=False,
-            sort_order=2,
         )
 
         q3 = Question.objects.create(
@@ -56,7 +54,6 @@ class Command(BaseCommand):
             question_type=QuestionType.CHECK.value,
             required=False,
             conditions_type="or",
-            sort_order=3,
         )
         choices = [
             Choice(
@@ -97,7 +94,6 @@ class Command(BaseCommand):
             question_text="Wat is uw favoriete functie van de Amsterdam App?",
             question_type=QuestionType.SELECT.value,
             required=False,
-            sort_order=4,
         )
         choices = [
             Choice(

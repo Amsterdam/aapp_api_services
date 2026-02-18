@@ -1,7 +1,5 @@
 import datetime
-from unittest.mock import patch
 
-import requests
 from django.test.utils import override_settings
 from django.urls import reverse
 
@@ -137,102 +135,6 @@ class TestCityOfficeView(BaseContactTestCase):
         result = response_data.get("result")
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 0)
-
-
-class TestWaitingTimesView(BaseContactTestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("contact-waiting-times")
-
-    def _assert_waittime_results_in_minutes(
-        self, mock_get, waittime: str, waiting_time: int
-    ):
-        mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = [
-            {"id": "1", "waiting": 10, "waittime": waittime},
-        ]
-
-        response = self.client.get(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 200)
-        response_data = response.json()
-        self.assertEqual(response_data.get("status"), True)
-        self.assertEqual(
-            response_data.get("result"),
-            [
-                {
-                    "title": self.city_office.title,
-                    "identifier": self.city_office.identifier,
-                    "queued": 10,
-                    "waitingTime": waiting_time,
-                },
-            ],
-        )
-
-    def _assert_response_results_in_empty_list(self, mock_get, mock_return_value):
-        mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = mock_return_value
-
-        response = self.client.get(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json().get("status"), True)
-        self.assertEqual(response.json().get("result"), [])
-
-    @patch("contact.views.contact_views.requests.get")
-    def test_source_response_waittime_in_minutes(self, mock_get):
-        """
-        Currently we only check for digits before the space.
-        """
-        self._assert_waittime_results_in_minutes(mock_get, "15 minuten", 15)
-        self._assert_waittime_results_in_minutes(mock_get, "6 uur", 6)
-        self._assert_waittime_results_in_minutes(mock_get, "166 foobar something", 166)
-
-    @patch("contact.views.contact_views.requests.get")
-    def test_source_response_waittime_special_cases(self, mock_get):
-        self._assert_waittime_results_in_minutes(mock_get, "meer dan een uur", 60)
-        self._assert_waittime_results_in_minutes(mock_get, "geen", 0)
-
-    @patch("contact.views.contact_views.requests.get")
-    def test_city_office_lookup_id_not_found(self, mock_get):
-        mock_return_value = [
-            {"id": "999", "waiting": 10, "waittime": "15 minuten"},
-        ]
-        self._assert_response_results_in_empty_list(mock_get, mock_return_value)
-
-    @patch("contact.views.contact_views.requests.get")
-    def test_source_response_unknown_value(self, mock_get):
-        mock_return_value = [
-            {"id": "1", "waiting": 10, "waittime": "unexpected_value"},
-        ]
-        self._assert_response_results_in_empty_list(mock_get, mock_return_value)
-
-    @patch("contact.views.contact_views.requests.get")
-    def test_source_response_unknown_value_with_spaces(self, mock_get):
-        mock_return_value = [
-            {"id": "1", "waiting": 10, "waittime": "unexpected value with spaces"},
-        ]
-        self._assert_response_results_in_empty_list(mock_get, mock_return_value)
-
-    @patch("contact.views.contact_views.requests.get")
-    def test_source_response_unknown_value_non_string(self, mock_get):
-        mock_return_value = [
-            {"id": "1", "waiting": 10, "waittime": 100},
-        ]
-        self._assert_response_results_in_empty_list(mock_get, mock_return_value)
-
-    @patch("contact.views.contact_views.requests.get")
-    def test_source_api_returns_non_200(self, mock_get):
-        mock_get.return_value.status_code = 500
-        mock_get.return_value.json.return_value = {}
-
-        response = self.client.get(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 500)
-
-    @patch("contact.views.contact_views.requests.get")
-    def test_source_api_connection_timeout(self, mock_get):
-        mock_get.side_effect = requests.exceptions.ConnectionError()
-
-        response = self.client.get(self.url, headers=self.api_headers)
-        self.assertEqual(response.status_code, 500)
 
 
 class TestHealthCheckView(BasicAPITestCase):

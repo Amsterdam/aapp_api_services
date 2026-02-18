@@ -3,7 +3,6 @@ from django import forms
 from django.contrib import admin
 from django.contrib.admin import TabularInline
 from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
-from django.utils import timezone
 
 from survey.admin.survey_version_admin import InlineForm
 from survey.models import Choice, Condition, Question, SurveyVersionEntry
@@ -14,8 +13,6 @@ def question_is_locked(question):
         return False
     survey_versions = question.survey_versions
     for sv in survey_versions.all():
-        if sv.active_from <= timezone.now():
-            return True
         if SurveyVersionEntry.objects.filter(survey_version=sv).exists():
             return True
     return False
@@ -80,6 +77,7 @@ class QuestionAdmin(SortableAdminBase, admin.ModelAdmin):
         "orientation",
         "min_characters",
         "max_characters",
+        "textarea_rows",
         "conditions_type",
     ]
     exclude = ["id", "sort_order", "question_id"]

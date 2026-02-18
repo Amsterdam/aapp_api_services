@@ -1,24 +1,30 @@
 import json
 import logging
+import re
 from urllib.error import HTTPError
 
 import requests
 from django.conf import settings
+from django.db import connections
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import extend_schema
 from requests import JSONDecodeError
+from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
+from shapely.geometry import Point
 
 from bridge.proxy.serializers import (
+    AddressPostalAreaResponseSerializer,
     AddressSearchByCoordinateSerializer,
     AddressSearchByNameSerializer,
     AddressSearchRequestSerializer,
     AddressSearchResponseSerializer,
     WasteGuideRequestSerializer,
 )
+from bridge.utils import load_postal_area_shapes
 from core.utils.openapi_utils import extend_schema_for_api_key
 
 logger = logging.getLogger(__name__)
@@ -160,8 +166,13 @@ class AddressSearchAbstractView(GenericAPIView):
             logger.error(f"Invalid response: {data}")
             return Response({"detail": "Upstream address service error"}, status=502)
 
+        response_data = [
+            self._rename_fields_for_serializer(data=data_item)
+            for data_item in data["response"]["docs"]
+        ]
+
         response_serializer = AddressSearchResponseSerializer(
-            data=data["response"]["docs"], many=True
+            data=response_data, many=True
         )
         response_serializer.is_valid()
         return Response(response_serializer.data)
@@ -180,6 +191,32 @@ class AddressSearchAbstractView(GenericAPIView):
             ("bq", "type:weg^1.5"),
             ("bq", "type:adres^1"),
         ]
+
+    def _rename_fields_for_serializer(self, data):
+        # get lat and long from coordinates
+        coordinates = self._get_lat_and_lon_from_coordinates(data["centroide_ll"])
+        # change naming of fields
+        data["city"] = data["woonplaatsnaam"]
+        data["street"] = data["straatnaam"]
+        data["lat"] = coordinates[0]
+        data["lon"] = coordinates[1]
+        data["number"] = data.get("huisnummer", "")
+        data["additionLetter"] = data.get("huisletter", "")
+        data["additionNumber"] = data.get("huisnummertoevoeging", "")
+        data["bagId"] = data.get("nummeraanduiding_id", "")
+
+        return data
+
+    @staticmethod
+    def _get_lat_and_lon_from_coordinates(coordinates):
+        if hasattr(coordinates, "coords"):
+            lon, lat = coordinates.coords
+            return lat, lon
+        m = re.match(r"POINT\(\s*([-0-9.]+)\s+([-0-9.]+)\s*\)", coordinates)
+        if not m:
+            return None, None
+        lon, lat = m.groups()
+        return float(lat), float(lon)
 
 
 class AddressSearchByNameView(AddressSearchAbstractView):
@@ -225,3 +262,51 @@ class AddressSearchByCoordinateView(AddressSearchAbstractView):
         params.append(("fq", "type:adres"))
         params.append(("rows", "5"))
         return params
+
+
+class AddressPostalAreaByCoordinateView(GenericAPIView):
+    serializer_class = AddressSearchByCoordinateSerializer
+    response_serializer_class = AddressPostalAreaResponseSerializer
+
+    @extend_schema_for_api_key(
+        success_response=AddressPostalAreaResponseSerializer,
+        additional_params=[AddressSearchByCoordinateSerializer],
+    )
+    def get(self, request):
+        serializer = self.get_serializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        location_point = Point(data["lon"], data["lat"])
+
+        postal_area_data = load_postal_area_shapes()
+
+        for postal_area, shape in postal_area_data.items():
+            if shape.contains(location_point):
+                response_serializer = self.response_serializer_class(
+                    data={"postal_area": postal_area}
+                )
+                response_serializer.is_valid(raise_exception=True)
+                return Response(
+                    data=response_serializer.data,
+                    status=status.HTTP_200_OK,
+                )
+
+        return Response(
+            data="No postal area found.",
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+
+class HealthCheckView(GenericAPIView):
+    authentication_classes = []
+
+    def get(self, request, *args, **kwargs) -> Response:
+        """Health Check"""
+        try:
+            connections["default"].cursor()
+        except BaseException:
+            return Response(
+                {"status": "unready"}, status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+        return Response({"status": "ok"})

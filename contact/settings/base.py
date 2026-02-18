@@ -3,6 +3,7 @@ from core.settings.base import *  # isort:skip
 SERVICE_NAME = "contact"
 INSTALLED_APPS += [
     "contact.apps.ContactConfig",
+    "notification.apps.NotificationsConfig",
 ]
 MIDDLEWARE += [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -20,8 +21,6 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
 SPECTACULAR_SETTINGS["TITLE"] = "Contact API"
 
 CSV_DIR = os.getenv("CSV_DIR", "/app/contact/csv")
-
-WAITING_TIME_API = "https://wachttijdenamsterdam.nl/data/"
 
 CITY_OFFICE_LOOKUP_TABLE = {
     5: "e9871a7716da02a4c20cfb06f9547005",  # Centrum
