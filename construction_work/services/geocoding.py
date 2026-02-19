@@ -1,9 +1,11 @@
 import logging
-import urllib.parse
+import re
 from typing import Optional, Tuple
 
 import requests
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def geocode_address(address: str) -> Tuple[Optional[float], Optional[float]]:
@@ -17,21 +19,32 @@ def geocode_address(address: str) -> Tuple[Optional[float], Optional[float]]:
         Tuple[Optional[float], Optional[float]]: A tuple containing latitude and longitude,
         or (None, None) if the geocoding fails.
     """
+
     try:
-        encoded_address = urllib.parse.quote_plus(address)
-        url = f"{settings.ADDRESS_TO_GPS_API}{encoded_address}"
-        response = requests.get(url=url, timeout=1)
+        response = requests.get(
+            settings.ADDRESS_SEARCH_URL,
+            params=[
+                ("q", address),
+                ("fq", "woonplaatsnaam:(amsterdam OR weesp)"),
+                ("rows", "1"),
+                ("fq", "type:adres"),
+            ],
+            headers={"Referer": "app.amsterdam.nl"},
+            timeout=5,
+        )
         response.raise_for_status()
-
-        data = response.json()
-        results = data.get("value", [])
-        if not results:
-            logging.warning(f"No results found for address: {address}")
-            return None, None
-
-        lon = results[0]["longitude"]
-        lat = results[0]["latitude"]
-        return lat, lon
     except requests.RequestException as e:
         logging.error(f"Error while geocoding address '{address}': {e}")
         return None, None
+
+    data = response.json()
+    results = data.get("response", {}).get("docs", [])
+    if not results:
+        logger.warning(f"No results found for address: {address}")
+        return None, None
+
+    coordinates = results[0].get("centroide_ll", "")
+    m = re.match(r"POINT\(\s*([-0-9.]+)\s+([-0-9.]+)\s*\)", coordinates)
+    lon, lat = m.groups()
+
+    return float(lat), float(lon)

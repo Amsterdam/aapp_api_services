@@ -15,21 +15,9 @@ class TestGeocodeAddress(TestCase):
 
         lat, lon = geocode_address("Dam 1")
 
-        assert lat == 52.395811189
-        assert lon == 4.952262942
+        assert lat == 52.37329259
+        assert lon == 4.8937175
         mock_get.assert_called_once()
-
-    @patch("requests.get")
-    def test_multiple_results_returns_first_result(self, mock_get):
-        mock_response = mock_get.return_value
-        mock_response.json.return_value = address_search.MOCK_DATA_MULTIPLE
-
-        first_result = address_search.MOCK_DATA_MULTIPLE["value"][0]
-
-        lat, lon = geocode_address("Dam")  # Ambiguous address
-
-        assert lat == first_result["latitude"]
-        assert lon == first_result["longitude"]
 
     @patch("requests.get")
     def test_no_results_returns_none(self, mock_get):
