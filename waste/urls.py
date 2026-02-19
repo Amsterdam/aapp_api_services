@@ -1,10 +1,8 @@
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib import admin
 from django.urls import path
 
-from core.urls import get_swagger_paths
-from core.views.admin_views import AdminLoginView
+from core.urls import get_admin_paths, get_swagger_paths
 from waste.views.container_views import WasteContainerPassNumberView
 from waste.views.notification_views import (
     WasteNotificationCreateView,
@@ -18,6 +16,7 @@ from waste.views.waste_views import (
 )
 
 BASE_PATH = "waste/api/v1"
+BASE_PATH_ADMIN = "waste/admin"
 
 urlpatterns = [
     path(
@@ -57,14 +56,8 @@ urlpatterns = [
         RecycleLocationsView.as_view(),
         name="waste-recycle-locations",
     ),
-    # Activate admin
-    path(
-        "waste/admin/login/",
-        AdminLoginView.as_view(),
-        name="waste-admin-login",
-    ),
-    path("waste/admin/", admin.site.urls),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += get_swagger_paths(BASE_PATH)
+urlpatterns += get_admin_paths(BASE_PATH_ADMIN, enable_oidc=False)

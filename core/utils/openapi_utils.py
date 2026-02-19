@@ -14,7 +14,7 @@ def custom_extend_schema(
     exceptions=None,
     additional_params=None,
     **kwargs,
-):
+):  # pragma: no cover
     """
     Extends original extend_schema function from drf-spectacular by adding default exception.
     Then creates serializers for this and manually added exceptions.
@@ -44,7 +44,7 @@ def custom_extend_schema(
 
 def extend_schema_for_api_key(
     success_response=None, exceptions=None, additional_params=None, **kwargs
-):
+):  # pragma: no cover
     return custom_extend_schema(
         default_exceptions=[ApiKeyInvalidException],
         success_response=success_response,
@@ -56,7 +56,7 @@ def extend_schema_for_api_key(
 
 def extend_schema_for_device_id(
     success_response=None, exceptions=None, additional_params=None, **kwargs
-):
+):  # pragma: no cover
     device_id_param = OpenApiParameter(
         settings.HEADER_DEVICE_ID,
         OpenApiTypes.STR,
