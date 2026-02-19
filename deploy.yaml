@@ -24,7 +24,6 @@ resources:
       name: Amsterdam-App/aapp_infra_azure
       ref: main
       trigger:
-        batch: true
         branches:
           include:
             - main
