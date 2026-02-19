@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class TestCoreScheduledNotificationService(APITestCase):
     def setUp(self):
-        self.service = ScheduledNotificationService()
+        self.service = ScheduledNotificationService(use_image_service=True)
         self.created_identifiers = []
 
     def tearDown(self):

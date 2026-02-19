@@ -6,7 +6,6 @@ from typing import NamedTuple
 from django.utils import timezone
 
 from core.enums import Module, NotificationType
-from core.services.internal_http_client import InternalServiceSession
 from notification.models import (
     Device,
     Notification,
@@ -37,7 +36,6 @@ class AbstractNotificationService:
     notification_type: NotificationType = None
 
     def __init__(self):
-        self.client = InternalServiceSession()
         self.link_source_id = None
 
     def get_last_timestamp(self, device_id: str) -> datetime | None:
