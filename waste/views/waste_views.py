@@ -1,5 +1,6 @@
 import logging
 
+from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_control, cache_page
 from drf_spectacular.types import OpenApiTypes
@@ -91,7 +92,7 @@ class WasteGuidePDFView(APIView):
 
         pdf_bytes = bytes(pdf.output())
 
-        response = Response(pdf_bytes, content_type="application/pdf")
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = (
             'attachment; filename="afvalwijzer_kalender.pdf"'
         )
@@ -105,14 +106,16 @@ class WasteGuideCalendarIcsView(APIView):
     def get(self, request, *args, **kwargs):
         bag_nummeraanduiding_id = kwargs.get("bag_nummeraanduiding_id")
         if bag_nummeraanduiding_id is None:
-            return Response(
-                {"detail": "bag_nummeraanduiding_id is required."},
+            return HttpResponse(
+                content_type="application/json",
+                data={"detail": "bag_nummeraanduiding_id is required."},
                 status=400,
             )
 
         if not isinstance(bag_nummeraanduiding_id, str):
-            return Response(
-                {"detail": "bag_nummeraanduiding_id must be a string."},
+            return HttpResponse(
+                content_type="application/json",
+                data={"detail": "bag_nummeraanduiding_id must be a string."},
                 status=400,
             )
 
@@ -120,6 +123,6 @@ class WasteGuideCalendarIcsView(APIView):
         waste_service.get_validated_data()
         calendar = waste_service.create_ics_calendar()
 
-        response = Response(calendar, content_type="text/calendar; charset=utf-8")
+        response = HttpResponse(calendar, content_type="text/calendar; charset=utf-8")
         response["Content-Disposition"] = 'inline; filename="calendar.ics"'
         return response
