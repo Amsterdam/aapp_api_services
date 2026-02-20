@@ -1,6 +1,6 @@
 import hashlib
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.auth.models import User
 
@@ -37,6 +37,7 @@ class NotificationService:
             title=notification.title,
             body=notification.message,
             scheduled_for=notification.send_at,
+            expires_at=notification.send_at + timedelta(minutes=30),
             identifier=self._create_identifier(
                 created_at=notification.created_at, created_by=notification.created_by
             ),
