@@ -156,7 +156,10 @@ class LoadDataTestCase(TestCase):
 
     @patch("construction_work.etl.load_data.ImageSetService")
     def test_projects_no_sections(self, mock_image_set_service):
-        """Test that projects function correctly creates or updates Project instances."""
+        """
+        Test that without filled sections are deactivated and those
+        with filled sections remain active
+        """
         project_data = [
             {
                 "id": 1,
@@ -262,6 +265,35 @@ class LoadDataTestCase(TestCase):
                 "publicationDate": timezone.now(),
                 "expirationDate": None,
             },
+            {
+                "id": 3,
+                "title": "Project 3",
+                "subtitle": "Subtitle 3",
+                "timeline": {
+                    "items": [
+                        {
+                            "body": "Cruquiusgebied verandere",
+                            "items": [],
+                            "title": "2008",
+                            "collapsed": True,
+                        }
+                    ],
+                    "title": "Wanneer",
+                },
+                "image": {
+                    "id": 240,
+                    "sources": [
+                        {"uri": "http://image3.jpg", "width": 940, "height": 415}
+                    ],
+                    "aspectRatio": 2,
+                },
+                "url": "http://example.com/project/3",
+                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
+                "created": timezone.now(),
+                "modified": timezone.now(),
+                "publicationDate": timezone.now(),
+                "expirationDate": None,
+            },
         ]
         self._set_mock_image_set_service_side_effect(
             mock_image_set_service, [p["image"] for p in project_data]
@@ -269,12 +301,14 @@ class LoadDataTestCase(TestCase):
 
         projects(project_data)
 
-        self.assertEqual(Project.objects.count(), 2)
+        self.assertEqual(Project.objects.count(), 3)
         project1 = Project.objects.get(foreign_id=1)
         project2 = Project.objects.get(foreign_id=2)
+        project3 = Project.objects.get(foreign_id=3)
 
         self.assertEqual(project1.active, False)
         self.assertEqual(project2.active, True)
+        self.assertEqual(project3.active, False)
 
     @patch("construction_work.etl.load_data.ImageSetService")
     def test_projects_update_conflict(self, mock_image_set_service):
