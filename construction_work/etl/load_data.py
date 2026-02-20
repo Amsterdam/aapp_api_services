@@ -110,6 +110,7 @@ def projects(project_data):
 def get_project_object(data):
     timeline_data = data.get("timeline") or {}
     coordinates_data = data.get("coordinates") or {}
+    sections_filled = check_sections_filled(data)
     project = Project(
         foreign_id=data.get("id"),
         title=data.get("title"),
@@ -126,9 +127,19 @@ def get_project_object(data):
         publication_date=data.get("created"),
         expiration_date=data.get("expirationDate"),
         last_seen=timezone.now(),
-        active=True,
+        # only projects with filled sections are set to active, because those are
+        # the only ones that can be shown on the frontend in a proper way.
+        active=sections_filled,
     )
     return project
+
+
+def check_sections_filled(data):
+    sections_data = data.get("sections") or {}
+    for _, value in sections_data.items():
+        if value:
+            return True
+    return False
 
 
 def get_contacts(data, project):
