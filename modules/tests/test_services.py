@@ -32,8 +32,8 @@ class TestScheduledNotificationService(TestCase):
             self.notification_1.created_at.strftime("%Y%m%d%H%M%S") in identifier, True
         )
 
-    def test_send_notification(self):
-        self.service.send_notification(self.notification_1)
+    def test_upsert_scheduled_notification(self):
+        self.service.upsert_scheduled_notification(self.notification_1)
 
         self.assertEqual(
             Notification.objects.filter(title=self.notification_1.title).count(), 1
