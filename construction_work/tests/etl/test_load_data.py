@@ -155,6 +155,128 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(project2.title, "Project 2")
 
     @patch("construction_work.etl.load_data.ImageSetService")
+    def test_projects_no_sections(self, mock_image_set_service):
+        """Test that projects function correctly creates or updates Project instances."""
+        project_data = [
+            {
+                "id": 1,
+                "title": "Project 1",
+                "sections": {
+                    "what": [],
+                    "when": [],
+                    "work": [],
+                    "where": [],
+                    "contact": [],
+                },
+                "contacts": [
+                    {
+                        "id": 1,
+                        "name": "Jan",
+                        "email": "jan@amsterdam.nl",
+                        "phone": None,
+                        "position": "Omgevingsmanager",
+                    }
+                ],
+                "subtitle": "Subtitle 1",
+                "timeline": {
+                    "items": [
+                        {
+                            "body": "Cruquiusgebied verandere",
+                            "items": [],
+                            "title": "2008",
+                            "collapsed": True,
+                        },
+                        {
+                            "body": "Bouw woningen",
+                            "items": [],
+                            "title": "2011",
+                            "collapsed": True,
+                        },
+                    ],
+                    "title": "Wanneer",
+                },
+                "url": "http://example.com/project/1",
+                "image": {
+                    "id": 236,
+                    "sources": [
+                        {"uri": "https://image.jpg", "width": 940, "height": 415}
+                    ],
+                    "aspectRatio": 2,
+                },
+                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
+                "created": timezone.now(),
+                "modified": timezone.now(),
+                "publicationDate": timezone.now(),
+                "expirationDate": None,
+            },
+            {
+                "id": 2,
+                "title": "Project 2",
+                "subtitle": "Subtitle 2",
+                "sections": {
+                    "what": [
+                        {
+                            "body": "Het park Gaasperplas",
+                            "links": [
+                                {
+                                    "url": "http://www.amsterdam.nl/",
+                                    "label": "Bekijk wat we gaan doen",
+                                }
+                            ],
+                            "title": None,
+                        }
+                    ],
+                    "when": [],
+                    "work": [],
+                    "where": [{"body": "De Gaasperplas", "links": [], "title": "Waar"}],
+                    "contact": [{"body": None, "links": [], "title": "Contact"}],
+                },
+                "timeline": {
+                    "items": [
+                        {
+                            "body": "Cruquiusgebied verandere",
+                            "items": [],
+                            "title": "2008",
+                            "collapsed": True,
+                        },
+                        {
+                            "body": "Bouw woningen",
+                            "items": [],
+                            "title": "2011",
+                            "collapsed": True,
+                        },
+                    ],
+                    "title": "Wanneer",
+                },
+                "image": {
+                    "id": 238,
+                    "sources": [
+                        {"uri": "http://image2.jpg", "width": 940, "height": 415}
+                    ],
+                    "aspectRatio": 2,
+                },
+                "url": "http://example.com/project/2",
+                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
+                "created": timezone.now(),
+                "modified": timezone.now(),
+                "publicationDate": timezone.now(),
+                "expirationDate": None,
+            },
+        ]
+        self._set_mock_image_set_service_side_effect(
+            mock_image_set_service, [p["image"] for p in project_data]
+        )
+
+        projects(project_data)
+
+        self.assertEqual(Project.objects.count(), 2)
+        project1 = Project.objects.get(foreign_id=1)
+        project2 = Project.objects.get(foreign_id=2)
+
+        self.assertEqual(project1.active, False)
+        self.assertEqual(project2.active, True)
+
+    @patch("construction_work.etl.load_data.ImageSetService")
     def test_projects_update_conflict(self, mock_image_set_service):
         """Test that projects function updates existing Project instances on conflict."""
         # Create an initial project
