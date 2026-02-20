@@ -116,7 +116,7 @@ class NotificationAdmin(admin.ModelAdmin):
 
         if request.method == "POST":
             if "confirm" in request.POST:
-                notification_service.send_notification(
+                notification_service.upsert_scheduled_notification(
                     obj, is_test_notification=is_test_notification
                 )
                 self.message_user(

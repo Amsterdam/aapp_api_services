@@ -17,7 +17,7 @@ class NotificationService:
     def __init__(self):
         self.notification_service = ScheduledNotificationService()
 
-    def send_notification(
+    def upsert_scheduled_notification(
         self, notification: Notification, is_test_notification: bool = True
     ):
         device_ids = (

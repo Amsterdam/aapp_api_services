@@ -30,7 +30,7 @@ class TestNotificationAdmin(TestCase):
             Notification, created_by=self.user, created_at=created_at, send_at=send_at
         )
 
-        self.notification_service.send_notification(notif)
+        self.notification_service.upsert_scheduled_notification(notif)
 
         identifier = self.notification_service._create_identifier(
             created_at=created_at, created_by=self.user
