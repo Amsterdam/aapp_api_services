@@ -33,6 +33,14 @@ class NotificationAdmin(admin.ModelAdmin):
         obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
+    def delete_model(self, request, obj):
+        # delete the scheduled notification in the notification service when the 
+        # notification is deleted in the admin 
+        if obj.send_at is not None and obj.send_at > timezone.now():
+            notification_service = NotificationService()
+            notification_service.delete_scheduled_notification(obj)
+        super().delete_model(request, obj)
+
     def has_change_permission(self, request, obj=None):
         if obj and self._notification_is_locked(obj):
             return False

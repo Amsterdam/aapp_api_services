@@ -10,11 +10,12 @@ from modules.models import Notification, TestDevice
 logger = logging.getLogger(__name__)
 
 
-class NotificationService(ScheduledNotificationService):
+class NotificationService:
+    module_slug = "modules"
+    notification_type = "modules:general-notification"
+    
     def __init__(self):
-        super().__init__()
-        self.notification_type = "modules:general-notification"
-        self.module_slug = "modules"
+        self.notification_service = ScheduledNotificationService()
 
     def send_notification(
         self, notification: Notification, is_test_notification: bool = True
@@ -32,7 +33,7 @@ class NotificationService(ScheduledNotificationService):
             context["deeplink"] = notification.deeplink
         if notification.url:
             context["url"] = notification.url
-        scheduled_notification = self.upsert(
+        scheduled_notification = self.notification_service.upsert(
             title=notification.title,
             body=notification.message,
             scheduled_for=notification.send_at,
@@ -47,6 +48,12 @@ class NotificationService(ScheduledNotificationService):
         )
         notification.nr_sessions = scheduled_notification.devices.count()
         notification.save()
+
+    def delete_scheduled_notification(self, notification: Notification):
+        identifier = self._create_identifier(
+            created_at=notification.created_at, created_by=notification.created_by
+        )
+        self.notification_service.delete(identifier)
 
     def _create_identifier(self, created_at: datetime, created_by: User) -> str:
         return f"{self.module_slug}_app_notification_{created_at.strftime('%Y%m%d%H%M%S')}_{hashlib.sha256(created_by.username.encode()).hexdigest()}"
