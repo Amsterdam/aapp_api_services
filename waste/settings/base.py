@@ -19,7 +19,13 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
     "core.authentication.APIKeyAuthentication",
 ]
 
-SPECTACULAR_SETTINGS["TITLE"] = "Waste API"
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Waste API",
+    "PREPROCESSING_HOOKS": [
+        "waste.schema_hooks.add_pdf_endpoint",
+        "waste.schema_hooks.add_ics_endpoint",
+    ],
+}
 
 STATIC_URL = "/waste/static/"
 

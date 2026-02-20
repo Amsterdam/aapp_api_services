@@ -2,17 +2,16 @@ import logging
 
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
+from django.views import View
 from django.views.decorators.cache import cache_control, cache_page
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import status
-from rest_framework.decorators import renderer_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.utils.openapi_utils import extend_schema_for_api_key
 from waste.exceptions import WasteGuideException
-from waste.renderers import ICSCalendarRenderer, PDFCalendarRenderer
 from waste.serializers.waste_guide_serializers import (
     WasteRequestSerializer,
     WasteResponseSerializer,
@@ -66,8 +65,7 @@ class WasteGuideView(APIView):
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)
 
 
-@renderer_classes([PDFCalendarRenderer])
-class WasteGuidePDFView(APIView):
+class WasteGuidePDFView(View):
     serializer_class = WasteRequestSerializer
 
     @extend_schema_for_api_key(
@@ -99,30 +97,70 @@ class WasteGuidePDFView(APIView):
         return response
 
 
+class WasteGuidePDFSchemaView(APIView):
+    @extend_schema_for_api_key(
+        request=WasteRequestSerializer,
+        success_response={
+            "content": {
+                "application/pdf": {"schema": {"type": "string", "format": "binary"}}
+            }
+        },
+        additional_params=[
+            OpenApiParameter(
+                "bag_nummeraanduiding_id",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                required=True,
+            )
+        ],
+    )
+    def get(self, request, *args, **kwargs):
+        # This will never actually be used, only for OpenAPI documentation
+        return Response(status=204)
+
+
 @method_decorator(cache_control(public=True, max_age=3600), name="dispatch")
 @method_decorator(cache_page(60 * 60), name="dispatch")
-@renderer_classes([ICSCalendarRenderer])
-class WasteGuideCalendarIcsView(APIView):
+class WasteGuideCalendarIcsView(View):
     def get(self, request, *args, **kwargs):
         bag_nummeraanduiding_id = kwargs.get("bag_nummeraanduiding_id")
         if bag_nummeraanduiding_id is None:
             return HttpResponse(
+                '{"detail":"bag_nummeraanduiding_id is required."}',
                 content_type="application/json",
-                data={"detail": "bag_nummeraanduiding_id is required."},
                 status=400,
             )
 
         if not isinstance(bag_nummeraanduiding_id, str):
             return HttpResponse(
+                '{"detail":"bag_nummeraanduiding_id must be a string."}',
                 content_type="application/json",
-                data={"detail": "bag_nummeraanduiding_id must be a string."},
                 status=400,
             )
 
         waste_service = WasteCollectionICSService(bag_nummeraanduiding_id)
         waste_service.get_validated_data()
+
         calendar = waste_service.create_ics_calendar()
 
-        response = HttpResponse(calendar, content_type="text/calendar; charset=utf-8")
+        response = HttpResponse(
+            str(calendar), content_type="text/calendar; charset=utf-8"
+        )
         response["Content-Disposition"] = 'inline; filename="calendar.ics"'
         return response
+
+
+class WasteGuideCalendarIcsSchemaView(APIView):
+    authentication_classes = []
+
+    @extend_schema_for_api_key(
+        request=WasteRequestSerializer,
+        success_response={
+            "content": {
+                "text/calendar": {"schema": {"type": "string", "format": "ics"}}
+            }
+        },
+    )
+    def get(self, request, *args, **kwargs):
+        # This will never actually be used, only for OpenAPI documentation
+        return Response(status=204)
