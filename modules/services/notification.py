@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class NotificationService:
     module_slug = "modules"
     notification_type = "modules:general-notification"
-    
+
     def __init__(self):
         self.notification_service = ScheduledNotificationService()
 

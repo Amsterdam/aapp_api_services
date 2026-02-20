@@ -34,14 +34,25 @@ class NotificationAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
     def delete_model(self, request, obj):
-        # delete the scheduled notification in the notification service when the 
-        # notification is deleted in the admin 
-        if obj.send_at is not None and obj.send_at > timezone.now():
+        # delete the scheduled notification in the notification service when the
+        # notification is deleted in the admin
+        if obj and not self._notification_is_locked(obj):
             notification_service = NotificationService()
             notification_service.delete_scheduled_notification(obj)
-        super().delete_model(request, obj)
+            super().delete_model(request, obj)
+        else:
+            self.message_user(
+                request,
+                "Bericht is verstuurd en kan niet meer verwijderd worden.",
+                level=messages.INFO,
+            )
 
     def has_change_permission(self, request, obj=None):
+        if obj and self._notification_is_locked(obj):
+            return False
+        return True
+
+    def has_delete_permission(self, request, obj=None):
         if obj and self._notification_is_locked(obj):
             return False
         return True
@@ -66,6 +77,14 @@ class NotificationAdmin(admin.ModelAdmin):
             ),
         ]
         return custom + urls
+
+    def get_readonly_fields(self, request, obj=None):
+        # Make 'is_test' field read-only once the notification is no longer a test,
+        # to prevent changing it back to a test notification
+        readonly = list(super().get_readonly_fields(request, obj))
+        if obj and obj.is_test is False:
+            readonly.append("is_test")
+        return readonly
 
     def response_change(
         self, request, obj: Notification, post_url_continue: str = None
@@ -164,3 +183,10 @@ class NotificationAdmin(admin.ModelAdmin):
             % len(queryset),
             messages.SUCCESS,
         )
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        # Remove only the bulk delete action
+        if "delete_selected" in actions:
+            del actions["delete_selected"]
+        return actions
