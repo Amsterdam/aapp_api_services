@@ -4,8 +4,6 @@
 #
 #################################################
 
-pr: none
-
 trigger:
   batch: true
   branches:
@@ -81,6 +79,11 @@ stages:
   jobs:
     - job: build
       pool: ManagedDevOpsPools
+      strategy:
+        matrix:
+          ${{ each service in parameters.services }}:
+            ${{ service }}:
+              SERVICE_NAME: ${{ service }}
       steps:
         - checkout: self
 
@@ -98,40 +101,9 @@ stages:
             az acr login -n $(registry)
           displayName: ACR login
 
-        - ${{ each svc in parameters.services }}:
-          # BUILD
-          - script: SERVICE_NAME=${{svc}} make build
-            displayName: make build (${{svc}})
-
-          # PUSH IMAGE
-          - script: |
-              SERVICE_NAME=${{svc}} make push || echo "Image already exists, ignoring"
-            displayName: make push (${{svc}})
-
-    - job: QA
-      pool: ManagedDevOpsPools
-      dependsOn: build
-      strategy:
-        matrix:
-          ${{ each service in parameters.services }}:
-            ${{ service }}:
-              SERVICE_NAME: ${{ service }}
-      steps:
-        - script: echo "Running QA for $(SERVICE_NAME)"
-          displayName: "Set SERVICE_NAME to $(SERVICE_NAME)"
-
-        - checkout: self
-
-        - task: Docker@2
-          inputs:
-            command: login
-            containerRegistry: Shared-Dockerhub-Datapunt
-          displayName: Docker hub login
-
-        - script: |
-            az login --identity
-            az acr login -n $(registry)
-          displayName: ACR login
+        # BUILD
+        - script: make build
+          displayName: make build
 
         # UNITTESTING & LINTING
         - script: make test
@@ -161,6 +133,11 @@ stages:
             trivySkipDirectories: []
             trivyTimeout: 5m0s
 
+        # PUSH IMAGE
+        - script: |
+            make push || echo "Image already exists, ignoring"
+          displayName: make push
+
         # LOCK PRODUCED IMAGES
         - ${{ if parameters.lockProducedImages }}:
           - script: |
@@ -181,13 +158,7 @@ stages:
     force: ${{ parameters.forceDeploy }}
     migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
     condition: |
-      and(
-        not(or(failed(), canceled())),
-        or(
-          eq(variables['Self.Ref'], 'refs/heads/main'),
-          eq(variables['Build.Reason'], 'Manual')
-        )
-      )
+      not(or(failed(), canceled()))
 
 # --------------------
 # TEST
