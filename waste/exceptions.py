@@ -10,7 +10,7 @@ class LinkDataException(BaseApiException):
 
 
 class WasteGuideException(BaseApiException):
-    status_code = status.HTTP_400_BAD_REQUEST
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = (
         "Something went wrong during request to source data for waste guide"
     )
