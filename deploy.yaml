@@ -76,11 +76,16 @@ stages:
 # --------------------
 # BUILD
 # --------------------
-- stage: build
+- stage: build & QA
   displayName: Build, test, analyze & push
   jobs:
     - job: build
       pool: ManagedDevOpsPools
+      strategy:
+        matrix:
+          ${{ each service in parameters.services }}:
+            ${{ service }}:
+              SERVICE_NAME: ${{ service }}
       steps:
         - checkout: self
 
@@ -102,36 +107,6 @@ stages:
           # BUILD
           - script: SERVICE_NAME=${{svc}} make build
             displayName: make build (${{svc}})
-
-          # PUSH IMAGE
-          - script: |
-              SERVICE_NAME=${{svc}} make push || echo "Image already exists, ignoring"
-            displayName: make push (${{svc}})
-
-    - job: QA
-      pool: ManagedDevOpsPools
-      dependsOn: build
-      strategy:
-        matrix:
-          ${{ each service in parameters.services }}:
-            ${{ service }}:
-              SERVICE_NAME: ${{ service }}
-      steps:
-        - script: echo "Running QA for $(SERVICE_NAME)"
-          displayName: "Set SERVICE_NAME to $(SERVICE_NAME)"
-
-        - checkout: self
-
-        - task: Docker@2
-          inputs:
-            command: login
-            containerRegistry: Shared-Dockerhub-Datapunt
-          displayName: Docker hub login
-
-        - script: |
-            az login --identity
-            az acr login -n $(registry)
-          displayName: ACR login
 
         # UNITTESTING & LINTING
         - script: make test
