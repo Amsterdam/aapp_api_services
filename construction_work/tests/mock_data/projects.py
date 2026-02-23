@@ -1,0 +1,28 @@
+MOCK_DATA = [
+    {
+        "foreign_id": 2048,
+        "active": True,
+        "title": "title first project",
+        "subtitle": "subtitle first project",
+        "coordinates_lat": 1.0,
+        "coordinates_lon": 1.0,
+        "url": "https://www.amsterdam.nl/foobar",
+        "creation_date": "2023-01-01T00:00:00+00:00",
+        "modification_date": "2023-01-20T00:00:00+00:00",
+        "publication_date": "2023-01-01T00:00:00+00:00",
+        "expiration_date": "2023-02-01T00:00:00+00:00",
+    },
+    {
+        "foreign_id": 4096,
+        "active": True,
+        "title": "title second project",
+        "subtitle": "subtitle second project",
+        "coordinates_lat": None,
+        "coordinates_lon": None,
+        "url": "https://www.amsterdam.nl/fizzbuzz",
+        "creation_date": "2023-01-01T00:00:00+00:00",
+        "modification_date": "2023-01-20T00:00:00+00:00",
+        "publication_date": "2023-01-01T00:00:00+00:00",
+        "expiration_date": "2023-02-01T00:00:00+00:00",
+    },
+]

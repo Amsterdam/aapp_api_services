@@ -84,6 +84,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "debug_toolbar",
+    "mozilla_django_oidc",
     "adminsortable2",
     "core.apps.CoreConfig",
 ]
@@ -105,14 +106,66 @@ MIDDLEWARE = [
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
+    # "core.authentication.OIDCAuthenticationBackend",
 ]
 
 ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
 
-ENTRA_TENANT_ID = os.getenv("TENANT_ID")
+ENTRA_TENANT_ID = os.getenv("TENANT_ID", "72fca1b1-2c2e-4376-a445-294d80196804")
 ENTRA_CLIENT_ID = os.getenv("CLIENT_ID")
 
 ENTRA_TOKEN_COOKIE_NAME = "__Host-Access-Token"
+
+# Required by mozilla_django_oidc
+OIDC_BASE_URL = os.getenv(
+    "OIDC_BASE_URL", f"https://login.microsoftonline.com/{ENTRA_TENANT_ID}"
+)
+OIDC_RP_CLIENT_ID = os.getenv("OIDC_RP_CLIENT_ID", ENTRA_CLIENT_ID)
+OIDC_RP_CLIENT_SECRET = os.getenv("OIDC_RP_CLIENT_SECRET")
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_RP_SCOPES = os.getenv("OIDC_RP_SCOPES", "openid profile email")
+OIDC_OP_AUTHORIZATION_ENDPOINT = os.getenv(
+    "OIDC_OP_AUTHORIZATION_ENDPOINT", f"{OIDC_BASE_URL}/oauth2/v2.0/authorize"
+)
+OIDC_OP_TOKEN_ENDPOINT = os.getenv(
+    "OIDC_OP_TOKEN_ENDPOINT", f"{OIDC_BASE_URL}/oauth2/v2.0/token"
+)
+OIDC_OP_USER_ENDPOINT = os.getenv(
+    "OIDC_OP_USER_ENDPOINT", "https://graph.microsoft.com/oidc/userinfo"
+)
+OIDC_OP_JWKS_ENDPOINT = os.getenv(
+    "OIDC_OP_JWKS_ENDPOINT", f"{OIDC_BASE_URL}/discovery/v2.0/keys"
+)
+OIDC_OP_LOGOUT_ENDPOINT = os.getenv(
+    "OIDC_OP_LOGOUT_ENDPOINT", f"{OIDC_BASE_URL}/oauth2/v2.0/logout"
+)
+OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"prompt": "select_account"}
+OIDC_USE_NONCE = False
+OIDC_USE_PKCE = True
+
+### MONKEY PATCH
+# Add callback w/o trailing slash in mozilla_django_oidc
+# This is a workaround as long as the redirect uri is not updated in Entra
+import mozilla_django_oidc.urls  # noqa: E402
+from django.urls import path  # noqa: E402
+
+mozilla_django_oidc.urls.urlpatterns.append(
+    path(
+        "callback",
+        mozilla_django_oidc.views.OIDCAuthenticationCallbackView.as_view(),
+        name="oidc_authentication_callback",
+    ),  # noqa: E501, F541
+)
+### END OF MONKEY PATCH
+
+# Required by amsterdam_django_oidc
+OIDC_OP_ISSUER = os.getenv(
+    "OIDC_OP_ISSUER", f"https://sts.windows.net/{ENTRA_TENANT_ID}/"
+)
+OIDC_VERIFY_AUDIENCE = os.getenv("OIDC_VERIFY_AUDIENCE", True)
+OIDC_TRUSTED_AUDIENCES = os.getenv(
+    "OIDC_TRUSTED_AUDIENCES", [f"api://{OIDC_RP_CLIENT_ID}"]
+)
 
 
 TEMPLATES = [
