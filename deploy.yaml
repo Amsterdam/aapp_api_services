@@ -150,13 +150,7 @@ stages:
     force: ${{ parameters.forceDeploy }}
     migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
     condition: |
-      and(
-        not(or(failed(), canceled())),
-        or(
-          eq(variables['Source.Ref'], 'refs/heads/main'),
-          eq(variables['Build.Reason'], 'Manual')
-        )
-      )
+      not(or(failed(), canceled()))
 
 # --------------------
 # TEST
