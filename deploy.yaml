@@ -61,7 +61,7 @@ variables:
   - name: Self.Ref
     value: $[ variables['Build.SourceBranch'] ]
   - name: Self.BranchName
-    value: $[ replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', 'refs/pull/', '') ]
+    value: $[ replace(replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', ''), 'refs/pull/', '') ]
   - name: registry
     value: saks01weuacrpgpgo5qvmwo.azurecr.io
   - name: version
