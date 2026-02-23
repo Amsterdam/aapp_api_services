@@ -100,8 +100,9 @@ class WasteGuidePDFView(View):
 
 
 class WasteGuidePDFSchemaView(APIView):
-    @extend_schema_for_api_key(
-        exceptions=[WasteGuideException],
+    authentication_classes = []
+    @custom_extend_schema(
+        default_exceptions=[WasteGuideException],
         request=WasteRequestSerializer,
         success_response={
             "content": {
