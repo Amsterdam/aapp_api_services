@@ -76,7 +76,7 @@ stages:
 # --------------------
 # BUILD
 # --------------------
-- stage: build & QA
+- stage: build
   displayName: Build, test, analyze & push
   jobs:
     - job: build
