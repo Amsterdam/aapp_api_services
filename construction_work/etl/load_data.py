@@ -136,7 +136,7 @@ def get_project_object(data):
 
 def check_sections_filled(data):
     sections_data = data.get("sections") or {}
-    for _, value in sections_data.items():
+    for value in sections_data.values():
         if value:
             return True
     return False
