@@ -23,5 +23,5 @@ class ModulesConfig(AppConfig):
         models.URLField.formfield = _https_formfield
         if settings.MOCK_ENTRA_AUTH:
             authentication.EntraCookieTokenAuthentication = (
-                authentication.MockEntraCookieTokenAuthentication
+                authentication.MockEntraTokenAuthentication
             )

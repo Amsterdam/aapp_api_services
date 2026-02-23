@@ -19,7 +19,9 @@ ARTICLE_MAX_AGE = int(os.getenv("ARTICLE_MAX_AGE", DEFAULT_ARTICLE_MAX_AGE))
 
 DEFAULT_WARNING_MESSAGE_EMAIL = "redactieprojecten@amsterdam.nl"
 
-ADDRESS_TO_GPS_API = "https://api.data.amsterdam.nl/atlas/search/adres/?q="
+ADDRESS_SEARCH_URL = os.getenv(
+    "ADDRESS_SEARCH_URL", "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free"
+)
 
 MIN_SEARCH_QUERY_LENGTH = 3
 
