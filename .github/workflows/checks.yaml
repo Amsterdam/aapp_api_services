@@ -6,8 +6,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  checks: write
 
 env:
   REGISTRY: ghcr.io
