@@ -164,11 +164,6 @@ stages:
             trivySkipDirectories: []
             trivyTimeout: 5m0s
 
-        # PUSH IMAGE
-        - script: |
-            make push || echo "Image already exists, ignoring"
-          displayName: make push
-
         # LOCK PRODUCED IMAGES
         - script: |
             az acr repository update --write-enabled false --name $(registry) --image aapp/images/app-$(SERVICE_NAME):$(version)
