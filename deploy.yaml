@@ -96,6 +96,11 @@ stages:
             containerRegistry: Shared-Dockerhub-Datapunt
           displayName: Docker hub login
 
+        - script: |
+            az login --identity
+            az acr login -n $(registry)
+          displayName: ACR login
+
         # BUILD
         - script: make build
           displayName: make build
@@ -127,6 +132,11 @@ stages:
             - '**/site-packages/pyjwt-*/METADATA'
             trivySkipDirectories: []
             trivyTimeout: 5m0s
+
+        # PUSH IMAGE
+        - script: |
+            make push || echo "Image already exists, ignoring"
+          displayName: make push
 
         # LOCK PRODUCED IMAGES
         - ${{ if parameters.lockProducedImages }}:
