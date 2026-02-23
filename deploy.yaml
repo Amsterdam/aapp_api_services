@@ -4,8 +4,11 @@
 #
 #################################################
 
+pr:
+  branches:
+    include:
+      - "*"
 trigger:
-  batch: true
   branches:
     include:
       - main
@@ -27,7 +30,7 @@ resources:
             - main
         paths:
           include:
-            - deployments
+            - deployments/**
 
 parameters:
   - name: versionOverride
@@ -39,9 +42,6 @@ parameters:
   - name: forceDeploy
     type: boolean
     default: false
-  - name: lockProducedImages
-    type: boolean
-    default: true
   - name: services
     type: object
     default:
@@ -61,7 +61,7 @@ variables:
   - name: Self.Ref
     value: $[ variables['Build.SourceBranch'] ]
   - name: Self.BranchName
-    value: $[ replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', '') ]
+    value: $[ replace(replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', ''), 'refs/pull/', '') ]
   - name: registry
     value: saks01weuacrpgpgo5qvmwo.azurecr.io
   - name: version
@@ -79,6 +79,41 @@ stages:
   jobs:
     - job: build
       pool: ManagedDevOpsPools
+      steps:
+        - checkout: self
+
+        - script: env | sort
+          displayName: Show ENV vars
+
+        - task: Docker@2
+          inputs:
+            command: login
+            containerRegistry: Shared-Dockerhub-Datapunt
+          displayName: Docker hub login
+
+        - script: |
+            az login --identity
+            az acr login -n $(registry)
+          displayName: ACR login
+
+        - ${{ each svc in parameters.services }}:
+          # BUILD
+          - script: SERVICE_NAME=${{svc}} make build
+            displayName: make build (${{svc}})
+
+          # PUSH IMAGE
+          - script: |
+              SERVICE_NAME=${{svc}} make push || echo "Image already exists, ignoring"
+            displayName: make push (${{svc}})
+
+    - job: QA
+      pool: ManagedDevOpsPools
+      dependsOn: build
+      condition: |
+        and(
+          not(or(failed(), canceled())),
+          ne(variables['Build.Reason'], 'PullRequest')
+        )
       strategy:
         matrix:
           ${{ each service in parameters.services }}:
@@ -100,10 +135,6 @@ stages:
             az login --identity
             az acr login -n $(registry)
           displayName: ACR login
-
-        # BUILD
-        - script: make build
-          displayName: make build
 
         # UNITTESTING & LINTING
         - script: make test
@@ -133,16 +164,10 @@ stages:
             trivySkipDirectories: []
             trivyTimeout: 5m0s
 
-        # PUSH IMAGE
-        - script: |
-            make push || echo "Image already exists, ignoring"
-          displayName: make push
-
         # LOCK PRODUCED IMAGES
-        - ${{ if parameters.lockProducedImages }}:
-          - script: |
-              az acr repository update --write-enabled false --name $(registry) --image aapp/images/app-$(SERVICE_NAME):$(version)
-            displayName: "Lock image: aapp/images/app-$(SERVICE_NAME)"
+        - script: |
+            az acr repository update --write-enabled false --name $(registry) --image aapp/images/app-$(SERVICE_NAME):$(version)
+          displayName: "Lock image: aapp/images/app-$(SERVICE_NAME)"
 
 # --------------------
 # DEV
@@ -158,7 +183,13 @@ stages:
     force: ${{ parameters.forceDeploy }}
     migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
     condition: |
-      not(or(failed(), canceled()))
+      and(
+        not(or(failed(), canceled())),
+        or(
+          eq(variables['Build.Reason'], 'PullRequest'),
+          eq(variables['Build.Reason'], 'Manual')
+        )
+      )
 
 # --------------------
 # TEST
@@ -200,9 +231,9 @@ stages:
         not(or(failed(), canceled())),
         or(
           eq(variables['Self.Ref'], 'refs/heads/main'),
-          startsWith(variables['Self.Ref'], 'refs/tags/'),
           eq(variables['Build.Reason'], 'Manual')
-        )
+        ),
+        startsWith(variables['version'], 'main')
       )
 
 # --------------------
@@ -223,7 +254,7 @@ stages:
         succeeded(),
         or(
           eq(variables['Self.Ref'], 'refs/heads/main'),
-          startsWith(variables['Self.Ref'], 'refs/tags/'),
           eq(variables['Build.Reason'], 'Manual')
-        )
+        ),
+        startsWith(variables['version'], 'main')
       )
