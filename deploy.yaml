@@ -239,7 +239,7 @@ stages:
           eq(variables['Build.Reason'], 'Manual')
         ),
         startsWith(variables['version'], 'main')
-      )  # Only allow image tags from main branch
+      )
 
 # --------------------
 # PROD
