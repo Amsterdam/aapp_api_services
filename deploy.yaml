@@ -238,8 +238,8 @@ stages:
           eq(variables['Self.Ref'], 'refs/heads/main'),
           eq(variables['Build.Reason'], 'Manual')
         ),
-        startsWith(variables['version'], 'main')  # Only allow image tags from main branch
-      )
+        startsWith(variables['version'], 'main')
+      )  # Only allow image tags from main branch
 
 # --------------------
 # PROD
