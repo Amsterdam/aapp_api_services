@@ -58,15 +58,15 @@ parameters:
 variables:
   - name: Docker.Buildkit
     value: "1"
-  - name: Source.Ref
-    value: $[ coalesce(resources.repositories['source'].ref, variables['Build.SourceBranch']) ]
-  - name: Source.BranchName
-    value: $[ replace(replace(variables['Source.Ref'], 'refs/heads/', ''), 'refs/tags/', '') ]
+  - name: Self.Ref
+    value: $[ variables['Build.SourceBranch'] ]
+  - name: Self.BranchName
+    value: $[ replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', '') ]
   - name: registry
     value: saks01weuacrpgpgo5qvmwo.azurecr.io
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
-      value: $[ format('{0}-{1}', replace(variables['Source.BranchName'], '/', '-'), resources.repositories.source.version) ]
+      value: $[ format('{0}-{1}', replace(variables['Self.BranchName'], '/', '-'), variables['Build.SourceVersion']) ]
     ${{ else }}:
       value: ${{ parameters.versionOverride }}
 
@@ -167,7 +167,7 @@ stages:
       and(
         not(or(failed(), canceled())),
         or(
-          eq(variables['Source.Ref'], 'refs/heads/main'),
+          eq(variables['Self.Ref'], 'refs/heads/main'),
           eq(variables['Build.Reason'], 'Manual')
         )
       )
@@ -189,8 +189,8 @@ stages:
       and(
         not(or(failed(), canceled())),
         or(
-          eq(variables['Source.Ref'], 'refs/heads/main'),
-          startsWith(variables['Source.Ref'], 'refs/tags/'),
+          eq(variables['Self.Ref'], 'refs/heads/main'),
+          startsWith(variables['Self.Ref'], 'refs/tags/'),
           eq(variables['Build.Reason'], 'Manual')
         )
       )
@@ -212,8 +212,8 @@ stages:
       and(
         succeeded(),
         or(
-          eq(variables['Source.Ref'], 'refs/heads/main'),
-          startsWith(variables['Source.Ref'], 'refs/tags/'),
+          eq(variables['Self.Ref'], 'refs/heads/main'),
+          startsWith(variables['Self.Ref'], 'refs/tags/'),
           eq(variables['Build.Reason'], 'Manual')
         )
       )
