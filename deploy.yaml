@@ -98,15 +98,9 @@ stages:
             containerRegistry: Shared-Dockerhub-Datapunt
           displayName: Docker hub login
 
-        - script: |
-            az login --identity
-            az acr login -n $(registry)
-          displayName: ACR login
-
-        - ${{ each svc in parameters.services }}:
-          # BUILD
-          - script: SERVICE_NAME=${{svc}} make build
-            displayName: make build (${{svc}})
+        # BUILD
+        - script: make build
+          displayName: make build
 
         # UNITTESTING & LINTING
         - script: make test
