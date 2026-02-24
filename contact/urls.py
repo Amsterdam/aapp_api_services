@@ -35,7 +35,11 @@ urlpatterns = [
         name="contact-admin-login",
     ),
     path("contact/admin/", admin.site.urls),
-    path("service/api/v1/maps/<int:service_id>/", service_views.ServiceMapView.as_view(), name="service-map"),
+    path(
+        "service/api/v1/maps/<int:service_id>/",
+        service_views.ServiceMapView.as_view(),
+        name="service-map",
+    ),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH_API)

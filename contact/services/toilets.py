@@ -1,5 +1,7 @@
 import logging
+from typing import Any, Dict
 from urllib.parse import quote
+
 import requests
 from django.conf import settings
 from django.core.cache import cache
@@ -7,7 +9,6 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 
 logger = logging.getLogger(__name__)
 
-# Define filters for toilets
 TOILET_FILTERS = [
     {
         "label": "Gratis",
@@ -26,7 +27,6 @@ TOILET_FILTERS = [
     },
 ]
 
-# List of properties to include in the response, this is also the order of which the properties will be shown in the frontend
 PROPERTIES_TO_INCLUDE = [
     {
         "label": "Titel",
@@ -60,42 +60,54 @@ PROPERTIES_TO_INCLUDE = [
     },
 ]
 
+# Cache and timeout for toilet data, since the data is not expected to change frequently and the request can be slow, we cache it for 24 hours
+CACHE_TIMEOUT = 60 * 60 * 24
+
 
 class ToiletService:
     def __init__(self) -> None:
         self.url = settings.PUBLIC_TOILET_URL
+        self._cache_key = f"{__name__}.load_toilets"
 
-    def get_full_data(self):
-
+    def get_full_data(self) -> Dict[str, Any]:
+        """Return toilets formatted with the selected properties and metadata.
+        The response includes:
+        - filters: the available filters for the frontend
+        - properties_to_include: the properties to include in the response, this is also the order of which the properties will be shown in the frontend
+        - data: the list of toilets with the selected properties and metadata
+        """
         toilets = self.get_toilets()
 
         full_toilet_data = []
 
         for toilet in toilets:
-            new_properties = {}
-            properties = toilet.get("properties", {})
-            # add open hours to properties
-            new_properties["open_hours"] = (
-                f"{properties.get('Dagen_geopend', '')} {properties.get('Openingstijden', '')}"
+            properties = toilet.get("properties", {}) or {}
+
+            selection = str(properties.get("SELECTIE", "")).lower()
+
+            # Build open hours from available parts, normalize empty string to None
+            open_days = properties.get("Dagen_geopend") or ""
+            opening_times = properties.get("Openingstijden") or ""
+            open_hours = (
+                " ".join(part for part in (open_days, opening_times) if part).strip()
+                or None
             )
-            if not new_properties["open_hours"].strip():
-                new_properties["open_hours"] = None
-            if properties.get("Foto"):
-                # add image url to properties
-                new_properties["image_url"] = (
-                    f"{settings.PUBLIC_TOILET_IMAGE_BASE_URL}{quote(properties.get('Foto', ''))}"
-                )
+
+            foto = properties.get("Foto")
+            if foto:
+                image_url = f"{settings.PUBLIC_TOILET_IMAGE_BASE_URL}{quote(foto)}"
             else:
-                new_properties["image_url"] = None
-            new_properties["is_toilet"] = properties.get("SELECTIE", "").lower() in [
-                "toegang",
-                "openbaar",
-                "parkeer",
-            ]
-            new_properties["price_per_use"] = properties.get("Prijs_per_gebruik", None)
-            new_properties["name"] = properties.get("Soort", None)
-            new_properties["description"] = properties.get("Omschrijving", None) or None
-            new_properties["is_accessible"] = properties.get("SELECTIE", "").lower() == "toegang"
+                image_url = None
+
+            new_properties = {
+                "name": properties.get("Soort"),
+                "open_hours": open_hours,
+                "price_per_use": properties.get("Prijs_per_gebruik"),
+                "description": properties.get("Omschrijving") or None,
+                "image_url": image_url,
+                "is_accessible": selection == "toegang",
+                "is_toilet": selection in ("toegang", "openbaar", "parkeer"),
+            }
 
             full_toilet_data.append(
                 {
@@ -114,15 +126,18 @@ class ToiletService:
         return full_data
 
     def get_toilets(self):
-        cache_key = f"{__name__}.load_toilets"
-        cached_data = cache.get(cache_key)
+        cached_data = cache.get(self._cache_key)
         if cached_data:
             return cached_data
 
-        response = self._make_request()
-        toilets = response.json().get("features", [])
+        try:
+            response = self._make_request()
+        except requests.exceptions.RequestException:
+            raise
 
-        cache.set(cache_key, toilets, timeout=60 * 60 * 24)
+        toilets = response.json().get("features", []) if response is not None else []
+
+        cache.set(self._cache_key, toilets, timeout=CACHE_TIMEOUT)
         return toilets
 
     @retry(
@@ -131,9 +146,12 @@ class ToiletService:
         retry=retry_if_exception_type(requests.exceptions.RequestException),
         reraise=True,  # Reraise the RequestException after retries
     )
-    def _make_request(
-        self,
-    ) -> requests.Response:
-        response = requests.get(url=self.url)
-        response.raise_for_status()
-        return response
+    def _make_request(self) -> requests.Response:
+        """Make the HTTP request for toilet data with retries and a timeout."""
+        try:
+            response = requests.get(url=self.url)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.RequestException:
+            logger.info("Failed to fetch public toilet data")
+            raise

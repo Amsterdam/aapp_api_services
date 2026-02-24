@@ -8,9 +8,8 @@ class FlexibleValueField(serializers.Field):
     def to_internal_value(self, data):
         if isinstance(data, (int, str, bool)):
             return data
-        raise serializers.ValidationError(
-            "filter_value must be int, str, or bool"
-        )
+        raise serializers.ValidationError("filter_value must be int, str, or bool")
+
 
 class FiltersSerializer(serializers.Serializer):
     label = serializers.CharField()
@@ -27,6 +26,7 @@ class PropertiesSerializer(serializers.Serializer):
 
 class GeometrySerializer(serializers.Serializer):
     coordinates = serializers.ListField(child=serializers.FloatField())
+
 
 class ToiletPropertiesSerializer(serializers.Serializer):
     name = serializers.CharField()

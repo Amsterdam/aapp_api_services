@@ -6,7 +6,10 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from contact.serializers.service_serializers import ServiceMapResponseSerializer, ToiletMapResponseSerializer
+from contact.serializers.service_serializers import (
+    ServiceMapResponseSerializer,
+    ToiletMapResponseSerializer,
+)
 from contact.services.toilets import ToiletService
 from core.utils.openapi_utils import extend_schema_for_api_key
 
