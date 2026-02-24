@@ -12,5 +12,5 @@ class SurveyConfig(AppConfig):
 
         if settings.MOCK_ENTRA_AUTH:
             authentication.EntraCookieTokenAuthentication = (
-                authentication.MockEntraCookieTokenAuthentication
+                authentication.EntraCookieTokenAuthentication
             )
