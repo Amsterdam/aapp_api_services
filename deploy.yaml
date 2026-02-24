@@ -251,7 +251,7 @@ stages:
     migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
     condition: |
       and(
-        succeeded(),
+        not(or(failed(), canceled())),
         or(
           eq(variables['Self.Ref'], 'refs/heads/main'),
           eq(variables['Build.Reason'], 'Manual')
