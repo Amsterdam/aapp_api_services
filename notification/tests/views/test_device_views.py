@@ -4,6 +4,7 @@ import freezegun
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from model_bakery import baker
 from rest_framework import status
 
@@ -40,9 +41,7 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["firebase_token"], data["firebase_token"])
         self.assertEqual(response.data["os"], data["os"])
-        self.assertEqual(
-            response.data["last_seen"], timezone.localtime(timezone.now()).isoformat()
-        )
+        self.assertEqual(parse_datetime(response.data["last_seen"]), timezone.now())
 
         # Silent accept second call
         with freezegun.freeze_time("2026-02-26T12:00:00Z"):
@@ -50,10 +49,7 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
                 self.url, data, headers=self.headers_with_device_id
             )
             # But last seen should be updated!
-            self.assertEqual(
-                response.data["last_seen"],
-                timezone.localtime(timezone.now()).isoformat(),
-            )
+            self.assertEqual(parse_datetime(response.data["last_seen"]), timezone.now())
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["firebase_token"], data["firebase_token"])
@@ -80,9 +76,7 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["firebase_token"], new_data["firebase_token"])
         self.assertEqual(response.data["os"], new_data["os"])
-        self.assertEqual(
-            response.data["last_seen"], timezone.localtime(timezone.now()).isoformat()
-        )
+        self.assertEqual(parse_datetime(response.data["last_seen"]), timezone.now())
 
     def test_delete_registration(self):
         """Test removing a device registration"""

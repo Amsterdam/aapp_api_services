@@ -1,9 +1,9 @@
 import json
+import threading
 
 import firebase_admin
 from django.conf import settings
 from firebase_admin import credentials
-import threading
 
 _firebase_app_lock = threading.Lock()
 
@@ -19,6 +19,8 @@ def get_firebase_app():
                 # Another thread may have initialized the app while we were waiting.
                 return firebase_admin.get_app()
             except ValueError:
-                cred = credentials.Certificate(json.loads(settings.FIREBASE_CREDENTIALS))
+                cred = credentials.Certificate(
+                    json.loads(settings.FIREBASE_CREDENTIALS)
+                )
                 firebase_admin.initialize_app(cred)
                 return firebase_admin.get_app()
