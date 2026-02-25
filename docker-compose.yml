@@ -69,6 +69,7 @@ services:
       SECRET_KEY: secret-key-for-testing
       EDITOR_GROUP_ID: editor-group-id-for-testing
       PUBLISHER_GROUP_ID: publisher-group-id-for-testing
+      MOCK_FIREBASE: "true"
     command: uv run pytest
 
   app:
