@@ -1,9 +1,7 @@
-import json
 import logging
 
-import firebase_admin
 from django.conf import settings
-from firebase_admin import credentials, messaging
+from firebase_admin import messaging
 
 from core.services.image_set import ImageSetService
 from notification.models import Notification
@@ -12,19 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class PushService:
-    def __init__(self) -> None:
-        """
-        Initialize Firebase admin safely. Firebase's get_app() method handles
-        race conditions internally - if no app exists, it will raise a ValueError
-        which we catch and then initialize the app.
-        """
-        try:
-            creds = credentials.Certificate(json.loads(settings.FIREBASE_CREDENTIALS))
-            firebase_admin.initialize_app(creds)
-        except ValueError:
-            # App already initialized, do nothing
-            pass
-
     def push(self, notifications: list[Notification]) -> int:
         """
         Forwards notification to Firebase, to be pushed to devices.
