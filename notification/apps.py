@@ -13,5 +13,5 @@ class NotificationsConfig(AppConfig):
 
         if settings.MOCK_FIREBASE:
             setup_local_development_patches()
-        else:
+        elif settings.FIREBASE_CREDENTIALS:
             get_firebase_app()
