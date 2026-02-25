@@ -11,9 +11,9 @@ def apply_init_firebase_patches():
     """Apply patches to Firebase initialization functions for testing."""
     settings.FIREBASE_CREDENTIALS = "{}"
 
-    cert_patcher = patch("notification.services.push.credentials.Certificate")
-    init_patcher = patch("notification.services.push.firebase_admin.initialize_app")
-    app_patcher = patch("notification.services.push.firebase_admin.get_app")
+    cert_patcher = patch("notification.firebase.credentials.Certificate")
+    init_patcher = patch("notification.firebase.firebase_admin.initialize_app")
+    app_patcher = patch("notification.firebase.firebase_admin.get_app")
 
     # Start patches and set return values to None
     mock_cert = cert_patcher.start()
