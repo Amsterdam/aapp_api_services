@@ -10,20 +10,33 @@ from rest_framework.views import APIView
 
 from contact.serializers.service_serializers import (
     ServiceMapResponseSerializer,
+    ServiceMapsResponseSerializer,
     ToiletMapResponseSerializer,
 )
 from contact.services.toilets import ToiletService
 from core.utils.openapi_utils import extend_schema_for_api_key
+from contact.enums.services import Services
 
 logger = logging.getLogger(__name__)
 
 toilet_service = ToiletService()
 
 
+class ServiceMapsView(APIView):
+    response_serializer_class = ServiceMapsResponseSerializer
+
+    @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
+    def get(self, request, *args, **kwargs):
+
+        services = Services.choices()
+        response_serializer = ServiceMapsResponseSerializer(services, many=True)
+        return Response(response_serializer.data)
+
+
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 
-    @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
+    # @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
     @extend_schema_for_api_key(
         success_response=ServiceMapResponseSerializer,
         additional_params=[
@@ -36,12 +49,10 @@ class ServiceMapView(APIView):
         ],
     )
     def get(self, request, service_id: int):
-        if (
-            service_id == 1
-        ):  # Currently we only have one service, which is toilets, so we check if the service_id is 1.
-            # TODO: Update method when ticket to get all services is implemented.
-            logger.info("Fetching data for service_id 1 (toilets)")
-            response_payload = toilet_service.get_full_data()
+        data_service_class = Services.get_service_by_id(service_id)  # Check if service exists, will return None if not found
+        if data_service_class is not None:
+            data_service = data_service_class()
+            response_payload = data_service.get_full_data()
 
             response_serializer = ToiletMapResponseSerializer(data=response_payload)
             response_serializer.is_valid(raise_exception=True)

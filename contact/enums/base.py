@@ -19,3 +19,9 @@ class PropertiesClass(NamedTuple):
     property_key: str
     property_type: str
     icon: str | None
+
+class ServiceClass(NamedTuple):
+    id: int
+    title: str
+    icon: str
+    dataservice: callable
