@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path
 
-from contact.views import contact_views, link_views
+from contact.views import contact_views, link_views, service_views
 from core.urls import get_admin_paths, get_swagger_paths
 from core.views.admin_views import AdminLoginView
 
@@ -35,6 +35,11 @@ urlpatterns = [
         name="contact-admin-login",
     ),
     path("contact/admin/", admin.site.urls),
+    path(
+        "service/api/v1/maps/<int:service_id>",
+        service_views.ServiceMapView.as_view(),
+        name="service-map",
+    ),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH_API)
