@@ -39,3 +39,12 @@ ADMIN_ROLES += ["cbs-time-delegated", "cbs-time-publisher"]
 
 LOGIN_REDIRECT_URL = "/contact/admin/"
 LOGIN_REDIRECT_URL_FAILURE = "/contact/admin/login/failure/"
+
+PUBLIC_TOILET_URL = os.getenv(
+    "PUBLIC_TOILET_URL",
+    "https://maps.amsterdam.nl/open_geodata/geojson_lnglat.php?KAARTLAAG=OPENBARE_TOILETTEN&THEMA=openbare_toiletten",
+)
+PUBLIC_TOILET_IMAGE_BASE_URL = os.getenv(
+    "PUBLIC_TOILET_IMAGE_BASE_URL",
+    "https://maps.amsterdam.nl/openbare_toiletten/Downloads/",
+)
