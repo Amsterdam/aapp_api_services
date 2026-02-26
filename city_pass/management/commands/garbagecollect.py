@@ -18,8 +18,4 @@ class Command(BaseCommand):
         Session.objects.filter(encrypted_adminstration_no__isnull=True).delete()
 
         # Remove expired refresh tokens
-        refresh_tokens = RefreshToken.objects.all()
-        refresh_tokens = list(
-            refresh_tokens
-        )  # Evaluate the queryset to avoid multiple queries
         RefreshToken.objects.filter(expires_at__lt=timezone.now()).delete()
