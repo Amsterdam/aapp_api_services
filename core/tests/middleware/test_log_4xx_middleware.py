@@ -6,7 +6,7 @@ from django.test import RequestFactory, TestCase
 from core.middleware.log_4xx_status import log_4xx_status_middleware
 
 
-class DatabaseRetryMiddlewareTest(TestCase):
+class Log4xxMiddlewareTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         patcher = mock.patch("core.middleware.log_4xx_status.logger")
@@ -36,8 +36,10 @@ class DatabaseRetryMiddlewareTest(TestCase):
 
         self.mock_logger.warning.assert_called_once()
         msg = self.mock_logger.warning.call_args.args[0]
-        self.assertIn(body, msg)
-        self.assertIn(str(status), msg)
+        self.assertEqual("GET /test-endpoint/", msg)
+        extra = self.mock_logger.warning.call_args.kwargs.get("extra", {})
+        self.assertEqual(body, extra["body"])
+        self.assertEqual(status, extra["status"])
 
     def test_release_version_added_to_extra(self):
         body, status, version = "Bad Request", 400, "1.0.0"
