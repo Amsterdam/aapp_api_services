@@ -254,13 +254,22 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "default": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
+        "default": {
+            "()": "core.logging_formatters.PrettyExtraFormatter",
+            "format": "%(name)s - %(message)s",
+        },
     },
     "handlers": {
         "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
+            "class": "rich.logging.RichHandler",
             "formatter": "default",
+            "level": "INFO",
+            # RichHandler options:
+            "rich_tracebacks": True,
+            "show_time": True,
+            "show_level": True,
+            "show_path": False,
+            "markup": False,
         },
     },
     "root": {
@@ -285,15 +294,19 @@ LOGGING = {
         },
         "azure.core.pipeline.policies.http_logging_policy": {
             "handlers": ["console"],
-            "level": "ERROR",  # Set to INFO to log what is being logged by OpenTelemetry
+            "level": "ERROR",
         },
         "azure.monitor.opentelemetry.exporter.export._base": {
             "handlers": ["console"],
-            "level": "ERROR",  # Set to INFO to log what is being logged by OpenTelemetry
+            "level": "ERROR",
         },
         "azure.identity._internal.get_token_mixin": {
             "handlers": ["console"],
             "level": "WARNING",  # Suppresses "WorkloadIdentityCredential.get_token succeeded" message
+        },
+        "azure.monitor.opentelemetry.exporter._configuration._utils": {
+            "handlers": ["console"],
+            "level": "ERROR",  # Suppresses "OneSettings request timed out" message
         },
         "opentelemetry.attributes": {
             "handlers": ["console"],

@@ -13,7 +13,7 @@ def _log_4xx_status(request, response):
     if status is not None and 400 <= status < 500:
         try:
             release_version = request.headers.get("releaseVersion")
-            extra = {"releaseVersion": release_version} if release_version else None
+            extra = {"releaseVersion": release_version} if release_version else {}
 
             body = ""
             # Don’t consume streaming responses
@@ -21,8 +21,14 @@ def _log_4xx_status(request, response):
                 body = response.content.decode(errors="replace")[:max_body_len]
 
             logger.warning(
-                f"{request.method} {request.get_full_path()} → {status}: {body}",
-                extra=extra,
+                f"{request.method} {request.path}",
+                extra={
+                    **extra,
+                    "status": status,
+                    "method": request.method,
+                    "body": body,
+                    "full_path": request.get_full_path(),
+                },
             )
         except Exception as e:
             logger.error(
