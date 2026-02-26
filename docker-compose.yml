@@ -69,6 +69,7 @@ services:
       SECRET_KEY: secret-key-for-testing
       EDITOR_GROUP_ID: editor-group-id-for-testing
       PUBLISHER_GROUP_ID: publisher-group-id-for-testing
+      MOCK_FIREBASE: "true"
     command: uv run pytest
 
   app:
@@ -81,6 +82,7 @@ services:
 
   lint:
     <<: *base-app
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/lint-${SERVICE_NAME}:${VERSION:-latest}
     volumes:
       - ./core:/app/core
       - ./manage.py:/app/manage.py
@@ -96,6 +98,7 @@ services:
       - ./pyproject.toml:/app/pyproject.toml
       - ./requirements.txt:/app/requirements.txt
       - ./uv.lock:/app/uv.lock
+
   openapi-diff:
     image: openapitools/openapi-diff:latest
     volumes:

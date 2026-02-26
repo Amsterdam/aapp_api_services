@@ -1,5 +1,10 @@
+import datetime
+
+import freezegun
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from model_bakery import baker
 from rest_framework import status
 
@@ -14,6 +19,7 @@ from notification.models import (
 )
 
 
+@freezegun.freeze_time("2026-02-25T12:00:00Z")
 class TestDeviceRegisterView(AuthenticatedAPITestCase):
     authentication_class = APIKeyAuthentication
 
@@ -35,9 +41,16 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["firebase_token"], data["firebase_token"])
         self.assertEqual(response.data["os"], data["os"])
+        self.assertEqual(parse_datetime(response.data["last_seen"]), timezone.now())
 
-        # Silent discard second call
-        response = self.client.post(self.url, data, headers=self.headers_with_device_id)
+        # Silent accept second call
+        with freezegun.freeze_time("2026-02-26T12:00:00Z"):
+            response = self.client.post(
+                self.url, data, headers=self.headers_with_device_id
+            )
+            # But last seen should be updated!
+            self.assertEqual(parse_datetime(response.data["last_seen"]), timezone.now())
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["firebase_token"], data["firebase_token"])
         self.assertEqual(response.data["os"], data["os"])
@@ -49,7 +62,11 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
     def test_update_existing_device(self):
         """Test updating an existing device"""
         baker.make(
-            Device, external_id=self.device_id, firebase_token="foobar_token", os="ios1"
+            Device,
+            external_id=self.device_id,
+            firebase_token="foobar_token",
+            os="ios1",
+            last_seen=timezone.now() - datetime.timedelta(days=10),
         )
         new_data = {"firebase_token": "foobar_token2", "os": "ios2"}
         response = self.client.post(
@@ -59,6 +76,7 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["firebase_token"], new_data["firebase_token"])
         self.assertEqual(response.data["os"], new_data["os"])
+        self.assertEqual(parse_datetime(response.data["last_seen"]), timezone.now())
 
     def test_delete_registration(self):
         """Test removing a device registration"""

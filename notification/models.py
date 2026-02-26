@@ -19,6 +19,7 @@ class Device(models.Model):
     external_id = models.CharField(max_length=1000, unique=True)
     os = models.CharField()
     firebase_token = models.CharField(max_length=1000, null=True)
+    last_seen = models.DateTimeField(auto_now=True)
 
 
 class BaseNotification(models.Model):
