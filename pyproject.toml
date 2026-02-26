@@ -18,6 +18,7 @@ dependencies = [
   "dos2unix",
   "whitenoise",
   "pyproj",
+  "rich",
   # polygon operations
   "shapely",
   # pdf

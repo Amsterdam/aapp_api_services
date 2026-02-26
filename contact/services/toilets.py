@@ -91,7 +91,7 @@ class ToiletService:
     def _make_request(self) -> requests.Response:
         """Make the HTTP request for toilet data with retries and a timeout."""
         try:
-            response = requests.get(self.data_url)
+            response = requests.get(self.data_url, timeout=5)
             response.raise_for_status()
             return response
         except requests.exceptions.RequestException:

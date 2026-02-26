@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from contact.enums.services import Services
 from contact.serializers.service_serializers import (
     ServiceMapResponseSerializer,
     ServiceMapsResponseSerializer,
@@ -15,7 +16,6 @@ from contact.serializers.service_serializers import (
 )
 from contact.services.toilets import ToiletService
 from core.utils.openapi_utils import extend_schema_for_api_key
-from contact.enums.services import Services
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class ServiceMapsView(APIView):
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 
-    # @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
+    @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
     @extend_schema_for_api_key(
         success_response=ServiceMapResponseSerializer,
         additional_params=[
@@ -49,7 +49,9 @@ class ServiceMapView(APIView):
         ],
     )
     def get(self, request, service_id: int):
-        data_service_class = Services.get_service_by_id(service_id)  # Check if service exists, will return None if not found
+        data_service_class = Services.get_service_by_id(
+            service_id
+        )  # Check if service exists, will return None if not found
         if data_service_class is not None:
             data_service = data_service_class()
             response_payload = data_service.get_full_data()

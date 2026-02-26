@@ -46,15 +46,20 @@ class ToiletPropertiesSerializer(serializers.Serializer):
     aapp_is_toilet = serializers.BooleanField()
 
 
-class ToiletListSerializer(serializers.Serializer):
+class ServiceListSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     geometry = GeometrySerializer()
+    properties = serializers.DictField()
+
+
+class ToiletListSerializer(ServiceListSerializer):
     properties = ToiletPropertiesSerializer()
 
 
 class ServiceMapResponseSerializer(serializers.Serializer):
     filters = FiltersSerializer(many=True)
     properties_to_include = PropertiesSerializer(many=True)
+    data = ServiceListSerializer(many=True)
 
 
 class ToiletMapResponseSerializer(ServiceMapResponseSerializer):
