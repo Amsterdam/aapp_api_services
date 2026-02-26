@@ -254,13 +254,22 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "default": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
+        "default": {
+            "()": "core.logging_formatters.PrettyExtraFormatter",
+            "format": "%(message)s",
+        },
     },
     "handlers": {
         "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
+            "class": "rich.logging.RichHandler",
             "formatter": "default",
+            "level": "DEBUG" if DEBUG else "INFO",
+            # RichHandler options:
+            "rich_tracebacks": True,
+            "show_time": True,
+            "show_level": True,
+            "show_path": True,
+            "markup": True,
         },
     },
     "root": {
