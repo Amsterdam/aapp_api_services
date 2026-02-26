@@ -21,7 +21,9 @@ urlpatterns = [
         name="contact-links",
     ),
     path(
-        BASE_PATH_CONTACT + "/links", link_views.LinksView.as_view(), name="contact-links"
+        BASE_PATH_CONTACT + "/links",
+        link_views.LinksView.as_view(),
+        name="contact-links",
     ),
     path(
         BASE_PATH_CONTACT + "/health-check",

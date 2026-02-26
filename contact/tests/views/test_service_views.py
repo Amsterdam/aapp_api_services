@@ -1,9 +1,9 @@
-from contact.enums.toilets import ToiletFilters, ToiletProperties
 import responses
 from django.conf import settings
 from django.urls import reverse
 from rest_framework import status
 
+from contact.enums.toilets import ToiletFilters, ToiletProperties
 from contact.tests.mock_data import toilets
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
@@ -21,7 +21,9 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["filters"], ToiletFilters.choices())
-        self.assertEqual(response.data["properties_to_include"], ToiletProperties.choices())
+        self.assertEqual(
+            response.data["properties_to_include"], ToiletProperties.choices()
+        )
         self.assertEqual(len(response.data["data"]), len(toilets.MOCK_DATA["features"]))
 
     def test_not_implemented_get_service_map_view(self):
