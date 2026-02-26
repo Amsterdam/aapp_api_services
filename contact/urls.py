@@ -36,7 +36,7 @@ urlpatterns = [
     ),
     path("contact/admin/", admin.site.urls),
     path(
-        "service/api/v1/maps/<int:service_id>/",
+        "service/api/v1/maps/<int:service_id>",
         service_views.ServiceMapView.as_view(),
         name="service-map",
     ),

@@ -1,5 +1,7 @@
 import logging
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import status
@@ -18,6 +20,7 @@ logger = logging.getLogger(__name__)
 toilet_service = ToiletService()
 
 
+@method_decorator(cache_page(60 * 60 * 24), name="dispatch")
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 
@@ -36,11 +39,10 @@ class ServiceMapView(APIView):
 
         if (
             service_id == 1
-        ):  # Currently we only have one service, which is toilets, so we check if the service_id is 1
+        ):  # Currently we only have one service, which is toilets, so we check if the service_id is 1.
+            # TODO: Update method when ticket to get all services is implemented.
             logger.info("Fetching data for service_id 1 (toilets)")
             response_payload = toilet_service.get_full_data()
-
-            # logging.info(f"ServiceMapView response payload: {response_payload}")
 
             response_serializer = ToiletMapResponseSerializer(data=response_payload)
             response_serializer.is_valid(raise_exception=True)

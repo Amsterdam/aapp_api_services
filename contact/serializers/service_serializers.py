@@ -18,24 +18,26 @@ class FiltersSerializer(serializers.Serializer):
 
 
 class PropertiesSerializer(serializers.Serializer):
-    label = serializers.CharField()
+    label = serializers.CharField(allow_null=True)
     property_key = serializers.CharField()
     property_type = serializers.CharField()
     icon = serializers.CharField(allow_null=True)
 
 
 class GeometrySerializer(serializers.Serializer):
+    type = serializers.CharField()
     coordinates = serializers.ListField(child=serializers.FloatField())
 
 
 class ToiletPropertiesSerializer(serializers.Serializer):
-    name = serializers.CharField()
-    open_hours = serializers.CharField(allow_null=True)
-    price_per_use = serializers.FloatField(allow_null=True)
-    description = serializers.CharField(allow_null=True)
-    image_url = serializers.URLField(allow_null=True)
-    is_accessible = serializers.BooleanField()
-    is_toilet = serializers.BooleanField()
+    # TODO: change this to dynamically generate fields based on the filters and properties when moving out of MVP stage
+    Soort = serializers.CharField()
+    aapp_open_hours = serializers.CharField(allow_null=True)
+    Prijs_per_gebruik = serializers.FloatField(allow_null=True)
+    aapp_description = serializers.CharField(allow_null=True)
+    aapp_image_url = serializers.URLField(allow_null=True)
+    aapp_is_accessible = serializers.BooleanField()
+    aapp_is_toilet = serializers.BooleanField()
 
 
 class ToiletListSerializer(serializers.Serializer):
