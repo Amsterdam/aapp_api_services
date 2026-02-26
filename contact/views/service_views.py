@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 toilet_service = ToiletService()
 
 
-@method_decorator(cache_page(60 * 60 * 24), name="dispatch")
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 
+    @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
     @extend_schema_for_api_key(
         success_response=ServiceMapResponseSerializer,
         additional_params=[
@@ -36,7 +36,6 @@ class ServiceMapView(APIView):
         ],
     )
     def get(self, request, service_id: int):
-
         if (
             service_id == 1
         ):  # Currently we only have one service, which is toilets, so we check if the service_id is 1.
