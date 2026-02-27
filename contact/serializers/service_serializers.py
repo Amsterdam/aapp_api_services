@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 
 class ServiceMapsResponseSerializer(serializers.Serializer):
-    id = serializers.CharField()
+    id = serializers.IntegerField()
     title = serializers.CharField()
     icon = serializers.CharField()
 

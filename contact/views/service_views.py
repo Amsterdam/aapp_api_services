@@ -1,7 +1,5 @@
 import logging
 
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import status
@@ -22,10 +20,10 @@ logger = logging.getLogger(__name__)
 toilet_service = ToiletService()
 
 
+# @method_decorator(cache_page(60 * 60 * 24), name="get")
 class ServiceMapsView(APIView):
     response_serializer_class = ServiceMapsResponseSerializer
 
-    @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
     def get(self, request, *args, **kwargs):
 
         services = Services.choices()
@@ -33,10 +31,10 @@ class ServiceMapsView(APIView):
         return Response(response_serializer.data)
 
 
+# @method_decorator(cache_page(60 * 60 * 24), name="get")
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 
-    @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
     @extend_schema_for_api_key(
         success_response=ServiceMapResponseSerializer,
         additional_params=[
@@ -49,18 +47,20 @@ class ServiceMapView(APIView):
         ],
     )
     def get(self, request, service_id: int):
-        data_service_class = Services.get_service_by_id(
-            service_id
-        )  # Check if service exists, will return None if not found
-        if data_service_class is not None:
-            data_service = data_service_class()
-            response_payload = data_service.get_full_data()
-
-            response_serializer = ToiletMapResponseSerializer(data=response_payload)
-            response_serializer.is_valid(raise_exception=True)
-            return Response(response_serializer.validated_data)
-
-        else:
+        data_service_class = Services.get_service_by_id(service_id)
+        if data_service_class is None:
+            # Service not found
             return Response(
                 {"detail": "Service not found."}, status=status.HTTP_404_NOT_FOUND
             )
+        if data_service_class.dataservice is None:
+            # No data service available
+            return Response(
+                {"detail": "No data service available for this service."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        data_service = data_service_class.dataservice()
+        response_payload = data_service.get_full_data()
+        response_serializer = ToiletMapResponseSerializer(data=response_payload)
+        response_serializer.is_valid(raise_exception=True)
+        return Response(response_serializer.validated_data)

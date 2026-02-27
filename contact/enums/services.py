@@ -19,5 +19,5 @@ class Services(ChoicesEnum):
         """
         for item in cls:
             if item.value.id == id:
-                return item.value.dataservice
+                return item.value
         return None
