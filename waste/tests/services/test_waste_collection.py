@@ -185,67 +185,6 @@ class WasteCollectionServiceTest(TestCase):
             ],
         )
 
-    def test_get_next_dates(self):
-        self.set_validated_mock_data(frequency_weekly.MOCK_DATA)
-        calendar = self.service.create_calendar()
-        next_dates = self.service.get_next_dates(calendar)
-
-        self.assertDictEqual(
-            next_dates,
-            {
-                "Rest": date(2025, 12, 10),
-                "GA": date(2025, 12, 10),
-                "Papier": None,
-                "GFT": None,
-                "Glas": None,
-                "Textiel": None,
-            },
-        )
-
-    def test_get_types(self):
-        self.set_validated_mock_data(frequency_weekly.MOCK_DATA)
-        calendar = self.service.create_calendar()
-        next_dates = self.service.get_next_dates(calendar)
-        waste_types = self.service.get_waste_types(next_dates)
-
-        self.assertEqual(
-            waste_types,
-            [
-                {
-                    "label": "Restafval",
-                    "code": "Rest",
-                    "curb_rules": "Dinsdag vanaf 21.00 tot woensdag 07.00 uur",
-                    "alert": None,
-                    "note": None,
-                    "days_array": ["woensdag"],
-                    "how": "In rolcontainer",
-                    "where": "Aan de rand van de stoep of op de vaste plek",
-                    "button_text": None,
-                    "url": None,
-                    "frequency": None,
-                    "is_collection_by_appointment": False,
-                    "next_date": date(2025, 12, 10),
-                    "info_link": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/restafval/",
-                },
-                {
-                    "label": "Grof afval",
-                    "code": "GA",
-                    "curb_rules": "Dinsdag vanaf 21.00 tot woensdag 07.00 uur",
-                    "alert": None,
-                    "note": None,
-                    "days_array": ["woensdag"],
-                    "how": "Breng uw grof afval naar een Recyclepunt of buiten zetten",
-                    "where": "Aan de rand van de stoep of op de vaste plek",
-                    "button_text": None,
-                    "url": "https://kaart.amsterdam.nl/recyclepunten",
-                    "frequency": None,
-                    "is_collection_by_appointment": False,
-                    "next_date": date(2025, 12, 10),
-                    "info_link": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/grofvuil/",
-                },
-            ],
-        )
-
     def test_calendar_even_oneven_weesp(self):
         self.set_validated_mock_data(frequency_weekly_oneven.MOCK_DATA)
         calendar = self.service.create_calendar()
@@ -411,5 +350,88 @@ class WasteCollectionServiceTest(TestCase):
                     "curb_rules_to": "tot vrijdag 07.00 uur",
                     "alert": None,
                 }
+            ],
+        )
+
+    def test_get_next_dates(self):
+        self.set_validated_mock_data(frequency_weekly.MOCK_DATA)
+        calendar = self.service.create_calendar()
+        next_dates = self.service.get_next_dates(calendar)
+
+        self.assertDictEqual(
+            next_dates,
+            {
+                "Rest": date(2025, 12, 10),
+                "GA": date(2025, 12, 10),
+                "Papier": None,
+                "GFT": None,
+                "Glas": None,
+                "Textiel": None,
+            },
+        )
+
+    def test_get_waste_types(self):
+        self.set_validated_mock_data(frequency_weekly.MOCK_DATA)
+        calendar = self.service.create_calendar()
+        next_dates = self.service.get_next_dates(calendar)
+        waste_types = self.service.get_waste_types(next_dates)
+
+        self.assertEqual(
+            waste_types,
+            [
+                {
+                    "label": "Restafval",
+                    "code": "Rest",
+                    "order": 1,
+                    "curb_rules": "Dinsdag vanaf 21.00 tot woensdag 07.00 uur",
+                    "alert": None,
+                    "note": None,
+                    "days_array": ["woensdag"],
+                    "how": "In rolcontainer",
+                    "where": "Aan de rand van de stoep of op de vaste plek",
+                    "button_text": None,
+                    "url": None,
+                    "frequency": None,
+                    "is_collection_by_appointment": False,
+                    "next_date": date(2025, 12, 10),
+                    "info_link": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/restafval/",
+                },
+                {
+                    "label": "Grof afval",
+                    "code": "GA",
+                    "order": 3,
+                    "curb_rules": "Dinsdag vanaf 21.00 tot woensdag 07.00 uur",
+                    "alert": None,
+                    "note": None,
+                    "days_array": ["woensdag"],
+                    "how": "Breng uw grof afval naar een Recyclepunt of buiten zetten",
+                    "where": "Aan de rand van de stoep of op de vaste plek",
+                    "button_text": None,
+                    "url": "https://kaart.amsterdam.nl/recyclepunten",
+                    "frequency": None,
+                    "is_collection_by_appointment": False,
+                    "next_date": date(2025, 12, 10),
+                    "info_link": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/grofvuil/",
+                },
+            ],
+        )
+
+    def test_sort_waste_types_by_order(self):
+        waste_types = [
+            {"code": "GFT", "order": 3},
+            {"code": "Rest", "order": 1},
+            {"code": "Papier", "order": 2},
+            {"code": "Glas", "order": None},
+        ]
+
+        sorted_waste_types = self.service.sort_waste_types_by_order(waste_types)
+
+        self.assertEqual(
+            sorted_waste_types,
+            [
+                {"code": "Rest", "order": 1},
+                {"code": "Papier", "order": 2},
+                {"code": "GFT", "order": 3},
+                {"code": "Glas", "order": None},
             ],
         )
