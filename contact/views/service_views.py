@@ -1,5 +1,7 @@
 import logging
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import status
@@ -12,15 +14,12 @@ from contact.serializers.service_serializers import (
     ServiceMapsResponseSerializer,
     ToiletMapResponseSerializer,
 )
-from contact.services.toilets import ToiletService
 from core.utils.openapi_utils import extend_schema_for_api_key
 
 logger = logging.getLogger(__name__)
 
-toilet_service = ToiletService()
 
-
-# @method_decorator(cache_page(60 * 60 * 24), name="get")
+@method_decorator(cache_page(60 * 60 * 24), name="get")
 class ServiceMapsView(APIView):
     response_serializer_class = ServiceMapsResponseSerializer
 
@@ -31,7 +30,7 @@ class ServiceMapsView(APIView):
         return Response(response_serializer.data)
 
 
-# @method_decorator(cache_page(60 * 60 * 24), name="get")
+@method_decorator(cache_page(60 * 60 * 24), name="get")
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 
