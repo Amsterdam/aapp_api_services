@@ -18,7 +18,7 @@ from bridge.parking.views.base_ssp_view import ssp_openapi_decorator
 logger = logging.getLogger(__name__)
 
 
-@method_decorator(cache_page(60 * 60), name="dispatch")
+@method_decorator(cache_page(60 * 60), name="get")
 class ParkingMachineListView(generics.GenericAPIView):
     serializer_class = ParkingMachineListRequestSerializer
     response_serializer = ParkingMachineListResponseSerializer

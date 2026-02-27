@@ -78,7 +78,7 @@ class EgisProxyExternalView(EgisProxyView):
     base_url = settings.SSP_BASE_URL_EXTERNAL
 
 
-@method_decorator(cache_page(60 * 60 * 24), name="dispatch")
+@method_decorator(cache_page(60 * 60 * 24), name="get")
 class WasteGuideView(GenericAPIView):
     authentication_classes = []
     serializer_class = WasteGuideRequestSerializer
@@ -97,7 +97,7 @@ class WasteGuideView(GenericAPIView):
         )
 
 
-@method_decorator(cache_page(60 * 5), name="dispatch")
+@method_decorator(cache_page(60 * 5), name="get")
 class PollingStationsView(GenericAPIView):
     def get(self, request):
         url = settings.POLLING_STATIONS_URL
@@ -122,7 +122,7 @@ class PollingStationsView(GenericAPIView):
         )
 
 
-@method_decorator(cache_page(60 * 60 * 24), name="dispatch")
+@method_decorator(cache_page(60 * 60 * 24), name="get")
 class AddressSearchView(GenericAPIView):
     authentication_classes = []
     serializer_class = AddressSearchRequestSerializer
@@ -142,7 +142,7 @@ class AddressSearchView(GenericAPIView):
         )
 
 
-@method_decorator(cache_page(60 * 60 * 24), name="dispatch")
+@method_decorator(cache_page(60 * 60 * 24), name="get")
 class AddressSearchAbstractView(GenericAPIView):
     def get(self, request):
         serializer = self.get_serializer(data=request.query_params)
