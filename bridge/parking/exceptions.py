@@ -164,7 +164,9 @@ class SSPEndDateBeforeStartDateError(BaseApiException):
 
 class SSPEndDateAfterPermitEndDateError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-    default_detail = "Invalid end date. Please input an end date before the client product end date."
+    default_detail = (
+        "Invalid end date. Please input an end date before the client product end date."
+    )
     default_code = "SSP_END_DATE_AFTER_PERMIT_END_DATE"
 
 
