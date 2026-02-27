@@ -64,7 +64,7 @@ MOCK_DATA = {
                 "afvalwijzerAfvalkalenderFrequentie": "",
                 "afvalwijzerFractieNaam": "Grof afval",
                 "afvalwijzerFractieCode": "GA",
-                "afvalwijzerFractieVolgnummer": 1,
+                "afvalwijzerFractieVolgnummer": 3,
                 "afvalwijzerRoutetypeNaam": "Grof afval vaste dag",
                 "afvalwijzerOphaaldagen": "woensdag",
                 "afvalwijzerOphaaldagenArray": ["woensdag"],

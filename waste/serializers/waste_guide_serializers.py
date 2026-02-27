@@ -2,8 +2,8 @@ from rest_framework import serializers
 
 from waste.constants import (
     WASTE_COLLECTION_BY_APPOINTMENT_CODE,
+    WASTE_TYPES_CODES,
     WASTE_TYPES_MAPPING,
-    WASTE_TYPES_ORDER,
 )
 from waste.models import NotificationSchedule
 
@@ -33,6 +33,9 @@ class WasteNotificationSerializer(serializers.ModelSerializer):
 class WasteDataSerializer(serializers.Serializer):
     afvalwijzerFractieNaam = serializers.CharField()
     afvalwijzerFractieCode = serializers.CharField()
+    afvalwijzerFractieVolgnummer = serializers.IntegerField(
+        allow_null=True, required=False
+    )
     afvalwijzerAfvalkalenderFrequentie = serializers.CharField(
         allow_null=True, allow_blank=True
     )
@@ -81,6 +84,7 @@ class WasteDataSerializer(serializers.Serializer):
         internal_data = {
             "label": _convert("afvalwijzerFractieNaam"),
             "code": WASTE_TYPES_MAPPING.get(_convert("afvalwijzerFractieCode")),
+            "order": _convert("afvalwijzerFractieVolgnummer"),
             "alert": _convert("afvalwijzerAfvalkalenderMelding"),
             "frequency": _convert("afvalwijzerAfvalkalenderFrequentie"),
             "note": _convert("afvalwijzerAfvalkalenderOpmerking"),
@@ -112,7 +116,7 @@ class WasteDataSerializer(serializers.Serializer):
 
 class WasteTypeSerializer(serializers.Serializer):
     label = serializers.CharField()
-    code = serializers.ChoiceField(choices=WASTE_TYPES_ORDER)
+    code = serializers.ChoiceField(choices=WASTE_TYPES_CODES)
     curb_rules = serializers.CharField(allow_null=True, default="")
     alert = serializers.CharField(allow_null=True, default="")
     note = serializers.CharField(allow_null=True, default="")
@@ -129,7 +133,7 @@ class WasteTypeSerializer(serializers.Serializer):
 class WasteCalendarSerializer(serializers.Serializer):
     date = serializers.DateField()
     label = serializers.CharField()
-    code = serializers.ChoiceField(choices=WASTE_TYPES_ORDER)
+    code = serializers.ChoiceField(choices=WASTE_TYPES_CODES)
     curb_rules_from = serializers.CharField(allow_null=True, default="")
     curb_rules_to = serializers.CharField(allow_null=True, default="")
     alert = serializers.CharField(allow_null=True, default="")
