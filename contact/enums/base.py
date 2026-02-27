@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import NamedTuple
+from typing import Callable, NamedTuple, Optional
 
 
 class ChoicesEnum(Enum):
@@ -19,3 +19,10 @@ class PropertiesClass(NamedTuple):
     property_key: str
     property_type: str
     icon: str | None
+
+
+class ServiceClass(NamedTuple):
+    id: int
+    title: str
+    icon: str
+    dataservice: Optional[Callable] = None
