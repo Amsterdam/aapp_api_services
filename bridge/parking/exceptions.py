@@ -34,6 +34,12 @@ class SSPCancelledError(BaseApiException):
     default_code = "SSP_REQUEST_CANCELLED"
 
 
+class SSPUnavailableError(BaseApiException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = "SSP service is temporarily unavailable"
+    default_code = "SSP_SERVICE_UNAVAILABLE"
+
+
 class SSLMissingAccessTokenError(BaseApiException):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = f"Missing required {settings.SSP_ACCESS_TOKEN_HEADER} header"
@@ -156,6 +162,12 @@ class SSPEndDateBeforeStartDateError(BaseApiException):
     default_code = "SSP_END_DATE_BEFORE_START_DATE"
 
 
+class SSPEndDateAfterPermitEndDateError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = " Invalid end date. Please input an end date before the client product end date."
+    default_code = "SSP_END_DATE_AFTER_PERMIT_END_DATE"
+
+
 class SSPMaxSessionsReachedError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Session maximum reached"
@@ -234,6 +246,12 @@ class SSPLicensePlateNoActivationError(BaseApiException):
     default_code = "SSP_LICENSE_PLATE_ACTIVATION_NOT_ALLOWED"
 
 
+class SSPLicensePlateActivationPSError(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Cannot activate a new license plate while the current license plate does not have a ps right."
+    default_code = "SSP_LICENSE_PLATE_ACTIVATION_PS_NOT_ALLOWED"
+
+
 class SSPParkingMachineNotInZoneError(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "The chosen parking machine is not within the allowed zones."
@@ -299,6 +317,7 @@ SSP_COMMON_ERRORS = [
     SSPStartTimeInvalidError,
     SSPStartDateEndDateNotSameError,
     SSPEndDateBeforeStartDateError,
+    SSPEndDateAfterPermitEndDateError,
     SSPMaxSessionsReachedError,
     SSPVehicleIDNotAllowedError,
     SSPVehicleOpenChangePlateError,
@@ -314,6 +333,7 @@ SSP_COMMON_ERRORS = [
     SSPLicensePlateExistsError,
     SSPLicensePlateNotFoundError,
     SSPLicensePlateNoActivationError,
+    SSPLicensePlateActivationPSError,
     SSPPermitNotFoundError,
     SSPTimeSlotOverbookedError,
     SSPVisitorAccountExistsError,
