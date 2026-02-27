@@ -14,10 +14,10 @@ def cache_function(timeout: int):
         def wrapper(*args, **kwargs):
             # Stable cache key based on function + arguments
             raw_key = f"{func.__module__}.{func.__qualname__}:{args}:{kwargs}"
-            cache_key = hashlib.md5(raw_key.encode()).hexdigest()
+            cache_key = f"aapp:{hashlib.sha256(raw_key.encode()).hexdigest()}"
 
             cached_data = cache.get(cache_key)
-            if cached_data:
+            if cached_data is not None:
                 return cached_data
 
             result = func(*args, **kwargs)
