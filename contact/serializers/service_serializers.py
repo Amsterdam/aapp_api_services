@@ -1,5 +1,61 @@
 from rest_framework import serializers
 
+FIELD_TYPE_MAPPING = {
+    "bool": serializers.BooleanField,
+    "float": serializers.FloatField,
+    "int": serializers.IntegerField,
+    "str": serializers.CharField,
+    "url": serializers.URLField,
+}
+
+
+def build_dynamic_properties_serializer(properties, filters):
+    """
+    Dynamically constructs a serializer class based on given properties and filters.
+    """
+
+    fields = {}
+
+    # Add property fields
+    for prop in properties:
+        field_class = FIELD_TYPE_MAPPING.get(
+            prop.get("property_type"), serializers.CharField
+        )
+        fields[prop["property_key"]] = field_class(allow_null=True, required=False)
+
+    # Add filter fields (if not already included)
+    for filt in filters:
+        key = filt["filter_key"]
+        if key not in fields:
+            field_class = FIELD_TYPE_MAPPING.get(
+                type(filt["filter_value"]).__name__, serializers.CharField
+            )
+            fields[key] = field_class(allow_null=True, required=False)
+
+    return type("DynamicPropertiesSerializer", (serializers.Serializer,), fields)
+
+
+def build_service_list_serializer(properties, filters):
+    DynamicPropertiesSerializer = build_dynamic_properties_serializer(
+        properties, filters
+    )
+
+    class DynamicServiceListSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        geometry = GeometrySerializer()
+        properties = DynamicPropertiesSerializer()
+
+    return DynamicServiceListSerializer
+
+
+def build_map_response_serializer(properties, filters):
+    DynamicListSerializer = build_service_list_serializer(properties, filters)
+
+    class DynamicMapResponseSerializer(ServiceMapResponseSerializer):
+        data = DynamicListSerializer(many=True)
+
+    return DynamicMapResponseSerializer
+
 
 class ServiceMapsResponseSerializer(serializers.Serializer):
     id = serializers.IntegerField()
@@ -35,32 +91,13 @@ class GeometrySerializer(serializers.Serializer):
     coordinates = serializers.ListField(child=serializers.FloatField())
 
 
-class ToiletPropertiesSerializer(serializers.Serializer):
-    # TODO: change this to dynamically generate fields based on the filters and properties when moving out of MVP stage
-    Soort = serializers.CharField()
-    aapp_open_hours = serializers.CharField(allow_null=True)
-    Prijs_per_gebruik = serializers.FloatField(allow_null=True)
-    aapp_description = serializers.CharField(allow_null=True)
-    aapp_image_url = serializers.URLField(allow_null=True)
-    aapp_is_accessible = serializers.BooleanField()
-    aapp_is_toilet = serializers.BooleanField()
-
-
 class ServiceListSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     geometry = GeometrySerializer()
     properties = serializers.DictField()
 
 
-class ToiletListSerializer(ServiceListSerializer):
-    properties = ToiletPropertiesSerializer()
-
-
 class ServiceMapResponseSerializer(serializers.Serializer):
     filters = FiltersSerializer(many=True)
     properties_to_include = PropertiesSerializer(many=True)
     data = ServiceListSerializer(many=True)
-
-
-class ToiletMapResponseSerializer(ServiceMapResponseSerializer):
-    data = ToiletListSerializer(many=True)

@@ -14,13 +14,13 @@ class ToiletProperties(ChoicesEnum):
     NAME = PropertiesClass(
         label=None,
         property_key="Soort",
-        property_type="string",
+        property_type="str",
         icon=None,
     )
     OPEN_HOURS = PropertiesClass(
         label="Openingstijden",
         property_key="aapp_open_hours",
-        property_type="string",
+        property_type="str",
         icon=icon_svg("clock"),
     )
     PRICE = PropertiesClass(
@@ -32,7 +32,7 @@ class ToiletProperties(ChoicesEnum):
     DESCRIPTION = PropertiesClass(
         label="Omschrijving",
         property_key="aapp_description",
-        property_type="string",
+        property_type="str",
         icon=icon_svg("info"),
     )
     IMAGE_URL = PropertiesClass(

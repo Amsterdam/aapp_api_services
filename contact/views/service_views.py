@@ -12,7 +12,7 @@ from contact.enums.services import Services
 from contact.serializers.service_serializers import (
     ServiceMapResponseSerializer,
     ServiceMapsResponseSerializer,
-    ToiletMapResponseSerializer,
+    build_map_response_serializer,
 )
 from core.utils.openapi_utils import extend_schema_for_api_key
 
@@ -60,6 +60,17 @@ class ServiceMapView(APIView):
             )
         data_service = data_service_class.dataservice()
         response_payload = data_service.get_full_data()
-        response_serializer = ToiletMapResponseSerializer(data=response_payload)
+
+        DynamicMapSerializer = build_map_response_serializer(
+            response_payload.get("properties_to_include", []),
+            response_payload.get("filters", []),
+        )
+
+        logging.info(
+            f"DynamicMapSerializer fields: {DynamicMapSerializer().get_fields()}"
+        )
+
+        response_serializer = DynamicMapSerializer(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
+
         return Response(response_serializer.validated_data)
