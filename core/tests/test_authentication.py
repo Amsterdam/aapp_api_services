@@ -36,11 +36,11 @@ class AuthenticatedAPITestCase(APITestCase):
             raise NotImplementedError("You must specify an authentication_class")
 
         # Instantiate the authentication class
-        auth_instance = self.authentication_class()
+        self.auth_instance = self.authentication_class()
 
         # Prepare API key for authentication
-        api_keys = auth_instance.api_keys
-        self.api_headers = {auth_instance.api_key_header: api_keys[0]}
+        api_keys = self.auth_instance.api_keys
+        self.api_headers = {self.auth_instance.api_key_header: api_keys[0]}
 
         # flush cache before every test run
         cache.clear()
@@ -74,6 +74,14 @@ class BasicAPITestCase(AuthenticatedAPITestCase):
         self.assertEqual(
             rsp_get.call_count, 1
         )  # The request should not be called a second time!
+
+        # Third call
+        response = self.client.get(
+            url, request_body, headers={self.auth_instance.api_key_header: "not-legit"}
+        )
+        self.assertEqual(
+            response.status_code, 401
+        )  # The request should get an unauthorized response!
 
 
 class ResponsesActivatedAPITestCase(BasicAPITestCase):
