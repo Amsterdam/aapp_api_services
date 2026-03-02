@@ -2,7 +2,6 @@ from datetime import date, datetime, time, timedelta
 
 from django.utils import timezone
 
-from waste.constants import WASTE_TYPES_MAPPING_READABLE
 
 CALENDAR_START = (
     "BEGIN:VCALENDAR\r\n"
@@ -55,9 +54,9 @@ class WasteICS:
 
     @staticmethod
     def _create_ics_event(event_date: date, item: dict) -> str:
-        readable_name = WASTE_TYPES_MAPPING_READABLE.get(item.get("code")) or "Afval"
+        readable_name = item.get("label").lower()
         event_uid = f"{readable_name.replace(',', '').replace(' ', '')}-{event_date.isoformat()}@app.amsterdam.nl"
-        event_name = f"Ophaaldag {readable_name.lower()}"
+        event_name = f"Ophaaldag {readable_name}"
 
         # start of day timestamp
         created_timestamp = timezone.make_aware(

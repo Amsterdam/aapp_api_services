@@ -59,18 +59,18 @@ WASTE_TYPES_MAPPING = {
     "Textiel": "Textiel",
 }
 
-WASTE_TYPES_MAPPING_READABLE = {
-    "Grof": "Grof afval",
-    "GA": "Grof afval",
-    "GFET": "Groente-, fruit-, etensresten en tuinafval",
-    "GFE": "Groente-, fruit-, etensresten en tuinafval",
-    "GFT": "Groente-, fruit-, etensresten en tuinafval",
-    "Glas": "Glas",
-    "Papier": "Papier en karton",
-    "Plastic": "Plastic",
-    "Rest": "Restafval",
-    "Textiel": "Textiel",
-}
+# WASTE_TYPES_MAPPING_READABLE = {
+#     "Grof": "Grof afval",
+#     "GA": "Grof afval",
+#     "GFET": "Groente-, fruit-, etensresten en tuinafval",
+#     "GFE": "Groente-, fruit-, etensresten en tuinafval",
+#     "GFT": "Groente-, fruit-, etensresten en tuinafval",
+#     "Glas": "Glas",
+#     "Papier": "Papier en karton",
+#     "Plastic": "Plastic",
+#     "Rest": "Restafval",
+#     "Textiel": "Textiel",
+# }
 
 WASTE_COLLECTION_ROUTE_TYPES = [
     "GROFVAST",

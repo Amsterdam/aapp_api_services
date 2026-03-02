@@ -3,7 +3,6 @@ from datetime import date
 
 from fpdf import FPDF
 
-from waste.constants import WASTE_TYPES_MAPPING_READABLE
 from waste.services.waste_collection_abstract import WasteCollectionAbstractService
 from waste.services.waste_pdf import (
     WastePDF,
@@ -16,12 +15,12 @@ class WasteCollectionPDFService(WasteCollectionAbstractService):
 
     def get_pdf_calendar(self) -> FPDF:
         # get all necessary data
-        waste_collection_by_date = self.create_pdf_calendar_dates()
+        waste_collection_by_date, code_label_list = self.create_pdf_calendar_dates()
         days = self.all_dates
         months = self.group_days_by_month(days)
 
         # initialize pdf and get settings
-        pdf = WastePDF(address=self._generate_address_string())
+        pdf = WastePDF(address=self._generate_address_string(), code_label_list=code_label_list)
         pdf.add_page()
         pdf.add_title()
 
@@ -36,15 +35,17 @@ class WasteCollectionPDFService(WasteCollectionAbstractService):
 
     def create_pdf_calendar_dates(self) -> dict[date, list[str]]:
         waste_collection_by_date = {}
+        code_label_list = []
         for item in self.validated_data:
             if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
                 dates = self.get_dates_for_waste_item(item)
                 for date in dates:
                     waste_collection_by_date.setdefault(date, []).append(
-                        WASTE_TYPES_MAPPING_READABLE.get(item.get("code"))
+                        item.get("code")
                     )
+            code_label_list.append((item.get("code"), item.get("label"), item.get("order")))
 
-        return waste_collection_by_date
+        return waste_collection_by_date, sorted(set(code_label_list), key=lambda x: x[2])
 
     @staticmethod
     def group_days_by_month(days: list[date]) -> OrderedDict:

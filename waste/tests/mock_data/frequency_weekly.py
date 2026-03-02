@@ -21,7 +21,7 @@ MOCK_DATA = {
                 "afvalwijzerBuitenzettenTot": "tot woensdag 07.00 uur",
                 "afvalwijzerAfvalkalenderOpmerking": None,
                 "afvalwijzerAfvalkalenderFrequentie": None,
-                "afvalwijzerFractieNaam": "Restafval",
+                "afvalwijzerFractieNaam": "Aangepaste rest naam",
                 "afvalwijzerFractieCode": "Rest",
                 "afvalwijzerFractieVolgnummer": 1,
                 "afvalwijzerRoutetypeNaam": "Rolcontainer Route",

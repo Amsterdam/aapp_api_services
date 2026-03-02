@@ -33,6 +33,9 @@ class WasteNotificationSerializer(serializers.ModelSerializer):
 class WasteDataSerializer(serializers.Serializer):
     afvalwijzerFractieNaam = serializers.CharField()
     afvalwijzerFractieCode = serializers.CharField()
+    afvalwijzerFractieVolgnummer = serializers.IntegerField(
+        allow_null=True, required=False
+    )
     afvalwijzerAfvalkalenderFrequentie = serializers.CharField(
         allow_null=True, allow_blank=True
     )
@@ -81,6 +84,7 @@ class WasteDataSerializer(serializers.Serializer):
         internal_data = {
             "label": _convert("afvalwijzerFractieNaam"),
             "code": WASTE_TYPES_MAPPING.get(_convert("afvalwijzerFractieCode")),
+            "order": _convert("afvalwijzerFractieVolgnummer"),
             "alert": _convert("afvalwijzerAfvalkalenderMelding"),
             "frequency": _convert("afvalwijzerAfvalkalenderFrequentie"),
             "note": _convert("afvalwijzerAfvalkalenderOpmerking"),
