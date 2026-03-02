@@ -68,7 +68,8 @@ class WastePDF(FPDF):
         self.set_font(PDF_FONT, "B", PDF_REGULAR_FONT_SIZE)
 
         required_height = max(
-            QR_HEIGHT + 2 * PDF_REGULAR_CELL_HEIGHT, (self.legend_lines * LEGEND_LINE_HEIGHT)
+            QR_HEIGHT + 2 * PDF_REGULAR_CELL_HEIGHT,
+            (self.legend_lines * LEGEND_LINE_HEIGHT),
         )
         self.set_y(-(required_height + 10))
 
@@ -110,6 +111,14 @@ class WastePDF(FPDF):
             "https://www.amsterdam.nl/afval/afvalinformatie",
             align="R",
             new_x="LMARGIN",
+            new_y="NEXT",
+        )
+        # Printing page number:
+        self.cell(
+            0,
+            PDF_HEADER_CELL_HEIGHT - 2,
+            f"Pagina {self.page_no()} van {{nb}}",
+            align="R",
         )
 
         self.set_font(PDF_FONT, "B", PDF_REGULAR_FONT_SIZE)
@@ -117,6 +126,8 @@ class WastePDF(FPDF):
 
         # draw legend
         for waste_code, waste_name, _ in self.code_label_list:
+            if waste_code not in CODE_TO_IMAGE:
+                continue
             self.image(
                 f"{DIR_PATH}/pdf_icons/{CODE_TO_IMAGE[waste_code]}",
                 x=self.get_x(),
@@ -133,15 +144,6 @@ class WastePDF(FPDF):
                 new_y="NEXT",
             )
             self.ln(3)
-
-        # Printing page number:
-        self.set_font(PDF_FONT, "", PDF_HEADER_FONT_SIZE)
-        self.cell(
-            0,
-            PDF_HEADER_CELL_HEIGHT - 2,
-            f"Pagina {self.page_no()} van {{nb}}",
-            align="R",
-        )
 
     def add_title(self):
         start_date = date.today()
@@ -233,7 +235,7 @@ class WastePDF(FPDF):
             n_icons_list.append(len(waste_by_date.get(current, [])))
 
             # Icons
-            for i, (waste_code, _) in enumerate(waste_by_date.get(current, [])):
+            for i, waste_code in enumerate(waste_by_date.get(current, [])):
                 self.image(
                     f"{DIR_PATH}/pdf_icons/{CODE_TO_IMAGE[waste_code]}",
                     x + (self.col_width - PDF_ICON_SIZE) / 2,

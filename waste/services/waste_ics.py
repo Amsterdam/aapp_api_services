@@ -2,7 +2,6 @@ from datetime import date, datetime, time, timedelta
 
 from django.utils import timezone
 
-
 CALENDAR_START = (
     "BEGIN:VCALENDAR\r\n"
     "VERSION:2.0\r\n"

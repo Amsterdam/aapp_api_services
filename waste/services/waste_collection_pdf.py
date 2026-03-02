@@ -20,7 +20,9 @@ class WasteCollectionPDFService(WasteCollectionAbstractService):
         months = self.group_days_by_month(days)
 
         # initialize pdf and get settings
-        pdf = WastePDF(address=self._generate_address_string(), code_label_list=code_label_list)
+        pdf = WastePDF(
+            address=self._generate_address_string(), code_label_list=code_label_list
+        )
         pdf.add_page()
         pdf.add_title()
 
@@ -43,9 +45,13 @@ class WasteCollectionPDFService(WasteCollectionAbstractService):
                     waste_collection_by_date.setdefault(date, []).append(
                         item.get("code")
                     )
-            code_label_list.append((item.get("code"), item.get("label"), item.get("order")))
+                    code_label_list.append(
+                        (item.get("code"), item.get("label"), item.get("order"))
+                    )
 
-        return waste_collection_by_date, sorted(set(code_label_list), key=lambda x: x[2])
+        return waste_collection_by_date, sorted(
+            set(code_label_list), key=lambda x: x[2]
+        )
 
     @staticmethod
     def group_days_by_month(days: list[date]) -> OrderedDict:

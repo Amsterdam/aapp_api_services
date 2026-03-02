@@ -12,10 +12,13 @@ class WasteICSServiceTest(TestCase):
 
     def test_add_event_to_calendar(self):
         calendar = WasteICS()
-        calendar.add_event_to_calendar(date(2026, 1, 12), {"code": "Rest"})
+        calendar.add_event_to_calendar(
+            date(2026, 1, 12), {"code": "Rest", "label": "Rest afval"}
+        )
         self.assertIn("BEGIN:VEVENT", calendar.calendar)
         self.assertIn("DTSTART;TZID=Europe/Amsterdam:20260112", calendar.calendar)
         self.assertIn("END:VEVENT", calendar.calendar)
+        self.assertIn("Ophaaldag rest afval", calendar.calendar)
 
     def test_add_calendar_ending(self):
         calendar = WasteICS()

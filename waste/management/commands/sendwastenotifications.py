@@ -203,7 +203,8 @@ class Command(BaseCommand):
                 waste_type = data.get("afvalwijzerFractieNaam")
                 if not waste_type:
                     logger.warning(
-                        f"[waste-notification] No waste type found. Skipping notification.", extra={"bag_nummeraanduiding_id": bag_nummeraanduiding_id}
+                        "[waste-notification] No waste type found. Skipping notification.",
+                        extra={"bag_nummeraanduiding_id": bag_nummeraanduiding_id},
                     )
                     continue
                 if waste_type not in fraction_device_ids.keys():
