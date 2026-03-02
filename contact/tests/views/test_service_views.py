@@ -3,9 +3,23 @@ from django.conf import settings
 from django.urls import reverse
 from rest_framework import status
 
+from contact.enums.services import Services
 from contact.enums.toilets import ToiletFilters, ToiletProperties
 from contact.tests.mock_data import toilets
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+
+
+class TestServiceMapsView(ResponsesActivatedAPITestCase):
+    def test_success_get_service_maps_view(self):
+
+        url = reverse("service-maps")
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), len(Services.choices()))
 
 
 class TestServiceMapView(ResponsesActivatedAPITestCase):

@@ -37,6 +37,11 @@ urlpatterns = [
     ),
     path("contact/admin/", admin.site.urls),
     path(
+        BASE_PATH_SERVICE + "/maps",
+        service_views.ServiceMapsView.as_view(),
+        name="service-maps",
+    ),
+    path(
         BASE_PATH_SERVICE + "/maps/<int:service_id>",
         service_views.ServiceMapView.as_view(),
         name="service-map",

@@ -163,6 +163,8 @@ class BaseSSPView(generics.GenericAPIView):
             raise exceptions.SSPServerError(detail=content)  # Map to 500 status
         if ssp_response.status_code == 502:
             raise exceptions.SSPBadGatewayError()  # Map to 502 status
+        if ssp_response.status_code == 503:
+            raise exceptions.SSPUnavailableError()
         for error in exceptions.SSP_COMMON_ERRORS:
             if error.default_detail in content:
                 raise error()  # Map to common error status
