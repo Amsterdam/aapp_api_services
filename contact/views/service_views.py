@@ -8,22 +8,32 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from contact.enums.services import Services
 from contact.serializers.service_serializers import (
     ServiceMapResponseSerializer,
+    ServiceMapsResponseSerializer,
     ToiletMapResponseSerializer,
 )
-from contact.services.toilets import ToiletService
 from core.utils.openapi_utils import extend_schema_for_api_key
 
 logger = logging.getLogger(__name__)
 
-toilet_service = ToiletService()
+
+@method_decorator(cache_page(60 * 60 * 24), name="get")
+class ServiceMapsView(APIView):
+    response_serializer_class = ServiceMapsResponseSerializer
+
+    def get(self, request, *args, **kwargs):
+
+        services = Services.choices()
+        response_serializer = ServiceMapsResponseSerializer(services, many=True)
+        return Response(response_serializer.data)
 
 
+@method_decorator(cache_page(60 * 60 * 24), name="get")
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 
-    @method_decorator(cache_page(60 * 60 * 24), name="dispatch")
     @extend_schema_for_api_key(
         success_response=ServiceMapResponseSerializer,
         additional_params=[
@@ -36,18 +46,20 @@ class ServiceMapView(APIView):
         ],
     )
     def get(self, request, service_id: int):
-        if (
-            service_id == 1
-        ):  # Currently we only have one service, which is toilets, so we check if the service_id is 1.
-            # TODO: Update method when ticket to get all services is implemented.
-            logger.info("Fetching data for service_id 1 (toilets)")
-            response_payload = toilet_service.get_full_data()
-
-            response_serializer = ToiletMapResponseSerializer(data=response_payload)
-            response_serializer.is_valid(raise_exception=True)
-            return Response(response_serializer.validated_data)
-
-        else:
+        data_service_class = Services.get_service_by_id(service_id)
+        if data_service_class is None:
+            # Service not found
             return Response(
                 {"detail": "Service not found."}, status=status.HTTP_404_NOT_FOUND
             )
+        if data_service_class.dataservice is None:
+            # No data service available
+            return Response(
+                {"detail": "No data service available for this service."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        data_service = data_service_class.dataservice()
+        response_payload = data_service.get_full_data()
+        response_serializer = ToiletMapResponseSerializer(data=response_payload)
+        response_serializer.is_valid(raise_exception=True)
+        return Response(response_serializer.validated_data)

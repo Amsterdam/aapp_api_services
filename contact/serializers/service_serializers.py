@@ -1,6 +1,12 @@
 from rest_framework import serializers
 
 
+class ServiceMapsResponseSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    icon = serializers.CharField()
+
+
 class FlexibleValueField(serializers.Field):
     def to_representation(self, value):
         return value
