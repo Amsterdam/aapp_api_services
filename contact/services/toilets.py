@@ -42,6 +42,7 @@ class ToiletService:
             full_toilet_data.append(
                 {
                     "id": toilet.get("id"),
+                    "type": toilet.get("type"),
                     "geometry": toilet.get("geometry"),
                     "properties": new_properties,
                 }
@@ -50,7 +51,10 @@ class ToiletService:
         full_data = {
             "filters": ToiletFilters.choices(),
             "properties_to_include": ToiletProperties.choices(),
-            "data": full_toilet_data,
+            "data": {
+                "type": "FeatureCollection",
+                "features": full_toilet_data,
+            },
         }
 
         return full_data
@@ -65,17 +69,17 @@ class ToiletService:
     ) -> Dict[str, Any]:
         """
         Returns a dictionary of custom properties for a toilet, using a prefix to avoid conflicts.
-        """
-        open_days = properties.get("Dagen_geopend", "")
-        opening_times = properties.get("Openingstijden", "")
-        open_hours = f"{open_days} {opening_times}".strip() or None
 
+        Note: aapp_title should ALWAYS be included as a custom property, as it is used as the main title for the toilet in the frontend.
+        """
         picture = properties.get("Foto")
         image_url = f"{self.image_url}{quote(picture)}" if picture else None
 
         selectie = (properties.get("SELECTIE") or "").lower()
         return {
-            f"{prefix}open_hours": open_hours,
+            f"{prefix}title": properties.get("Soort", "") or "Toilet",
+            f"{prefix}days_open": properties.get("Dagen_geopend", "") or None,
+            f"{prefix}opening_hours": properties.get("Openingstijden", "") or None,
             f"{prefix}description": properties.get("Omschrijving") or None,
             f"{prefix}image_url": image_url,
             f"{prefix}is_accessible": selectie == "toegang",
