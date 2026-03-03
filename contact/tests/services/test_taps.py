@@ -18,7 +18,7 @@ class TapServiceTest(ResponsesActivatedAPITestCase):
 
         self.assertEqual(full_data["filters"], TapFilters.choices())
         self.assertEqual(full_data["properties_to_include"], TapProperties.choices())
-        self.assertEqual(len(full_data["data"]), 3)
+        self.assertEqual(len(full_data["data"]["features"]), 3)
 
     def test_filter_data(self):
         # Test that filter_data correctly filters taps based on the provided filters

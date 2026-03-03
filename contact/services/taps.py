@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from django.conf import settings
 
-from contact.enums.taps import TapFilters, TapProperties
+from contact.enums.taps import LIST_PROPERTY, TapFilters, TapProperties
 from contact.services.service_abstract import ServiceAbstract
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,6 @@ class TapService(ServiceAbstract):
         taps = self.filter_data(all_taps)
 
         full_tap_data = []
-        full_types = []
 
         for tap in taps:
             # get properties and add custom properties with prefix to avoid conflicts with original properties,
@@ -39,19 +38,17 @@ class TapService(ServiceAbstract):
             full_tap_data.append(
                 {
                     "id": int(tap.get("id").split(".")[1]),
+                    "type": tap.get("type"),
                     "geometry": self.get_geometry_from_properties(
                         tap.get("properties", {}) or {}
                     ),
                     "properties": new_properties,
                 }
             )
-            full_types.append(tap.get("properties", {}).get("type", ""))
 
-        full_data = {
-            "filters": TapFilters.choices(),
-            "properties_to_include": TapProperties.choices(),
-            "data": full_tap_data,
-        }
+        full_data = self.build_response_payload(
+            full_tap_data, TapFilters, TapProperties, LIST_PROPERTY
+        )
 
         return full_data
 
@@ -73,8 +70,10 @@ class TapService(ServiceAbstract):
         Returns a dictionary of custom properties for a tap, using a prefix to avoid conflicts.
         """
         custom_properties = {
+            f"{self.properties_prefix}title": properties.get("beschrijvi", "")
+            or "Kraan",
             f"{self.properties_prefix}is_fountain": "fontein"
-            in properties.get("beschrijving", "").lower(),
+            in properties.get("beschrijvi", "").lower(),
             f"{self.properties_prefix}always_accessible": "24-7 open"
             in properties.get("type", "").lower(),
             f"{self.properties_prefix}has_issue": "storing"

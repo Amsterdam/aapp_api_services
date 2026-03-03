@@ -1,6 +1,6 @@
 from contact.enums.base import ChoicesEnum, ServiceClass
-from contact.services.taps import TapService
 from contact.icons import IconPath
+from contact.services.taps import TapService
 from contact.services.toilets import ToiletService
 
 

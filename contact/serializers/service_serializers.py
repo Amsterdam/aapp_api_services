@@ -1,45 +1,60 @@
 from rest_framework import serializers
 
 FIELD_TYPE_MAPPING = {
+    "boolean": serializers.BooleanField,
+    "price": serializers.FloatField,
+    "number": serializers.IntegerField,
+    "string": serializers.CharField,
+    "image": serializers.URLField,
+}
+
+# this mapping is used for filters. Their type is determined by the type of their filter_value, which can be int, str, or bool
+FILTER_FIELD_TYPE_MAPPING = {
     "bool": serializers.BooleanField,
-    "float": serializers.FloatField,
     "int": serializers.IntegerField,
     "str": serializers.CharField,
-    "url": serializers.URLField,
 }
 
 
-def build_dynamic_properties_serializer(properties, filters):
+def build_dynamic_properties_serializer(properties, filters, list_property):
     """
     Dynamically constructs a serializer class based on given properties and filters.
     """
 
     fields = {
-        "aapp_title": "string"
-    }
+        "aapp_title": serializers.CharField()
+    }  # Always include title as a property
 
     # Add property fields
     for prop in properties:
         field_class = FIELD_TYPE_MAPPING.get(
             prop.get("property_type"), serializers.CharField
         )
-        fields[prop["property_key"]] = field_class(allow_null=True, required=False)
+        fields[prop["property_key"]] = field_class(allow_null=True)
 
     # Add filter fields (if not already included)
     for filt in filters:
         key = filt["filter_key"]
         if key not in fields:
-            field_class = FIELD_TYPE_MAPPING.get(
+            field_class = FILTER_FIELD_TYPE_MAPPING.get(
                 type(filt["filter_value"]).__name__, serializers.CharField
             )
-            fields[key] = field_class(allow_null=True, required=False)
+            fields[key] = field_class()
+
+    key = list_property["key"]
+    if key not in fields:
+        field_class = FIELD_TYPE_MAPPING.get(
+            list_property["type"], serializers.CharField
+        )
+        # TODO: change required to True once addresses are added for taps
+        fields[key] = field_class(allow_null=True, required=False)
 
     return type("DynamicPropertiesSerializer", (serializers.Serializer,), fields)
 
 
-def build_service_list_serializer(properties, filters):
+def build_service_list_serializer(properties, filters, list_property):
     DynamicPropertiesSerializer = build_dynamic_properties_serializer(
-        properties, filters
+        properties, filters, list_property
     )
 
     class DynamicServiceListSerializer(serializers.Serializer):
@@ -50,19 +65,27 @@ def build_service_list_serializer(properties, filters):
     return DynamicServiceListSerializer
 
 
-def build_map_response_serializer(properties, filters):
-    DynamicListSerializer = build_service_list_serializer(properties, filters)
+def build_geojson_serializer(properties, filters, list_property):
+    DynamicListSerializer = build_service_list_serializer(
+        properties, filters, list_property
+    )
+
+    class DynamicGeoJsonSerializer(serializers.Serializer):
+        type = serializers.CharField()
+        features = DynamicListSerializer(many=True)
+
+    return DynamicGeoJsonSerializer
+
+
+def build_map_response_serializer(properties, filters, list_property):
+    DynamicGeoJsonSerializer = build_geojson_serializer(
+        properties, filters, list_property
+    )
 
     class DynamicMapResponseSerializer(ServiceMapResponseSerializer):
-        data = DynamicListSerializer(many=True)
+        data = DynamicGeoJsonSerializer()
 
     return DynamicMapResponseSerializer
-
-
-class ServiceMapsResponseSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    title = serializers.CharField()
-    icon = serializers.CharField()
 
 
 class ServiceMapsResponseSerializer(serializers.Serializer):
@@ -94,6 +117,11 @@ class PropertiesSerializer(serializers.Serializer):
     icon = serializers.CharField(allow_null=True)
 
 
+class ListPropertySerializer(serializers.Serializer):
+    key = serializers.CharField()
+    type = serializers.CharField()
+
+
 class GeometrySerializer(serializers.Serializer):
     type = serializers.CharField()
     coordinates = serializers.ListField(child=serializers.FloatField())
@@ -114,5 +142,5 @@ class ServiceMapGeoJsonSerializer(serializers.Serializer):
 class ServiceMapResponseSerializer(serializers.Serializer):
     filters = FiltersSerializer(many=True)
     properties_to_include = PropertiesSerializer(many=True)
+    list_property = ListPropertySerializer()
     data = ServiceMapGeoJsonSerializer()
-

@@ -4,7 +4,7 @@ from urllib.parse import quote
 
 from django.conf import settings
 
-from contact.enums.toilets import ToiletFilters, ToiletProperties
+from contact.enums.toilets import LIST_PROPERTY, ToiletFilters, ToiletProperties
 from contact.services.service_abstract import ServiceAbstract
 
 logger = logging.getLogger(__name__)
@@ -45,14 +45,9 @@ class ToiletService(ServiceAbstract):
                 }
             )
 
-        full_data = {
-            "filters": ToiletFilters.choices(),
-            "properties_to_include": ToiletProperties.choices(),
-            "data": {
-                "type": "FeatureCollection",
-                "features": full_toilet_data,
-            },
-        }
+        full_data = self.build_response_payload(
+            full_toilet_data, ToiletFilters, ToiletProperties, LIST_PROPERTY
+        )
 
         return full_data
 
@@ -68,10 +63,16 @@ class ToiletService(ServiceAbstract):
         selectie = (properties.get("SELECTIE") or "").lower()
         return {
             f"{self.properties_prefix}title": properties.get("Soort", "") or "Toilet",
-            f"{self.properties_prefix}days_open": properties.get("Dagen_geopend", "") or None,
-            f"{self.properties_prefix}opening_hours": properties.get("Openingstijden", "") or None,
-            f"{self.properties_prefix}description": properties.get("Omschrijving") or None,
+            f"{self.properties_prefix}days_open": properties.get("Dagen_geopend", "")
+            or None,
+            f"{self.properties_prefix}opening_hours": properties.get(
+                "Openingstijden", ""
+            )
+            or None,
+            f"{self.properties_prefix}description": properties.get("Omschrijving")
+            or None,
             f"{self.properties_prefix}image_url": image_url,
             f"{self.properties_prefix}is_accessible": selectie == "toegang",
-            f"{self.properties_prefix}is_toilet": selectie in ("toegang", "openbaar", "parkeer"),
+            f"{self.properties_prefix}is_toilet": selectie
+            in ("toegang", "openbaar", "parkeer"),
         }

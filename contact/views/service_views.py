@@ -30,7 +30,7 @@ class ServiceMapsView(APIView):
         return Response(response_serializer.data)
 
 
-@method_decorator(cache_page(60 * 60 * 24), name="get")
+# @method_decorator(cache_page(60 * 60 * 24), name="get")
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 
@@ -64,6 +64,7 @@ class ServiceMapView(APIView):
         DynamicMapSerializer = build_map_response_serializer(
             response_payload.get("properties_to_include", []),
             response_payload.get("filters", []),
+            response_payload.get("list_property", {}),
         )
 
         logging.info(
