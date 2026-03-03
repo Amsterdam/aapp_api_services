@@ -6,9 +6,27 @@ from django.conf import settings
 from requests.models import PreparedRequest
 
 from bridge.burning_guide.serializers.advice import AdviceResponseSerializer
-from bridge.burning_guide.services.rivm import RIVMService, UnknownPostalcodeError
+from bridge.burning_guide.services.rivm import (
+    RIVMService,
+    UnknownPostalcodeError,
+    load_postal_data,
+)
 from bridge.burning_guide.tests.mock_data import address_properties, postal_codes
+from bridge.burning_guide.tests.mock_data.postal_area_shapes import MOCK_DATA
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+
+
+@patch("bridge.burning_guide.services.rivm.load_postal_area_shapes")
+def test_load_postal_data_caching(mock_load_shapes):
+    mock_load_shapes.return_value = MOCK_DATA  # Mocked shape data
+    postal_data_first_call = load_postal_data()
+    assert postal_data_first_call["1056"]["min_x"] == 118623.17586823055
+    assert mock_load_shapes.call_count == 1
+
+    # Second call should return cached data, so load_postal_area_shapes should not be called again
+    postal_data_second_call = load_postal_data()
+    assert postal_data_second_call["1056"]["min_x"] == 118623.17586823055
+    assert mock_load_shapes.call_count == 1  # Still 1, no additional calls
 
 
 class TestRIVMServiceNewRedStatus:

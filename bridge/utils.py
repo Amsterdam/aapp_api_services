@@ -1,8 +1,9 @@
 import requests
 import shapely
 from django.conf import settings
-from django.core.cache import cache
 from rest_framework import serializers
+
+from core.utils.caching_utils import cache_function
 
 
 def validate_digits(variable_name: str, value: str) -> str:
@@ -14,6 +15,7 @@ def validate_digits(variable_name: str, value: str) -> str:
     return value
 
 
+@cache_function(timeout=60 * 60 * 24)  # Cache for 24 hours
 def load_postal_area_shapes():
     """
     Function to load the postal data:
@@ -21,10 +23,6 @@ def load_postal_area_shapes():
     - for each postal code:
         - save shape to dict
     """
-    cache_key = f"{__name__}.load_postal_area_shapes"
-    cached_data = cache.get(cache_key)
-    if cached_data:
-        return cached_data
     url = settings.BURNING_GUIDE_AMSTERDAM_MAPS_URL
     params = {"KAARTLAAG": "PC4_BUURTEN", "THEMA": "postcode"}
     response = requests.get(url, params=params)
@@ -42,5 +40,4 @@ def load_postal_area_shapes():
         # add polygon_object to final dict
         final_dict[postal_code] = polygon_object
 
-    cache.set(cache_key, final_dict, timeout=60 * 60 * 24)
     return final_dict

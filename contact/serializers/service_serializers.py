@@ -65,6 +65,12 @@ class ServiceMapsResponseSerializer(serializers.Serializer):
     icon = serializers.CharField()
 
 
+class ServiceMapsResponseSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    icon = serializers.CharField()
+
+
 class FlexibleValueField(serializers.Field):
     def to_representation(self, value):
         return value
@@ -95,11 +101,18 @@ class GeometrySerializer(serializers.Serializer):
 
 class ServiceListSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    type = serializers.CharField()
     geometry = GeometrySerializer()
     properties = serializers.DictField()
+
+
+class ServiceMapGeoJsonSerializer(serializers.Serializer):
+    type = serializers.CharField()
+    features = ServiceListSerializer(many=True)
 
 
 class ServiceMapResponseSerializer(serializers.Serializer):
     filters = FiltersSerializer(many=True)
     properties_to_include = PropertiesSerializer(many=True)
-    data = ServiceListSerializer(many=True)
+    data = ServiceMapGeoJsonSerializer()
+

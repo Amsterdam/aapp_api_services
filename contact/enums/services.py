@@ -1,6 +1,6 @@
 from contact.enums.base import ChoicesEnum, ServiceClass
-from contact.icons import icon_svg
 from contact.services.taps import TapService
+from contact.icons import IconPath
 from contact.services.toilets import ToiletService
 
 
@@ -8,11 +8,11 @@ class Services(ChoicesEnum):
     TOILET = ServiceClass(
         id=1,
         title="Openbare toiletten",
-        icon=icon_svg("toilet"),
+        icon=IconPath.get("toilet"),
         dataservice=ToiletService,
     )
     TAP = ServiceClass(
-        id=2, title="Drinkwater", icon=icon_svg("tap"), dataservice=TapService
+        id=2, title="Drinkwater", icon=IconPath.get("tap"), dataservice=TapService
     )
 
     @classmethod

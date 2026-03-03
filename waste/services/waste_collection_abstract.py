@@ -37,10 +37,10 @@ class WasteCollectionAbstractService:
 
     def get_validated_data(self):
         url = settings.WASTE_GUIDE_URL
-        # api_key = settings.WASTE_GUIDE_API_KEY
+        api_key = settings.WASTE_GUIDE_API_KEY
         headers = None
-        # if settings.ENVIRONMENT_SLUG in ["a", "p"]:
-        #     headers = {"X-Api-Key": api_key}
+        if settings.ENVIRONMENT_SLUG in ["a", "p"]:
+            headers = {"X-Api-Key": api_key}
         try:
             resp = self.make_request(
                 method="GET",
