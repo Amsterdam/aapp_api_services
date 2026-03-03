@@ -421,6 +421,7 @@ class WasteCollectionServiceTest(TestCase):
             {"code": "GFT", "order": 3},
             {"code": "Rest", "order": 1},
             {"code": "Papier", "order": 2},
+            {"code": "Textiel", "order": 0},
             {"code": "Glas", "order": None},
         ]
 
@@ -429,6 +430,7 @@ class WasteCollectionServiceTest(TestCase):
         self.assertEqual(
             sorted_waste_types,
             [
+                {"code": "Textiel", "order": 0},
                 {"code": "Rest", "order": 1},
                 {"code": "Papier", "order": 2},
                 {"code": "GFT", "order": 3},

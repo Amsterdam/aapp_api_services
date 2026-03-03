@@ -81,7 +81,10 @@ class WasteCollectionService(WasteCollectionAbstractService):
         return sorted_waste_types
 
     def sort_waste_types_by_order(self, waste_types: list[dict]) -> list[dict]:
-        return sorted(waste_types, key=lambda x: x.get("order", 999) or 999)
+        return sorted(
+            waste_types,
+            key=lambda x: x.get("order") if x.get("order") is not None else 999,
+        )
 
     def get_is_residential(self):
         if self.validated_data and len(self.validated_data) > 0:
