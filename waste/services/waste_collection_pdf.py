@@ -46,7 +46,11 @@ class WasteCollectionPDFService(WasteCollectionAbstractService):
                         item.get("code")
                     )
                     code_label_list.append(
-                        (item.get("code"), item.get("label"), item.get("order"))
+                        (
+                            item.get("code"),
+                            item.get("label"),
+                            item.get("order", 999) or 999,
+                        )
                     )
 
         return waste_collection_by_date, sorted(

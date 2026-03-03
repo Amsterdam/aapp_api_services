@@ -53,7 +53,8 @@ class WasteICS:
 
     @staticmethod
     def _create_ics_event(event_date: date, item: dict) -> str:
-        readable_name = item.get("label").lower()
+        label = item.get("label", "") or "afval"
+        readable_name = label.lower()
         event_uid = f"{readable_name.replace(',', '').replace(' ', '')}-{event_date.isoformat()}@app.amsterdam.nl"
         event_name = f"Ophaaldag {readable_name}"
 

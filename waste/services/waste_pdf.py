@@ -42,7 +42,10 @@ class WastePDF(FPDF):
         self.set_margins(PDF_MARGIN_LR, PDF_MARGIN_TB, PDF_MARGIN_LR)
         self.address = address
         self.code_label_list = code_label_list
-        self.legend_lines = len(code_label_list)
+        # check if any of the waste types in the legend have an icon, to determine how much space the legend will take in the footer
+        self.legend_lines = sum(
+            1 for waste_code, _, _ in code_label_list if waste_code in CODE_TO_IMAGE
+        )
         self._set_pdf_settings()
 
     def header(self):
@@ -236,6 +239,8 @@ class WastePDF(FPDF):
 
             # Icons
             for i, waste_code in enumerate(waste_by_date.get(current, [])):
+                if waste_code not in CODE_TO_IMAGE:
+                    continue
                 self.image(
                     f"{DIR_PATH}/pdf_icons/{CODE_TO_IMAGE[waste_code]}",
                     x + (self.col_width - PDF_ICON_SIZE) / 2,
@@ -247,7 +252,6 @@ class WastePDF(FPDF):
             col += 1
             if col == 7:
                 max_icons = max(n_icons_list)
-                # pdf.ln((max_icons * PDF_ICON_SIZE) + PDF_REGULAR_CELL_HEIGHT - 2)
                 self.ln(
                     max(
                         (max_icons * PDF_ICON_SIZE) + PDF_REGULAR_CELL_HEIGHT - 2,
