@@ -94,6 +94,6 @@ WEEKDAYS = {
     5: "zaterdag",
     6: "zondag",
 }
-WASTE_TYPES_ORDER = ["Rest", "GA", "Papier", "GFT", "Glas", "Textiel"]
+WASTE_TYPES_CODES = ["Rest", "GA", "Papier", "GFT", "Glas", "Textiel"]
 
 WASTE_COLLECTION_BY_APPOINTMENT_CODE = "THUISAFSPR"
