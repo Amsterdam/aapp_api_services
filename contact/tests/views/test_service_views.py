@@ -38,7 +38,9 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         self.assertEqual(
             response.data["properties_to_include"], ToiletProperties.choices()
         )
-        self.assertEqual(len(response.data["data"]), len(toilets.MOCK_DATA["features"]))
+        self.assertEqual(
+            len(response.data["data"]["features"]), len(toilets.MOCK_DATA["features"])
+        )
 
     def test_not_implemented_get_service_map_view(self):
         # Mock the response from the external API

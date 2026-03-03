@@ -49,6 +49,7 @@ class ToiletPropertiesSerializer(serializers.Serializer):
 
 class ServiceListSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    type = serializers.CharField()
     geometry = GeometrySerializer()
     properties = serializers.DictField()
 

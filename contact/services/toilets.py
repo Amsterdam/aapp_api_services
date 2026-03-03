@@ -42,6 +42,7 @@ class ToiletService:
             full_toilet_data.append(
                 {
                     "id": toilet.get("id"),
+                    "type": toilet.get("type"),
                     "geometry": toilet.get("geometry"),
                     "properties": new_properties,
                 }
@@ -76,7 +77,7 @@ class ToiletService:
 
         selectie = (properties.get("SELECTIE") or "").lower()
         return {
-            f"{prefix}title": properties.get("Soort", "") or "",
+            f"{prefix}title": properties.get("Soort", "") or "Toilet",
             f"{prefix}days_open": properties.get("Dagen_geopend", "") or None,
             f"{prefix}opening_hours": properties.get("Openingstijden", "") or None,
             f"{prefix}description": properties.get("Omschrijving") or None,
