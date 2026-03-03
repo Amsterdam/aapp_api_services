@@ -44,6 +44,8 @@ class TestWasteCalendarView(ResponsesActivatedAPITestCase):
             if waste_type["code"] == "GFT":
                 self.assertEqual(waste_type["next_date"], "2024-04-01")
 
+        self.assertEqual(result["waste_types"][0]["code"], "GFT")
+
         self.assertEqual(result["is_residential"], True)
         self.assertEqual(result["is_collection_by_appointment"], False)
 

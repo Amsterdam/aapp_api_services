@@ -30,5 +30,19 @@ MOCK_DATA = {
                 "SELECTIE": "TOEGANG",
             },
         },
+        {
+            "id": 3,
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.912339, 52.321287]},
+            "properties": {
+                "Soort": "Openbaar toilet",
+                "Prijs_per_gebruik": 0,
+                "Dagen_geopend": "",
+                "Openingstijden": "",
+                "Omschrijving": "",
+                "Foto": "",
+                "SELECTIE": "OPENBAAR",
+            },
+        },
     ],
 }
