@@ -68,10 +68,10 @@ class ServiceMapResponseSerializer(serializers.Serializer):
     data = ServiceMapGeoJsonSerializer()
 
 
-class ToiletGeojsonSerializer(serializers.Serializer):
+class ToiletGeoJsonSerializer(serializers.Serializer):
     type = serializers.CharField()
     features = ToiletListSerializer(many=True)
 
 
 class ToiletMapResponseSerializer(ServiceMapResponseSerializer):
-    data = ToiletGeojsonSerializer()
+    data = ToiletGeoJsonSerializer()
