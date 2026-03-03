@@ -22,7 +22,9 @@ class ToiletServiceTest(ResponsesActivatedAPITestCase):
 
         self.assertEqual(full_data["filters"], ToiletFilters.choices())
         self.assertEqual(full_data["properties_to_include"], ToiletProperties.choices())
-        self.assertEqual(len(full_data["data"]), len(toilets.MOCK_DATA["features"]))
+        self.assertEqual(
+            len(full_data["data"]["features"]), len(toilets.MOCK_DATA["features"])
+        )
 
     @patch("contact.services.toilets.requests.get")
     def test_make_request_succeeds_after_retry(self, mock_get):

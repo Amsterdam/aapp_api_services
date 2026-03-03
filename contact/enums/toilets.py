@@ -1,5 +1,5 @@
 from contact.enums.base import ChoicesEnum, FilterClass, PropertiesClass
-from contact.icons import icon_svg
+from contact.icons import IconPath
 
 
 class ToiletFilters(ChoicesEnum):
@@ -11,33 +11,33 @@ class ToiletFilters(ChoicesEnum):
 
 
 class ToiletProperties(ChoicesEnum):
-    NAME = PropertiesClass(
+    OPEN_HOURS_MAIN = PropertiesClass(
+        label="Openingstijden",
+        property_key="aapp_opening_hours",
+        property_type="string",
+        icon=IconPath.get("clock"),
+    )
+    OPEN_HOURS_EXTRA = PropertiesClass(
         label=None,
-        property_key="Soort",
+        property_key="aapp_days_open",
         property_type="string",
         icon=None,
-    )
-    OPEN_HOURS = PropertiesClass(
-        label="Openingstijden",
-        property_key="aapp_open_hours",
-        property_type="string",
-        icon=icon_svg("clock"),
     )
     PRICE = PropertiesClass(
         label="Prijs",
         property_key="Prijs_per_gebruik",
-        property_type="float",
-        icon=icon_svg("eurocoins"),
+        property_type="price",
+        icon=IconPath.get("eurocoins"),
     )
     DESCRIPTION = PropertiesClass(
         label="Omschrijving",
         property_key="aapp_description",
         property_type="string",
-        icon=icon_svg("info"),
+        icon=IconPath.get("info"),
     )
     IMAGE_URL = PropertiesClass(
         label=None,
         property_key="aapp_image_url",
-        property_type="url",
+        property_type="image",
         icon=None,
     )

@@ -37,8 +37,9 @@ class GeometrySerializer(serializers.Serializer):
 
 class ToiletPropertiesSerializer(serializers.Serializer):
     # TODO: change this to dynamically generate fields based on the filters and properties when moving out of MVP stage
-    Soort = serializers.CharField()
-    aapp_open_hours = serializers.CharField(allow_null=True)
+    aapp_title = serializers.CharField()
+    aapp_opening_hours = serializers.CharField(allow_null=True)
+    aapp_days_open = serializers.CharField(allow_null=True)
     Prijs_per_gebruik = serializers.FloatField(allow_null=True)
     aapp_description = serializers.CharField(allow_null=True)
     aapp_image_url = serializers.URLField(allow_null=True)
@@ -56,11 +57,21 @@ class ToiletListSerializer(ServiceListSerializer):
     properties = ToiletPropertiesSerializer()
 
 
+class ServiceMapGeoJsonSerializer(serializers.Serializer):
+    type = serializers.CharField()
+    features = ServiceListSerializer(many=True)
+
+
 class ServiceMapResponseSerializer(serializers.Serializer):
     filters = FiltersSerializer(many=True)
     properties_to_include = PropertiesSerializer(many=True)
-    data = ServiceListSerializer(many=True)
+    data = ServiceMapGeoJsonSerializer()
+
+
+class ToiletGeojsonSerializer(serializers.Serializer):
+    type = serializers.CharField()
+    features = ToiletListSerializer(many=True)
 
 
 class ToiletMapResponseSerializer(ServiceMapResponseSerializer):
-    data = ToiletListSerializer(many=True)
+    data = ToiletGeojsonSerializer()
