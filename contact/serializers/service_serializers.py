@@ -14,7 +14,9 @@ def build_dynamic_properties_serializer(properties, filters):
     Dynamically constructs a serializer class based on given properties and filters.
     """
 
-    fields = {}
+    fields = {
+        "aapp_title": "string"
+    }
 
     # Add property fields
     for prop in properties:
