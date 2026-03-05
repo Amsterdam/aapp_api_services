@@ -1,22 +1,56 @@
+from typing import Any, Dict
+
+from core.serializers.address_serializers import AddressSerializer, CoordinatesSerializer
 from rest_framework import serializers
+from contact.enums.base import SerializerMapping, ChoicesEnum 
 
-FIELD_TYPE_MAPPING = {
-    "boolean": serializers.BooleanField,
-    "price": serializers.FloatField,
-    "number": serializers.IntegerField,
-    "string": serializers.CharField,
-    "image": serializers.URLField,
-}
-
-# this mapping is used for filters. Their type is determined by the type of their filter_value, which can be int, str, or bool
-FILTER_FIELD_TYPE_MAPPING = {
-    "bool": serializers.BooleanField,
-    "int": serializers.IntegerField,
-    "str": serializers.CharField,
-}
+class ServiceAddressSerializer(AddressSerializer):
+    lat = serializers.FloatField(required=False, write_only=True)
+    lon = serializers.FloatField(required=False, write_only=True)
+    coordinates = CoordinatesSerializer(source="*", read_only=True)
 
 
-def build_dynamic_properties_serializer(properties, filters, list_property):
+class PropertySerializers(ChoicesEnum):
+    ADDRESS = SerializerMapping(
+        type="address",
+        serializer=ServiceAddressSerializer,
+    )
+    BOOLEAN = SerializerMapping(
+        type="boolean",
+        serializer=serializers.BooleanField,
+    )
+    IMAGE = SerializerMapping(
+        type="image",
+        serializer=serializers.URLField,
+    ) 
+    PRICE = SerializerMapping(
+        type="price",
+        serializer=serializers.FloatField,
+    )
+    STRING = SerializerMapping(
+        type="string",
+        serializer=serializers.CharField,
+    )
+    
+   
+class FilterSerializers(ChoicesEnum):
+    BOOL = SerializerMapping(
+        type="bool",
+        serializer=serializers.BooleanField,
+    )
+    INT = SerializerMapping(
+        type="int",
+        serializer=serializers.IntegerField,
+    )
+    STR = SerializerMapping(
+        type="str",
+        serializer=serializers.CharField,
+    )
+
+property_serializer_mapping = {item.value.type: item.value.serializer for item in PropertySerializers}
+filter_serializer_mapping = {item.value.type: item.value.serializer for item in FilterSerializers}
+
+def build_dynamic_properties_serializer(properties: list[Dict[str, Any]], filters: list[Dict[str, Any]], list_property: Dict[str, Any]) -> serializers.Serializer:
     """
     Dynamically constructs a serializer class based on given properties and filters.
     """
@@ -27,7 +61,7 @@ def build_dynamic_properties_serializer(properties, filters, list_property):
 
     # Add property fields
     for prop in properties:
-        field_class = FIELD_TYPE_MAPPING.get(
+        field_class = property_serializer_mapping.get(
             prop.get("property_type"), serializers.CharField
         )
         fields[prop["property_key"]] = field_class(allow_null=True)
@@ -36,14 +70,14 @@ def build_dynamic_properties_serializer(properties, filters, list_property):
     for filt in filters:
         key = filt["filter_key"]
         if key not in fields:
-            field_class = FILTER_FIELD_TYPE_MAPPING.get(
+            field_class = filter_serializer_mapping.get(
                 type(filt["filter_value"]).__name__, serializers.CharField
             )
             fields[key] = field_class()
 
     key = list_property["key"]
     if key not in fields:
-        field_class = FIELD_TYPE_MAPPING.get(
+        field_class = property_serializer_mapping.get(
             list_property["type"], serializers.CharField
         )
         # TODO: change required to True once addresses are added for taps
@@ -52,7 +86,7 @@ def build_dynamic_properties_serializer(properties, filters, list_property):
     return type("DynamicPropertiesSerializer", (serializers.Serializer,), fields)
 
 
-def build_service_list_serializer(properties, filters, list_property):
+def build_service_list_serializer(properties: list[Dict[str, Any]], filters: list[Dict[str, Any]], list_property: Dict[str, Any]) -> serializers.Serializer:
     DynamicPropertiesSerializer = build_dynamic_properties_serializer(
         properties, filters, list_property
     )
@@ -65,7 +99,7 @@ def build_service_list_serializer(properties, filters, list_property):
     return DynamicServiceListSerializer
 
 
-def build_geojson_serializer(properties, filters, list_property):
+def build_geojson_serializer(properties: list[Dict[str, Any]], filters: list[Dict[str, Any]], list_property: Dict[str, Any]) -> serializers.Serializer:
     DynamicListSerializer = build_service_list_serializer(
         properties, filters, list_property
     )
@@ -77,7 +111,7 @@ def build_geojson_serializer(properties, filters, list_property):
     return DynamicGeoJsonSerializer
 
 
-def build_map_response_serializer(properties, filters, list_property):
+def build_map_response_serializer(properties: list[Dict[str, Any]], filters: list[Dict[str, Any]], list_property: Dict[str, Any]) -> serializers.Serializer:
     DynamicGeoJsonSerializer = build_geojson_serializer(
         properties, filters, list_property
     )
