@@ -40,7 +40,7 @@ class WasteCollectionServiceTest(TestCase):
             [
                 {
                     "date": date(2025, 12, 10),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -56,7 +56,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2025, 12, 17),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -72,7 +72,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2025, 12, 24),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -88,7 +88,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2025, 12, 31),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -104,7 +104,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2026, 1, 7),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -120,7 +120,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2026, 1, 14),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -136,7 +136,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2026, 1, 21),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -152,7 +152,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2026, 1, 28),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -168,7 +168,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2026, 2, 4),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -380,7 +380,7 @@ class WasteCollectionServiceTest(TestCase):
             waste_types,
             [
                 {
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "order": 1,
                     "curb_rules": "Dinsdag vanaf 21.00 tot woensdag 07.00 uur",

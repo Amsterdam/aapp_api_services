@@ -9,11 +9,11 @@ from babel.dates import format_date
 from fpdf import FPDF
 
 # pdf settings
-LABEL_TO_IMAGE = {
-    "Papier en karton": "paper.svg",
-    "Grof afval": "grof.svg",
-    "Restafval": "rest.svg",
-    "Groente-, fruit-, etensresten en tuinafval": "gft.svg",
+CODE_TO_IMAGE = {
+    "Papier": "paper.svg",
+    "GA": "grof.svg",
+    "Rest": "rest.svg",
+    "GFT": "gft.svg",
 }
 PDF_ICON_SIZE = 6
 PDF_ROW_HEIGHT = 20
@@ -29,7 +29,6 @@ PDF_MONTH_HEADER_CELL_HEIGHT = int(PDF_MONTH_HEADER_FONT_SIZE / 1.6)
 PDF_REGULAR_CELL_HEIGHT = int(PDF_REGULAR_FONT_SIZE / 1.6)
 PDF_HEADER_CELL_HEIGHT = int(PDF_HEADER_FONT_SIZE / 1.6)
 QR_HEIGHT = 20
-LEGEND_LINES = len(LABEL_TO_IMAGE)
 LEGEND_LINE_HEIGHT = PDF_REGULAR_CELL_HEIGHT + 3
 WEEKDAYS_NL = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"]
 
@@ -38,10 +37,15 @@ DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class WastePDF(FPDF):
-    def __init__(self, address):
+    def __init__(self, address: str, code_label_list: list[tuple[str, str, int]]):
         super().__init__()
         self.set_margins(PDF_MARGIN_LR, PDF_MARGIN_TB, PDF_MARGIN_LR)
         self.address = address
+        self.code_label_list = code_label_list
+        # check if any of the waste types in the legend have an icon, to determine how much space the legend will take in the footer
+        self.legend_lines = sum(
+            1 for waste_code, _, _ in code_label_list if waste_code in CODE_TO_IMAGE
+        )
         self._set_pdf_settings()
 
     def header(self):
@@ -67,7 +71,8 @@ class WastePDF(FPDF):
         self.set_font(PDF_FONT, "B", PDF_REGULAR_FONT_SIZE)
 
         required_height = max(
-            QR_HEIGHT + 2 * PDF_REGULAR_CELL_HEIGHT, (LEGEND_LINES * LEGEND_LINE_HEIGHT)
+            QR_HEIGHT + 2 * PDF_REGULAR_CELL_HEIGHT,
+            (self.legend_lines * LEGEND_LINE_HEIGHT),
         )
         self.set_y(-(required_height + 10))
 
@@ -109,15 +114,25 @@ class WastePDF(FPDF):
             "https://www.amsterdam.nl/afval/afvalinformatie",
             align="R",
             new_x="LMARGIN",
+            new_y="NEXT",
+        )
+        # Printing page number:
+        self.cell(
+            0,
+            PDF_HEADER_CELL_HEIGHT - 2,
+            f"Pagina {self.page_no()} van {{nb}}",
+            align="R",
         )
 
         self.set_font(PDF_FONT, "B", PDF_REGULAR_FONT_SIZE)
         self.set_y(-(required_height + 10))
 
         # draw legend
-        for waste_name, waste_icon in LABEL_TO_IMAGE.items():
+        for waste_code, waste_name, _ in self.code_label_list:
+            if waste_code not in CODE_TO_IMAGE:
+                continue
             self.image(
-                f"{DIR_PATH}/pdf_icons/{waste_icon}",
+                f"{DIR_PATH}/pdf_icons/{CODE_TO_IMAGE[waste_code]}",
                 x=self.get_x(),
                 y=self.get_y(),
                 w=PDF_ICON_SIZE,
@@ -132,15 +147,6 @@ class WastePDF(FPDF):
                 new_y="NEXT",
             )
             self.ln(3)
-
-        # Printing page number:
-        self.set_font(PDF_FONT, "", PDF_HEADER_FONT_SIZE)
-        self.cell(
-            0,
-            PDF_HEADER_CELL_HEIGHT - 2,
-            f"Pagina {self.page_no()} van {{nb}}",
-            align="R",
-        )
 
     def add_title(self):
         start_date = date.today()
@@ -157,7 +163,7 @@ class WastePDF(FPDF):
         return (
             self.h
             - self.b_margin
-            - max(QR_HEIGHT, (LEGEND_LINES * LEGEND_LINE_HEIGHT))
+            - max(QR_HEIGHT, (self.legend_lines * LEGEND_LINE_HEIGHT))
             - self.get_y()
         )
 
@@ -232,9 +238,11 @@ class WastePDF(FPDF):
             n_icons_list.append(len(waste_by_date.get(current, [])))
 
             # Icons
-            for i, waste_name in enumerate(waste_by_date.get(current, [])):
+            for i, waste_code in enumerate(waste_by_date.get(current, [])):
+                if waste_code not in CODE_TO_IMAGE:
+                    continue
                 self.image(
-                    f"{DIR_PATH}/pdf_icons/{LABEL_TO_IMAGE[waste_name]}",
+                    f"{DIR_PATH}/pdf_icons/{CODE_TO_IMAGE[waste_code]}",
                     x + (self.col_width - PDF_ICON_SIZE) / 2,
                     self.get_y() + (PDF_ICON_SIZE + 1) * i,
                     w=PDF_ICON_SIZE,
@@ -244,7 +252,6 @@ class WastePDF(FPDF):
             col += 1
             if col == 7:
                 max_icons = max(n_icons_list)
-                # pdf.ln((max_icons * PDF_ICON_SIZE) + PDF_REGULAR_CELL_HEIGHT - 2)
                 self.ln(
                     max(
                         (max_icons * PDF_ICON_SIZE) + PDF_REGULAR_CELL_HEIGHT - 2,

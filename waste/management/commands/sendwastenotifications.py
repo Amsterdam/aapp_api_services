@@ -11,7 +11,6 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 
 from waste.constants import (
     WASTE_COLLECTION_ROUTE_TYPES,
-    WASTE_TYPES_MAPPING_READABLE,
     WEEKDAYS,
 )
 from waste.models import NotificationSchedule
@@ -151,7 +150,7 @@ class Command(BaseCommand):
         filtered_data = [
             {
                 "bagNummeraanduidingId": d.get("bagNummeraanduidingId", ""),
-                "afvalwijzerFractieCode": d.get("afvalwijzerFractieCode", ""),
+                "afvalwijzerFractieNaam": d.get("afvalwijzerFractieNaam", ""),
                 "afvalwijzerOphaaldagen2": d.get("afvalwijzerOphaaldagen2", ""),
             }
             for d in data
@@ -201,9 +200,13 @@ class Command(BaseCommand):
             )
             for scheduled_notification in scheduled_notifications:
                 # get waste type from data
-                waste_type = WASTE_TYPES_MAPPING_READABLE.get(
-                    data.get("afvalwijzerFractieCode")
-                )
+                waste_type = data.get("afvalwijzerFractieNaam")
+                if not waste_type:
+                    logger.warning(
+                        "[waste-notification] No waste type found. Skipping notification.",
+                        extra={"bag_nummeraanduiding_id": bag_nummeraanduiding_id},
+                    )
+                    continue
                 if waste_type not in fraction_device_ids.keys():
                     fraction_device_ids[waste_type] = [scheduled_notification.device_id]
                 else:
