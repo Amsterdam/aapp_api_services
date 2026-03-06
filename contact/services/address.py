@@ -64,23 +64,7 @@ class AddressService:
     async def _async_get_address_by_coordinates(
         self, session, latitude: float, longitude: float
     ) -> Dict[str, Any]:
-        params = [
-            (
-                "fl",
-                "straatnaam huisnummer huisletter huisnummertoevoeging postcode woonplaatsnaam type nummeraanduiding_id centroide_ll",
-            ),
-            (
-                "qf",
-                "exacte_match^1 suggest^0.5 straatnaam^0.6 huisnummer^0.5 huisletter^0.5 huisnummertoevoeging^0.5",
-            ),
-            ("fq", "bron:BAG"),
-            ("bq", "type:weg^1.5"),
-            ("bq", "type:adres^1"),
-            ("lat", latitude),
-            ("lon", longitude),
-            ("fq", "type:adres"),
-            ("rows", "1"),
-        ]
+        params = self.construct_params(latitude=latitude, longitude=longitude)
         try:
             async with session.get(
                 self.url,
