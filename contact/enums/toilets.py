@@ -37,7 +37,7 @@ class ToiletProperties(ChoicesEnum):
     DESCRIPTION = PropertiesClass(
         label="Omschrijving",
         property_key="aapp_description",
-        property_type="str",
+        property_type="string",
         icon=IconPath.get("info"),
     )
     IMAGE_URL = PropertiesClass(

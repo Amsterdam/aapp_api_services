@@ -112,6 +112,7 @@ def build_service_list_serializer(
 
     class DynamicServiceListSerializer(serializers.Serializer):
         id = serializers.IntegerField()
+        type = serializers.CharField()
         geometry = GeometrySerializer()
         properties = DynamicPropertiesSerializer()
 

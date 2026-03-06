@@ -115,7 +115,6 @@ class AddressServiceTest(ResponsesActivatedAPITestCase):
         }
 
         result = self.service._rename_fields_for_serializer(input_data)
-        print(result)
         assert result == expected_output
 
     def test_get_lat_lon_from_coordinates(self):

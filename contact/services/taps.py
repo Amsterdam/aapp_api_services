@@ -18,12 +18,6 @@ class TapService(ServiceAbstract):
         super().__init__()
 
     def get_full_data(self) -> Dict[str, Any]:
-        """
-        Returns a dictionary containing:
-        - filters: available filters for the frontend
-        - properties_to_include: properties to include and their order
-        - data: list of taps with selected and custom properties
-        """
         all_taps = self.get_geojson_items()
         taps = self.filter_data(all_taps)
 
@@ -56,7 +50,7 @@ class TapService(ServiceAbstract):
 
         return full_data
 
-    def filter_data(self, data: list[Dict[str, Any]]) -> Dict[str, Any]:
+    def filter_data(self, data: list[Dict[str, Any]]) -> list[Dict[str, Any]]:
         """
         We only want to return taps that are within the municipality of Amsterdam, so we filter data based on the "plaats" property,
         which should contain "Amsterdam" or "Weesp".
@@ -71,7 +65,7 @@ class TapService(ServiceAbstract):
 
     def get_all_coordinates(
         self, data: list[Dict[str, Any]]
-    ) -> tuple[set[tuple[float, float]], list[tuple[Dict[str, Any], float, float]]]:
+    ) -> tuple[list[tuple[float, float]], list[tuple[Dict[str, Any], float, float]]]:
         """
         Extracts all unique coordinates from the tap data.
         """

@@ -67,10 +67,6 @@ class ServiceMapView(APIView):
             response_payload.get("list_property", {}),
         )
 
-        logging.info(
-            f"DynamicMapSerializer fields: {DynamicMapSerializer().get_fields()}"
-        )
-
         response_serializer = DynamicMapSerializer(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
 

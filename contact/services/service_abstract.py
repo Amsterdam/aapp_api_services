@@ -22,9 +22,10 @@ class ServiceAbstract:
         Returns a dictionary containing:
         - filters: available filters for the frontend
         - properties_to_include: properties to include and their order
+        - list_property: property that is shown in the list view
         - data: list of items with selected and custom properties
         """
-        pass
+        raise NotImplementedError("Subclasses must implement the get_full_data method")
 
     def get_geojson_items(self) -> list[Dict[str, Any]]:
         """Fetches and returns the list of items from the remote API."""

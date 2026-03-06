@@ -16,24 +16,34 @@ class FetchError(Exception):
     pass
 
 
+@cache_function(timeout=60 * 60 * 24 * 28)  # Cache the result for 4 weeks
+def _cached_batch_get_addresses_by_coordinates(
+    coords: list[tuple[float, float]],
+) -> dict[tuple[float, float], Dict[str, Any]]:
+    """
+    Module-level cached helper to avoid including `self` in the cache key.
+    """
+    logging.info(f"Fetching addresses for {len(coords)} coordinates")
+    service = AddressService()
+    result = asyncio.run(service.async_batch_get_addresses_by_coordinates(coords))
+    return result
+
+
 class AddressService:
     def __init__(self) -> None:
         self.url = settings.ADDRESS_SEARCH_URL
 
-    @cache_function(timeout=60 * 60 * 24 * 28)  # Cache the result for 4 weeks
     def batch_get_addresses_by_coordinates(
         self, coords: list[tuple[float, float]]
     ) -> dict[tuple[float, float], Dict[str, Any]]:
-        """Synchronous batch address lookup using threads (default, safe for Django views)."""
-        logging.info(f"Fetching addresses for {len(coords)} coordinates")
-        result = asyncio.run(self.async_batch_get_addresses_by_coordinates(coords))
-        return result
+        """Synchronous wrapper around async address lookup."""
+        return _cached_batch_get_addresses_by_coordinates(coords=coords)
 
     async def async_batch_get_addresses_by_coordinates(
         self, coords: list[tuple[float, float]], max_concurrent_requests: int = 20
     ) -> dict[tuple[float, float], Dict[str, Any]]:
         """
-        Asynchronous batch address lookup using aiohttp, for use in async contexts or ETL jobs.
+        Asynchronous batch address lookup.
         """
         sem = asyncio.Semaphore(max_concurrent_requests)
         async with aiohttp.ClientSession() as session:
@@ -51,9 +61,7 @@ class AddressService:
             try:
                 return await self._async_get_address_by_coordinates(session, lat, lon)
             except Exception as e:
-                logger.error(
-                    f"Failed to fetch address for coordinates ({lat}, {lon}): {e}"
-                )
+                logger.error(f"Failed to fetch address with error: {e}")
                 return None
 
     @retry(
@@ -73,20 +81,17 @@ class AddressService:
                 timeout=5,
             ) as response:
                 if response.status != 200:
-                    logger.error(
-                        f"Failed to fetch address for coordinates ({latitude}, {longitude}), status code: {response.status}"
-                    )
                     raise FetchError(
                         f"Failed to fetch address for coordinates ({latitude}, {longitude}), status code: {response.status}"
                     )
                 data = await response.json()
         except aiohttp.ClientError as e:
-            logger.info(
-                "Failed to fetch data",
-                extra={"url": self.url, "params": params},
-            )
             raise FetchError(
                 f"Failed to fetch address for coordinates ({latitude}, {longitude}): {str(e)}"
+            ) from e
+        except asyncio.TimeoutError as e:
+            raise FetchError(
+                f"Request timed out for coordinates ({latitude}, {longitude})"
             ) from e
 
         if not data.get("response"):
