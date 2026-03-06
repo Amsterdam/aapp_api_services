@@ -32,7 +32,7 @@
 - `Makefile`: Defines common dev/test commands.
 - `requirements.txt` & `pyproject.toml`: Dependency management.
 - `deploy/`: Deployment scripts.
-- `.pre-commit-config.yml`: Pre-commit hook config.
+- `.pre-commit-config.yaml`: Pre-commit hook config.
 
 ## Patterns & Examples
 - **App Example:** See `city_pass/` for a full-featured app with authentication, serializers, and integration tests.
