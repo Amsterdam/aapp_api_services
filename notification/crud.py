@@ -3,7 +3,6 @@ import logging
 
 from django.conf import settings
 from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
-from django.forms.models import model_to_dict
 from django.utils import timezone
 
 from notification.models import (
