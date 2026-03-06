@@ -82,6 +82,28 @@ class TestNotificationCRUD(TestCase):
         self.assertEqual(notification.device_external_id, device.external_id)
 
     @patch("notification.services.push.messaging.send_each")
+    def test_push_notification_ids_are_unique(self, multicast_mock):
+        devices = self.create_devices(3, with_token=True)
+        messages = self.create_firebase_messages(
+            devices, title=self.notification.title, body=self.notification.body
+        )
+        multicast_mock.return_value = MockFirebaseSendEach(messages)
+
+        notification_crud = NotificationCRUD(self.notification)
+        notification_crud.create(Device.objects.all())
+
+        sent_notification_ids = []
+        for call in multicast_mock.call_args_list:
+            batch = call.args[0]
+            for msg in batch:
+                sent_notification_ids.append(msg.data.get("notificationId"))
+
+        # One push message per device with token
+        self.assertEqual(len(sent_notification_ids), len(devices))
+        self.assertTrue(all(sent_notification_ids))
+        self.assertEqual(len(set(sent_notification_ids)), len(sent_notification_ids))
+
+    @patch("notification.services.push.messaging.send_each")
     def test_push_missing_token(self, _):
         device = baker.make(Device)
         notification_crud = NotificationCRUD(self.notification)

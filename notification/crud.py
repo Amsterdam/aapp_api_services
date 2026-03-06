@@ -3,6 +3,7 @@ import logging
 
 from django.conf import settings
 from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
+from django.forms.models import model_to_dict
 from django.utils import timezone
 
 from notification.models import (
@@ -124,6 +125,7 @@ class NotificationCRUD:
         with_push, without_push = [], []
         for c in device_list:
             new_notification: Notification = copy.copy(self.source_notification)
+            new_notification.context = copy.deepcopy(self.source_notification.context)
             new_notification.device = c
             new_notification.device_external_id = c.external_id
             if c in self.devices_for_push and self.push_service:
