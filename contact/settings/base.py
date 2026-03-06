@@ -48,3 +48,11 @@ PUBLIC_TOILET_IMAGE_BASE_URL = os.getenv(
     "PUBLIC_TOILET_IMAGE_BASE_URL",
     "https://maps.amsterdam.nl/openbare_toiletten/Downloads/",
 )
+TAP_URL = os.getenv(
+    "TAP_URL",
+    "https://data.rivm.nl/geo/alo/wfs?request=GetFeature&service=WFS&version=1.1.0&outputFormat=json&typeName=alo:rivm_drinkwaterkranen_actueel",
+)
+# Address search
+ADDRESS_SEARCH_URL = os.getenv(
+    "ADDRESS_SEARCH_URL", "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free"
+)
