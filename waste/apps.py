@@ -12,5 +12,5 @@ class WasteConfig(AppConfig):
 
         if settings.MOCK_ENTRA_AUTH:
             authentication.EntraCookieTokenAuthentication = (
-                authentication.EntraCookieTokenAuthentication
+                authentication.MockEntraTokenAuthentication
             )
