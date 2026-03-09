@@ -3,9 +3,11 @@ import uuid
 from datetime import datetime
 from typing import NamedTuple
 
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from core.enums import Module, NotificationType
+from core.services.image_set import ImageSetService
 from notification.models import (
     Device,
     Notification,
@@ -16,27 +18,182 @@ from notification.models import (
 logger = logging.getLogger(__name__)
 
 
-class InternalServiceError(Exception):
-    """Something went wrong calling the notification service"""
+class NotificationServiceError(Exception):
+    """Exception raised for errors calling the Notification Service."""
 
 
 class NotificationData(NamedTuple):
     link_source_id: str
     title: str
     message: str
-    device_ids: list[str]
-    image_set_id: int = None
+    device_ids: list[str] | None = None
+    image_set_id: int | None = None
     make_push: bool = True
-    url: str = None
-    deeplink: str = None
+    url: str | None = None
+    deeplink: str | None = None
 
 
-class AbstractNotificationService:
-    module_slug: Module = None
-    notification_type: NotificationType = None
+class NotificationServiceAbstract:
+    """Unified service that supports both:
 
-    def __init__(self):
-        self.link_source_id = None
+    - module-scoped notification creation via the `send()` + `process()` pattern
+    - generic scheduled notification CRUD/upsert via `upsert()/get()/delete()`
+
+    Existing services remain in place; this class is intended as a V2 replacement.
+    """
+
+    module_slug: Module | None = None
+    notification_type: NotificationType | None = None
+
+    def __init__(self, use_image_service: bool = False):
+        if use_image_service:
+            self.image_service = ImageSetService()
+        else:
+            self.image_service = None
+
+        # check that both module slug and notification type are set
+        if self.module_slug is None:
+            raise NotificationServiceError("module_slug must be set on the service")
+        if self.notification_type is None:
+            raise NotificationServiceError(
+                "notification_type must be set on the service"
+            )
+
+    def send(self, *args, **kwargs):
+        """
+        Send a notification to users based on the provided notification data.
+        This method should be overridden by subclasses to implement specific notification logic.
+        The 'upsert' method should be called with the notification data.
+        """
+        raise NotImplementedError(
+            "Subclasses must implement the send method to upsert notifications."
+        )
+
+    def upsert(
+        self,
+        notification: NotificationData,
+        identifier: str,
+        context: dict,
+        scheduled_for: datetime | None = None,
+        expires_at: datetime | None = None,
+        expiry_minutes: int = 15,
+        send_all_devices: bool = False,
+    ) -> ScheduledNotification:
+
+        self.link_source_id = notification.link_source_id
+        self.notification_url = notification.url
+        self.notification_deeplink = notification.deeplink
+
+        if scheduled_for is None:
+            scheduled_for = timezone.now() + timezone.timedelta(seconds=5)
+
+        if expires_at is None:
+            expires_at = scheduled_for + timezone.timedelta(minutes=expiry_minutes)
+
+        if identifier is None:
+            identifier = f"{self.module_slug}_{uuid.uuid4()}"
+
+        if context is None:
+            context = self.build_context(
+                module_slug=self.module_slug,
+                notification_type=self.notification_type,
+                link_source_id=self.link_source_id,
+                url=self.notification_url,
+                deeplink=self.notification_deeplink,
+            )
+
+        if send_all_devices:
+            devices = Device.objects.all()
+        else:
+            if notification.device_ids is None:
+                raise NotificationServiceError(
+                    "Device ids must be defined if send_all_devices is False"
+                )
+            devices = self.create_missing_device_ids(notification.device_ids)
+
+        if expires_at and expires_at <= scheduled_for:
+            raise NotificationServiceError(
+                "Expires_at must be later than scheduled_for"
+            )
+
+        if not identifier.startswith(self.module_slug):
+            raise NotificationServiceError("Identifier must start with module_slug")
+
+        if notification.image_set_id is not None:
+            if self.image_service is None:
+                raise NotificationServiceError(
+                    "Image validation requires use_image_service=True"
+                )
+            if not self.image_service.exists(notification.image_set_id):
+                raise NotificationServiceError(f"Image with id {notification.image_set_id} does not exist")
+
+        instance = self._get_scheduled_notification_instance(identifier)
+        if not instance:
+            try:
+                instance = ScheduledNotification(
+                    title=notification.title,
+                    body=notification.message,
+                    scheduled_for=scheduled_for,
+                    identifier=identifier,
+                    context=context,
+                    notification_type=self.notification_type,
+                    module_slug=self.module_slug,
+                    image=notification.image_set_id,
+                    created_at=timezone.now(),
+                    expires_at=expires_at or "3000-01-01",
+                    make_push=notification.make_push,
+                )
+                instance.save()
+                instance.devices.set(devices)
+                return instance
+            except IntegrityError:
+                instance = self._get_scheduled_notification_instance(identifier)
+
+        # Perform UPDATE if object exists
+        # Note: notification type, module slug, context and make_push are not updatable
+        old_devices = list(instance.devices.all())
+        devices = list(set(old_devices) | set(devices))
+
+        instance.title = notification.title
+        instance.body = notification.message
+        instance.scheduled_for = scheduled_for
+
+        if notification.image_set_id is not None:
+            instance.image = notification.image_set_id
+        if expires_at is not None:
+            instance.expires_at = expires_at
+
+        with transaction.atomic():
+            instance.save()
+            instance.devices.set(devices)
+
+        return instance
+    
+    def build_context(
+        self,
+        module_slug: str,
+        notification_type: str,
+        link_source_id: str,
+        url: str | None = None,
+        deeplink: str | None = None,
+    ) -> dict[str, str]:
+        """Context can only contain string values!"""
+        context = {
+            "linkSourceid": link_source_id,
+            "type": notification_type,
+            "module_slug": module_slug,
+        }
+        if url is not None:
+            context["url"] = str(url)
+        if deeplink is not None:
+            context["deeplink"] = str(deeplink)
+
+        return context
+
+    def _get_scheduled_notification_instance(
+        self, identifier: str
+    ) -> ScheduledNotification | None:
+        return ScheduledNotification.objects.filter(identifier=identifier).first()
 
     def get_last_timestamp(self, device_id: str) -> datetime | None:
         timestamps = list(
@@ -55,67 +212,32 @@ class AbstractNotificationService:
             .order_by("-created_at")
         )
 
-    def send(self, *args, **kwargs):
-        """
-        Send a notification to users based on the provided notification data.
-        This method should be overridden by subclasses to implement specific notification logic.
-        The 'process' method should be called with the notification data.
-        """
-        raise NotImplementedError(
-            "Subclasses must implement the send method to process notifications."
-        )
+    def get_all_scheduled_notifications(self) -> list[ScheduledNotification]:
+        return list(ScheduledNotification.objects.all())
 
-    def process(
-        self,
-        notification: NotificationData,
-        expiry_minutes: int = 15,
-    ):
-        """
-        Send notifications to users.
-        """
-        self.link_source_id = notification.link_source_id
-        self.notification_url = notification.url
-        self.notification_deeplink = notification.deeplink
-        devices = create_missing_device_ids(notification.device_ids)
-        now = timezone.now() + timezone.timedelta(seconds=5)
-        instance = ScheduledNotification(
-            title=notification.title,
-            body=notification.message,
-            module_slug=self.module_slug,
-            notification_type=self.notification_type,
-            created_at=timezone.now(),
-            context=self.get_context(),
-            make_push=notification.make_push,
-            scheduled_for=now,
-            expires_at=now + timezone.timedelta(minutes=expiry_minutes),
-            identifier=f"{self.module_slug}_{uuid.uuid4()}",
-            image=notification.image_set_id,
-        )
-        instance.save()
-        instance.devices.set(devices)
+    def get_scheduled_notification(
+        self, identifier: str
+    ) -> ScheduledNotification | None:
+        try:
+            return ScheduledNotification.objects.get(identifier=identifier)
+        except ScheduledNotification.DoesNotExist:
+            return None
 
-    def get_context(self) -> dict:
-        """Context can only contain string values!"""
-        context = {
-            "linkSourceid": str(self.link_source_id),
-            "type": self.notification_type,
-            "module_slug": self.module_slug,
-        }
-        if self.notification_url:
-            context["url"] = str(self.notification_url)
-        if self.notification_deeplink:
-            context["deeplink"] = str(self.notification_deeplink)
-        return context
+    def delete_scheduled_notification(self, identifier: str):
+        try:
+            ScheduledNotification.objects.get(identifier=identifier).delete()
+        except ScheduledNotification.DoesNotExist:
+            return None
 
-
-def create_missing_device_ids(device_ids: list[str]) -> list[Device]:
-    existing_devices = Device.objects.filter(external_id__in=device_ids).values_list(
-        "external_id", flat=True
-    )
-    missing_device_ids = set(device_ids) - set(existing_devices)
-    if missing_device_ids:
-        Device.objects.bulk_create(
-            Device(external_id=device_id) for device_id in missing_device_ids
-        )
-        logger.info(f"Created {len(missing_device_ids)} missing devices.")
-    return Device.objects.filter(external_id__in=device_ids)
+    @staticmethod
+    def create_missing_device_ids(device_ids: list[str]) -> list[Device]:
+        existing_devices = Device.objects.filter(
+            external_id__in=device_ids
+        ).values_list("external_id", flat=True)
+        missing_device_ids = set(device_ids) - set(existing_devices)
+        if missing_device_ids:
+            Device.objects.bulk_create(
+                Device(external_id=device_id) for device_id in missing_device_ids
+            )
+            logger.info(f"Created {len(missing_device_ids)} missing devices.")
+        return Device.objects.filter(external_id__in=device_ids)
