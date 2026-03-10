@@ -5,10 +5,10 @@ from django.utils import timezone
 from freezegun import freeze_time
 from model_bakery import baker
 
-from core.services.notification_service import NotificationData
 from core.services.notification_service import (
-    NotificationServiceError,
+    NotificationData,
     NotificationServiceAbstract,
+    NotificationServiceError,
 )
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from notification.models import (
@@ -25,7 +25,7 @@ class MockUnifiedNotificationService(NotificationServiceAbstract):
 
 
 @freeze_time("2026-02-01 10:00:00")
-class TestUnifiedNotificationService_AbstractLike(ResponsesActivatedAPITestCase):
+class TestNotificationService_Unscheduled(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.module_slug = "test-slug"
@@ -54,7 +54,7 @@ class TestUnifiedNotificationService_AbstractLike(ResponsesActivatedAPITestCase)
         )
         self.assertEqual(notifications[0].device_external_id, self.device_1.external_id)
 
-    def test_process_defaults_to_now_plus_5s(self):
+    def test_upsert_defaults_to_now_plus_5s(self):
         notification = NotificationData(
             title="Hello",
             message="Is it me you're looking for?",
@@ -74,7 +74,7 @@ class TestUnifiedNotificationService_AbstractLike(ResponsesActivatedAPITestCase)
             self.service.send("anything")
 
 
-class TestUnifiedNotificationService_ScheduledLike(ResponsesActivatedAPITestCase):
+class TestNotificationService_Scheduled(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.service = MockUnifiedNotificationService()
@@ -128,14 +128,14 @@ class TestUnifiedNotificationService_ScheduledLike(ResponsesActivatedAPITestCase
 
     def test_upsert_insert(self):
         notification = NotificationData(
-            title="New Notification",
+            title="Hello",
             message="Is it me you're looking for?",
             link_source_id="see_it_in_your_eyes",
             device_ids=[self.device_1.external_id, self.device_2.external_id],
         )
         self.service.upsert(
             notification=notification,
-            scheduled_for="2024-07-01T10:00:00Z",
+            scheduled_for=timezone.now(),
             identifier=f"{self.service.module_slug}:notif_3",
             context={
                 "type": self.service.notification_type,
@@ -147,9 +147,9 @@ class TestUnifiedNotificationService_ScheduledLike(ResponsesActivatedAPITestCase
         new_notification = self.service.get_scheduled_notification(
             f"{self.service.module_slug}:notif_3"
         )
-        self.assertEqual(new_notification.title, "New Notification")
-        self.assertEqual(new_notification.devices.count(), 3)
-        self.assertEqual(Device.objects.count(), 3)
+        self.assertEqual(new_notification.title, "Hello")
+        self.assertEqual(new_notification.devices.count(), 2)
+        self.assertEqual(Device.objects.count(), 2)
 
     def test_upsert_update(self):
         notification = NotificationData(
@@ -160,7 +160,7 @@ class TestUnifiedNotificationService_ScheduledLike(ResponsesActivatedAPITestCase
         )
         instance = self.service.upsert(
             notification=notification,
-            scheduled_for="2024-07-01T10:00:00Z",
+            scheduled_for=timezone.now(),
             identifier=f"{self.service.module_slug}:notif_1",
             context={
                 "type": self.service.notification_type,
@@ -180,33 +180,33 @@ class TestUnifiedNotificationService_ScheduledLike(ResponsesActivatedAPITestCase
     def test_upsert_invalid_expires_at(self):
         with self.assertRaises(NotificationServiceError):
             notification = NotificationData(
-            title="Invalid Notification",
-            message="This notification has invalid expires_at.",
-            link_source_id="see_it_in_your_eyes",
-            device_ids=[self.device_1.external_id, self.device_2.external_id],
-        )
+                title="Invalid Notification",
+                message="This notification has invalid expires_at.",
+                link_source_id="see_it_in_your_eyes",
+                device_ids=[self.device_1.external_id, self.device_2.external_id],
+            )
             self.service.upsert(
                 notification=notification,
-                scheduled_for="2024-07-01T10:00:00Z",
+                scheduled_for=timezone.now(),
                 identifier=f"{self.service.module_slug}:notif_4",
                 context={
                     "type": self.service.notification_type,
                     "module_slug": self.service.module_slug,
                 },
-                expires_at="2024-06-30T10:00:00Z",
+                expires_at=timezone.now() - timezone.timedelta(minutes=30),
             )
 
     def test_upsert_invalid_identifier(self):
         with self.assertRaises(NotificationServiceError):
             notification = NotificationData(
-            title="Invalid Notification",
-            message="This notification has invalid identifier.",
-            link_source_id="abc",
-            device_ids=[self.device_1.external_id, self.device_2.external_id],
-        )
+                title="Invalid Notification",
+                message="This notification has invalid identifier.",
+                link_source_id="abc",
+                device_ids=[self.device_1.external_id, self.device_2.external_id],
+            )
             self.service.upsert(
                 notification=notification,
-                scheduled_for="2024-07-01T10:00:00Z",
+                scheduled_for=timezone.now(),
                 identifier="different_slug:notif_5",
                 context={
                     "type": self.service.notification_type,
@@ -223,7 +223,7 @@ class TestUnifiedNotificationService_ScheduledLike(ResponsesActivatedAPITestCase
         )
         notification = self.service.upsert(
             notification=notification,
-            scheduled_for="2024-07-01T10:00:00Z",
+            scheduled_for=timezone.now(),
             identifier=f"{self.service.module_slug}:notif_1",
             context={
                 "type": self.service.notification_type,
@@ -241,7 +241,7 @@ class TestUnifiedNotificationService_ScheduledLike(ResponsesActivatedAPITestCase
         )
         self.service.upsert(
             notification=notification,
-            scheduled_for="2024-07-01T10:00:00Z",
+            scheduled_for=timezone.now(),
             identifier=f"{self.service.module_slug}:notif_2",
             context={
                 "type": self.service.notification_type,
@@ -258,12 +258,12 @@ class TestUnifiedNotificationService_ScheduledLike(ResponsesActivatedAPITestCase
         notification = NotificationData(
             title="No Devices Notification",
             message="This notification has no devices.",
-            link_source_id="abc"
+            link_source_id="abc",
         )
         with self.assertRaises(NotificationServiceError):
             self.service.upsert(
                 notification=notification,
-                scheduled_for="2024-07-01T10:00:00Z",
+                scheduled_for=timezone.now(),
                 identifier=f"{self.service.module_slug}:notif_1",
                 context={
                     "type": self.service.notification_type,
@@ -275,11 +275,11 @@ class TestUnifiedNotificationService_ScheduledLike(ResponsesActivatedAPITestCase
         notification = NotificationData(
             title="All Devices Notification",
             message="This notification has all devices.",
-            link_source_id="abc"
+            link_source_id="abc",
         )
         instance = self.service.upsert(
             notification=notification,
-            scheduled_for="2024-07-01T10:00:00Z",
+            scheduled_for=timezone.now(),
             identifier=f"{self.service.module_slug}:notif_1",
             context={
                 "type": self.service.notification_type,
@@ -299,13 +299,13 @@ class TestUnifiedNotificationService_ScheduledLike(ResponsesActivatedAPITestCase
             message="Body",
             link_source_id="abc",
             device_ids=["device_2"],
-            image_set_id=1
+            image_set_id=1,
         )
 
         with self.assertRaises(NotificationServiceError):
             self.service.upsert(
                 notification=notification,
-                scheduled_for="2024-07-01T10:00:00Z",
+                scheduled_for=timezone.now(),
                 identifier=f"{self.service.module_slug}:notif_1",
                 context={
                     "type": self.service.notification_type,

@@ -2,9 +2,9 @@ import hashlib
 import logging
 from datetime import datetime, timedelta
 
+from core.services.scheduled_notification import ScheduledNotificationService
 from django.contrib.auth.models import User
 
-from core.services.scheduled_notification import ScheduledNotificationService
 from modules.models import Notification, TestDevice
 
 logger = logging.getLogger(__name__)

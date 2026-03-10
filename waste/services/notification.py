@@ -1,6 +1,7 @@
 import datetime
 import logging
 
+from core.services.scheduled_notification import ScheduledNotificationService
 from django.utils import timezone
 
 from core.enums import Module, NotificationType
@@ -8,7 +9,6 @@ from core.services.notification_service import (
     AbstractNotificationService,
     NotificationData,
 )
-from core.services.scheduled_notification import ScheduledNotificationService
 from waste.models import ManualNotification, NotificationSchedule
 
 logger = logging.getLogger(__name__)

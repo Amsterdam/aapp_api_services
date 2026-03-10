@@ -8,8 +8,8 @@ from rest_framework.test import APITestCase
 
 from core.services.notification_service import (
     NotificationData,
-    NotificationServiceError,
     NotificationServiceAbstract,
+    NotificationServiceError,
 )
 
 logger = logging.getLogger(__name__)
@@ -58,13 +58,18 @@ class TestCoreScheduledNotificationService(APITestCase):
         identifier = f"{settings.SERVICE_NAME}:test_notification"
         self.created_identifiers.append(identifier)
 
-        new_scheduled_notification = self.service.upsert(
+        notification = NotificationData(
             title="Test Notification",
-            body="This is a test notification",
+            message="This is a test notification",
+            link_source_id="link_1",
+            device_ids=["device1", "device2"],
+        )
+
+        new_scheduled_notification = self.service.upsert(
+            notification=notification,
             scheduled_for=timezone.now() + timedelta(minutes=10),
             identifier=identifier,
             context={},
-            device_ids=["device1", "device2"],
         )
 
         self.assertTrue(new_scheduled_notification)
@@ -81,14 +86,19 @@ class TestCoreScheduledNotificationService(APITestCase):
         )
 
         with self.assertRaises(NotificationServiceError):
-            self.service.upsert(
+            notification = NotificationData(
                 title="Test Notification",
-                body="This is a test notification",
+                message="This is a test notification",
+                link_source_id="link_1",
+                device_ids=["device1", "device2"],
+                image_set_id=unknown_image_id,
+            )
+
+            self.service.upsert(
+                notification=notification,
                 scheduled_for=timezone.now() + timedelta(minutes=10),
                 identifier=identifier,
                 context={},
-                device_ids=["device1", "device2"],
-                image=unknown_image_id,
             )
 
     def test_add_notification_with_specific_expiration(self):
@@ -97,13 +107,18 @@ class TestCoreScheduledNotificationService(APITestCase):
         scheduled_for = timezone.now() + timedelta(minutes=10)
         expires_at = scheduled_for + timedelta(minutes=10)
 
-        new_scheduled_notification = self.service.upsert(
+        notification = NotificationData(
             title="Test Notification",
-            body="This is a test notification",
+            message="This is a test notification",
+            link_source_id="link_1",
+            device_ids=["device1", "device2"],
+        )
+
+        new_scheduled_notification = self.service.upsert(
+            notification=notification,
             scheduled_for=scheduled_for,
             identifier=identifier,
             context={},
-            device_ids=["device1", "device2"],
             expires_at=expires_at,
         )
 
@@ -115,13 +130,18 @@ class TestCoreScheduledNotificationService(APITestCase):
         identifier = f"{settings.SERVICE_NAME}_test-notification"
         self.created_identifiers.append(identifier)
 
-        self.service.upsert(
+        notification = NotificationData(
             title="Test Notification",
-            body="This is a test notification",
+            message="This is a test notification",
+            link_source_id="link_1",
+            device_ids=["device1", "device2"],
+        )
+
+        self.service.upsert(
+            notification=notification,
             scheduled_for=timezone.now() + timedelta(minutes=10),
             identifier=identifier,
             context={},
-            device_ids=["device1", "device2"],
         )
         result_notification = self.service.get_scheduled_notification(identifier)
         self.assertIsNotNone(result_notification)
@@ -136,24 +156,34 @@ class TestCoreScheduledNotificationService(APITestCase):
         identifier = f"{settings.SERVICE_NAME}_test-notification"
         self.created_identifiers.append(identifier)
 
-        self.service.upsert(
+        notification = NotificationData(
             title="Test Notification",
-            body="This is a test notification",
+            message="This is a test notification",
+            link_source_id="link_1",
+            device_ids=["device1", "device2"],
+        )
+
+        self.service.upsert(
+            notification=notification,
             scheduled_for=timezone.now() + timedelta(minutes=10),
             identifier=identifier,
             context={},
-            device_ids=["device1", "device2"],
         )
 
         new_scheduled_for = timezone.now() + timedelta(minutes=20)
         new_device_ids = ["device3", "device4"]
-        self.service.upsert(
+
+        notification = NotificationData(
             title="Test Notification",
-            body="This is a test notification",
+            message="This is a test notification",
+            link_source_id="link_1",
+            device_ids=new_device_ids,
+        )
+        self.service.upsert(
+            notification=notification,
             scheduled_for=new_scheduled_for,
             identifier=identifier,
             context={},
-            device_ids=new_device_ids,
         )
         updated_notification = self.service.get_scheduled_notification(identifier)
         device_ids = set(d.external_id for d in updated_notification.devices.all())
@@ -164,13 +194,19 @@ class TestCoreScheduledNotificationService(APITestCase):
 
     def test_delete_notification(self):
         identifier = f"{settings.SERVICE_NAME}_test-notification"
-        self.service.upsert(
+
+        notification = NotificationData(
             title="Test Notification",
-            body="This is a test notification",
+            message="This is a test notification",
+            link_source_id="link_1",
+            device_ids=["device1", "device2"],
+        )
+
+        self.service.upsert(
+            notification=notification,
             scheduled_for=timezone.now() + timedelta(minutes=10),
             identifier=identifier,
             context={},
-            device_ids=["device1", "device2"],
         )
 
         self.service.delete_scheduled_notification(identifier)

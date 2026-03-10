@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import httpx
 import respx
+from core.services.scheduled_notification import ScheduledNotificationService
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
@@ -17,7 +18,6 @@ from bridge.parking.tests.mock_data_external import (
     parking_session_start,
 )
 from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
-from core.services.scheduled_notification import ScheduledNotificationService
 
 logger = logging.getLogger(__name__)
 

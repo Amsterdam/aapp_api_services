@@ -36,10 +36,8 @@ class NotificationData(NamedTuple):
 class NotificationServiceAbstract:
     """Unified service that supports both:
 
-    - module-scoped notification creation via the `send()` + `process()` pattern
+    - module-scoped notification creation via the `send()` + `upsert()` pattern
     - generic scheduled notification CRUD/upsert via `upsert()/get()/delete()`
-
-    Existing services remain in place; this class is intended as a V2 replacement.
     """
 
     module_slug: Module | None = None
@@ -72,23 +70,13 @@ class NotificationServiceAbstract:
     def upsert(
         self,
         notification: NotificationData,
-        identifier: str,
-        context: dict,
+        identifier: str | None = None,
+        context: dict | None = None,
         scheduled_for: datetime | None = None,
         expires_at: datetime | None = None,
         expiry_minutes: int = 15,
         send_all_devices: bool = False,
     ) -> ScheduledNotification:
-
-        self.link_source_id = notification.link_source_id
-        self.notification_url = notification.url
-        self.notification_deeplink = notification.deeplink
-
-        if scheduled_for is None:
-            scheduled_for = timezone.now() + timezone.timedelta(seconds=5)
-
-        if expires_at is None:
-            expires_at = scheduled_for + timezone.timedelta(minutes=expiry_minutes)
 
         if identifier is None:
             identifier = f"{self.module_slug}_{uuid.uuid4()}"
@@ -97,10 +85,16 @@ class NotificationServiceAbstract:
             context = self.build_context(
                 module_slug=self.module_slug,
                 notification_type=self.notification_type,
-                link_source_id=self.link_source_id,
-                url=self.notification_url,
-                deeplink=self.notification_deeplink,
+                link_source_id=notification.link_source_id,
+                url=notification.url,
+                deeplink=notification.deeplink,
             )
+
+        if scheduled_for is None:
+            scheduled_for = timezone.now() + timezone.timedelta(seconds=5)
+
+        if expires_at is None:
+            expires_at = scheduled_for + timezone.timedelta(minutes=expiry_minutes)
 
         if send_all_devices:
             devices = Device.objects.all()
@@ -125,7 +119,9 @@ class NotificationServiceAbstract:
                     "Image validation requires use_image_service=True"
                 )
             if not self.image_service.exists(notification.image_set_id):
-                raise NotificationServiceError(f"Image with id {notification.image_set_id} does not exist")
+                raise NotificationServiceError(
+                    f"Image with id {notification.image_set_id} does not exist"
+                )
 
         instance = self._get_scheduled_notification_instance(identifier)
         if not instance:
@@ -168,7 +164,7 @@ class NotificationServiceAbstract:
             instance.devices.set(devices)
 
         return instance
-    
+
     def build_context(
         self,
         module_slug: str,

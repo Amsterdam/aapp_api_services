@@ -1,13 +1,13 @@
 import logging
 from datetime import datetime, timedelta
 
+from core.services.scheduled_notification import ScheduledNotificationService
 from django.conf import settings
 from django.utils import timezone
 
 from bridge.parking.config import DEFAULT_LANGUAGE, REMINDER_MESSAGES
 from bridge.parking.enums import NotificationStatus
 from core.enums import Module, NotificationType
-from core.services.scheduled_notification import ScheduledNotificationService
 
 logger = logging.getLogger(__name__)
 
