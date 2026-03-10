@@ -15,7 +15,7 @@ class TapServiceTest(ResponsesActivatedAPITestCase):
         self.service = TapService()
         self.address_service = AddressService()
 
-    @patch("contact.services.address.AddressService._async_get_address_by_coordinates")
+    @patch("contact.services.address.AddressService.get_address_by_coordinates")
     def test_get_full_data(self, mock_get):
         mock_get.return_value = self.address_service._rename_fields_for_serializer(
             address.MOCK_DATA["response"]["docs"][0]

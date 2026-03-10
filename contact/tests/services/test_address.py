@@ -1,11 +1,9 @@
-import asyncio
+import json
 from unittest.mock import patch
 from urllib.parse import urlencode
 
-import aiohttp
-import pytest
-from aioresponses import aioresponses
-from tenacity import RetryError
+import responses
+from requests import Response
 
 from contact.services.address import AddressService
 from contact.tests.mock_data import address
@@ -16,84 +14,84 @@ class AddressServiceTest(ResponsesActivatedAPITestCase):
     def setUp(self):
         self.service = AddressService()
         self.api_success_response = address.MOCK_DATA
+        self.api_invalid_json_response = "Invalid JSON"
+        self.api_missing_response = {"data": {}}
+        self.api_invalid_response = {"response": {"something_random": []}}
         self.latitude = 52.1236451
         self.longitude = 4.12369605
-        self.url_with_params = f"{self.service.url}?{urlencode(self.service.construct_params(latitude=self.latitude, longitude=self.longitude))}"
 
-    def test_batch_get_addresses_by_coordinates(self):
+    def test_get_address_by_coordinates(self):
+        latitude = 52.1236450
+        longitude = 4.12369600
+        url_with_params = f"{self.service.url}?{urlencode(self.service.construct_params(latitude=latitude, longitude=longitude))}"
 
-        # Mock the async method to return a predefined response
-        with aioresponses() as mocked:
-            mocked.get(self.url_with_params, payload=self.api_success_response)
-
-            result = self.service.batch_get_addresses_by_coordinates(
-                coords=[(self.latitude, self.longitude)]
-            )
-
-            expected_result = {
-                (
-                    self.latitude,
-                    self.longitude,
-                ): self.service._rename_fields_for_serializer(
-                    self.api_success_response["response"]["docs"][0]
-                )
-            }
-
-            assert result == expected_result
-
-    @pytest.mark.asyncio
-    @patch("contact.services.address.AddressService._async_get_address_by_coordinates")
-    async def test_fetch_with_sem_exception(self, mock_async_get):
-
-        sem = asyncio.Semaphore(1)
-        async with aiohttp.ClientSession() as session:
-            mock_async_get.side_effect = Exception("Test exception")
-            result = await self.service._fetch_with_sem(
-                sem, session, self.latitude, self.longitude
-            )
-            assert result is None
-
-    @pytest.mark.asyncio
-    async def test_async_get_address_by_coordinates_success(self):
-        # api_response = address.MOCK_DATA
-        renamed_api_response = self.service._rename_fields_for_serializer(
-            self.api_success_response["response"]["docs"][0]
+        responses.get(url_with_params, json=self.api_success_response)
+        address = self.service.get_address_by_coordinates(
+            latitude=latitude, longitude=longitude
         )
+        assert address is not None
+        assert address["street"] == "straatnaam"
 
-        with aioresponses() as mocked:
-            mocked.get(self.url_with_params, payload=self.api_success_response)
+    def test_get_address_by_coordinates_invalid_json(self):
+        latitude = 52.1236452
+        longitude = 4.12369602
+        url_with_params = f"{self.service.url}?{urlencode(self.service.construct_params(latitude=latitude, longitude=longitude))}"
 
-            async with aiohttp.ClientSession() as session:
-                result = await self.service._async_get_address_by_coordinates(
-                    session, latitude=self.latitude, longitude=self.longitude
-                )
+        responses.get(url_with_params, json=self.api_invalid_json_response)
 
-                assert result == renamed_api_response
+        address = self.service.get_address_by_coordinates(
+            latitude=latitude, longitude=longitude
+        )
+        assert address is None
 
-    @pytest.mark.asyncio
-    async def test_async_get_address_by_coordinates_retries_and_fails(self):
+    def test_get_address_by_coordinates_missing_response(self):
+        latitude = 52.1236453
+        longitude = 4.12369603
+        url_with_params = f"{self.service.url}?{urlencode(self.service.construct_params(latitude=latitude, longitude=longitude))}"
 
-        with aioresponses() as mocked:
-            mocked.get(self.url_with_params, status=500)
+        responses.get(url_with_params, json=self.api_missing_response)
+        address = self.service.get_address_by_coordinates(
+            latitude=latitude, longitude=longitude
+        )
+        print(address)
+        assert address is None
 
-            async with aiohttp.ClientSession() as session:
-                with pytest.raises(RetryError):
-                    await self.service._async_get_address_by_coordinates(
-                        session, latitude=self.latitude, longitude=self.longitude
-                    )
+    def test_get_address_by_coordinates_invalid_response(self):
+        latitude = 52.1236454
+        longitude = 4.12369604
+        url_with_params = f"{self.service.url}?{urlencode(self.service.construct_params(latitude=latitude, longitude=longitude))}"
 
-    @pytest.mark.asyncio
-    async def test_async_get_address_by_coordinates_invalid_response(self):
+        responses.get(url_with_params, json=self.api_invalid_response)
+        address = self.service.get_address_by_coordinates(
+            latitude=latitude, longitude=longitude
+        )
+        print(address)
+        assert address is None
 
-        with aioresponses() as mocked:
-            mocked.get(self.url_with_params, payload={"data": "invalid"})
+    @patch("contact.services.address.requests.get")
+    def test_make_request_succeeds_after_retry(self, mock_get):
+        # Simulate a 500 error on the first request
+        mock_response_1 = Response()
+        mock_response_1.status_code = 500
+        mock_response_1._content = json.dumps(
+            {"status": "ERROR", "message": "Internal Server Error"}
+        ).encode("utf-8")
 
-            async with aiohttp.ClientSession() as session:
-                result = await self.service._async_get_address_by_coordinates(
-                    session, latitude=self.latitude, longitude=self.longitude
-                )
+        # Simulate a successful response on the second request
+        mock_response_2 = Response()
+        mock_response_2.status_code = 200
+        mock_response_2._content = json.dumps(
+            {"content": address.MOCK_DATA, "status": "SUCCESS"}
+        ).encode("utf-8")
 
-                assert result is None
+        mock_get.side_effect = [mock_response_1, mock_response_2]
+
+        resp = self.service.make_request(
+            params=self.service.construct_params(
+                latitude=self.latitude, longitude=self.longitude
+            )
+        )
+        self.assertEqual(resp.status_code, 200)
 
     def test_rename_fields_for_serializer(self):
 

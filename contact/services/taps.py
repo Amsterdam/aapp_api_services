@@ -21,13 +21,13 @@ class TapService(ServiceAbstract):
         all_taps = self.get_geojson_items()
         taps = self.filter_data(all_taps)
 
-        coords, tap_coords = self.get_all_coordinates(taps)
-        address_map = self.address_service.batch_get_addresses_by_coordinates(coords)
-
         full_tap_data = []
-        for tap, lat, lon in tap_coords:
+
+        for tap in taps:
             properties = tap.get("properties", {}) or {}
-            address = address_map.get((lat, lon))
+            lat = properties.get("latitude")
+            lon = properties.get("longitude")
+            address = self.address_service.get_address_by_coordinates(lat, lon)
             custom_properties = self.get_custom_properties(properties, address)
             new_properties = {**properties, **custom_properties}
 
@@ -62,24 +62,6 @@ class TapService(ServiceAbstract):
             in ["Amsterdam", "Weesp", "Amsterdamse bos"]
         ]
         return filtered_data
-
-    def get_all_coordinates(
-        self, data: list[Dict[str, Any]]
-    ) -> tuple[list[tuple[float, float]], list[tuple[Dict[str, Any], float, float]]]:
-        """
-        Extracts all unique coordinates from the tap data.
-        """
-        # Collect all unique coordinates
-        coords = set()
-        tap_coords = []
-        for tap in data:
-            properties = tap.get("properties", {}) or {}
-            lat = properties.get("latitude")
-            lon = properties.get("longitude")
-            tap_coords.append((tap, lat, lon))
-            if lat is not None and lon is not None:
-                coords.add((lat, lon))
-        return list(coords), tap_coords
 
     def get_custom_properties(
         self, properties: Dict[str, Any], address: Dict[str, Any]

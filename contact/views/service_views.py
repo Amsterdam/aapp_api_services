@@ -30,7 +30,7 @@ class ServiceMapsView(APIView):
         return Response(response_serializer.data)
 
 
-@method_decorator(cache_page(60 * 60 * 24), name="get")
+# @method_decorator(cache_page(60 * 60 * 24), name="get")
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 

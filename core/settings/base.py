@@ -336,6 +336,12 @@ IMAGE_ENDPOINTS = {
     "DETAIL": urljoin(IMAGE_BASE_URL, "image"),
 }
 
+# Address lookup tuning
+# - Concurrency impacts cold-cache `/service/api/v1/maps/2` performance (hundreds of lookups).
+# - Timeout is per upstream request; keep it low to avoid long tail latency.
+ADDRESS_LOOKUP_CONCURRENCY = int(os.getenv("ADDRESS_LOOKUP_CONCURRENCY", "60"))
+ADDRESS_LOOKUP_TIMEOUT_SECONDS = float(os.getenv("ADDRESS_LOOKUP_TIMEOUT_SECONDS", "4"))
+
 REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = os.getenv("REDIS_PORT")
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
