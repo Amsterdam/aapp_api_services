@@ -24,7 +24,7 @@ class TestServiceMapsView(ResponsesActivatedAPITestCase):
 
 
 class TestServiceMapView(ResponsesActivatedAPITestCase):
-    def test_success_get_service_map_view_1(self):
+    def test_success_get_service_map_view_toilets(self):
         # Mock the response from the external API
         responses.get(settings.PUBLIC_TOILET_URL, json=toilets.MOCK_DATA)
 
@@ -43,7 +43,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
             len(response.data["data"]["features"]), len(toilets.MOCK_DATA["features"])
         )
 
-    def test_success_get_service_map_view_2(self):
+    def test_success_get_service_map_view_taps(self):
         # Mock the response from the external API
         responses.get(settings.TAP_URL, json=taps.MOCK_DATA)
 

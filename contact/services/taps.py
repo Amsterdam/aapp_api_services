@@ -67,10 +67,9 @@ class TapService(ServiceAbstract):
             if "fontein" in properties.get("beschrijvi", "").lower()
             else "Watertap"
         )
+        property_type = properties.get("type", "") or ""
         custom_type = (
-            "24 uur per dag beschikbaar"
-            if "24-7" in properties.get("type")
-            else properties.get("type")
+            "24 uur per dag beschikbaar" if "24-7" in property_type else property_type
         )
         custom_properties = {
             f"{self.properties_prefix}title": title,
