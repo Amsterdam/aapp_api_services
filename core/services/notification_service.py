@@ -179,7 +179,7 @@ class AbstractNotificationService:
             "module_slug": module_slug,
         }
         if link_source_id is not None:
-            context["linkSourceid"] = link_source_id
+            context["linkSourceid"] = str(link_source_id)
         if url is not None:
             context["url"] = str(url)
         if deeplink is not None:
