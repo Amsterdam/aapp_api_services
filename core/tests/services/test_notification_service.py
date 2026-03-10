@@ -6,8 +6,8 @@ from freezegun import freeze_time
 from model_bakery import baker
 
 from core.services.notification_service import (
+    AbstractNotificationService,
     NotificationData,
-    NotificationServiceAbstract,
     NotificationServiceError,
 )
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
@@ -19,7 +19,7 @@ from notification.models import (
 )
 
 
-class MockUnifiedNotificationService(NotificationServiceAbstract):
+class MockUnifiedNotificationService(AbstractNotificationService):
     module_slug = "test-slug"
     notification_type = "test-slug:notification"
 

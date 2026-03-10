@@ -7,15 +7,15 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from core.services.notification_service import (
+    AbstractNotificationService,
     NotificationData,
-    NotificationServiceAbstract,
     NotificationServiceError,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class MockUnifiedNotificationService(NotificationServiceAbstract):
+class MockUnifiedNotificationService(AbstractNotificationService):
     module_slug = settings.SERVICE_NAME
     notification_type = f"{settings.SERVICE_NAME}:notification"
 

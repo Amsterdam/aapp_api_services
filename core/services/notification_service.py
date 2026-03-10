@@ -23,9 +23,9 @@ class NotificationServiceError(Exception):
 
 
 class NotificationData(NamedTuple):
-    link_source_id: str
     title: str
     message: str
+    link_source_id: str | None = None
     device_ids: list[str] | None = None
     image_set_id: int | None = None
     make_push: bool = True
@@ -33,7 +33,7 @@ class NotificationData(NamedTuple):
     deeplink: str | None = None
 
 
-class NotificationServiceAbstract:
+class AbstractNotificationService:
     """Unified service that supports both:
 
     - module-scoped notification creation via the `send()` + `upsert()` pattern
@@ -169,16 +169,17 @@ class NotificationServiceAbstract:
         self,
         module_slug: str,
         notification_type: str,
-        link_source_id: str,
+        link_source_id: str | None = None,
         url: str | None = None,
         deeplink: str | None = None,
     ) -> dict[str, str]:
         """Context can only contain string values!"""
         context = {
-            "linkSourceid": link_source_id,
             "type": notification_type,
             "module_slug": module_slug,
         }
+        if link_source_id is not None:
+            context["linkSourceid"] = link_source_id
         if url is not None:
             context["url"] = str(url)
         if deeplink is not None:

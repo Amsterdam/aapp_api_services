@@ -5,13 +5,13 @@ from uuid import uuid4
 
 import httpx
 import respx
-from core.services.scheduled_notification import ScheduledNotificationService
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from uritemplate import URITemplate
 
 from bridge.parking.enums import NotificationStatus
+from bridge.parking.services.notifications import NotificationService
 from bridge.parking.services.ssp import SSPEndpointExternal
 from bridge.parking.tests.mock_data_external import (
     parking_session_edit,
@@ -30,7 +30,7 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         self.api_headers[settings.HEADER_DEVICE_ID] = self.device_id
         self.parking_session_id = 10000
         self.report_code = randint(1, 1000)
-        self.notification_scheduler = ScheduledNotificationService()
+        self.notification_scheduler = NotificationService()
 
     def test_create_scheduled_notification(self):
         self._init_test()
@@ -225,13 +225,15 @@ class TestParkingSessionProcessNotification(BaseSSPTestCase):
         )
 
     def _check_notification_count(self, count):
-        notifications = self.notification_scheduler.get_all()
+        notifications = self.notification_scheduler.get_all_scheduled_notifications()
         self.assertEqual(len(notifications), count)
         return notifications
 
     def tearDown(self):
-        scheduled_notifications = self.notification_scheduler.get_all()
+        scheduled_notifications = (
+            self.notification_scheduler.get_all_scheduled_notifications()
+        )
         for notification in scheduled_notifications:
             identifier = notification.identifier
             logger.info(f"Deleting scheduled notification [{identifier}]")
-            self.notification_scheduler.delete(identifier)
+            self.notification_scheduler.delete_scheduled_notification(identifier)
