@@ -3,23 +3,9 @@ from typing import Any, Dict
 from rest_framework import serializers
 
 from contact.enums.base import ChoicesEnum, SerializerMapping
-from core.serializers.address_serializers import (
-    AddressSerializer,
-    CoordinatesSerializer,
-)
-
-
-class ServiceAddressSerializer(AddressSerializer):
-    lat = serializers.FloatField(required=False, write_only=True)
-    lon = serializers.FloatField(required=False, write_only=True)
-    coordinates = CoordinatesSerializer(source="*", read_only=True)
 
 
 class PropertySerializers(ChoicesEnum):
-    ADDRESS = SerializerMapping(
-        type="address",
-        serializer=ServiceAddressSerializer,
-    )
     BOOLEAN = SerializerMapping(
         type="boolean",
         serializer=serializers.BooleanField,
@@ -64,7 +50,7 @@ filter_serializer_mapping = {
 def build_dynamic_properties_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
-    list_property: Dict[str, Any],
+    list_property: Dict[str, Any] | None,
 ) -> serializers.Serializer:
     """
     Dynamically constructs a serializer class based on given properties and filters.
@@ -90,13 +76,14 @@ def build_dynamic_properties_serializer(
             )
             fields[key] = field_class()
 
-    key = list_property["key"]
-    if key not in fields:
-        field_class = property_serializer_mapping.get(
-            list_property["type"], serializers.CharField
-        )
-        # TODO: change required to True once addresses are added for taps
-        fields[key] = field_class(allow_null=True, required=False)
+    if list_property is not None:
+        key = list_property["key"]
+        if key not in fields:
+            field_class = property_serializer_mapping.get(
+                list_property["type"], serializers.CharField
+            )
+            # TODO: change required to True once addresses are added for taps
+            fields[key] = field_class(allow_null=True, required=False)
 
     return type("DynamicPropertiesSerializer", (serializers.Serializer,), fields)
 
@@ -204,5 +191,5 @@ class ServiceMapGeoJsonSerializer(serializers.Serializer):
 class ServiceMapResponseSerializer(serializers.Serializer):
     filters = FiltersSerializer(many=True)
     properties_to_include = PropertiesSerializer(many=True)
-    list_property = ListPropertySerializer()
+    list_property = ListPropertySerializer(allow_null=True)
     data = ServiceMapGeoJsonSerializer()

@@ -3,8 +3,7 @@ from typing import Any, Dict
 
 from django.conf import settings
 
-from contact.enums.taps import LIST_PROPERTY, TapFilters, TapProperties
-from contact.services.address import AddressService
+from contact.enums.taps import TapFilters, TapProperties
 from contact.services.service_abstract import ServiceAbstract
 
 logger = logging.getLogger(__name__)
@@ -12,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 class TapService(ServiceAbstract):
     data_url = settings.TAP_URL
-    address_service = AddressService()
 
     def __init__(self) -> None:
         super().__init__()
@@ -25,10 +23,7 @@ class TapService(ServiceAbstract):
 
         for tap in taps:
             properties = tap.get("properties", {}) or {}
-            lat = properties.get("latitude")
-            lon = properties.get("longitude")
-            address = self.address_service.get_address_by_coordinates(lat, lon)
-            custom_properties = self.get_custom_properties(properties, address)
+            custom_properties = self.get_custom_properties(properties)
             new_properties = {**properties, **custom_properties}
 
             # TODO: When out of MVP stage: implement a way to store all available properties in a database,
@@ -45,7 +40,7 @@ class TapService(ServiceAbstract):
             )
 
         full_data = self.build_response_payload(
-            full_tap_data, TapFilters, TapProperties, LIST_PROPERTY
+            full_tap_data, TapFilters, TapProperties, list_property=None
         )
 
         return full_data
@@ -63,22 +58,23 @@ class TapService(ServiceAbstract):
         ]
         return filtered_data
 
-    def get_custom_properties(
-        self, properties: Dict[str, Any], address: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def get_custom_properties(self, properties: Dict[str, Any]) -> Dict[str, Any]:
         """
         Returns a dictionary of custom properties for a tap, using a prefix to avoid conflicts.
         """
+        title = (
+            "Drinkfontein"
+            if "fontein" in properties.get("beschrijvi", "").lower()
+            else "Watertap"
+        )
+        custom_type = (
+            "24 uur per dag beschikbaar"
+            if "24-7" in properties.get("type")
+            else properties.get("type")
+        )
         custom_properties = {
-            f"{self.properties_prefix}title": properties.get("beschrijvi", "")
-            or "Kraan",
-            f"{self.properties_prefix}is_fountain": "fontein"
-            in properties.get("beschrijvi", "").lower(),
-            f"{self.properties_prefix}always_accessible": "24-7 open"
-            in properties.get("type", "").lower(),
-            f"{self.properties_prefix}has_issue": "storing"
-            in properties.get("type", "").lower(),
-            f"{self.properties_prefix}address": address if address else None,
+            f"{self.properties_prefix}title": title,
+            f"{self.properties_prefix}type": custom_type,
         }
         return custom_properties
 

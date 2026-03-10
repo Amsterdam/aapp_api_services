@@ -53,7 +53,7 @@ class ServiceAbstract:
         items: list[Dict[str, Any]],
         filters: ChoicesEnum,
         properties_to_include: ChoicesEnum,
-        list_property: ListPropertyClass,
+        list_property: ListPropertyClass | None = None,
     ) -> Dict[str, Any]:
         """
         Builds the response payload with the given items, filters, and properties to include.
@@ -61,7 +61,7 @@ class ServiceAbstract:
         full_data = {
             "filters": filters.choices(),
             "properties_to_include": properties_to_include.choices(),
-            "list_property": list_property._asdict(),
+            "list_property": list_property._asdict() if list_property else None,
             "data": {
                 "type": "FeatureCollection",
                 "features": items,

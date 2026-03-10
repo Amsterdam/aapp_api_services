@@ -1,29 +1,20 @@
-from unittest.mock import patch
-
 import responses
 from django.conf import settings
 
 from contact.enums.taps import TapFilters, TapProperties
-from contact.services.address import AddressService
 from contact.services.taps import TapService
-from contact.tests.mock_data import address, taps
+from contact.tests.mock_data import taps
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
 
 class TapServiceTest(ResponsesActivatedAPITestCase):
     def setUp(self):
         self.service = TapService()
-        self.address_service = AddressService()
 
-    @patch("contact.services.address.AddressService.get_address_by_coordinates")
-    def test_get_full_data(self, mock_get):
-        mock_get.return_value = self.address_service._rename_fields_for_serializer(
-            address.MOCK_DATA["response"]["docs"][0]
-        )
+    def test_get_full_data(self):
+
         responses.get(settings.TAP_URL, json=taps.MOCK_DATA)
-
         full_data = self.service.get_full_data()
-
         self.assertEqual(full_data["filters"], TapFilters.choices())
         self.assertEqual(full_data["properties_to_include"], TapProperties.choices())
         self.assertEqual(len(full_data["data"]["features"]), 3)
