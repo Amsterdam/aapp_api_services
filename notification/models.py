@@ -1,6 +1,5 @@
 import uuid
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
@@ -180,8 +179,3 @@ class NotificationLast(models.Model):
     def clean(self):
         if not self.notification_scope.startswith(self.module_slug):
             raise ValidationError("Notification scope must start with module slug")
-
-        if self.notification_scope not in settings.NOTIFICATION_SCOPES:
-            raise ValidationError(
-                f"Notification scope {self.notification_scope} is not in the list of allowed scopes"
-            )
