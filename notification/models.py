@@ -174,7 +174,7 @@ class NotificationLast(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     module_slug = models.CharField()
     notification_scope = models.CharField()
-    last_create = models.DateTimeField(auto_now=True)
+    last_create = models.DateTimeField()
 
     def clean(self):
         if not self.notification_scope.startswith(self.module_slug):

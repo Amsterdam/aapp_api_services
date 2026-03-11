@@ -44,7 +44,7 @@ class AbstractNotificationService:
             module_slug=self.module_slug,
         )
         timestamps = {
-            ts.notification_scope.strip(f"{self.module_slug}:"): ts.last_create
+            ts.notification_scope.removeprefix(f"{self.module_slug}:"): ts.last_create
             for ts in timestamps
         }
         return timestamps
