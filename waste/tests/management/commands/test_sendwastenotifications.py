@@ -23,6 +23,12 @@ from waste.tests.mock_data import (
     "waste.management.commands.sendwastenotifications.NotificationService.send_waste_notification"
 )
 class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
+    """
+    Different addresses have different frequencies on which the waste is collected.
+    For all these frequencies we have a testcase where the notification should be send
+    and a testcase where the notification should not be send.
+    """
+
     @freeze_time("2025-03-31")
     def test_send_single_notification_weekly_pattern_send(
         self, mock_call_notification_service
@@ -47,7 +53,6 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         mock_call_notification_service.assert_not_called()
 
     @freeze_time("2026-03-19")
-    @responses.activate
     def test_send_single_notification_four_pattern_send(
         self, mock_call_notification_service
     ):
@@ -63,18 +68,14 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         )
 
     @freeze_time("2026-03-12")
-    @responses.activate
     def test_send_single_notification_four_pattern_not_send(
         self, mock_call_notification_service
     ):
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_four_weeks.MOCK_DATA)
         call_command("sendwastenotifications")
-        # we expect the mock call to not be called, because the frequency is "om de 4 weken"
-        # and the date is not a multiple of 4 weeks from the start date (2026-03-19)
         mock_call_notification_service.assert_not_called()
 
     @freeze_time("2026-01-08")
-    @responses.activate
     def test_send_single_notification_with_year_pattern_send(
         self, mock_call_notification_service
     ):
@@ -92,7 +93,6 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         )
 
     @freeze_time("2026-01-15")
-    @responses.activate
     def test_send_single_notification_with_year_pattern_not_send(
         self, mock_call_notification_service
     ):
@@ -100,12 +100,9 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
             settings.WASTE_GUIDE_URL, json=frequency_hardcoded_with_year.MOCK_DATA
         )
         call_command("sendwastenotifications")
-        # we expect the mock call to not be called, because the frequency is "om de 4 weken"
-        # and the date is not a multiple of 4 weeks from the start date (2026-03-19)
         mock_call_notification_service.assert_not_called()
 
     @freeze_time("2026-03-05")
-    @responses.activate
     def test_send_single_notification_wo_year_pattern_send(
         self, mock_call_notification_service
     ):
@@ -123,7 +120,6 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         )
 
     @freeze_time("2026-03-12")
-    @responses.activate
     def test_send_single_notification_wo_year_pattern_not_send(
         self, mock_call_notification_service
     ):
@@ -131,12 +127,9 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
             settings.WASTE_GUIDE_URL, json=frequency_hardcoded_wo_year.MOCK_DATA
         )
         call_command("sendwastenotifications")
-        # we expect the mock call to not be called, because the frequency is "om de 4 weken"
-        # and the date is not a multiple of 4 weeks from the start date (2026-03-19)
         mock_call_notification_service.assert_not_called()
 
     @freeze_time("2026-03-08")
-    @responses.activate
     def test_send_single_notification_monthly_pattern_send(
         self, mock_call_notification_service
     ):
@@ -152,18 +145,14 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         )
 
     @freeze_time("2026-03-15")
-    @responses.activate
     def test_send_single_notification_monthly_pattern_not_send(
         self, mock_call_notification_service
     ):
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_monthly.MOCK_DATA)
         call_command("sendwastenotifications")
-        # we expect the mock call to not be called, because the frequency is "om de 4 weken"
-        # and the date is not a multiple of 4 weeks from the start date (2026-03-19)
         mock_call_notification_service.assert_not_called()
 
     @freeze_time("2026-03-16")
-    @responses.activate
     def test_send_single_notification_weekly_even_pattern_send(
         self, mock_call_notification_service
     ):
@@ -179,18 +168,14 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         )
 
     @freeze_time("2026-03-09")
-    @responses.activate
     def test_send_single_notification_weekly_even_pattern_not_send(
         self, mock_call_notification_service
     ):
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly_oneven.MOCK_DATA)
         call_command("sendwastenotifications")
-        # we expect the mock call to not be called, because the frequency is "om de 4 weken"
-        # and the date is not a multiple of 4 weeks from the start date (2026-03-19)
         mock_call_notification_service.assert_not_called()
 
     @freeze_time("2026-03-08")
-    @responses.activate
     def test_send_single_notification_weekly_odd_pattern_send(
         self, mock_call_notification_service
     ):
@@ -206,12 +191,9 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         )
 
     @freeze_time("2026-03-15")
-    @responses.activate
     def test_send_single_notification_weekly_odd_pattern_not_send(
         self, mock_call_notification_service
     ):
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly_oneven.MOCK_DATA)
         call_command("sendwastenotifications")
-        # we expect the mock call to not be called, because the frequency is "om de 4 weken"
-        # and the date is not a multiple of 4 weeks from the start date (2026-03-19)
         mock_call_notification_service.assert_not_called()
