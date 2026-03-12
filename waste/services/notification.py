@@ -1,7 +1,6 @@
 import datetime
 import logging
 
-from core.services.scheduled_notification import ScheduledNotificationService
 from django.utils import timezone
 
 from core.enums import Module, NotificationType
@@ -14,31 +13,33 @@ from waste.models import ManualNotification, NotificationSchedule
 logger = logging.getLogger(__name__)
 
 
-class NotificationService(ScheduledNotificationService):
+class NotificationService(AbstractNotificationService):
+    module_slug = Module.WASTE.value
+    notification_type = NotificationType.WASTE_DATE_REMINDER.value
+
     def __init__(self):
         super().__init__()
         self.notification_datetime = datetime.datetime.combine(
             datetime.date.today(), datetime.time(hour=21, minute=0)
         )
 
-    def send_waste_notification(
+    def send(
         self,
         device_ids: list[str],
         waste_type: str,
         notification_datetime: datetime.datetime | None = None,
     ):
-        self.upsert(
+
+        notification = NotificationData(
             title="Afvalwijzer",
-            body=f"Morgen halen we {waste_type.lower()} in uw buurt op. Ga naar Afvalwijzer.",
+            message=f"Morgen halen we {waste_type.lower()} in uw buurt op. Ga naar Afvalwijzer.",
+            device_ids=device_ids,
+        )
+
+        self.upsert(
+            notification=notification,
             scheduled_for=notification_datetime or self.notification_datetime,
             identifier=self._create_identifier(waste_type=waste_type),
-            context={
-                "type": NotificationType.WASTE_DATE_REMINDER.value,
-                "module_slug": Module.WASTE.value,
-            },
-            device_ids=device_ids,
-            notification_type=NotificationType.WASTE_DATE_REMINDER.value,
-            module_slug=Module.WASTE.value,
         )
 
     def _create_identifier(self, waste_type: str) -> str:
@@ -58,7 +59,7 @@ class ManualNotificationService(AbstractNotificationService):
                 link_source_id=notification.pk,
                 device_ids=device_ids,
             )
-            self.process(notification_data, expiry_minutes=60)
+            self.upsert(notification_data, expiry_minutes=60)
 
         notification.send_at = timezone.now()
         notification.nr_sessions = len(device_ids)

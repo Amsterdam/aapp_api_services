@@ -229,7 +229,7 @@ class Command(BaseCommand):
         # send notifications to all device ids
         for waste_type, device_ids in fraction_device_ids.items():
             deduplicated_device_ids = list(set(device_ids))
-            self.notification_service.send_waste_notification(
+            self.notification_service.send(
                 device_ids=deduplicated_device_ids,
                 waste_type=waste_type,
                 notification_datetime=self.notification_datetime,

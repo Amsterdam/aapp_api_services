@@ -13,9 +13,7 @@ from waste.tests.mock_data import frequency_none
 
 
 @freeze_time("2025-03-31")
-@patch(
-    "waste.management.commands.sendwastenotifications.NotificationService.send_waste_notification"
-)
+@patch("waste.management.commands.sendwastenotifications.NotificationService.send")
 class SendWasteNotificationsTest(TestCase):
     @responses.activate
     def test_send_single_notification(self, mock_call_notification_service):
