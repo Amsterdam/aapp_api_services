@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urljoin
 
 import requests
@@ -10,7 +10,10 @@ from bridge.mijnamsterdam.serializers.general_serializers import (
 )
 from bridge.mijnamsterdam.services.notifications import NotificationService
 from core.enums import Module, NotificationType
-from core.services.notification_service import NotificationData
+from core.services.notification_service import (
+    NotificationData,
+    create_missing_device_ids,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +30,7 @@ class MijnAmsterdamNotificationProcessor:
         for user_data in data:
             try:
                 logger.info(f"Processing user device_ids {user_data['consumerIds']}")
+                create_missing_device_ids(device_ids=user_data["consumerIds"])
                 self.send_notifications(user_data=user_data)
             except Exception as e:
                 logger.error(
@@ -114,39 +118,38 @@ class MijnAmsterdamNotificationProcessor:
                 "Comparing data with last timestamp",
                 extra={"service_id": service_id, "last_timestamp": last_ts},
             )
-            nr_svc_messages, new_last_ts = self._get_nr_service_messages(
-                last_ts, service
+            nr_svc_messages, new_last_ts = self.get_nr_service_messages(
+                last_ts or datetime(1970, 1, 1, tzinfo=timezone.utc), service
             )
-            nr_messages_total += nr_svc_messages
+            if last_ts:
+                # Only register new messages if we have a last timestamp, otherwise we are processing the user for
+                # the first time and should not send notifications for all existing messages
+                nr_messages_total += nr_svc_messages
             if new_last_ts:
                 ts_updates[service_id] = new_last_ts
 
-        if ts_updates:
-            assert nr_messages_total > 0, (
-                "There should be new messages if there are timestamp updates"
-            )
         if nr_messages_total > 0:
             assert ts_updates, (
                 "There should be timestamp updates if there are new messages"
             )
         return nr_messages_total, ts_updates
 
-    def _get_nr_service_messages(self, last_timestamp, service) -> (int, datetime):
+    def get_nr_service_messages(self, last_timestamp, service) -> (int, datetime):
         nr_svc_messages = 0
         new_last_timestamp = None
         for c in service["content"]:
-            if c["datePublished"] > last_timestamp:
+            date_published = c["datePublished"]
+            if date_published > last_timestamp:
                 nr_svc_messages += 1
-                new_last_timestamp = (
-                    max(new_last_timestamp, c["datePublished"])
-                    if new_last_timestamp
-                    else c["datePublished"]
-                )
+                if new_last_timestamp:
+                    new_last_timestamp = max(new_last_timestamp, date_published)
+                else:
+                    new_last_timestamp = date_published
                 logger.debug(
                     "New message found",
                     extra={
                         "service": service["serviceId"],
-                        "published_at": c["datePublished"],
+                        "published_at": date_published,
                     },
                 )
         return nr_svc_messages, new_last_timestamp
