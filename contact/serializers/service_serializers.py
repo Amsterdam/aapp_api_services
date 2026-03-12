@@ -76,7 +76,7 @@ def build_dynamic_properties_serializer(
             )
             fields[key] = field_class()
 
-    if list_property is not None:
+    if list_property:
         key = list_property["key"]
         if key not in fields:
             field_class = property_serializer_mapping.get(
