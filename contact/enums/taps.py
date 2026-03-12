@@ -1,6 +1,5 @@
 from contact.enums.base import (
     ChoicesEnum,
-    ListPropertyClass,
     PropertiesClass,
 )
 
@@ -11,11 +10,14 @@ class TapFilters(ChoicesEnum):
 
 class TapProperties(ChoicesEnum):
     OPEN_HOURS = PropertiesClass(
-        label="Toegang",
-        property_key="type",
+        label=None,
+        property_key="aapp_type",
         property_type="string",
         icon=None,
     )
-
-
-LIST_PROPERTY = ListPropertyClass(key="aapp_address", type="address")
+    DESCRIPTION = PropertiesClass(
+        label=None,
+        property_key="beschrijvi",
+        property_type="string",
+        icon=None,
+    )
