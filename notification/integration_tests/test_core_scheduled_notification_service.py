@@ -54,8 +54,30 @@ class TestCoreScheduledNotificationService(APITestCase):
 
         self.assertTrue(new_scheduled_notification)
 
-    def test_add_notification_with_custom_module_slug(self):
-        identifier = f"{settings.SERVICE_NAME}:test_notification"
+    def test_add_notification_with_custom_module_slug_error(self):
+        module_slug = "foobar-slug"
+        identifier = f"{module_slug}_test-notification"
+        self.created_identifiers.append(identifier)
+
+        notification = NotificationData(
+            title="Test Notification",
+            message="This is a test notification",
+            link_source_id="link_1",
+            device_ids=["device1", "device2"],
+        )
+
+        with self.assertRaises(NotificationServiceError):
+            self.service.upsert(
+                notification=notification,
+                scheduled_for=timezone.now() + timedelta(minutes=10),
+                identifier=identifier,
+                context={},
+            )
+
+    def test_add_notification_with_custom_module_slug_success(self):
+        module_slug = "foobar-slug"
+        self.service.module_slug = module_slug
+        identifier = f"{module_slug}_test-notification-2"
         self.created_identifiers.append(identifier)
 
         notification = NotificationData(
