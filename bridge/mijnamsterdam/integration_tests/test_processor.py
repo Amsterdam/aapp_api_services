@@ -8,10 +8,17 @@ from django.conf import settings
 from django.core.management import call_command
 from django.test import override_settings
 from django.utils import timezone
+from model_bakery import baker
 
 from bridge.mijnamsterdam.processor import MijnAmsterdamNotificationProcessor
+from core.enums import Module
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import Notification, ScheduledNotification
+from notification.models import (
+    Device,
+    Notification,
+    NotificationLast,
+    ScheduledNotification,
+)
 
 
 class NotificationData(NamedTuple):
@@ -114,6 +121,16 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
                 ),
                 json=mock_data,
             )
+            responses.get(
+                urljoin(
+                    settings.MIJN_AMS_API_DOMAIN,
+                    settings.MIJN_AMS_API_PATHS["NOTIFICATIONS"],
+                ),
+                json={
+                    "content": [],
+                    "status": "OK",
+                },
+            )
 
     def test_run_processor_developing_payload(self):
         device_id = f"integration_test_{datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]}"
@@ -144,7 +161,16 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
             ),
             json=mock_data,
         )
-
+        responses.get(
+            urljoin(
+                settings.MIJN_AMS_API_DOMAIN,
+                settings.MIJN_AMS_API_PATHS["NOTIFICATIONS"],
+            ),
+            json={
+                "content": [],
+                "status": "OK",
+            },
+        )
         self._process_mijn_amsterdam_notifications()
 
         notifications = self.notification_service.get_notifications(device_id)
@@ -189,6 +215,7 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
             ],
             "status": "OK",
         }
+        # First request
         responses.get(
             urljoin(
                 settings.MIJN_AMS_API_DOMAIN,
@@ -196,4 +223,29 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
             ),
             json=mock_data,
         )
+        # Second request, to test pagination (should not return any new data)
+        responses.get(
+            urljoin(
+                settings.MIJN_AMS_API_DOMAIN,
+                settings.MIJN_AMS_API_PATHS["NOTIFICATIONS"],
+            ),
+            json={
+                "content": [],
+                "status": "OK",
+            },
+        )
+        self._create_notificationlast_records(
+            device_ids=[d for n in data for d in n.device_ids]
+        )
         return mock_data
+
+    def _create_notificationlast_records(self, device_ids: list[str]):
+        for consumer_id in device_ids:
+            device = baker.make(Device, external_id=consumer_id)
+            baker.make(
+                NotificationLast,
+                notification_scope=f"{Module.MIJN_AMS.value}:belasting",
+                last_create="1970-01-01T12:00:00Z",
+                device=device,
+                module_slug=Module.MIJN_AMS.value,
+            )

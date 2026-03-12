@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from urllib.parse import urljoin
 
 import requests
@@ -119,7 +119,7 @@ class MijnAmsterdamNotificationProcessor:
                 extra={"service_id": service_id, "last_timestamp": last_ts},
             )
             nr_svc_messages, new_last_ts = self.get_nr_service_messages(
-                last_ts or datetime(1970, 1, 1, tzinfo=timezone.utc), service
+                last_ts, service
             )
             if last_ts:
                 # Only register new messages if we have a last timestamp, otherwise we are processing the user for
@@ -139,7 +139,7 @@ class MijnAmsterdamNotificationProcessor:
         new_last_timestamp = None
         for c in service["content"]:
             date_published = c["datePublished"]
-            if date_published > last_timestamp:
+            if not last_timestamp or date_published > last_timestamp:
                 nr_svc_messages += 1
                 if new_last_timestamp:
                     new_last_timestamp = max(new_last_timestamp, date_published)
