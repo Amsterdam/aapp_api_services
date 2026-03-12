@@ -13,6 +13,7 @@ from waste.constants import (
     WASTE_COLLECTION_ROUTE_TYPES,
     WEEKDAYS,
 )
+from waste.interpret_frequencies import interpret_single_date_frequency
 from waste.models import NotificationSchedule
 from waste.services.notification import NotificationService
 
@@ -36,9 +37,8 @@ class Command(BaseCommand):
         self.headers = None
         if settings.ENVIRONMENT_SLUG in ["a", "p"]:
             self.headers = {"X-Api-Key": self.api_key}
-        self.tomorrow_weekday_name = WEEKDAYS[
-            (datetime.date.today() + datetime.timedelta(days=1)).weekday()
-        ]
+        self.tomorrow_datetime = datetime.date.today() + datetime.timedelta(days=1)
+        self.tomorrow_weekday_name = WEEKDAYS[self.tomorrow_datetime.weekday()]
         self.notification_datetime = datetime.datetime.combine(
             datetime.date.today(), datetime.time(hour=21, minute=0)
         )  # send at 21:00 today for tomorrow pickups
@@ -141,17 +141,43 @@ class Command(BaseCommand):
         waste_data = response_json.get("_embedded", {}).get("afvalwijzer", [])
 
         # filter waste data to only keep records with a pickup day
-        waste_data = self._filter_waste_data_on_day(data=waste_data)
+        waste_data = self._filter_waste_data_on_frequency(data=waste_data)
         next_link = response_json.get("_links", {}).get("next", {}).get("href")
         return waste_data, next_link
 
+    def _filter_waste_data_on_frequency(self, data: list[dict]) -> list[dict]:
+        """
+        Only filtering on day is not enough, as some pickups are scheduled every other week
+        or every 4 weeks for example, and we don't want to send notifications for those.
+        Therefore we also need to check the "afvalwijzerAfvalkalenderFrequentie" field,
+        which contains frequency information.
+        """
+        filtered_day_data = self._filter_waste_data_on_day(data=data)
+        filtered_data = [
+            d
+            for d in filtered_day_data
+            if interpret_single_date_frequency(
+                date=self.tomorrow_datetime,
+                frequency=d.get("afvalwijzerAfvalkalenderFrequentie", "") or "",
+                note=d.get("afvalwijzerAfvalkalenderOpmerking", "") or "",
+                weekday=self.tomorrow_datetime.weekday(),
+            )
+            is not None
+        ]
+        return filtered_data
+
     def _filter_waste_data_on_day(self, data: list[dict]) -> list[dict]:
-        """filter on day, to only keep the records where pickupday is tomorrow, also only keep relevant fields"""
         filtered_data = [
             {
                 "bagNummeraanduidingId": d.get("bagNummeraanduidingId", ""),
                 "afvalwijzerFractieNaam": d.get("afvalwijzerFractieNaam", ""),
                 "afvalwijzerOphaaldagen2": d.get("afvalwijzerOphaaldagen2", ""),
+                "afvalwijzerAfvalkalenderFrequentie": d.get(
+                    "afvalwijzerAfvalkalenderFrequentie", ""
+                ),
+                "afvalwijzerAfvalkalenderOpmerking": d.get(
+                    "afvalwijzerAfvalkalenderOpmerking", ""
+                ),
             }
             for d in data
             if self.tomorrow_weekday_name

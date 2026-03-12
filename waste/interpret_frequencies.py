@@ -8,6 +8,17 @@ WEEKLY_PATTERN = re.compile(r"om de \d{1} weken")
 logger = logging.getLogger(__name__)
 
 
+def interpret_single_date_frequency(
+    date: datetime, frequency: str, note: str, weekday: int
+) -> datetime | None:
+    dates = interpret_frequencies(
+        [date], {"frequency": frequency, "note": note}, [weekday]
+    )
+    if len(dates) == 0:
+        return None
+    return dates[0]
+
+
 def interpret_frequencies(dates, item, ophaaldagen_list):
     frequency = item.get("frequency") or ""
     if frequency == "":
