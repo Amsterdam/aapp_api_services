@@ -27,7 +27,7 @@ class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
 
     def get(self, request):
         try:
-            response_json = self._get_status(method="get")
+            response_json = self._get_device_response(method="get")
             content = response_json["content"]
             if content.get("isRegistered"):
                 profile_name = content.get("profileName")
@@ -42,7 +42,7 @@ class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
 
     def delete(self, request):
         try:
-            response_json = self._get_status(method="delete")
+            response_json = self._get_device_response(method="delete")
             data = {"status": response_json["status"]}
             serializer = DeviceResponseSerializer(data=data)
             serializer.is_valid(raise_exception=True)
@@ -56,7 +56,7 @@ class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
         retry=retry_if_exception_type(requests.exceptions.RequestException),
         reraise=True,  # reraise error after retries are exhausted
     )
-    def _get_status(self, method):
+    def _get_device_response(self, method):
         url = (
             settings.MIJN_AMS_API_DOMAIN
             + settings.MIJN_AMS_API_PATHS["DEVICES"]
