@@ -42,7 +42,7 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
         self.processor.run()
         self.assertEqual(ScheduledNotification.objects.count(), 0)
 
-        self.assertEqual(NotificationLast.objects.count(), 4)
+        self.assertEqual(NotificationLast.objects.count(), 5)
 
         # Check that the last_create timestamps are set to the datePublished of the notifications
         self.processor.run()
@@ -54,7 +54,9 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
         self.assertEqual(ScheduledNotification.objects.count(), 4)
 
         # Check if timestamp is updated
-        last_notifications = NotificationLast.objects.all()
+        last_notifications = NotificationLast.objects.exclude(
+            device__external_id="wesley"
+        )  # wesley has no notifications, so timestamp should not be updated
         for n in last_notifications:
             self.assertGreater(n.last_create, datetime(2025, 1, 1, tzinfo=timezone.utc))
 

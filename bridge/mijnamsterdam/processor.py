@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urljoin
 
 import requests
@@ -121,30 +121,21 @@ class MijnAmsterdamNotificationProcessor:
             nr_svc_messages, new_last_ts = self.get_nr_service_messages(
                 last_ts, service
             )
+            ts_updates[service_id] = new_last_ts
             if last_ts:
                 # Only register new messages if we have a last timestamp, otherwise we are processing the user for
                 # the first time and should not send notifications for all existing messages
                 nr_messages_total += nr_svc_messages
-            if new_last_ts:
-                ts_updates[service_id] = new_last_ts
-
-        if nr_messages_total > 0:
-            assert ts_updates, (
-                "There should be timestamp updates if there are new messages"
-            )
         return nr_messages_total, ts_updates
 
     def get_nr_service_messages(self, last_timestamp, service) -> (int, datetime):
         nr_svc_messages = 0
-        new_last_timestamp = None
+        new_last_timestamp = datetime(1970, 1, 1, tzinfo=timezone.utc)
         for c in service["content"]:
             date_published = c["datePublished"]
             if not last_timestamp or date_published > last_timestamp:
                 nr_svc_messages += 1
-                if new_last_timestamp:
-                    new_last_timestamp = max(new_last_timestamp, date_published)
-                else:
-                    new_last_timestamp = date_published
+                new_last_timestamp = max(new_last_timestamp, date_published)
                 logger.debug(
                     "New message found",
                     extra={
