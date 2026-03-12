@@ -4,8 +4,9 @@ from django.urls import reverse
 from rest_framework import status
 
 from contact.enums.services import Services
+from contact.enums.taps import TapFilters, TapProperties
 from contact.enums.toilets import ToiletFilters, ToiletProperties
-from contact.tests.mock_data import toilets
+from contact.tests.mock_data import taps, toilets
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
 
@@ -23,7 +24,7 @@ class TestServiceMapsView(ResponsesActivatedAPITestCase):
 
 
 class TestServiceMapView(ResponsesActivatedAPITestCase):
-    def test_success_get_service_map_view(self):
+    def test_success_get_service_map_view_toilets(self):
         # Mock the response from the external API
         responses.get(settings.PUBLIC_TOILET_URL, json=toilets.MOCK_DATA)
 
@@ -40,6 +41,22 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         )
         self.assertEqual(
             len(response.data["data"]["features"]), len(toilets.MOCK_DATA["features"])
+        )
+
+    def test_success_get_service_map_view_taps(self):
+        # Mock the response from the external API
+        responses.get(settings.TAP_URL, json=taps.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 2})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["filters"], TapFilters.choices())
+        self.assertEqual(
+            response.data["properties_to_include"], TapProperties.choices()
         )
 
     def test_not_implemented_get_service_map_view(self):

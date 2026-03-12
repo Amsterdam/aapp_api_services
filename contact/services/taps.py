@@ -3,8 +3,7 @@ from typing import Any, Dict
 
 from django.conf import settings
 
-from contact.enums.taps import LIST_PROPERTY, TapFilters, TapProperties
-from contact.services.address import AddressService
+from contact.enums.taps import TapFilters, TapProperties
 from contact.services.service_abstract import ServiceAbstract
 
 logger = logging.getLogger(__name__)
@@ -12,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 class TapService(ServiceAbstract):
     data_url = settings.TAP_URL
-    address_service = AddressService()
 
     def __init__(self) -> None:
         super().__init__()
@@ -21,14 +19,11 @@ class TapService(ServiceAbstract):
         all_taps = self.get_geojson_items()
         taps = self.filter_data(all_taps)
 
-        coords, tap_coords = self.get_all_coordinates(taps)
-        address_map = self.address_service.batch_get_addresses_by_coordinates(coords)
-
         full_tap_data = []
-        for tap, lat, lon in tap_coords:
+
+        for tap in taps:
             properties = tap.get("properties", {}) or {}
-            address = address_map.get((lat, lon))
-            custom_properties = self.get_custom_properties(properties, address)
+            custom_properties = self.get_custom_properties(properties)
             new_properties = {**properties, **custom_properties}
 
             # TODO: When out of MVP stage: implement a way to store all available properties in a database,
@@ -45,7 +40,7 @@ class TapService(ServiceAbstract):
             )
 
         full_data = self.build_response_payload(
-            full_tap_data, TapFilters, TapProperties, LIST_PROPERTY
+            full_tap_data, TapFilters, TapProperties, list_property=None
         )
 
         return full_data
@@ -63,40 +58,22 @@ class TapService(ServiceAbstract):
         ]
         return filtered_data
 
-    def get_all_coordinates(
-        self, data: list[Dict[str, Any]]
-    ) -> tuple[list[tuple[float, float]], list[tuple[Dict[str, Any], float, float]]]:
-        """
-        Extracts all unique coordinates from the tap data.
-        """
-        # Collect all unique coordinates
-        coords = set()
-        tap_coords = []
-        for tap in data:
-            properties = tap.get("properties", {}) or {}
-            lat = properties.get("latitude")
-            lon = properties.get("longitude")
-            tap_coords.append((tap, lat, lon))
-            if lat is not None and lon is not None:
-                coords.add((lat, lon))
-        return list(coords), tap_coords
-
-    def get_custom_properties(
-        self, properties: Dict[str, Any], address: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def get_custom_properties(self, properties: Dict[str, Any]) -> Dict[str, Any]:
         """
         Returns a dictionary of custom properties for a tap, using a prefix to avoid conflicts.
         """
+        title = (
+            "Drinkfontein"
+            if "fontein" in properties.get("beschrijvi", "").lower()
+            else "Watertap"
+        )
+        property_type = properties.get("type", "") or ""
+        custom_type = (
+            "24 uur per dag beschikbaar" if "24-7" in property_type else property_type
+        )
         custom_properties = {
-            f"{self.properties_prefix}title": properties.get("beschrijvi", "")
-            or "Kraan",
-            f"{self.properties_prefix}is_fountain": "fontein"
-            in properties.get("beschrijvi", "").lower(),
-            f"{self.properties_prefix}always_accessible": "24-7 open"
-            in properties.get("type", "").lower(),
-            f"{self.properties_prefix}has_issue": "storing"
-            in properties.get("type", "").lower(),
-            f"{self.properties_prefix}address": address if address else None,
+            f"{self.properties_prefix}title": title,
+            f"{self.properties_prefix}type": custom_type,
         }
         return custom_properties
 
