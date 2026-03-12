@@ -62,6 +62,9 @@ class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
             + settings.MIJN_AMS_API_PATHS["DEVICES"]
             + self.device_id
         )
-        response = requests.request(method, url, timeout=10)
+        headers = {
+            settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY_INBOUND,
+        }
+        response = requests.request(method, url, headers=headers, timeout=10)
         response.raise_for_status()
         return response.json()
