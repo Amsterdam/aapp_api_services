@@ -27,14 +27,25 @@ class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
 
     def get(self, request):
         try:
-            serializer = self._get_status(method="get")
+            response_json = self._get_device_response(method="get")
+            content = response_json["content"]
+            if content.get("isRegistered"):
+                profile_name = content.get("profileName")
+                data = {"status": "OK", "profile_name": profile_name}
+            else:
+                data = {"status": "ERROR"}
+            serializer = DeviceResponseSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except requests.exceptions.RequestException:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def delete(self, request):
         try:
-            serializer = self._get_status(method="delete")
+            response_json = self._get_device_response(method="delete")
+            data = {"status": response_json["status"]}
+            serializer = DeviceResponseSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except requests.exceptions.RequestException:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -45,7 +56,7 @@ class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
         retry=retry_if_exception_type(requests.exceptions.RequestException),
         reraise=True,  # reraise error after retries are exhausted
     )
-    def _get_status(self, method):
+    def _get_device_response(self, method):
         url = (
             settings.MIJN_AMS_API_DOMAIN
             + settings.MIJN_AMS_API_PATHS["DEVICES"]
@@ -53,12 +64,4 @@ class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
         )
         response = requests.request(method, url, timeout=10)
         response.raise_for_status()
-        json = response.json()
-        try:
-            status = json["status"]
-        except KeyError:
-            status = "ERROR"
-
-        serializer = DeviceResponseSerializer(data={"status": status})
-        serializer.is_valid(raise_exception=True)
-        return serializer
+        return response.json()
