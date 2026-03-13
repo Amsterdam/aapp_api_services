@@ -16,6 +16,7 @@ from notification.models import (
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
+    WasteNotification
 )
 
 
@@ -463,3 +464,19 @@ class TestNotificationPushModuleDisabledListView(AuthenticatedAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
+
+
+class TestWasteNotificationCreateView(AuthenticatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("waste-guide-notification-create")
+        self.device_id = "test-device-id"
+        self.api_headers["DeviceId"] = self.device_id
+
+    def test_success(self):
+        payload = {
+            "bag_nummeraanduiding_id": "12345",
+        }
+        response = self.client.post(self.url, data=payload, headers=self.api_headers)
+        self.assertEqual(response.status_code, 201)
+        WasteNotification.objects.get(device_id=self.device_id)

@@ -14,7 +14,7 @@ from waste.constants import (
     WEEKDAYS,
 )
 from waste.interpret_frequencies import interpret_single_date_frequency
-from waste.models import NotificationSchedule
+from notification.models import WasteNotification
 from waste.services.notification import NotificationService
 
 
@@ -44,7 +44,7 @@ class Command(BaseCommand):
         )  # send at 21:00 today for tomorrow pickups
         self.notification_service = NotificationService()
         self.notification_schedules = list(
-            NotificationSchedule.objects.filter(
+            WasteNotification.objects.filter(
                 Q(
                     updated_at__lt=datetime.datetime.combine(
                         datetime.date.today(), datetime.time.min
@@ -87,7 +87,7 @@ class Command(BaseCommand):
 
         # Mark all schedules as updated, to prevent sending the same notification multiple times
         ids_to_update = [schedule.pk for schedule in self.notification_schedules]
-        NotificationSchedule.objects.filter(pk__in=ids_to_update).update(
+        WasteNotification.objects.filter(pk__in=ids_to_update).update(
             updated_at=timezone.now()
         )
 
@@ -243,7 +243,7 @@ class Command(BaseCommand):
 
     def _filter_notifications_to_send(
         self, bag_nummeraanduiding_id: str
-    ) -> list[NotificationSchedule]:
+    ) -> list[WasteNotification]:
         """Filter notification schedules to only those that need to be sent"""
         return [
             schedule

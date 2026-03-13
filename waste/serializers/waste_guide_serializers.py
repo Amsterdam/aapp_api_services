@@ -5,29 +5,29 @@ from waste.constants import (
     WASTE_TYPES_CODES,
     WASTE_TYPES_MAPPING,
 )
-from waste.models import NotificationSchedule
+# from waste.models import NotificationSchedule
 
 
 class WasteRequestSerializer(serializers.Serializer):
     bag_nummeraanduiding_id = serializers.CharField()
 
 
-class WasteNotificationSerializer(serializers.ModelSerializer):
-    updated_at = serializers.DateTimeField(read_only=True)
+# class WasteNotificationSerializer(serializers.ModelSerializer):
+#     updated_at = serializers.DateTimeField(read_only=True)
 
-    class Meta:
-        model = NotificationSchedule
-        fields = ["bag_nummeraanduiding_id", "updated_at"]
+#     class Meta:
+#         model = NotificationSchedule
+#         fields = ["bag_nummeraanduiding_id", "updated_at"]
 
-    def create(self, validated_data):
-        device_id = self.context.get("device_id")
-        if not device_id:
-            raise serializers.ValidationError("Device ID header missing")
+#     def create(self, validated_data):
+#         device_id = self.context.get("device_id")
+#         if not device_id:
+#             raise serializers.ValidationError("Device ID header missing")
 
-        return NotificationSchedule.objects.create(
-            device_id=device_id,
-            **validated_data,
-        )
+#         return NotificationSchedule.objects.create(
+#             device_id=device_id,
+#             **validated_data,
+#         )
 
 
 class WasteDataSerializer(serializers.Serializer):

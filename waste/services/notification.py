@@ -9,7 +9,8 @@ from core.services.notification_service import (
     NotificationData,
 )
 from core.services.scheduled_notification import ScheduledNotificationService
-from waste.models import ManualNotification, NotificationSchedule
+from waste.models import ManualNotification
+from notification.models import WasteNotification
 
 logger = logging.getLogger(__name__)
 
@@ -65,4 +66,4 @@ class ManualNotificationService(AbstractNotificationService):
         notification.save()
 
     def get_device_ids(self) -> list[str]:
-        return list(NotificationSchedule.objects.values_list("device_id", flat=True))
+        return list(WasteNotification.objects.values_list("device_id", flat=True))
