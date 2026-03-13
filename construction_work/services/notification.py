@@ -12,9 +12,7 @@ logger = logging.getLogger(__name__)
 
 class ArticleNotificationService(AbstractNotificationService):
     module_slug = Module.CONSTRUCTION_WORK.value
-    notification_type = (
-        NotificationType.CONSTRUCTION_WORK_WARNING_MESSAGE.value
-    )  # same type as warning message, as there is no difference for the user
+    notification_type = NotificationType.CONSTRUCTION_WORK_ARTICLE_MESSAGE.value
 
     def send(self, notification_data: NotificationData):
         self.upsert(notification_data)

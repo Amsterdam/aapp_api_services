@@ -64,9 +64,9 @@ SSP_API_TIMEOUT_SECONDS = int(os.getenv("SSP_API_TIMEOUT_SECONDS", 10))
 MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
 MIJN_AMS_API_KEY_INBOUND = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
 MIJN_AMS_API_DOMAIN = os.getenv(
-    "MIJN_AMS_API_DOMAIN", "https://mams-t-appservice-bff.azurewebsites.net/"
+    "MIJN_AMS_API_DOMAIN", "https://mams-t-appservice-bff.azurewebsites.net"
 )
 MIJN_AMS_API_PATHS = {
     "NOTIFICATIONS": "/private/api/v1/services/amsapp/notifications",
-    "DEVICES": "/api/v1/services/amsapp/notifications/consumer/",
+    "DEVICES": "/private/api/v1/services/amsapp/notifications/consumer/",
 }

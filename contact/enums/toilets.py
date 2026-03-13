@@ -1,4 +1,9 @@
-from contact.enums.base import ChoicesEnum, FilterClass, PropertiesClass
+from contact.enums.base import (
+    ChoicesEnum,
+    FilterClass,
+    ListPropertyClass,
+    PropertiesClass,
+)
 from contact.icons import IconPath
 
 
@@ -41,3 +46,6 @@ class ToiletProperties(ChoicesEnum):
         property_type="image",
         icon=None,
     )
+
+
+LIST_PROPERTY = ListPropertyClass(key="Prijs_per_gebruik", type="price")

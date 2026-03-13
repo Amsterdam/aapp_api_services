@@ -2,7 +2,7 @@
 
 ## About
 
-This repository contains the backend files for the Amsterdam App. The Amsterdam App is a native app for citizens, entrepreneurs, and visitors of the City of Amsterdam to provide information, allow communication, and streamline transactions.
+This repository contains the backend files for the Amsterdam App. The Amsterdam App is a native app for citizens, entrepreneurs, and visitors of the municipality of Amsterdam to provide information, allow communication, and streamline transactions.
 
 The backend is built using Django, and more specifically the REST framework of Django. Django allows us to have a modular approach, where each module is linked to a module in the application.
 
@@ -130,9 +130,9 @@ Here are some common issues and their solutions:
 
 
 ## Pre commit hooks
-To use the pre-commit hooks as specified in `.pre-commit-config.yml`, first install `pre-commit` by running: `pip install pre-commit` (inside your virtual environment). Then run: `pre-commit install`.
+To use the pre-commit hooks as specified in `.pre-commit-config.yaml`, first install `pre-commit` by running: `pip install pre-commit` (inside your virtual environment). Then run: `pre-commit install`.
 
-If the `.pre-commit-config.yml` changes, you have to install the new pre-commit hooks. This will not update automatically.
+If the `.pre-commit-config.yaml` changes, you have to install the new pre-commit hooks. This will not update automatically.
 
 ## Adding new packages
 If a new package is needed in the project, this has to be added in the `pryproject.toml` file. Then run
