@@ -5,6 +5,7 @@ from waste.constants import (
     WASTE_TYPES_CODES,
     WASTE_TYPES_MAPPING,
 )
+
 # from waste.models import NotificationSchedule
 
 

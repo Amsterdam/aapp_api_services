@@ -185,7 +185,8 @@ class NotificationLast(models.Model):
             raise ValidationError(
                 f"Notification scope {self.notification_scope} is not in the list of allowed scopes"
             )
-        
+
+
 class WasteNotification(models.Model):
     """
     Record to determine which device wants to receive waste notifications and for which address (bag_nummeraanduiding_id).

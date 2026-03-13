@@ -1,11 +1,8 @@
+from django.db import IntegrityError
 from drf_spectacular.utils import OpenApiExample
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
-from rest_framework.response import Response
-import logging
-from django.db import IntegrityError
 from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.response import Response
 from rest_framework.response import Response
 
 from core.exceptions import InputDataException
@@ -15,12 +12,12 @@ from notification.models import (
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
-    WasteNotification
+    WasteNotification,
 )
 from notification.serializers.device_serializers import (
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
-    WasteNotificationSerializer
+    WasteNotificationSerializer,
 )
 from notification.serializers.notification_config_serializers import (
     NotificationPushModuleDisabledListSerializer,
@@ -216,7 +213,6 @@ class NotificationPushModuleDisabledListView(DeviceIdMixin, generics.ListAPIView
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
-
 
 
 @extend_schema_for_device_id(success_response=WasteNotificationSerializer)

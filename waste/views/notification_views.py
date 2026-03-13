@@ -1,12 +1,12 @@
-from django.db import IntegrityError
-from django.conf import settings
-from rest_framework import status
-from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView, ApiView
-from rest_framework.response import Response
 import requests
-from core.utils.openapi_utils import extend_schema_for_device_id
+from django.conf import settings
+from django.db import IntegrityError
+from rest_framework import status
+from rest_framework.generics import ApiView
+from rest_framework.response import Response
+
 from core.views.mixins import DeviceIdMixin
-from waste.models import WasteNotification
+
 # from waste.serializers.waste_guide_serializers import (
 #     WasteNotificationSerializer,
 # )
@@ -22,18 +22,16 @@ class WasteNotificationCreateView(DeviceIdMixin, ApiView):
             response = requests.post(
                 url=settings.NOTIFICATION_ENDPOINTS["waste_create"],
                 headers={"deviceId": self.device_id},
-                data=request.data
+                data=request.data,
             )
             response.raise_for_status()
-        except:
+        except Exception:
             return Response(
                 {"detail": "Failed to create notification schedule."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        return Response(
-            {"status": "success"}, status=status.HTTP_201_CREATED
-        )
+        return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
         serializer = self.get_serializer(
             data=request.data, context={"device_id": self.device_id}
@@ -66,52 +64,45 @@ class WasteNotificationDetailView(DeviceIdMixin, ApiView):
                 headers={"deviceId": self.device_id},
             )
             response.raise_for_status()
-        except:
+        except Exception:
             return Response(
                 {"detail": "Failed to get waste notification."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        return Response(
-            {"status": "success"}, status=status.HTTP_201_CREATED
-        )
+        return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
     def update(self, request):
         try:
             response = requests.patch(
                 url=settings.NOTIFICATION_ENDPOINTS["waste_create"],
                 headers={"deviceId": self.device_id},
-                data=request.data
+                data=request.data,
             )
             response.raise_for_status()
-        except:
+        except Exception:
             return Response(
                 {"detail": "Failed to update notification schedule."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        return Response(
-            {"status": "success"}, status=status.HTTP_201_CREATED
-        )
+        return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
     def delete(self, request):
         try:
             response = requests.delete(
                 url=settings.NOTIFICATION_ENDPOINTS["waste_create"],
                 headers={"deviceId": self.device_id},
-                data=request.data
+                data=request.data,
             )
             response.raise_for_status()
-        except:
+        except Exception:
             return Response(
                 {"detail": "Failed to delete notification schedule."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        return Response(
-            {"status": "success"}, status=status.HTTP_201_CREATED
-        )
-
+        return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
     # def get_object(self):
     #     return self.get_queryset().get(device_id=self.device_id)

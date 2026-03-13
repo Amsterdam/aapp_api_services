@@ -11,12 +11,15 @@ from rest_framework import status
 from core.authentication import APIKeyAuthentication
 from core.enums import Module
 from core.exceptions import MissingDeviceIdHeader
-from core.tests.test_authentication import AuthenticatedAPITestCase
+from core.tests.test_authentication import (
+    AuthenticatedAPITestCase,
+    ResponsesActivatedAPITestCase,
+)
 from notification.models import (
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
-    WasteNotification
+    WasteNotification,
 )
 
 
@@ -466,7 +469,7 @@ class TestNotificationPushModuleDisabledListView(AuthenticatedAPITestCase):
         self.assertEqual(response.data, [])
 
 
-class TestWasteNotificationCreateView(AuthenticatedAPITestCase):
+class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("waste-guide-notification-create")

@@ -9,8 +9,8 @@ from core.services.notification_service import (
     NotificationData,
 )
 from core.services.scheduled_notification import ScheduledNotificationService
-from waste.models import ManualNotification
 from notification.models import WasteNotification
+from waste.models import ManualNotification
 
 logger = logging.getLogger(__name__)
 

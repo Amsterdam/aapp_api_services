@@ -4,19 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('notification', '0027_device_last_seen'),
+        ("notification", "0027_device_last_seen"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='WasteNotification',
+            name="WasteNotification",
             fields=[
-                ('device_id', models.CharField(max_length=255, primary_key=True, serialize=False)),
-                ('bag_nummeraanduiding_id', models.CharField(max_length=255, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(null=True)),
+                (
+                    "device_id",
+                    models.CharField(max_length=255, primary_key=True, serialize=False),
+                ),
+                (
+                    "bag_nummeraanduiding_id",
+                    models.CharField(max_length=255, null=True),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(null=True)),
             ],
         ),
     ]

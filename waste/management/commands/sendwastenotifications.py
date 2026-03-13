@@ -9,12 +9,12 @@ from django.db.models import Q
 from django.utils import timezone
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
+from notification.models import WasteNotification
 from waste.constants import (
     WASTE_COLLECTION_ROUTE_TYPES,
     WEEKDAYS,
 )
 from waste.interpret_frequencies import interpret_single_date_frequency
-from notification.models import WasteNotification
 from waste.services.notification import NotificationService
 
 
