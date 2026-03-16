@@ -132,9 +132,7 @@ class MijnAmsterdamNotificationProcessor:
         nr_svc_messages = 0
         # Make sure that new_last_timestamp is never lower than the last_timestamp, otherwise all messages will be
         # send again in the next run!
-        new_last_timestamp = max(
-            datetime(1970, 1, 1, tzinfo=timezone.utc), last_timestamp
-        )
+        new_last_timestamp = last_timestamp or datetime(1970, 1, 1, tzinfo=timezone.utc)
         for c in service["content"]:
             date_published = c["datePublished"]
             if not last_timestamp or date_published > last_timestamp:
