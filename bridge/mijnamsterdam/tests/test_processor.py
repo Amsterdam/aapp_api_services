@@ -44,6 +44,27 @@ class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
 
         self.assertEqual(NotificationLast.objects.count(), 5)
 
+        # Reset mock responses
+        # First call
+        self.rsp_get_notifications = responses.get(
+            urljoin(
+                settings.MIJN_AMS_API_DOMAIN,
+                settings.MIJN_AMS_API_PATHS["NOTIFICATIONS"],
+            ),
+            json=mock_data.MIJN_AMS_NOTIFICATIONS_RESPONSE,
+        )
+        # Second call, to test pagination (should not return any new data)
+        self.rsp_get_notifications = responses.get(
+            urljoin(
+                settings.MIJN_AMS_API_DOMAIN,
+                settings.MIJN_AMS_API_PATHS["NOTIFICATIONS"],
+            ),
+            json={
+                "content": [],
+                "status": "OK",
+            },
+        )
+
         # Check that the last_create timestamps are set to the datePublished of the notifications
         self.processor.run()
         self.assertEqual(ScheduledNotification.objects.count(), 0)
