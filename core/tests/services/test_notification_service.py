@@ -34,7 +34,7 @@ class TestNotificationService_Unscheduled(ResponsesActivatedAPITestCase):
         self.service.notification_type = "test-slug:notification"
         self.device_1 = baker.make(Device, external_id="device_1")
         self.device_2 = baker.make(Device, external_id="device_2")
-        baker.make(
+        self.notification_last_1 = baker.make(
             NotificationLast,
             device=self.device_1,
             module_slug=self.module_slug,
@@ -42,11 +42,36 @@ class TestNotificationService_Unscheduled(ResponsesActivatedAPITestCase):
         )
         baker.make(Notification, device=self.device_1)
 
-    def test_get_last_timestamp(self):
-        result = self.service.get_last_timestamp("device_1")
-        self.assertEqual(
-            result, datetime.datetime(2026, 2, 1, 10, 0, tzinfo=datetime.timezone.utc)
-        )
+    def test_get_last_timestamps(self):
+        result = self.service.get_last_timestamps("device_1")
+        self.assertEqual(result, {"default": self.notification_last_1.last_create})
+
+    def test_update_last_timestamps_new(self):
+        updates = {
+            "new_scope": datetime.datetime(2026, 2, 1, 11),
+            "another_scope": datetime.datetime(2026, 2, 1, 12),
+        }
+        self.service.update_last_timestamps("device_2", updates)
+
+        result = self.service.get_last_timestamps("device_2")
+        for service, timestamp in updates.items():
+            res_corrected = timezone.make_naive(
+                result[service], timezone.get_default_timezone()
+            )
+            self.assertEqual(res_corrected, timestamp)
+
+    def test_update_last_timestamps_existing(self):
+        updates = {
+            "default": datetime.datetime(2026, 2, 1, 12),
+        }
+        self.service.update_last_timestamps("device_1", updates)
+
+        result = self.service.get_last_timestamps("device_1")
+        for service, timestamp in updates.items():
+            res_corrected = timezone.make_naive(
+                result[service], timezone.get_default_timezone()
+            )
+            self.assertEqual(res_corrected, timestamp)
 
     def test_get_notifications(self):
         notifications = self.service.get_notifications(
