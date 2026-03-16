@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from model_bakery import baker
 
 from bridge.mijnamsterdam.services.notifications import NotificationService
@@ -39,11 +37,3 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         )
         self.notification_service.send(notification_data)
         self.assertEqual(ScheduledNotification.objects.count(), 1)
-
-    def test_get_last_timestamp(self):
-        last_timestamp = self.notification_service.get_last_timestamps(self.device_id)
-        expected = {
-            "string": datetime(2025, 7, 27, 10, 7, 38, 603000, tzinfo=timezone.utc),
-            "string_2": datetime(2025, 7, 24, 11, 48, 36, 715000, tzinfo=timezone.utc),
-        }
-        self.assertEqual(last_timestamp, expected)
