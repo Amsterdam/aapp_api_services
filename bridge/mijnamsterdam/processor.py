@@ -131,7 +131,7 @@ class MijnAmsterdamNotificationProcessor:
                     extra={
                         "service_id": service_id,
                         "last_timestamp": str(last_ts),
-                        "new_last_timestamp": new_last_ts,
+                        "new_last_timestamp": str(new_last_ts),
                         "messages_found": nr_svc_messages,
                         "total_messages": nr_messages_total,  # only increased if last_ts exists
                         "initial_load": not last_ts,
