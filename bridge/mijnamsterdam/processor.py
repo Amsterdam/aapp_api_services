@@ -101,7 +101,10 @@ class MijnAmsterdamNotificationProcessor:
             device_ids=[device],
             make_push=make_push,
         )
-        logger.info(f"Sending notification for {nr_messages_total} new messages")
+        logger.info(
+            "Sending notification for new messages",
+            extra={"device_id": device, "nr_messages": nr_messages_total},
+        )
         self.notification_service.send(notification_data=notification_data)
 
     def _get_push_enabled(self):
@@ -114,10 +117,6 @@ class MijnAmsterdamNotificationProcessor:
         for service in user_data["services"]:
             service_id = service["serviceId"]
             last_ts = last_timestamps.get(service_id)
-            logger.info(
-                "Comparing data with last timestamp",
-                extra={"service_id": service_id, "last_timestamp": last_ts},
-            )
             nr_svc_messages, new_last_ts = self.get_nr_service_messages(
                 last_ts, service
             )
@@ -126,6 +125,18 @@ class MijnAmsterdamNotificationProcessor:
                 # Only register new messages if we have a last timestamp, otherwise we are processing the user for
                 # the first time and should not send notifications for all existing messages
                 nr_messages_total += nr_svc_messages
+            if nr_svc_messages > 0:
+                logger.info(
+                    "New messages found",
+                    extra={
+                        "service_id": service_id,
+                        "last_timestamp": str(last_ts),
+                        "new_last_timestamp": new_last_ts,
+                        "messages_found": nr_svc_messages,
+                        "total_messages": nr_messages_total,  # only increased if last_ts exists
+                        "initial_load": not last_ts,
+                    },
+                )
         return nr_messages_total, ts_updates
 
     def get_nr_service_messages(self, last_timestamp, service) -> (int, datetime):
