@@ -21,8 +21,9 @@ logger = logging.getLogger(__name__)
 
 @method_decorator(cache_page(60 * 60 * 24), name="get")
 class ServiceMapsView(APIView):
-    response_serializer_class = ServiceMapsResponseSerializer
-
+    @extend_schema_for_api_key(
+        success_response=ServiceMapsResponseSerializer(many=True),
+    )
     def get(self, request, *args, **kwargs):
 
         services = Services.choices()
