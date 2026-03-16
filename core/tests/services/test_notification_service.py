@@ -38,11 +38,36 @@ class TestScheduledAbstractNotificationService(ResponsesActivatedAPITestCase):
             device=self.device_1,
         )
 
-    def test_get_last_timestamp(self):
-        result = self.service.get_last_timestamp("device_1")
-        self.assertEqual(
-            result, datetime.datetime(2026, 2, 1, 10, 0, tzinfo=datetime.timezone.utc)
-        )
+    def test_get_last_timestamps(self):
+        result = self.service.get_last_timestamps("device_1")
+        self.assertEqual(result, {"default": self.notification_last_1.last_create})
+
+    def test_update_last_timestamps_new(self):
+        updates = {
+            "new_scope": datetime.datetime(2026, 2, 1, 11),
+            "another_scope": datetime.datetime(2026, 2, 1, 12),
+        }
+        self.service.update_last_timestamps("device_2", updates)
+
+        result = self.service.get_last_timestamps("device_2")
+        for service, timestamp in updates.items():
+            res_corrected = timezone.make_naive(
+                result[service], timezone.get_default_timezone()
+            )
+            self.assertEqual(res_corrected, timestamp)
+
+    def test_update_last_timestamps_existing(self):
+        updates = {
+            "default": datetime.datetime(2026, 2, 1, 12),
+        }
+        self.service.update_last_timestamps("device_1", updates)
+
+        result = self.service.get_last_timestamps("device_1")
+        for service, timestamp in updates.items():
+            res_corrected = timezone.make_naive(
+                result[service], timezone.get_default_timezone()
+            )
+            self.assertEqual(res_corrected, timestamp)
 
     def test_get_notifications(self):
         notifications = self.service.get_notifications(
@@ -51,7 +76,6 @@ class TestScheduledAbstractNotificationService(ResponsesActivatedAPITestCase):
         self.assertEqual(notifications[0].device_external_id, self.device_1.external_id)
 
     def test_process(self):
-
         notification = NotificationData(
             title="Hello",
             message="Is it me you're looking for?",
@@ -67,7 +91,6 @@ class TestScheduledAbstractNotificationService(ResponsesActivatedAPITestCase):
         )
 
     def test_send_not_implemented(self):
-
         notification = NotificationData(
             title="Hello",
             message="I've just got to let you know",

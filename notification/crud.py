@@ -1,14 +1,12 @@
 import copy
 import logging
 
-from django.conf import settings
 from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
 from django.utils import timezone
 
 from notification.models import (
     Device,
     Notification,
-    NotificationLast,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
 )
@@ -62,7 +60,6 @@ class NotificationCRUD:
         device_list = self._collect_and_annotate_devices(device_qs)
         self.total_device_count = len(device_list)
         notifications_with_push = self._create_notifications(device_list)
-        self._update_last_timestamps(device_list)
 
         if notifications_with_push and self.push_service:
             try:
@@ -136,32 +133,6 @@ class NotificationCRUD:
         self.notifications_with_push = Notification.objects.bulk_create(with_push)
         self.notifications_without_push = Notification.objects.bulk_create(without_push)
         return self.notifications_with_push
-
-    def _update_last_timestamps(self, device_list: list[Device]) -> None:
-        """
-        Update the last timestamps for all devices.
-        This is used to determine when the last notification was created
-        """
-        if (
-            self.source_notification.module_slug
-            not in settings.NOTIFICATION_MODULE_SLUG_LAST_TIMESTAMP
-        ):
-            return
-
-        notifications_last = [
-            NotificationLast(
-                device=device,
-                module_slug=self.source_notification.module_slug,
-                notification_scope=self.source_notification.notification_type,
-            )
-            for device in device_list
-        ]
-        NotificationLast.objects.bulk_create(
-            notifications_last,
-            update_fields=["last_create"],
-            unique_fields=["device", "notification_scope"],
-            update_conflicts=True,
-        )
 
     @property
     def response_data(self):
