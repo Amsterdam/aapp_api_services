@@ -38,7 +38,7 @@ class AbstractNotificationService:
     def __init__(self):
         self.link_source_id = None
 
-    def get_last_timestamps(self, device_id: str) -> dict[str:datetime]:
+    def get_last_timestamps(self, device_id: str) -> dict[str, datetime]:
         timestamps = NotificationLast.objects.filter(
             device__external_id=device_id,
             module_slug=self.module_slug,
