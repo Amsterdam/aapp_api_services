@@ -90,9 +90,9 @@ class MijnAmsterdamNotificationProcessor:
         if nr_messages_total == 0:
             return
         if nr_messages_total == 1:
-            message = "U heeft een nieuw bericht op Mijn Amsterdam"
+            message = "U heeft een nieuw bericht"
         else:
-            message = f"U heeft {nr_messages_total} nieuwe berichten op Mijn Amsterdam"
+            message = f"U heeft {nr_messages_total} nieuwe berichten"
         message += ". Ga naar Mijn Amsterdam."
         notification_data = NotificationData(
             link_source_id="mijn-amsterdam-id-placeholder",
