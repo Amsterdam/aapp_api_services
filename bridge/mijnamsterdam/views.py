@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from bridge.mijnamsterdam.serializers.device_serializers import DeviceResponseSerializer
+from core.enums import Module
+from core.services.notification_last import NotificationLastService
 from core.utils.openapi_utils import extend_schema_for_api_key
 from core.views.mixins import DeviceIdMixin
 
@@ -24,6 +26,9 @@ from core.views.mixins import DeviceIdMixin
 )
 class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
     serializer_class = DeviceResponseSerializer
+    notification_last_service = NotificationLastService(
+        module_slug=Module.MIJN_AMS.value
+    )
 
     def get(self, request):
         try:
@@ -46,6 +51,10 @@ class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
             data = {"status": response_json["status"]}
             serializer = DeviceResponseSerializer(data=data)
             serializer.is_valid(raise_exception=True)
+            self.notification_last_service.delete_last_timestamps(
+                device_id=self.device_id
+            )
+
             return Response(serializer.data, status=status.HTTP_200_OK)
         except requests.exceptions.RequestException:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)

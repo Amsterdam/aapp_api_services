@@ -10,6 +10,7 @@ from bridge.mijnamsterdam.serializers.general_serializers import (
 )
 from bridge.mijnamsterdam.services.notifications import NotificationService
 from core.enums import Module, NotificationType
+from core.services.notification_last import NotificationLastService
 from core.services.notification_service import (
     NotificationData,
     create_missing_device_ids,
@@ -21,6 +22,9 @@ logger = logging.getLogger(__name__)
 class MijnAmsterdamNotificationProcessor:
     def __init__(self):
         self.notification_service = NotificationService()
+        self.notification_last_service = NotificationLastService(
+            module_slug=Module.MIJN_AMS.value
+        )
         self.notification_types = [n.value for n in NotificationType]
 
     def run(self):
@@ -73,7 +77,7 @@ class MijnAmsterdamNotificationProcessor:
 
         for device in device_ids:
             logger.info("Processing device", extra={"device_id": device})
-            last_timestamps = self.notification_service.get_last_timestamps(
+            last_timestamps = self.notification_last_service.get_last_timestamps(
                 device_id=device
             )
             nr_messages_total, ts_updates = self.get_nr_messages(
@@ -82,7 +86,7 @@ class MijnAmsterdamNotificationProcessor:
 
             self._send_notification(device, make_push, nr_messages_total)
             if ts_updates:
-                self.notification_service.update_last_timestamps(
+                self.notification_last_service.update_last_timestamps(
                     device_id=device, updates=ts_updates
                 )
 
