@@ -113,7 +113,6 @@ class RIVMService:
         response_payload["definitive_6"] = response_payload["definitief_6"]
         response_payload["definitive_12"] = response_payload["definitief_12"]
         response_payload["definitive_18"] = response_payload["definitief_18"]
-        response_payload["wind_direction"] = response_payload["windrichting"]
 
         request_serializer = AdviceResponseSerializer(data=response_payload)
         request_serializer.is_valid(raise_exception=True)
