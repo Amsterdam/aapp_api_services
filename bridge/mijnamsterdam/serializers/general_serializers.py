@@ -5,7 +5,6 @@ from rest_framework.serializers import Serializer
 class NotificationSerializer(Serializer):
     id = serializers.CharField()
     title = serializers.CharField()
-    themaId = serializers.CharField()
     datePublished = serializers.DateTimeField()
 
 
