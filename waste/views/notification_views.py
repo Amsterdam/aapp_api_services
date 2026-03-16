@@ -1,135 +1,109 @@
 import requests
 from django.conf import settings
-from django.db import IntegrityError
 from rest_framework import status
-from rest_framework.generics import ApiView
+from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
+import logging
+
 from core.views.mixins import DeviceIdMixin
+from core.utils.openapi_utils import extend_schema_for_device_id
+from waste.serializers.waste_guide_serializers import WasteRequestSerializer
 
-# from waste.serializers.waste_guide_serializers import (
-#     WasteNotificationSerializer,
-# )
+logger = logging.getLogger(__name__)
 
-
-# @extend_schema_for_device_id(success_response=WasteNotificationSerializer)
-class WasteNotificationCreateView(DeviceIdMixin, ApiView):
-    # serializer_class = WasteNotificationSerializer
+@extend_schema_for_device_id()
+class WasteNotificationCreateView(DeviceIdMixin, CreateAPIView):
+    serializer_class = WasteRequestSerializer
 
     def create(self, request, *args, **kwargs):
-
         try:
             response = requests.post(
-                url=settings.NOTIFICATION_ENDPOINTS["waste_create"],
-                headers={"deviceId": self.device_id},
-                data=request.data,
+                url = settings.NOTIFICATION_ENDPOINTS["WASTE_CREATE"],
+                data = request.data,
+                headers={"DeviceId": self.device_id,
+                settings.API_KEY_HEADER: request.headers.get(settings.API_KEY_HEADER)
+                }
             )
-            response.raise_for_status()
-        except Exception:
-            return Response(
-                {"detail": "Failed to create notification schedule."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        return Response({"status": "success"}, status=status.HTTP_201_CREATED)
-
-        serializer = self.get_serializer(
-            data=request.data, context={"device_id": self.device_id}
-        )
-        serializer.is_valid(raise_exception=True)
-        try:
-            self.perform_create(serializer)
-        except IntegrityError:
-            return Response(
+            if response.status_code == status.HTTP_409_CONFLICT:
+                return Response(
                 {"detail": "Notification schedule for this device already exists."},
                 status=status.HTTP_409_CONFLICT,
             )
-        headers = self.get_success_headers(serializer.data)
+            response.raise_for_status()
+        except Exception as e:
+            logger.error(f"Error sending waste notification: {e}")
+            return Response(
+                {"status": "error", "message": "Failed to send notification"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return Response(
-            {"status": "success"}, status=status.HTTP_201_CREATED, headers=headers
+            {"status": "success"}, status=status.HTTP_201_CREATED
         )
 
 
-# @extend_schema_for_device_id(success_response=WasteNotificationSerializer)
-class WasteNotificationDetailView(DeviceIdMixin, ApiView):
-    # queryset = WasteNotification.objects.all()
-    # serializer_class = WasteNotificationSerializer
-    # lookup_field = "device_id"
+@extend_schema_for_device_id()
+class WasteNotificationDetailView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
+    serializer_class = WasteRequestSerializer
     http_method_names = ["get", "patch", "delete"]
 
-    def get(self):
+    def retrieve(self, request, *args, **kwargs):
         try:
             response = requests.get(
-                url=settings.NOTIFICATION_ENDPOINTS["waste_create"],
-                headers={"deviceId": self.device_id},
+                url = settings.NOTIFICATION_ENDPOINTS["WASTE_CHANGE"],
+                headers={"DeviceId": self.device_id,
+                settings.API_KEY_HEADER: request.headers.get(settings.API_KEY_HEADER)
+                }
+            )
+            if response.status_code == status.HTTP_409_CONFLICT:
+                return Response(
+                {"detail": "Notification schedule for this device already exists."},
+                status=status.HTTP_409_CONFLICT,
             )
             response.raise_for_status()
-        except Exception:
-            return Response(
-                {"detail": "Failed to get waste notification."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        except Exception as e:
+            logger.error("Error retrieving notification")
+            return Response(data={"status": "error", "message": "not found"})
 
-        return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+        return Response({"status": "success"})
 
-    def update(self, request):
+    def update(self, request, *args, **kwargs):
         try:
             response = requests.patch(
-                url=settings.NOTIFICATION_ENDPOINTS["waste_create"],
-                headers={"deviceId": self.device_id},
-                data=request.data,
+                url = settings.NOTIFICATION_ENDPOINTS["WASTE_CHANGE"],
+                data = request.data,
+                headers={"DeviceId": self.device_id,
+                settings.API_KEY_HEADER: request.headers.get(settings.API_KEY_HEADER)
+                }
+            )
+            if response.status_code == status.HTTP_404_NOT_FOUND:
+                return Response(
+                {"detail": "Notification not found"},
+                status=status.HTTP_404_NOT_FOUND,
             )
             response.raise_for_status()
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error sending waste notification: {e}")
             return Response(
-                {"detail": "Failed to update notification schedule."},
+                {"status": "error", "message": "Failed to send notification"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        return Response({"status": "success"})
 
-        return Response({"status": "success"}, status=status.HTTP_201_CREATED)
-
-    def delete(self, request):
+    def destroy(self, request, *args, **kwargs):
         try:
             response = requests.delete(
-                url=settings.NOTIFICATION_ENDPOINTS["waste_create"],
-                headers={"deviceId": self.device_id},
-                data=request.data,
+                url = settings.NOTIFICATION_ENDPOINTS["WASTE_CHANGE"],
+                headers={"DeviceId": self.device_id,
+                settings.API_KEY_HEADER: request.headers.get(settings.API_KEY_HEADER)
+                }
             )
             response.raise_for_status()
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error sending waste notification: {e}")
             return Response(
-                {"detail": "Failed to delete notification schedule."},
+                {"status": "error", "message": "Failed to send notification"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-        return Response({"status": "success"}, status=status.HTTP_201_CREATED)
-
-    # def get_object(self):
-    #     return self.get_queryset().get(device_id=self.device_id)
-
-    # def retrieve(self, request, *args, **kwargs):
-    #     try:
-    #         self.get_object()
-    #     except WasteNotification.DoesNotExist:
-    #         return Response(data={"status": "error", "message": "not found"})
-    #     return Response({"status": "success"})
-
-    # def update(self, request, *args, **kwargs):
-    #     try:
-    #         instance = self.get_object()
-    #     except WasteNotification.DoesNotExist:
-    #         return Response(status=status.HTTP_404_NOT_FOUND)
-
-    #     serializer = self.get_serializer(instance, data=request.data, partial=True)
-    #     serializer.is_valid(raise_exception=True)
-    #     self.perform_update(serializer)
-    #     return Response({"status": "success"})
-
-    # def destroy(self, request, *args, **kwargs):
-    #     try:
-    #         instance = self.get_object()
-    #     except WasteNotification.DoesNotExist:
-    #         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    #     instance.delete()
-    #     return Response(status=status.HTTP_204_NO_CONTENT)

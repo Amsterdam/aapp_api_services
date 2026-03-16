@@ -11,6 +11,7 @@ from notification.models import (
     Notification,
     NotificationLast,
     ScheduledNotification,
+    WasteNotification
 )
 
 logger = logging.getLogger(__name__)
@@ -119,3 +120,10 @@ def create_missing_device_ids(device_ids: list[str]) -> list[Device]:
         )
         logger.info(f"Created {len(missing_device_ids)} missing devices.")
     return Device.objects.filter(external_id__in=device_ids)
+
+
+class WasteNotificationService:
+
+    @staticmethod
+    def get_device_ids() -> list[str]:
+        return list(WasteNotification.objects.values_list("device_id", flat=True))

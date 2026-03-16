@@ -35,12 +35,12 @@ urlpatterns = [
         name="notification-device-push-module-disabled-list",
     ),
     path(
-        BASE_PATH + "/device/waste",
+        BASE_PATH + "/device/waste-notifications",
         device_views.WasteNotificationCreateView.as_view(),
         name="waste-guide-notification-create",
     ),
     path(
-        BASE_PATH + "/device/waste",
+        BASE_PATH + "/device/waste-notification",
         device_views.WasteNotificationDetailView.as_view(),
         name="waste-guide-notification-detail",
     ),
