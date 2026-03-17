@@ -136,8 +136,7 @@ class AbstractNotificationService:
                 expires_at=expires_at or "3000-01-01",
                 make_push=notification.make_push,
             )
-            instance.save()
-            self._set_devices(device_ids, instance_id=instance.id)
+            self._save_scheduled_notification(device_ids, instance=instance)
             return instance
 
         # Perform UPDATE if object exists
@@ -150,26 +149,29 @@ class AbstractNotificationService:
             instance.image = notification.image_set_id
         if expires_at is not None:
             instance.expires_at = expires_at
-
-        with transaction.atomic():
-            instance.save()
-            self._set_devices(device_ids, instance_id=instance.id)
+        self._save_scheduled_notification(device_ids, instance=instance)
 
         return instance
 
-    def _set_devices(self, devices: list[int], instance_id: int):
+    def _save_scheduled_notification(
+        self, devices: list[int], instance: ScheduledNotification
+    ):
         # Inserting into the Through table is much less memory-intensive than instance.devices.set(devices)
-        # Note: previously added devices will not be removed!
+        # Note: previously added devices will not be removed on updates!
         Through = ScheduledNotification.devices.through
-        for batch in chunked(devices, 5000):
-            rows = (
-                Through(
-                    schedulednotification_id=instance_id,
-                    device_id=device_id,
+        with transaction.atomic():
+            instance.save()
+            for batch in chunked(devices, 5000):
+                rows = (
+                    Through(
+                        schedulednotification_id=instance.id,
+                        device_id=device_id,
+                    )
+                    for device_id in batch
                 )
-                for device_id in batch
-            )
-            Through.objects.bulk_create(rows, batch_size=5000, ignore_conflicts=True)
+                Through.objects.bulk_create(
+                    rows, batch_size=5000, ignore_conflicts=True
+                )
 
     def build_context(
         self,
