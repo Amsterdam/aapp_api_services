@@ -10,6 +10,7 @@ from bridge.mijnamsterdam.serializers.general_serializers import (
 )
 from bridge.mijnamsterdam.services.notifications import NotificationService
 from core.enums import Module, NotificationType
+from core.services.notification_last import NotificationLastService
 from core.services.notification_service import (
     NotificationData,
     create_missing_device_ids,
@@ -21,6 +22,9 @@ logger = logging.getLogger(__name__)
 class MijnAmsterdamNotificationProcessor:
     def __init__(self):
         self.notification_service = NotificationService()
+        self.notification_last_service = NotificationLastService(
+            module_slug=Module.MIJN_AMS.value
+        )
         self.notification_types = [n.value for n in NotificationType]
 
     def run(self):
@@ -73,7 +77,7 @@ class MijnAmsterdamNotificationProcessor:
 
         for device in device_ids:
             logger.info("Processing device", extra={"device_id": device})
-            last_timestamps = self.notification_service.get_last_timestamps(
+            last_timestamps = self.notification_last_service.get_last_timestamps(
                 device_id=device
             )
             nr_messages_total, ts_updates = self.get_nr_messages(
@@ -82,7 +86,7 @@ class MijnAmsterdamNotificationProcessor:
 
             self._send_notification(device, make_push, nr_messages_total)
             if ts_updates:
-                self.notification_service.update_last_timestamps(
+                self.notification_last_service.update_last_timestamps(
                     device_id=device, updates=ts_updates
                 )
 
@@ -90,9 +94,9 @@ class MijnAmsterdamNotificationProcessor:
         if nr_messages_total == 0:
             return
         if nr_messages_total == 1:
-            message = "U heeft een nieuw bericht op Mijn Amsterdam"
+            message = "U heeft een nieuw bericht"
         else:
-            message = f"U heeft {nr_messages_total} nieuwe berichten op Mijn Amsterdam"
+            message = f"U heeft {nr_messages_total} nieuwe berichten"
         message += ". Ga naar Mijn Amsterdam."
         notification_data = NotificationData(
             link_source_id="mijn-amsterdam-id-placeholder",
@@ -101,7 +105,10 @@ class MijnAmsterdamNotificationProcessor:
             device_ids=[device],
             make_push=make_push,
         )
-        logger.info(f"Sending notification for {nr_messages_total} new messages")
+        logger.info(
+            "Sending notification for new messages",
+            extra={"device_id": device, "nr_messages": nr_messages_total},
+        )
         self.notification_service.send(notification_data=notification_data)
 
     def _get_push_enabled(self):
@@ -114,10 +121,6 @@ class MijnAmsterdamNotificationProcessor:
         for service in user_data["services"]:
             service_id = service["serviceId"]
             last_ts = last_timestamps.get(service_id)
-            logger.info(
-                "Comparing data with last timestamp",
-                extra={"service_id": service_id, "last_timestamp": last_ts},
-            )
             nr_svc_messages, new_last_ts = self.get_nr_service_messages(
                 last_ts, service
             )
@@ -126,6 +129,18 @@ class MijnAmsterdamNotificationProcessor:
                 # Only register new messages if we have a last timestamp, otherwise we are processing the user for
                 # the first time and should not send notifications for all existing messages
                 nr_messages_total += nr_svc_messages
+            if nr_svc_messages > 0:
+                logger.info(
+                    "New messages found",
+                    extra={
+                        "service_id": service_id,
+                        "last_timestamp": str(last_ts),
+                        "new_last_timestamp": str(new_last_ts),
+                        "messages_found": nr_svc_messages,
+                        "total_messages": nr_messages_total,  # only increased if last_ts exists
+                        "initial_load": not last_ts,
+                    },
+                )
         return nr_messages_total, ts_updates
 
     def get_nr_service_messages(self, last_timestamp, service) -> (int, datetime):
