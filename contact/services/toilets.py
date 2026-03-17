@@ -59,16 +59,14 @@ class ToiletService(ServiceAbstract):
         """
         picture = properties.get("Foto")
         image_url = f"{self.image_url}{quote(picture)}" if picture else None
-
         selectie = (properties.get("SELECTIE") or "").lower()
         return {
             f"{self.properties_prefix}title": properties.get("Soort", "") or "Toilet",
             f"{self.properties_prefix}days_open": properties.get("Dagen_geopend", "")
             or None,
-            f"{self.properties_prefix}opening_hours": properties.get(
-                "Openingstijden", ""
-            )
-            or None,
+            f"{self.properties_prefix}opening_hours": self.construct_opening_hours(
+                properties
+            ),
             f"{self.properties_prefix}description": properties.get("Omschrijving")
             or None,
             f"{self.properties_prefix}image_url": image_url,
@@ -76,3 +74,17 @@ class ToiletService(ServiceAbstract):
             f"{self.properties_prefix}is_toilet": selectie
             in ("toegang", "openbaar", "parkeer"),
         }
+
+    def construct_opening_hours(self, properties: Dict[str, Any]) -> str:
+        """
+        Constructs a human-readable opening hours property by combining 'Dagen_geopend' and 'Openingstijden' properties if they exist.
+        """
+        days_open = properties.get("Dagen_geopend", "")
+        opening_hours = properties.get("Openingstijden", "")
+        if days_open and opening_hours:
+            return f"{opening_hours}\n{days_open}"
+        if days_open:
+            return days_open
+        if opening_hours:
+            return opening_hours
+        return None

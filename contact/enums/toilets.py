@@ -16,17 +16,11 @@ class ToiletFilters(ChoicesEnum):
 
 
 class ToiletProperties(ChoicesEnum):
-    OPEN_HOURS_MAIN = PropertiesClass(
+    OPEN_HOURS = PropertiesClass(
         label="Openingstijden",
         property_key="aapp_opening_hours",
         property_type="string",
         icon=IconPath.get("clock"),
-    )
-    OPEN_HOURS_EXTRA = PropertiesClass(
-        label=None,
-        property_key="aapp_days_open",
-        property_type="string",
-        icon=None,
     )
     PRICE = PropertiesClass(
         label="Prijs",
