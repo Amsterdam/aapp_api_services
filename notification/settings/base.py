@@ -51,5 +51,6 @@ FIREBASE_DEVICE_LIMIT = 500
 # Example: 500 hashed (SHA256) device ids strings would amount to 64 bytes per string.
 # So, 500 * 64 = 32,000 bytes / 1024 = 31.25 KiB
 MAX_DEVICES_PER_REQUEST = FIREBASE_DEVICE_LIMIT
+NOTIFICATION_DEVICE_BATCH_SIZE = 5000
 
 STATIC_URL = "/notification/static/"
