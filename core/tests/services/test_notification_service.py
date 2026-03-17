@@ -33,7 +33,7 @@ class TestNotificationServiceUnscheduled(ResponsesActivatedAPITestCase):
         self.service.notification_type = "test-slug:notification"
         self.device_1 = baker.make(Device, external_id="device_1")
         self.device_2 = baker.make(Device, external_id="device_2")
-        baker.make(
+        self.notification_last_1 = baker.make(
             NotificationLast,
             device=self.device_1,
             module_slug=self.module_slug,
