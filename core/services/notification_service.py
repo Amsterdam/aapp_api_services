@@ -3,7 +3,6 @@ import uuid
 from datetime import datetime
 from typing import NamedTuple
 
-from django.db import transaction
 from django.utils import timezone
 from more_itertools import chunked
 
@@ -159,19 +158,18 @@ class AbstractNotificationService:
         # Inserting into the Through table is much less memory-intensive than instance.devices.set(devices)
         # Note: previously added devices will not be removed on updates!
         Through = ScheduledNotification.devices.through
-        with transaction.atomic():
-            instance.save()
-            for batch in chunked(devices, 5000):
-                rows = (
-                    Through(
-                        schedulednotification_id=instance.id,
-                        device_id=device_id,
-                    )
-                    for device_id in batch
+        instance.save()
+        for batch in chunked(devices, 5000):
+            rows = (
+                Through(
+                    schedulednotification_id=instance.id,
+                    device_id=device_id,
                 )
-                Through.objects.bulk_create(
-                    rows, batch_size=5000, ignore_conflicts=True
-                )
+                for device_id in batch
+            )
+            Through.objects.bulk_create(rows, batch_size=5000, ignore_conflicts=True)
+        instance.is_ready = True
+        instance.save()
 
     def build_context(
         self,

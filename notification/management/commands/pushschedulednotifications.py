@@ -28,7 +28,9 @@ class Command(BaseCommand):
                 notifications_to_process = (
                     ScheduledNotification.objects.select_for_update(
                         skip_locked=True
-                    ).filter(scheduled_for__lte=timezone_now)[:BATCH_SIZE]
+                    ).filter(scheduled_for__lte=timezone_now, is_ready=True)[
+                        :BATCH_SIZE
+                    ]
                 )
                 notifications_to_process = list(notifications_to_process)
                 if not notifications_to_process:
@@ -82,12 +84,23 @@ class Command(BaseCommand):
             image=scheduled_notification.image,
             created_at=timezone.now(),
         )
-        scheduled_notification.devices.all()
         notification_crud = NotificationCRUD(
             source_notification=notification_obj,
             push_enabled=scheduled_notification.make_push,
         )
-        response = notification_crud.create(
-            device_qs=scheduled_notification.devices.all()
+        self.process_notifications_in_batches(
+            notification_crud, qs=scheduled_notification.devices.all()
         )
-        logger.debug(response)
+
+    def process_notifications_in_batches(self, notification_crud, qs):
+        batch_size = 5000
+        start = 0
+        while True:
+            batch_qs = qs[start : start + batch_size]
+            if not batch_qs.exists():
+                break
+
+            response = notification_crud.create(device_qs=batch_qs)
+            logger.debug(response)
+
+            start += batch_size

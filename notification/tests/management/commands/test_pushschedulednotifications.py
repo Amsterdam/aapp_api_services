@@ -20,6 +20,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             ScheduledNotification,
             scheduled_for=scheduled_date,
             devices=devices,
+            is_ready=True,
         )
 
         call_command("pushschedulednotifications", "--test-mode")
@@ -34,6 +35,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             ScheduledNotification,
             scheduled_for=scheduled_date_future,
             devices=devices,
+            is_ready=True,
         )
 
         call_command("pushschedulednotifications", "--test-mode")
@@ -49,12 +51,14 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             ScheduledNotification,
             scheduled_for=date_in_past,
             devices=devices,
+            is_ready=True,
         )
         devices = baker.make(Device, _quantity=2)
         baker.make(
             ScheduledNotification,
             scheduled_for=date_in_future,
             devices=devices,
+            is_ready=True,
         )
 
         call_command("pushschedulednotifications", "--test-mode")
@@ -72,6 +76,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             ScheduledNotification,
             scheduled_for=yesterday,
             devices=devices,
+            is_ready=True,
         )
 
         # expirable_notification
@@ -80,6 +85,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             scheduled_for=yesterday,
             expires_at=yesterday + timedelta(minutes=10),
             devices=devices,
+            is_ready=True,
         )
 
         future_notification = baker.make(
@@ -87,8 +93,8 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             scheduled_for=tomorrow,
             expires_at=tomorrow + timedelta(minutes=10),
             devices=devices,
+            is_ready=True,
         )
-
         call_command("pushschedulednotifications", "--test-mode")
 
         not_pushed_notifications = ScheduledNotification.objects.all()
