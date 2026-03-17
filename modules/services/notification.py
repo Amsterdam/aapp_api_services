@@ -1,8 +1,5 @@
-import hashlib
 import logging
-from datetime import datetime, timedelta
-
-from django.contrib.auth.models import User
+from datetime import timedelta
 
 from core.services.notification_service import (
     AbstractNotificationService,
@@ -42,9 +39,7 @@ class NotificationService(AbstractNotificationService):
             notification=notification_data,
             scheduled_for=notification.send_at,
             expires_at=notification.send_at + timedelta(minutes=30),
-            identifier=self._create_identifier(
-                created_at=notification.created_at, created_by=notification.created_by
-            ),
+            identifier=self._create_identifier(notification.id),
             context=context,
             send_all_devices=not is_test_notification,
         )
@@ -52,10 +47,9 @@ class NotificationService(AbstractNotificationService):
         notification.save()
 
     def delete_general_notification(self, notification: Notification):
-        identifier = self._create_identifier(
-            created_at=notification.created_at, created_by=notification.created_by
-        )
+        identifier = self._create_identifier(notification.id)
         self.delete_scheduled_notification(identifier)
 
-    def _create_identifier(self, created_at: datetime, created_by: User) -> str:
-        return f"{self.module_slug}_app_notification_{created_at.strftime('%Y%m%d%H%M%S')}_{hashlib.sha256(created_by.username.encode()).hexdigest()}"
+    def _create_identifier(self, notification_id: int) -> str:
+        assert notification_id, "Notification must have an id to create an identifier"
+        return f"{self.module_slug}_app_notification_{notification_id}"

@@ -3,10 +3,9 @@ import uuid
 from datetime import datetime
 from typing import NamedTuple
 
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from django.utils import timezone
 
-from core.enums import Module, NotificationType
 from core.services.image_set import ImageSetService
 from notification.models import (
     Device,
@@ -39,8 +38,8 @@ class AbstractNotificationService:
     - generic scheduled notification CRUD/upsert via `upsert()/get()/delete()`
     """
 
-    module_slug: Module | None = None
-    notification_type: NotificationType | None = None
+    module_slug: str | None = None
+    notification_type: str | None = None
 
     def __init__(self, use_image_service: bool = False):
         if use_image_service:
@@ -123,25 +122,22 @@ class AbstractNotificationService:
 
         instance = self._get_scheduled_notification_instance(identifier)
         if not instance:
-            try:
-                instance = ScheduledNotification(
-                    title=notification.title,
-                    body=notification.message,
-                    scheduled_for=scheduled_for,
-                    identifier=identifier,
-                    context=context,
-                    notification_type=self.notification_type,
-                    module_slug=self.module_slug,
-                    image=notification.image_set_id,
-                    created_at=timezone.now(),
-                    expires_at=expires_at or "3000-01-01",
-                    make_push=notification.make_push,
-                )
-                instance.save()
-                instance.devices.set(devices)
-                return instance
-            except IntegrityError:
-                instance = self._get_scheduled_notification_instance(identifier)
+            instance = ScheduledNotification(
+                title=notification.title,
+                body=notification.message,
+                scheduled_for=scheduled_for,
+                identifier=identifier,
+                context=context,
+                notification_type=self.notification_type,
+                module_slug=self.module_slug,
+                image=notification.image_set_id,
+                created_at=timezone.now(),
+                expires_at=expires_at or "3000-01-01",
+                make_push=notification.make_push,
+            )
+            instance.save()
+            instance.devices.set(devices)
+            return instance
 
         # Perform UPDATE if object exists
         # Note: notification type, module slug, context and make_push are not updatable
