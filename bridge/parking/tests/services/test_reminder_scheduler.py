@@ -10,10 +10,8 @@ from bridge.parking.services.reminder_scheduler import ParkingReminderScheduler
 
 
 class TestReminderScheduler(TestCase):
-    @patch(
-        "bridge.parking.services.reminder_scheduler.ScheduledNotificationService.upsert"
-    )
-    def test_create_new_reminder_for_unknown_identifier(self, mock_upsert_reminder):
+    @patch("bridge.parking.services.reminder_scheduler.NotificationService.send")
+    def test_create_new_reminder_for_unknown_identifier(self, mock_send_reminder):
         reminder_key = "test-reminder-key"
         scheduler = ParkingReminderScheduler(
             reminder_key=reminder_key,
@@ -24,10 +22,10 @@ class TestReminderScheduler(TestCase):
         )
         notification_status = scheduler.process()
         self.assertEqual(notification_status, NotificationStatus.CREATED)
-        self.assertEqual(mock_upsert_reminder.call_count, 1)
+        self.assertEqual(mock_send_reminder.call_count, 1)
 
     @patch(
-        "bridge.parking.services.reminder_scheduler.ScheduledNotificationService.delete"
+        "bridge.parking.services.reminder_scheduler.NotificationService.delete_scheduled_notification"
     )
     def test_dont_create_reminder_since_end_datetime_is_too_soon(
         self, mock_delete_reminder
@@ -44,10 +42,8 @@ class TestReminderScheduler(TestCase):
         self.assertEqual(notification_status, NotificationStatus.CANCELLED)
         self.assertEqual(mock_delete_reminder.call_count, 1)
 
-    @patch(
-        "bridge.parking.services.reminder_scheduler.ScheduledNotificationService.upsert"
-    )
-    def test_update_existing_reminder(self, mock_upsert_reminder):
+    @patch("bridge.parking.services.reminder_scheduler.NotificationService.send")
+    def test_update_existing_reminder(self, mock_send_reminder):
         reminder_key = "test-reminder-key"
         scheduler = ParkingReminderScheduler(
             reminder_key=reminder_key,
@@ -58,10 +54,10 @@ class TestReminderScheduler(TestCase):
         )
         notification_status = scheduler.process()
         self.assertEqual(notification_status, NotificationStatus.CREATED)
-        self.assertEqual(mock_upsert_reminder.call_count, 1)
+        self.assertEqual(mock_send_reminder.call_count, 1)
 
     @patch(
-        "bridge.parking.services.reminder_scheduler.ScheduledNotificationService.delete"
+        "bridge.parking.services.reminder_scheduler.NotificationService.delete_scheduled_notification"
     )
     def test_delete_reminder_if_end_datetime_is_in_the_past(self, mock_delete_reminder):
         reminder_key = "test-reminder-key"

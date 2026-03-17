@@ -25,7 +25,7 @@ class NotificationService(AbstractNotificationService):
             device_ids=device_ids,
         )
 
-        self.process(notification_data)
+        self.upsert(notification_data)
 
         notification.send_at = timezone.now()
         notification.nr_sessions = len(device_ids)

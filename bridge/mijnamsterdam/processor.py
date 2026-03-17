@@ -11,10 +11,7 @@ from bridge.mijnamsterdam.serializers.general_serializers import (
 from bridge.mijnamsterdam.services.notifications import NotificationService
 from core.enums import Module, NotificationType
 from core.services.notification_last import NotificationLastService
-from core.services.notification_service import (
-    NotificationData,
-    create_missing_device_ids,
-)
+from core.services.notification_service import NotificationData
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +31,9 @@ class MijnAmsterdamNotificationProcessor:
         for user_data in data:
             try:
                 logger.info(f"Processing user device_ids {user_data['consumerIds']}")
-                create_missing_device_ids(device_ids=user_data["consumerIds"])
+                self.notification_service.create_missing_device_ids(
+                    device_ids=user_data["consumerIds"]
+                )
                 self.send_notifications(user_data=user_data)
             except Exception as e:
                 logger.error(
