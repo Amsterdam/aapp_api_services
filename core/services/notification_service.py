@@ -162,7 +162,6 @@ class AbstractNotificationService:
         with transaction.atomic():
             instance.save()
             for batch in chunked(devices, 5000):
-                instance.save()
                 rows = (
                     Through(
                         schedulednotification_id=instance.id,
@@ -173,20 +172,6 @@ class AbstractNotificationService:
                 Through.objects.bulk_create(
                     rows, batch_size=5000, ignore_conflicts=True
                 )
-
-    def _set_devices(self, devices: list[int], instance_id: int):
-        # Inserting into the Through table is much less memory-intensive than instance.devices.set(devices)
-        # Note: previously added devices will not be removed!
-        Through = ScheduledNotification.devices.through
-        for batch in chunked(devices, 5000):
-            rows = (
-                Through(
-                    schedulednotification_id=instance_id,
-                    device_id=device_id,
-                )
-                for device_id in batch
-            )
-            Through.objects.bulk_create(rows, batch_size=5000, ignore_conflicts=True)
 
     def build_context(
         self,
