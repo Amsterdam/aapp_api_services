@@ -5,6 +5,7 @@ from typing import NamedTuple
 
 from django.db import transaction
 from django.utils import timezone
+from more_itertools import chunked
 
 from core.services.image_set import ImageSetService
 from notification.models import (
@@ -94,13 +95,13 @@ class AbstractNotificationService:
             expires_at = scheduled_for + timezone.timedelta(minutes=expiry_minutes)
 
         if send_all_devices:
-            devices = Device.objects.all()
+            device_ids = list(Device.objects.values_list("id", flat=True))
         else:
             if notification.device_ids is None:
                 raise NotificationServiceError(
                     "Device ids must be defined if send_all_devices is False"
                 )
-            devices = self.create_missing_device_ids(notification.device_ids)
+            device_ids = self.create_missing_device_ids(notification.device_ids)
 
         if expires_at and expires_at <= scheduled_for:
             raise NotificationServiceError(
@@ -136,14 +137,11 @@ class AbstractNotificationService:
                 make_push=notification.make_push,
             )
             instance.save()
-            instance.devices.set(devices)
+            self._set_devices(device_ids, instance_id=instance.id)
             return instance
 
         # Perform UPDATE if object exists
         # Note: notification type, module slug, context and make_push are not updatable
-        old_devices = list(instance.devices.all())
-        devices = list(set(old_devices) | set(devices))
-
         instance.title = notification.title
         instance.body = notification.message
         instance.scheduled_for = scheduled_for
@@ -155,9 +153,23 @@ class AbstractNotificationService:
 
         with transaction.atomic():
             instance.save()
-            instance.devices.set(devices)
+            self._set_devices(device_ids, instance_id=instance.id)
 
         return instance
+
+    def _set_devices(self, devices: list[int], instance_id: int):
+        # Inserting into the Through table is much less memory-intensive than instance.devices.set(devices)
+        # Note: previously added devices will not be removed!
+        Through = ScheduledNotification.devices.through
+        for batch in chunked(devices, 5000):
+            rows = (
+                Through(
+                    schedulednotification_id=instance_id,
+                    device_id=device_id,
+                )
+                for device_id in batch
+            )
+            Through.objects.bulk_create(rows, batch_size=5000, ignore_conflicts=True)
 
     def build_context(
         self,
@@ -211,7 +223,7 @@ class AbstractNotificationService:
             return None
 
     @staticmethod
-    def create_missing_device_ids(device_ids: list[str]) -> list[Device]:
+    def create_missing_device_ids(device_ids: list[str]) -> list[int]:
         existing_devices = Device.objects.filter(
             external_id__in=device_ids
         ).values_list("external_id", flat=True)
@@ -221,4 +233,8 @@ class AbstractNotificationService:
                 Device(external_id=device_id) for device_id in missing_device_ids
             )
             logger.info(f"Created {len(missing_device_ids)} missing devices.")
-        return Device.objects.filter(external_id__in=device_ids)
+        return list(
+            Device.objects.filter(external_id__in=device_ids).values_list(
+                "id", flat=True
+            )
+        )
