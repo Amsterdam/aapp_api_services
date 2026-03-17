@@ -34,20 +34,21 @@ class Command(BaseCommand):
                     ]
                 )
                 notifications_to_process = list(notifications_to_process)
-                if not notifications_to_process:
-                    logger.debug("No scheduled notifications found. Sleeping...")
+                if notifications_to_process:
                     if options["test_mode"]:
-                        # In test mode, interrupt the loop when no notifications are found
-                        break
-                    sleep(5)  # Sleep for 5 seconds before checking again
-                    continue
+                        for n in notifications_to_process:
+                            n.make_push = False
+                    logger.info(
+                        f"Pushing {len(notifications_to_process)} scheduled notifications"
+                    )
+                    self.process_notifications(notifications_to_process)
+
+            if not notifications_to_process:
                 if options["test_mode"]:
-                    for n in notifications_to_process:
-                        n.make_push = False
-                logger.info(
-                    f"Pushing {len(notifications_to_process)} scheduled notifications"
-                )
-                self.process_notifications(notifications_to_process)
+                    # In test mode, interrupt the loop when no notifications are found
+                    break
+                logger.debug("No scheduled notifications found. Sleeping...")
+                sleep(5)  # Sleep for 5 seconds before checking again
 
     def process_notifications(
         self, notifications_to_process: list[ScheduledNotification]
