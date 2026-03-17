@@ -52,5 +52,7 @@ class NotificationService(AbstractNotificationService):
 
     def _create_identifier(self, notification_id: int) -> str:
         if not notification_id:
-            raise ValueError("Notification must be saved and have an id to create an identifier")
+            raise ValueError(
+                "Notification must be saved and have an id to create an identifier"
+            )
         return f"{self.module_slug}_app_notification_{notification_id}"
