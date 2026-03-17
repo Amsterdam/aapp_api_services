@@ -28,13 +28,9 @@ class TestScheduledNotificationService(TestCase):
         self.user = baker.make(User, username="testuser")
 
     def test_identifier(self):
-        identifier = self.service._create_identifier(
-            created_at=self.notification_1.created_at, created_by=self.user
-        )
+        identifier = self.service._create_identifier(123)
         self.assertEqual(identifier.startswith(self.service.module_slug), True)
-        self.assertEqual(
-            self.notification_1.created_at.strftime("%Y%m%d%H%M%S") in identifier, True
-        )
+        self.assertIn("123", identifier)
 
     def test_send_notification(self):
         self.service.send(self.notification_1)

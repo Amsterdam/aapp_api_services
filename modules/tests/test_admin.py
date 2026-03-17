@@ -32,9 +32,7 @@ class TestNotificationAdmin(TestCase):
 
         self.notification_service.send(notif)
 
-        identifier = self.notification_service._create_identifier(
-            created_at=created_at, created_by=self.user
-        )
+        identifier = self.notification_service._create_identifier(notif.id)
 
         # sanity check
         self.assertTrue(
