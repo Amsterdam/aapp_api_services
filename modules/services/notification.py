@@ -51,5 +51,6 @@ class NotificationService(AbstractNotificationService):
         self.delete_scheduled_notification(identifier)
 
     def _create_identifier(self, notification_id: int) -> str:
-        assert notification_id, "Notification must have an id to create an identifier"
+        if not notification_id:
+            raise ValueError("Notification must be saved and have an id to create an identifier")
         return f"{self.module_slug}_app_notification_{notification_id}"
