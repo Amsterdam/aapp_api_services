@@ -43,3 +43,23 @@ class TapServiceTest(ResponsesActivatedAPITestCase):
         properties = {}
         geometry = self.service.get_geometry_from_properties(properties)
         self.assertEqual(geometry, {})
+
+    def test_get_custom_properties_24_7_open(self):
+        properties = {
+            "beschrijvi": "Watertap vlak bij pont.",
+            "type": "Regulier, 24-7 open",
+        }
+        custom_properties = self.service.get_custom_properties(properties)
+        self.assertEqual(custom_properties["aapp_title"], "Watertap")
+        self.assertEqual(custom_properties["aapp_has_malfunction"], False)
+        self.assertEqual(custom_properties["aapp_type"], "24 uur per dag beschikbaar")
+
+    def test_get_custom_properties_has_malfunction(self):
+        properties = {
+            "beschrijvi": "Fontein bij het park.",
+            "type": "Storing",
+        }
+        custom_properties = self.service.get_custom_properties(properties)
+        self.assertEqual(custom_properties["aapp_title"], "Drinkfontein")
+        self.assertEqual(custom_properties["aapp_has_malfunction"], True)
+        self.assertEqual(custom_properties["aapp_type"], None)

@@ -68,11 +68,17 @@ class TapService(ServiceAbstract):
             else "Watertap"
         )
         property_type = properties.get("type", "") or ""
-        custom_type = (
-            "24 uur per dag beschikbaar" if "24-7" in property_type else property_type
-        )
+        has_malfunction = "storing" in property_type.lower()
+        if has_malfunction:
+            custom_type = None
+        elif "24-7" in property_type:
+            custom_type = "24 uur per dag beschikbaar"
+        else:
+            custom_type = property_type
+
         custom_properties = {
             f"{self.properties_prefix}title": title,
+            f"{self.properties_prefix}has_malfunction": has_malfunction,
             f"{self.properties_prefix}type": custom_type,
         }
         return custom_properties
