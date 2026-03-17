@@ -62,8 +62,6 @@ class ToiletService(ServiceAbstract):
         selectie = (properties.get("SELECTIE") or "").lower()
         return {
             f"{self.properties_prefix}title": properties.get("Soort", "") or "Toilet",
-            f"{self.properties_prefix}days_open": properties.get("Dagen_geopend", "")
-            or None,
             f"{self.properties_prefix}opening_hours": self.construct_opening_hours(
                 properties
             ),
@@ -75,9 +73,10 @@ class ToiletService(ServiceAbstract):
             in ("toegang", "openbaar", "parkeer"),
         }
 
-    def construct_opening_hours(self, properties: Dict[str, Any]) -> str:
+    def construct_opening_hours(self, properties: Dict[str, Any]) -> str | None:
         """
-        Constructs a human-readable opening hours property by combining 'Dagen_geopend' and 'Openingstijden' properties if they exist.
+        Constructs a human-readable opening hours property by
+        combining 'Dagen_geopend' and 'Openingstijden' properties if they exist.
         """
         days_open = properties.get("Dagen_geopend", "")
         opening_hours = properties.get("Openingstijden", "")
