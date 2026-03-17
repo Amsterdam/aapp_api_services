@@ -11,7 +11,6 @@ from core.services.image_set import ImageSetService
 from notification.models import (
     Device,
     Notification,
-    NotificationLast,
     ScheduledNotification,
 )
 
@@ -77,7 +76,6 @@ class AbstractNotificationService:
         expiry_minutes: int = 15,
         send_all_devices: bool = False,
     ) -> ScheduledNotification:
-
         if identifier is None:
             identifier = f"{self.module_slug}_{uuid.uuid4()}"
 
@@ -191,16 +189,6 @@ class AbstractNotificationService:
         self, identifier: str
     ) -> ScheduledNotification | None:
         return ScheduledNotification.objects.filter(identifier=identifier).first()
-
-    def get_last_timestamp(self, device_id: str) -> datetime | None:
-        timestamps = list(
-            NotificationLast.objects.select_related("device").filter(
-                device__external_id=device_id,
-                module_slug=self.module_slug,
-            )
-        )
-        timestamps = [nt.last_create for nt in timestamps]
-        return max(timestamps) if timestamps else None
 
     def get_notifications(self, device_id: str) -> list[Notification]:
         return (

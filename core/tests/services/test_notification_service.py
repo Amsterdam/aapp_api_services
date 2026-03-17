@@ -1,4 +1,3 @@
-import datetime
 from unittest.mock import Mock
 
 from django.utils import timezone
@@ -25,7 +24,7 @@ class MockUnifiedNotificationService(AbstractNotificationService):
 
 
 @freeze_time("2026-02-01 10:00:00")
-class TestNotificationService_Unscheduled(ResponsesActivatedAPITestCase):
+class TestNotificationServiceUnscheduled(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.module_slug = "test-slug"
@@ -41,12 +40,6 @@ class TestNotificationService_Unscheduled(ResponsesActivatedAPITestCase):
             notification_scope=f"{self.module_slug}:default",
         )
         baker.make(Notification, device=self.device_1)
-
-    def test_get_last_timestamp(self):
-        result = self.service.get_last_timestamp("device_1")
-        self.assertEqual(
-            result, datetime.datetime(2026, 2, 1, 10, 0, tzinfo=datetime.timezone.utc)
-        )
 
     def test_get_notifications(self):
         notifications = self.service.get_notifications(
@@ -74,7 +67,7 @@ class TestNotificationService_Unscheduled(ResponsesActivatedAPITestCase):
             self.service.send("anything")
 
 
-class TestNotificationService_Scheduled(ResponsesActivatedAPITestCase):
+class TestNotificationServiceScheduled(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.service = MockUnifiedNotificationService()
