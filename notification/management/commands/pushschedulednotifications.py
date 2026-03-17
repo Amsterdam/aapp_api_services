@@ -28,7 +28,9 @@ class Command(BaseCommand):
                 notifications_to_process = (
                     ScheduledNotification.objects.select_for_update(
                         skip_locked=True
-                    ).filter(scheduled_for__lte=timezone_now)[:BATCH_SIZE]
+                    ).filter(scheduled_for__lte=timezone_now, is_ready=True)[
+                        :BATCH_SIZE
+                    ]
                 )
                 notifications_to_process = list(notifications_to_process)
                 if not notifications_to_process:
@@ -82,7 +84,6 @@ class Command(BaseCommand):
             image=scheduled_notification.image,
             created_at=timezone.now(),
         )
-        scheduled_notification.devices.all()
         notification_crud = NotificationCRUD(
             source_notification=notification_obj,
             push_enabled=scheduled_notification.make_push,
