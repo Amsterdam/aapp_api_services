@@ -71,16 +71,20 @@ class TapService(ServiceAbstract):
         has_malfunction = "storing" in property_type.lower()
         if has_malfunction:
             custom_type = None
+            malfunction_property = "Tijdelijk buiten gebruik"
         elif "24-7" in property_type:
             custom_type = "24 uur per dag beschikbaar"
+            malfunction_property = None
         else:
             custom_type = property_type
+            malfunction_property = None
 
         custom_properties = {
             f"{self.properties_prefix}title": title,
-            f"{self.properties_prefix}has_malfunction": has_malfunction,
+            f"{self.properties_prefix}malfunction": malfunction_property,
             f"{self.properties_prefix}type": custom_type,
         }
+
         return custom_properties
 
     def get_geometry_from_properties(

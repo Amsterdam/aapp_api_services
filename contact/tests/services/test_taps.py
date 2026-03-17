@@ -51,7 +51,7 @@ class TapServiceTest(ResponsesActivatedAPITestCase):
         }
         custom_properties = self.service.get_custom_properties(properties)
         self.assertEqual(custom_properties["aapp_title"], "Watertap")
-        self.assertEqual(custom_properties["aapp_has_malfunction"], False)
+        self.assertEqual(custom_properties["aapp_malfunction"], None)
         self.assertEqual(custom_properties["aapp_type"], "24 uur per dag beschikbaar")
 
     def test_get_custom_properties_has_malfunction(self):
@@ -61,5 +61,7 @@ class TapServiceTest(ResponsesActivatedAPITestCase):
         }
         custom_properties = self.service.get_custom_properties(properties)
         self.assertEqual(custom_properties["aapp_title"], "Drinkfontein")
-        self.assertEqual(custom_properties["aapp_has_malfunction"], True)
+        self.assertEqual(
+            custom_properties["aapp_malfunction"], "Tijdelijk buiten gebruik"
+        )
         self.assertEqual(custom_properties["aapp_type"], None)

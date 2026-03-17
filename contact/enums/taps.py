@@ -9,10 +9,10 @@ class TapFilters(ChoicesEnum):
 
 
 class TapProperties(ChoicesEnum):
-    HAS_MALFUNCTION = PropertiesClass(
+    MALFUNCTION = PropertiesClass(
         label=None,
-        property_key="aapp_has_malfunction",
-        property_type="boolean",
+        property_key="aapp_malfunction",
+        property_type="malfunction",
         icon=None,
     )
     OPEN_HOURS = PropertiesClass(
