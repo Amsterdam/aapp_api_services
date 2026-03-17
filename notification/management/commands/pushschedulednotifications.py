@@ -88,7 +88,19 @@ class Command(BaseCommand):
             source_notification=notification_obj,
             push_enabled=scheduled_notification.make_push,
         )
-        response = notification_crud.create(
-            device_qs=scheduled_notification.devices.all()
+        self.process_notifications_in_batches(
+            notification_crud, qs=scheduled_notification.devices.all()
         )
-        logger.debug(response)
+
+    def process_notifications_in_batches(self, notification_crud, qs):
+        batch_size = 5000
+        start = 0
+        while True:
+            batch_qs = qs[start : start + batch_size]
+            if not batch_qs.exists():
+                break
+
+            response = notification_crud.create(device_qs=batch_qs)
+            logger.debug(response)
+
+            start += batch_size
