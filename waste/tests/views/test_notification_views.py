@@ -19,9 +19,7 @@ class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
         payload = {
             "bag_nummeraanduiding_id": "12345",
         }
-        resp = responses.post(
-            settings.NOTIFICATION_ENDPOINTS["WASTE_CREATE"], status=201
-        )
+        resp = responses.post(settings.NOTIFICATION_WASTE_ENDPOINT, status=201)
         response = self.client.post(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 201)
         self.assertEqual(resp.call_count, 1)
@@ -38,7 +36,7 @@ class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
         self.url = reverse(
             "waste-guide-notification-detail",
         )
-        self.notification_url = settings.NOTIFICATION_ENDPOINTS["WASTE_CHANGE"]
+        self.notification_url = settings.NOTIFICATION_WASTE_ENDPOINT
 
     def test_retrieve_success(self):
         resp = responses.get(
@@ -66,7 +64,7 @@ class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
         payload = {
             "bag_nummeraanduiding_id": "1012",
         }
-        resp = responses.patch(self.notification_url, status=200, json=payload)
+        resp = responses.post(self.notification_url, status=200, json=payload)
         response = self.client.patch(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(

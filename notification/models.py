@@ -3,6 +3,7 @@ import uuid
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
+from django.utils import timezone
 
 from core.validators import context_validator
 
@@ -191,3 +192,10 @@ class WasteNotification(models.Model):
     bag_nummeraanduiding_id = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True)
+
+    def save(self, *args, **kwargs):
+        if (
+            self._state.adding is False
+        ):  # to ensure that updated_at is not filled on creation.
+            self.updated_at = timezone.now()
+        super().save(*args, **kwargs)

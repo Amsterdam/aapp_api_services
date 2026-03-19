@@ -472,7 +472,7 @@ class TestNotificationPushModuleDisabledListView(AuthenticatedAPITestCase):
 class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
-        self.url = reverse("waste-guide-notification-create")
+        self.url = reverse("waste-guide-notification")
         self.device_id = "test-device-id"
         self.api_headers["DeviceId"] = self.device_id
 
@@ -484,6 +484,23 @@ class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.status_code, 201)
         WasteNotification.objects.get(device_id=self.device_id)
 
+    def test_upsert_second_post_updates(self):
+        WasteNotification.objects.create(
+            bag_nummeraanduiding_id="old",
+            device_id=self.device_id,
+        )
+
+        payload = {
+            "bag_nummeraanduiding_id": "new",
+        }
+        response = self.client.post(self.url, data=payload, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        updated_notification = WasteNotification.objects.get(device_id=self.device_id)
+        self.assertEqual(
+            updated_notification.bag_nummeraanduiding_id,
+            payload["bag_nummeraanduiding_id"],
+        )
+
 
 class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
     def setUp(self):
@@ -494,7 +511,7 @@ class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
         )
         self.api_headers["DeviceId"] = self.notification.device_id
         self.url = reverse(
-            "waste-guide-notification-detail",
+            "waste-guide-notification",
         )
 
     def test_retrieve_success(self):
@@ -511,7 +528,7 @@ class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
         payload = {
             "bag_nummeraanduiding_id": "1012",
         }
-        response = self.client.patch(self.url, data=payload, headers=self.api_headers)
+        response = self.client.post(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         updated_notification = WasteNotification.objects.get(
             device_id=self.notification.device_id

@@ -1,8 +1,6 @@
-from django.db import IntegrityError
 from drf_spectacular.utils import OpenApiExample
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
-from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
 from core.exceptions import InputDataException
@@ -17,7 +15,8 @@ from notification.models import (
 from notification.serializers.device_serializers import (
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
-    WasteNotificationSerializer,
+    WasteNotificationRequestSerializer,
+    WasteNotificationResponseSerializer,
 )
 from notification.serializers.notification_config_serializers import (
     NotificationPushModuleDisabledListSerializer,
@@ -215,65 +214,49 @@ class NotificationPushModuleDisabledListView(DeviceIdMixin, generics.ListAPIView
         return super().get(request, *args, **kwargs)
 
 
-@extend_schema_for_device_id(success_response=WasteNotificationSerializer)
-class WasteNotificationCreateView(DeviceIdMixin, CreateAPIView):
-    serializer_class = WasteNotificationSerializer
+@extend_schema_for_device_id(success_response=WasteNotificationResponseSerializer)
+class WasteNotificationView(DeviceIdMixin, generics.GenericAPIView):
+    """Create/update, retrieve and delete the waste-notification schedule for a device."""
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(
-            data=request.data, context={"device_id": self.device_id}
-        )
-        serializer.is_valid(raise_exception=True)
-        try:
-            self.perform_create(serializer)
-            get_or_create_device(self.device_id)
-        except IntegrityError:
+    serializer_class = WasteNotificationRequestSerializer
+    http_method_names = ["get", "post", "delete"]
+
+    def get(self, request, *args, **kwargs):
+        if self._get_instance() is None:
             return Response(
-                {"detail": "Notification schedule for this device already exists."},
-                status=status.HTTP_409_CONFLICT,
+                data={"status": "error", "message": "not found"},
+                status=status.HTTP_200_OK,
             )
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            {"status": "success"}, status=status.HTTP_201_CREATED, headers=headers
-        )
+        return Response({"status": "success"}, status=status.HTTP_200_OK)
 
+    def post(self, request, *args, **kwargs):
+        instance = self._get_instance()
+        if instance is None:
+            serializer = self.get_serializer(
+                data=request.data, context={"device_id": self.device_id}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            get_or_create_device(self.device_id)
+            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
-@extend_schema_for_device_id(success_response=WasteNotificationSerializer)
-class WasteNotificationDetailView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
-    queryset = WasteNotification.objects.all()
-    serializer_class = WasteNotificationSerializer
-    lookup_field = "device_id"
-    http_method_names = ["get", "patch", "delete"]
-
-    def get_object(self):
-        return self.get_queryset().get(device_id=self.device_id)
-
-    def retrieve(self, request, *args, **kwargs):
-        try:
-            self.get_object()
-        except WasteNotification.DoesNotExist:
-            return Response(data={"status": "error", "message": "not found"})
-        return Response({"status": "success"})
-
-    def update(self, request, *args, **kwargs):
-        try:
-            instance = self.get_object()
-        except WasteNotification.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
+        # If instance already exists, update it with the new data, and update updated_at to now
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response({"status": "success"})
+        serializer.save()
+        get_or_create_device(self.device_id)
+        return Response({"status": "success"}, status=status.HTTP_200_OK)
 
-    def destroy(self, request, *args, **kwargs):
-        try:
-            instance = self.get_object()
-        except WasteNotification.DoesNotExist:
+    def delete(self, request, *args, **kwargs):
+        instance = self._get_instance()
+        if instance is None:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def _get_instance(self):
+        return WasteNotification.objects.filter(device_id=self.device_id).first()
 
 
 def get_or_create_device(device_id):

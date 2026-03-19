@@ -20,7 +20,7 @@ class WasteNotificationCreateView(DeviceIdMixin, CreateAPIView):
     def create(self, request, *args, **kwargs):
         try:
             response = requests.post(
-                url=settings.NOTIFICATION_ENDPOINTS["WASTE_CREATE"],
+                url=settings.NOTIFICATION_WASTE_ENDPOINT,
                 data=request.data,
                 headers={
                     "DeviceId": self.device_id,
@@ -52,7 +52,7 @@ class WasteNotificationDetailView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
     def retrieve(self, request, *args, **kwargs):
         try:
             response = requests.get(
-                url=settings.NOTIFICATION_ENDPOINTS["WASTE_CHANGE"],
+                url=settings.NOTIFICATION_WASTE_ENDPOINT,
                 headers={
                     "DeviceId": self.device_id,
                     settings.API_KEY_HEADER: request.headers.get(
@@ -73,8 +73,8 @@ class WasteNotificationDetailView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         try:
-            response = requests.patch(
-                url=settings.NOTIFICATION_ENDPOINTS["WASTE_CHANGE"],
+            response = requests.post(
+                url=settings.NOTIFICATION_WASTE_ENDPOINT,
                 data=request.data,
                 headers={
                     "DeviceId": self.device_id,
@@ -100,7 +100,7 @@ class WasteNotificationDetailView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
     def destroy(self, request, *args, **kwargs):
         try:
             response = requests.delete(
-                url=settings.NOTIFICATION_ENDPOINTS["WASTE_CHANGE"],
+                url=settings.NOTIFICATION_WASTE_ENDPOINT,
                 headers={
                     "DeviceId": self.device_id,
                     settings.API_KEY_HEADER: request.headers.get(
