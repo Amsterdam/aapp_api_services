@@ -1,25 +1,20 @@
-import hashlib
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-from django.contrib.auth.models import User
-
-from core.services.scheduled_notification import ScheduledNotificationService
+from core.services.notification_service import (
+    AbstractNotificationService,
+    NotificationData,
+)
 from modules.models import Notification, TestDevice
 
 logger = logging.getLogger(__name__)
 
 
-class NotificationService:
+class NotificationService(AbstractNotificationService):
     module_slug = "modules"
     notification_type = "modules:general-notification"
 
-    def __init__(self):
-        self.notification_service = ScheduledNotificationService()
-
-    def upsert_scheduled_notification(
-        self, notification: Notification, is_test_notification: bool = True
-    ):
+    def send(self, notification: Notification, is_test_notification: bool = True):
         device_ids = (
             list(TestDevice.objects.values_list("device_id", flat=True))
             if is_test_notification
@@ -33,28 +28,31 @@ class NotificationService:
             context["deeplink"] = notification.deeplink
         if notification.url:
             context["url"] = notification.url
-        scheduled_notification = self.notification_service.upsert(
+
+        notification_data = NotificationData(
             title=notification.title,
-            body=notification.message,
+            message=notification.message,
+            link_source_id=str(notification.pk),
+            device_ids=device_ids,
+        )
+        scheduled_notification = self.upsert(
+            notification=notification_data,
             scheduled_for=notification.send_at,
             expires_at=notification.send_at + timedelta(minutes=30),
-            identifier=self._create_identifier(
-                created_at=notification.created_at, created_by=notification.created_by
-            ),
+            identifier=self._create_identifier(notification.id),
             context=context,
-            notification_type=self.notification_type,
-            module_slug=self.module_slug,
-            device_ids=device_ids,
             send_all_devices=not is_test_notification,
         )
         notification.nr_sessions = scheduled_notification.devices.count()
         notification.save()
 
-    def delete_scheduled_notification(self, notification: Notification):
-        identifier = self._create_identifier(
-            created_at=notification.created_at, created_by=notification.created_by
-        )
-        self.notification_service.delete(identifier)
+    def delete_general_notification(self, notification: Notification):
+        identifier = self._create_identifier(notification.id)
+        self.delete_scheduled_notification(identifier)
 
-    def _create_identifier(self, created_at: datetime, created_by: User) -> str:
-        return f"{self.module_slug}_app_notification_{created_at.strftime('%Y%m%d%H%M%S')}_{hashlib.sha256(created_by.username.encode()).hexdigest()}"
+    def _create_identifier(self, notification_id: int) -> str:
+        if not notification_id:
+            raise ValueError(
+                "Notification must be saved and have an id to create an identifier"
+            )
+        return f"{self.module_slug}_app_notification_{notification_id}"

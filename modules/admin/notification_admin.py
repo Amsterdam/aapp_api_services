@@ -38,7 +38,7 @@ class NotificationAdmin(admin.ModelAdmin):
         # notification is deleted in the admin
         if obj and not self._notification_is_locked(obj):
             notification_service = NotificationService()
-            notification_service.delete_scheduled_notification(obj)
+            notification_service.delete_general_notification(obj)
             super().delete_model(request, obj)
         else:
             self.message_user(
@@ -116,7 +116,7 @@ class NotificationAdmin(admin.ModelAdmin):
 
         if request.method == "POST":
             if "confirm" in request.POST:
-                notification_service.upsert_scheduled_notification(
+                notification_service.send(
                     obj, is_test_notification=is_test_notification
                 )
                 self.message_user(

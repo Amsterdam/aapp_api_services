@@ -11,7 +11,7 @@ from waste.services.notification import ManualNotificationService, NotificationS
 class NotificationServiceTest(ResponsesActivatedAPITestCase):
     def test_call_notification_service(self):
         notification_service = NotificationService()
-        notification_service.send_waste_notification(
+        notification_service.send(
             device_ids=["device1", "device2"],
             waste_type="glas",
         )

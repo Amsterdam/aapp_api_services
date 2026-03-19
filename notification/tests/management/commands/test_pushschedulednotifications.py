@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.core.management import call_command
-from django.test import TransactionTestCase
+from django.test import TransactionTestCase, override_settings
 from model_bakery import baker
 
 from notification.models import Device, Notification, ScheduledNotification
@@ -20,6 +20,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             ScheduledNotification,
             scheduled_for=scheduled_date,
             devices=devices,
+            is_ready=True,
         )
 
         call_command("pushschedulednotifications", "--test-mode")
@@ -34,6 +35,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             ScheduledNotification,
             scheduled_for=scheduled_date_future,
             devices=devices,
+            is_ready=True,
         )
 
         call_command("pushschedulednotifications", "--test-mode")
@@ -49,12 +51,14 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             ScheduledNotification,
             scheduled_for=date_in_past,
             devices=devices,
+            is_ready=True,
         )
         devices = baker.make(Device, _quantity=2)
         baker.make(
             ScheduledNotification,
             scheduled_for=date_in_future,
             devices=devices,
+            is_ready=True,
         )
 
         call_command("pushschedulednotifications", "--test-mode")
@@ -72,6 +76,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             ScheduledNotification,
             scheduled_for=yesterday,
             devices=devices,
+            is_ready=True,
         )
 
         # expirable_notification
@@ -80,6 +85,7 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             scheduled_for=yesterday,
             expires_at=yesterday + timedelta(minutes=10),
             devices=devices,
+            is_ready=True,
         )
 
         future_notification = baker.make(
@@ -87,11 +93,29 @@ class UpdateScheduledNotificationsTest(TransactionTestCase):
             scheduled_for=tomorrow,
             expires_at=tomorrow + timedelta(minutes=10),
             devices=devices,
+            is_ready=True,
         )
-
         call_command("pushschedulednotifications", "--test-mode")
 
         not_pushed_notifications = ScheduledNotification.objects.all()
         self.assertTrue(future_notification in not_pushed_notifications)
 
         self.assertEqual(Notification.objects.count(), len(devices))
+
+    @override_settings(NOTIFICATION_DEVICE_BATCH_SIZE=7)
+    def test_process_notifications_in_batches(self):
+        nr_devices = 50
+        devices = baker.make(Device, _quantity=nr_devices)
+        baker.make(
+            ScheduledNotification,
+            scheduled_for=datetime.now() - timedelta(minutes=1),
+            devices=devices,
+            is_ready=True,
+        )
+
+        call_command("pushschedulednotifications", "--test-mode")
+
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
+        self.assertEqual(Notification.objects.count(), nr_devices)
+        for device in devices:
+            self.assertEqual(Notification.objects.filter(device=device).count(), 1)

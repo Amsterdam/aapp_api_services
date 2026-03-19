@@ -22,3 +22,37 @@ class ToiletServiceTest(ResponsesActivatedAPITestCase):
             len(full_data["data"]["features"]), len(toilets.MOCK_DATA["features"])
         )
         self.assertEqual(full_data["data"]["type"], "FeatureCollection")
+
+    def test_construct_opening_hours_both(self):
+        properties = {
+            "Dagen_geopend": "ma - di - wo - do - vr - za - zo",
+            "Openingstijden": "24 uur per dag",
+        }
+        opening_hours = self.service.construct_opening_hours(properties)
+        self.assertEqual(
+            opening_hours, "24 uur per dag\nma - di - wo - do - vr - za - zo"
+        )
+
+    def test_construct_opening_hours_only_days(self):
+        properties = {
+            "Dagen_geopend": "ma - di - wo - do - vr - za - zo",
+            "Openingstijden": "",
+        }
+        opening_hours = self.service.construct_opening_hours(properties)
+        self.assertEqual(opening_hours, "ma - di - wo - do - vr - za - zo")
+
+    def test_construct_opening_hours_only_hours(self):
+        properties = {
+            "Dagen_geopend": "",
+            "Openingstijden": "24 uur per dag",
+        }
+        opening_hours = self.service.construct_opening_hours(properties)
+        self.assertEqual(opening_hours, "24 uur per dag")
+
+    def test_construct_opening_hours_none(self):
+        properties = {
+            "Dagen_geopend": "",
+            "Openingstijden": "",
+        }
+        opening_hours = self.service.construct_opening_hours(properties)
+        self.assertEqual(opening_hours, None)

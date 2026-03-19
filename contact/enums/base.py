@@ -3,7 +3,9 @@ from typing import Callable, Literal, NamedTuple, Optional
 
 from rest_framework import serializers
 
-property_types = Literal["address", "boolean", "image", "price", "string"]
+property_types = Literal[
+    "address", "boolean", "image", "price", "string", "malfunction"
+]
 
 
 class ChoicesEnum(Enum):

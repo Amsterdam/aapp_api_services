@@ -45,6 +45,10 @@ NOTIFICATION_BASE_URL_EXTERNAL = urljoin(
     NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH_EXT", "/notification/api/v1/")
 )
 NOTIFICATION_ENDPOINTS = {
-    "WASTE_CREATE": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/waste-notifications"),
-    "WASTE_CHANGE": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/waste-notification"),
+    "WASTE_CREATE": urljoin(
+        NOTIFICATION_BASE_URL_EXTERNAL, "device/waste-notifications"
+    ),
+    "WASTE_CHANGE": urljoin(
+        NOTIFICATION_BASE_URL_EXTERNAL, "device/waste-notification"
+    ),
 }

@@ -1,6 +1,7 @@
 import logging
 from time import sleep
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
@@ -28,22 +29,26 @@ class Command(BaseCommand):
                 notifications_to_process = (
                     ScheduledNotification.objects.select_for_update(
                         skip_locked=True
-                    ).filter(scheduled_for__lte=timezone_now)[:BATCH_SIZE]
+                    ).filter(scheduled_for__lte=timezone_now, is_ready=True)[
+                        :BATCH_SIZE
+                    ]
                 )
                 notifications_to_process = list(notifications_to_process)
-                if not notifications_to_process:
-                    logger.debug("No scheduled notifications found. Sleeping...")
+                if notifications_to_process:
                     if options["test_mode"]:
-                        # In test mode, interrupt the loop when no notifications are found
-                        break
-                    sleep(5)  # Sleep for 5 seconds before checking again
+                        for n in notifications_to_process:
+                            n.make_push = False
+                    logger.info(
+                        f"Pushing {len(notifications_to_process)} scheduled notifications"
+                    )
+                    self.process_notifications(notifications_to_process)
+
+            if not notifications_to_process:
                 if options["test_mode"]:
-                    for n in notifications_to_process:
-                        n.make_push = False
-                logger.info(
-                    f"Pushing {len(notifications_to_process)} scheduled notifications"
-                )
-                self.process_notifications(notifications_to_process)
+                    # In test mode, interrupt the loop when no notifications are found
+                    break
+                logger.debug("No scheduled notifications found. Sleeping...")
+                sleep(5)  # Sleep for 5 seconds before checking again
 
     def process_notifications(
         self, notifications_to_process: list[ScheduledNotification]
@@ -82,12 +87,30 @@ class Command(BaseCommand):
             image=scheduled_notification.image,
             created_at=timezone.now(),
         )
-        scheduled_notification.devices.all()
         notification_crud = NotificationCRUD(
             source_notification=notification_obj,
             push_enabled=scheduled_notification.make_push,
         )
-        response = notification_crud.create(
-            device_qs=scheduled_notification.devices.all()
+        self.process_notifications_in_batches(
+            notification_crud, scheduled_notification=scheduled_notification
         )
-        logger.debug(response)
+
+    def process_notifications_in_batches(
+        self, notification_crud, scheduled_notification
+    ):
+        batch_size = settings.NOTIFICATION_DEVICE_BATCH_SIZE
+        last_id = 0
+        base_qs = scheduled_notification.devices.order_by("id")
+        while True:
+            batch_ids = list(
+                base_qs.filter(id__gt=last_id).values_list("id", flat=True)[:batch_size]
+            )
+            if not batch_ids:
+                break
+            batch_qs = base_qs.filter(id__in=batch_ids).order_by("id")
+
+            logger.info("Processing batch of devices", extra={"last_id": last_id})
+            response = notification_crud.create(device_qs=batch_qs)
+            logger.debug(response)
+
+            last_id = batch_ids[-1]

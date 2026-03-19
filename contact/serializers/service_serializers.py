@@ -14,6 +14,10 @@ class PropertySerializers(ChoicesEnum):
         type="image",
         serializer=serializers.URLField,
     )
+    MALFUNCTION = SerializerMapping(
+        type="malfunction",
+        serializer=serializers.CharField,
+    )
     PRICE = SerializerMapping(
         type="price",
         serializer=serializers.FloatField,

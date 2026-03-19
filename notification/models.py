@@ -1,6 +1,5 @@
 import uuid
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
@@ -88,6 +87,7 @@ class ScheduledNotification(BaseNotification):
     devices = models.ManyToManyField(Device, related_name="scheduled_notifications")
     expires_at = models.DateTimeField(default="3000-01-01")
     make_push = models.BooleanField(default=True)
+    is_ready = models.BooleanField(default=False)
 
     def __str__(self):
         return f"[SCHEDULED] {self.module_slug} - {self.title}"
@@ -175,16 +175,11 @@ class NotificationLast(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     module_slug = models.CharField()
     notification_scope = models.CharField()
-    last_create = models.DateTimeField(auto_now=True)
+    last_create = models.DateTimeField()
 
     def clean(self):
         if not self.notification_scope.startswith(self.module_slug):
             raise ValidationError("Notification scope must start with module slug")
-
-        if self.notification_scope not in settings.NOTIFICATION_SCOPES:
-            raise ValidationError(
-                f"Notification scope {self.notification_scope} is not in the list of allowed scopes"
-            )
 
 
 class WasteNotification(models.Model):

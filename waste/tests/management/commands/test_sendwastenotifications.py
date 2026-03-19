@@ -19,9 +19,7 @@ from waste.tests.mock_data import (
 )
 
 
-@patch(
-    "waste.management.commands.sendwastenotifications.NotificationService.send_waste_notification"
-)
+@patch("waste.management.commands.sendwastenotifications.NotificationService.send")
 class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
     """
     Different addresses have different frequencies on which the waste is collected.

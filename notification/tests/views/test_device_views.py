@@ -485,7 +485,6 @@ class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
         WasteNotification.objects.get(device_id=self.device_id)
 
 
-
 class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()

@@ -6,8 +6,9 @@ from django.utils import timezone
 
 from bridge.parking.config import DEFAULT_LANGUAGE, REMINDER_MESSAGES
 from bridge.parking.enums import NotificationStatus
+from bridge.parking.services.notifications import NotificationService
 from core.enums import Module, NotificationType
-from core.services.scheduled_notification import ScheduledNotificationService
+from core.services.notification_service import NotificationData
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +25,7 @@ class ParkingReminderScheduler:
         device_id: str,
         report_code: str | None,
     ):
-        # no image service needed for parking reminders
-        self.schedule_service = ScheduledNotificationService(use_image_service=False)
+        self.schedule_service = NotificationService()
 
         self.device_id = device_id
         self.report_code = report_code
@@ -47,7 +47,7 @@ class ParkingReminderScheduler:
             return NotificationStatus.CREATED
         else:
             logger.info("Deleting reminder", extra=self.log_extra)
-            self.schedule_service.delete(self.identifier)
+            self.schedule_service.delete_scheduled_notification(self.identifier)
             return NotificationStatus.CANCELLED
 
     def schedule_reminder(
@@ -55,6 +55,12 @@ class ParkingReminderScheduler:
         locale: str = DEFAULT_LANGUAGE,
     ):
         content = REMINDER_MESSAGES.get(locale)
+        notification = NotificationData(
+            title=content.title,
+            message=content.body,
+            device_ids=[self.device_id],
+        )
+
         context = {
             "reminderKey": self.reminder_key,
             "type": NotificationType.PARKING_REMINDER.value,
@@ -62,16 +68,13 @@ class ParkingReminderScheduler:
         }
         if self.report_code:
             context["reportCode"] = str(self.report_code)
-        self.schedule_service.upsert(
-            title=content.title,
-            body=content.body,
+
+        self.schedule_service.send(
+            notification_data=notification,
             identifier=self.identifier,
             scheduled_for=self.reminder_time,
             expires_at=self.end_datetime,
             context=context,
-            device_ids=[self.device_id],
-            notification_type=NotificationType.PARKING_REMINDER.value,
-            module_slug=Module.PARKING.value,
         )
 
     def _get_reminder_time(self, end_datetime: datetime) -> datetime | None:
