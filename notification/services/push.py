@@ -1,10 +1,17 @@
 import logging
 
+import urllib3
 from django.conf import settings
 from firebase_admin import messaging
 
 from core.services.image_set import ImageSetService
 from notification.models import Notification
+
+# Patch urllib3 connection pool size globally
+urllib3.util.connection.HAS_IPV6 = False  # Avoid IPv6 issues
+urllib3.connectionpool.ConnectionPool.DEFAULT_MAXSIZE = (
+    settings.MAX_MESSAGES_PER_FIREBASE_BATCH
+)
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +22,7 @@ class PushService:
         Forwards notification to Firebase, to be pushed to devices.
 
         If device has a firebase token, a Firebase message will be crafted
-        and finally send as a batch to Firebase.
+        and finally sent as a batch to Firebase.
 
         Args:
             notifications (list[Notification]): notifications used for Firebase message data
@@ -77,7 +84,7 @@ class PushService:
         """
         Split the device list into batches of settings.MAX_DEVICES_PER_REQUEST devices.
         """
-        max_devices = settings.MAX_DEVICES_PER_REQUEST
+        max_devices = settings.MAX_MESSAGES_PER_FIREBASE_BATCH
         batches = [
             messages[i : i + max_devices] for i in range(0, len(messages), max_devices)
         ]
