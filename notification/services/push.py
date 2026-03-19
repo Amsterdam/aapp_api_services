@@ -1,7 +1,5 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import firebase_admin.messaging as fam
 import urllib3
 from django.conf import settings
 from firebase_admin import messaging
@@ -9,12 +7,11 @@ from firebase_admin import messaging
 from core.services.image_set import ImageSetService
 from notification.models import Notification
 
-MAX_WORKERS = 50  # Match patched pool size
 # Patch urllib3 connection pool size globally
 urllib3.util.connection.HAS_IPV6 = False  # Avoid IPv6 issues
-urllib3.connectionpool.ConnectionPool.DEFAULT_MAXSIZE = MAX_WORKERS
-# Patch thread pool size for send_each globally
-fam._THREAD_POOL_SIZE = MAX_WORKERS
+urllib3.connectionpool.ConnectionPool.DEFAULT_MAXSIZE = (
+    settings.MAX_MESSAGES_PER_FIREBASE_BATCH
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,22 +31,11 @@ class PushService:
         firebase_messages = [self._define_firebase_message(n) for n in notifications]
         firebase_batches = self._batch_messages(firebase_messages)
         failed_token_count = 0
-
-        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            future_to_batch = {
-                executor.submit(messaging.send_each, batch): batch
-                for batch in firebase_batches
-            }
-            for future in as_completed(future_to_batch):
-                batch = future_to_batch[future]
-                try:
-                    batch_response = future.result()
-                    if batch_response.failure_count > 0:
-                        failed_token_count += batch_response.failure_count
-                        self._log_failures(batch_response, batch)
-                except Exception as exc:
-                    logger.error(f"Batch failed: {exc}")
-
+        for batch in firebase_batches:
+            batch_response = messaging.send_each(batch)
+            if batch_response.failure_count > 0:
+                failed_token_count += batch_response.failure_count
+                self._log_failures(batch_response, firebase_messages)
         return failed_token_count
 
     def _define_firebase_message(
@@ -98,7 +84,7 @@ class PushService:
         """
         Split the device list into batches of settings.MAX_DEVICES_PER_REQUEST devices.
         """
-        max_devices = settings.MAX_DEVICES_PER_REQUEST
+        max_devices = settings.MAX_MESSAGES_PER_FIREBASE_BATCH
         batches = [
             messages[i : i + max_devices] for i in range(0, len(messages), max_devices)
         ]
