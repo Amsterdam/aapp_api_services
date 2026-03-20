@@ -56,4 +56,4 @@ class NotificationSerializer(serializers.ModelSerializer, PostalCodeValidationMi
 
 class ServiceDeviceResponseSerializer(serializers.Serializer):
     status = serializers.CharField()
-    message = serializers.CharField()
+    message = serializers.CharField(required=False)

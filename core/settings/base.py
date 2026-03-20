@@ -363,3 +363,13 @@ ADMIN_ROLES = []
 MOCK_FIREBASE = False
 FIREBASE_CREDENTIALS = os.getenv("FIREBASE_JSON")
 NOTIFICATION_DEVICE_BATCH_SIZE = 5000
+
+# temporary settings for notification service, to be removed after migration
+NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://api-notification:8000")
+NOTIFICATION_BASE_URL_EXTERNAL = urljoin(
+    NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH_EXT", "/notification/api/v1/")
+)
+NOTIFICATION_ENDPOINT = {
+    "WASTE": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/waste"),
+    "BURNING_GUIDE": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/burning-guide"),
+}
