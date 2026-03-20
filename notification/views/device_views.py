@@ -10,13 +10,13 @@ from notification.models import (
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
-    WasteNotification,
+    WasteDevice,
 )
 from notification.serializers.device_serializers import (
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
-    WasteNotificationRequestSerializer,
-    WasteNotificationResponseSerializer,
+    WasteDeviceRequestSerializer,
+    WasteDeviceResponseSerializer,
 )
 from notification.serializers.notification_config_serializers import (
     NotificationPushModuleDisabledListSerializer,
@@ -214,11 +214,11 @@ class NotificationPushModuleDisabledListView(DeviceIdMixin, generics.ListAPIView
         return super().get(request, *args, **kwargs)
 
 
-@extend_schema_for_device_id(success_response=WasteNotificationResponseSerializer)
-class WasteNotificationView(DeviceIdMixin, generics.GenericAPIView):
+@extend_schema_for_device_id(success_response=WasteDeviceResponseSerializer)
+class WasteDeviceView(DeviceIdMixin, generics.GenericAPIView):
     """Create/update, retrieve and delete the waste-notification schedule for a device."""
 
-    serializer_class = WasteNotificationRequestSerializer
+    serializer_class = WasteDeviceRequestSerializer
     http_method_names = ["get", "post", "delete"]
 
     def get(self, request, *args, **kwargs):
@@ -255,7 +255,7 @@ class WasteNotificationView(DeviceIdMixin, generics.GenericAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def _get_instance(self):
-        return WasteNotification.objects.filter(device_id=self.device_id).first()
+        return WasteDevice.objects.filter(device_id=self.device_id).first()
 
 
 def get_or_create_device(device_id):

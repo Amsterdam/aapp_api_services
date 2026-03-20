@@ -5,7 +5,7 @@ from django.conf import settings
 from django.urls import reverse
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import WasteNotification
+from notification.models import WasteDevice
 
 
 class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
@@ -32,7 +32,7 @@ class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
 class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
-        self.notification = WasteNotification.objects.create(
+        self.notification = WasteDevice.objects.create(
             bag_nummeraanduiding_id="1091",
             device_id="test-device-id",
         )

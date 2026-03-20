@@ -4,7 +4,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from model_bakery import baker
 
-from notification.models import WasteNotification
+from notification.models import WasteDevice
 from waste.models import NotificationSchedule
 
 
@@ -20,7 +20,7 @@ class WasteMigrationTest(TestCase):
         )
         call_command("migratewastenotificationdata")
 
-        waste_notifications = WasteNotification.objects.all()
+        waste_notifications = WasteDevice.objects.all()
         self.assertEqual(waste_notifications.count(), 1)
 
         waste_notification = waste_notifications.first()
@@ -34,7 +34,7 @@ class WasteMigrationTest(TestCase):
 
     def test_migrate_waste_notification_data_with_record_already_existing(self):
         already_existing = baker.make(
-            WasteNotification,
+            WasteDevice,
             device_id="device_1",
             bag_nummeraanduiding_id="12345",
             updated_at=None,
@@ -47,7 +47,7 @@ class WasteMigrationTest(TestCase):
         )
         call_command("migratewastenotificationdata")
 
-        waste_notifications = WasteNotification.objects.all()
+        waste_notifications = WasteDevice.objects.all()
         self.assertEqual(waste_notifications.count(), 1)
 
         # check that info is unchanged for already existing record

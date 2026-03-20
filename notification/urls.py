@@ -36,7 +36,7 @@ urlpatterns = [
     ),
     path(
         BASE_PATH + "/device/waste",
-        device_views.WasteNotificationView.as_view(),
+        device_views.WasteDeviceView.as_view(),
         name="waste-guide-notification",
     ),
     path(
