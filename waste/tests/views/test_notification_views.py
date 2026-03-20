@@ -1,5 +1,3 @@
-import json
-
 import responses
 from django.conf import settings
 from django.urls import reverse
@@ -70,7 +68,7 @@ class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
         response = self.client.patch(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            json.loads(resp.body)["bag_nummeraanduiding_id"],
+            responses.calls[0].response.json()["bag_nummeraanduiding_id"],
             payload["bag_nummeraanduiding_id"],
         )
         self.assertEqual(resp.call_count, 1)

@@ -1,5 +1,3 @@
-import logging
-
 from django.conf import settings
 from rest_framework import status
 from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
@@ -9,8 +7,6 @@ from core.services.internal_http_client import InternalServiceSession
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 from waste.serializers.waste_guide_serializers import WasteRequestSerializer
-
-logger = logging.getLogger(__name__)
 
 internal_client = InternalServiceSession()
 

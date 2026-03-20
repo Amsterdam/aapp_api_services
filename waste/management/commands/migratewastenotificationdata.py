@@ -10,9 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    """Migrate waste notification data from the old notification service to the new one."""
+    """
+    Migrate waste notification data from waste.NotificationSchedule (default DB)
+    to notification.WasteDevice (notification DB).
+    """
 
-    help = "Migrate waste notification data from the old notification service to the new one."
+    help = "Migrate waste notification data from waste.NotificationSchedule (default DB)to notification.WasteDevice (notification DB)."
 
     def handle(self, *args: Any, **options: Any) -> None:
         old_records = NotificationSchedule.objects.all()
