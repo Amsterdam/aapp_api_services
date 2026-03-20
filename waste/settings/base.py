@@ -39,9 +39,3 @@ ADMIN_ROLES += [
     "waste-delegated",
     "waste-publisher",
 ]
-
-NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://api-notification:8000")
-NOTIFICATION_BASE_URL_EXTERNAL = urljoin(
-    NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH_EXT", "/notification/api/v1/")
-)
-NOTIFICATION_WASTE_ENDPOINT = urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/waste")

@@ -240,7 +240,6 @@ class WasteNotificationView(DeviceIdMixin, generics.GenericAPIView):
             get_or_create_device(self.device_id)
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
-        # If instance already exists, update it with the new data, and update updated_at to now
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()

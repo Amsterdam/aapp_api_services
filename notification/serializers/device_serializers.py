@@ -38,4 +38,4 @@ class WasteNotificationRequestSerializer(serializers.ModelSerializer):
 
 class WasteNotificationResponseSerializer(serializers.Serializer):
     status = serializers.CharField()
-    message = serializers.CharField()
+    message = serializers.CharField(required=False)
