@@ -3,7 +3,6 @@ import uuid
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
-from django.utils import timezone
 
 from core.validators import context_validator
 
@@ -185,17 +184,14 @@ class NotificationLast(models.Model):
 
 class WasteNotification(models.Model):
     """
-    Record to determine which device wants to receive waste notifications and for which address (bag_nummeraanduiding_id).
+    Record to determine which device wants to receive waste notifications and
+    for which address (bag_nummeraanduiding_id).
+
+    Note: updated_at is not used to keep track of when a users updated its bag_nummeraanduiding_id,
+    but to determine if the scheduled notification should be sent (again).
     """
 
     device_id = models.CharField(max_length=255, primary_key=True)
     bag_nummeraanduiding_id = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True)
-
-    def save(self, *args, **kwargs):
-        if (
-            self._state.adding is False
-        ):  # to ensure that updated_at is not filled on creation.
-            self.updated_at = timezone.now()
-        super().save(*args, **kwargs)
