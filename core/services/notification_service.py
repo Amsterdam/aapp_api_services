@@ -11,7 +11,6 @@ from notification.models import (
     Device,
     Notification,
     ScheduledNotification,
-    WasteNotification,
 )
 
 logger = logging.getLogger(__name__)
@@ -239,65 +238,3 @@ class AbstractNotificationService:
                 "id", flat=True
             )
         )
-
-
-#     def process(
-#         self,
-#         notification: NotificationData,
-#         expiry_minutes: int = 15,
-#     ):
-#         """
-#         Send notifications to users.
-#         """
-#         self.link_source_id = notification.link_source_id
-#         self.notification_url = notification.url
-#         self.notification_deeplink = notification.deeplink
-#         devices = create_missing_device_ids(notification.device_ids)
-#         now = timezone.now() + timezone.timedelta(seconds=5)
-#         instance = ScheduledNotification(
-#             title=notification.title,
-#             body=notification.message,
-#             module_slug=self.module_slug,
-#             notification_type=self.notification_type,
-#             created_at=timezone.now(),
-#             context=self.get_context(),
-#             make_push=notification.make_push,
-#             scheduled_for=now,
-#             expires_at=now + timezone.timedelta(minutes=expiry_minutes),
-#             identifier=f"{self.module_slug}_{uuid.uuid4()}",
-#             image=notification.image_set_id,
-#         )
-#         instance.save()
-#         instance.devices.set(devices)
-
-#     def get_context(self) -> dict:
-#         """Context can only contain string values!"""
-#         context = {
-#             "linkSourceid": str(self.link_source_id),
-#             "type": self.notification_type,
-#             "module_slug": self.module_slug,
-#         }
-#         if self.notification_url:
-#             context["url"] = str(self.notification_url)
-#         if self.notification_deeplink:
-#             context["deeplink"] = str(self.notification_deeplink)
-#         return context
-
-
-# def create_missing_device_ids(device_ids: list[str]) -> list[Device]:
-#     existing_devices = Device.objects.filter(external_id__in=device_ids).values_list(
-#         "external_id", flat=True
-#     )
-#     missing_device_ids = set(device_ids) - set(existing_devices)
-#     if missing_device_ids:
-#         Device.objects.bulk_create(
-#             Device(external_id=device_id) for device_id in missing_device_ids
-#         )
-#         logger.info(f"Created {len(missing_device_ids)} missing devices.")
-#     return Device.objects.filter(external_id__in=device_ids)
-
-
-class WasteNotificationService:
-    @staticmethod
-    def get_device_ids() -> list[str]:
-        return list(WasteNotification.objects.values_list("device_id", flat=True))

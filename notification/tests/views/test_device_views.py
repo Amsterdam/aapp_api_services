@@ -469,7 +469,7 @@ class TestNotificationPushModuleDisabledListView(AuthenticatedAPITestCase):
         self.assertEqual(response.data, [])
 
 
-class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
+class TestWasteNotificationView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("waste-guide-notification")
@@ -501,20 +501,11 @@ class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
             payload["bag_nummeraanduiding_id"],
         )
 
-
-class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
-    def setUp(self):
-        super().setUp()
+    def test_retrieve_success(self):
         self.notification = WasteNotification.objects.create(
             bag_nummeraanduiding_id="1091",
             device_id="test-device-id",
         )
-        self.api_headers["DeviceId"] = self.notification.device_id
-        self.url = reverse(
-            "waste-guide-notification",
-        )
-
-    def test_retrieve_success(self):
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
 
@@ -525,6 +516,10 @@ class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.json(), {"status": "error", "message": "not found"})
 
     def test_update_success(self):
+        self.notification = WasteNotification.objects.create(
+            bag_nummeraanduiding_id="1091",
+            device_id="test-device-id",
+        )
         payload = {
             "bag_nummeraanduiding_id": "1012",
         }
@@ -539,6 +534,10 @@ class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
         )
 
     def test_delete_success(self):
+        self.notification = WasteNotification.objects.create(
+            bag_nummeraanduiding_id="1091",
+            device_id="test-device-id",
+        )
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 204)
         notification_records = WasteNotification.objects.all()
