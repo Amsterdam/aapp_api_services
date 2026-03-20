@@ -240,7 +240,7 @@ class WasteDeviceView(DeviceIdMixin, generics.GenericAPIView):
             get_or_create_device(self.device_id)
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         get_or_create_device(self.device_id)

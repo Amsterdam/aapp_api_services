@@ -484,6 +484,26 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.status_code, 201)
         WasteDevice.objects.get(device_id=self.device_id)
 
+    def test_create_missing_body_returns_validation_error(self):
+        response = self.client.post(self.url, data={}, headers=self.api_headers)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"bag_nummeraanduiding_id": ["This field is required."]},
+        )
+
+    def test_create_missing_bag_nummeraanduiding_id_returns_validation_error(self):
+        response = self.client.post(
+            self.url,
+            data={"updated_at": "2020-01-01T00:00:00Z"},
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"bag_nummeraanduiding_id": ["This field is required."]},
+        )
+
     def test_upsert_second_post_updates(self):
         WasteDevice.objects.create(
             bag_nummeraanduiding_id="old",
@@ -499,6 +519,18 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         self.assertEqual(
             updated_notification.bag_nummeraanduiding_id,
             payload["bag_nummeraanduiding_id"],
+        )
+
+    def test_update_missing_body_returns_validation_error(self):
+        WasteDevice.objects.create(
+            bag_nummeraanduiding_id="old",
+            device_id=self.device_id,
+        )
+        response = self.client.post(self.url, data={}, headers=self.api_headers)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"bag_nummeraanduiding_id": ["This field is required."]},
         )
 
     def test_retrieve_success(self):

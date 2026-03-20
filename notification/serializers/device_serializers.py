@@ -19,6 +19,11 @@ class DeviceRegisterResponseSerializer(serializers.ModelSerializer):
 
 
 class WasteDeviceRequestSerializer(serializers.ModelSerializer):
+    bag_nummeraanduiding_id = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        allow_null=False,
+    )
     updated_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
