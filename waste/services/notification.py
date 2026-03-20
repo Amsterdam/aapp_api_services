@@ -7,7 +7,7 @@ from core.services.notification_service import (
     AbstractNotificationService,
     NotificationData,
 )
-from notification.models import WasteNotification
+from notification.models import WasteDevice
 from waste.models import ManualNotification
 
 
@@ -64,4 +64,4 @@ class ManualNotificationService(AbstractNotificationService):
         notification.save()
 
     def get_device_ids(self) -> list[str]:
-        return list(WasteNotification.objects.values_list("device_id", flat=True))
+        return list(WasteDevice.objects.values_list("device_id", flat=True))

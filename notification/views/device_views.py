@@ -10,13 +10,14 @@ from notification.models import (
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
-    WasteNotification,
-    BurningGuideDevice
+    BurningGuideDevice,
+    WasteDevice,
 )
 from notification.serializers.device_serializers import (
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
-    WasteNotificationRequestSerializer
+    WasteDeviceRequestSerializer,
+    BurningGuideDeviceRequestSerializer,
 )
 from notification.serializers.notification_config_serializers import (
     NotificationPushModuleDisabledListSerializer,
@@ -217,13 +218,13 @@ class NotificationPushModuleDisabledListView(DeviceIdMixin, generics.ListAPIView
 
 class WasteDeviceView(ServiceDeviceView):
     """Create/update, retrieve and delete the waste-notification schedule for a device."""
-    serializer_class = WasteNotificationRequestSerializer
+    serializer_class = WasteDeviceRequestSerializer
     def _get_instance(self):
-        return WasteNotification.objects.filter(device_id=self.device_id).first()
+        return WasteDevice.objects.filter(device_id=self.device_id).first()
     
 class BurningGuideDeviceView(ServiceDeviceView):
     """Create/update, retrieve and delete the burning-guide-notification schedule for a device."""
-    serializer_class = WasteNotificationRequestSerializer
+    serializer_class = BurningGuideDeviceRequestSerializer
     def _get_instance(self):
         return BurningGuideDevice.objects.filter(device_id=self.device_id).first()
 

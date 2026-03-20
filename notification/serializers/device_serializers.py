@@ -1,7 +1,7 @@
 from bridge.burning_guide.serializers.mixins import PostalCodeValidationMixin
 from rest_framework import serializers
 
-from notification.models import BurningGuideDevice, Device, WasteNotification
+from notification.models import BurningGuideDevice, Device, WasteDevice
 
 
 class DeviceRegisterRequestSerializer(serializers.Serializer):
@@ -19,11 +19,11 @@ class DeviceRegisterResponseSerializer(serializers.ModelSerializer):
         }
 
 
-class WasteNotificationRequestSerializer(serializers.ModelSerializer):
+class WasteDeviceRequestSerializer(serializers.ModelSerializer):
     updated_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
-        model = WasteNotification
+        model = WasteDevice
         fields = ["bag_nummeraanduiding_id", "updated_at"]
 
     def create(self, validated_data):
@@ -31,12 +31,12 @@ class WasteNotificationRequestSerializer(serializers.ModelSerializer):
         if not device_id:
             raise serializers.ValidationError("Device ID header missing")
 
-        return WasteNotification.objects.create(
+        return WasteDevice.objects.create(
             device_id=device_id,
             **validated_data,
         )
     
-class NotificationSerializer(serializers.ModelSerializer, PostalCodeValidationMixin):
+class BurningGuideDeviceRequestSerializer(serializers.ModelSerializer, PostalCodeValidationMixin):
     send_at = serializers.DateTimeField(read_only=True)
 
     class Meta:

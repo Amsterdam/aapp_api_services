@@ -19,7 +19,7 @@ from notification.models import (
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
-    WasteNotification,
+    WasteDevice,
 )
 
 
@@ -469,7 +469,7 @@ class TestNotificationPushModuleDisabledListView(AuthenticatedAPITestCase):
         self.assertEqual(response.data, [])
 
 
-class TestWasteNotificationView(ResponsesActivatedAPITestCase):
+class TestWasteDeviceView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("waste-guide-notification")
@@ -482,10 +482,10 @@ class TestWasteNotificationView(ResponsesActivatedAPITestCase):
         }
         response = self.client.post(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 201)
-        WasteNotification.objects.get(device_id=self.device_id)
+        WasteDevice.objects.get(device_id=self.device_id)
 
     def test_upsert_second_post_updates(self):
-        WasteNotification.objects.create(
+        WasteDevice.objects.create(
             bag_nummeraanduiding_id="old",
             device_id=self.device_id,
         )
@@ -495,14 +495,14 @@ class TestWasteNotificationView(ResponsesActivatedAPITestCase):
         }
         response = self.client.post(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        updated_notification = WasteNotification.objects.get(device_id=self.device_id)
+        updated_notification = WasteDevice.objects.get(device_id=self.device_id)
         self.assertEqual(
             updated_notification.bag_nummeraanduiding_id,
             payload["bag_nummeraanduiding_id"],
         )
 
     def test_retrieve_success(self):
-        self.notification = WasteNotification.objects.create(
+        self.notification = WasteDevice.objects.create(
             bag_nummeraanduiding_id="1091",
             device_id="test-device-id",
         )
@@ -510,13 +510,13 @@ class TestWasteNotificationView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_retrieve_no_content(self):
-        WasteNotification.objects.all().delete()
+        WasteDevice.objects.all().delete()
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "error", "message": "not found"})
 
     def test_update_success(self):
-        self.notification = WasteNotification.objects.create(
+        self.notification = WasteDevice.objects.create(
             bag_nummeraanduiding_id="1091",
             device_id="test-device-id",
         )
@@ -525,7 +525,7 @@ class TestWasteNotificationView(ResponsesActivatedAPITestCase):
         }
         response = self.client.post(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        updated_notification = WasteNotification.objects.get(
+        updated_notification = WasteDevice.objects.get(
             device_id=self.notification.device_id
         )
         self.assertEqual(
@@ -534,16 +534,16 @@ class TestWasteNotificationView(ResponsesActivatedAPITestCase):
         )
 
     def test_delete_success(self):
-        self.notification = WasteNotification.objects.create(
+        self.notification = WasteDevice.objects.create(
             bag_nummeraanduiding_id="1091",
             device_id="test-device-id",
         )
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 204)
-        notification_records = WasteNotification.objects.all()
+        notification_records = WasteDevice.objects.all()
         self.assertEqual(notification_records.count(), 0)
 
     def test_delete_not_found(self):
-        WasteNotification.objects.all().delete()
+        WasteDevice.objects.all().delete()
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 204)

@@ -1,11 +1,9 @@
-import json
-
 import responses
 from django.conf import settings
 from django.urls import reverse
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import WasteNotification
+from notification.models import WasteDevice
 
 
 class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
@@ -32,7 +30,7 @@ class TestWasteNotificationCreateView(ResponsesActivatedAPITestCase):
 class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
-        self.notification = WasteNotification.objects.create(
+        self.notification = WasteDevice.objects.create(
             bag_nummeraanduiding_id="1091",
             device_id="test-device-id",
         )
@@ -70,7 +68,7 @@ class TestWasteGuideNotificationDetailView(ResponsesActivatedAPITestCase):
         response = self.client.patch(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            json.loads(resp.body)["bag_nummeraanduiding_id"],
+            responses.calls[0].response.json()["bag_nummeraanduiding_id"],
             payload["bag_nummeraanduiding_id"],
         )
         self.assertEqual(resp.call_count, 1)
