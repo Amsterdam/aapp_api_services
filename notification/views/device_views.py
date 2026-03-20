@@ -11,12 +11,12 @@ from notification.models import (
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
     WasteNotification,
+    BurningGuideDevice
 )
 from notification.serializers.device_serializers import (
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
-    WasteNotificationRequestSerializer,
-    WasteNotificationResponseSerializer,
+    WasteNotificationRequestSerializer
 )
 from notification.serializers.notification_config_serializers import (
     NotificationPushModuleDisabledListSerializer,
@@ -24,6 +24,7 @@ from notification.serializers.notification_config_serializers import (
     NotificationPushTypeDisabledListSerializer,
     NotificationPushTypeDisabledSerializer,
 )
+from notification.views.service_device_abstract_view import ServiceDeviceView
 
 
 class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
@@ -214,49 +215,17 @@ class NotificationPushModuleDisabledListView(DeviceIdMixin, generics.ListAPIView
         return super().get(request, *args, **kwargs)
 
 
-@extend_schema_for_device_id(success_response=WasteNotificationResponseSerializer)
-class WasteNotificationView(DeviceIdMixin, generics.GenericAPIView):
+class WasteDeviceView(ServiceDeviceView):
     """Create/update, retrieve and delete the waste-notification schedule for a device."""
-
     serializer_class = WasteNotificationRequestSerializer
-    http_method_names = ["get", "post", "delete"]
-
-    def get(self, request, *args, **kwargs):
-        if self._get_instance() is None:
-            return Response(
-                data={"status": "error", "message": "not found"},
-                status=status.HTTP_200_OK,
-            )
-        return Response({"status": "success"}, status=status.HTTP_200_OK)
-
-    def post(self, request, *args, **kwargs):
-        instance = self._get_instance()
-        if instance is None:
-            serializer = self.get_serializer(
-                data=request.data, context={"device_id": self.device_id}
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            get_or_create_device(self.device_id)
-            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
-
-        # If instance already exists, update it with the new data, and update updated_at to now
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        get_or_create_device(self.device_id)
-        return Response({"status": "success"}, status=status.HTTP_200_OK)
-
-    def delete(self, request, *args, **kwargs):
-        instance = self._get_instance()
-        if instance is None:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
     def _get_instance(self):
         return WasteNotification.objects.filter(device_id=self.device_id).first()
+    
+class BurningGuideDeviceView(ServiceDeviceView):
+    """Create/update, retrieve and delete the burning-guide-notification schedule for a device."""
+    serializer_class = WasteNotificationRequestSerializer
+    def _get_instance(self):
+        return BurningGuideDevice.objects.filter(device_id=self.device_id).first()
 
 
 def get_or_create_device(device_id):

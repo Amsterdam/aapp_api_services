@@ -195,3 +195,15 @@ class WasteNotification(models.Model):
     bag_nummeraanduiding_id = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True)
+
+
+class BurningGuideDevice(models.Model):
+    """
+    Record to determine which device wants to receive burning guide notifications and
+    for which address (postal_code).
+    """
+
+    device_id = models.CharField(max_length=255, primary_key=True)
+    postal_code = models.CharField(max_length=4)
+    created_at = models.DateTimeField(auto_now_add=True)
+    send_at = models.DateTimeField(null=True)

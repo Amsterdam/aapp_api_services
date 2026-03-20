@@ -1,19 +1,24 @@
+import requests
+from django.conf import settings
+
 from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
-
-from bridge.burning_guide.serializers.notification import (
-    NotificationSerializer,
+import logging
+from bridge.burning_guide.serializers.advice import (
+    AdviceRequestSerializer,
 )
-from bridge.models import BurningGuideNotification
+# from bridge.models import BurningGuideNotification
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 
 
-@extend_schema_for_device_id(success_response=NotificationSerializer)
+logger = logging.getLogger(__name__)
+
+@extend_schema_for_device_id()
 class BurningGuideNotificationCreateView(DeviceIdMixin, CreateAPIView):
-    serializer_class = NotificationSerializer
+    serializer_class = AdviceRequestSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(
@@ -31,7 +36,7 @@ class BurningGuideNotificationCreateView(DeviceIdMixin, CreateAPIView):
         return Response(
             {"status": "success"}, status=status.HTTP_201_CREATED, headers=headers
         )
-
+    
 
 @extend_schema_for_device_id(success_response=NotificationSerializer)
 class BurningGuideNotificationView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
@@ -69,3 +74,5 @@ class BurningGuideNotificationView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
 
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
