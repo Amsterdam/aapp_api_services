@@ -42,6 +42,7 @@ class TestWasteDeviceService(ResponsesActivatedAPITestCase):
         outdated_device = baker.make(
             WasteDevice,
             device_id="outdated_device",
+            bag_nummeraanduiding_id="789",
             updated_at=datetime.datetime.combine(
                 datetime.date.today() - datetime.timedelta(days=1),
                 datetime.time(hour=0, minute=0),
@@ -50,12 +51,27 @@ class TestWasteDeviceService(ResponsesActivatedAPITestCase):
         up_to_date_device = baker.make(
             WasteDevice,
             device_id="up_to_date_device",
+            bag_nummeraanduiding_id="101",
             updated_at=timezone.now(),
         )
 
         result = self.service.get_outdated_waste_devices()
         self.assertIn(outdated_device, result)
         self.assertNotIn(up_to_date_device, result)
+
+    def test_get_outdated_no_id_waste_devices(self):
+        outdated_device = baker.make(
+            WasteDevice,
+            device_id="outdated_device",
+            bag_nummeraanduiding_id=None,
+            updated_at=datetime.datetime.combine(
+                datetime.date.today() - datetime.timedelta(days=1),
+                datetime.time(hour=0, minute=0),
+            ),
+        )
+
+        result = self.service.get_outdated_waste_devices()
+        self.assertNotIn(outdated_device, result)
 
     def test_update_waste_device(self):
         device = baker.make(
