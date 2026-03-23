@@ -18,6 +18,7 @@ from notification.serializers.device_serializers import (
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
     WasteDeviceRequestSerializer,
+    WasteDeviceResponseSerializer,
 )
 from notification.serializers.notification_config_serializers import (
     NotificationPushModuleDisabledListSerializer,
