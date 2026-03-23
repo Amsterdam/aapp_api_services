@@ -17,7 +17,7 @@ class TestPushService(TestCase):
     def setUp(self):
         self.push_service = PushService()
 
-    @override_settings(MAX_MESSAGES_PER_FIREBASE_BATCH=6)
+    @override_settings(MAX_FIREBASE_WORKERS=6)
     def test_batch_messages_single(self):
         # Test that the batch_messages method correctly batches messages
         messages = [1, 2, 3, 4, 5]
@@ -25,7 +25,7 @@ class TestPushService(TestCase):
         self.assertEqual(len(batched_messages), 1)
         self.assertEqual(batched_messages[0], [1, 2, 3, 4, 5])
 
-    @override_settings(MAX_MESSAGES_PER_FIREBASE_BATCH=3)
+    @override_settings(MAX_FIREBASE_WORKERS=3)
     def test_batch_messages_multiple(self):
         # Test that the batch_messages method correctly batches messages
         messages = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -46,7 +46,7 @@ class TestPushService(TestCase):
         mock_send_each.assert_called_once()
 
     @patch("firebase_admin.messaging.send_each")
-    @override_settings(MAX_MESSAGES_PER_FIREBASE_BATCH=3)
+    @override_settings(MAX_FIREBASE_WORKERS=3)
     def test_push_success_batches(self, mock_send_each):
         device = baker.make(Device, firebase_token="test_token")
         notification = baker.make(Notification, device=device, image=None)
@@ -59,7 +59,7 @@ class TestPushService(TestCase):
         self.assertEqual(failed_token_count, 0)
 
     @patch("firebase_admin.messaging.send_each")
-    @override_settings(MAX_MESSAGES_PER_FIREBASE_BATCH=3)
+    @override_settings(MAX_FIREBASE_WORKERS=3)
     def test_push_failed_tokens(self, mock_send_each):
         device = baker.make(Device, firebase_token="test_token")
         notification = baker.make(Notification, device=device, image=None)
