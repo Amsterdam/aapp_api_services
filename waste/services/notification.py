@@ -1,5 +1,4 @@
 import datetime
-import logging
 
 from django.utils import timezone
 
@@ -8,9 +7,10 @@ from core.services.notification_service import (
     AbstractNotificationService,
     NotificationData,
 )
-from waste.models import ManualNotification, NotificationSchedule
+from core.services.waste_device import WasteDeviceService
+from waste.models import ManualNotification
 
-logger = logging.getLogger(__name__)
+waste_device_service = WasteDeviceService()
 
 
 class NotificationService(AbstractNotificationService):
@@ -66,4 +66,4 @@ class ManualNotificationService(AbstractNotificationService):
         notification.save()
 
     def get_device_ids(self) -> list[str]:
-        return list(NotificationSchedule.objects.values_list("device_id", flat=True))
+        return waste_device_service.get_device_ids()

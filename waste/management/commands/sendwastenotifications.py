@@ -5,16 +5,14 @@ from typing import Any
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db.models import Q
-from django.utils import timezone
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
+from core.services.waste_device import WasteDeviceService
 from waste.constants import (
     WASTE_COLLECTION_ROUTE_TYPES,
     WEEKDAYS,
 )
 from waste.interpret_frequencies import interpret_single_date_frequency
-from waste.models import NotificationSchedule
 from waste.services.notification import NotificationService
 
 
@@ -37,21 +35,16 @@ class Command(BaseCommand):
         self.headers = None
         if settings.ENVIRONMENT_SLUG in ["a", "p"]:
             self.headers = {"X-Api-Key": self.api_key}
+
+        self.waste_device_service = WasteDeviceService()
         self.tomorrow_datetime = datetime.date.today() + datetime.timedelta(days=1)
         self.tomorrow_weekday_name = WEEKDAYS[self.tomorrow_datetime.weekday()]
         self.notification_datetime = datetime.datetime.combine(
             datetime.date.today(), datetime.time(hour=21, minute=0)
         )  # send at 21:00 today for tomorrow pickups
         self.notification_service = NotificationService()
-        self.notification_schedules = list(
-            NotificationSchedule.objects.filter(
-                Q(
-                    updated_at__lt=datetime.datetime.combine(
-                        datetime.date.today(), datetime.time.min
-                    )
-                )
-                | Q(updated_at__isnull=True)
-            )
+        self.notification_schedules = (
+            self.waste_device_service.get_outdated_waste_devices()
         )
         logger.info(
             f"[waste-notification] Initialized command."
@@ -87,9 +80,7 @@ class Command(BaseCommand):
 
         # Mark all schedules as updated, to prevent sending the same notification multiple times
         ids_to_update = [schedule.pk for schedule in self.notification_schedules]
-        NotificationSchedule.objects.filter(pk__in=ids_to_update).update(
-            updated_at=timezone.now()
-        )
+        self.waste_device_service.update_waste_device(ids_to_update=ids_to_update)
 
     def _get_records_for_waste_type(
         self, waste_type: str, page_size: int = 5000
@@ -241,9 +232,7 @@ class Command(BaseCommand):
                     )
         return fraction_device_ids
 
-    def _filter_notifications_to_send(
-        self, bag_nummeraanduiding_id: str
-    ) -> list[NotificationSchedule]:
+    def _filter_notifications_to_send(self, bag_nummeraanduiding_id: str):
         """Filter notification schedules to only those that need to be sent"""
         return [
             schedule

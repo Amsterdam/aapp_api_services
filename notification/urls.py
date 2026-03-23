@@ -35,6 +35,11 @@ urlpatterns = [
         name="notification-device-push-module-disabled-list",
     ),
     path(
+        BASE_PATH + "/device/waste",
+        device_views.WasteDeviceView.as_view(),
+        name="waste-guide-notification",
+    ),
+    path(
         BASE_PATH + "/notifications/<uuid:notification_id>",
         notification_views.NotificationDetailView.as_view(),
         name="notification-detail-notification",
