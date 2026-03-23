@@ -27,6 +27,7 @@ class NotificationData(NamedTuple):
 
 
 @override_settings(FIREBASE_CREDENTIALS="foobar")
+@override_settings(MAX_MESSAGES_PER_FIREBASE_BATCH=10)
 @freezegun.freeze_time(timezone.now())
 class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):
     def setUp(self):

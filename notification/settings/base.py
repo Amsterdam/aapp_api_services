@@ -42,14 +42,8 @@ DATABASE_ROUTERS = []
 
 APPEND_SLASH = True
 
-# This is equal to the maximum tokens Firebase will accept:
-# https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-multiple-devices
-FIREBASE_DEVICE_LIMIT = 500
-# Enforcing this limit will also make the queue items limited in size, since,
-# Azure Queue Storage messages are max 64 KiB:
-# https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-multiple-devices#
-# Example: 500 hashed (SHA256) device ids strings would amount to 64 bytes per string.
-# So, 500 * 64 = 32,000 bytes / 1024 = 31.25 KiB
-MAX_DEVICES_PER_REQUEST = FIREBASE_DEVICE_LIMIT
+# Firebase will accept a maximum of 500 messages as the same time, but sends them all in parrallel.
+# In order to prevent threadpool exhaustion we take a lower limit on concurrency
+MAX_MESSAGES_PER_FIREBASE_BATCH = 50
 
 STATIC_URL = "/notification/static/"
