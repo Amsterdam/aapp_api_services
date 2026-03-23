@@ -3,8 +3,9 @@ from rest_framework import status
 from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
-from bridge.burning_guide.serializers.advice import (
-    AdviceRequestSerializer,
+from bridge.burning_guide.serializers.notification import (
+    BurningGuideNotificationRequestSerializer,
+    BurningGuideNotificationResponseSerializer,
 )
 from core.services.internal_http_client import InternalServiceSession
 from core.utils.openapi_utils import extend_schema_for_device_id
@@ -13,9 +14,11 @@ from core.views.mixins import DeviceIdMixin
 internal_client = InternalServiceSession()
 
 
-@extend_schema_for_device_id()
+@extend_schema_for_device_id(
+    success_response=BurningGuideNotificationResponseSerializer
+)
 class BurningGuideNotificationCreateView(DeviceIdMixin, CreateAPIView):
-    serializer_class = AdviceRequestSerializer
+    serializer_class = BurningGuideNotificationRequestSerializer
 
     def create(self, request, *args, **kwargs):
         response = internal_client.post(
@@ -29,9 +32,11 @@ class BurningGuideNotificationCreateView(DeviceIdMixin, CreateAPIView):
         return Response(response.json(), status=response.status_code)
 
 
-@extend_schema_for_device_id()
+@extend_schema_for_device_id(
+    success_response=BurningGuideNotificationResponseSerializer
+)
 class BurningGuideNotificationView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
-    serializer_class = AdviceRequestSerializer
+    serializer_class = BurningGuideNotificationRequestSerializer
     http_method_names = ["get", "patch", "delete"]
 
     def retrieve(self, request, *args, **kwargs):
