@@ -42,8 +42,8 @@ DATABASE_ROUTERS = []
 
 APPEND_SLASH = True
 
-# Firebase will accept a maximum of 500 messages as the same time, but sends them all in parrallel.
+# Firebase will accept a maximum of 500 messages as the same time, but sends them all in parallel.
 # In order to prevent threadpool exhaustion we take a lower limit on concurrency
-MAX_MESSAGES_PER_FIREBASE_BATCH = 50
+MAX_FIREBASE_WORKERS = 10
 
 STATIC_URL = "/notification/static/"

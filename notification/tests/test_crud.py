@@ -12,10 +12,7 @@ from notification.models import (
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
 )
-from notification.utils.patch_utils import (
-    MockFirebaseSendEach,
-    apply_init_firebase_patches,
-)
+from notification.utils.patch_utils import apply_init_firebase_patches
 
 
 class TestNotificationCRUD(TestCase):
@@ -64,13 +61,10 @@ class TestNotificationCRUD(TestCase):
             messages.append(firebase_message)
         return messages
 
-    @patch("notification.services.push.messaging.send_each")
-    def test_push_success(self, multicast_mock):
+    @patch("notification.services.push.messaging.send")
+    def test_push_success(self, send_firebase_mock):
         device = baker.make(Device, firebase_token="abc_token")
-        messages = self.create_firebase_messages(
-            [device], title=self.notification.title, body=self.notification.body
-        )
-        multicast_mock.return_value = MockFirebaseSendEach(messages)
+        send_firebase_mock.return_value = "mock_message_id"
 
         notification_crud = NotificationCRUD(self.notification)
         notification_crud.create(Device.objects.all())
@@ -81,29 +75,25 @@ class TestNotificationCRUD(TestCase):
         self.assertIsNotNone(notification.pushed_at)
         self.assertEqual(notification.device_external_id, device.external_id)
 
-    @patch("notification.services.push.messaging.send_each")
-    def test_push_notification_ids_are_unique(self, multicast_mock):
+    @patch("notification.services.push.messaging.send")
+    def test_push_notification_ids_are_unique(self, send_firebase_mock):
         devices = self.create_devices(3, with_token=True)
-        messages = self.create_firebase_messages(
-            devices, title=self.notification.title, body=self.notification.body
-        )
-        multicast_mock.return_value = MockFirebaseSendEach(messages)
+        send_firebase_mock.return_value = "mock_message_id"
 
         notification_crud = NotificationCRUD(self.notification)
         notification_crud.create(Device.objects.all())
 
         sent_notification_ids = []
-        for call in multicast_mock.call_args_list:
-            batch = call.args[0]
-            for msg in batch:
-                sent_notification_ids.append(msg.data.get("notificationId"))
+        for call in send_firebase_mock.call_args_list:
+            msg = call.args[0]  # The first positional argument to messaging.send
+            sent_notification_ids.append(msg.data.get("notificationId"))
 
         # One push message per device with token
         self.assertEqual(len(sent_notification_ids), len(devices))
         self.assertTrue(all(sent_notification_ids))
         self.assertEqual(len(set(sent_notification_ids)), len(sent_notification_ids))
 
-    @patch("notification.services.push.messaging.send_each")
+    @patch("notification.services.push.messaging.send")
     def test_push_missing_token(self, _):
         device = baker.make(Device)
         notification_crud = NotificationCRUD(self.notification)
@@ -116,7 +106,7 @@ class TestNotificationCRUD(TestCase):
         self.assertIsNone(notification.pushed_at)
         self.assertEqual(notification.device_external_id, device.external_id)
 
-    @patch("notification.services.push.messaging.send_each")
+    @patch("notification.services.push.messaging.send")
     def test_push_disabled(self, _):
         device = baker.make(Device, firebase_token="abc_token")
         notification_crud = NotificationCRUD(self.notification, push_enabled=False)
@@ -129,32 +119,27 @@ class TestNotificationCRUD(TestCase):
         self.assertIsNone(notification.pushed_at)
         self.assertEqual(notification.device_external_id, device.external_id)
 
-    @patch("notification.services.push.messaging.send_each")
-    def test_push_with_some_failed_tokens(self, multicast_mock):
+    @patch("notification.services.push.messaging.send")
+    def test_push_with_some_failed_tokens(self, send_firebase_mock):
         device_count = 5
-        failed_device_count = 2
+        self.create_devices(device_count)
 
-        created_devices = self.create_devices(device_count)
-        messages = self.create_firebase_messages(
-            created_devices,
-            title=self.notification.title,
-            body=self.notification.body,
-        )
-
-        multicast_mock.return_value = MockFirebaseSendEach(
-            messages, fail_count=failed_device_count
-        )
-
-        device_qs = Device.objects.all()
+        # Simulate failures for the first calls
+        send_firebase_mock.side_effect = [
+            Exception("Simulated failure"),
+            Exception("Simulated failure"),
+            "mock_message_id",
+            "mock_message_id",
+            "mock_message_id",
+        ]
         notification_crud = NotificationCRUD(self.notification)
 
         logger = logging.getLogger("notification.services.push")
         parent_logger = logger.parent
         parent_logger.setLevel(logging.INFO)
         parent_logger.propagate = True
-
         with self.assertLogs(logger, level=logging.INFO) as log_context:
-            notification_crud.create(device_qs)
+            notification_crud.create(Device.objects.all())
 
         self.assertTrue(
             any(
@@ -163,9 +148,7 @@ class TestNotificationCRUD(TestCase):
             )
         )
         self.assertEqual(Notification.objects.count(), device_count)
-        self.assertEqual(
-            notification_crud.response_data["failed_token_count"], failed_device_count
-        )
+        self.assertEqual(notification_crud.response_data["failed_token_count"], 2)
 
     @override_settings(FIREBASE_DEVICE_LIMIT=5)
     def test_hit_max_devices(self):
@@ -257,18 +240,21 @@ class TestNotificationCRUD(TestCase):
             },
         )
 
-    @patch("notification.services.push.messaging.send_each")
-    def test_response_data_counts_for_devices(self, multicast_mock):
+    @patch("notification.services.push.messaging.send")
+    def test_response_data_counts_for_devices(self, send_firebase_mock):
         devices_with_token = self.create_devices(3, with_token=True)
         devices_without_token = self.create_devices(
             3, with_token=False, start_id=len(devices_with_token)
         )
         known_devices = devices_with_token + devices_without_token
 
-        messages = self.create_firebase_messages(
-            known_devices, title=self.notification.title, body=self.notification.body
-        )
-        multicast_mock.return_value = MockFirebaseSendEach(messages, fail_count=1)
+        # Simulate failures for devices with token
+        def send_side_effect(msg):
+            if msg.token == devices_with_token[0].firebase_token:
+                raise Exception("Simulated failure")
+            return "mock_message_id"
+
+        send_firebase_mock.side_effect = send_side_effect
 
         baker.make(
             NotificationPushTypeDisabled,
@@ -296,6 +282,6 @@ class TestNotificationCRUD(TestCase):
                 "total_device_count": len(known_devices),
                 "total_token_count": len(devices_with_token),
                 "total_enabled_count": len(devices_with_token) - 1,
-                "failed_token_count": 1,
+                "failed_token_count": 2,
             },
         )

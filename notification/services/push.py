@@ -1,19 +1,14 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import urllib3
 from django.conf import settings
 from firebase_admin import messaging
 
 from core.services.image_set import ImageSetService
 from notification.models import Notification
 
-# Patch urllib3 connection pool size globally
-urllib3.util.connection.HAS_IPV6 = False  # Avoid IPv6 issues
-urllib3.connectionpool.ConnectionPool.DEFAULT_MAXSIZE = (
-    settings.MAX_MESSAGES_PER_FIREBASE_BATCH
-)
-
 logger = logging.getLogger(__name__)
+thread_pool = ThreadPoolExecutor(max_workers=settings.MAX_FIREBASE_WORKERS)
 
 
 class PushService:
@@ -21,22 +16,37 @@ class PushService:
         """
         Forwards notification to Firebase, to be pushed to devices.
 
-        If device has a firebase token, a Firebase message will be crafted
-        and finally sent as a batch to Firebase.
+        Processes notifications in batches of 5000 to avoid high memory usage.
+        Each batch is sent concurrently using a thread pool.
 
         Args:
             notifications (list[Notification]): notifications used for Firebase message data
         """
-
-        firebase_messages = [self._define_firebase_message(n) for n in notifications]
-        firebase_batches = self._batch_messages(firebase_messages)
         failed_token_count = 0
-        for batch in firebase_batches:
-            batch_response = messaging.send_each(batch)
-            if batch_response.failure_count > 0:
-                failed_token_count += batch_response.failure_count
-                self._log_failures(batch_response, firebase_messages)
+        for batch in self._batch_messages(notifications):
+            firebase_messages = [
+                self._define_firebase_message(notification) for notification in batch
+            ]
+            futures = []
+            for msg in firebase_messages:
+                futures.append(thread_pool.submit(self._send_message, msg))
+
+            for future in as_completed(futures):
+                result = future.result()
+                if result is False:
+                    failed_token_count += 1
         return failed_token_count
+
+    def _send_message(self, message: messaging.Message) -> bool:
+        try:
+            messaging.send(message)
+            return True
+        except Exception:
+            logger.error(
+                "Failed to send notification to device",
+                extra={"firebase_token": getattr(message, "token", None)},
+            )
+            return False
 
     def _define_firebase_message(
         self, notification_obj: Notification
@@ -80,22 +90,15 @@ class PushService:
         )
         return android_image_config, ios_image_config
 
-    def _batch_messages(self, messages) -> list[list[messaging.Message]]:
+    def _batch_messages(
+        self, notifications: list[Notification]
+    ) -> list[list[Notification]]:
         """
-        Split the device list into batches of settings.MAX_DEVICES_PER_REQUEST devices.
+        Split the device list into batches to prevent memory overflow.
         """
-        max_devices = settings.MAX_MESSAGES_PER_FIREBASE_BATCH
+        max_devices = 5000
         batches = [
-            messages[i : i + max_devices] for i in range(0, len(messages), max_devices)
+            notifications[i : i + max_devices]
+            for i in range(0, len(notifications), max_devices)
         ]
         return batches
-
-    def _log_failures(self, batch_response, firebase_messages: list[messaging.Message]):
-        responses = batch_response.responses
-        for idx, resp in enumerate(responses):
-            if not resp.success:
-                failed_token = firebase_messages[idx].token
-                logger.error(
-                    "Failed to send notification to device",
-                    extra={"firebase_token": failed_token},
-                )
