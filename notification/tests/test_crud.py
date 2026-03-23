@@ -248,7 +248,7 @@ class TestNotificationCRUD(TestCase):
         )
         known_devices = devices_with_token + devices_without_token
 
-        # Simulate one failure for a device with token
+        # Simulate failures for devices with token
         def send_side_effect(msg):
             if msg.token == devices_with_token[0].firebase_token:
                 raise Exception("Simulated failure")

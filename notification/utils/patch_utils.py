@@ -53,17 +53,19 @@ class MockFirebaseSendResponse:
         if message.apns:
             log_message += f"\n- ios_image: {message.apns.fcm_options.image}"
 
+        logger.info(log_message)
+
 
 def setup_local_development_patches():  # pragma: no cover
     """Set up patches for local development to mock Firebase interactions."""
     cert_patcher, init_patcher, app_patcher = apply_init_firebase_patches()
-    send_each_patcher = patch(
-        "notification.services.push.messaging.send_each", new=MockFirebaseSendResponse
+    send_patcher = patch(
+        "notification.services.push.messaging.send", new=MockFirebaseSendResponse
     )
-    send_each_patcher.start()
+    send_patcher.start()
 
     # Ensure patches are stopped when the server stops
     atexit.register(cert_patcher.stop)
     atexit.register(init_patcher.stop)
     atexit.register(app_patcher.stop)
-    atexit.register(send_each_patcher.stop)
+    atexit.register(send_patcher.stop)

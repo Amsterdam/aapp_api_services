@@ -21,7 +21,6 @@ class TestPushService(TestCase):
     def test_push_success(self, mock_send):
         device = baker.make(Device, firebase_token="test_token")
         notification = baker.make(Notification, device=device, image=None)
-        mock_send.return_value.failure_count = 0
 
         self.push_service.push([notification])
         mock_send.assert_called_once()
@@ -41,7 +40,11 @@ class TestPushService(TestCase):
         device = baker.make(Device, firebase_token="test_token")
         notification = baker.make(Notification, device=device, image=None)
         notifications = [notification] * 8
+        mock_send.side_effect = 3 * [Exception("test error")] + 5 * [
+            "foobar-notification"
+        ]
 
-        self.push_service.push(notifications)
+        failed_token_count = self.push_service.push(notifications)
 
         self.assertEqual(mock_send.call_count, 8)
+        self.assertEqual(failed_token_count, 3)

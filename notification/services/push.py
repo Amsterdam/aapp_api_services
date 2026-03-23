@@ -24,7 +24,9 @@ class PushService:
         """
         failed_token_count = 0
         for batch in self._batch_messages(notifications):
-            firebase_messages = [self._define_firebase_message(n) for n in batch]
+            firebase_messages = [
+                self._define_firebase_message(notification) for notification in batch
+            ]
             futures = []
             for msg in firebase_messages:
                 futures.append(thread_pool.submit(self._send_message, msg))
