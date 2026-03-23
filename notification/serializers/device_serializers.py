@@ -1,6 +1,6 @@
-from bridge.burning_guide.serializers.mixins import PostalCodeValidationMixin
 from rest_framework import serializers
 
+from core.serializers.mixins import PostalCodeValidationMixin
 from notification.models import BurningGuideDevice, Device, WasteDevice
 
 
@@ -40,8 +40,11 @@ class WasteDeviceRequestSerializer(serializers.ModelSerializer):
             device_id=device_id,
             **validated_data,
         )
-    
-class BurningGuideDeviceRequestSerializer(serializers.ModelSerializer, PostalCodeValidationMixin):
+
+
+class BurningGuideDeviceRequestSerializer(
+    serializers.ModelSerializer, PostalCodeValidationMixin
+):
     send_at = serializers.DateTimeField(read_only=True)
 
     class Meta:

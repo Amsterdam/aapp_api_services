@@ -8,8 +8,8 @@ from django.utils import timezone
 
 from bridge.burning_guide.services.notifications import NotificationService
 from bridge.burning_guide.services.rivm import RIVMService
-from bridge.models import BurningGuideNotification
 from core.services.notification_service import NotificationData
+from notification.models import BurningGuideDevice
 
 logger = logging.getLogger(__name__)
 rivm_client = RIVMService()
@@ -33,7 +33,7 @@ class Command(BaseCommand):
             return
         last_timestamp = self._last_fixed_timestamp()
         notification_devices = list(
-            BurningGuideNotification.objects.filter(
+            BurningGuideDevice.objects.filter(
                 Q(send_at__lt=last_timestamp) | Q(send_at__isnull=True)
             )
         )
@@ -56,7 +56,7 @@ class Command(BaseCommand):
                     )
 
                 # Mark devices within postal code as updated, to prevent sending the same notification multiple times
-                BurningGuideNotification.objects.filter(pk__in=device_ids).update(
+                BurningGuideDevice.objects.filter(pk__in=device_ids).update(
                     send_at=timezone.now()
                 )
             except Exception as e:
@@ -70,7 +70,7 @@ class Command(BaseCommand):
 
     def collect_batched_notifications(
         self,
-        notification_devices: list[BurningGuideNotification],
+        notification_devices: list[BurningGuideDevice],
     ):
         """We batch notifications per postal code, so we send one notification to multiple devices"""
         batched_notifications = defaultdict(list)

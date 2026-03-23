@@ -1,7 +1,7 @@
 from django.urls import reverse
 
-from bridge.models import BurningGuideNotification
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+from notification.models import BurningGuideDevice
 
 
 class TestBurningGuideNotificationCreateView(ResponsesActivatedAPITestCase):
@@ -17,7 +17,7 @@ class TestBurningGuideNotificationCreateView(ResponsesActivatedAPITestCase):
         }
         response = self.client.post(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 201)
-        BurningGuideNotification.objects.get(device_id=self.device_id)
+        BurningGuideDevice.objects.get(device_id=self.device_id)
 
     def test_invalid_postal_code(self):
         payload = {
@@ -25,14 +25,14 @@ class TestBurningGuideNotificationCreateView(ResponsesActivatedAPITestCase):
         }
         response = self.client.post(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 400)
-        notification_records = BurningGuideNotification.objects.all()
+        notification_records = BurningGuideDevice.objects.all()
         self.assertEqual(notification_records.count(), 0)
 
 
 class TestBurningGuideNotificationView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
-        self.notification = BurningGuideNotification.objects.create(
+        self.notification = BurningGuideDevice.objects.create(
             device_id="test-device-id",
             postal_code="1091",
         )
@@ -46,7 +46,7 @@ class TestBurningGuideNotificationView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_retrieve_no_content(self):
-        BurningGuideNotification.objects.all().delete()
+        BurningGuideDevice.objects.all().delete()
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "error", "message": "not found"})
@@ -57,7 +57,7 @@ class TestBurningGuideNotificationView(ResponsesActivatedAPITestCase):
         }
         response = self.client.patch(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        updated_notification = BurningGuideNotification.objects.get(
+        updated_notification = BurningGuideDevice.objects.get(
             device_id=self.notification.device_id
         )
         self.assertEqual(updated_notification.postal_code, payload["postal_code"])
@@ -65,10 +65,10 @@ class TestBurningGuideNotificationView(ResponsesActivatedAPITestCase):
     def test_delete_success(self):
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 204)
-        notification_records = BurningGuideNotification.objects.all()
+        notification_records = BurningGuideDevice.objects.all()
         self.assertEqual(notification_records.count(), 0)
 
     def test_delete_not_found(self):
-        BurningGuideNotification.objects.all().delete()
+        BurningGuideDevice.objects.all().delete()
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 204)

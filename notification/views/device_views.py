@@ -7,17 +7,17 @@ from core.exceptions import InputDataException
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 from notification.models import (
+    BurningGuideDevice,
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
-    BurningGuideDevice,
     WasteDevice,
 )
 from notification.serializers.device_serializers import (
+    BurningGuideDeviceRequestSerializer,
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
     WasteDeviceRequestSerializer,
-    BurningGuideDeviceRequestSerializer,
 )
 from notification.serializers.notification_config_serializers import (
     NotificationPushModuleDisabledListSerializer,
@@ -218,13 +218,18 @@ class NotificationPushModuleDisabledListView(DeviceIdMixin, generics.ListAPIView
 
 class WasteDeviceView(ServiceDeviceView):
     """Create/update, retrieve and delete the waste-notification schedule for a device."""
+
     serializer_class = WasteDeviceRequestSerializer
+
     def _get_instance(self):
         return WasteDevice.objects.filter(device_id=self.device_id).first()
-    
+
+
 class BurningGuideDeviceView(ServiceDeviceView):
     """Create/update, retrieve and delete the burning-guide-notification schedule for a device."""
+
     serializer_class = BurningGuideDeviceRequestSerializer
+
     def _get_instance(self):
         return BurningGuideDevice.objects.filter(device_id=self.device_id).first()
 

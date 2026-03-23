@@ -1,10 +1,11 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 
+from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 from notification.models import Device
-from core.utils.openapi_utils import extend_schema_for_device_id
 from notification.serializers.device_serializers import ServiceDeviceResponseSerializer
+
 
 @extend_schema_for_device_id(success_response=ServiceDeviceResponseSerializer)
 class ServiceDeviceView(DeviceIdMixin, generics.GenericAPIView):
@@ -32,7 +33,7 @@ class ServiceDeviceView(DeviceIdMixin, generics.GenericAPIView):
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
         # If instance already exists, update it with the new data, and update updated_at to now
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         self.get_or_create_device(self.device_id)
@@ -49,7 +50,7 @@ class ServiceDeviceView(DeviceIdMixin, generics.GenericAPIView):
     def _get_instance(self):
         """Helper method, should be implemented by the child class, to get the notification instance for the device_id"""
         raise NotImplementedError("Subclasses must implement _get_instance method")
-    
+
     def get_or_create_device(self, device_id):
         existing_device = Device.objects.filter(external_id=device_id).first()
         if not existing_device:
