@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from bridge.burning_guide.serializers.mixins import PostalCodeValidationMixin
+from core.serializers.mixins import PostalCodeValidationMixin
 
 
 class AdviceRequestSerializer(serializers.Serializer, PostalCodeValidationMixin):

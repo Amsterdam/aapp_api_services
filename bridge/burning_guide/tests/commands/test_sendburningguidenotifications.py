@@ -9,9 +9,8 @@ from django.core.management import call_command
 from model_bakery import baker
 
 from bridge.management.commands.sendburningguidenotifications import Command
-from bridge.models import BurningGuideNotification
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import ScheduledNotification
+from notification.models import BurningGuideDevice, ScheduledNotification
 
 tz = ZoneInfo(settings.TIME_ZONE)
 
@@ -25,9 +24,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
             ("device3", "5678"),
         ]
         self.notifications = [
-            baker.make(
-                BurningGuideNotification, postal_code=postal_code, device_id=device_id
-            )
+            baker.make(BurningGuideDevice, postal_code=postal_code, device_id=device_id)
             for device_id, postal_code in self.zipped_devices
         ]
 

@@ -3,12 +3,11 @@ from collections import defaultdict
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 from django.utils import timezone
 
 from bridge.burning_guide.services.notifications import NotificationService
 from bridge.burning_guide.services.rivm import RIVMService
-from bridge.models import BurningGuideNotification
+from core.services.burning_guide_device import BurningGuideDeviceService
 from core.services.notification_service import NotificationData
 
 logger = logging.getLogger(__name__)
@@ -23,6 +22,7 @@ class Command(BaseCommand):
     def __init__(self):
         super().__init__()
         self.notification_service = NotificationService()
+        self.burning_guide_device_service = BurningGuideDeviceService()
 
     def handle(self, *args, **kwargs):
         # check if command should run at this hour
@@ -32,9 +32,9 @@ class Command(BaseCommand):
             )
             return
         last_timestamp = self._last_fixed_timestamp()
-        notification_devices = list(
-            BurningGuideNotification.objects.filter(
-                Q(send_at__lt=last_timestamp) | Q(send_at__isnull=True)
+        notification_devices = (
+            self.burning_guide_device_service.get_outdated_burning_guide_devices(
+                last_timestamp
             )
         )
         batched_notifications = self.collect_batched_notifications(notification_devices)
@@ -56,8 +56,8 @@ class Command(BaseCommand):
                     )
 
                 # Mark devices within postal code as updated, to prevent sending the same notification multiple times
-                BurningGuideNotification.objects.filter(pk__in=device_ids).update(
-                    send_at=timezone.now()
+                self.burning_guide_device_service.update_burning_guide_devices(
+                    device_ids
                 )
             except Exception as e:
                 logger.error(
@@ -68,10 +68,7 @@ class Command(BaseCommand):
                     },
                 )
 
-    def collect_batched_notifications(
-        self,
-        notification_devices: list[BurningGuideNotification],
-    ):
+    def collect_batched_notifications(self, notification_devices):
         """We batch notifications per postal code, so we send one notification to multiple devices"""
         batched_notifications = defaultdict(list)
         for device in notification_devices:
