@@ -125,3 +125,8 @@ class WasteResponseSerializer(serializers.Serializer):
     calendar = WasteCalendarSerializer(many=True)
     is_residential = serializers.BooleanField()
     is_collection_by_appointment = serializers.BooleanField()
+
+
+class WasteNotificationResponseSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    message = serializers.CharField(required=False)

@@ -6,12 +6,15 @@ from rest_framework.response import Response
 from core.services.internal_http_client import InternalServiceSession
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
-from waste.serializers.waste_guide_serializers import WasteRequestSerializer
+from waste.serializers.waste_guide_serializers import (
+    WasteNotificationResponseSerializer,
+    WasteRequestSerializer,
+)
 
 internal_client = InternalServiceSession()
 
 
-@extend_schema_for_device_id()
+@extend_schema_for_device_id(success_response=WasteNotificationResponseSerializer)
 class WasteNotificationCreateView(DeviceIdMixin, CreateAPIView):
     serializer_class = WasteRequestSerializer
 
@@ -27,7 +30,7 @@ class WasteNotificationCreateView(DeviceIdMixin, CreateAPIView):
         return Response(response.json(), status=response.status_code)
 
 
-@extend_schema_for_device_id()
+@extend_schema_for_device_id(success_response=WasteNotificationResponseSerializer)
 class WasteNotificationDetailView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
     serializer_class = WasteRequestSerializer
     http_method_names = ["get", "patch", "delete"]
