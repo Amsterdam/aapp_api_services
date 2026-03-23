@@ -9,7 +9,7 @@ from notification.serializers.device_serializers import ServiceDeviceResponseSer
 
 @extend_schema_for_device_id(success_response=ServiceDeviceResponseSerializer)
 class ServiceDeviceView(DeviceIdMixin, generics.GenericAPIView):
-    """Create/update, retrieve and delete the waste-notification schedule for a device."""
+    """Create/update, retrieve and delete the notification schedule for a service device."""
 
     http_method_names = ["get", "post", "delete"]
 
@@ -32,7 +32,6 @@ class ServiceDeviceView(DeviceIdMixin, generics.GenericAPIView):
             self.get_or_create_device(self.device_id)
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
-        # If instance already exists, update it with the new data, and update updated_at to now
         serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()

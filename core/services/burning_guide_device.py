@@ -16,7 +16,7 @@ class BurningGuideDeviceService:
         BurningGuideDevice.objects.bulk_create(burning_guide_devices)
 
     def define_burning_guide_device_instance(
-        self, device_id: str, postal_code: str, send_at: datetime
+        self, device_id: str, postal_code: str, send_at: datetime | None
     ) -> BurningGuideDevice:
         return BurningGuideDevice(
             device_id=device_id,

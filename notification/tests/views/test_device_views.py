@@ -607,6 +607,10 @@ class TestBurningGuideDeviceView(ResponsesActivatedAPITestCase):
         self.assertEqual(notification_records.count(), 0)
 
     def test_retrieve_success(self):
+        self.notification = BurningGuideDevice.objects.create(
+            postal_code="1091",
+            device_id="test-device-id",
+        )
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
 

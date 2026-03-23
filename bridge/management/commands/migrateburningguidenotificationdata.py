@@ -17,7 +17,7 @@ class Command(BaseCommand):
     to notification.BurningGuideDevice (notification DB).
     """
 
-    help = "Migrate burning guide notification data from bridge.BurningGuideNotification (default DB)to notification.BurningGuideDevice (notification DB)."
+    help = "Migrate burning guide notification data from bridge.BurningGuideNotification (default DB) to notification.BurningGuideDevice (notification DB)."
 
     def handle(self, *args: Any, **options: Any) -> None:
         old_records = BurningGuideNotification.objects.all()
