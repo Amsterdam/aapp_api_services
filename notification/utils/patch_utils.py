@@ -34,54 +34,31 @@ class MockFirebaseError(Exception):
     pass
 
 
-class MockFirebaseSendEachResponse:
-    """Mock response for the `send_each` function from the `firebase_admin.messaging` module."""
+class MockFirebaseSendResponse:
+    """Mock response for the `send` function from the `firebase_admin.messaging` module."""
 
-    def __init__(self, success=True):
+    def __init__(self, message, success=True):
         self.success = success
 
+        log_message = (
+            "Mocked outgoing Firebase message!\n"
+            f"- title: {message.notification.title}\n"
+            f"- token: {message.token}\n"
+            f"- data: {message.data}"
+        )
 
-class MockFirebaseSendEach:
-    """Mock for the `send_each` function from the `firebase_admin.messaging` module."""
+        if message.android:
+            log_message += f"\n- android_image: {message.android.notification.image}"
 
-    def __init__(self, messages: list, fail_count: int = 0):
-        if fail_count > len(messages):
-            raise MockFirebaseError("Fail count cannot be higher than response count")
-
-        self.failure_count = fail_count
-        self.responses: list[MockFirebaseSendEachResponse] = [
-            MockFirebaseSendEachResponse() for _ in messages
-        ]
-
-        # Mark the first `fail_count` responses as failures
-        for response in self.responses[:fail_count]:
-            response.success = False
-
-        # Log each message
-        for message in messages:
-            log_message = (
-                "Mocked outgoing Firebase message!\n"
-                f"- title: {message.notification.title}\n"
-                f"- token: {message.token}\n"
-                f"- data: {message.data}"
-            )
-
-            if message.android:
-                log_message += (
-                    f"\n- android_image: {message.android.notification.image}"
-                )
-
-            if message.apns:
-                log_message += f"\n- ios_image: {message.apns.fcm_options.image}"
-
-            logger.debug(log_message)
+        if message.apns:
+            log_message += f"\n- ios_image: {message.apns.fcm_options.image}"
 
 
 def setup_local_development_patches():  # pragma: no cover
     """Set up patches for local development to mock Firebase interactions."""
     cert_patcher, init_patcher, app_patcher = apply_init_firebase_patches()
     send_each_patcher = patch(
-        "notification.services.push.messaging.send_each", new=MockFirebaseSendEach
+        "notification.services.push.messaging.send_each", new=MockFirebaseSendResponse
     )
     send_each_patcher.start()
 
