@@ -40,6 +40,11 @@ urlpatterns = [
         name="waste-guide-notification",
     ),
     path(
+        BASE_PATH + "/device/burning-guide",
+        device_views.BurningGuideDeviceView.as_view(),
+        name="burning-guide-notification",
+    ),
+    path(
         BASE_PATH + "/notifications/<uuid:notification_id>",
         notification_views.NotificationDetailView.as_view(),
         name="notification-detail-notification",
