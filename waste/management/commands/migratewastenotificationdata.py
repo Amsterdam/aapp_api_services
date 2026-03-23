@@ -3,10 +3,12 @@ from typing import Any
 
 from django.core.management.base import BaseCommand
 
-from notification.models import WasteDevice
+from core.services.waste_device import WasteDeviceService
 from waste.models import NotificationSchedule
 
 logger = logging.getLogger(__name__)
+
+waste_device_service = WasteDeviceService()
 
 
 class Command(BaseCommand):
@@ -21,9 +23,7 @@ class Command(BaseCommand):
         old_records = NotificationSchedule.objects.all()
 
         # Fetch all existing device_ids
-        existing_device_ids = set(
-            WasteDevice.objects.values_list("device_id", flat=True)
-        )
+        existing_device_ids = set(waste_device_service.get_device_ids())
 
         notifications_to_create = []
         skipped = 0
@@ -36,16 +36,15 @@ class Command(BaseCommand):
                 skipped += 1
                 continue
             notifications_to_create.append(
-                WasteDevice(
+                waste_device_service.define_waste_device_instance(
                     device_id=record.device_id,
                     bag_nummeraanduiding_id=record.bag_nummeraanduiding_id,
-                    created_at=record.created_at,
                     updated_at=record.updated_at,
                 )
             )
 
         if notifications_to_create:
-            WasteDevice.objects.bulk_create(notifications_to_create)
+            waste_device_service.bulk_create_waste_devices(notifications_to_create)
             logger.info(f"Created {len(notifications_to_create)} new notifications.")
 
         # delete old record after migration

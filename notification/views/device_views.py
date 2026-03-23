@@ -231,27 +231,24 @@ class WasteDeviceView(DeviceIdMixin, generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         instance = self._get_instance()
+        get_or_create_device(self.device_id)
         if instance is None:
             serializer = self.get_serializer(
                 data=request.data, context={"device_id": self.device_id}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            get_or_create_device(self.device_id)
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
         serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        get_or_create_device(self.device_id)
         return Response({"status": "success"}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         instance = self._get_instance()
-        if instance is None:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        instance.delete()
+        if instance:
+            instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def _get_instance(self):
