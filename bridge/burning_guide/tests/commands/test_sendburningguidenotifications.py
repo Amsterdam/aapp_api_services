@@ -22,6 +22,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
             ("device1", "1234"),
             ("device2", "1234"),
             ("device3", "5678"),
+            ("device4", None),
         ]
         self.notifications = [
             baker.make(BurningGuideDevice, postal_code=postal_code, device_id=device_id)
@@ -88,9 +89,13 @@ class TestCommand(ResponsesActivatedAPITestCase):
 
     def test_collect_batched_notifications(self):
         batched = self.command.collect_batched_notifications(self.notifications)
+        # this expected result would not occur in real life, as devices without
+        # postal code would not be included in the collected notifications,
+        # but this is to test the batching logic
         expected = {
             "1234": ["device1", "device2"],
             "5678": ["device3"],
+            None: ["device4"],
         }
         self.assertEqual(batched, expected)
 
