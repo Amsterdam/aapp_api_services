@@ -1,9 +1,9 @@
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from django.conf import settings
 
-from contact.enums.taps import TapFilters, TapProperties
+from contact.enums.taps import TapFilters, TapIcons, TapProperties
 from contact.services.service_abstract import ServiceAbstract
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class TapService(ServiceAbstract):
             )
 
         full_data = self.build_response_payload(
-            full_tap_data, TapFilters, TapProperties, list_property=None
+            full_tap_data, TapFilters, TapProperties, list_property=None, icons=TapIcons
         )
 
         return full_data
@@ -62,30 +62,60 @@ class TapService(ServiceAbstract):
         """
         Returns a dictionary of custom properties for a tap, using a prefix to avoid conflicts.
         """
-        title = (
-            "Drinkfontein"
-            if "fontein" in properties.get("beschrijvi", "").lower()
-            else "Watertap"
-        )
+        title = self._tap_title(properties)
         property_type = properties.get("type", "") or ""
-        has_malfunction = "storing" in property_type.lower()
+
+        custom_type, malfunction_property, has_malfunction = (
+            self._tap_custom_type_and_malfunction(property_type)
+        )
+        icon_type = self._tap_icon_type(title=title, has_malfunction=has_malfunction)
+
+        return self._build_custom_properties(
+            title=title,
+            malfunction_property=malfunction_property,
+            custom_type=custom_type,
+            icon_type=icon_type,
+        )
+
+    def _tap_title(self, properties: Dict[str, Any]) -> str:
+        description = (properties.get("beschrijvi") or "").lower()
+        return "Drinkfontein" if "fontein" in description else "Watertap"
+
+    def _tap_custom_type_and_malfunction(
+        self, property_type: str
+    ) -> Tuple[str | None, str | None, bool]:
+        if "storing" in property_type.lower():
+            return None, "Tijdelijk buiten gebruik", True
+
+        if "24-7" in property_type:
+            return "24 uur per dag beschikbaar", None, False
+
+        return property_type, None, False
+
+    def _tap_icon_type(self, *, title: str, has_malfunction: bool) -> str:
         if has_malfunction:
-            custom_type = None
-            malfunction_property = "Tijdelijk buiten gebruik"
-        elif "24-7" in property_type:
-            custom_type = "24 uur per dag beschikbaar"
-            malfunction_property = None
-        else:
-            custom_type = property_type
-            malfunction_property = None
+            return TapIcons.MALFUNCTION.value.icon_id
 
-        custom_properties = {
-            f"{self.properties_prefix}title": title,
-            f"{self.properties_prefix}malfunction": malfunction_property,
-            f"{self.properties_prefix}type": custom_type,
+        if title == "Drinkfontein":
+            return TapIcons.FOUNTAIN.value.icon_id
+
+        return TapIcons.TAP.value.icon_id
+
+    def _build_custom_properties(
+        self,
+        *,
+        title: str,
+        malfunction_property: str | None,
+        custom_type: str | None,
+        icon_type: str,
+    ) -> Dict[str, Any]:
+        prefix = self.properties_prefix
+        return {
+            f"{prefix}title": title,
+            f"{prefix}malfunction": malfunction_property,
+            f"{prefix}type": custom_type,
+            f"{prefix}icon_type": icon_type,
         }
-
-        return custom_properties
 
     def get_geometry_from_properties(
         self, properties: Dict[str, Any]

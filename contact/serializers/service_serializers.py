@@ -55,6 +55,7 @@ def build_dynamic_properties_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
     list_property: Dict[str, Any] | None,
+    include_items: bool = True,
 ) -> serializers.Serializer:
     """
     Dynamically constructs a serializer class based on given properties and filters.
@@ -63,6 +64,9 @@ def build_dynamic_properties_serializer(
     fields = {
         "aapp_title": serializers.CharField()
     }  # Always include title as a property
+
+    if include_items:
+        fields["aapp_icon_type"] = serializers.CharField()
 
     # Add property fields
     for prop in properties:
@@ -96,9 +100,10 @@ def build_service_list_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
     list_property: Dict[str, Any],
+    include_items: bool = True,
 ) -> serializers.Serializer:
     DynamicPropertiesSerializer = build_dynamic_properties_serializer(
-        properties, filters, list_property
+        properties, filters, list_property, include_items
     )
 
     class DynamicServiceListSerializer(serializers.Serializer):
@@ -114,9 +119,10 @@ def build_geojson_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
     list_property: Dict[str, Any],
+    include_items: bool = True,
 ) -> serializers.Serializer:
     DynamicListSerializer = build_service_list_serializer(
-        properties, filters, list_property
+        properties, filters, list_property, include_items
     )
 
     class DynamicGeoJsonSerializer(serializers.Serializer):
@@ -130,9 +136,10 @@ def build_map_response_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
     list_property: Dict[str, Any],
+    include_items: bool = True,
 ) -> serializers.Serializer:
     DynamicGeoJsonSerializer = build_geojson_serializer(
-        properties, filters, list_property
+        properties, filters, list_property, include_items
     )
 
     class DynamicMapResponseSerializer(ServiceMapResponseSerializer):
@@ -170,6 +177,43 @@ class PropertiesSerializer(serializers.Serializer):
     icon = serializers.CharField(allow_null=True)
 
 
+class IconDefinitionSerializer(serializers.Serializer):
+    path = serializers.CharField()
+    stroke = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    background = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True
+    )
+
+
+class IconsToIncludeMapField(serializers.Field):
+    def to_internal_value(self, data):
+        if not isinstance(data, dict):
+            raise serializers.ValidationError("icons_to_include must be an object/dict")
+
+        result = {}
+        errors = {}
+
+        for icon_id, icon_def in data.items():
+            if not isinstance(icon_id, str):
+                errors[icon_id] = "icon key must be a string"
+                continue
+
+            ser = IconDefinitionSerializer(data=icon_def)
+            if not ser.is_valid():
+                errors[icon_id] = ser.errors
+            else:
+                result[icon_id] = ser.validated_data
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return result
+
+    def to_representation(self, value):
+        # If `value` is already a dict of primitives, this is enough.
+        return value
+
+
 class ListPropertySerializer(serializers.Serializer):
     key = serializers.CharField()
     type = serializers.CharField()
@@ -196,4 +240,5 @@ class ServiceMapResponseSerializer(serializers.Serializer):
     filters = FiltersSerializer(many=True)
     properties_to_include = PropertiesSerializer(many=True)
     list_property = ListPropertySerializer(allow_null=True)
+    icons_to_include = IconsToIncludeMapField(allow_null=True)
     data = ServiceMapGeoJsonSerializer()

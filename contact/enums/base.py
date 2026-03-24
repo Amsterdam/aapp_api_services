@@ -13,6 +13,10 @@ class ChoicesEnum(Enum):
     def choices(cls):
         return [item.value._asdict() for item in cls]
 
+    @classmethod
+    def object_choices(cls):
+        return {item.value._asdict()["icon_id"]: item.value._asdict() for item in cls}
+
 
 class ServiceClass(NamedTuple):
     id: int
@@ -32,6 +36,13 @@ class PropertiesClass(NamedTuple):
     property_key: str
     property_type: property_types
     icon: str | None
+
+
+class IconClass(NamedTuple):
+    icon_id: str
+    path: str
+    stroke: str | None
+    background: str | None
 
 
 class ListPropertyClass(NamedTuple):
