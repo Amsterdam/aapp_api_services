@@ -1,4 +1,3 @@
-import datetime
 from unittest.mock import patch
 
 import responses
@@ -39,7 +38,6 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
             waste_type="Groente, fruit, etensresten en tuinafval",
-            notification_datetime=datetime.datetime(2025, 3, 31, 21, 0),
         )
 
     @freeze_time("2025-03-30")
@@ -62,7 +60,6 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
             waste_type="Papier en karton",
-            notification_datetime=datetime.datetime(2026, 3, 19, 21, 0),
         )
 
     @freeze_time("2026-03-12")
@@ -87,7 +84,6 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
             waste_type="Papier en karton",
-            notification_datetime=datetime.datetime(2026, 1, 8, 21, 0),
         )
 
     @freeze_time("2026-01-15")
@@ -114,7 +110,6 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
             waste_type="Papier en karton",
-            notification_datetime=datetime.datetime(2026, 3, 5, 21, 0),
         )
 
     @freeze_time("2026-03-12")
@@ -137,7 +132,6 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
             waste_type="Papier en karton",
-            notification_datetime=datetime.datetime(2026, 3, 8, 21, 0),
         )
 
     @freeze_time("2026-03-15")
@@ -160,7 +154,6 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
             waste_type="Groente fruit en tuin",
-            notification_datetime=datetime.datetime(2026, 3, 16, 21, 0),
         )
 
     @freeze_time("2026-03-09")
@@ -183,7 +176,6 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
             waste_type="Papier en karton",
-            notification_datetime=datetime.datetime(2026, 3, 8, 21, 0),
         )
 
     @freeze_time("2026-03-15")

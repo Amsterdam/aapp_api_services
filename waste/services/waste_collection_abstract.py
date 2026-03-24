@@ -81,7 +81,14 @@ class WasteCollectionAbstractService:
 
     def get_dates_for_waste_item(self, item) -> list[date]:
         ophaaldagen_list, dates = self.filter_ophaaldagen(ophaaldagen=item.get("days"))
-        dates = interpret_frequencies(dates, item, ophaaldagen_list)
+        frequency = item.get("frequency")
+        note = item.get("note")
+        dates = interpret_frequencies(
+            dates=dates,
+            frequency=frequency,
+            note=note,
+            ophaaldagen_list=ophaaldagen_list,
+        )
         return dates
 
     def filter_ophaaldagen(self, ophaaldagen):

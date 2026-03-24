@@ -35,7 +35,7 @@ class WasteCollectionPDFService(WasteCollectionAbstractService):
 
         return pdf
 
-    def create_pdf_calendar_dates(self) -> dict[date, list[str]]:
+    def create_pdf_calendar_dates(self) -> tuple[dict[date, list[str]], list]:
         waste_collection_by_date = {}
         code_label_list = []
         for item in self.validated_data:
