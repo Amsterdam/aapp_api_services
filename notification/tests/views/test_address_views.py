@@ -70,6 +70,26 @@ class TestAddressView(ResponsesActivatedAPITestCase):
             WasteDevice.objects.filter(device_id=self.device_id).count(), 0
         )
 
+    def test_update_burning_guide_long_postal_code(self):
+        data = {
+            "bag_nummeraanduiding_id": "new-bag-id",
+            "postal_code": "1024VL",
+        }
+        response = self.client.post(
+            self.url, data, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_burning_guide_postal_code_outside_amsterdam(self):
+        data = {
+            "bag_nummeraanduiding_id": "new-bag-id",
+            "postal_code": "1971AB",
+        }
+        response = self.client.post(
+            self.url, data, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 400)
+
     def test_update_both_existing_addresses(self):
         baker.make(BurningGuideDevice, device_id=self.device_id, postal_code="1091")
         baker.make(

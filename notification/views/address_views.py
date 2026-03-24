@@ -6,13 +6,12 @@ from core.views.mixins import DeviceIdMixin
 from notification.models import BurningGuideDevice, WasteDevice
 from notification.serializers.address_serializers import (
     AddressRequestSerializer,
-    AddressResponseSerializer,
 )
 
 
-@extend_schema_for_device_id(success_response=AddressResponseSerializer)
+@extend_schema_for_device_id()
 class AddressView(DeviceIdMixin, generics.GenericAPIView):
-    """Create/update, retrieve and delete the notification schedule for a service device."""
+    """Create/update and delete the address information for the waste and burning guide device records"""
 
     serializer_class = AddressRequestSerializer
 
@@ -37,7 +36,7 @@ class AddressView(DeviceIdMixin, generics.GenericAPIView):
             burning_guide_device.postal_code = serializer.validated_data["postal_code"]
             burning_guide_device.save()
 
-        return Response({"status": "success"}, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
 
