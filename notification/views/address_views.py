@@ -4,10 +4,13 @@ from rest_framework.response import Response
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 from notification.models import BurningGuideDevice, WasteDevice
-from notification.serializers.address_serializers import AddressRequestSerializer
+from notification.serializers.address_serializers import (
+    AddressRequestSerializer,
+    AddressResponseSerializer,
+)
 
 
-@extend_schema_for_device_id()
+@extend_schema_for_device_id(success_response=AddressResponseSerializer)
 class AddressView(DeviceIdMixin, generics.GenericAPIView):
     """Create/update, retrieve and delete the notification schedule for a service device."""
 
@@ -17,14 +20,12 @@ class AddressView(DeviceIdMixin, generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        # validate the request data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # check if there is already a waste address for the device
         waste_device = self._get_waste_device_instance()
         if waste_device:
-            # if there is, update the existing waste address
+            # if there is a waste device, update the existing waste address
             waste_device.bag_nummeraanduiding_id = serializer.validated_data[
                 "bag_nummeraanduiding_id"
             ]
@@ -32,7 +33,7 @@ class AddressView(DeviceIdMixin, generics.GenericAPIView):
 
         burning_guide_device = self._get_burning_guide_device_instance()
         if burning_guide_device:
-            # if there is, update the existing burning guide address
+            # if there is a burning guide device, update the existing burning guide address
             burning_guide_device.postal_code = serializer.validated_data["postal_code"]
             burning_guide_device.save()
 
@@ -40,7 +41,8 @@ class AddressView(DeviceIdMixin, generics.GenericAPIView):
 
     def delete(self, request, *args, **kwargs):
 
-        # for both the waste and burning guide device, delete the address by setting the bag_nummeraanduiding_id and postal_code to None respectively
+        # for both the waste and burning guide device,
+        # delete the address by setting the bag_nummeraanduiding_id and postal_code to None respectively
         waste_device = self._get_waste_device_instance()
         if waste_device:
             waste_device.bag_nummeraanduiding_id = None
