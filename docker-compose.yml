@@ -14,6 +14,7 @@ x-app: &base-app
     ALLOW_NOTIFICATION_DB_MIGRATE: "true"
   volumes:
     - ./core:/app/core
+    - ./notification:/app/notification
     - ./${SERVICE_NAME}:/app/${SERVICE_NAME}
     - ./pyproject.toml:/app/pyproject.toml
     - ./manage.py:/app/manage.py

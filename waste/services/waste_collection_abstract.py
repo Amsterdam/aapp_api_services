@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class WasteCollectionAbstractService:
-    def __init__(self, bag_nummeraanduiding_id: str):
-        self.bag_nummeraanduiding_id = bag_nummeraanduiding_id
-        self.validated_data = []
+    def __init__(self):
         self.all_dates = self._get_dates()
         self.waste_links = {
             "Glas": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/glas-potten-flessen-en-ander-glas/",
@@ -31,35 +29,41 @@ class WasteCollectionAbstractService:
     @staticmethod
     def _get_dates() -> list[date]:
         now = datetime.now()
-        end_date = now + timedelta(days=settings.CALENDAR_LENGTH - 1)
-        dates = [(now + timedelta(n)).date() for n in range((end_date - now).days + 1)]
+        dates = [(now + timedelta(n)).date() for n in range(settings.CALENDAR_LENGTH)]
         return dates
 
-    def get_validated_data(self):
+    def get_validated_data_for_bag_id(self, bag_id):
+        params = {"bagNummeraanduidingId": bag_id}
         url = settings.WASTE_GUIDE_URL
+        data, _ = self.get_validated_data(url=url, params=params)
+        return data
+
+    def get_validated_data(self, *, url, params):
         api_key = settings.WASTE_GUIDE_API_KEY
         headers = None
         if settings.ENVIRONMENT_SLUG in ["a", "p"]:
             headers = {"X-Api-Key": api_key}
         try:
-            resp = self.make_request(
+            response_json = self.make_request(
                 method="GET",
                 url=url,
                 headers=headers,
-                params={"bagNummeraanduidingId": self.bag_nummeraanduiding_id},
+                params=params,
             )
-            data = resp.json().get("_embedded", {}).get("afvalwijzer", [])
+            data = response_json.get("_embedded", {}).get("afvalwijzer", [])
         except requests.RequestException as e:
             logger.error(f"Error fetching waste data: {e}")
             raise WasteGuideException() from e
+
         serializer = WasteDataSerializer(data=data, many=True)
         serializer.is_valid(raise_exception=True)
         data = [d for d in serializer.validated_data if d.get("code")]
-        self.validated_data = data
+        next_link = response_json.get("_links", {}).get("next", {}).get("href")
+        return data, next_link
 
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_fixed(2),
+        wait=wait_fixed(1),
         retry=retry_if_exception_type(requests.exceptions.RequestException),
         reraise=True,  # Reraise the RequestException after retries
     )
@@ -69,7 +73,7 @@ class WasteCollectionAbstractService:
         url: str,
         headers: dict | None = None,
         params: dict | None = None,
-    ) -> requests.Response:
+    ) -> dict:
         response = requests.request(
             method=method,
             url=url,
@@ -77,7 +81,7 @@ class WasteCollectionAbstractService:
             params=params,
         )
         response.raise_for_status()
-        return response
+        return response.json()
 
     def get_dates_for_waste_item(self, item) -> list[date]:
         ophaaldagen_list, dates = self.filter_ophaaldagen(ophaaldagen=item.get("days"))

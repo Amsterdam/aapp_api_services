@@ -21,7 +21,7 @@ from waste.tests.mock_data import (
 @freezegun.freeze_time("2025-12-09")
 class WasteCollectionAbstractServiceTest(ResponsesActivatedAPITestCase):
     def setUp(self):
-        self.service = WasteCollectionAbstractService(bag_nummeraanduiding_id="1234")
+        self.service = WasteCollectionAbstractService()
 
     @override_settings(CALENDAR_LENGTH=7)
     def test_get_dates(self):
@@ -42,8 +42,8 @@ class WasteCollectionAbstractServiceTest(ResponsesActivatedAPITestCase):
             re.compile(settings.WASTE_GUIDE_URL + ".*"),
             json=frequency_monthly.MOCK_DATA,
         )
-        self.service.get_validated_data()
-        self.assertIsNotNone(self.service.validated_data)
+        validated_data = self.service.get_validated_data_for_bag_id("1234")
+        self.assertIsNotNone(validated_data)
 
     def test_get_validated_data_request_exception(self):
         responses.get(
@@ -51,7 +51,7 @@ class WasteCollectionAbstractServiceTest(ResponsesActivatedAPITestCase):
             status=500,
         )
         with self.assertRaises(WasteGuideException):
-            self.service.get_validated_data()
+            self.service.get_validated_data_for_bag_id("1234")
 
     @patch("waste.services.waste_collection_abstract.requests.request")
     def test_get_validated_data_succeeds_after_retry(self, mock_get):
@@ -71,8 +71,13 @@ class WasteCollectionAbstractServiceTest(ResponsesActivatedAPITestCase):
 
         mock_get.side_effect = [mock_response_1, mock_response_2]
 
-        resp = self.service.make_request(method="GET", url="waste_guide_url")
-        self.assertEqual(resp.status_code, 200)
+        resp_json = self.service.make_request(method="GET", url="waste_guide_url")
+        self.assertEqual(
+            resp_json["content"]["_embedded"]["afvalwijzer"][0][
+                "bagNummeraanduidingId"
+            ],
+            "x",
+        )
 
     def test_get_dates_for_waste_item_unknown_frequency(self):
         item = frequency_unknown.MOCK_DATA["_embedded"]["afvalwijzer"][0]

@@ -27,6 +27,7 @@ MOCK_DATA = {
                 "huisnummertoevoeging": "-C",
                 "postcode": "1020AB",
                 "woonplaatsnaam": "Amsterdam",
+                "bagNummeraanduidingId": "x",
             },
             {
                 "afvalwijzerPerXWeken": "1",

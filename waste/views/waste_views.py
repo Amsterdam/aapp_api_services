@@ -46,13 +46,19 @@ class WasteGuideView(APIView):
         serializer.is_valid(raise_exception=True)
         bag_nummeraanduiding_id = serializer.validated_data["bag_nummeraanduiding_id"]
 
-        waste_service = WasteCollectionService(bag_nummeraanduiding_id)
-        waste_service.get_validated_data()
-        calendar = waste_service.create_calendar()
+        waste_service = WasteCollectionService()
+        validated_data = waste_service.get_validated_data_for_bag_id(
+            bag_nummeraanduiding_id
+        )
+        calendar = waste_service.create_calendar(validated_data)
         next_dates = waste_service.get_next_dates(calendar)
-        waste_types = waste_service.get_waste_types(next_dates=next_dates)
-        is_residential = waste_service.get_is_residential()
-        is_collection_by_appointment = waste_service.get_is_collection_by_appointment()
+        waste_types = waste_service.get_waste_types(
+            validated_data, next_dates=next_dates
+        )
+        is_residential = waste_service.get_is_residential(validated_data)
+        is_collection_by_appointment = waste_service.get_is_collection_by_appointment(
+            validated_data
+        )
 
         response_serializer = self.response_serializer_class(
             data={
@@ -81,15 +87,17 @@ class WasteGuidePDFView(View):
             )
         bag_nummeraanduiding_id = serializer.validated_data["bag_nummeraanduiding_id"]
 
-        waste_service = WasteCollectionPDFService(bag_nummeraanduiding_id)
+        waste_service = WasteCollectionPDFService()
         try:
-            waste_service.get_validated_data()
+            validated_data = waste_service.get_validated_data_for_bag_id(
+                bag_nummeraanduiding_id
+            )
         except WasteGuideException as e:
             return JsonResponse(
                 {"detail": e.default_detail, "code": e.default_code},
                 status=e.status_code,
             )
-        pdf = waste_service.get_pdf_calendar()
+        pdf = waste_service.get_pdf_calendar(validated_data)
         pdf_bytes = bytes(pdf.output())
 
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
@@ -143,16 +151,18 @@ class WasteGuideCalendarIcsView(View):
                 status=400,
             )
 
-        waste_service = WasteCollectionICSService(bag_nummeraanduiding_id)
+        waste_service = WasteCollectionICSService()
         try:
-            waste_service.get_validated_data()
+            validated_data = waste_service.get_validated_data_for_bag_id(
+                bag_nummeraanduiding_id
+            )
         except WasteGuideException as e:
             return JsonResponse(
                 {"detail": e.default_detail, "code": e.default_code},
                 status=e.status_code,
             )
 
-        calendar = waste_service.create_ics_calendar()
+        calendar = waste_service.create_ics_calendar(validated_data)
 
         response = HttpResponse(
             str(calendar), content_type="text/calendar; charset=utf-8"
