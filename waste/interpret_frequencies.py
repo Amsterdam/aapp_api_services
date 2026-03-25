@@ -2,13 +2,17 @@ import logging
 import re
 from datetime import date, datetime, timedelta
 
+from waste.models import WasteCollectionException
+
 MONTHLY_PATTERN = re.compile(r"\d{1}(?:e|de|ste) van de maand")
 WEEKLY_PATTERN = re.compile(r"om de \d{1} weken")
 
 logger = logging.getLogger(__name__)
 
 
-def interpret_frequencies(*, dates, frequency, note, ophaaldagen_list):
+def interpret_frequencies(*, dates, ophaaldagen_list, frequency=None, note=None):
+    dates = _filter_exception_dates(dates)
+
     if not frequency or frequency == "":
         pass  # no filtering needed
     elif "oneven" in frequency:
@@ -29,6 +33,12 @@ def interpret_frequencies(*, dates, frequency, note, ophaaldagen_list):
     else:
         logger.error(f"Unknown frequency pattern '{frequency}'. Skipping...")
         dates = []
+    return dates
+
+
+def _filter_exception_dates(dates: list[date]) -> list[date]:
+    exceptions = list(WasteCollectionException.objects.values_list("date", flat=True))
+    dates = [d for d in dates if d not in exceptions]
     return dates
 
 
