@@ -32,6 +32,7 @@ class WasteCollectionNotificationService(WasteCollectionAbstractService):
             logger.info(
                 f"Fetched {len(waste_data_tomorrow)} records for {route_type}, next_link: {next_link}"
             )
+            params = None  # params are included in the next_link url already
         return waste_data
 
     def _filter_waste_data_pickup_tomorrow(self, waste_data: list[dict]) -> list[dict]:

@@ -74,6 +74,9 @@ class TransactionsBalanceConfirmView(BaseNotificationView):
     """
 
     serializer_class = TransactionBalanceConfirmRequestSerializer
+    device_id_required = (
+        False  # TODO: deze regel verwijderen als app versie 1.21.0 deprecated is
+    )
 
     @check_user_role(allowed_roles=[Role.USER.value, Role.VISITOR.value])
     @ssp_openapi_decorator(
@@ -111,7 +114,6 @@ class TransactionsBalanceConfirmView(BaseNotificationView):
                 data = response_data["data"]
                 await sync_to_async(self._process_notification)(
                     ps_right_id=data["id"],
-                    ps_right_id_old=data["id_old"],
                     end_datetime=datetime.fromisoformat(data["ended_at"]),
                     report_code=kwargs["report_code"],  # Extracted from internal token
                 )
