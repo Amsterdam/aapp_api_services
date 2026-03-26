@@ -28,7 +28,10 @@ COPY pyproject.toml /app/pyproject.toml
 COPY uv.lock /app/uv.lock
 RUN uv sync --frozen
 
-RUN addgroup -S app && adduser -S appuser -G app
+ARG APP_UID=1000
+ARG APP_GID=1000
+RUN addgroup -S -g ${APP_GID} app \
+    && adduser -S -D -u ${APP_UID} -G app appuser
 
 COPY manage.py /app/
 RUN dos2unix /app/manage.py

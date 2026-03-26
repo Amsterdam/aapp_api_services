@@ -2,6 +2,9 @@ x-app: &base-app
   build:
     context: .
     target: app-${SERVICE_NAME}
+    args:
+      APP_UID: ${APP_UID:-1000}
+      APP_GID: ${APP_GID:-1000}
   environment: &base-app-env
     POSTGRES_PASSWORD: dev
     POSTGRES_USER: dev

@@ -152,7 +152,7 @@ dev: check-service
 
 dev-rebuild: check-service
 	# Rebuild Docker image and start Django app with runserver
-	$(dc) build dev
+	$(dc) build --no-cache --pull dev
 	$(run) --service-ports dev
 
 app: check-service
