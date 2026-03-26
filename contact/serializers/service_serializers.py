@@ -177,21 +177,6 @@ class PropertiesSerializer(serializers.Serializer):
     icon = serializers.CharField(allow_null=True)
 
 
-class IconDefinitionSerializer(serializers.Serializer):
-    path = serializers.CharField()
-    path_color = serializers.CharField(
-        required=False, allow_null=True, allow_blank=True
-    )
-    circle_color = serializers.CharField(
-        required=False, allow_null=True, allow_blank=True
-    )
-
-
-class IconsToIncludeMapField(serializers.DictField):
-    def __init__(self, **kwargs):
-        super().__init__(child=IconDefinitionSerializer(), **kwargs)
-
-
 class ListPropertySerializer(serializers.Serializer):
     key = serializers.CharField()
     type = serializers.CharField()
@@ -209,6 +194,16 @@ class ServiceListSerializer(serializers.Serializer):
     properties = serializers.DictField()
 
 
+class IconDefinitionSerializer(serializers.Serializer):
+    path = serializers.CharField()
+    path_color = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True
+    )
+    circle_color = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True
+    )
+
+
 class ServiceMapGeoJsonSerializer(serializers.Serializer):
     type = serializers.CharField()
     features = ServiceListSerializer(many=True)
@@ -218,5 +213,7 @@ class ServiceMapResponseSerializer(serializers.Serializer):
     filters = FiltersSerializer(many=True)
     properties_to_include = PropertiesSerializer(many=True)
     list_property = ListPropertySerializer(allow_null=True)
-    icons_to_include = IconsToIncludeMapField(allow_null=True)
+    icons_to_include = serializers.DictField(
+        child=IconDefinitionSerializer(), allow_null=True
+    )
     data = ServiceMapGeoJsonSerializer()
