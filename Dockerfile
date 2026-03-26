@@ -6,10 +6,14 @@ ENV PYTHONUNBUFFERED=1 \
 
 # Any process that requires to write in the home dir
 # we write to /tmp since we have no home dir
-ENV HOME=/tmp \
-    TMPDIR=/tmp \
+ENV APP_TMPDIR=/tmp
+ENV HOME=${APP_TMPDIR} \
+    TMPDIR=${APP_TMPDIR} \
+    AZURE_CONFIG_DIR=${APP_TMPDIR}/.azure \
+    XDG_CACHE_HOME=${APP_TMPDIR}/.cache \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPYCACHEPREFIX=/tmp/pycache
+    PYTHONPYCACHEPREFIX=${APP_TMPDIR}/pycache
+ENV UV_CACHE_DIR=${XDG_CACHE_HOME}/uv
 WORKDIR /app
 
 # Install dependencies
@@ -23,7 +27,7 @@ COPY pyproject.toml /app/pyproject.toml
 COPY uv.lock /app/uv.lock
 RUN uv sync --frozen
 
-RUN addgroup -S app && adduser -S app -G app
+RUN addgroup -S app && adduser -S appuser -G app
 
 COPY manage.py /app/
 RUN dos2unix /app/manage.py
@@ -33,9 +37,9 @@ COPY /core /app/core
 COPY /deploy /app/deploy
 
 RUN DJANGO_SETTINGS_MODULE=core.settings.base uv run python manage.py collectstatic --no-input
-RUN mkdir /home/app/.azure
-RUN chown app:app /home/app/.azure
-USER root
+RUN mkdir -p "$AZURE_CONFIG_DIR" "$PYTHONPYCACHEPREFIX" "$UV_CACHE_DIR" \
+    && chown -R appuser:app "$AZURE_CONFIG_DIR" "$PYTHONPYCACHEPREFIX" "$XDG_CACHE_HOME"
+USER appuser
 WORKDIR /app
 COPY notification /app/notification
 
