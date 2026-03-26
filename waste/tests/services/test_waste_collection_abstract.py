@@ -1,3 +1,4 @@
+import datetime
 import json
 import re
 from datetime import date
@@ -7,10 +8,12 @@ import freezegun
 import responses
 from django.conf import settings
 from django.test import override_settings
+from model_bakery import baker
 from requests import Response
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from waste.exceptions import WasteGuideException
+from waste.models import WasteCollectionException
 from waste.services.waste_collection_abstract import WasteCollectionAbstractService
 from waste.tests.mock_data import (
     frequency_monthly,
@@ -83,3 +86,33 @@ class WasteCollectionAbstractServiceTest(ResponsesActivatedAPITestCase):
         item = frequency_unknown.MOCK_DATA["_embedded"]["afvalwijzer"][0]
         dates = self.service.get_dates_for_waste_item(item=item)
         self.assertEqual(len(dates), 0)
+
+
+class WasteCollectionAbstractServiceExceptionDatesTest(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        self.dates = [datetime.date(2026, 1, day + 1) for day in range(7)]
+        self.service = WasteCollectionAbstractService()
+
+    def test_no_exception_dates(self):
+        interpreted_dates = self.service.filter_exception_dates(dates=self.dates)
+        self.assertEqual(interpreted_dates, self.dates)
+
+    def test_single_exception_dates(self):
+        baker.make(WasteCollectionException, date=self.dates[0])
+
+        interpreted_dates = self.service.filter_exception_dates(dates=self.dates)
+        self.assertEqual(interpreted_dates, self.dates[1:])
+
+    def test_multiple_exception_dates(self):
+        baker.make(WasteCollectionException, date=self.dates[0])
+        baker.make(WasteCollectionException, date=self.dates[1])
+
+        interpreted_dates = self.service.filter_exception_dates(dates=self.dates)
+        self.assertEqual(interpreted_dates, self.dates[2:])
+
+    def test_all_exception_dates(self):
+        for d in self.dates:
+            baker.make(WasteCollectionException, date=d)
+
+        interpreted_dates = self.service.filter_exception_dates(dates=self.dates)
+        self.assertEqual(interpreted_dates, [])

@@ -9,6 +9,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 
 from waste.exceptions import WasteGuideException
 from waste.interpret_frequencies import interpret_frequencies
+from waste.models import WasteCollectionException
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
 
 logger = logging.getLogger(__name__)
@@ -93,6 +94,7 @@ class WasteCollectionAbstractService:
             note=note,
             ophaaldagen_list=ophaaldagen_list,
         )
+        dates = self.filter_exception_dates(dates)
         return dates
 
     def filter_ophaaldagen(self, ophaaldagen):
@@ -116,3 +118,11 @@ class WasteCollectionAbstractService:
         ophaaldagen_list = re.split(r",| en ", ophaaldagen)
         ophaaldagen_mapped = [days_of_week[d.strip()] for d in ophaaldagen_list]
         return ophaaldagen_mapped
+
+    @staticmethod
+    def filter_exception_dates(dates: list[date]) -> list[date]:
+        exceptions = list(
+            WasteCollectionException.objects.values_list("date", flat=True)
+        )
+        dates = [d for d in dates if d not in exceptions]
+        return dates
