@@ -28,7 +28,7 @@ class SurveyVersionEntryAdmin(SortableAdminBase, admin.ModelAdmin):
 
     def get_queryset(self, request):
         return SurveyVersionEntry.objects.prefetch_related("answers").select_related(
-            "survey_version__survey__team"
+            "survey_version__survey"
         )
 
     def has_add_permission(self, request):
@@ -42,7 +42,7 @@ class SurveyVersionEntryAdmin(SortableAdminBase, admin.ModelAdmin):
 
     def antwoorden(self, obj):
         return format_html_join(
-            "<br>",
+            "\n",
             "<li>{}: {}</li>",
             ((a.question.id, a.answer) for a in obj.answers.all()),
         )
