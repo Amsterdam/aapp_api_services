@@ -1,4 +1,5 @@
 from contact.enums.base import ChoicesEnum, IconClass, PropertiesClass
+from contact.icons import IconPath
 
 
 class TapFilters(ChoicesEnum):
@@ -27,13 +28,21 @@ class TapProperties(ChoicesEnum):
 
 
 class TapIcons(ChoicesEnum):
-    TAP = IconClass(icon_id="tap", path="tap", stroke="#009DE6", background="#FF0000")
+    TAP = IconClass(
+        label="tap",
+        path=IconPath["tap-tap-marker"],
+        circle_color="#009DE6",
+        path_color="#FFFFFF",
+    )
     FOUNTAIN = IconClass(
-        icon_id="fountain", path="fountain", stroke="#009DE6", background="#FFFFFF"
+        label="fountain",
+        path=IconPath["tap-fountain-marker"],
+        circle_color="#009DE6",
+        path_color="#FFFFFF",
     )
     MALFUNCTION = IconClass(
-        icon_id="malfunction",
-        path="malfunction",
-        stroke="#009DE6",
-        background="#FFFFFF",
+        label="malfunction",
+        path=IconPath["tap-malfunction-marker"],
+        circle_color="#767676",
+        path_color="#FFFFFF",
     )

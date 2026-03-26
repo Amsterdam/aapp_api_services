@@ -94,12 +94,12 @@ class TapService(ServiceAbstract):
 
     def _tap_icon_type(self, *, title: str, has_malfunction: bool) -> str:
         if has_malfunction:
-            return TapIcons.MALFUNCTION.value.icon_id
+            return TapIcons.MALFUNCTION.value.label
 
         if title == "Drinkfontein":
-            return TapIcons.FOUNTAIN.value.icon_id
+            return TapIcons.FOUNTAIN.value.label
 
-        return TapIcons.TAP.value.icon_id
+        return TapIcons.TAP.value.label
 
     def _build_custom_properties(
         self,
