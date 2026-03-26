@@ -55,7 +55,7 @@ def build_dynamic_properties_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
     list_property: Dict[str, Any] | None,
-    include_items: bool = True,
+    include_icons: bool = True,
 ) -> serializers.Serializer:
     """
     Dynamically constructs a serializer class based on given properties and filters.
@@ -65,7 +65,7 @@ def build_dynamic_properties_serializer(
         "aapp_title": serializers.CharField()
     }  # Always include title as a property
 
-    if include_items:
+    if include_icons:
         fields["aapp_icon_type"] = serializers.CharField()
 
     # Add property fields
@@ -100,10 +100,10 @@ def build_service_list_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
     list_property: Dict[str, Any],
-    include_items: bool = True,
+    include_icons: bool = True,
 ) -> serializers.Serializer:
     DynamicPropertiesSerializer = build_dynamic_properties_serializer(
-        properties, filters, list_property, include_items
+        properties, filters, list_property, include_icons
     )
 
     class DynamicServiceListSerializer(serializers.Serializer):
@@ -119,10 +119,10 @@ def build_geojson_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
     list_property: Dict[str, Any],
-    include_items: bool = True,
+    include_icons: bool = True,
 ) -> serializers.Serializer:
     DynamicListSerializer = build_service_list_serializer(
-        properties, filters, list_property, include_items
+        properties, filters, list_property, include_icons
     )
 
     class DynamicGeoJsonSerializer(serializers.Serializer):
@@ -136,10 +136,10 @@ def build_map_response_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
     list_property: Dict[str, Any],
-    include_items: bool = True,
+    include_icons: bool = True,
 ) -> serializers.Serializer:
     DynamicGeoJsonSerializer = build_geojson_serializer(
-        properties, filters, list_property, include_items
+        properties, filters, list_property, include_icons
     )
 
     class DynamicMapResponseSerializer(ServiceMapResponseSerializer):
