@@ -187,33 +187,9 @@ class IconDefinitionSerializer(serializers.Serializer):
     )
 
 
-class IconsToIncludeMapField(serializers.Field):
-    def to_internal_value(self, data):
-        if not isinstance(data, dict):
-            raise serializers.ValidationError("icons_to_include must be an object/dict")
-
-        result = {}
-        errors = {}
-
-        for icon_id, icon_def in data.items():
-            if not isinstance(icon_id, str):
-                errors[icon_id] = "icon key must be a string"
-                continue
-
-            ser = IconDefinitionSerializer(data=icon_def)
-            if not ser.is_valid():
-                errors[icon_id] = ser.errors
-            else:
-                result[icon_id] = ser.validated_data
-
-        if errors:
-            raise serializers.ValidationError(errors)
-
-        return result
-
-    def to_representation(self, value):
-        # If `value` is already a dict of primitives, this is enough.
-        return value
+class IconsToIncludeMapField(serializers.DictField):
+    def __init__(self, **kwargs):
+        super().__init__(child=IconDefinitionSerializer(), **kwargs)
 
 
 class ListPropertySerializer(serializers.Serializer):
