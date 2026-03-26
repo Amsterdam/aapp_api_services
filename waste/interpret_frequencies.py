@@ -8,7 +8,7 @@ WEEKLY_PATTERN = re.compile(r"om de \d{1} weken")
 logger = logging.getLogger(__name__)
 
 
-def interpret_frequencies(*, dates, frequency, note, ophaaldagen_list):
+def interpret_frequencies(*, dates, ophaaldagen_list, frequency=None, note=None):
     if not frequency or frequency == "":
         pass  # no filtering needed
     elif "oneven" in frequency:

@@ -162,3 +162,14 @@ class OpeningHoursException(OpeningHourAbstract):
         if self.description:
             return f"{self.description} ({date})"
         return date
+
+
+class WasteCollectionException(models.Model):
+    """Model for exceptions to regular waste collections"""
+
+    class Meta:
+        verbose_name = "Afvalophaling uitzondering"
+        verbose_name_plural = "Afvalophaling uitzonderingen"
+
+    date = models.DateField(verbose_name="Datum", unique=True)
+    reason = models.CharField(verbose_name="Reden van de uitzondering", max_length=200)

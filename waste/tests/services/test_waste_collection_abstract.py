@@ -7,10 +7,12 @@ import freezegun
 import responses
 from django.conf import settings
 from django.test import override_settings
+from model_bakery import baker
 from requests import Response
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from waste.exceptions import WasteGuideException
+from waste.models import WasteCollectionException
 from waste.services.waste_collection_abstract import WasteCollectionAbstractService
 from waste.tests.mock_data import (
     frequency_monthly,
@@ -83,3 +85,30 @@ class WasteCollectionAbstractServiceTest(ResponsesActivatedAPITestCase):
         item = frequency_unknown.MOCK_DATA["_embedded"]["afvalwijzer"][0]
         dates = self.service.get_dates_for_waste_item(item=item)
         self.assertEqual(len(dates), 0)
+
+    def test_no_exception_dates(self):
+        service = WasteCollectionAbstractService()
+        self.assertEqual(len(service.all_dates), settings.CALENDAR_LENGTH)
+
+    def test_single_exception_dates(self):
+        baker.make(WasteCollectionException, date="2025-12-09")
+
+        service = WasteCollectionAbstractService()
+        self.assertEqual(len(service.all_dates), settings.CALENDAR_LENGTH - 1)
+        self.assertNotIn(date(2025, 12, 9), service.all_dates)
+
+    def test_multiple_exception_dates(self):
+        baker.make(WasteCollectionException, date="2025-12-09")
+        baker.make(WasteCollectionException, date="2025-12-15")
+
+        service = WasteCollectionAbstractService()
+        self.assertEqual(len(service.all_dates), settings.CALENDAR_LENGTH - 2)
+        self.assertNotIn(date(2025, 12, 9), service.all_dates)
+        self.assertNotIn(date(2025, 12, 15), service.all_dates)
+
+    def test_all_exception_dates(self):
+        for d in self.service.all_dates:
+            baker.make(WasteCollectionException, date=d)
+
+        service = WasteCollectionAbstractService()
+        self.assertEqual(service.all_dates, [])

@@ -9,6 +9,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 
 from waste.exceptions import WasteGuideException
 from waste.interpret_frequencies import interpret_frequencies
+from waste.models import WasteCollectionException
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
 
 logger = logging.getLogger(__name__)
@@ -26,10 +27,14 @@ class WasteCollectionAbstractService:
             "Textiel": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/kleding-textiel-en-schoenen/",
         }
 
-    @staticmethod
-    def _get_dates() -> list[date]:
+    def _get_dates(self) -> list[date]:
         now = date.today()
         dates = [now + timedelta(days=n) for n in range(settings.CALENDAR_LENGTH)]
+
+        exception_dates = list(
+            WasteCollectionException.objects.values_list("date", flat=True)
+        )
+        dates = [d for d in dates if d not in exception_dates]
         return dates
 
     def get_validated_data_for_bag_id(self, bag_id):
