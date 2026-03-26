@@ -179,8 +179,10 @@ class PropertiesSerializer(serializers.Serializer):
 
 class IconDefinitionSerializer(serializers.Serializer):
     path = serializers.CharField()
-    stroke = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    background = serializers.CharField(
+    path_color = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True
+    )
+    circle_color = serializers.CharField(
         required=False, allow_null=True, allow_blank=True
     )
 
