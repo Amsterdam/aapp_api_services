@@ -27,10 +27,14 @@ class WasteCollectionAbstractService:
             "Textiel": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/kleding-textiel-en-schoenen/",
         }
 
-    @staticmethod
-    def _get_dates() -> list[date]:
+    def _get_dates(self) -> list[date]:
         now = date.today()
         dates = [now + timedelta(days=n) for n in range(settings.CALENDAR_LENGTH)]
+
+        exception_dates = list(
+            WasteCollectionException.objects.values_list("date", flat=True)
+        )
+        dates = [d for d in dates if d not in exception_dates]
         return dates
 
     def get_validated_data_for_bag_id(self, bag_id):
@@ -94,7 +98,6 @@ class WasteCollectionAbstractService:
             note=note,
             ophaaldagen_list=ophaaldagen_list,
         )
-        dates = self.filter_exception_dates(dates)
         return dates
 
     def filter_ophaaldagen(self, ophaaldagen):
@@ -118,11 +121,3 @@ class WasteCollectionAbstractService:
         ophaaldagen_list = re.split(r",| en ", ophaaldagen)
         ophaaldagen_mapped = [days_of_week[d.strip()] for d in ophaaldagen_list]
         return ophaaldagen_mapped
-
-    @staticmethod
-    def filter_exception_dates(dates: list[date]) -> list[date]:
-        exceptions = list(
-            WasteCollectionException.objects.values_list("date", flat=True)
-        )
-        dates = [d for d in dates if d not in exceptions]
-        return dates

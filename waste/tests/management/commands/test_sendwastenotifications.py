@@ -8,6 +8,7 @@ from model_bakery import baker
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from notification.models import WasteDevice
+from waste.models import WasteCollectionException
 from waste.tests.mock_data import (
     frequency_four_weeks,
     frequency_hardcoded_with_year,
@@ -177,6 +178,16 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
             device_ids=[schedule.device_id],
             waste_type="Papier en karton",
         )
+
+    @freeze_time("2026-03-08")
+    def test_send_single_notification_on_exception_date(
+        self, mock_call_notification_service
+    ):
+        baker.make(WasteCollectionException, date="2026-03-09")
+        responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly_oneven.MOCK_DATA)
+        baker.make(WasteDevice, bag_nummeraanduiding_id="1234", updated_at=None)
+        call_command("sendwastenotifications")
+        mock_call_notification_service.assert_not_called()
 
     @freeze_time("2026-03-15")
     def test_send_single_notification_weekly_odd_pattern_not_send(

@@ -9,11 +9,11 @@ logger = logging.getLogger(__name__)
 
 
 class WasteCollectionNotificationService(WasteCollectionAbstractService):
-    @staticmethod
-    def _get_dates() -> list[date]:
-        # Only select tomorrow for date selection!
+    def _get_dates(self) -> list[date]:
+        dates = super()._get_dates()
+        # Only select tomorrow for date selection, and persist exception date logic
         date_tomorrow = date.today() + timedelta(days=1)
-        return [date_tomorrow]
+        return [d for d in dates if d == date_tomorrow]
 
     def get_validated_data_for_route_type_code(self, route_type: str) -> list[dict]:
         """Get all records for a specific waste type from waste guide API"""

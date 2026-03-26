@@ -40,6 +40,13 @@ class Command(BaseCommand):
         filters them based on whether the pickup day is tomorrow, collects device IDs
         for notifications, and schedules the notifications accordingly.
         """
+        # Check if tomorrow is an exception date before processing
+        if len(self.collection_service.all_dates) == 0:
+            logger.warning(
+                "Tomorrow is an exception on waste collection. No notifications will be sent."
+            )
+            return
+
         full_data = []
         for route_type_code in WASTE_COLLECTION_ROUTE_TYPES:
             logger.info(

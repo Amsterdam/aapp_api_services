@@ -1,4 +1,3 @@
-import datetime
 import json
 import re
 from datetime import date
@@ -87,32 +86,29 @@ class WasteCollectionAbstractServiceTest(ResponsesActivatedAPITestCase):
         dates = self.service.get_dates_for_waste_item(item=item)
         self.assertEqual(len(dates), 0)
 
-
-class WasteCollectionAbstractServiceExceptionDatesTest(ResponsesActivatedAPITestCase):
-    def setUp(self):
-        self.dates = [datetime.date(2026, 1, day + 1) for day in range(7)]
-        self.service = WasteCollectionAbstractService()
-
     def test_no_exception_dates(self):
-        interpreted_dates = self.service.filter_exception_dates(dates=self.dates)
-        self.assertEqual(interpreted_dates, self.dates)
+        service = WasteCollectionAbstractService()
+        self.assertEqual(len(service.all_dates), settings.CALENDAR_LENGTH)
 
     def test_single_exception_dates(self):
-        baker.make(WasteCollectionException, date=self.dates[0])
+        baker.make(WasteCollectionException, date="2025-12-09")
 
-        interpreted_dates = self.service.filter_exception_dates(dates=self.dates)
-        self.assertEqual(interpreted_dates, self.dates[1:])
+        service = WasteCollectionAbstractService()
+        self.assertEqual(len(service.all_dates), settings.CALENDAR_LENGTH - 1)
+        self.assertNotIn(date(2025, 12, 9), service.all_dates)
 
     def test_multiple_exception_dates(self):
-        baker.make(WasteCollectionException, date=self.dates[0])
-        baker.make(WasteCollectionException, date=self.dates[1])
+        baker.make(WasteCollectionException, date="2025-12-09")
+        baker.make(WasteCollectionException, date="2025-12-15")
 
-        interpreted_dates = self.service.filter_exception_dates(dates=self.dates)
-        self.assertEqual(interpreted_dates, self.dates[2:])
+        service = WasteCollectionAbstractService()
+        self.assertEqual(len(service.all_dates), settings.CALENDAR_LENGTH - 2)
+        self.assertNotIn(date(2025, 12, 9), service.all_dates)
+        self.assertNotIn(date(2025, 12, 15), service.all_dates)
 
     def test_all_exception_dates(self):
-        for d in self.dates:
+        for d in self.service.all_dates:
             baker.make(WasteCollectionException, date=d)
 
-        interpreted_dates = self.service.filter_exception_dates(dates=self.dates)
-        self.assertEqual(interpreted_dates, [])
+        service = WasteCollectionAbstractService()
+        self.assertEqual(service.all_dates, [])
