@@ -2,7 +2,7 @@ from adminsortable2.admin import SortableAdminBase
 from django import forms
 from django.contrib import admin
 from django.contrib.admin import TabularInline
-from django.utils.html import format_html
+from django.utils.html import format_html_join
 
 from survey.models import Answer, SurveyVersionEntry
 
@@ -26,6 +26,11 @@ class SurveyVersionEntryAdmin(SortableAdminBase, admin.ModelAdmin):
     inlines = [AnswerInLine]
     ordering = ["-id"]
 
+    def get_queryset(self, request):
+        return SurveyVersionEntry.objects.prefetch_related("answers").select_related(
+            "survey_version__survey__team"
+        )
+
     def has_add_permission(self, request):
         return False
 
@@ -36,6 +41,8 @@ class SurveyVersionEntryAdmin(SortableAdminBase, admin.ModelAdmin):
         return False
 
     def antwoorden(self, obj):
-        return format_html(
-            "<br>".join(f"{a.question.id}: {a.answer}" for a in obj.answers.all())
+        return format_html_join(
+            "<br>",
+            "<li>{}: {}</li>",
+            ((a.question.id, a.answer) for a in obj.answers.all()),
         )

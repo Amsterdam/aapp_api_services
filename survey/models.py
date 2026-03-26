@@ -174,7 +174,7 @@ class SurveyVersionEntry(models.Model):
     metadata = models.JSONField(default=dict)
 
     def __str__(self):
-        return f"Vragenlijst: {self.survey_version}]"
+        return f"Vragenlijst: {self.survey_version}"
 
 
 class Answer(models.Model):
@@ -186,7 +186,7 @@ class Answer(models.Model):
         SurveyVersionEntry, on_delete=models.PROTECT, related_name="answers"
     )
     question = models.ForeignKey(
-        Question, verbose_name="Vraag", null=True, on_delete=models.PROTECT
+        Question, verbose_name="Vraag", on_delete=models.PROTECT
     )
     answer = models.CharField("Antwoord", max_length=1000)
 

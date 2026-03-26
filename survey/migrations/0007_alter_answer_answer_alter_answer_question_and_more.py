@@ -44,4 +44,13 @@ class Migration(migrations.Migration):
                 verbose_name="Vragenlijst versie",
             ),
         ),
+        migrations.AlterField(
+            model_name="answer",
+            name="question",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                to="survey.question",
+                verbose_name="Vraag",
+            ),
+        ),
     ]
