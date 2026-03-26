@@ -26,7 +26,7 @@ class ServiceMapsView(APIView):
     )
     def get(self, request, *args, **kwargs):
 
-        services = Services.choices()
+        services = Services.choices_as_list()
         response_serializer = ServiceMapsResponseSerializer(services, many=True)
         return Response(response_serializer.data)
 

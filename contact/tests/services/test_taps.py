@@ -15,8 +15,10 @@ class TapServiceTest(ResponsesActivatedAPITestCase):
 
         responses.get(settings.TAP_URL, json=taps.MOCK_DATA)
         full_data = self.service.get_full_data()
-        self.assertEqual(full_data["filters"], TapFilters.choices())
-        self.assertEqual(full_data["properties_to_include"], TapProperties.choices())
+        self.assertEqual(full_data["filters"], TapFilters.choices_as_list())
+        self.assertEqual(
+            full_data["properties_to_include"], TapProperties.choices_as_list()
+        )
         self.assertEqual(len(full_data["data"]["features"]), 3)
 
     def test_filter_data(self):

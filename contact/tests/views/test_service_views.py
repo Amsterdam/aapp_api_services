@@ -20,7 +20,7 @@ class TestServiceMapsView(ResponsesActivatedAPITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), len(Services.choices()))
+        self.assertEqual(len(response.data), len(Services.choices_as_list()))
 
 
 class TestServiceMapView(ResponsesActivatedAPITestCase):
@@ -35,9 +35,9 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["filters"], ToiletFilters.choices())
+        self.assertEqual(response.data["filters"], ToiletFilters.choices_as_list())
         self.assertEqual(
-            response.data["properties_to_include"], ToiletProperties.choices()
+            response.data["properties_to_include"], ToiletProperties.choices_as_list()
         )
         self.assertEqual(
             len(response.data["data"]["features"]), len(toilets.MOCK_DATA["features"])
@@ -54,9 +54,9 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["filters"], TapFilters.choices())
+        self.assertEqual(response.data["filters"], TapFilters.choices_as_list())
         self.assertEqual(
-            response.data["properties_to_include"], TapProperties.choices()
+            response.data["properties_to_include"], TapProperties.choices_as_list()
         )
 
     def test_not_implemented_get_service_map_view(self):

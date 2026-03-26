@@ -60,10 +60,10 @@ class ServiceAbstract:
         Builds the response payload with the given items, filters, and properties to include.
         """
         full_data = {
-            "filters": filters.choices(),
-            "properties_to_include": properties_to_include.choices(),
+            "filters": filters.choices_as_list(),
+            "properties_to_include": properties_to_include.choices_as_list(),
             "list_property": list_property._asdict() if list_property else None,
-            "icons_to_include": icons.object_choices() if icons else None,
+            "icons_to_include": icons.choices_as_dict() if icons else None,
             "data": {
                 "type": "FeatureCollection",
                 "features": items,
