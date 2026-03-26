@@ -37,3 +37,7 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         )
         self.notification_service.send(notification_data)
         self.assertEqual(ScheduledNotification.objects.count(), 1)
+        scheduled_notification = ScheduledNotification.objects.first()
+        self.assertEqual(
+            scheduled_notification.context["url"], "https://mijn.amsterdam.nl/"
+        )
