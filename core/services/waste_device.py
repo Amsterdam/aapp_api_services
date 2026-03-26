@@ -23,10 +23,14 @@ class WasteDeviceService:
         )
 
     def get_outdated_waste_devices(self) -> list[WasteDevice]:
+        # add filtering on bag_nummeraanduiding_id to only get devices that are relevant for the notifications
         return list(
             WasteDevice.objects.filter(
-                Q(updated_at__lt=datetime.combine(date.today(), time.min))
-                | Q(updated_at__isnull=True)
+                (
+                    Q(updated_at__lt=datetime.combine(date.today(), time.min))
+                    | Q(updated_at__isnull=True)
+                )
+                & Q(bag_nummeraanduiding_id__isnull=False)
             )
         )
 

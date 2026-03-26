@@ -29,7 +29,8 @@ class BurningGuideDeviceService:
     ) -> list[BurningGuideDevice]:
         return list(
             BurningGuideDevice.objects.filter(
-                Q(send_at__lt=last_timestamp) | Q(send_at__isnull=True)
+                (Q(send_at__lt=last_timestamp) | Q(send_at__isnull=True))
+                & Q(postal_code__isnull=False)
             )
         )
 

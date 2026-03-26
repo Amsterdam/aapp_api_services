@@ -204,6 +204,6 @@ class BurningGuideDevice(models.Model):
     """
 
     device_id = models.CharField(max_length=255, primary_key=True)
-    postal_code = models.CharField(max_length=4)
+    postal_code = models.CharField(max_length=4, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     send_at = models.DateTimeField(null=True)

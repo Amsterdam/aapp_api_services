@@ -46,6 +46,9 @@ class BurningGuideDeviceRequestSerializer(
     serializers.ModelSerializer, PostalCodeValidationMixin
 ):
     send_at = serializers.DateTimeField(read_only=True)
+    postal_code = serializers.CharField(
+        required=True, allow_null=False, min_length=4, max_length=4
+    )
 
     class Meta:
         model = BurningGuideDevice
