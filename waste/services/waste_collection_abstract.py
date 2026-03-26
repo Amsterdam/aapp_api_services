@@ -1,6 +1,6 @@
 import logging
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Literal
 
 import requests
@@ -28,8 +28,8 @@ class WasteCollectionAbstractService:
 
     @staticmethod
     def _get_dates() -> list[date]:
-        now = datetime.now()
-        dates = [(now + timedelta(n)).date() for n in range(settings.CALENDAR_LENGTH)]
+        now = date.today()
+        dates = [now + timedelta(days=n) for n in range(settings.CALENDAR_LENGTH)]
         return dates
 
     def get_validated_data_for_bag_id(self, bag_id):
