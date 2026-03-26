@@ -6,12 +6,9 @@ from waste.services.waste_collection_abstract import WasteCollectionAbstractServ
 
 
 class WasteCollectionService(WasteCollectionAbstractService):
-    def __init__(self, bag_nummeraanduiding_id: str):
-        super().__init__(bag_nummeraanduiding_id)
-
-    def create_calendar(self) -> list[dict]:
+    def create_calendar(self, validated_data) -> list[dict]:
         calendar = []
-        for item in self.validated_data:
+        for item in validated_data:
             if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
                 dates = self.get_dates_for_waste_item(item)
                 calendar += [
@@ -46,9 +43,11 @@ class WasteCollectionService(WasteCollectionAbstractService):
 
         return next_dates
 
-    def get_waste_types(self, next_dates: dict[str, str | None]) -> list[dict]:
+    def get_waste_types(
+        self, validated_data, next_dates: dict[str, str | None]
+    ) -> list[dict]:
         waste_types = []
-        for item in self.validated_data:
+        for item in validated_data:
             code = item.get("code")
             if code in constants.WASTE_TYPES_CODES:
                 waste_types.append(
@@ -86,13 +85,13 @@ class WasteCollectionService(WasteCollectionAbstractService):
             key=lambda x: x.get("order") if x.get("order") is not None else 999,
         )
 
-    def get_is_residential(self):
-        if self.validated_data and len(self.validated_data) > 0:
-            return self.validated_data[0].get("is_residential")
+    def get_is_residential(self, validated_data):
+        if validated_data and len(validated_data) > 0:
+            return validated_data[0].get("is_residential")
         return True
 
-    def get_is_collection_by_appointment(self):
-        for item in self.validated_data:
+    def get_is_collection_by_appointment(self, validated_data):
+        for item in validated_data:
             if item.get("code") == "Rest":
                 return item.get("is_collection_by_appointment")
         return False

@@ -8,20 +8,8 @@ WEEKLY_PATTERN = re.compile(r"om de \d{1} weken")
 logger = logging.getLogger(__name__)
 
 
-def interpret_single_date_frequency(
-    date: datetime, frequency: str, note: str, weekday: int
-) -> datetime | None:
-    dates = interpret_frequencies(
-        [date], {"frequency": frequency, "note": note}, [weekday]
-    )
-    if len(dates) == 0:
-        return None
-    return dates[0]
-
-
-def interpret_frequencies(dates, item, ophaaldagen_list):
-    frequency = item.get("frequency") or ""
-    if frequency == "":
+def interpret_frequencies(*, dates, frequency, note, ophaaldagen_list):
+    if not frequency or frequency == "":
         pass  # no filtering needed
     elif "oneven" in frequency:
         dates = _filter_even_oneven(dates, even=False)
@@ -34,11 +22,12 @@ def interpret_frequencies(dates, item, ophaaldagen_list):
             dates, weekday=ophaaldagen_list[0], frequency=frequency
         )
     elif WEEKLY_PATTERN.match(frequency) is not None:
-        dates = _filter_weekly_frequency(dates, item.get("note"))
+        if not note:
+            logger.error("No dates note provided for weekly pattern. Skipping...")
+            return []
+        dates = _filter_weekly_frequency(dates, note)
     else:
-        logger.error(
-            f"Unknown frequency pattern '{frequency}' for waste type {item.get('code')}"
-        )
+        logger.error(f"Unknown frequency pattern '{frequency}'. Skipping...")
         dates = []
     return dates
 

@@ -15,16 +15,16 @@ from waste.tests.mock_data import (
 @freezegun.freeze_time("2025-12-09")
 class WasteCollectionICSServiceTest(ResponsesActivatedAPITestCase):
     def setUp(self):
-        self.service = WasteCollectionICSService(bag_nummeraanduiding_id="1234")
+        self.service = WasteCollectionICSService()
         responses.get(
             re.compile(settings.WASTE_GUIDE_URL + ".*"),
             json=frequency_monthly.MOCK_DATA,
         )
-        self.service.get_validated_data()
 
     @override_settings(CALENDAR_LENGTH=14)
     def test_create_ics_calendar(self):
-        calendar = self.service.create_ics_calendar()
+        validated_data = self.service.get_validated_data_for_bag_id(bag_id="1234")
+        calendar = self.service.create_ics_calendar(validated_data)
 
         # make sure calendar has a start and an end
         self.assertIn("BEGIN:VCALENDAR", str(calendar))

@@ -21,19 +21,19 @@ from waste.tests.mock_data import (
 class WasteCollectionServiceTest(TestCase):
     @override_settings(CALENDAR_LENGTH=60)
     def setUp(self):
-        self.service = WasteCollectionService(bag_nummeraanduiding_id="1234")
+        self.service = WasteCollectionService()
 
     @responses.activate
-    def set_validated_mock_data(self, mock_data):
+    def get_validated_mock_data(self, mock_data):
         responses.get(
             re.compile(settings.WASTE_GUIDE_URL + ".*"),
             json=mock_data,
         )
-        self.service.get_validated_data()
+        return self.service.get_validated_data_for_bag_id("1234")
 
     def test_create_calendar(self):
-        self.set_validated_mock_data(frequency_weekly.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(frequency_weekly.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
 
         self.assertEqual(
             calendar,
@@ -186,8 +186,8 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_calendar_even_oneven_weesp(self):
-        self.set_validated_mock_data(frequency_weekly_oneven.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(frequency_weekly_oneven.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
 
         self.assertEqual(
             calendar,
@@ -268,8 +268,10 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_calendar_specific_dates_weesp(self):
-        self.set_validated_mock_data(frequency_hardcoded_wo_year.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(
+            frequency_hardcoded_wo_year.MOCK_DATA
+        )
+        calendar = self.service.create_calendar(validated_data)
 
         # interpret date string as datetime
         self.assertEqual(
@@ -292,8 +294,10 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_calendar_specific_dates_weesp_with_year(self):
-        self.set_validated_mock_data(frequency_hardcoded_with_year.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(
+            frequency_hardcoded_with_year.MOCK_DATA
+        )
+        calendar = self.service.create_calendar(validated_data)
 
         # interpret date string as datetime
         self.assertEqual(
@@ -316,8 +320,8 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_calendar_montly_frequency_success(self):
-        self.set_validated_mock_data(frequency_monthly.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(frequency_monthly.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
 
         # interpret date string as datetime
         self.assertEqual(
@@ -335,8 +339,8 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_calendar_four_weeks(self):
-        self.set_validated_mock_data(frequency_four_weeks.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(frequency_four_weeks.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
 
         # interpret date string as datetime
         self.assertEqual(
@@ -354,8 +358,8 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_get_next_dates(self):
-        self.set_validated_mock_data(frequency_weekly.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(frequency_weekly.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
         next_dates = self.service.get_next_dates(calendar)
 
         self.assertDictEqual(
@@ -371,10 +375,10 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_get_waste_types(self):
-        self.set_validated_mock_data(frequency_weekly.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(frequency_weekly.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
         next_dates = self.service.get_next_dates(calendar)
-        waste_types = self.service.get_waste_types(next_dates)
+        waste_types = self.service.get_waste_types(validated_data, next_dates)
 
         self.assertEqual(
             waste_types,
