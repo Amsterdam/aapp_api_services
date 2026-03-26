@@ -1,7 +1,7 @@
 import responses
 from django.conf import settings
 
-from contact.enums.taps import TapFilters, TapProperties
+from contact.enums.taps import TapFilters, TapIcons, TapProperties
 from contact.services.taps import TapService
 from contact.tests.mock_data import taps
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
@@ -19,6 +19,7 @@ class TapServiceTest(ResponsesActivatedAPITestCase):
         self.assertEqual(
             full_data["properties_to_include"], TapProperties.choices_as_list()
         )
+        self.assertEqual(full_data["icons_to_include"], TapIcons.choices_as_dict())
         self.assertEqual(len(full_data["data"]["features"]), 3)
 
     def test_filter_data(self):

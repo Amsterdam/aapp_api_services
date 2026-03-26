@@ -23,6 +23,7 @@ class ToiletServiceTest(ResponsesActivatedAPITestCase):
         self.assertEqual(
             len(full_data["data"]["features"]), len(toilets.MOCK_DATA["features"])
         )
+        self.assertEqual(full_data["icons_to_include"], None)
         self.assertEqual(full_data["data"]["type"], "FeatureCollection")
 
     def test_construct_opening_hours_both(self):
