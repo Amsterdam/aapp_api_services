@@ -14,8 +14,14 @@ class TestAddressView(ResponsesActivatedAPITestCase):
 
     def test_update_no_existing_address(self):
         data = {
-            "bag_nummeraanduiding_id": "test-bag-id",
-            "postal_code": "1023",
+            "city": "Amsterdam",
+            "street": "Teststraat",
+            "coordinates": {
+                "lat": 52.370216,
+                "lon": 4.895168,
+            },
+            "bagId": "test-bag-id",
+            "postcode": "1023",
         }
         response = self.client.post(
             self.url, data, format="json", headers=self.api_headers
@@ -33,8 +39,14 @@ class TestAddressView(ResponsesActivatedAPITestCase):
             WasteDevice, device_id=self.device_id, bag_nummeraanduiding_id="old-bag-id"
         )
         data = {
-            "bag_nummeraanduiding_id": "new-bag-id",
-            "postal_code": "1023",
+            "city": "Amsterdam",
+            "street": "Teststraat",
+            "coordinates": {
+                "lat": 52.370216,
+                "lon": 4.895168,
+            },
+            "bagId": "test-bag-id",
+            "postcode": "1023",
         }
         response = self.client.post(
             self.url, data, format="json", headers=self.api_headers
@@ -44,7 +56,7 @@ class TestAddressView(ResponsesActivatedAPITestCase):
             WasteDevice.objects.filter(device_id=self.device_id)
             .first()
             .bag_nummeraanduiding_id,
-            data["bag_nummeraanduiding_id"],
+            data["bagId"],
         )
         self.assertEqual(
             BurningGuideDevice.objects.filter(device_id=self.device_id).count(), 0
@@ -53,8 +65,14 @@ class TestAddressView(ResponsesActivatedAPITestCase):
     def test_update_burning_guide_existing_address(self):
         baker.make(BurningGuideDevice, device_id=self.device_id, postal_code="1091")
         data = {
-            "bag_nummeraanduiding_id": "new-bag-id",
-            "postal_code": "1024",
+            "city": "Amsterdam",
+            "street": "Teststraat",
+            "coordinates": {
+                "lat": 52.370216,
+                "lon": 4.895168,
+            },
+            "bagId": "test-bag-id",
+            "postcode": "1023",
         }
         response = self.client.post(
             self.url, data, format="json", headers=self.api_headers
@@ -64,7 +82,7 @@ class TestAddressView(ResponsesActivatedAPITestCase):
             BurningGuideDevice.objects.filter(device_id=self.device_id)
             .first()
             .postal_code,
-            data["postal_code"],
+            data["postcode"],
         )
         self.assertEqual(
             WasteDevice.objects.filter(device_id=self.device_id).count(), 0
@@ -72,18 +90,30 @@ class TestAddressView(ResponsesActivatedAPITestCase):
 
     def test_update_burning_guide_long_postal_code(self):
         data = {
-            "bag_nummeraanduiding_id": "new-bag-id",
-            "postal_code": "1024VL",
+            "city": "Amsterdam",
+            "street": "Teststraat",
+            "coordinates": {
+                "lat": 52.370216,
+                "lon": 4.895168,
+            },
+            "bagId": "test-bag-id",
+            "postcode": "1023AB",
         }
         response = self.client.post(
             self.url, data, format="json", headers=self.api_headers
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 200)
 
     def test_update_burning_guide_postal_code_outside_amsterdam(self):
         data = {
-            "bag_nummeraanduiding_id": "new-bag-id",
-            "postal_code": "1971AB",
+            "city": "Hollywood",
+            "street": "Street of Stars",
+            "coordinates": {
+                "lat": 52.370216,
+                "lon": 4.895168,
+            },
+            "bagId": "test-bag-id",
+            "postcode": "2222",
         }
         response = self.client.post(
             self.url, data, format="json", headers=self.api_headers
@@ -96,8 +126,14 @@ class TestAddressView(ResponsesActivatedAPITestCase):
             WasteDevice, device_id=self.device_id, bag_nummeraanduiding_id="old-bag-id"
         )
         data = {
-            "bag_nummeraanduiding_id": "new-bag-id",
-            "postal_code": "1024",
+            "city": "Amsterdam",
+            "street": "Teststraat",
+            "coordinates": {
+                "lat": 52.370216,
+                "lon": 4.895168,
+            },
+            "bagId": "test-bag-id",
+            "postcode": "1023",
         }
         response = self.client.post(
             self.url, data, format="json", headers=self.api_headers
@@ -107,13 +143,13 @@ class TestAddressView(ResponsesActivatedAPITestCase):
             BurningGuideDevice.objects.filter(device_id=self.device_id)
             .first()
             .postal_code,
-            data["postal_code"],
+            data["postcode"],
         )
         self.assertEqual(
             WasteDevice.objects.filter(device_id=self.device_id)
             .first()
             .bag_nummeraanduiding_id,
-            data["bag_nummeraanduiding_id"],
+            data["bagId"],
         )
 
     def test_delete_no_existing_address(self):
