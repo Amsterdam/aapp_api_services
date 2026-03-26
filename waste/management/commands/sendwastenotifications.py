@@ -47,7 +47,7 @@ class Command(BaseCommand):
             )
             full_data.extend(
                 self.collection_service.get_validated_data_for_route_type_code(
-                    route_type=route_type_code, page_size=20000
+                    route_type=route_type_code
                 )
             )
         logger.info("Fetched all waste data from Waste Guide API.")
