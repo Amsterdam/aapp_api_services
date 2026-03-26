@@ -77,7 +77,7 @@ class SurveyVersion(models.Model):
     active_from = models.DateTimeField("Actief vanaf", null=True)
 
     def __str__(self):
-        return f"{self.survey.title} - {self.version}"
+        return f"{self.survey.title} [V{self.version}]"
 
 
 class SurveyVersionQuestion(models.Model):
@@ -166,13 +166,15 @@ class SurveyVersionEntry(models.Model):
         verbose_name = "Ingevulde vragenlijst"
         verbose_name_plural = "Ingevulde vragenlijsten"
 
-    survey_version = models.ForeignKey(SurveyVersion, on_delete=models.PROTECT)
-    created_at = models.DateTimeField(auto_now_add=True)
-    entry_point = models.CharField(max_length=1000)
+    survey_version = models.ForeignKey(
+        SurveyVersion, verbose_name="Vragenlijst versie", on_delete=models.PROTECT
+    )
+    created_at = models.DateTimeField("Aangemaakt op", auto_now_add=True)
+    entry_point = models.CharField("Toegangspunt", max_length=1000)
     metadata = models.JSONField(default=dict)
 
     def __str__(self):
-        return f"Vragenlijst: {self.survey_version.survey.title} - {self.survey_version.version}"
+        return f"Vragenlijst: {self.survey_version}]"
 
 
 class Answer(models.Model):
@@ -183,8 +185,10 @@ class Answer(models.Model):
     survey_version_entry = models.ForeignKey(
         SurveyVersionEntry, on_delete=models.PROTECT, related_name="answers"
     )
-    question = models.ForeignKey(Question, null=True, on_delete=models.PROTECT)
-    answer = models.CharField(max_length=1000)
+    question = models.ForeignKey(
+        Question, verbose_name="Vraag", null=True, on_delete=models.PROTECT
+    )
+    answer = models.CharField("Antwoord", max_length=1000)
 
     def __str__(self):
         return f"{self.question.question_text}"
