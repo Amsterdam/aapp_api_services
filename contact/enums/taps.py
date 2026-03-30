@@ -1,7 +1,5 @@
-from contact.enums.base import (
-    ChoicesEnum,
-    PropertiesClass,
-)
+from contact.enums.base import ChoicesEnum, IconClass, PropertiesClass
+from contact.icons import IconPath
 
 
 class TapFilters(ChoicesEnum):
@@ -26,4 +24,25 @@ class TapProperties(ChoicesEnum):
         property_key="beschrijvi",
         property_type="string",
         icon=None,
+    )
+
+
+class TapIcons(ChoicesEnum):
+    TAP = IconClass(
+        label="tap",
+        path=IconPath["tap-tap-marker"],
+        circle_color="#009DE6",
+        path_color="#FFFFFF",
+    )
+    FOUNTAIN = IconClass(
+        label="fountain",
+        path=IconPath["tap-fountain-marker"],
+        circle_color="#009DE6",
+        path_color="#FFFFFF",
+    )
+    MALFUNCTION = IconClass(
+        label="malfunction",
+        path=IconPath["tap-malfunction-marker"],
+        circle_color="#767676",
+        path_color="#FFFFFF",
     )

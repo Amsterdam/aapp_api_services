@@ -26,7 +26,7 @@ class ServiceMapsView(APIView):
     )
     def get(self, request, *args, **kwargs):
 
-        services = Services.choices()
+        services = Services.choices_as_list()
         response_serializer = ServiceMapsResponseSerializer(services, many=True)
         return Response(response_serializer.data)
 
@@ -66,6 +66,7 @@ class ServiceMapView(APIView):
             response_payload.get("properties_to_include", []),
             response_payload.get("filters", []),
             response_payload.get("list_property", {}),
+            response_payload.get("icons_to_include", None) is not None,
         )
 
         response_serializer = DynamicMapSerializer(data=response_payload)

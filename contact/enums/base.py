@@ -10,8 +10,12 @@ property_types = Literal[
 
 class ChoicesEnum(Enum):
     @classmethod
-    def choices(cls):
+    def choices_as_list(cls):
         return [item.value._asdict() for item in cls]
+
+    @classmethod
+    def choices_as_dict(cls):
+        return {item.value._asdict()["label"]: item.value._asdict() for item in cls}
 
 
 class ServiceClass(NamedTuple):
@@ -32,6 +36,13 @@ class PropertiesClass(NamedTuple):
     property_key: str
     property_type: property_types
     icon: str | None
+
+
+class IconClass(NamedTuple):
+    label: str
+    path: str
+    path_color: str | None
+    circle_color: str | None
 
 
 class ListPropertyClass(NamedTuple):

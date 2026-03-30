@@ -16,11 +16,14 @@ class ToiletServiceTest(ResponsesActivatedAPITestCase):
 
         full_data = self.service.get_full_data()
 
-        self.assertEqual(full_data["filters"], ToiletFilters.choices())
-        self.assertEqual(full_data["properties_to_include"], ToiletProperties.choices())
+        self.assertEqual(full_data["filters"], ToiletFilters.choices_as_list())
+        self.assertEqual(
+            full_data["properties_to_include"], ToiletProperties.choices_as_list()
+        )
         self.assertEqual(
             len(full_data["data"]["features"]), len(toilets.MOCK_DATA["features"])
         )
+        self.assertEqual(full_data["icons_to_include"], None)
         self.assertEqual(full_data["data"]["type"], "FeatureCollection")
 
     def test_construct_opening_hours_both(self):
