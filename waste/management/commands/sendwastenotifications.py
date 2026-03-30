@@ -5,11 +5,11 @@ from django.core.management.base import BaseCommand
 
 from core.services.waste_device import WasteDeviceService
 from waste.constants import WASTE_COLLECTION_ROUTE_TYPES
+from waste.models import WasteCollectionRouteName
 from waste.services.notification import NotificationService
 from waste.services.waste_collection_notification import (
     WasteCollectionNotificationService,
 )
-from waste.models import WasteCollectionRouteName
 
 logger = logging.getLogger(__name__)
 
@@ -54,8 +54,10 @@ class Command(BaseCommand):
             logger.info(
                 "Fetching data for route", extra={"route_type_code": route_type_code}
             )
-            waste_data, waste_route_names = self.collection_service.get_validated_data_for_route_type_code(
-                route_type=route_type_code
+            waste_data, waste_route_names = (
+                self.collection_service.get_validated_data_for_route_type_code(
+                    route_type=route_type_code
+                )
             )
             full_data.extend(waste_data)
             route_names.update(waste_route_names)
@@ -74,7 +76,6 @@ class Command(BaseCommand):
             [WasteCollectionRouteName(name=route_name) for route_name in route_names],
             ignore_conflicts=True,
         )
-
 
     def _get_devices_per_fraction(
         self, filtered_data: list[dict]

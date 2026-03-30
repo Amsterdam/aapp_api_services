@@ -16,7 +16,9 @@ class WasteCollectionNotificationService(WasteCollectionAbstractService):
         date_tomorrow = date.today() + timedelta(days=1)
         return [d for d in dates if d == date_tomorrow]
 
-    def get_validated_data_for_route_type_code(self, route_type: str) -> Tuple[list[dict], set[str]]:
+    def get_validated_data_for_route_type_code(
+        self, route_type: str
+    ) -> Tuple[list[dict], set[str]]:
         """Get all records for a specific waste type from waste guide API"""
 
         params = {

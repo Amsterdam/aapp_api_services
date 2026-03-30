@@ -167,10 +167,14 @@ class OpeningHoursException(OpeningHourAbstract):
 class WasteCollectionRouteName(models.Model):
     """Model to store waste collection route names"""
 
+    class Meta:
+        ordering = ["name"]
+
     name = models.CharField(primary_key=True, max_length=300)
 
     def __str__(self):
         return self.name
+
 
 class WasteCollectionException(models.Model):
     """Model for exceptions to regular waste collections"""
@@ -186,4 +190,3 @@ class WasteCollectionException(models.Model):
         verbose_name="afvalwijzerRoutenaam",
         help_text="Selecteer de afvalophaalroutes waar deze uitzondering voor geldt",
     )
-
