@@ -150,6 +150,9 @@ dev: check-service
     # Start Django app with runserver
 	$(run) --service-ports dev
 
+dev-rebuild: build dev 
+	# Rebuild Docker image and start Django app with runserver
+
 app: check-service
     # Start Django app with UWsgi
 	$(dc) up app
