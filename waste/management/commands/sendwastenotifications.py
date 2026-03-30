@@ -9,6 +9,7 @@ from waste.services.notification import NotificationService
 from waste.services.waste_collection_notification import (
     WasteCollectionNotificationService,
 )
+from waste.models import WasteCollectionRouteName
 
 logger = logging.getLogger(__name__)
 
@@ -48,17 +49,18 @@ class Command(BaseCommand):
             return
 
         full_data = []
+        route_names = set()
         for route_type_code in WASTE_COLLECTION_ROUTE_TYPES:
             logger.info(
                 "Fetching data for route", extra={"route_type_code": route_type_code}
             )
-            full_data.extend(
-                self.collection_service.get_validated_data_for_route_type_code(
-                    route_type=route_type_code
-                )
+            waste_data, waste_route_names = self.collection_service.get_validated_data_for_route_type_code(
+                route_type=route_type_code
             )
-        logger.info("Fetched all waste data from Waste Guide API.")
+            full_data.extend(waste_data)
+            route_names.update(waste_route_names)
 
+        logger.info("Fetched all waste data from Waste Guide API.")
         logger.info("Sending notifications")
         devices_per_fraction = self._get_devices_per_fraction(filtered_data=full_data)
         self._send_notifications(fraction_device_ids=devices_per_fraction)
@@ -66,6 +68,13 @@ class Command(BaseCommand):
         logger.info("Updating waste device records with last notification timestamp")
         ids_to_update = [schedule.pk for schedule in self.notification_schedules]
         self.waste_device_service.update_waste_device(ids_to_update=ids_to_update)
+
+        logger.info("Updating waste route names")
+        WasteCollectionRouteName.objects.bulk_create(
+            [WasteCollectionRouteName(name=route_name) for route_name in route_names],
+            ignore_conflicts=True,
+        )
+
 
     def _get_devices_per_fraction(
         self, filtered_data: list[dict]
