@@ -15,7 +15,11 @@ class DataAmsterdamService:
         response = self._make_request()
         data = response.json()
         locations = data.get("_embedded", {}).get("zwembad", [])
-        filtered_locations = [location for location in locations if location.get("verhuuradministratie") == "Gemeente Amsterdam"]
+        filtered_locations = [
+            location
+            for location in locations
+            if location.get("verhuuradministratie") == "Gemeente Amsterdam"
+        ]
         # add detail name to each location dict for easier fetching of schedule and activities later on
         for location in filtered_locations:
             location["detail-name"] = location.get("naam").lower().replace(" ", "-")
@@ -34,5 +38,7 @@ class DataAmsterdamService:
             response.raise_for_status()
             return response
         except requests.exceptions.RequestException:
-            logger.info("Failed to fetch swim location data", extra={"url": self.data_url})
+            logger.info(
+                "Failed to fetch swim location data", extra={"url": self.data_url}
+            )
             raise

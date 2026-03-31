@@ -10,14 +10,15 @@ class ZwembadenApiService:
     def __init__(self) -> None:
         self.base_url = "https://zwembaden.api-amsterdam.nl/nl/api"
 
-    def get_schedule_for_date_and_location(self, date_str: str, location_name: str) -> dict:
+    def get_schedule_for_date_and_location(
+        self, date_str: str, location_name: str
+    ) -> dict:
         """Get swim schedule for a specific date and location."""
         url = f"{self.base_url}/{location_name}/date/{date_str}/"
         response = self._make_request(url)
         data = response.json()
         schedule = data.get("schedule", [])
         return schedule
-    
 
     def get_activities_for_location(self, location_name: str) -> dict:
         """Get swim activities for a specific location."""
@@ -29,7 +30,6 @@ class ZwembadenApiService:
             "schedule_per_weekday": data.get("days", []),
         }
         return payload
-
 
     @retry(
         stop=stop_after_attempt(3),
