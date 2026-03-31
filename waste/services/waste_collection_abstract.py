@@ -11,6 +11,7 @@ from waste.exceptions import WasteGuideException
 from waste.interpret_frequencies import interpret_frequencies
 from waste.models import WasteCollectionException
 from waste.serializers.waste_guide_serializers import WasteDataSerializer
+from core.utils.caching_utils import cache_function
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +31,6 @@ class WasteCollectionAbstractService:
     def _get_dates(self) -> list[date]:
         now = date.today()
         dates = [now + timedelta(days=n) for n in range(settings.CALENDAR_LENGTH)]
-
-        exception_dates = list(
-            WasteCollectionException.objects.values_list("date", flat=True)
-        )
-        dates = [d for d in dates if d not in exception_dates]
         return dates
 
     def get_validated_data_for_bag_id(self, bag_id):
@@ -98,6 +94,7 @@ class WasteCollectionAbstractService:
             note=note,
             ophaaldagen_list=ophaaldagen_list,
         )
+        dates = self._filter_dates_on_exceptions(dates=dates, item=item)
         return dates
 
     def filter_ophaaldagen(self, ophaaldagen):
@@ -121,3 +118,28 @@ class WasteCollectionAbstractService:
         ophaaldagen_list = re.split(r",| en ", ophaaldagen)
         ophaaldagen_mapped = [days_of_week[d.strip()] for d in ophaaldagen_list]
         return ophaaldagen_mapped
+
+    def _filter_dates_on_exceptions(self, dates: list[date], item: dict[str]) -> list[date]:
+        future_dates = self._get_future_dates()
+        dates_overlap = set(dates) & set(future_dates)
+        if not dates_overlap:
+            return dates
+        
+        item_route = item.get("route_name")
+        for date in dates_overlap:
+            affected_routes = self._get_affected_routes_for_date(date)
+            if item_route in affected_routes:
+                dates.remove(date)
+
+        return dates
+    
+    @cache_function(timeout=60 * 60 )  # cache one hour
+    @staticmethod
+    def _get_future_dates() -> list[date]:
+        return WasteCollectionException.objects.filter(date__gte=date.today()).values_list("date", flat=True)
+    
+    @cache_function(timeout=60 * 60 * 2)  # Cache for 2 hours
+    @staticmethod
+    def _get_affected_routes_for_date(date: date) -> list[str]:
+        # cache this function because when sending notifications it can be called multiple times for the same date
+        return WasteCollectionException.objects.filter(date=date).values_list("affected_routes", flat=True)
