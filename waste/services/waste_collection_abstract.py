@@ -7,6 +7,7 @@ import requests
 from django.conf import settings
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
+from core.utils.caching_utils import cache_function
 from waste.exceptions import WasteGuideException
 from waste.interpret_frequencies import interpret_frequencies
 from waste.models import WasteCollectionException
@@ -134,17 +135,19 @@ class WasteCollectionAbstractService:
 
         return dates
 
-    # @cache_function(timeout=60 * 60 )  # cache one hour
     @staticmethod
+    @cache_function(timeout=60 * 60)  # cache one hour
     def _get_future_dates() -> list[date]:
-        return WasteCollectionException.objects.filter(
-            date__gte=date.today()
-        ).values_list("date", flat=True)
+        return list(
+            WasteCollectionException.objects.filter(date__gte=date.today()).values_list(
+                "date", flat=True
+            )
+        )
 
-    # @cache_function(timeout=60 * 60 * 2)  # Cache for 2 hours
     @staticmethod
+    @cache_function(timeout=60 * 60)  # Cache for one hour
     def _get_affected_routes_for_date(date: date) -> list[str]:
-        # cache this function because when sending notifications it can be called multiple times for the same date
+        # cache this function because when sending notifications it will be called multiple times for the same date
         return list(
             WasteCollectionException.objects.filter(date=date).values_list(
                 "affected_routes__name", flat=True
