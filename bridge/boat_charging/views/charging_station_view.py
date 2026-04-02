@@ -1,5 +1,3 @@
-from urllib.parse import urljoin
-
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
@@ -20,11 +18,8 @@ class ChargingStationView(BaseView):
 
     @extend_schema_for_api_key(success_response=StartTransactionResponseSerializer)
     async def post(self, request, *args, **kwargs):
-        station_id = kwargs["charging_station_id"]
-        endpoint = urljoin(
-            settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"], station_id
-        )
-        endpoint += "/start-transaction"
+        station_id = self.get_safe_path_param(kwargs["charging_station_id"])
+        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{station_id}/start-transaction"
 
         request_data = StartTransactionRequestSerializer(data=request.data)
         request_data.is_valid(raise_exception=True)
@@ -56,14 +51,12 @@ class ChargingStationView(BaseView):
         ]
     )
     async def delete(self, request, *args, **kwargs):
-        station_id = kwargs["charging_station_id"]
+        station_id = self.get_safe_path_param(kwargs["charging_station_id"])
+        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{station_id}/stop-transaction"
+
         api_correlation_token = request.headers.get("api_correlation_token")
         if not api_correlation_token:
             raise ValidationError("No api_correlation_token is provided")
-        endpoint = urljoin(
-            settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"], station_id
-        )
-        endpoint += "/stop-transaction"
 
         body_data = {"id": api_correlation_token}
         await self.api_call(

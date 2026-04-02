@@ -1,4 +1,5 @@
-from urllib.parse import urljoin
+import re
+from urllib.parse import quote
 
 from django.conf import settings
 from rest_framework.response import Response
@@ -9,6 +10,8 @@ from bridge.boat_charging.serializers.session_serializers import (
 )
 from bridge.boat_charging.views.base_view import BaseView
 from core.utils.openapi_utils import extend_schema_for_api_key
+
+SESSION_ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 @extend_schema_for_api_key(success_response=SessionResponseSerializer(many=True))
@@ -48,23 +51,18 @@ class SessionDetailView(SessionView):
     paginated = False
 
     async def get(self, request, *args, **kwargs):
-        session_id = kwargs["session_id"]
-        endpoint = urljoin(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"], session_id)
+        session_id = self.get_safe_path_param(kwargs["session_id"])
+        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{session_id}"
         response_json = await self.api_call("get", endpoint=endpoint)
         serializer_data = self.get_session_data(response_json)
 
         # Enrich data with transaction
-        transaction_endpoint = urljoin(
-            settings.BOAT_CHARGING_ENDPOINTS["TRANSACTIONS"],
-            response_json["transactionId"],
-        )
+        transaction_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['TRANSACTIONS']}/{quote(response_json['transactionId'], safe='')}"
         transaction_json = await self.api_call("get", endpoint=transaction_endpoint)
         serializer_data["transaction"] = self.get_transaction_data(transaction_json)
 
         # Enrich data with location data
-        location_endpoint = urljoin(
-            settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"], response_json["locationId"]
-        )
+        location_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{quote(response_json['locationId'], safe='')}"
         location_json = await self.api_call("get", endpoint=location_endpoint)
         serializer_data["location"] = self.get_location_data(location_json)
 

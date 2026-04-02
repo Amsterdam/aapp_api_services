@@ -17,7 +17,7 @@ class TestChargingStationView(BoatChargingTestCase):
         )
 
     def test_start_transaction_success(self):
-        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}{self.station_id}/start-transaction"
+        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{self.station_id}/start-transaction"
         resp = respx.post(endpoint).mock(
             return_value=httpx.Response(200, json=start_transaction.MOCK_RESPONSE)
         )
@@ -27,7 +27,7 @@ class TestChargingStationView(BoatChargingTestCase):
         self.assertEqual(resp.call_count, 1)
 
     def test_stop_transaction_success(self):
-        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}{self.station_id}/stop-transaction"
+        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{self.station_id}/stop-transaction"
         resp = respx.post(endpoint).mock(
             return_value=httpx.Response(200, json=start_transaction.MOCK_RESPONSE)
         )

@@ -1,8 +1,10 @@
 import logging
+import re
+from urllib.parse import quote
 
 import httpx
 from adrf.generics import GenericAPIView
-from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import NotAuthenticated, ValidationError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from bridge.boat_charging.client import client
@@ -12,6 +14,7 @@ from bridge.boat_charging.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+PATH_PARAM_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 class BaseView(GenericAPIView):
@@ -107,3 +110,13 @@ class BaseView(GenericAPIView):
             # "available_sockets": item["chargingStationCount"],
             "total_sockets": item["chargingStationCount"],
         }
+
+    def get_safe_path_param(self, param) -> str:
+        """
+        Prevent malicious input in the charging station id path parameter.
+        Only allow alphanumeric characters, dashes and underscores.
+        """
+        if not PATH_PARAM_RE.fullmatch(param):
+            raise ValidationError("Invalid session id")
+        safe_param = quote(param, safe="")
+        return safe_param

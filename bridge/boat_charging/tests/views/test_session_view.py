@@ -1,5 +1,3 @@
-from urllib.parse import urljoin
-
 import httpx
 import respx
 from django.conf import settings
@@ -37,25 +35,21 @@ class TestSessionDetailView(BoatChargingTestCase):
         )
 
     def test_success(self):
-        ext_endpoint = urljoin(
-            settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"], self.session_id
+        ext_endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{self.session_id}"
         )
         resp = respx.get(ext_endpoint).mock(
             return_value=httpx.Response(200, json=session_detail.MOCK_RESPONSE)
         )
 
-        transaction_endpoint = urljoin(
-            settings.BOAT_CHARGING_ENDPOINTS["TRANSACTIONS"],
-            "VCPS-7BMY3_OCPPJ16_243",
+        transaction_endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['TRANSACTIONS']}/VCPS-7BMY3_OCPPJ16_243"
         )
         resp_transaction = respx.get(transaction_endpoint).mock(
             return_value=httpx.Response(200, json=transaction_detail.MOCK_RESPONSE)
         )
 
-        location_endpoint = urljoin(
-            settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"],
-            "2c0ccfb795d040e39136b7dd1d25f13e",
-        )
+        location_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/2c0ccfb795d040e39136b7dd1d25f13e"
         resp_location = respx.get(location_endpoint).mock(
             return_value=httpx.Response(200, json=location_detail.MOCK_RESPONSE)
         )

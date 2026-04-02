@@ -1,5 +1,5 @@
 import asyncio
-from urllib.parse import urljoin
+from urllib.parse import quote
 
 from django.conf import settings
 from rest_framework.response import Response
@@ -34,15 +34,13 @@ class LocationDetailView(LocationView):
     paginated = False
 
     async def get(self, request, *args, **kwargs):
-        location_id = kwargs["location_id"]
-        endpoint = urljoin(settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"], location_id)
+        location_id = self.get_safe_path_param(kwargs["location_id"])
+        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{location_id}"
         response_json = await self.api_call("get", endpoint=endpoint)
         serializer_data = self.get_location_data(response_json)
 
         # Enrich data with tariff
-        tariff_endpoint = urljoin(
-            settings.BOAT_CHARGING_ENDPOINTS["TARIFFS"], response_json["tariffId"]
-        )
+        tariff_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['TARIFFS']}/{quote(response_json['tariffId'], safe='')}"
         tariff_json = await self.api_call("get", endpoint=tariff_endpoint)
         serializer_data["tariff"] = self.get_tariff_data(tariff_json)
 
@@ -51,12 +49,9 @@ class LocationDetailView(LocationView):
         tasks = [
             self.api_call(
                 "get",
-                endpoint=urljoin(
-                    settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"],
-                    charging_station_id,
-                ),
+                endpoint=f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{quote(station_id, safe='')}",
             )
-            for charging_station_id in charging_station_ids
+            for station_id in charging_station_ids
         ]
         charging_station_responses = await asyncio.gather(*tasks)
         serializer_data["charging_stations"] = [
