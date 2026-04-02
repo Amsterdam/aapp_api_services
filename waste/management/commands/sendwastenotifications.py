@@ -41,10 +41,10 @@ class Command(BaseCommand):
         filters them based on whether the pickup day is tomorrow, collects device IDs
         for notifications, and schedules the notifications accordingly.
         """
-        # Check if tomorrow is an exception date before processing
-        if len(self.collection_service.all_dates) == 0:
+        # Check if tomorrow is an exception date for all routes before processing
+        if not self._should_send_notifications_run():
             logger.warning(
-                "Tomorrow is an exception on waste collection. No notifications will be sent."
+                "Tomorrow is an exception on waste collection for all routes. No notifications will be sent."
             )
             return
 
@@ -84,6 +84,25 @@ class Command(BaseCommand):
             ],
             ignore_conflicts=True,
         )
+
+    def _should_send_notifications_run(self) -> bool:
+        # if tomorrow is not in exception dates, we can proceed with sending notifications
+        tomorrow = self.collection_service._get_dates()[0]
+        exception_dates = self.collection_service._get_future_exception_dates()
+
+        if tomorrow not in exception_dates:
+            return True
+
+        # If tomorrow is an exception date, check whether all routes are affected.
+        affected_routes = self.collection_service._get_affected_routes_for_date(
+            date=tomorrow
+        )
+        if affected_routes is None:
+            logger.warning(
+                "Tomorrow is an exception on waste collection for all routes. No notifications will be sent."
+            )
+            return False
+        return True
 
     def _get_devices_per_fraction(
         self, filtered_data: list[dict]

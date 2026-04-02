@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from unittest.mock import patch
 
 import responses
@@ -8,6 +9,7 @@ from model_bakery import baker
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from notification.models import WasteDevice
+from waste.management.commands.sendwastenotifications import Command
 from waste.models import WasteCollectionException, WasteCollectionRouteName
 from waste.tests.mock_data import (
     frequency_four_weeks,
@@ -27,6 +29,41 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
     For all these frequencies we have a testcase where the notification should be send
     and a testcase where the notification should not be send.
     """
+
+    @freeze_time("2025-03-31")
+    def test_should_send_notifications_run_no_exception(
+        self, mock_call_notification_service
+    ):
+        command = Command()
+        self.assertTrue(command._should_send_notifications_run())
+
+    @freeze_time("2025-03-31")
+    def test_should_send_notifications_run_exception_all_routes(
+        self, mock_call_notification_service
+    ):
+        tomorrow = date.today() + timedelta(days=1)
+        baker.make(WasteCollectionException, date=tomorrow)
+        command = Command()
+        self.assertFalse(command._should_send_notifications_run())
+
+    @freeze_time("2025-03-31")
+    def test_should_send_notifications_run_exception_all_routes_different_date(
+        self, mock_call_notification_service
+    ):
+        tomorrow = date.today() + timedelta(days=1)
+        baker.make(WasteCollectionException, date=tomorrow + timedelta(days=5))
+        command = Command()
+        self.assertTrue(command._should_send_notifications_run())
+
+    @freeze_time("2025-03-31")
+    def test_should_send_notifications_run_exception_some_routes(
+        self, mock_call_notification_service
+    ):
+        tomorrow = date.today() + timedelta(days=1)
+        route = baker.make(WasteCollectionRouteName, name="Route-A")
+        baker.make(WasteCollectionException, date=tomorrow, affected_routes=[route])
+        command = Command()
+        self.assertTrue(command._should_send_notifications_run())
 
     @freeze_time("2025-03-31")
     def test_send_single_notification_weekly_pattern_send(

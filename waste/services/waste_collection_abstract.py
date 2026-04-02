@@ -122,8 +122,8 @@ class WasteCollectionAbstractService:
     def _filter_dates_on_exceptions(
         self, dates: list[date], item: dict[str, str]
     ) -> list[date]:
-        future_dates = self._get_future_dates()
-        dates_overlap = set(dates) & set(future_dates)
+        future_exception_dates = self._get_future_exception_dates()
+        dates_overlap = set(dates) & set(future_exception_dates)
         if not dates_overlap:
             return dates
 
@@ -144,7 +144,7 @@ class WasteCollectionAbstractService:
 
     @staticmethod
     @cache_function(timeout=60 * 60)  # cache one hour
-    def _get_future_dates() -> list[date]:
+    def _get_future_exception_dates() -> list[date]:
         return list(
             WasteCollectionException.objects.filter(date__gte=date.today()).values_list(
                 "date", flat=True
