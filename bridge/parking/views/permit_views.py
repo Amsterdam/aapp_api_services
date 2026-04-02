@@ -264,9 +264,9 @@ class ParkingPermitZoneView(BaseSSPView):
         if response_data["permit"]["geo_json"] is None:
             response_data["permit"]["geo_json"] = "{}"
 
-        response_payload = {
-            "geojson": json.loads(response_data["permit"]["geo_json"]),
-        }
+        geojson = response_data["permit"]["geo_json"]
+        geojson = geojson if type(geojson) is dict else json.loads(geojson)
+        response_payload = {"geojson": geojson}
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
         return Response(
