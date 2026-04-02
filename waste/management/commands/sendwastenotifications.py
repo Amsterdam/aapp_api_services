@@ -72,8 +72,16 @@ class Command(BaseCommand):
         self.waste_device_service.update_waste_device(ids_to_update=ids_to_update)
 
         logger.info("Updating waste route names")
+        clean_route_names = {
+            name.strip()
+            for name in route_names
+            if isinstance(name, str) and name.strip()
+        }
         WasteCollectionRouteName.objects.bulk_create(
-            [WasteCollectionRouteName(name=route_name) for route_name in route_names],
+            [
+                WasteCollectionRouteName(name=route_name)
+                for route_name in clean_route_names
+            ],
             ignore_conflicts=True,
         )
 

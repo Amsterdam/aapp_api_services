@@ -180,3 +180,25 @@ class WasteCollectionAbstractServiceTest(ResponsesActivatedAPITestCase):
         dates = self.service.get_dates_for_waste_item(item=serializer.validated_data)
         expected_dates = []
         self.assertEqual(dates, expected_dates)
+
+    def test_get_dates_for_waste_item_weekly_frequency_all_exceptions_no_route_names(
+        self,
+    ):
+
+        all_dates = [
+            date(2025, 12, 10),
+            date(2025, 12, 17),
+            date(2025, 12, 24),
+            date(2025, 12, 31),
+            date(2026, 1, 7),
+            date(2026, 1, 14),
+        ]
+        for d in all_dates:
+            baker.make(WasteCollectionException, date=d)
+
+        item = frequency_weekly.MOCK_DATA["_embedded"]["afvalwijzer"][0]
+        serializer = WasteDataSerializer(data=item)
+        serializer.is_valid()
+        dates = self.service.get_dates_for_waste_item(item=serializer.validated_data)
+        expected_dates = []
+        self.assertEqual(dates, expected_dates)

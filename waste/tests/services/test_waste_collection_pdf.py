@@ -4,7 +4,6 @@ from datetime import date
 import freezegun
 import responses
 from django.conf import settings
-from django.test import override_settings
 from model_bakery import baker
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
@@ -22,7 +21,6 @@ class WasteCollectionPDFServiceTest(ResponsesActivatedAPITestCase):
             json=frequency_weekly.MOCK_DATA,
         )
 
-    @override_settings(CALENDAR_LENGTH=14)
     def test_create_pdf_calendar_dates(self):
         validated_data = self.service.get_validated_data_for_bag_id(bag_id="1234")
 
@@ -32,7 +30,6 @@ class WasteCollectionPDFServiceTest(ResponsesActivatedAPITestCase):
         self.assertEqual(len(waste_collection_by_date), 6)
         self.assertEqual(waste_collection_by_date[date(2025, 12, 10)], ["Rest", "GA"])
 
-    @override_settings(CALENDAR_LENGTH=14)
     def test_create_pdf_calendar_dates_with_single_exception(self):
         exception_route_name_instance = baker.make(
             WasteCollectionRouteName, name="Met_Uitzondering_Rest"
@@ -50,7 +47,6 @@ class WasteCollectionPDFServiceTest(ResponsesActivatedAPITestCase):
         self.assertEqual(len(waste_collection_by_date), 6)
         self.assertEqual(waste_collection_by_date[date(2025, 12, 10)], ["GA"])
 
-    @override_settings(CALENDAR_LENGTH=14)
     def test_create_pdf_calendar_dates_with_multiple_exceptions(self):
         exception_route_name_instance_rest = baker.make(
             WasteCollectionRouteName, name="Met_Uitzondering_Rest"
@@ -72,3 +68,16 @@ class WasteCollectionPDFServiceTest(ResponsesActivatedAPITestCase):
             validated_data
         )
         self.assertEqual(len(waste_collection_by_date), 5)
+
+    def test_create_pdf_calendar_dates_with_multiple_exceptions_without_route_names(
+        self,
+    ):
+
+        baker.make(WasteCollectionException, date="2025-12-10")
+        baker.make(WasteCollectionException, date="2025-12-24")
+
+        validated_data = self.service.get_validated_data_for_bag_id(bag_id="1234")
+        waste_collection_by_date, _ = self.service.create_pdf_calendar_dates(
+            validated_data
+        )
+        self.assertEqual(len(waste_collection_by_date), 4)

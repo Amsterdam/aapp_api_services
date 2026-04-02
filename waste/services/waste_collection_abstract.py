@@ -130,6 +130,13 @@ class WasteCollectionAbstractService:
         item_route = item.get("route_name")
         for affected_date in dates_overlap:
             affected_routes = self._get_affected_routes_for_date(affected_date)
+
+            # if the affected routes is empty, it means all routes are affected and the date should be removed
+            if not affected_routes:
+                dates.remove(affected_date)
+                continue
+
+            # if the item route is affected by the exception, remove the date from the list of dates to send notifications for
             if item_route in affected_routes:
                 dates.remove(affected_date)
 
@@ -145,11 +152,16 @@ class WasteCollectionAbstractService:
         )
 
     @staticmethod
-    @cache_function(timeout=60 * 60)  # Cache for one hour
-    def _get_affected_routes_for_date(date: date) -> list[str]:
-        # cache this function because when sending notifications it will be called multiple times for the same date
-        return list(
-            WasteCollectionException.objects.filter(date=date).values_list(
-                "affected_routes__name", flat=True
+    @cache_function(timeout=60 * 60)  # cache for one hour
+    def _get_affected_routes_for_date(date: date) -> list[str] | None:
+        # Cache this function because when sending notifications it will be called
+        # multiple times for the same date.
+        affected_routes = (
+            WasteCollectionException.objects.filter(
+                date=date,
+                affected_routes__isnull=False,
             )
+            .values_list("affected_routes__name", flat=True)
+            .distinct()
         )
+        return list(affected_routes) if affected_routes else None
