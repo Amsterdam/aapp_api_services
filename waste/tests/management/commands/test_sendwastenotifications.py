@@ -15,6 +15,7 @@ from waste.tests.mock_data import (
     frequency_hardcoded_wo_year,
     frequency_monthly,
     frequency_none,
+    frequency_weekly,
     frequency_weekly_oneven,
 )
 
@@ -237,3 +238,49 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly_oneven.MOCK_DATA)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_not_called()
+
+    def test_add_route_names_empty_table(self, mock_call_notification_service):
+        responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly.MOCK_DATA)
+        call_command("sendwastenotifications")
+        all_waste_collection_route_names = WasteCollectionRouteName.objects.values_list(
+            "name", flat=True
+        )
+        self.assertEqual(len(all_waste_collection_route_names), 2)
+        self.assertEqual(
+            set(all_waste_collection_route_names),
+            {"Met_Uitzondering_Grof", "Met_Uitzondering_Rest"},
+        )
+
+    def test_add_route_names_existing_name_overlap(
+        self, mock_call_notification_service
+    ):
+        baker.make(WasteCollectionRouteName, name="Met_Uitzondering_Grof")
+        responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly.MOCK_DATA)
+        call_command("sendwastenotifications")
+        all_waste_collection_route_names = WasteCollectionRouteName.objects.values_list(
+            "name", flat=True
+        )
+        self.assertEqual(len(all_waste_collection_route_names), 2)
+        self.assertEqual(
+            set(all_waste_collection_route_names),
+            {"Met_Uitzondering_Grof", "Met_Uitzondering_Rest"},
+        )
+
+    def test_add_route_names_existing_name_no_overlap(
+        self, mock_call_notification_service
+    ):
+        baker.make(WasteCollectionRouteName, name="Met_Uitzondering_Papier")
+        responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly.MOCK_DATA)
+        call_command("sendwastenotifications")
+        all_waste_collection_route_names = WasteCollectionRouteName.objects.values_list(
+            "name", flat=True
+        )
+        self.assertEqual(len(all_waste_collection_route_names), 3)
+        self.assertEqual(
+            set(all_waste_collection_route_names),
+            {
+                "Met_Uitzondering_Grof",
+                "Met_Uitzondering_Rest",
+                "Met_Uitzondering_Papier",
+            },
+        )
