@@ -1,6 +1,6 @@
 from django.urls import path
 
-from bridge.boat_charging.views import location_view
+from bridge.boat_charging.views import location_view, session_view
 
 BASE_PATH = "boat-charging/api/v1"
 urlpatterns = [
@@ -13,5 +13,15 @@ urlpatterns = [
         BASE_PATH + "/locations/<str:location_id>",
         location_view.LocationDetailView.as_view(),
         name="boat-charging-location-detail",
+    ),
+    path(
+        BASE_PATH + "/sessions",
+        session_view.SessionView.as_view(),
+        name="boat-charging-sessions",
+    ),
+    path(
+        BASE_PATH + "/sessions/<str:session_id>",
+        session_view.SessionDetailView.as_view(),
+        name="boat-charging-session-detail",
     ),
 ]

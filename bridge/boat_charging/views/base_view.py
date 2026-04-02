@@ -85,3 +85,27 @@ class BaseView(GenericAPIView):
         if response.status_code >= 400:
             raise BoatChargingClientError()
         return
+
+    def get_location_data(self, item) -> dict:
+        return {
+            "id": item["id"],
+            "name": item["name"],
+            "address": {
+                "city": item["city"],
+                "street": item["address"],  # todo: minus het huisnummer
+                "coordinates": {
+                    "lat": item["coordinates"]["latitude"],
+                    "lon": item["coordinates"]["longitude"],
+                },
+                # "number": item["address"], # Todo: extract number from address
+                "postcode": item["postalCode"],
+            },
+            "opening_times": {
+                "regular_hours": item["openingTimes"]["regularHours"],
+                "twentyfourseven": item["openingTimes"]["twentyfourseven"],
+                "exceptional_openings": item["openingTimes"]["exceptionalOpenings"],
+                "exceptional_closings": item["openingTimes"]["exceptionalClosings"],
+            },
+            # "available_sockets": item["chargingStationCount"],
+            "total_sockets": item["chargingStationCount"],
+        }

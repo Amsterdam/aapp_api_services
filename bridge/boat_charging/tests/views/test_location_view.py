@@ -67,4 +67,4 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(resp_tariff.call_count, 1)
-        self.assertEqual(len(response["charging_stations"]), 2)
+        self.assertEqual(len(response.data["charging_stations"]), 2)

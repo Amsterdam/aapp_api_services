@@ -24,34 +24,10 @@ class LocationView(BaseView):
             "get",
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"],
         )
-        serializer_data = [self.get_serializer_data(item) for item in response_json]
+        serializer_data = [self.get_location_data(item) for item in response_json]
         serializer = self.response_serializer_class(data=serializer_data, many=True)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)
-
-    def get_serializer_data(self, item) -> dict:
-        return {
-            "id": item["id"],
-            "name": item["name"],
-            "address": {
-                "city": item["city"],
-                "street": item["address"],  # todo: minus het huisnummer
-                "coordinates": {
-                    "lat": item["coordinates"]["latitude"],
-                    "lon": item["coordinates"]["longitude"],
-                },
-                # "number": item["address"], # Todo: extract number from address
-                "postcode": item["postalCode"],
-            },
-            "opening_times": {
-                "regular_hours": item["openingTimes"]["regularHours"],
-                "twentyfourseven": item["openingTimes"]["twentyfourseven"],
-                "exceptional_openings": item["openingTimes"]["exceptionalOpenings"],
-                "exceptional_closings": item["openingTimes"]["exceptionalClosings"],
-            },
-            # "available_sockets": item["chargingStationCount"],
-            "total_sockets": item["chargingStationCount"],
-        }
 
 
 @extend_schema_for_api_key(success_response=LocationDetailResponseSerializer)
@@ -63,7 +39,7 @@ class LocationDetailView(LocationView):
         location_id = kwargs["location_id"]
         endpoint = urljoin(settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"], location_id)
         response_json = await self.api_call("get", endpoint=endpoint)
-        serializer_data = self.get_serializer_data(response_json)
+        serializer_data = self.get_location_data(response_json)
 
         # Enrich data with tariff
         tariff_endpoint = urljoin(
