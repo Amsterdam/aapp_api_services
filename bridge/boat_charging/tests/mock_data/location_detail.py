@@ -22,7 +22,7 @@ MOCK_RESPONSE = {
     "chargingWhenClosed": False,
     "lastUpdated": "2026-03-19T21:00:40.343213Z",
     "chargingStationCount": 0,
-    "chargingStationsIds": [],
+    "chargingStationsIds": ["cs_id_1", "cs_id_2"],
     "tariffId": "NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY",
     "facilities": [],
 }

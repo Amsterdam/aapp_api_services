@@ -56,7 +56,10 @@ class BaseView(GenericAPIView):
                 exc_info=True,
             )
             raise ServerError("Request failed before response") from exc
-        return payload["content"]
+
+        if self.paginated:
+            return payload["content"]
+        return payload
 
     @retry(
         stop=stop_after_attempt(3),

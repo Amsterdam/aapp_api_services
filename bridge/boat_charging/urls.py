@@ -9,4 +9,9 @@ urlpatterns = [
         location_view.LocationView.as_view(),
         name="boat-charging-locations",
     ),
+    path(
+        BASE_PATH + "/locations/<str:location_id>",
+        location_view.LocationDetailView.as_view(),
+        name="boat-charging-location-detail",
+    ),
 ]

@@ -1,7 +1,12 @@
+from urllib.parse import urljoin
+
 from django.conf import settings
 from rest_framework.response import Response
 
-from bridge.boat_charging.serializers.location import LocationResponseSerializer
+from bridge.boat_charging.serializers.location_serializers import (
+    LocationDetailResponseSerializer,
+    LocationResponseSerializer,
+)
 from bridge.boat_charging.views.base_view import BaseView
 from core.services.internal_http_client import InternalServiceSession
 from core.utils.openapi_utils import extend_schema_for_api_key
@@ -9,44 +14,112 @@ from core.utils.openapi_utils import extend_schema_for_api_key
 internal_client = InternalServiceSession()
 
 
-@extend_schema_for_api_key(success_response=LocationResponseSerializer)
+@extend_schema_for_api_key(success_response=LocationResponseSerializer(many=True))
 class LocationView(BaseView):
     response_serializer_class = LocationResponseSerializer
+    paginated = True
 
     async def get(self, request, *args, **kwargs):
         response_json = await self.api_call(
             "get",
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"],
         )
-        serializer_data = [
-            {
-                "id": item["id"],
-                "name": item["name"],
-                "address": {
-                    "city": item["city"],
-                    "street": item["address"],  # todo: minus het huisnummer
-                    "coordinates": {
-                        "lat": item["coordinates"]["latitude"],
-                        "lon": item["coordinates"]["longitude"],
-                    },
-                    # "number": item["address"], # Todo: extract number from address
-                    "postcode": item["postalCode"],
-                },
-                "opening_times": {
-                    "regular_hours": item["openingTimes"]["regularHours"],
-                    "twentyfourseven": item["openingTimes"]["twentyfourseven"],
-                    "exceptional_openings": item["openingTimes"]["exceptionalOpenings"],
-                    "exceptional_closings": item["openingTimes"]["exceptionalClosings"],
-                },
-                # "charging_station_ids": [],
-                "tariff_id": item["tariffId"],
-                "available_sockets": item[
-                    "chargingStationCount"
-                ],  # Todo: get available sockets
-                "total_sockets": item["chargingStationCount"],
-            }
-            for item in response_json
-        ]
+        serializer_data = [self.get_serializer_data(item) for item in response_json]
         serializer = self.response_serializer_class(data=serializer_data, many=True)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)
+
+    def get_serializer_data(self, item) -> dict:
+        return {
+            "id": item["id"],
+            "name": item["name"],
+            "address": {
+                "city": item["city"],
+                "street": item["address"],  # todo: minus het huisnummer
+                "coordinates": {
+                    "lat": item["coordinates"]["latitude"],
+                    "lon": item["coordinates"]["longitude"],
+                },
+                # "number": item["address"], # Todo: extract number from address
+                "postcode": item["postalCode"],
+            },
+            "opening_times": {
+                "regular_hours": item["openingTimes"]["regularHours"],
+                "twentyfourseven": item["openingTimes"]["twentyfourseven"],
+                "exceptional_openings": item["openingTimes"]["exceptionalOpenings"],
+                "exceptional_closings": item["openingTimes"]["exceptionalClosings"],
+            },
+            # "available_sockets": item["chargingStationCount"],
+            "total_sockets": item["chargingStationCount"],
+        }
+
+
+@extend_schema_for_api_key(success_response=LocationDetailResponseSerializer)
+class LocationDetailView(LocationView):
+    response_serializer_class = LocationDetailResponseSerializer
+    paginated = False
+
+    async def get(self, request, *args, **kwargs):
+        location_id = kwargs["location_id"]
+        endpoint = urljoin(settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"], location_id)
+        response_json = await self.api_call("get", endpoint=endpoint)
+        serializer_data = self.get_serializer_data(response_json)
+
+        # Enrich data with tariff
+        tariff_endpoint = urljoin(
+            settings.BOAT_CHARGING_ENDPOINTS["TARIFFS"], response_json["tariffId"]
+        )
+        tariff_json = await self.api_call("get", endpoint=tariff_endpoint)
+        serializer_data["tariff"] = self.get_tariff_data(tariff_json)
+
+        # Enrich data with charging station ids
+        serializer_data["charging_stations"] = []
+        for charging_station_id in response_json["chargingStationsIds"]:
+            charging_station_endpoint = urljoin(
+                settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"],
+                charging_station_id,
+            )
+            charging_station_json = await self.api_call(
+                "get", endpoint=charging_station_endpoint
+            )
+            serializer_data["charging_stations"].append(
+                self.get_charging_station_data(charging_station_json)
+            )
+
+        serializer = self.response_serializer_class(data=serializer_data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=200)
+
+    def get_tariff_data(self, tariff_json) -> dict:
+        return {
+            "id": tariff_json["id"],
+            "energy_price_per_kwh": tariff_json["energyPricePerKwh"],
+            "charging_time_price_per_hour": tariff_json["chargingTimePricePerHour"],
+            "parking_time_price_per_hour": tariff_json["parkingTimePricePerHour"],
+            "flat_fee_price": tariff_json["flatFeePrice"],
+        }
+
+    def get_charging_station_data(self, cs_json) -> dict:
+        return {
+            "id": cs_json["id"],
+            "status": cs_json["status"],
+            "location_id": cs_json["locationId"],
+            "evses": [
+                {
+                    "id": evs["id"],
+                    "ocpp_evse_id": evs["ocppEvseId"],
+                    "evse_id": evs["evseId"],
+                    "status": evs["status"],
+                    "connectors": [
+                        {
+                            "connector_id": conn["connectorId"],
+                            "max_amp": conn["maxAmp"],
+                            "voltage": conn["voltage"],
+                            "status": conn["status"],
+                        }
+                        for conn in evs["connectors"]
+                    ],
+                }
+                for evs in cs_json["evses"]
+            ],
+        }
