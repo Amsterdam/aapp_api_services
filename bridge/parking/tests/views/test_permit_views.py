@@ -10,6 +10,7 @@ from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
 from bridge.parking.tests.mock_data import (
     paid_parking_zone,
     permit,
+    permit_geojson_as_json,
     permits,
 )
 from bridge.parking.tests.mock_data_external import parking_zone_by_machine
@@ -65,12 +66,24 @@ class TestParkingPermitZoneView(BaseSSPTestCase):
         self.permit_id = "1003"
         self.url = reverse("parking-permit-zone", args=[self.permit_id])
         self.mock_response = permit.MOCK_RESPONSE_VISITOR_HOLDER
+        self.mock_response_geojson = permit_geojson_as_json.MOCK_RESPONSE
 
     def test_success(self):
         url_template = SSPEndpoint.PERMIT.value
         url = URITemplate(url_template).expand(permit_id=self.permit_id)
         resp = respx.get(url).mock(
             return_value=httpx.Response(200, json=self.mock_response)
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+
+    def test_success_geojson(self):
+        url_template = SSPEndpoint.PERMIT.value
+        url = URITemplate(url_template).expand(permit_id=self.permit_id)
+        resp = respx.get(url).mock(
+            return_value=httpx.Response(200, json=self.mock_response_geojson)
         )
 
         response = self.client.get(self.url, headers=self.api_headers)
