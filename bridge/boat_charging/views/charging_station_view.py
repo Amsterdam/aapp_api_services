@@ -11,10 +11,7 @@ from bridge.boat_charging.serializers.charging_station_serializers import (
     StartTransactionResponseSerializer,
 )
 from bridge.boat_charging.views.base_view import BaseView
-from core.services.internal_http_client import InternalServiceSession
 from core.utils.openapi_utils import extend_schema_for_api_key
-
-internal_client = InternalServiceSession()
 
 
 class ChargingStationView(BaseView):

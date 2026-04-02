@@ -1,3 +1,4 @@
+import asyncio
 from urllib.parse import urljoin
 
 from django.conf import settings
@@ -8,10 +9,7 @@ from bridge.boat_charging.serializers.location_serializers import (
     LocationResponseSerializer,
 )
 from bridge.boat_charging.views.base_view import BaseView
-from core.services.internal_http_client import InternalServiceSession
 from core.utils.openapi_utils import extend_schema_for_api_key
-
-internal_client = InternalServiceSession()
 
 
 @extend_schema_for_api_key(success_response=LocationResponseSerializer(many=True))
@@ -49,18 +47,22 @@ class LocationDetailView(LocationView):
         serializer_data["tariff"] = self.get_tariff_data(tariff_json)
 
         # Enrich data with charging station ids
-        serializer_data["charging_stations"] = []
-        for charging_station_id in response_json["chargingStationsIds"]:
-            charging_station_endpoint = urljoin(
-                settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"],
-                charging_station_id,
+        charging_station_ids = response_json["chargingStationsIds"]
+        tasks = [
+            self.api_call(
+                "get",
+                endpoint=urljoin(
+                    settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"],
+                    charging_station_id,
+                ),
             )
-            charging_station_json = await self.api_call(
-                "get", endpoint=charging_station_endpoint
-            )
-            serializer_data["charging_stations"].append(
-                self.get_charging_station_data(charging_station_json)
-            )
+            for charging_station_id in charging_station_ids
+        ]
+        charging_station_responses = await asyncio.gather(*tasks)
+        serializer_data["charging_stations"] = [
+            self.get_charging_station_data(charging_station_json)
+            for charging_station_json in charging_station_responses
+        ]
 
         serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)

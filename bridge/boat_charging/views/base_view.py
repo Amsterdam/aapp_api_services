@@ -2,6 +2,7 @@ import logging
 
 import httpx
 from adrf.generics import GenericAPIView
+from rest_framework.exceptions import NotAuthenticated
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from bridge.boat_charging.client import client
@@ -11,10 +12,6 @@ from bridge.boat_charging.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class ServerError(Exception):
-    pass
 
 
 class BaseView(GenericAPIView):
@@ -40,6 +37,8 @@ class BaseView(GenericAPIView):
             access_token = self.request.headers.get("access_token")
             if access_token:
                 headers["Authorization"] = f"Bearer {access_token}"
+            else:
+                raise NotAuthenticated("No access token provided in request headers")
 
         try:
             payload = await self.make_request(
@@ -55,7 +54,7 @@ class BaseView(GenericAPIView):
                 type(exc).__name__,
                 exc_info=True,
             )
-            raise ServerError("Request failed before response") from exc
+            raise BoatChargingServerError("Request failed before response") from exc
 
         if self.paginated:
             return payload["content"]

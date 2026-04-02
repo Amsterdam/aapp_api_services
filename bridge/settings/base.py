@@ -72,7 +72,6 @@ MIJN_AMS_API_PATHS = {
 }
 
 # CMPS Evinity varen API
-BOAT_CHARGING_TOKEN_HEADER = "Authorization"
 BOAT_CHARGING_DOMAIN = os.getenv(
     "BOAT_CHARGING_DOMAIN", "https://cpms.service.staging.evinity.io"
 )

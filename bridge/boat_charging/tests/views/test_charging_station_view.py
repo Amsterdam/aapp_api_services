@@ -7,7 +7,7 @@ from bridge.boat_charging.tests.mock_data import start_transaction
 from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
 
 
-class TestSessionView(BoatChargingTestCase):
+class TestChargingStationView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
         self.station_id = "foobar"

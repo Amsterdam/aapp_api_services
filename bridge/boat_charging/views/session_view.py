@@ -8,10 +8,7 @@ from bridge.boat_charging.serializers.session_serializers import (
     SessionResponseSerializer,
 )
 from bridge.boat_charging.views.base_view import BaseView
-from core.services.internal_http_client import InternalServiceSession
 from core.utils.openapi_utils import extend_schema_for_api_key
-
-internal_client = InternalServiceSession()
 
 
 @extend_schema_for_api_key(success_response=SessionResponseSerializer(many=True))

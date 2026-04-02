@@ -7,7 +7,7 @@ OPERATION_STATE_CHOICES = ["OPERATIVE", "INOPERATIVE", "OFFLINE", "UNKNOWN"]
 
 class OpeningTimesSerializer(serializers.Serializer):
     regular_hours = serializers.ListField(child=serializers.IntegerField())
-    twentyfourseven = (serializers.BooleanField(),)
+    twentyfourseven = serializers.BooleanField()
     exceptional_openings = serializers.ListField(child=serializers.IntegerField())
     exceptional_closings = serializers.ListField(child=serializers.IntegerField())
 
