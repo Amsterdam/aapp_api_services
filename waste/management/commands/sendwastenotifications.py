@@ -87,19 +87,20 @@ class Command(BaseCommand):
 
     def _should_send_notifications_run(self) -> bool:
         # if tomorrow is not in exception dates, we can proceed with sending notifications
-        tomorrow = self.collection_service._get_dates()[0]
+        collection_dates = self.collection_service._get_dates()
+        collection_date = collection_dates[0] if collection_dates else None
         exception_dates = self.collection_service._get_future_exception_dates()
 
-        if tomorrow not in exception_dates:
+        if collection_date not in exception_dates:
             return True
 
         # If tomorrow is an exception date, check whether all routes are affected.
         affected_routes = self.collection_service._get_affected_routes_for_date(
-            date=tomorrow
+            exception_date=collection_date
         )
         if affected_routes is None:
             logger.warning(
-                "Tomorrow is an exception on waste collection for all routes. No notifications will be sent."
+                f"{collection_date} is an exception on waste collection for all routes. No notifications will be sent."
             )
             return False
         return True

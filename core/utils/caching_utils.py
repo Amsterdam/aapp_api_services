@@ -18,7 +18,10 @@ def cache_function(timeout: int):
             # That means cache entries can leak between tests and make DB-driven code
             # behave non-deterministically. To keep tests reliable, bypass caching.
             pytest_running = "pytest" in sys.modules or os.getenv("PYTEST_CURRENT_TEST")
-            caching_enabled_in_pytest = os.getenv("CACHE_FUNCTION_ENABLED_PYTEST")
+            cache_flag = os.getenv("CACHE_FUNCTION_ENABLED_PYTEST")
+            caching_enabled_in_pytest = (
+                cache_flag is not None and cache_flag.lower() == "true"
+            )
             if pytest_running and not caching_enabled_in_pytest:
                 return func(*args, **kwargs)
 
