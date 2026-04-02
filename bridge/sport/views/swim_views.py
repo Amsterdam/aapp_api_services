@@ -1,6 +1,7 @@
 import logging
 from datetime import date, timedelta
 
+from bridge.sport.serializers.swim_serializers import SwimLocationsResponseSerializer
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
@@ -17,18 +18,19 @@ zwembaden_api_service = ZwembadenApiService()
 
 class SwimLocationsView(generics.GenericAPIView):
     """
-    Get swim locations
+    Get a list of swim locations
     """
 
+    @extend_schema_for_api_key(
+        success_response=SwimLocationsResponseSerializer(many=True),
+    )
     def get(self, request, *args, **kwargs) -> Response:
         locations = (
             data_amsterdam_service.get_swim_locations_where_amsterdam_is_renting_out()
         )
 
-        return Response(
-            data=locations,
-            status=status.HTTP_200_OK,
-        )
+        # response_serializer = SwimLocationsResponseSerializer(locations, many=True)
+        return Response(data=locations, status=status.HTTP_200_OK)
 
 
 class SwimScheduleView(generics.GenericAPIView):
