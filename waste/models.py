@@ -189,4 +189,5 @@ class WasteCollectionException(models.Model):
         WasteCollectionRouteName,
         verbose_name="afvalwijzerRoutenaam",
         help_text="Selecteer de afvalophaalroutes waar deze uitzondering voor geldt",
+        blank=True,
     )
