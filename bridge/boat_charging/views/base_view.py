@@ -92,12 +92,11 @@ class BaseView(GenericAPIView):
             "name": item["name"],
             "address": {
                 "city": item["city"],
-                "street": item["address"],  # todo: minus het huisnummer
+                "street": item["address"],  # The street contains the house number!
                 "coordinates": {
                     "lat": item["coordinates"]["latitude"],
                     "lon": item["coordinates"]["longitude"],
                 },
-                # "number": item["address"], # Todo: extract number from address
                 "postcode": item["postalCode"],
             },
             "opening_times": {
