@@ -5,7 +5,7 @@ MOCK_DATA = {
                 "_links": {},
                 "afvalwijzerInstructie": None,
                 "afvalwijzerBasisroutetypeId": "Id",
-                "afvalwijzerRoutenaam": "RouteNaam",
+                "afvalwijzerRoutenaam": "Met_Uitzondering",
                 "afvalwijzerPerXWeken": "1",
                 "afvalwijzerBuitenzettenVanafTot": "Zondag vanaf 21.00 tot maandag 07.00 uur",
                 "afvalwijzerBuitenzettenVanaf": "Zondag vanaf 21.00",
