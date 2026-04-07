@@ -48,6 +48,7 @@ WORKDIR /app
 COPY notification /app/notification
 
 ### Core stages for administrative tasks
+# These need root to write to the home dir, so we use the core image for these tasks
 FROM core AS app-core
 USER root
 
