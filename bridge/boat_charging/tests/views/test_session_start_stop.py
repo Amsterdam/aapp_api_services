@@ -7,12 +7,12 @@ from bridge.boat_charging.tests.mock_data import start_transaction
 from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
 
 
-class TestChargingStationView(BoatChargingTestCase):
+class TestSessionStartStopView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
         self.station_id = "foobar"
         self.url = reverse(
-            "boat-charging-station-detail",
+            "boat-charging-session-start-stop",
             kwargs={"charging_station_id": self.station_id},
         )
 

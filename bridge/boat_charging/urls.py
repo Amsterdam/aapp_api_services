@@ -1,8 +1,8 @@
 from django.urls import path
 
 from bridge.boat_charging.views import (
-    charging_station_view,
     location_view,
+    session_start_stop,
     session_view,
 )
 
@@ -29,8 +29,8 @@ urlpatterns = [
         name="boat-charging-session-detail",
     ),
     path(
-        BASE_PATH + "/charging-station/<str:charging_station_id>",
-        charging_station_view.ChargingStationView.as_view(),
-        name="boat-charging-station-detail",
+        BASE_PATH + "/session/<str:charging_station_id>",
+        session_start_stop.SessionStartStopView.as_view(),
+        name="boat-charging-session-start-stop",
     ),
 ]

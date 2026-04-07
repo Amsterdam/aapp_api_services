@@ -12,7 +12,7 @@ from bridge.boat_charging.views.base_view import BaseView
 from core.utils.openapi_utils import extend_schema_for_api_key
 
 
-class ChargingStationView(BaseView):
+class SessionStartStopView(BaseView):
     paginated = False
     serializer_class = StartTransactionRequestSerializer
 
