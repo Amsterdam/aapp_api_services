@@ -8,11 +8,15 @@ from bridge.boat_charging.serializers.location_serializers import (
     LocationDetailResponseSerializer,
     LocationResponseSerializer,
 )
-from bridge.boat_charging.views.base_view import BaseView
-from core.utils.openapi_utils import extend_schema_for_api_key
+from bridge.boat_charging.views.base_view import (
+    BaseView,
+    boat_charging_openapi_decorator,
+)
 
 
-@extend_schema_for_api_key(success_response=LocationResponseSerializer(many=True))
+@boat_charging_openapi_decorator(
+    response_serializer_class=LocationResponseSerializer(many=True)
+)
 class LocationView(BaseView):
     response_serializer_class = LocationResponseSerializer
     paginated = True
@@ -28,7 +32,9 @@ class LocationView(BaseView):
         return Response(serializer.validated_data, status=200)
 
 
-@extend_schema_for_api_key(success_response=LocationDetailResponseSerializer)
+@boat_charging_openapi_decorator(
+    response_serializer_class=LocationDetailResponseSerializer
+)
 class LocationDetailView(LocationView):
     response_serializer_class = LocationDetailResponseSerializer
     paginated = False

@@ -8,13 +8,17 @@ from bridge.boat_charging.serializers.session_serializers import (
     SessionDetailResponseSerializer,
     SessionResponseSerializer,
 )
-from bridge.boat_charging.views.base_view import BaseView
-from core.utils.openapi_utils import extend_schema_for_api_key
+from bridge.boat_charging.views.base_view import (
+    BaseView,
+    boat_charging_openapi_decorator,
+)
 
 SESSION_ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
-@extend_schema_for_api_key(success_response=SessionResponseSerializer(many=True))
+@boat_charging_openapi_decorator(
+    response_serializer_class=SessionResponseSerializer(many=True)
+)
 class SessionView(BaseView):
     response_serializer_class = SessionResponseSerializer
     paginated = True
@@ -45,7 +49,9 @@ class SessionView(BaseView):
         return data
 
 
-@extend_schema_for_api_key(success_response=SessionDetailResponseSerializer)
+@boat_charging_openapi_decorator(
+    response_serializer_class=SessionDetailResponseSerializer
+)
 class SessionDetailView(SessionView):
     response_serializer_class = SessionDetailResponseSerializer
     paginated = False

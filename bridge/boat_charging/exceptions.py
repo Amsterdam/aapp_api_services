@@ -13,3 +13,15 @@ class BoatChargingServerError(BaseApiException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = "Error processing request"
     default_code = "BOAT_CHARGING_SERVER_ERROR"
+
+
+class BoatChargingMissingAccessToken(BaseApiException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_detail = "No access token provided in request headers"
+    default_code = "BOAT_CHARGING_MISSING_ACCESS_TOKEN"
+
+
+class BoatChargingAuthError(BaseApiException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_detail = "Authentication error with boat charging API"
+    default_code = "BOAT_CHARGING_AUTH_ERROR"

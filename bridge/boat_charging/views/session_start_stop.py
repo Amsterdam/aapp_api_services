@@ -8,15 +8,19 @@ from bridge.boat_charging.serializers.charging_station_serializers import (
     StartTransactionRequestSerializer,
     StartTransactionResponseSerializer,
 )
-from bridge.boat_charging.views.base_view import BaseView
-from core.utils.openapi_utils import extend_schema_for_api_key
+from bridge.boat_charging.views.base_view import (
+    BaseView,
+    boat_charging_openapi_decorator,
+)
 
 
 class SessionStartStopView(BaseView):
     paginated = False
     serializer_class = StartTransactionRequestSerializer
 
-    @extend_schema_for_api_key(success_response=StartTransactionResponseSerializer)
+    @boat_charging_openapi_decorator(
+        response_serializer_class=StartTransactionResponseSerializer
+    )
     async def post(self, request, *args, **kwargs):
         station_id = self.get_safe_path_param(kwargs["charging_station_id"])
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{station_id}/start-transaction"
@@ -40,7 +44,8 @@ class SessionStartStopView(BaseView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)
 
-    @extend_schema_for_api_key(
+    @boat_charging_openapi_decorator(
+        response_serializer_class=None,
         additional_params=[
             OpenApiParameter(
                 name="api_correlation_token",
@@ -48,7 +53,7 @@ class SessionStartStopView(BaseView):
                 location="header",
                 required=True,
             )
-        ]
+        ],
     )
     async def delete(self, request, *args, **kwargs):
         station_id = self.get_safe_path_param(kwargs["charging_station_id"])

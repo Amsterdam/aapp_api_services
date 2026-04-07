@@ -1,17 +1,23 @@
 import logging
 import re
-from urllib.parse import quote
+from urllib.parse import quote as urllib_parse_quote
 
 import httpx
 from adrf.generics import GenericAPIView
+from django.conf import settings
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter
 from rest_framework.exceptions import NotAuthenticated, ValidationError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from bridge.boat_charging.client import client
 from bridge.boat_charging.exceptions import (
+    BoatChargingAuthError,
     BoatChargingClientError,
+    BoatChargingMissingAccessToken,
     BoatChargingServerError,
 )
+from core.utils.openapi_utils import extend_schema_for_api_key
 
 logger = logging.getLogger(__name__)
 PATH_PARAM_RE = re.compile(r"^[A-Za-z0-9_-]+$")
@@ -37,7 +43,7 @@ class BaseView(GenericAPIView):
             # "X-Auth-Token": settings.API_KEY,
         }
         if requires_access_token:
-            access_token = self.request.headers.get("access_token")
+            access_token = self.request.headers.get("Access-Token")
             if access_token:
                 headers["Authorization"] = f"Bearer {access_token}"
             else:
@@ -84,6 +90,8 @@ class BaseView(GenericAPIView):
     async def raise_exception(self, response):
         if response.status_code >= 500:
             raise BoatChargingServerError()
+        if response.status_code == 401:
+            raise BoatChargingAuthError()
         if response.status_code >= 400:
             raise BoatChargingClientError()
         return
@@ -118,5 +126,70 @@ class BaseView(GenericAPIView):
         """
         if not PATH_PARAM_RE.fullmatch(param):
             raise ValidationError("Invalid session id")
-        safe_param = quote(param, safe="")
+        safe_param = urllib_parse_quote(param, safe="")
         return safe_param
+
+
+def boat_charging_openapi_decorator(
+    response_serializer_class,
+    additional_params=None,
+    requires_access_token=True,
+    requires_device_id=False,
+    paginated=False,
+    exceptions=None,
+):
+    """
+    Returns a decorator for DRF schema configuration
+    """
+    kwargs = {
+        "success_response": response_serializer_class,
+        "exceptions": [
+            BoatChargingClientError,
+            BoatChargingServerError,
+            BoatChargingMissingAccessToken,
+        ],
+    }
+    if exceptions:
+        kwargs["exceptions"].extend(exceptions)
+
+    additional_params = additional_params or []
+    if requires_access_token:
+        additional_params.append(
+            OpenApiParameter(
+                name="Access-Token",
+                description="EVinity Access Token",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                required=True,
+            )
+        )
+        kwargs["exceptions"].insert(0, BoatChargingMissingAccessToken)
+    if requires_device_id:
+        additional_params.append(
+            OpenApiParameter(
+                name=settings.HEADER_DEVICE_ID,
+                type=OpenApiTypes.STR,
+                location="header",
+                required=True,
+            )
+        )
+
+    if paginated:
+        additional_params.append(
+            OpenApiParameter(
+                name="page",
+                required=False,
+                type=OpenApiTypes.INT,
+                location="query",
+            )
+        )
+        additional_params.append(
+            OpenApiParameter(
+                name="page_size",
+                required=False,
+                type=OpenApiTypes.INT,
+                location="query",
+            )
+        )
+
+    return extend_schema_for_api_key(**kwargs, additional_params=additional_params)
