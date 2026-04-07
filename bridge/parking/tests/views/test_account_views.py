@@ -6,7 +6,8 @@ from django.urls import reverse
 
 from bridge.parking.exceptions import SSPResponseError
 from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
-from bridge.parking.tests.mock_data import permit, permits
+from bridge.parking.tests.mock_data import permits
+from bridge.parking.tests.mock_data.permit import visitor_holder
 from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 
 
@@ -117,7 +118,7 @@ class TestParkingAccountDetailsView(BaseSSPTestCase):
         super().setUp()
         self.url = reverse("parking-account-details")
         self.mock_permits_response = permits.MOCK_RESPONSE
-        self.mock_permit_detail_response = permit.MOCK_RESPONSE_VISITOR_HOLDER
+        self.mock_permit_detail_response = visitor_holder.MOCK_RESPONSE
         self.test_permitholder_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjEwMzkxNTYsImV4cCI6MTc2MTA0Mjc1Niwicm9sZXMiOlsiUk9MRV9VU0VSX1NTUCJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiYmxhIiwibG9jYWxlIjoibmwtTkwiLCJjbGllbnRfcHJvZHVjdF9pZCI6MTB9.sRkWR4ZM3WFvg4B17QUStrWvkhsDH7xK7QfScGYt6yw%AMSTERDAMAPP%eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjEwMzkxNTYsImV4cCI6MTc2MTA0Mjc1Niwicm9sZXMiOlsiUk9MRV9VU0VSX1NTUCJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiYmxhIiwibG9jYWxlIjoibmwtTkwiLCJjbGllbnRfcHJvZHVjdF9pZCI6MTB9.sRkWR4ZM3WFvg4B17QUStrWvkhsDH7xK7QfScGYt6yw"
 
     def test_success_permitholder(self):
