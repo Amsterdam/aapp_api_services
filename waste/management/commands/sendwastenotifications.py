@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 
 from core.services.waste_device import WasteDeviceService
 from waste.constants import WASTE_COLLECTION_ROUTE_TYPES
+from waste.models import WasteCollectionRouteName
 from waste.services.notification import NotificationService
 from waste.services.waste_collection_notification import (
     WasteCollectionNotificationService,
@@ -40,25 +41,28 @@ class Command(BaseCommand):
         filters them based on whether the pickup day is tomorrow, collects device IDs
         for notifications, and schedules the notifications accordingly.
         """
-        # Check if tomorrow is an exception date before processing
-        if len(self.collection_service.all_dates) == 0:
+        # Check if tomorrow is an exception date for all routes before processing
+        if not self._should_send_notifications_run():
             logger.warning(
-                "Tomorrow is an exception on waste collection. No notifications will be sent."
+                "Tomorrow is an exception on waste collection for all routes. No notifications will be sent."
             )
             return
 
         full_data = []
+        route_names = set()
         for route_type_code in WASTE_COLLECTION_ROUTE_TYPES:
             logger.info(
                 "Fetching data for route", extra={"route_type_code": route_type_code}
             )
-            full_data.extend(
+            waste_data, waste_route_names = (
                 self.collection_service.get_validated_data_for_route_type_code(
                     route_type=route_type_code
                 )
             )
-        logger.info("Fetched all waste data from Waste Guide API.")
+            full_data.extend(waste_data)
+            route_names.update(waste_route_names)
 
+        logger.info("Fetched all waste data from Waste Guide API.")
         logger.info("Sending notifications")
         devices_per_fraction = self._get_devices_per_fraction(filtered_data=full_data)
         self._send_notifications(fraction_device_ids=devices_per_fraction)
@@ -66,6 +70,40 @@ class Command(BaseCommand):
         logger.info("Updating waste device records with last notification timestamp")
         ids_to_update = [schedule.pk for schedule in self.notification_schedules]
         self.waste_device_service.update_waste_device(ids_to_update=ids_to_update)
+
+        logger.info("Updating waste route names")
+        clean_route_names = {
+            name.strip()
+            for name in route_names
+            if isinstance(name, str) and name.strip()
+        }
+        WasteCollectionRouteName.objects.bulk_create(
+            [
+                WasteCollectionRouteName(name=route_name)
+                for route_name in clean_route_names
+            ],
+            ignore_conflicts=True,
+        )
+
+    def _should_send_notifications_run(self) -> bool:
+        # if tomorrow is not in exception dates, we can proceed with sending notifications
+        collection_dates = self.collection_service._get_dates()
+        collection_date = collection_dates[0] if collection_dates else None
+        exception_dates = self.collection_service._get_future_exception_dates()
+
+        if collection_date not in exception_dates:
+            return True
+
+        # If tomorrow is an exception date, check whether all routes are affected.
+        affected_routes = self.collection_service._get_affected_routes_for_date(
+            exception_date=collection_date
+        )
+        if affected_routes is None:
+            logger.warning(
+                f"{collection_date} is an exception on waste collection for all routes. No notifications will be sent."
+            )
+            return False
+        return True
 
     def _get_devices_per_fraction(
         self, filtered_data: list[dict]

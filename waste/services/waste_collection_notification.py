@@ -1,5 +1,6 @@
 import logging
 from datetime import date, timedelta
+from typing import Tuple
 
 from django.conf import settings
 
@@ -15,7 +16,9 @@ class WasteCollectionNotificationService(WasteCollectionAbstractService):
         date_tomorrow = date.today() + timedelta(days=1)
         return [d for d in dates if d == date_tomorrow]
 
-    def get_validated_data_for_route_type_code(self, route_type: str) -> list[dict]:
+    def get_validated_data_for_route_type_code(
+        self, route_type: str
+    ) -> Tuple[list[dict], set[str]]:
         """Get all records for a specific waste type from waste guide API"""
 
         params = {
@@ -24,10 +27,12 @@ class WasteCollectionNotificationService(WasteCollectionAbstractService):
         }
         next_link = settings.WASTE_GUIDE_URL
         waste_data = []
+        route_names = set()
         while next_link:
             waste_data_batch, next_link = self.get_validated_data(
                 url=next_link, params=params
             )
+            route_names.update(item.get("route_name") for item in waste_data_batch)
             waste_data_tomorrow = self._filter_waste_data_pickup_tomorrow(
                 waste_data=waste_data_batch
             )
@@ -36,7 +41,7 @@ class WasteCollectionNotificationService(WasteCollectionAbstractService):
                 f"Fetched {len(waste_data_tomorrow)} records for {route_type}, next_link: {next_link}"
             )
             params = None  # params are included in the next_link url already
-        return waste_data
+        return waste_data, route_names
 
     def _filter_waste_data_pickup_tomorrow(self, waste_data: list[dict]) -> list[dict]:
         filtered_data = [

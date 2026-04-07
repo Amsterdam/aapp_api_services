@@ -12,11 +12,13 @@ from requests import Response
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from waste.exceptions import WasteGuideException
-from waste.models import WasteCollectionException
+from waste.models import WasteCollectionException, WasteCollectionRouteName
+from waste.serializers.waste_guide_serializers import WasteDataSerializer
 from waste.services.waste_collection_abstract import WasteCollectionAbstractService
 from waste.tests.mock_data import (
     frequency_monthly,
     frequency_unknown,
+    frequency_weekly,
 )
 
 
@@ -86,29 +88,117 @@ class WasteCollectionAbstractServiceTest(ResponsesActivatedAPITestCase):
         dates = self.service.get_dates_for_waste_item(item=item)
         self.assertEqual(len(dates), 0)
 
-    def test_no_exception_dates(self):
-        service = WasteCollectionAbstractService()
-        self.assertEqual(len(service.all_dates), settings.CALENDAR_LENGTH)
+    def test_get_dates_for_waste_item_weekly_frequency_no_exception(self):
+        item = frequency_weekly.MOCK_DATA["_embedded"]["afvalwijzer"][0]
+        serializer = WasteDataSerializer(data=item)
+        serializer.is_valid()
+        dates = self.service.get_dates_for_waste_item(item=serializer.validated_data)
+        expected_dates = [
+            date(2025, 12, 10),
+            date(2025, 12, 17),
+            date(2025, 12, 24),
+            date(2025, 12, 31),
+            date(2026, 1, 7),
+            date(2026, 1, 14),
+        ]
+        self.assertEqual(dates, expected_dates)
 
-    def test_single_exception_dates(self):
-        baker.make(WasteCollectionException, date="2025-12-09")
+    def test_get_dates_for_waste_item_weekly_frequency_single_exception(self):
+        exception_route_name_instance = baker.make(
+            WasteCollectionRouteName, name="Met_Uitzondering_Rest"
+        )
+        baker.make(
+            WasteCollectionException,
+            date="2025-12-24",
+            affected_routes=[exception_route_name_instance],
+        )
 
-        service = WasteCollectionAbstractService()
-        self.assertEqual(len(service.all_dates), settings.CALENDAR_LENGTH - 1)
-        self.assertNotIn(date(2025, 12, 9), service.all_dates)
+        item = frequency_weekly.MOCK_DATA["_embedded"]["afvalwijzer"][0]
+        serializer = WasteDataSerializer(data=item)
+        serializer.is_valid()
+        dates = self.service.get_dates_for_waste_item(item=serializer.validated_data)
+        expected_dates = [
+            date(2025, 12, 10),
+            date(2025, 12, 17),
+            date(2025, 12, 31),
+            date(2026, 1, 7),
+            date(2026, 1, 14),
+        ]
+        self.assertEqual(dates, expected_dates)
 
-    def test_multiple_exception_dates(self):
-        baker.make(WasteCollectionException, date="2025-12-09")
-        baker.make(WasteCollectionException, date="2025-12-15")
+    def test_get_dates_for_waste_item_weekly_frequency_multiple_exceptions(self):
+        exception_route_name_instance = baker.make(
+            WasteCollectionRouteName, name="Met_Uitzondering_Rest"
+        )
 
-        service = WasteCollectionAbstractService()
-        self.assertEqual(len(service.all_dates), settings.CALENDAR_LENGTH - 2)
-        self.assertNotIn(date(2025, 12, 9), service.all_dates)
-        self.assertNotIn(date(2025, 12, 15), service.all_dates)
+        baker.make(
+            WasteCollectionException,
+            date="2025-12-24",
+            affected_routes=[exception_route_name_instance],
+        )
+        baker.make(
+            WasteCollectionException,
+            date="2026-01-07",
+            affected_routes=[exception_route_name_instance],
+        )
 
-    def test_all_exception_dates(self):
-        for d in self.service.all_dates:
+        item = frequency_weekly.MOCK_DATA["_embedded"]["afvalwijzer"][0]
+        serializer = WasteDataSerializer(data=item)
+        serializer.is_valid()
+        dates = self.service.get_dates_for_waste_item(item=serializer.validated_data)
+        expected_dates = [
+            date(2025, 12, 10),
+            date(2025, 12, 17),
+            date(2025, 12, 31),
+            date(2026, 1, 14),
+        ]
+        self.assertEqual(dates, expected_dates)
+
+    def test_get_dates_for_waste_item_weekly_frequency_all_exceptions(self):
+        exception_route_name_instance = baker.make(
+            WasteCollectionRouteName, name="Met_Uitzondering_Rest"
+        )
+
+        all_dates = [
+            date(2025, 12, 10),
+            date(2025, 12, 17),
+            date(2025, 12, 24),
+            date(2025, 12, 31),
+            date(2026, 1, 7),
+            date(2026, 1, 14),
+        ]
+        for d in all_dates:
+            baker.make(
+                WasteCollectionException,
+                date=d,
+                affected_routes=[exception_route_name_instance],
+            )
+
+        item = frequency_weekly.MOCK_DATA["_embedded"]["afvalwijzer"][0]
+        serializer = WasteDataSerializer(data=item)
+        serializer.is_valid()
+        dates = self.service.get_dates_for_waste_item(item=serializer.validated_data)
+        expected_dates = []
+        self.assertEqual(dates, expected_dates)
+
+    def test_get_dates_for_waste_item_weekly_frequency_all_exceptions_no_route_names(
+        self,
+    ):
+
+        all_dates = [
+            date(2025, 12, 10),
+            date(2025, 12, 17),
+            date(2025, 12, 24),
+            date(2025, 12, 31),
+            date(2026, 1, 7),
+            date(2026, 1, 14),
+        ]
+        for d in all_dates:
             baker.make(WasteCollectionException, date=d)
 
-        service = WasteCollectionAbstractService()
-        self.assertEqual(service.all_dates, [])
+        item = frequency_weekly.MOCK_DATA["_embedded"]["afvalwijzer"][0]
+        serializer = WasteDataSerializer(data=item)
+        serializer.is_valid()
+        dates = self.service.get_dates_for_waste_item(item=serializer.validated_data)
+        expected_dates = []
+        self.assertEqual(dates, expected_dates)
