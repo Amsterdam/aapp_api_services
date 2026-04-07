@@ -143,7 +143,7 @@ class WasteCollectionAbstractService:
         return dates
 
     @staticmethod
-    @cache_function(timeout=60 * 60)  # cache one hour
+    @cache_function(timeout=60)  # cache one minute
     def _get_future_exception_dates() -> list[date]:
         return list(
             WasteCollectionException.objects.filter(date__gte=date.today()).values_list(
@@ -152,7 +152,7 @@ class WasteCollectionAbstractService:
         )
 
     @staticmethod
-    @cache_function(timeout=60 * 60)  # cache for one hour
+    @cache_function(timeout=60)  # cache one minute
     def _get_affected_routes_for_date(exception_date: date) -> list[str] | None:
         # Cache this function because when sending notifications it will be called
         # multiple times for the same date.
