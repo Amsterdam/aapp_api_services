@@ -4,6 +4,8 @@ ALL_SERVICES = bridge city_pass construction_work contact image modules notifica
 
 ifdef SERVICE_NAME
 export SERVICE_NAME_HYPHEN=$(subst _,-,$(SERVICE_NAME))
+else
+export SERVICE_NAME=core
 endif
 
 ifdef TARGET_MIGRATION
@@ -40,7 +42,7 @@ requirements: lock-packages pip-freeze
 ### MAKEFILE TARGETS THAT CAN LOOP THROUGH ALL SERVICES ###
 # Interprets code 5 (no tests found) as 0 (success)
 define dc_for_all
-	@if [ -z "$(SERVICE_NAME)" ]; then \
+	@if [ "$(SERVICE_NAME)" = "core" ]; then \
 	  for s in $(ALL_SERVICES); do \
 		SERVICE_NAME=$$s docker compose $(1);  \
 	    status=$$?; if [ $$status -ne 0 ] && [ $$status -ne 5 ]; then exit $$status; fi; \
@@ -108,7 +110,7 @@ prepare-for-pr: requirements lintfix test openapi-diff
 ### SINGLE SERVICE COMMANDS ###
 check-service:
 	# Check if SERVICE_NAME is set in environment variables
-	@if [ -z "$(SERVICE_NAME)" ]; then \
+	@if [ "$(SERVICE_NAME)" = "core" ]; then \
 		echo "ERROR: SERVICE_NAME is not set"; \
 		exit 1; \
 	fi
@@ -150,7 +152,7 @@ dev: check-service
     # Start Django app with runserver
 	$(run) --service-ports dev
 
-dev-rebuild: build dev 
+dev-rebuild: build dev
 	# Rebuild Docker image and start Django app with runserver
 
 app: check-service
