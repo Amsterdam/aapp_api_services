@@ -3,7 +3,7 @@ from time import sleep
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db import transaction
+from django.db import OperationalError, transaction
 from django.utils import timezone
 
 from notification.crud import NotificationCRUD
@@ -26,13 +26,19 @@ class Command(BaseCommand):
                 # select_for_update() is used to lock the database rows one by one to prevent duplicate pushes.
                 # If another parallel process is running, it will skip the locked rows and move on to the next ones.
                 timezone_now = timezone.now()
-                notifications_to_process = (
-                    ScheduledNotification.objects.select_for_update(
-                        skip_locked=True
-                    ).filter(scheduled_for__lte=timezone_now, is_ready=True)[
-                        :BATCH_SIZE
-                    ]
-                )
+                try:
+                    notifications_to_process = (
+                        ScheduledNotification.objects.select_for_update(
+                            skip_locked=True
+                        ).filter(scheduled_for__lte=timezone_now, is_ready=True)[
+                            :BATCH_SIZE
+                        ]
+                    )
+                except OperationalError:
+                    logger.warning(
+                        "Scheduled notifications could not be collected. Retrying..."
+                    )
+                    continue
                 notifications_to_process = list(notifications_to_process)
                 if notifications_to_process:
                     if options["test_mode"]:
