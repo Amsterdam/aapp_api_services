@@ -21,12 +21,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         while True:
-            with transaction.atomic():
-                # Select all scheduled notifications that have not been pushed yet.
-                # select_for_update() is used to lock the database rows one by one to prevent duplicate pushes.
-                # If another parallel process is running, it will skip the locked rows and move on to the next ones.
-                timezone_now = timezone.now()
-                try:
+            try:
+                with transaction.atomic():
+                    # Select all scheduled notifications that have not been pushed yet.
+                    # select_for_update() is used to lock the database rows one by one to prevent duplicate pushes.
+                    # If another parallel process is running, it will skip the locked rows and move on to the next ones.
+                    timezone_now = timezone.now()
                     notifications_to_process = (
                         ScheduledNotification.objects.select_for_update(
                             skip_locked=True
@@ -34,33 +34,38 @@ class Command(BaseCommand):
                             :BATCH_SIZE
                         ]
                     )
-                except OperationalError:
-                    logger.warning(
-                        "Scheduled notifications could not be collected. Retrying..."
-                    )
-                    continue
-                notifications_to_process = list(notifications_to_process)
-                if notifications_to_process:
-                    if options["test_mode"]:
-                        for n in notifications_to_process:
-                            n.make_push = False
-                    logger.info(
-                        f"Pushing {len(notifications_to_process)} scheduled notifications"
-                    )
-                    self.process_notifications(notifications_to_process)
+                    notifications_to_process = list(notifications_to_process)
 
-            if not notifications_to_process:
-                if options["test_mode"]:
-                    # In test mode, interrupt the loop when no notifications are found
-                    break
-                logger.debug("No scheduled notifications found. Sleeping...")
-                sleep(5)  # Sleep for 5 seconds before checking again
+                    if notifications_to_process:
+                        if options["test_mode"]:
+                            for n in notifications_to_process:
+                                n.make_push = False
+                        logger.info(
+                            f"Pushing {len(notifications_to_process)} scheduled notifications"
+                        )
+                        self.process_notifications(notifications_to_process)
+
+                if not notifications_to_process:
+                    if options["test_mode"]:
+                        # In test mode, interrupt the loop when no notifications are found
+                        break
+                    logger.debug("No scheduled notifications found. Sleeping...")
+                    sleep(5)  # Sleep for 5 seconds before checking again
+
+            except OperationalError:
+                logger.warning(
+                    "Scheduled notifications could not be collected. Retrying..."
+                )
+                sleep(1)  # Sleep for 1 second before checking again
+                continue
 
     def process_notifications(
         self, notifications_to_process: list[ScheduledNotification]
     ):
         for scheduled_notification in notifications_to_process:
+            is_expired = False
             if scheduled_notification.expires_at <= timezone.now():
+                is_expired = True
                 logger.info(
                     "Skipping expired notification",
                     extra={
@@ -69,14 +74,9 @@ class Command(BaseCommand):
                         "scheduled_for": scheduled_notification.scheduled_for,
                     },
                 )
-                try:
-                    scheduled_notification.delete()
-                except OperationalError:
-                    logger.warning("Failed to delete expired notification. Retrying...")
             else:
                 try:
                     self.process(scheduled_notification)
-                    scheduled_notification.delete()
                 except Exception as e:
                     logger.error(
                         "Error processing scheduled notification",
@@ -86,6 +86,14 @@ class Command(BaseCommand):
                             "context": scheduled_notification.context,
                         },
                     )
+
+            try:
+                scheduled_notification.delete()
+            except OperationalError:
+                logger.warning(
+                    "Failed to delete notification. Skipping delete for now...",
+                    extra={"is_expired": is_expired},
+                )
 
     def process(self, scheduled_notification: ScheduledNotification):
         notification_obj = Notification(
