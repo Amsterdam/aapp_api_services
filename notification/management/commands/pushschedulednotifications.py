@@ -69,6 +69,10 @@ class Command(BaseCommand):
                         "scheduled_for": scheduled_notification.scheduled_for,
                     },
                 )
+                try:
+                    scheduled_notification.delete()
+                except OperationalError:
+                    logger.warning("Failed to delete expired notification. Retrying...")
             else:
                 try:
                     self.process(scheduled_notification)
