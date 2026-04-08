@@ -15,6 +15,7 @@ from bridge.boat_charging.views.base_view import (
     BaseView,
     boat_charging_openapi_decorator,
 )
+from core.utils.caching_utils import cache_function
 
 
 class SessionStartStopView(BaseView):
@@ -49,13 +50,18 @@ class SessionStartStopView(BaseView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)
 
+    @cache_function(timeout=600)  # cache token for 10 minutes
     async def _get_token(self) -> Any:
         """CPMS will assign a single token to this app and use that same token consistently,
         as there is no need to generate or use different tokens for each transaction"""
         tokens_json = await self.api_call(
             "get", endpoint=settings.BOAT_CHARGING_ENDPOINTS["TOKENS"], paginated=True
         )
-        token = tokens_json[0]["uid"]
+        if not tokens_json:
+            raise ValidationError("No charging token is available from CPMS")
+        token = tokens_json[0].get("uid")
+        if not token:
+            raise ValidationError("No valid token uid is available from CPMS")
         return token
 
     @boat_charging_openapi_decorator(
