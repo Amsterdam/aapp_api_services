@@ -71,7 +71,7 @@ class ScheduledNotification(BaseNotification):
         constraints = [
             models.UniqueConstraint(fields=["identifier"], name="unique_identifier"),
             models.CheckConstraint(
-                check=Q(expires_at__gt=F("scheduled_for")),
+                condition=Q(expires_at__gt=F("scheduled_for")),
                 name="expires_after_scheduled_for",
             ),
         ]

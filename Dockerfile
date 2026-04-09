@@ -1,6 +1,6 @@
 ### Builds core application
-FROM python:3.11-alpine AS core
-COPY --from=ghcr.io/astral-sh/uv:0.7.13 /uv /uvx /bin/
+FROM python:3.14-alpine AS core
+COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /uvx /bin/
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=on
 
@@ -47,6 +47,11 @@ USER appuser
 WORKDIR /app
 COPY notification /app/notification
 
+### Core stages for administrative tasks
+# These need root to write to the home dir, so we use the core image for these tasks
+FROM core AS app-core
+USER root
+
 ### City Pass stages
 FROM core AS app-city_pass
 COPY city_pass /app/city_pass
@@ -78,6 +83,6 @@ COPY image /app/image
 FROM core AS app-waste
 COPY waste /app/waste
 
-### Waste stages
+### Survey stages
 FROM core AS app-survey
 COPY survey /app/survey
