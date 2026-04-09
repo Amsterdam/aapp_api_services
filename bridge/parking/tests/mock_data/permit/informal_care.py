@@ -1,5 +1,5 @@
 MOCK_RESPONSE = {
-    "client_product_id": 5008,
+    "client_product_id": 1234,
     "config": {
         "can_start_parking_session": False,
         "can_input_vrn": True,
@@ -224,8 +224,8 @@ MOCK_RESPONSE = {
     },
     "vrns": [
         {
-            "id": 5008,
-            "vrn": "SSP008",
+            "id": 1234,
+            "vrn": "ABC123",
             "temporary_vrn": None,
             "temporary_ended_at": None,
             "activated_at": "2025-11-13T16:30:48+00:00",
@@ -236,8 +236,8 @@ MOCK_RESPONSE = {
             "has_parking_session": False,
         },
         {
-            "id": 5009,
-            "vrn": "SSP088",
+            "id": 1235,
+            "vrn": "ABC124",
             "temporary_vrn": None,
             "temporary_ended_at": None,
             "activated_at": "2025-11-13T16:30:48+00:00",
@@ -248,8 +248,8 @@ MOCK_RESPONSE = {
             "has_parking_session": True,
         },
         {
-            "id": 5010,
-            "vrn": "SSP888",
+            "id": 1236,
+            "vrn": "ABC125",
             "temporary_vrn": None,
             "temporary_ended_at": None,
             "activated_at": "2026-05-13T16:30:48+00:00",

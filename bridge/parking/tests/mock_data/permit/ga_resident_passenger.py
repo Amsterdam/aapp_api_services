@@ -1,5 +1,5 @@
 MOCK_RESPONSE = {
-    "client_product_id": 1201,
+    "client_product_id": 1234,
     "config": {
         "can_start_parking_session": False,
         "can_input_vrn": True,
@@ -1077,7 +1077,7 @@ MOCK_RESPONSE = {
         "time_balance_expires_at": None,
         "favorite_machine_number": None,
         "main_account": {
-            "username": "33333330",
+            "username": "12345678",
             "pin": "1234",
             "money_balance": None,
             "time_balance": None,
@@ -1093,8 +1093,8 @@ MOCK_RESPONSE = {
     },
     "vrns": [
         {
-            "id": 1201,
-            "vrn": "P37001",
+            "id": 1234,
+            "vrn": "ABC123",
             "temporary_vrn": None,
             "temporary_ended_at": None,
             "activated_at": "2026-01-13T16:30:48+00:00",
