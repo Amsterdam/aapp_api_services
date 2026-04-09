@@ -245,6 +245,12 @@ class TestSurveyVersionEntryListView(AbstractSurveyTestCase):
         self.assertEqual(len(response.data["results"]), 11)
 
     def test_get_survey_unique_code_filter_empty(self):
+        data = {"survey_unique_code": ""}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 11)
+
+    def test_get_survey_unique_code_filter_nonexistent(self):
         data = {"survey_unique_code": "foobar"}
         response = self.client.get(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
@@ -257,6 +263,12 @@ class TestSurveyVersionEntryListView(AbstractSurveyTestCase):
         self.assertEqual(len(response.data["results"]), 9)
 
     def test_get_survey_version_filter_empty(self):
+        data = {"survey_version": ""}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 11)
+
+    def test_get_survey_version_filter_nonexistent(self):
         data = {"survey_version": "3"}
         response = self.client.get(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
@@ -282,7 +294,7 @@ class TestSurveyVersionEntryListView(AbstractSurveyTestCase):
         self.assertEqual(response.status_code, 200)
         entry_points = [entry["entry_point"] for entry in response.data["results"]]
         self.assertEqual(entry_points, sorted(entry_points))
-        assert entry_points[0] == "A Parkeer module"
+        self.assertEqual(entry_points[0], "A Parkeer module")
 
     def test_get_sort_by_entry_point_desc(self):
         data = {"sort_by": "entry_point", "sort_order": "desc"}
