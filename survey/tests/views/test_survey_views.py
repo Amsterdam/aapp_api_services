@@ -249,3 +249,37 @@ class TestSurveyVersionEntryListView(AbstractSurveyTestCase):
         response = self.client.get(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["results"]), 0)
+
+    def test_get_sort_by_entry_point_asc(self):
+        data = {"sort_by": "entry_point", "sort_order": "asc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 9)
+        entry_points = [entry["entry_point"] for entry in response.data["results"]]
+        self.assertEqual(entry_points, sorted(entry_points))
+
+    def test_get_sort_by_entry_point_desc(self):
+        data = {"sort_by": "entry_point", "sort_order": "desc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 9)
+        entry_points = [entry["entry_point"] for entry in response.data["results"]]
+        self.assertEqual(entry_points, sorted(entry_points, reverse=True))
+
+    def test_get_sort_by_invalid_field(self):
+        data = {"sort_by": "invalid_field"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 400)
+
+    def test_get_sort_by_valid_field_invalid_order(self):
+        data = {"sort_by": "entry_point", "sort_order": "invalid_order"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 400)
+
+    def test_get_sort_by_created_at_desc(self):
+        data = {"sort_by": "created_at", "sort_order": "desc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 9)
+        created_at_list = [entry["created_at"] for entry in response.data["results"]]
+        self.assertEqual(created_at_list, sorted(created_at_list, reverse=True))

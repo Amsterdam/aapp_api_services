@@ -1,7 +1,6 @@
 from django.db.models import Prefetch
 from django.utils import timezone
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
@@ -22,7 +21,8 @@ from survey.serializers.survey_serializers import (
     SurveyConfigResponseSerializer,
     SurveySerializer,
     SurveyVersionDetailSerializer,
-    SurveyVersionEntryListSerializer,
+    SurveyVersionEntryListRequestSerializer,
+    SurveyVersionEntryListResponseSerializer,
     SurveyVersionEntrySerializer,
     SurveyVersionSerializer,
 )
@@ -172,7 +172,7 @@ class SurveyVersionEntryListView(ListAPIView):
         page_size_query_param = "page_size"
         max_page_size = 100
 
-    serializer_class = SurveyVersionEntryListSerializer
+    serializer_class = SurveyVersionEntryListResponseSerializer
     queryset = (
         SurveyVersionEntry.objects.all()
         .prefetch_related("answers")
@@ -184,29 +184,22 @@ class SurveyVersionEntryListView(ListAPIView):
         queryset = super().get_queryset()
         survey_version = self.request.query_params.get("survey_version")
         survey_unique_code = self.request.query_params.get("survey_unique_code")
+        sort_by = self.request.query_params.get("sort_by")
+        sort_order = self.request.query_params.get("sort_order", "asc")
         if survey_version:
             queryset = queryset.filter(survey_version__version=survey_version)
         if survey_unique_code:
             queryset = queryset.filter(
                 survey_version__survey__unique_code=survey_unique_code
             )
+        if sort_by:
+            if sort_order == "desc":
+                sort_by = f"-{sort_by}"
+            queryset = queryset.order_by(sort_by)
         return queryset
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="survey_version",
-                type=OpenApiTypes.INT,
-                required=False,
-                description="Filter by SurveyVersion id.",
-            ),
-            OpenApiParameter(
-                name="survey_unique_code",
-                type=OpenApiTypes.STR,
-                required=False,
-                description="Filter by Survey unique_code.",
-            ),
-        ]
-    )
+    @extend_schema(parameters=[SurveyVersionEntryListRequestSerializer])
     def get(self, request, *args, **kwargs):
+        serializer = SurveyVersionEntryListRequestSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
         return super().get(request, *args, **kwargs)
