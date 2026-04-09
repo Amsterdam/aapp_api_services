@@ -10,7 +10,7 @@ DATABASES["default"]["PASSWORD"] = POSTGRES_PASSWORD
 DATABASES["notification"]["PASSWORD"] = POSTGRES_PASSWORD
 
 # When using ASGI, persistent connections should be disabled.
-# https://docs.djangoproject.com/en/6.0/ref/databases/?utm_source=chatgpt.com#persistent-connections
+# https://docs.djangoproject.com/en/6.0/ref/databases/#persistent-connections
 DATABASES["default"]["CONN_MAX_AGE"] = 0
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = False
 
