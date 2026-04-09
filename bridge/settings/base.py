@@ -85,4 +85,5 @@ BOAT_CHARGING_ENDPOINTS = {
     "TRANSACTIONS": urljoin(
         BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/transactions"
     ),
+    "TOKENS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/tokens"),
 }
