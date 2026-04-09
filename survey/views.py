@@ -193,9 +193,15 @@ class SurveyVersionEntryListView(ListAPIView):
                 survey_version__survey__unique_code=survey_unique_code
             )
         if sort_by:
+            sort_by_mapping = {
+                "survey_version": "survey_version__version",
+            }
+            sort_by = sort_by_mapping.get(sort_by, sort_by)
+            secondary_sort = "id"
             if sort_order == "desc":
                 sort_by = f"-{sort_by}"
-            queryset = queryset.order_by(sort_by)
+                secondary_sort = "-id"
+            queryset = queryset.order_by(sort_by, secondary_sort)
         return queryset
 
     @extend_schema(parameters=[SurveyVersionEntryListRequestSerializer])

@@ -101,8 +101,12 @@ class SurveyVersionEntrySerializer(serializers.ModelSerializer):
 
 
 class SurveyVersionEntryListRequestSerializer(serializers.Serializer):
-    survey_version = serializers.IntegerField(required=False)
-    survey_unique_code = serializers.CharField(required=False)
+    survey_version = serializers.IntegerField(
+        required=False, help_text="Filter by SurveyVersion id."
+    )
+    survey_unique_code = serializers.CharField(
+        required=False, help_text="Filter by Survey unique_code."
+    )
     sort_by = serializers.ChoiceField(
         choices=[
             "created_at",
@@ -111,11 +115,8 @@ class SurveyVersionEntryListRequestSerializer(serializers.Serializer):
             "survey_version",
         ],
         required=False,
-        default="id",
     )
-    sort_order = serializers.ChoiceField(
-        choices=["asc", "desc"], required=False, default="asc"
-    )
+    sort_order = serializers.ChoiceField(choices=["asc", "desc"], required=False)
 
 
 class SurveyVersionEntryListResponseSerializer(serializers.ModelSerializer):
