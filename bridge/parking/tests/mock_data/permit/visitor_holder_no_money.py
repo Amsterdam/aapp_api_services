@@ -1,4 +1,4 @@
-MOCK_RESPONSE = MOCK_RESPONSE = {
+MOCK_RESPONSE = {
     "client_product_id": 1234,
     "config": {
         "can_start_parking_session": True,
@@ -259,13 +259,13 @@ MOCK_RESPONSE = MOCK_RESPONSE = {
         "main_account": {
             "username": "12345678",
             "pin": "1234",
-            "money_balance": 981287,
-            "time_balance": 539486,
+            "money_balance": None,
+            "time_balance": None,
         },
         "visitor_account": {
-            "username": None,
-            "pin": None,
-            "time_balance": 0,
+            "username": "12345679",
+            "pin": "1234",
+            "time_balance": 3600,
         },
     },
     "validity": {

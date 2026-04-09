@@ -9,14 +9,14 @@ from uritemplate import URITemplate
 from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
 from bridge.parking.tests.mock_data import (
     paid_parking_zone,
-    # permit_geojson_as_json,
-    permits,
+    # permit_geojson_as_json,,
 )
 from bridge.parking.tests.mock_data.permit import (
     visitor_holder,
     visitor_holder_geojson_as_string,
     visitor_holder_no_visitor,
 )
+from bridge.parking.tests.mock_data.permits import multiple_visitor_permits
 from bridge.parking.tests.mock_data_external import parking_zone_by_machine
 from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 from bridge.parking.views.permit_views import (
@@ -29,7 +29,7 @@ class TestParkingPermitsView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("parking-permits")
-        self.mock_response = permits.MOCK_RESPONSE
+        self.mock_response = multiple_visitor_permits.MOCK_RESPONSE
 
     def test_success(self):
         resp = respx.get(ParkingPermitsView.ssp_endpoint).mock(
@@ -37,7 +37,7 @@ class TestParkingPermitsView(BaseSSPTestCase):
         )
         permit_detail_template = SSPEndpoint.PERMIT.value
         parking_zone_template = SSPEndpoint.PAID_PARKING_ZONE.value
-        for permit_id in ["1003", "10001", "1001"]:
+        for permit_id in ["1003", "10001", "1001", "10002"]:
             permit_detail_url = URITemplate(permit_detail_template).expand(
                 permit_id=permit_id
             )
@@ -67,7 +67,7 @@ class TestParkingPermitsView(BaseSSPTestCase):
         )
         permit_detail_template = SSPEndpoint.PERMIT.value
         parking_zone_template = SSPEndpoint.PAID_PARKING_ZONE.value
-        for permit_id in ["1003", "10001", "1001"]:
+        for permit_id in ["1003", "10001", "1001", "10002"]:
             permit_detail_url = URITemplate(permit_detail_template).expand(
                 permit_id=permit_id
             )

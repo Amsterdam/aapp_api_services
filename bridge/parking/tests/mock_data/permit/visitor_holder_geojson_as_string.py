@@ -1,5 +1,5 @@
 MOCK_RESPONSE = {
-    "client_product_id": 1004,
+    "client_product_id": 1234,
     "config": {
         "can_start_parking_session": True,
         "can_input_vrn": False,
@@ -28,13 +28,13 @@ MOCK_RESPONSE = {
         "time_balance_expires_at": "2026-06-30T21:59:59+00:00",
         "favorite_machine_number": 10528,
         "main_account": {
-            "username": "10000000",
+            "username": "12345678",
             "pin": "1234",
             "money_balance": 981287,
             "time_balance": 539486,
         },
         "visitor_account": {
-            "username": "10000001",
+            "username": "12345679",
             "pin": "1234",
             "time_balance": 3600,
         },

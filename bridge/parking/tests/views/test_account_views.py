@@ -6,8 +6,14 @@ from django.urls import reverse
 
 from bridge.parking.exceptions import SSPResponseError
 from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
-from bridge.parking.tests.mock_data import permits
-from bridge.parking.tests.mock_data.permit import visitor_holder
+from bridge.parking.tests.mock_data.permit import (
+    visitor_holder,
+    visitor_holder_no_money,
+)
+from bridge.parking.tests.mock_data.permits import (
+    multiple_visitor_permits,
+    one_visitor_permit,
+)
 from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 
 
@@ -117,8 +123,12 @@ class TestParkingAccountDetailsView(BaseSSPTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("parking-account-details")
-        self.mock_permits_response = permits.MOCK_RESPONSE
+        self.mock_permits_multiple_response = multiple_visitor_permits.MOCK_RESPONSE
+        self.mock_permits_single_response = one_visitor_permit.MOCK_RESPONSE
         self.mock_permit_detail_response = visitor_holder.MOCK_RESPONSE
+        self.mock_permit_detail_response_no_money = (
+            visitor_holder_no_money.MOCK_RESPONSE
+        )
         self.test_permitholder_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjEwMzkxNTYsImV4cCI6MTc2MTA0Mjc1Niwicm9sZXMiOlsiUk9MRV9VU0VSX1NTUCJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiYmxhIiwibG9jYWxlIjoibmwtTkwiLCJjbGllbnRfcHJvZHVjdF9pZCI6MTB9.sRkWR4ZM3WFvg4B17QUStrWvkhsDH7xK7QfScGYt6yw%AMSTERDAMAPP%eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjEwMzkxNTYsImV4cCI6MTc2MTA0Mjc1Niwicm9sZXMiOlsiUk9MRV9VU0VSX1NTUCJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiYmxhIiwibG9jYWxlIjoibmwtTkwiLCJjbGllbnRfcHJvZHVjdF9pZCI6MTB9.sRkWR4ZM3WFvg4B17QUStrWvkhsDH7xK7QfScGYt6yw"
 
     def test_success_permitholder(self):
@@ -126,11 +136,11 @@ class TestParkingAccountDetailsView(BaseSSPTestCase):
         api_headers["SSP-Access-Token"] = f"{self.test_permitholder_token}"
 
         resp_list = respx.get(SSPEndpoint.PERMITS.value).mock(
-            return_value=httpx.Response(200, json=self.mock_permits_response)
+            return_value=httpx.Response(200, json=self.mock_permits_single_response)
         )
         permit_detail_template = SSPEndpoint.PERMIT.value
-        # Only mock the permit 10001 because it is a visitor permit
-        permit_detail_url = permit_detail_template.format(permit_id=10001)
+        # Only mock the permit 10002 because it is a visitor permit
+        permit_detail_url = permit_detail_template.format(permit_id=10002)
         resp_detail = respx.get(permit_detail_url).mock(
             return_value=httpx.Response(200, json=self.mock_permit_detail_response)
         )
@@ -139,6 +149,56 @@ class TestParkingAccountDetailsView(BaseSSPTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp_list.call_count, 1)
         self.assertEqual(resp_detail.call_count, 1)
+
+    def test_success_permitholder_no_balance(self):
+        api_headers = self.api_headers.copy()
+        api_headers["SSP-Access-Token"] = f"{self.test_permitholder_token}"
+
+        resp_list = respx.get(SSPEndpoint.PERMITS.value).mock(
+            return_value=httpx.Response(200, json=self.mock_permits_single_response)
+        )
+        permit_detail_template = SSPEndpoint.PERMIT.value
+        # Only mock the permit 10002 because it is a visitor permit
+        permit_detail_url = permit_detail_template.format(permit_id=10002)
+        resp_detail = respx.get(permit_detail_url).mock(
+            return_value=httpx.Response(
+                200, json=self.mock_permit_detail_response_no_money
+            )
+        )
+
+        response = self.client.get(self.url, headers=api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp_list.call_count, 1)
+        self.assertEqual(resp_detail.call_count, 1)
+        self.assertEqual(response.data["wallet"]["balance"], 0.0)
+
+    def test_success_permitholder_balance_search(self):
+        """Test that the balance is correctly returned for a permit holder with multiple visitor permits"""
+        api_headers = self.api_headers.copy()
+        api_headers["SSP-Access-Token"] = f"{self.test_permitholder_token}"
+
+        resp_list = respx.get(SSPEndpoint.PERMITS.value).mock(
+            return_value=httpx.Response(200, json=self.mock_permits_multiple_response)
+        )
+        permit_detail_template = SSPEndpoint.PERMIT.value
+        # Mock both permits, because 10001 and 10002 are visitor permits
+        permit_detail_url = permit_detail_template.format(permit_id=10001)
+        resp_detail_no_money = respx.get(permit_detail_url).mock(
+            return_value=httpx.Response(
+                200, json=self.mock_permit_detail_response_no_money
+            )
+        )
+        permit_detail_url = permit_detail_template.format(permit_id=10002)
+        resp_detail_money = respx.get(permit_detail_url).mock(
+            return_value=httpx.Response(200, json=self.mock_permit_detail_response)
+        )
+
+        response = self.client.get(self.url, headers=api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp_list.call_count, 1)
+        self.assertEqual(resp_detail_no_money.call_count, 1)
+        self.assertEqual(resp_detail_money.call_count, 1)
+        self.assertEqual(response.data["wallet"]["balance"], 9812.87)
 
     def test_success_visitor(self):
         api_headers = self.api_headers.copy()
