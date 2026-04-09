@@ -9,10 +9,10 @@ POSTGRES_PASSWORD = azure.auth.db_password
 DATABASES["default"]["PASSWORD"] = POSTGRES_PASSWORD
 DATABASES["notification"]["PASSWORD"] = POSTGRES_PASSWORD
 
-# Enables persistent connections to the database
-# Helps smooth over database connection issues
-DATABASES["default"]["CONN_MAX_AGE"] = 60
-DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+# When using ASGI, persistent connections should be disabled.
+# https://docs.djangoproject.com/en/6.0/ref/databases/?utm_source=chatgpt.com#persistent-connections
+DATABASES["default"]["CONN_MAX_AGE"] = 0
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = False
 
 APPLICATIONINSIGHTS_CONNECTION_STRING = os.getenv(
     "APPLICATIONINSIGHTS_CONNECTION_STRING"
