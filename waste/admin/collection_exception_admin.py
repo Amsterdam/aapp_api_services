@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from waste.models import WasteCollectionException
 
@@ -9,7 +9,7 @@ class WasteCollectionExceptionAdmin(admin.ModelAdmin):
 
     @admin.display(description="Belangrijke informatie")
     def affected_routes_info(self, obj=None):
-        return format_html(
+        return mark_safe(
             "<div class='help'><strong style='font-size: 1.2em; font-weight: 600; color: red;'>Als er in het onderstaande veld geen routes worden gekozen, worden <u>alle routes</u> beïnvloed door deze uitzondering.</strong></div>"
         )
 
