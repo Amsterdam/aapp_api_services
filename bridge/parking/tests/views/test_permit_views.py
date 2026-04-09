@@ -7,10 +7,7 @@ from django.urls import reverse
 from uritemplate import URITemplate
 
 from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
-from bridge.parking.tests.mock_data import (
-    paid_parking_zone,
-    # permit_geojson_as_json,,
-)
+from bridge.parking.tests.mock_data import paid_parking_zone
 from bridge.parking.tests.mock_data.permit import (
     visitor_holder,
     visitor_holder_geojson_as_string,
