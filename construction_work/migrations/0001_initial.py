@@ -298,7 +298,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="device",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ("firebase_token__isnull", True),
                     models.Q(("firebase_token", ""), _negated=True),
                     _connector="OR",

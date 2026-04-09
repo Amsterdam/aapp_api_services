@@ -47,6 +47,7 @@ class WasteDataSerializer(serializers.Serializer):
     afvalwijzerFractiecodeActief = serializers.BooleanField(
         allow_null=True, required=False
     )
+    afvalwijzerRoutenaam = serializers.CharField(allow_null=True, allow_blank=True)
     bagNummeraanduidingId = serializers.CharField()
     gebruiksdoelWoonfunctie = serializers.BooleanField(allow_null=True, required=False)
     straatnaam = serializers.CharField(allow_null=True, allow_blank=True)
@@ -83,6 +84,7 @@ class WasteDataSerializer(serializers.Serializer):
             "days_array": _convert("afvalwijzerOphaaldagen2Array"),
             "url": _convert("afvalwijzerUrl"),
             "where": _convert("afvalwijzerWaar"),
+            "route_name": _convert("afvalwijzerRoutenaam"),
             "bag_id": _convert("bagNummeraanduidingId"),
             "is_residential": _convert("gebruiksdoelWoonfunctie"),
             "basisroutetypeCode": validated_data.get("afvalwijzerBasisroutetypeCode"),

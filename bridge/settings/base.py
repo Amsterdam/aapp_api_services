@@ -70,3 +70,20 @@ MIJN_AMS_API_PATHS = {
     "NOTIFICATIONS": "/private/api/v1/services/amsapp/notifications",
     "DEVICES": "/private/api/v1/services/amsapp/notifications/consumer/",
 }
+
+# CMPS Evinity varen API
+BOAT_CHARGING_DOMAIN = os.getenv(
+    "BOAT_CHARGING_DOMAIN", "https://cpms.service.staging.evinity.io"
+)
+BOAT_CHARGING_ENDPOINTS = {
+    "LOCATIONS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/locations"),
+    "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/sessions"),
+    "TARIFFS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/tariffs"),
+    "CHARGING_STATIONS": urljoin(
+        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/charging-stations"
+    ),
+    "TRANSACTIONS": urljoin(
+        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/transactions"
+    ),
+    "TOKENS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/tokens"),
+}

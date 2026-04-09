@@ -4,6 +4,7 @@ SERVICE_NAME = "modules"
 INSTALLED_APPS += [
     "modules.apps.ModulesConfig",
     "notification.apps.NotificationsConfig",
+    "django.contrib.postgres",
 ]
 MIDDLEWARE += [
     "csp.middleware.CSPMiddleware",

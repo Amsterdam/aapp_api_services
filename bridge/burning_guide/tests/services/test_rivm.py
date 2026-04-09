@@ -3,6 +3,7 @@ from unittest.mock import patch
 import pytest
 import responses
 from django.conf import settings
+from django.core.cache import cache
 from requests.models import PreparedRequest
 
 from bridge.burning_guide.serializers.advice import AdviceResponseSerializer
@@ -17,7 +18,10 @@ from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
 
 @patch("bridge.burning_guide.services.rivm.load_postal_area_shapes")
-def test_load_postal_data_caching(mock_load_shapes):
+def test_load_postal_data_caching(mock_load_shapes, monkeypatch):
+    monkeypatch.setenv("CACHE_FUNCTION_ENABLED_PYTEST", True)
+    cache.clear()
+
     mock_load_shapes.return_value = MOCK_DATA  # Mocked shape data
     postal_data_first_call = load_postal_data()
     assert postal_data_first_call["1056"]["min_x"] == 118623.17586823055
