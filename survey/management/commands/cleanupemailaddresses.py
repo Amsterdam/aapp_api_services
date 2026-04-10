@@ -17,6 +17,7 @@ class Command(BaseCommand):
         days_until_email_deletion = settings.DAYS_UNTIL_EMAIL_DELETION
         cutoff = timezone.now() - timezone.timedelta(days=days_until_email_deletion)
 
+        # The update() method returns the number of affected rows (https://docs.djangoproject.com/en/6.0/ref/models/querysets/#update)
         updated_count = (
             Answer.objects.filter(
                 survey_version_entry__created_at__lte=cutoff,

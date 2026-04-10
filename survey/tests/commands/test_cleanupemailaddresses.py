@@ -4,6 +4,7 @@ from model_bakery import baker
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from survey.models import Answer, SurveyVersion, SurveyVersionEntry
+from survey.named_tuples import QuestionType
 
 
 class TestCommand(ResponsesActivatedAPITestCase):
@@ -13,10 +14,10 @@ class TestCommand(ResponsesActivatedAPITestCase):
             call_command("surveymockdata")
             survey_version = SurveyVersion.objects.first()
             email_question = survey_version.questions.filter(
-                question_type="email"
+                question_type=QuestionType.EMAIL.value
             ).first()
             non_email_question = survey_version.questions.filter(
-                question_type="text"
+                question_type=QuestionType.TEXT.value
             ).first()
             entry = baker.make(SurveyVersionEntry, survey_version=survey_version)
             self.email_answer = baker.make(
@@ -55,7 +56,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         # check that email answers are as expected and non-email answers are not affected
         entry = SurveyVersionEntry.objects.first()
         for answer in entry.answers.all():
-            if answer.question.question_type == "email":
+            if answer.question.question_type == QuestionType.EMAIL.value:
                 self.assertEqual(answer.answer, expected_answer)
-            elif answer.question.question_type == "text":
+            elif answer.question.question_type == QuestionType.TEXT.value:
                 self.assertEqual(answer.answer, self.text_answer.answer)
