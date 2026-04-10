@@ -1,6 +1,5 @@
 from django.db.models import Prefetch
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
@@ -197,6 +196,8 @@ class SurveyVersionEntryListView(ListAPIView):
                 "survey_version": "survey_version__version",
             }
             sort_by = sort_by_mapping.get(sort_by, sort_by)
+            # secondary sort by id to ensure consistent ordering when multiple entries 
+            # have the same value in the primary sort field
             secondary_sort = "id"
             if sort_order == "desc":
                 sort_by = f"-{sort_by}"
@@ -204,7 +205,10 @@ class SurveyVersionEntryListView(ListAPIView):
             queryset = queryset.order_by(sort_by, secondary_sort)
         return queryset
 
-    @extend_schema(parameters=[SurveyVersionEntryListRequestSerializer])
+    @extend_schema_for_api_key(
+        success_response=SurveyVersionEntryListResponseSerializer,
+        additional_params=[SurveyVersionEntryListRequestSerializer],
+    )
     def get(self, request, *args, **kwargs):
         serializer = SurveyVersionEntryListRequestSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
