@@ -196,7 +196,7 @@ class SurveyVersionEntryListView(ListAPIView):
                 "survey_version": "survey_version__version",
             }
             sort_by = sort_by_mapping.get(sort_by, sort_by)
-            # secondary sort by id to ensure consistent ordering when multiple entries 
+            # secondary sort by id to ensure consistent ordering when multiple entries
             # have the same value in the primary sort field
             secondary_sort = "id"
             if sort_order == "desc":
