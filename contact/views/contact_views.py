@@ -1,5 +1,6 @@
 import logging
 
+from django.forms import model_to_dict
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import generics, status
@@ -18,9 +19,20 @@ class CityOfficesView(generics.RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        output_data = {"status": True, "result": queryset}
+        output_data = self.construct_response(queryset)
         output_serializer = self.get_serializer(output_data)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
+
+    def construct_response(self, queryset):
+        result = []
+        for item in queryset:
+            item_dict = model_to_dict(item)
+            item_dict["street"] = item.street_name
+            item_dict["number"] = item.street_number
+            item_dict["postcode"] = item.postal_code
+            result.append(item_dict)
+        output_data = {"status": True, "result": result}
+        return output_data
 
 
 class HealthCheckView(generics.RetrieveAPIView):

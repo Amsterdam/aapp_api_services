@@ -6,6 +6,7 @@ from contact.models import (
     OpeningHoursException,
     RegularOpeningHours,
 )
+from core.serializers.address_serializers import AddressSerializer
 
 
 class TimeDictField(serializers.Field):
@@ -39,7 +40,7 @@ class OpeningHoursSerializer(serializers.Serializer):
     exceptions = ExceptionOpeningHoursSerializer(many=True)
 
 
-class AddressSerializer(serializers.Serializer):
+class CityOfficeAddressSerializer(AddressSerializer):
     streetName = serializers.CharField(source="street_name")
     streetNumber = serializers.CharField(source="street_number")
     postalCode = serializers.CharField(source="postal_code")
@@ -52,7 +53,7 @@ class CoordinatesSerializer(serializers.Serializer):
 
 
 class CityOfficeSerializer(serializers.ModelSerializer):
-    address = AddressSerializer(source="*")
+    address = CityOfficeAddressSerializer(source="*")
     coordinates = CoordinatesSerializer(source="*")
     visitingHours = serializers.SerializerMethodField()
     addressContent = serializers.JSONField(source="address_content", allow_null=True)
@@ -81,11 +82,14 @@ class CityOfficeSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(OpeningHoursSerializer)
     def get_visitingHours(self, obj):
+        # print("Getting visiting hours for", obj, type(obj))
         regular_hours = RegularOpeningHours.objects.filter(
-            city_office_opening_hours__city_office=obj
+            city_office_opening_hours__city_office__identifier=obj["identifier"]
         ).filter(opens_time__isnull=False, closes_time__isnull=False)
 
-        exceptions = OpeningHoursException.objects.filter(affected_offices=obj)
+        exceptions = OpeningHoursException.objects.filter(
+            affected_offices=obj["identifier"]
+        )
 
         opening_hours = OpeningHoursSerializer(
             {"regular": regular_hours, "exceptions": exceptions}

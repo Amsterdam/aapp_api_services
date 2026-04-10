@@ -9,6 +9,7 @@ from contact.models import (
     OpeningHoursException,
     RegularOpeningHours,
 )
+from core.serializers.address_serializers import AddressSerializer
 from core.tests.test_authentication import BasicAPITestCase
 
 
@@ -119,6 +120,27 @@ class TestCityOfficeView(BaseContactTestCase):
         self.assertEqual(exception["opening"], {"hours": 10, "minutes": 0})
         self.assertEqual(exception["closing"], {"hours": 16, "minutes": 0})
         self.assertEqual(exception["description"], "Test exception")
+
+    def test_get_city_offices_core_address_fields(self):
+
+        # get required fields from core AddressSerializer
+        core_address_serializer = AddressSerializer()
+        core_address_fields = core_address_serializer.get_fields()
+        required_core_fields = []
+        for field_name, field in core_address_fields.items():
+            if field.required:
+                required_core_fields.append(field_name)
+
+        # get result
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()
+
+        # Check that all core address fields are present in the response
+        result = response_data.get("result")
+        for office_data in result:
+            for field in required_core_fields:
+                self.assertIn(field, office_data["address"])
 
     def test_get_city_offices_empty(self):
         # Remove existing data
