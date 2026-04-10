@@ -36,6 +36,7 @@ class BaseView(GenericAPIView):
         body_data=None,
         query_params=None,
         requires_access_token=True,
+        paginated=False,
     ):
         headers = {
             "Content-Type": "application/json",
@@ -65,7 +66,7 @@ class BaseView(GenericAPIView):
             )
             raise BoatChargingServerError("Request failed before response") from exc
 
-        if self.paginated:
+        if self.paginated or paginated:
             return payload["content"]
         return payload
 

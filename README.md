@@ -9,7 +9,7 @@ The backend is built using Django, and more specifically the REST framework of D
 ## Prerequisites
 
 The following programs and tooling should be installed on your device:
-- Python (3.12.3)
+- Python 3
 - UV
 - Docker
 
@@ -25,7 +25,7 @@ The following steps should be followed to set up this project:
 - Clone the repository: `git clone git@ssh.dev.azure.com:v3/CloudCompetenceCenter/Amsterdam-App/aapp_api_services`
 - Switch to the repo directory: `cd aapp_api_services`
 - Check your python version: `python3 --version`
-- Install matching venv version: `sudo apt install python3.12-venv` (if your python version is 3.12)
+- Install matching venv version: `sudo apt install python3.14-venv` (if your python version is 3.14)
 - Install python3-dev: `sudo apt install python3-dev`
 - Create a virtual environment: `python3 -m venv .venv`
 - Activate the virtual environment: `./.venv/bin/activate`
