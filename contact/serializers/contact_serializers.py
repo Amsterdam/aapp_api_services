@@ -82,7 +82,6 @@ class CityOfficeSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(OpeningHoursSerializer)
     def get_visitingHours(self, obj):
-        # print("Getting visiting hours for", obj, type(obj))
         regular_hours = RegularOpeningHours.objects.filter(
             city_office_opening_hours__city_office__identifier=obj["identifier"]
         ).filter(opens_time__isnull=False, closes_time__isnull=False)

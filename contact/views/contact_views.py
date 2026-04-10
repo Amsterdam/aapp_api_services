@@ -1,6 +1,6 @@
 import logging
 
-from django.forms import model_to_dict
+from django.forms.models import model_to_dict
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import generics, status
