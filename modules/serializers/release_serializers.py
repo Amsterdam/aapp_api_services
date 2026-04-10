@@ -1,6 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 
+from modules.icons import ModuleIconPath
 from modules.models import AppRelease, ReleaseModuleStatus
 from modules.utils import VersionQueries
 
@@ -31,6 +32,7 @@ class ReleaseModuleSerializer(serializers.ModelSerializer):
         source="module_version.description", read_only=True
     )
     icon = serializers.CharField(source="module_version.icon", read_only=True)
+    icon_path = serializers.SerializerMethodField()
     # ReleaseModuleStatus fields
     releaseStatus = serializers.IntegerField(source="status", read_only=True)
     releaseAppReason = serializers.CharField(source="app_reason", read_only=True)
@@ -46,6 +48,7 @@ class ReleaseModuleSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "icon",
+            "icon_path",
             "status",
             "moduleStatus",
             "moduleAppReason",
@@ -68,6 +71,15 @@ class ReleaseModuleSerializer(serializers.ModelSerializer):
         if module_status == ReleaseModuleStatus.Status.INACTIVE:
             return 0
         return 1
+
+    def get_icon_path(self, obj: ReleaseModuleStatus) -> str:
+        """
+        Returns the path to the icon of the module version.
+        """
+        icon_name = obj.module_version.icon
+        if icon_name and icon_name in ModuleIconPath.keys():
+            return ModuleIconPath.get(icon_name)
+        return ModuleIconPath["info"]
 
 
 class AppReleaseSerializer(serializers.ModelSerializer):
