@@ -1,7 +1,7 @@
 MOCK_RESPONSE = {
     "page": 1,
     "row_per_page": 10,
-    "count": 8,
+    "count": 4,
     "data": [
         {
             "type": "client_product",
@@ -21,7 +21,7 @@ MOCK_RESPONSE = {
             "vrns": [
                 {
                     "id": 1003,
-                    "vrn": "AB1003",
+                    "vrn": "ABC003",
                     "temporary_vrn": None,
                     "temporary_ended_at": None,
                     "activated_at": "2025-04-02T14:22:17+00:00",
@@ -68,7 +68,7 @@ MOCK_RESPONSE = {
             "vrns": [
                 {
                     "id": 1002,
-                    "vrn": "67WFD6",
+                    "vrn": "ABC002",
                     "temporary_vrn": None,
                     "temporary_ended_at": None,
                     "activated_at": "2023-01-01T00:00:00+00:00",

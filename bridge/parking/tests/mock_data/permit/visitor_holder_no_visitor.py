@@ -1,4 +1,4 @@
-MOCK_RESPONSE = MOCK_RESPONSE = {
+MOCK_RESPONSE = {
     "client_product_id": 1234,
     "config": {
         "can_start_parking_session": True,
