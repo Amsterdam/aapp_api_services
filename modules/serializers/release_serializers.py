@@ -32,7 +32,7 @@ class ReleaseModuleSerializer(serializers.ModelSerializer):
         source="module_version.description", read_only=True
     )
     icon = serializers.CharField(source="module_version.icon", read_only=True)
-    icon_path = serializers.SerializerMethodField()
+    iconPath = serializers.SerializerMethodField()
     # ReleaseModuleStatus fields
     releaseStatus = serializers.IntegerField(source="status", read_only=True)
     releaseAppReason = serializers.CharField(source="app_reason", read_only=True)
@@ -48,7 +48,7 @@ class ReleaseModuleSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "icon",
-            "icon_path",
+            "iconPath",
             "status",
             "moduleStatus",
             "moduleAppReason",
@@ -72,14 +72,14 @@ class ReleaseModuleSerializer(serializers.ModelSerializer):
             return 0
         return 1
 
-    def get_icon_path(self, obj: ReleaseModuleStatus) -> str:
+    def get_iconPath(self, obj: ReleaseModuleStatus) -> str:
         """
         Returns the path to the icon of the module version.
         """
         icon_name = obj.module_version.icon
-        if icon_name and icon_name in ModuleIconPath.keys():
-            return ModuleIconPath.get(icon_name)
-        return ModuleIconPath["info"]
+        if not icon_name:
+            return ModuleIconPath["info"]
+        return ModuleIconPath.get(icon_name, ModuleIconPath["info"])
 
 
 class AppReleaseSerializer(serializers.ModelSerializer):
