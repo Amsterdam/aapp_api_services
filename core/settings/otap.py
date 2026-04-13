@@ -9,7 +9,10 @@ POSTGRES_PASSWORD = azure.auth.db_password
 DATABASES["default"]["PASSWORD"] = POSTGRES_PASSWORD
 DATABASES["notification"]["PASSWORD"] = POSTGRES_PASSWORD
 
-# When should use super short conn_max_age (1 second) to prevent connection build-up
+# We should use super short conn_max_age (1 second) to prevent connection build-up
+# IMPORTANT: because we redefine the default database in the notification service,
+# these settings will not be inherited, so we need to set them explicitly in the notification
+# service as well. If we forget to set these, we will have connection build-up and eventually run out of connections.
 DATABASES["default"]["CONN_MAX_AGE"] = 1
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
