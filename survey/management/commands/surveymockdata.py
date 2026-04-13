@@ -30,6 +30,13 @@ class Command(BaseCommand):
                 version=1,
                 active_from=timezone.now() - timedelta(days=1),
             )
+        survey_version_2 = survey.surveyversion_set.filter(version=2).first()
+        if not survey_version_2:
+            survey_version_2 = SurveyVersion.objects.create(
+                survey=survey,
+                version=2,
+                active_from=timezone.now() + timedelta(days=1),
+            )
 
         q1 = Question.objects.create(
             question_text="Welk rapportcijfer geeft u vandaag aan de Amsterdam App?",
@@ -119,6 +126,12 @@ class Command(BaseCommand):
             ),
             SurveyVersionQuestion(
                 survey_version=survey_version_1, question=q4, sort_order=4
+            ),
+            SurveyVersionQuestion(
+                survey_version=survey_version_2, question=q1, sort_order=1
+            ),
+            SurveyVersionQuestion(
+                survey_version=survey_version_2, question=q3, sort_order=2
             ),
         ]
         SurveyVersionQuestion.objects.bulk_create(survey_version_questions)
