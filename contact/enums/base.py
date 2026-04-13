@@ -18,7 +18,7 @@ class ChoicesEnum(Enum):
         return {item.value._asdict()["label"]: item.value._asdict() for item in cls}
 
 
-class ModuleSourceChoices(ChoicesEnum):
+class ModuleSourceChoices(Enum):
     HANDIG_IN_DE_STAD = "handig-in-de-stad"
     KONINGSDAG = "koningsdag"
 

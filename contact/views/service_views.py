@@ -20,9 +20,7 @@ from core.utils.openapi_utils import extend_schema_for_api_key
 logger = logging.getLogger(__name__)
 
 
-# temporarily lower caching to 1 minute for testing purposes, should be increased in production
-# TODO: update cache duration to 24 hours in production
-@method_decorator(cache_page(60), name="get")
+@method_decorator(cache_page(60 * 60 * 24), name="get")
 class ServiceMapsView(APIView):
     @extend_schema_for_api_key(
         success_response=ServiceMapsResponseSerializer(many=True),
