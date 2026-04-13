@@ -11,7 +11,7 @@ from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
 
 class TestServiceMapsView(ResponsesActivatedAPITestCase):
-    def test_success_get_service_maps_view(self):
+    def test_success_get_service_maps_view_no_module_source(self):
 
         url = reverse("service-maps")
         response = self.client.get(
@@ -19,8 +19,58 @@ class TestServiceMapsView(ResponsesActivatedAPITestCase):
             headers=self.api_headers,
         )
 
+        # by default, the module_source should be "handig-in-de-stad", so we should only get the services with that input_module
+        expected_services = [
+            service
+            for service in Services.choices_as_list()
+            if service["input_module"] == "handig-in-de-stad"
+        ]
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), len(Services.choices_as_list()))
+        self.assertEqual(len(response.data), len(expected_services))
+        self.assertEqual(
+            sorted(s["title"] for s in response.data),
+            sorted(s["title"] for s in expected_services),
+        )
+
+    def test_success_get_service_maps_view_handig_in_de_stad(self):
+        url = reverse("service-maps")
+        data = {"module_source": "handig-in-de-stad"}
+        response = self.client.get(
+            url,
+            data,
+            headers=self.api_headers,
+        )
+
+        expected_services = [
+            service
+            for service in Services.choices_as_list()
+            if service["input_module"] == "handig-in-de-stad"
+        ]
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), len(expected_services))
+        self.assertEqual(
+            sorted(s["title"] for s in response.data),
+            sorted(s["title"] for s in expected_services),
+        )
+
+    def test_success_get_service_maps_view_koningsdag(self):
+        url = reverse("service-maps")
+        data = {"module_source": "koningsdag"}
+        response = self.client.get(url, data, headers=self.api_headers)
+        expected_services = [
+            service
+            for service in Services.choices_as_list()
+            if service["input_module"] == "koningsdag"
+        ]
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), len(expected_services))
+        self.assertEqual(
+            sorted(s["title"] for s in response.data),
+            sorted(s["title"] for s in expected_services),
+        )
 
 
 class TestServiceMapView(ResponsesActivatedAPITestCase):

@@ -148,6 +148,14 @@ def build_map_response_serializer(
     return DynamicMapResponseSerializer
 
 
+class ServiceMapsRequestSerializer(serializers.Serializer):
+    module_source = serializers.ChoiceField(
+        choices=["handig-in-de-stad", "koningsdag"],
+        default="handig-in-de-stad",
+        help_text="Filter services based on their input module. Default is 'handig-in-de-stad'.",
+    )
+
+
 class ServiceMapsResponseSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField()

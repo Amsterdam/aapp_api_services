@@ -5,14 +5,33 @@ from contact.services.toilets import ToiletService
 
 
 class Services(ChoicesEnum):
-    TOILET = ServiceClass(
+    SERVICES_TOILET = ServiceClass(
         id=1,
         title="Openbare toiletten",
         icon=IconPath.get("toilet"),
         dataservice=ToiletService,
+        input_module="handig-in-de-stad",
     )
-    TAP = ServiceClass(
-        id=2, title="Drinkwater", icon=IconPath.get("tap"), dataservice=TapService
+    SERVICES_TAP = ServiceClass(
+        id=2,
+        title="Drinkwater",
+        icon=IconPath.get("tap"),
+        dataservice=TapService,
+        input_module="handig-in-de-stad",
+    )
+    KINGSDAY_LAND = ServiceClass(
+        id=3,
+        title="Ter land",
+        icon=IconPath.get("info"),
+        dataservice=None,
+        input_module="koningsdag",
+    )
+    KINGSDAY_WATER = ServiceClass(
+        id=4,
+        title="Te water",
+        icon=IconPath.get("info"),
+        dataservice=None,
+        input_module="koningsdag",
     )
 
     @classmethod

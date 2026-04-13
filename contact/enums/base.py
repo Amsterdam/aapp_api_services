@@ -7,6 +7,8 @@ property_types = Literal[
     "address", "boolean", "image", "price", "string", "malfunction"
 ]
 
+module_input = Literal["handig-in-de-stad", "koningsdag"]
+
 
 class ChoicesEnum(Enum):
     @classmethod
@@ -22,6 +24,7 @@ class ServiceClass(NamedTuple):
     id: int
     title: str
     icon: str
+    input_module: module_input
     dataservice: Optional[Callable] = None
 
 
