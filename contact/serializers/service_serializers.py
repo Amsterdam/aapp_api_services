@@ -3,6 +3,7 @@ from typing import Any, Dict
 from rest_framework import serializers
 
 from contact.enums.base import ChoicesEnum, ModuleSourceChoices, SerializerMapping
+from core.serializers.address_serializers import AddressSerializer
 
 
 class PropertySerializers(ChoicesEnum):
@@ -25,6 +26,10 @@ class PropertySerializers(ChoicesEnum):
     STRING = SerializerMapping(
         type="string",
         serializer=serializers.CharField,
+    )
+    ADDRESS = SerializerMapping(
+        type="address",
+        serializer=AddressSerializer,
     )
 
 
