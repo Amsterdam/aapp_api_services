@@ -37,14 +37,13 @@ class ReleaseDetailView(generics.RetrieveAPIView):
 
     def get_object(self):
         version = self.kwargs.get(self.lookup_url_kwarg)
-        queryset = self.get_queryset()
         if version == "latest":
-            releases = queryset.all()
+            releases = AppRelease.objects.all()
             if not releases:
                 raise ReleaseNotFoundException
             version = VersionQueries.get_highest_version([x.version for x in releases])
 
-        release = queryset.filter(version=version).first()
+        release = AppRelease.objects.filter(version=version).first()
         if release is None:
             raise ReleaseNotFoundException(
                 f"Release version '{version}' does not exist."
