@@ -27,7 +27,7 @@ class ServiceClass(NamedTuple):
     id: int
     title: str
     icon: str
-    input_module: ModuleSourceChoices
+    input_module: str
     dataservice: Optional[Callable] = None
 
 
