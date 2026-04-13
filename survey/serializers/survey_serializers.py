@@ -100,8 +100,38 @@ class SurveyVersionEntrySerializer(serializers.ModelSerializer):
         return entry
 
 
-class SurveyVersionEntryListSerializer(serializers.ModelSerializer):
+class SurveyVersionEntryListRequestSerializer(serializers.Serializer):
+    survey_version = serializers.IntegerField(
+        required=False, help_text="Filter by survey version."
+    )
+    survey_unique_code = serializers.CharField(
+        required=False, help_text="Filter by Survey unique_code."
+    )
+    sort_by = serializers.ChoiceField(
+        choices=[
+            "created_at",
+            "entry_point",
+            "id",
+            "survey_version",
+        ],
+        required=False,
+        help_text="Sort results by one of: created_at, entry_point, id, or survey_version.",
+    )
+    sort_order = serializers.ChoiceField(
+        choices=["asc", "desc"],
+        required=False,
+        default="asc",
+        help_text="Sort order: asc or desc. Default is asc.",
+    )
+
+
+class SurveyVersionEntryListResponseSerializer(serializers.ModelSerializer):
     answers = AnswerSerializer(many=True)
+    survey_version = serializers.IntegerField(
+        source="survey_version.version",
+        read_only=True,
+        help_text="Survey version number.",
+    )
     survey_unique_code = serializers.SerializerMethodField()
 
     class Meta:

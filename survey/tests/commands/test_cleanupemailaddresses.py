@@ -9,10 +9,9 @@ from survey.named_tuples import QuestionType
 
 class TestCommand(ResponsesActivatedAPITestCase):
     def setUp(self):
-
         with freezegun.freeze_time("2024-06-01 12:00:00"):
             call_command("surveymockdata")
-            survey_version = SurveyVersion.objects.first()
+            survey_version = SurveyVersion.objects.filter(version=1).first()
             email_question = survey_version.questions.filter(
                 question_type=QuestionType.EMAIL.value
             ).first()
