@@ -114,6 +114,12 @@ class Command(BaseCommand):
         ]
         Choice.objects.bulk_create(choices)
 
+        q5 = Question.objects.create(
+            question_text="Wat is uw e-mailadres?",
+            question_type=QuestionType.EMAIL.value,
+            required=False,
+        )
+
         survey_version_questions = [
             SurveyVersionQuestion(
                 survey_version=survey_version_1, question=q1, sort_order=1
@@ -126,6 +132,9 @@ class Command(BaseCommand):
             ),
             SurveyVersionQuestion(
                 survey_version=survey_version_1, question=q4, sort_order=4
+            ),
+            SurveyVersionQuestion(
+                survey_version=survey_version_1, question=q5, sort_order=5
             ),
             SurveyVersionQuestion(
                 survey_version=survey_version_2, question=q1, sort_order=1
