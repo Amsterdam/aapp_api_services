@@ -7,8 +7,6 @@ property_types = Literal[
     "address", "boolean", "image", "price", "string", "malfunction"
 ]
 
-module_input = Literal["handig-in-de-stad", "koningsdag"]
-
 
 class ChoicesEnum(Enum):
     @classmethod
@@ -20,11 +18,16 @@ class ChoicesEnum(Enum):
         return {item.value._asdict()["label"]: item.value._asdict() for item in cls}
 
 
+class ModuleSourceChoices(ChoicesEnum):
+    HANDIG_IN_DE_STAD = "handig-in-de-stad"
+    KONINGSDAG = "koningsdag"
+
+
 class ServiceClass(NamedTuple):
     id: int
     title: str
     icon: str
-    input_module: module_input
+    input_module: ModuleSourceChoices
     dataservice: Optional[Callable] = None
 
 

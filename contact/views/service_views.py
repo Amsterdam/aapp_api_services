@@ -20,14 +20,18 @@ from core.utils.openapi_utils import extend_schema_for_api_key
 logger = logging.getLogger(__name__)
 
 
-# @method_decorator(cache_page(60), name="get")
+# temporarily lower caching to 1 minute for testing purposes, should be increased in production
+# TODO: update cache duration to 24 hours in production
+@method_decorator(cache_page(60), name="get")
 class ServiceMapsView(APIView):
     @extend_schema_for_api_key(
         success_response=ServiceMapsResponseSerializer(many=True),
         additional_params=[ServiceMapsRequestSerializer],
     )
     def get(self, request, *args, **kwargs):
-        module_source = request.query_params.get("module_source", "handig-in-de-stad")
+        serializer = ServiceMapsRequestSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        module_source = serializer.validated_data["module_source"]
         services = Services.choices_as_list()
 
         # filter services on module_source

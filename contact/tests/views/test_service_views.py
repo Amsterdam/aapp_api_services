@@ -72,6 +72,13 @@ class TestServiceMapsView(ResponsesActivatedAPITestCase):
             sorted(s["title"] for s in expected_services),
         )
 
+    def test_success_get_service_maps_view_invalid(self):
+        url = reverse("service-maps")
+        data = {"module_source": "invalid_module"}
+        response = self.client.get(url, data, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 class TestServiceMapView(ResponsesActivatedAPITestCase):
     def test_success_get_service_map_view_toilets(self):

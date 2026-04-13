@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from rest_framework import serializers
 
-from contact.enums.base import ChoicesEnum, SerializerMapping
+from contact.enums.base import ChoicesEnum, ModuleSourceChoices, SerializerMapping
 
 
 class PropertySerializers(ChoicesEnum):
@@ -150,8 +150,8 @@ def build_map_response_serializer(
 
 class ServiceMapsRequestSerializer(serializers.Serializer):
     module_source = serializers.ChoiceField(
-        choices=["handig-in-de-stad", "koningsdag"],
-        default="handig-in-de-stad",
+        choices=[choice.value for choice in ModuleSourceChoices],
+        default=ModuleSourceChoices.HANDIG_IN_DE_STAD.value,
         help_text="Filter services based on their input module. Default is 'handig-in-de-stad'.",
     )
 
