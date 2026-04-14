@@ -13,7 +13,7 @@ class KingsdayWaterData(ChoicesEnum):
     BOATING_BAN = DataLayer(label="Invaarverbod", code=44258, icon_label="boating_ban")
     BLOCK = DataLayer(label="Afsluiting", code=44255, icon_label="boat_block")
     RECYCLE_BOAT = DataLayer(label="Afvalboot", code=44264, icon_label="recycle_boat")
-    # DIRECTION = DataLayer(label="Vaarrichting", code=44261, icon_label="boat_direction")
+    DIRECTION = DataLayer(label="Vaarrichting", code=44261, icon_label="boat_direction")
 
 
 class KingsdayWaterFilters(ChoicesEnum):
@@ -30,9 +30,9 @@ class KingsdayWaterLayers(ChoicesEnum):
     RECYCLE_BOAT = FilterClass(
         label="Afvalboot", filter_key="aapp_subtitle", filter_value="Afvalboot"
     )
-    # DIRECTION = FilterClass(
-    #     label="Vaarrichting", filter_key="aapp_subtitle", filter_value="Vaarrichting"
-    # )
+    DIRECTION = FilterClass(
+        label="Vaarrichting", filter_key="aapp_subtitle", filter_value="Vaarrichting"
+    )
 
 
 class KingsdayWaterProperties(ChoicesEnum):
@@ -71,16 +71,16 @@ class KingsdayWaterIcons(ChoicesEnum):
     )
     RECYCLE_BOAT = IconClass(
         label="recycle_boat",
-        path=IconPath["tap-tap-marker"],
-        circle_color="#00FF00",
+        path=IconPath["kingsday-recycle"],
+        circle_color="#00A03C",
         path_color="#FFFFFF",
     )
-    # DIRECTION = IconClass(
-    #     label="boat_direction",
-    #     path=IconPath["tap-tap-marker"],
-    #     circle_color="#0000FF",
-    #     path_color="#FFFFFF",
-    # )
+    DIRECTION = IconClass(
+        label="boat_direction",
+        path=IconPath["tap-tap-marker"],
+        circle_color="#0000FF",
+        path_color="#FFFFFF",
+    )
 
 
 LIST_PROPERTY = ListPropertyClass(key="aapp_subtitle", type="string")

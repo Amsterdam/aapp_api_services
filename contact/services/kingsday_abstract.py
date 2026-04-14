@@ -148,8 +148,6 @@ class KingsdayAbstractService(ServiceAbstract):
                 and len(geom["coordinates"][0]) > 0
             ):
                 coords = geom["coordinates"][0][0]
-                geom["coordinates"] = coords
-                geom["type"] = "Point"
             else:
                 logger.error("Polygon geometry does not contain valid coordinates.")
 

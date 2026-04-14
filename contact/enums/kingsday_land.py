@@ -83,38 +83,38 @@ class KingsdayLandProperties(ChoicesEnum):
 class KingsdayLandIcons(ChoicesEnum):
     EVENT = IconClass(
         label="event",
-        path=IconPath["tap-tap-marker"],
+        path=IconPath["kingsday-event"],
         circle_color="#FF9100",
         path_color="#181818",
     )
     FIRST_AID = IconClass(
         label="first_aid",
-        path=IconPath["tap-fountain-marker"],
-        circle_color="#009DE6",
+        path=IconPath["kingsday-first-aid"],
+        circle_color="#EC0000",
         path_color="#FFFFFF",
     )
     RECYCLE_DROP_OFF = IconClass(
         label="recycle_drop_off",
-        path=IconPath["tap-malfunction-marker"],
-        circle_color="#767676",
+        path=IconPath["kingsday-recycle"],
+        circle_color="#00A03C",
         path_color="#FFFFFF",
     )
     TOILET = IconClass(
         label="toilet",
-        path=IconPath["tap-fountain-marker"],
-        circle_color="#DC2BA4",
-        path_color="#FFFFFF",
+        path=IconPath["toilet"],
+        circle_color="#FFE600",
+        path_color="#181818",
     )
     DETOUR = IconClass(
         label="detour",
-        path=IconPath["tap-fountain-marker"],
-        circle_color="#F8760B",
+        path=IconPath["kingsday-detour"],
+        circle_color="#A00078",
         path_color="#FFFFFF",
     )
     CLOSED_PARKING_LOT = IconClass(
         label="closed_parking_lot",
-        path=IconPath["tap-fountain-marker"],
-        circle_color="#E60000",
+        path=IconPath["kingsday-parking-lot"],
+        circle_color="#E50082",
         path_color="#FFFFFF",
     )
 
