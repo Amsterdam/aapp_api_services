@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from contact.enums.services import Services
 from contact.serializers.service_serializers import (
     ServiceMapResponseSerializer,
+    ServiceMapsRequestSerializer,
     ServiceMapsResponseSerializer,
     build_map_response_serializer,
 )
@@ -23,10 +24,19 @@ logger = logging.getLogger(__name__)
 class ServiceMapsView(APIView):
     @extend_schema_for_api_key(
         success_response=ServiceMapsResponseSerializer(many=True),
+        additional_params=[ServiceMapsRequestSerializer],
     )
     def get(self, request, *args, **kwargs):
-
+        serializer = ServiceMapsRequestSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        module_source = serializer.validated_data["module_source"]
         services = Services.choices_as_list()
+
+        # filter services on module_source
+        services = [
+            service for service in services if service["input_module"] == module_source
+        ]
+
         response_serializer = ServiceMapsResponseSerializer(services, many=True)
         return Response(response_serializer.data)
 
