@@ -1,6 +1,7 @@
 from contact.enums.base import ChoicesEnum, ModuleSourceChoices, ServiceClass
 from contact.icons import IconPath
 from contact.services.kingsday_land import KingsdayLandService
+from contact.services.kingsday_water import KingsdayWaterService
 from contact.services.taps import TapService
 from contact.services.toilets import ToiletService
 
@@ -31,7 +32,7 @@ class Services(ChoicesEnum):
         id=4,
         title="Te water",
         icon=IconPath.get("info"),
-        dataservice=None,
+        dataservice=KingsdayWaterService,
         input_module=ModuleSourceChoices.KONINGSDAG.value,
     )
 

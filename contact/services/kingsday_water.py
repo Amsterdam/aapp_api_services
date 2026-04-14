@@ -4,12 +4,12 @@ from typing import Any, Dict
 
 from django.conf import settings
 
-from contact.enums.kingsday_land import (
-    KingsdayLandData,
-    KingsdayLandFilters,
-    KingsdayLandIcons,
-    KingsdayLandLayers,
-    KingsdayLandProperties,
+from contact.enums.kingsday_water import (
+    KingsdayWaterData,
+    KingsdayWaterFilters,
+    KingsdayWaterIcons,
+    KingsdayWaterLayers,
+    KingsdayWaterProperties,
 )
 from contact.services.service_abstract import ServiceAbstract
 
@@ -25,18 +25,18 @@ def cleanhtml(raw_html: str) -> str:
     return cleantext
 
 
-class KingsdayLandService(ServiceAbstract):
+class KingsdayWaterService(ServiceAbstract):
     data_url = settings.KINGSDAY_URL
 
     def __init__(self) -> None:
         super().__init__()
-        self.data_layers = KingsdayLandData.choices_as_list()
+        self.data_layers = KingsdayWaterData.choices_as_list()
 
     def get_full_data(self) -> Dict[str, Any]:
 
         base_url = self.data_url
 
-        full_kingsday_land_data = []
+        full_kingsday_water_data = []
         id_counter = 1
 
         for layer in self.data_layers:
@@ -58,15 +58,15 @@ class KingsdayLandService(ServiceAbstract):
                 item["id"] = id_counter
                 id_counter += 1
 
-            full_kingsday_land_data.extend(data)
+            full_kingsday_water_data.extend(data)
 
         full_data = self.build_response_payload(
-            full_kingsday_land_data,
-            KingsdayLandFilters,
-            KingsdayLandLayers,
-            KingsdayLandProperties,
+            full_kingsday_water_data,
+            KingsdayWaterFilters,
+            KingsdayWaterLayers,
+            KingsdayWaterProperties,
             list_property=None,
-            icons=KingsdayLandIcons,
+            icons=KingsdayWaterIcons,
         )
 
         return full_data

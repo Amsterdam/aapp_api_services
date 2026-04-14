@@ -1,0 +1,309 @@
+MOCK_DATA = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.88943159,
+          52.37965592
+        ]
+      },
+      "properties": {
+        "id": "12641030",
+        "title": "Brouwersgracht",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "Brouwersgracht",
+        "street_number": "63",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.88298718,
+          52.38373944
+        ]
+      },
+      "properties": {
+        "id": "12641033",
+        "title": "Brouwersgracht/Bullebak brug",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "Brouwersgracht",
+        "street_number": "302",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.89237232,
+          52.37935368
+        ]
+      },
+      "properties": {
+        "id": "12641036",
+        "title": "Brouwersgracht",
+        "description": "Flexibele stremming/verkeersaanwijzing mogelijk",
+        "street": "Brouwersgracht",
+        "street_number": "54",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.89579751,
+          52.36183292
+        ]
+      },
+      "properties": {
+        "id": "12641039",
+        "title": "Reguliersgracht",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "Reguliersgracht",
+        "street_number": "92",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.8955763,
+          52.36457326
+        ]
+      },
+      "properties": {
+        "id": "12641042",
+        "title": "Reguliersgracht",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "Reguliersgracht",
+        "street_number": "2",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.87603095,
+          52.37366618
+        ]
+      },
+      "properties": {
+        "id": "12641045",
+        "title": "Bullebaksluis",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "Marnixstraat",
+        "street_number": "148",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.87659313,
+          52.37055859
+        ]
+      },
+      "properties": {
+        "id": "12641048",
+        "title": "Doorvaart PQ",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "Marnixstraat",
+        "street_number": "244",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.88567283,
+          52.3756675
+        ]
+      },
+      "properties": {
+        "id": "12641051",
+        "title": "leliegracht",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "leliegracht",
+        "street_number": "38",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.88622254,
+          52.37507643
+        ]
+      },
+      "properties": {
+        "id": "12641054",
+        "title": "leliegracht",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "leliegracht",
+        "street_number": "27",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.90114604,
+          52.36408395
+        ]
+      },
+      "properties": {
+        "id": "12641057",
+        "title": "keizersgracht",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "keizersgracht",
+        "street_number": "826",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.88709305,
+          52.36823168
+        ]
+      },
+      "properties": {
+        "id": "12641060",
+        "title": "Beulingsloot",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "herengracht ",
+        "street_number": "395",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.89003841,
+          52.37662063
+        ]
+      },
+      "properties": {
+        "id": "12641063",
+        "title": "Blauwburgwal",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "herengracht ",
+        "street_number": "107",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.88767714,
+          52.35939022
+        ]
+      },
+      "properties": {
+        "id": "12641066",
+        "title": "weteringsluis",
+        "description": "Vaarweg ter plaatse gestremd",
+        "street": "Stadhouderskade",
+        "street_number": "46",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.88468849,
+          52.36663067
+        ]
+      },
+      "properties": {
+        "id": "12641069",
+        "title": "Keizersgracht",
+        "description": "Flexibele stremming/verkeersaanwijzing mogelijk",
+        "street": "Keizersgracht",
+        "street_number": "464",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.8812472,
+          52.36583408
+        ]
+      },
+      "properties": {
+        "id": "12641072",
+        "title": "Leidsegracht",
+        "description": "Flexibele stremming",
+        "street": "leidsegracht",
+        "street_number": "1",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.88338825,
+          52.36605892
+        ]
+      },
+      "properties": {
+        "id": "12641075",
+        "title": "Prinsengracht",
+        "description": "Flexibele stremming/verkeersaanwijzing mogelijk",
+        "street": "Prinsengracht",
+        "street_number": "669",
+        "city": "Amsterdam",
+        "meta": []
+      }
+    }
+  ]
+}

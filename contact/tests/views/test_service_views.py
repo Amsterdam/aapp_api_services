@@ -11,10 +11,13 @@ from contact.enums.taps import TapFilters, TapProperties
 from contact.enums.toilets import ToiletFilters, ToiletProperties
 from contact.tests.mock_data import taps, toilets
 from contact.tests.mock_data.kingsday import (
+    boat_block,
+    boating_ban,
     closed_parking_lot,
     detour,
     events,
     first_aid,
+    recycle_boat,
     recycle_drop_off,
     toilet,
 )
@@ -244,6 +247,84 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         responses.get(url, json=closed_parking_lot.MOCK_DATA)
 
         url = reverse("service-map", kwargs={"service_id": 3})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    @patch(
+        "contact.services.kingsday_water.KingsdayWaterData.choices_as_list",
+        return_value=[
+            {
+                "label": "Invaarverbod",
+                "code": 7,
+                "icon_label": "boating_ban",
+            }
+        ],
+    )
+    def test_success_get_service_map_view_kingsday_water_boating_ban(
+        self, mock_data_layers
+    ):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}7.json"
+        responses.get(url, json=boating_ban.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 4})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    @patch(
+        "contact.services.kingsday_water.KingsdayWaterData.choices_as_list",
+        return_value=[
+            {
+                "label": "Afsluiting",
+                "code": 8,
+                "icon_label": "boat_block",
+            }
+        ],
+    )
+    def test_success_get_service_map_view_kingsday_water_boat_block(
+        self, mock_data_layers
+    ):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}8.json"
+        responses.get(url, json=boat_block.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 4})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    @patch(
+        "contact.services.kingsday_water.KingsdayWaterData.choices_as_list",
+        return_value=[
+            {
+                "label": "Afvalboot",
+                "code": 9,
+                "icon_label": "recycle_boat",
+            }
+        ],
+    )
+    def test_success_get_service_map_view_kingsday_water_recycle_boat(
+        self, mock_data_layers
+    ):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}9.json"
+        responses.get(url, json=recycle_boat.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 4})
         response = self.client.get(
             url,
             headers=self.api_headers,
