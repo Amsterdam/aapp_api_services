@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 CLEANR = re.compile("<.*?>")
 
 
-def cleanhtml(raw_html):
+def cleanhtml(raw_html: str) -> str:
     cleantext = re.sub(CLEANR, "", raw_html)
     return cleantext
 

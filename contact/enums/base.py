@@ -18,7 +18,7 @@ class ChoicesEnum(Enum):
         return {item.value._asdict()["label"]: item.value._asdict() for item in cls}
 
 
-class ModuleSourceChoices(ChoicesEnum):
+class ModuleSourceChoices(Enum):
     HANDIG_IN_DE_STAD = "handig-in-de-stad"
     KONINGSDAG = "koningsdag"
 
@@ -27,7 +27,7 @@ class ServiceClass(NamedTuple):
     id: int
     title: str
     icon: str
-    input_module: ModuleSourceChoices
+    input_module: str
     dataservice: Optional[Callable] = None
 
 
