@@ -3,6 +3,7 @@ from contact.enums.base import (
     DataLayer,
     FilterClass,
     IconClass,
+    ListPropertyClass,
     PropertiesClass,
 )
 from contact.icons import IconPath
@@ -116,3 +117,6 @@ class KingsdayLandIcons(ChoicesEnum):
         circle_color="#009DE6",
         path_color="#FFFFFF",
     )
+
+
+LIST_PROPERTY = ListPropertyClass(key="aapp_subtitle", type="string")

@@ -254,7 +254,6 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-
     @patch(
         "contact.services.kingsday_water.KingsdayWaterData.choices_as_list",
         return_value=[
@@ -280,7 +279,6 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-
     @patch(
         "contact.services.kingsday_water.KingsdayWaterData.choices_as_list",
         return_value=[
@@ -305,7 +303,6 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
 
     @patch(
         "contact.services.kingsday_water.KingsdayWaterData.choices_as_list",

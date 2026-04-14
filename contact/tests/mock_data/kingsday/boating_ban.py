@@ -1,591 +1,405 @@
 MOCK_DATA = {
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.88798433,
-          52.38111358
-        ]
-      },
-      "properties": {
-        "id": "12641078",
-        "title": "Brouwersgracht",
-        "description": "Invaarverbod",
-        "street": "Brouwersgracht",
-        "street_number": "1",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.8885153,
-          52.38016437
-        ]
-      },
-      "properties": {
-        "id": "12641081",
-        "title": "Brouwersgracht",
-        "description": "Invaarverbod",
-        "street": "Brouwersgracht",
-        "street_number": "101",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.88491401,
-          52.38815484
-        ]
-      },
-      "properties": {
-        "id": "12641084",
-        "title": "Zoutkeetsgracht",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "street": "Korte Zoutkeetsgracht",
-        "street_number": "10",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.8933304,
-          52.38334319
-        ]
-      },
-      "properties": {
-        "id": "12641087",
-        "title": "Westerdoksluis",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "street": "Westerdoksdijk",
-        "street_number": "2",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.91978668,
-          52.36648685
-        ]
-      },
-      "properties": {
-        "id": "12641090",
-        "title": "Westertoegang",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.87659313,
-          52.37055859
-        ]
-      },
-      "properties": {
-        "id": "12641093",
-        "title": "Doorvaart PQ",
-        "description": "Invaarverbod",
-        "street": "Marnixstraat",
-        "street_number": "244",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.86800905,
-          52.37166373
-        ]
-      },
-      "properties": {
-        "id": "12641096",
-        "title": "Hugo de Grootgracht",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "street": "Bilderdijkpark",
-        "street_number": "18",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.86713047,
-          52.37145316
-        ]
-      },
-      "properties": {
-        "id": "12641099",
-        "title": "Bilderdijkgracht",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "street": "Bilderdijkkade",
-        "street_number": "2",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.85780924,
-          52.36134558
-        ]
-      },
-      "properties": {
-        "id": "12641102",
-        "title": "Jacob van Lennepkanaal",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "street": "Jacob van Lennepkade",
-        "street_number": "313",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.818551,
-          52.32565123
-        ]
-      },
-      "properties": {
-        "id": "12641105",
-        "title": "Stadiongracht",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "street": "Piet Kranenburgpad",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.91229572,
-          52.34692746
-        ]
-      },
-      "properties": {
-        "id": "12641108",
-        "title": "Amstel",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "street": "Amsteldijk",
-        "street_number": "809",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.95408625,
-          52.36769213
-        ]
-      },
-      "properties": {
-        "id": "12641111",
-        "title": "Nieuwe Vaart",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "street": "Amsterdam Rijnkanaalkade",
-        "street_number": "1",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.91160454,
-          52.37729341
-        ]
-      },
-      "properties": {
-        "id": "12641114",
-        "title": "Oosterdoksdoorgang",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "street": "Piet Heinkade",
-        "street_number": "2",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.93891556,
-          52.3705064
-        ]
-      },
-      "properties": {
-        "id": "12641117",
-        "title": "Entrepothaven",
-        "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
-        "street": "Borneokade",
-        "street_number": "101",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.90206627,
-          52.37659862
-        ]
-      },
-      "properties": {
-        "id": "12641120",
-        "title": "Oudezijdskolk",
-        "description": "Invaarverbod",
-        "street": "Prins Hendrikkade",
-        "street_number": "93",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.90228841,
-          52.37642876
-        ]
-      },
-      "properties": {
-        "id": "12641123",
-        "title": "Geldersekade",
-        "description": "Invaarverbod",
-        "street": "Prins Hendrikkade",
-        "street_number": "95",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.90561562,
-          52.3729641
-        ]
-      },
-      "properties": {
-        "id": "12641126",
-        "title": "Waalseilandsgracht",
-        "description": "Invaarverbod",
-        "street": "Binnenkant",
-        "street_number": "1A",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.90714372,
-          52.37288043
-        ]
-      },
-      "properties": {
-        "id": "12641129",
-        "title": "Oudeschans",
-        "description": "Invaarverbod",
-        "street": "Kalkmarkt",
-        "street_number": "1",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.90168482,
-          52.36985628
-        ]
-      },
-      "properties": {
-        "id": "12641132",
-        "title": "Zwanenburgwal",
-        "description": "Invaarverbod",
-        "street": "Jodenbreestraat",
-        "street_number": "1",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.9030735,
-          52.36639271
-        ]
-      },
-      "properties": {
-        "id": "12641135",
-        "title": "Nieuwe Herengracht",
-        "description": "Invaarverbod",
-        "street": "Nieuwe Herengracht",
-        "street_number": "1",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.90181996,
-          52.36287338
-        ]
-      },
-      "properties": {
-        "id": "12641138",
-        "title": "Prinsengracht",
-        "description": "Invaarverbod",
-        "street": "Amstel",
-        "street_number": "284",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.89568998,
-          52.36308455
-        ]
-      },
-      "properties": {
-        "id": "12641141",
-        "title": "Reguliersgracht",
-        "description": "Invaarverbod",
-        "street": "Reguliersgracht",
-        "street_number": "40",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.8908492,
-          52.37634541
-        ]
-      },
-      "properties": {
-        "id": "12641144",
-        "title": "Singel",
-        "description": "Invaarverbod",
-        "street": "Singel",
-        "street_number": "110",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.89487095,
-          52.37998911
-        ]
-      },
-      "properties": {
-        "id": "12641147",
-        "title": "Singel/haarlemmersluis",
-        "description": "Invaarverbod",
-        "street": "Droogbak",
-        "street_number": "1Z",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.88667951,
-          52.37495274
-        ]
-      },
-      "properties": {
-        "id": "12641150",
-        "title": "Leliegracht",
-        "description": "Invaarverbod",
-        "street": "leliegracht",
-        "street_number": "2",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.88446827,
-          52.37569834
-        ]
-      },
-      "properties": {
-        "id": "12641153",
-        "title": "Leliegracht",
-        "description": "Invaarverbod",
-        "street": "leliegracht",
-        "street_number": "51",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.89565976,
-          52.36366584
-        ]
-      },
-      "properties": {
-        "id": "12641156",
-        "title": "Reguliersgracht",
-        "description": "Invaarverbod",
-        "street": "Reguliersgracht",
-        "street_number": "38",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.9035848,
-          52.35854852
-        ]
-      },
-      "properties": {
-        "id": "12641159",
-        "title": "Singelgracht",
-        "description": "Invaarverbod muv rondvaart",
-        "street": "Stadhouderskade",
-        "street_number": "160",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.89583284,
-          52.3612938
-        ]
-      },
-      "properties": {
-        "id": "12641162",
-        "title": "Reguliersgracht",
-        "description": "Invaarverbod",
-        "street": "reguliersgracht",
-        "street_number": "94",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.88701512,
-          52.36221133
-        ]
-      },
-      "properties": {
-        "id": "12641165",
-        "title": "Spiegelgracht",
-        "description": "Invaarverbod",
-        "street": "spiegelgracht",
-        "street_number": "1",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.87982855,
-          52.36535166
-        ]
-      },
-      "properties": {
-        "id": "12641168",
-        "title": "Leidsegracht",
-        "description": "Invaarverbod",
-        "street": "leidsekade",
-        "street_number": "71",
-        "city": "Amsterdam",
-        "meta": []
-      }
-    }
-  ]
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.88798433, 52.38111358]},
+            "properties": {
+                "id": "12641078",
+                "title": "Brouwersgracht",
+                "description": "Invaarverbod",
+                "street": "Brouwersgracht",
+                "street_number": "1",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.8885153, 52.38016437]},
+            "properties": {
+                "id": "12641081",
+                "title": "Brouwersgracht",
+                "description": "Invaarverbod",
+                "street": "Brouwersgracht",
+                "street_number": "101",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.88491401, 52.38815484]},
+            "properties": {
+                "id": "12641084",
+                "title": "Zoutkeetsgracht",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Korte Zoutkeetsgracht",
+                "street_number": "10",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.8933304, 52.38334319]},
+            "properties": {
+                "id": "12641087",
+                "title": "Westerdoksluis",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Westerdoksdijk",
+                "street_number": "2",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.91978668, 52.36648685]},
+            "properties": {
+                "id": "12641090",
+                "title": "Westertoegang",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.87659313, 52.37055859]},
+            "properties": {
+                "id": "12641093",
+                "title": "Doorvaart PQ",
+                "description": "Invaarverbod",
+                "street": "Marnixstraat",
+                "street_number": "244",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.86800905, 52.37166373]},
+            "properties": {
+                "id": "12641096",
+                "title": "Hugo de Grootgracht",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Bilderdijkpark",
+                "street_number": "18",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.86713047, 52.37145316]},
+            "properties": {
+                "id": "12641099",
+                "title": "Bilderdijkgracht",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Bilderdijkkade",
+                "street_number": "2",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.85780924, 52.36134558]},
+            "properties": {
+                "id": "12641102",
+                "title": "Jacob van Lennepkanaal",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Jacob van Lennepkade",
+                "street_number": "313",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.818551, 52.32565123]},
+            "properties": {
+                "id": "12641105",
+                "title": "Stadiongracht",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Piet Kranenburgpad",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.91229572, 52.34692746]},
+            "properties": {
+                "id": "12641108",
+                "title": "Amstel",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Amsteldijk",
+                "street_number": "809",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.95408625, 52.36769213]},
+            "properties": {
+                "id": "12641111",
+                "title": "Nieuwe Vaart",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Amsterdam Rijnkanaalkade",
+                "street_number": "1",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.91160454, 52.37729341]},
+            "properties": {
+                "id": "12641114",
+                "title": "Oosterdoksdoorgang",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Piet Heinkade",
+                "street_number": "2",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.93891556, 52.3705064]},
+            "properties": {
+                "id": "12641117",
+                "title": "Entrepothaven",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Borneokade",
+                "street_number": "101",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.90206627, 52.37659862]},
+            "properties": {
+                "id": "12641120",
+                "title": "Oudezijdskolk",
+                "description": "Invaarverbod",
+                "street": "Prins Hendrikkade",
+                "street_number": "93",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.90228841, 52.37642876]},
+            "properties": {
+                "id": "12641123",
+                "title": "Geldersekade",
+                "description": "Invaarverbod",
+                "street": "Prins Hendrikkade",
+                "street_number": "95",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.90561562, 52.3729641]},
+            "properties": {
+                "id": "12641126",
+                "title": "Waalseilandsgracht",
+                "description": "Invaarverbod",
+                "street": "Binnenkant",
+                "street_number": "1A",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.90714372, 52.37288043]},
+            "properties": {
+                "id": "12641129",
+                "title": "Oudeschans",
+                "description": "Invaarverbod",
+                "street": "Kalkmarkt",
+                "street_number": "1",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.90168482, 52.36985628]},
+            "properties": {
+                "id": "12641132",
+                "title": "Zwanenburgwal",
+                "description": "Invaarverbod",
+                "street": "Jodenbreestraat",
+                "street_number": "1",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.9030735, 52.36639271]},
+            "properties": {
+                "id": "12641135",
+                "title": "Nieuwe Herengracht",
+                "description": "Invaarverbod",
+                "street": "Nieuwe Herengracht",
+                "street_number": "1",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.90181996, 52.36287338]},
+            "properties": {
+                "id": "12641138",
+                "title": "Prinsengracht",
+                "description": "Invaarverbod",
+                "street": "Amstel",
+                "street_number": "284",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.89568998, 52.36308455]},
+            "properties": {
+                "id": "12641141",
+                "title": "Reguliersgracht",
+                "description": "Invaarverbod",
+                "street": "Reguliersgracht",
+                "street_number": "40",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.8908492, 52.37634541]},
+            "properties": {
+                "id": "12641144",
+                "title": "Singel",
+                "description": "Invaarverbod",
+                "street": "Singel",
+                "street_number": "110",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.89487095, 52.37998911]},
+            "properties": {
+                "id": "12641147",
+                "title": "Singel/haarlemmersluis",
+                "description": "Invaarverbod",
+                "street": "Droogbak",
+                "street_number": "1Z",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.88667951, 52.37495274]},
+            "properties": {
+                "id": "12641150",
+                "title": "Leliegracht",
+                "description": "Invaarverbod",
+                "street": "leliegracht",
+                "street_number": "2",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.88446827, 52.37569834]},
+            "properties": {
+                "id": "12641153",
+                "title": "Leliegracht",
+                "description": "Invaarverbod",
+                "street": "leliegracht",
+                "street_number": "51",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.89565976, 52.36366584]},
+            "properties": {
+                "id": "12641156",
+                "title": "Reguliersgracht",
+                "description": "Invaarverbod",
+                "street": "Reguliersgracht",
+                "street_number": "38",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.9035848, 52.35854852]},
+            "properties": {
+                "id": "12641159",
+                "title": "Singelgracht",
+                "description": "Invaarverbod muv rondvaart",
+                "street": "Stadhouderskade",
+                "street_number": "160",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.89583284, 52.3612938]},
+            "properties": {
+                "id": "12641162",
+                "title": "Reguliersgracht",
+                "description": "Invaarverbod",
+                "street": "reguliersgracht",
+                "street_number": "94",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.88701512, 52.36221133]},
+            "properties": {
+                "id": "12641165",
+                "title": "Spiegelgracht",
+                "description": "Invaarverbod",
+                "street": "spiegelgracht",
+                "street_number": "1",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.87982855, 52.36535166]},
+            "properties": {
+                "id": "12641168",
+                "title": "Leidsegracht",
+                "description": "Invaarverbod",
+                "street": "leidsekade",
+                "street_number": "71",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+    ],
 }

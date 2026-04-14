@@ -1,4 +1,5 @@
 import responses
+from django.conf import settings
 
 from contact.enums.kingsday_land import (
     KingsdayLandFilters,
@@ -31,6 +32,21 @@ class KingsdayLandServiceTest(ResponsesActivatedAPITestCase):
             full_data["icons_to_include"], KingsdayLandIcons.choices_as_dict()
         )
         self.assertEqual(len(full_data["data"]["features"]), 2)
+
+    def test_get_full_data_does_not_mutate_data_url(self):
+        self.service.data_layers = [
+            {"label": "Evenement", "code": 1, "icon_label": "event"}
+        ]
+        url = f"{settings.KINGSDAY_URL}1.json"
+
+        responses.get(url, json=events.MOCK_DATA)
+        self.service.get_full_data()
+
+        self.assertEqual(self.service.data_url, settings.KINGSDAY_URL)
+
+        # second call should still use the base url
+        self.service.get_full_data()
+        self.assertEqual(self.service.data_url, settings.KINGSDAY_URL)
 
     def test_get_custom_properties(self):
         mock_item = events.MOCK_DATA["features"][0]
