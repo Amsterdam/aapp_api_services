@@ -53,6 +53,4 @@ TAP_URL = os.getenv(
     "https://data.rivm.nl/geo/alo/wfs?request=GetFeature&service=WFS&version=1.1.0&outputFormat=json&typeName=alo:rivm_drinkwaterkranen_actueel",
 )
 
-KINGSDAY_URL = os.getenv(
-    "KINGSDAY_URL",
-    "https://kaart.amsterdam.nl/api/layers/")
+KINGSDAY_URL = os.getenv("KINGSDAY_URL", "https://kaart.amsterdam.nl/api/layers/")

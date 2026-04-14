@@ -15,6 +15,10 @@ class ToiletFilters(ChoicesEnum):
     TOILET = FilterClass(label="Toilet", filter_key="aapp_is_toilet", filter_value=True)
 
 
+class ToiletLayers(ChoicesEnum):
+    pass
+
+
 class ToiletProperties(ChoicesEnum):
     OPEN_HOURS = PropertiesClass(
         label="Openingstijden",

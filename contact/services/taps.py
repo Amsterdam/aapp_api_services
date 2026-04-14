@@ -3,7 +3,7 @@ from typing import Any, Dict, Tuple
 
 from django.conf import settings
 
-from contact.enums.taps import TapFilters, TapIcons, TapProperties
+from contact.enums.taps import TapFilters, TapIcons, TapLayers, TapProperties
 from contact.services.service_abstract import ServiceAbstract
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,12 @@ class TapService(ServiceAbstract):
             )
 
         full_data = self.build_response_payload(
-            full_tap_data, TapFilters, TapProperties, list_property=None, icons=TapIcons
+            full_tap_data,
+            TapFilters,
+            TapLayers,
+            TapProperties,
+            list_property=None,
+            icons=TapIcons,
         )
 
         return full_data

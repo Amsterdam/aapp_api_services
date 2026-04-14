@@ -1,12 +1,23 @@
+from unittest.mock import patch
+
 import responses
 from django.conf import settings
 from django.urls import reverse
 from rest_framework import status
 
+from contact.enums.kingsday_land import KingsdayLandProperties
 from contact.enums.services import Services
 from contact.enums.taps import TapFilters, TapProperties
 from contact.enums.toilets import ToiletFilters, ToiletProperties
 from contact.tests.mock_data import taps, toilets
+from contact.tests.mock_data.kingsday import (
+    closed_parking_lot,
+    detour,
+    events,
+    first_aid,
+    recycle_drop_off,
+    toilet,
+)
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
 
@@ -115,6 +126,130 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         self.assertEqual(
             response.data["properties_to_include"], TapProperties.choices_as_list()
         )
+
+    @patch(
+        "contact.services.kingsday_land.KingsdayLandData.choices_as_list",
+        return_value=[{"label": "Evenement", "code": 1, "icon_label": "event"}],
+    )
+    def test_success_get_service_map_view_kingsday_land_events(self, mock_data_layers):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}1.json"
+        responses.get(url, json=events.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 3})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["properties_to_include"],
+            KingsdayLandProperties.choices_as_list(),
+        )
+
+    @patch(
+        "contact.services.kingsday_land.KingsdayLandData.choices_as_list",
+        return_value=[{"label": "EHBO-post", "code": 2, "icon_label": "first_aid"}],
+    )
+    def test_success_get_service_map_view_kingsday_land_first_aid(
+        self, mock_data_layers
+    ):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}2.json"
+        responses.get(url, json=first_aid.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 3})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch(
+        "contact.services.kingsday_land.KingsdayLandData.choices_as_list",
+        return_value=[
+            {
+                "label": "Inleverpunt overgebleven spullen",
+                "code": 3,
+                "icon_label": "recycle_drop_off",
+            }
+        ],
+    )
+    def test_success_get_service_map_view_kingsday_land_leftover_stuff(
+        self, mock_data_layers
+    ):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}3.json"
+        responses.get(url, json=recycle_drop_off.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 3})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch(
+        "contact.services.kingsday_land.KingsdayLandData.choices_as_list",
+        return_value=[{"label": "Toilet", "code": 4, "icon_label": "toilet"}],
+    )
+    def test_success_get_service_map_view_kingsday_land_toilet(self, mock_data_layers):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}4.json"
+        responses.get(url, json=toilet.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 3})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch(
+        "contact.services.kingsday_land.KingsdayLandData.choices_as_list",
+        return_value=[{"label": "Omleiding", "code": 5, "icon_label": "detour"}],
+    )
+    def test_success_get_service_map_view_kingsday_land_detour(self, mock_data_layers):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}5.json"
+        responses.get(url, json=detour.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 3})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch(
+        "contact.services.kingsday_land.KingsdayLandData.choices_as_list",
+        return_value=[
+            {
+                "label": "Afgesloten parkeergarage",
+                "code": 6,
+                "icon_label": "closed_parking_lot",
+            }
+        ],
+    )
+    def test_success_get_service_map_view_kingsday_land_closed_parking_lot(
+        self, mock_data_layers
+    ):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}6.json"
+        responses.get(url, json=closed_parking_lot.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 3})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_not_implemented_get_service_map_view(self):
         # Mock the response from the external API

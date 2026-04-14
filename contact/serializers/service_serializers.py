@@ -6,6 +6,13 @@ from contact.enums.base import ChoicesEnum, ModuleSourceChoices, SerializerMappi
 from core.serializers.address_serializers import AddressSerializer
 
 
+class ServiceAddressSerializer(AddressSerializer):
+    # We can be a little less strict for service addresses
+    postcode = serializers.CharField(allow_null=True, allow_blank=True)
+    number = serializers.CharField(allow_null=True, allow_blank=True)
+    street = serializers.CharField(allow_null=True, allow_blank=True)
+
+
 class PropertySerializers(ChoicesEnum):
     BOOLEAN = SerializerMapping(
         type="boolean",
@@ -29,7 +36,7 @@ class PropertySerializers(ChoicesEnum):
     )
     ADDRESS = SerializerMapping(
         type="address",
-        serializer=AddressSerializer,
+        serializer=ServiceAddressSerializer,
     )
 
 
@@ -59,6 +66,7 @@ filter_serializer_mapping = {
 def build_dynamic_properties_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
+    layers: list[Dict[str, Any]],
     list_property: Dict[str, Any] | None,
     include_icons: bool = True,
 ) -> serializers.Serializer:
@@ -89,6 +97,15 @@ def build_dynamic_properties_serializer(
             )
             fields[key] = field_class()
 
+    # Add layer fields (if not already included)
+    for layer in layers:
+        key = layer["filter_key"]
+        if key not in fields:
+            field_class = filter_serializer_mapping.get(
+                type(layer["filter_value"]).__name__, serializers.CharField
+            )
+            fields[key] = field_class()
+
     if list_property:
         key = list_property["key"]
         if key not in fields:
@@ -104,11 +121,12 @@ def build_dynamic_properties_serializer(
 def build_service_list_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
+    layers: list[Dict[str, Any]],
     list_property: Dict[str, Any],
     include_icons: bool = True,
 ) -> serializers.Serializer:
     DynamicPropertiesSerializer = build_dynamic_properties_serializer(
-        properties, filters, list_property, include_icons
+        properties, filters, layers, list_property, include_icons
     )
 
     class DynamicServiceListSerializer(serializers.Serializer):
@@ -123,11 +141,12 @@ def build_service_list_serializer(
 def build_geojson_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
+    layers: list[Dict[str, Any]],
     list_property: Dict[str, Any],
     include_icons: bool = True,
 ) -> serializers.Serializer:
     DynamicListSerializer = build_service_list_serializer(
-        properties, filters, list_property, include_icons
+        properties, filters, layers, list_property, include_icons
     )
 
     class DynamicGeoJsonSerializer(serializers.Serializer):
@@ -140,11 +159,12 @@ def build_geojson_serializer(
 def build_map_response_serializer(
     properties: list[Dict[str, Any]],
     filters: list[Dict[str, Any]],
+    layers: list[Dict[str, Any]],
     list_property: Dict[str, Any],
     include_icons: bool = True,
 ) -> serializers.Serializer:
     DynamicGeoJsonSerializer = build_geojson_serializer(
-        properties, filters, list_property, include_icons
+        properties, filters, layers, list_property, include_icons
     )
 
     class DynamicMapResponseSerializer(ServiceMapResponseSerializer):
@@ -224,6 +244,7 @@ class ServiceMapGeoJsonSerializer(serializers.Serializer):
 
 class ServiceMapResponseSerializer(serializers.Serializer):
     filters = FiltersSerializer(many=True)
+    layers = FiltersSerializer(many=True)
     properties_to_include = PropertiesSerializer(many=True)
     list_property = ListPropertySerializer(allow_null=True)
     icons_to_include = serializers.DictField(

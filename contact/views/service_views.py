@@ -77,6 +77,7 @@ class ServiceMapView(APIView):
         DynamicMapSerializer = build_map_response_serializer(
             response_payload.get("properties_to_include", []),
             response_payload.get("filters", []),
+            response_payload.get("layers", []),
             response_payload.get("list_property", {}),
             response_payload.get("icons_to_include", None) is not None,
         )

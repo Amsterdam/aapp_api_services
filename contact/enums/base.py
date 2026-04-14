@@ -31,6 +31,12 @@ class ServiceClass(NamedTuple):
     dataservice: Optional[Callable] = None
 
 
+class DataLayer(NamedTuple):
+    label: str
+    code: int
+    icon_label: str
+
+
 class FilterClass(NamedTuple):
     label: str
     filter_key: str
