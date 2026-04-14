@@ -1,3 +1,5 @@
+from typing import Any, Dict, List
+
 from contact.enums.kingsday_land import (
     LIST_PROPERTY,
     KingsdayLandData,
@@ -16,3 +18,44 @@ class KingsdayLandService(KingsdayAbstractService):
     properties_enum = KingsdayLandProperties
     icons_enum = KingsdayLandIcons
     list_property = LIST_PROPERTY
+
+    def get_custom_properties(
+        self,
+        properties: Dict[str, Any],
+        geom: Dict[str, Any],
+        layer_type: str,
+        icon_name: str | None,
+    ) -> Dict[str, Any]:
+        address = self._get_address_from_properties(properties, geom)
+        prefix = self.properties_prefix
+
+        return {
+            f"{prefix}title": properties.get("title", ""),
+            f"{prefix}subtitle": layer_type,
+            f"{prefix}icon_type": icon_name,
+            f"{prefix}description": self._clean_html(properties.get("description"))
+            or None,
+            f"{prefix}website": properties.get("website") or None,
+            f"{prefix}address": address,
+            f"{prefix}toilet_table": self._create_toilet_table(
+                properties.get("meta", [])
+            ),
+        }
+
+    def _create_toilet_table(
+        self, meta: List[Dict[str, str]]
+    ) -> List[Dict[str, str]] | None:
+        """
+        Converts the 'meta' field from the original data into a structured format for the 'aapp_toilet_table' property.
+        """
+        if not meta:
+            return None
+
+        table = []
+        for item in meta:
+            key = item.get("title")
+            value = item.get("value")
+            if key and value:
+                table.append({"key": key, "value": value})
+
+        return table

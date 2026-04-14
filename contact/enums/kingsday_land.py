@@ -54,16 +54,16 @@ class KingsdayLandLayers(ChoicesEnum):
 
 
 class KingsdayLandProperties(ChoicesEnum):
-    SUBTITLE = PropertiesClass(
-        label=None,
-        property_key="aapp_subtitle",
-        property_type="string",
-        icon=None,
-    )
     ADDRESS = PropertiesClass(
-        label=None,
+        label="Adres",
         property_key="aapp_address",
         property_type="address",
+        icon=IconPath["map-marker"],
+    )
+    WEBSITE = PropertiesClass(
+        label=None,
+        property_key="aapp_website",
+        property_type="url",
         icon=None,
     )
     DESCRIPTION = PropertiesClass(
@@ -72,10 +72,10 @@ class KingsdayLandProperties(ChoicesEnum):
         property_type="string",
         icon=None,
     )
-    WEBSITE = PropertiesClass(
-        label=None,
-        property_key="aapp_website",
-        property_type="url",
+    TOILET_TABLE = PropertiesClass(
+        label="Overige informatie",
+        property_key="aapp_toilet_table",
+        property_type="key_value_table",
         icon=None,
     )
 

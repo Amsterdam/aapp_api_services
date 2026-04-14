@@ -13,7 +13,16 @@ class ServiceAddressSerializer(AddressSerializer):
     street = serializers.CharField(allow_null=True, allow_blank=True)
 
 
+class KeyValueTableSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    value = serializers.CharField()
+
+
 class PropertySerializers(ChoicesEnum):
+    ADDRESS = SerializerMapping(
+        type="address",
+        serializer=ServiceAddressSerializer,
+    )
     BOOLEAN = SerializerMapping(
         type="boolean",
         serializer=serializers.BooleanField,
@@ -34,9 +43,13 @@ class PropertySerializers(ChoicesEnum):
         type="string",
         serializer=serializers.CharField,
     )
-    ADDRESS = SerializerMapping(
-        type="address",
-        serializer=ServiceAddressSerializer,
+    TABLE = SerializerMapping(
+        type="key_value_table",
+        serializer=KeyValueTableSerializer,
+    )
+    URL = SerializerMapping(
+        type="url",
+        serializer=serializers.URLField,
     )
 
 
@@ -75,8 +88,11 @@ def build_dynamic_properties_serializer(
     """
 
     fields = {
-        "aapp_title": serializers.CharField()
-    }  # Always include title as a property
+        "aapp_title": serializers.CharField(),
+        "aapp_subtitle": serializers.CharField(
+            allow_null=True, allow_blank=True, required=False
+        ),
+    }  # Always include title and subtitle as a property
 
     if include_icons:
         fields["aapp_icon_type"] = serializers.CharField()
@@ -86,7 +102,10 @@ def build_dynamic_properties_serializer(
         field_class = property_serializer_mapping.get(
             prop.get("property_type"), serializers.CharField
         )
-        fields[prop["property_key"]] = field_class(allow_null=True)
+        if prop.get("property_type") == "key_value_table":
+            fields[prop["property_key"]] = field_class(many=True, allow_null=True)
+        else:
+            fields[prop["property_key"]] = field_class(allow_null=True)
 
     # Add filter fields (if not already included)
     for filt in filters:
