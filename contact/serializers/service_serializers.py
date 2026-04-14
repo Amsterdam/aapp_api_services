@@ -236,7 +236,62 @@ class ListPropertySerializer(serializers.Serializer):
 
 class GeometrySerializer(serializers.Serializer):
     type = serializers.CharField()
-    coordinates = serializers.ListField(child=serializers.FloatField())
+    coordinates = serializers.JSONField()
+
+    @staticmethod
+    def _is_number(value: Any) -> bool:
+        return isinstance(value, float)
+
+    def validate(self, attrs):
+        geometry_type = attrs.get("type")
+        coordinates = attrs.get("coordinates")
+
+        if geometry_type == "Point":
+            if not (
+                isinstance(coordinates, list)
+                and len(coordinates) >= 2
+                and self._is_number(coordinates[0])
+                and self._is_number(coordinates[1])
+            ):
+                raise serializers.ValidationError(
+                    {"coordinates": "Point coordinates must be [lon, lat]."}
+                )
+
+        if geometry_type == "Polygon":
+            # Expect: [ [ [lon, lat], ... ] , ... ] (one or more rings)
+            if not (
+                isinstance(coordinates, list)
+                and coordinates
+                and isinstance(coordinates[0], list)
+                and coordinates[0]
+                and isinstance(coordinates[0][0], list)
+                and len(coordinates[0][0]) >= 2
+                and self._is_number(coordinates[0][0][0])
+                and self._is_number(coordinates[0][0][1])
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "coordinates": "Polygon coordinates must be nested [lon, lat] positions."
+                    }
+                )
+
+        if geometry_type == "LineString":
+            # Expect: [ [lon, lat], ... ] (one or more positions)
+            if not (
+                isinstance(coordinates, list)
+                and coordinates
+                and isinstance(coordinates[0], list)
+                and len(coordinates[0]) >= 2
+                and self._is_number(coordinates[0][0])
+                and self._is_number(coordinates[0][1])
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "coordinates": "LineString coordinates must be [lon, lat] positions."
+                    }
+                )
+
+        return attrs
 
 
 class ServiceListSerializer(serializers.Serializer):

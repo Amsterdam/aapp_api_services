@@ -15,6 +15,7 @@ from contact.tests.mock_data.kingsday import (
     boating_ban,
     closed_parking_lot,
     detour,
+    direction,
     events,
     first_aid,
     recycle_boat,
@@ -320,6 +321,31 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         # Mock the response from the external API
         url = f"{settings.KINGSDAY_URL}9.json"
         responses.get(url, json=recycle_boat.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 4})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch(
+        "contact.services.kingsday_water.KingsdayWaterData.choices_as_list",
+        return_value=[
+            {
+                "label": "Vaarrichting",
+                "code": 10,
+                "icon_label": "boat_direction",
+            }
+        ],
+    )
+    def test_success_get_service_map_view_kingsday_water_boat_direction(
+        self, mock_data_layers
+    ):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}10.json"
+        responses.get(url, json=direction.MOCK_DATA)
 
         url = reverse("service-map", kwargs={"service_id": 4})
         response = self.client.get(

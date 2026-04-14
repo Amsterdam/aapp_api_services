@@ -102,19 +102,19 @@ class KingsdayLandIcons(ChoicesEnum):
     TOILET = IconClass(
         label="toilet",
         path=IconPath["tap-fountain-marker"],
-        circle_color="#009DE6",
+        circle_color="#DC2BA4",
         path_color="#FFFFFF",
     )
     DETOUR = IconClass(
         label="detour",
         path=IconPath["tap-fountain-marker"],
-        circle_color="#009DE6",
+        circle_color="#F8760B",
         path_color="#FFFFFF",
     )
     CLOSED_PARKING_LOT = IconClass(
         label="closed_parking_lot",
         path=IconPath["tap-fountain-marker"],
-        circle_color="#009DE6",
+        circle_color="#E60000",
         path_color="#FFFFFF",
     )
 

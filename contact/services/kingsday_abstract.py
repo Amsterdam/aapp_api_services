@@ -119,12 +119,13 @@ class KingsdayAbstractService(ServiceAbstract):
     def _get_address_from_properties(
         self, properties: Dict[str, Any], geom: Dict[str, Any]
     ) -> Dict[str, Any]:
+
         if (
             geom.get("type") == "Point"
             and isinstance(geom.get("coordinates"), list)
             and len(geom.get("coordinates")) == 2
         ):
-            pass
+            coords = geom["coordinates"]
 
         elif geom.get("type") == "MultiPoint":
             if (
@@ -133,6 +134,7 @@ class KingsdayAbstractService(ServiceAbstract):
             ):
                 geom["coordinates"] = geom["coordinates"][0]
                 geom["type"] = "Point"
+                coords = geom["coordinates"]
             else:
                 logger.error("MultiPoint geometry does not contain valid coordinates.")
 
@@ -143,15 +145,14 @@ class KingsdayAbstractService(ServiceAbstract):
                 and isinstance(geom["coordinates"][0], list)
                 and len(geom["coordinates"][0]) > 0
             ):
-                geom["coordinates"] = geom["coordinates"][0][0]
-                geom["type"] = "Point"
+                coords = geom["coordinates"][0][0]
             else:
                 logger.error("Polygon geometry does not contain valid coordinates.")
 
         else:
             logger.error(f"Unexpected geometry type: {geom.get('type')}")
 
-        coords = geom.get("coordinates")
+        # coords = geom.get("coordinates")
         lat = coords[1] if isinstance(coords, list) and len(coords) >= 2 else None
         lon = coords[0] if isinstance(coords, list) and len(coords) >= 2 else None
 
