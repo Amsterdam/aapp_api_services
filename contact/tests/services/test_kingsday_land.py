@@ -60,7 +60,7 @@ class KingsdayLandServiceTest(ResponsesActivatedAPITestCase):
 
         self.assertEqual(custom_properties["aapp_subtitle"], "Evenement")
 
-        # make sure lat an lon are correctly extracted from the geometry and added to the properties
+        # make sure lat and lon are correctly extracted from the geometry and added to the properties
         self.assertEqual(
             custom_properties["aapp_address"]["coordinates"]["lat"], 52.40028685
         )

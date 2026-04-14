@@ -84,8 +84,8 @@ class KingsdayLandIcons(ChoicesEnum):
     EVENT = IconClass(
         label="event",
         path=IconPath["tap-tap-marker"],
-        circle_color="#009DE6",
-        path_color="#FFFFFF",
+        circle_color="#FF9100",
+        path_color="#181818",
     )
     FIRST_AID = IconClass(
         label="first_aid",

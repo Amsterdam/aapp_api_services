@@ -120,6 +120,8 @@ class KingsdayAbstractService(ServiceAbstract):
         self, properties: Dict[str, Any], geom: Dict[str, Any]
     ) -> Dict[str, Any]:
 
+        coords = None
+
         if (
             geom.get("type") == "Point"
             and isinstance(geom.get("coordinates"), list)
@@ -146,13 +148,14 @@ class KingsdayAbstractService(ServiceAbstract):
                 and len(geom["coordinates"][0]) > 0
             ):
                 coords = geom["coordinates"][0][0]
+                geom["coordinates"] = coords
+                geom["type"] = "Point"
             else:
                 logger.error("Polygon geometry does not contain valid coordinates.")
 
         else:
             logger.error(f"Unexpected geometry type: {geom.get('type')}")
 
-        # coords = geom.get("coordinates")
         lat = coords[1] if isinstance(coords, list) and len(coords) >= 2 else None
         lon = coords[0] if isinstance(coords, list) and len(coords) >= 2 else None
 

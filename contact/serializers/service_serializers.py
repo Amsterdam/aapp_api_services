@@ -240,7 +240,7 @@ class GeometrySerializer(serializers.Serializer):
 
     @staticmethod
     def _is_number(value: Any) -> bool:
-        return isinstance(value, float)
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
 
     def validate(self, attrs):
         geometry_type = attrs.get("type")
