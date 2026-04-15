@@ -151,6 +151,21 @@ class KingsdayAbstractService(ServiceAbstract):
             else:
                 logger.error("Polygon geometry does not contain valid coordinates.")
 
+        elif geom.get("type") == "MultiPolygon":
+            if (
+                isinstance(geom.get("coordinates"), list)
+                and len(geom.get("coordinates")) > 0
+                and isinstance(geom["coordinates"][0], list)
+                and len(geom["coordinates"][0]) > 0
+                and isinstance(geom["coordinates"][0][0], list)
+                and len(geom["coordinates"][0][0]) > 0
+            ):
+                coords = geom["coordinates"][0][0][0]
+            else:
+                logger.error(
+                    "MultiPolygon geometry does not contain valid coordinates."
+                )
+
         else:
             logger.error(f"Unexpected geometry type: {geom.get('type')}")
 
