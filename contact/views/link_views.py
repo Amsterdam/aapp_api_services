@@ -27,6 +27,7 @@ class LinksView(generics.RetrieveAPIView):
         "feedbackForm": "https://formulier.amsterdam.nl/thema/burgerzaken/amsterdam-app/Uw-mening/",
         "immigration": "https://www.amsterdam.nl/burgerzaken/verhuizen-inschrijving-briefadres/verhuizen-amsterdam-vanuit-buitenland/",
         "income_help": "https://www.amsterdam.nl/werk-inkomen/hulp-bij-laag-inkomen/",
+        "kingsday": "https://www.amsterdam.nl/nieuws/evenementen-herdenkingen/koningsdag-2026/",
         "lifelessBirth": "https://www.amsterdam.nl/veelgevraagd/levenloos-geboren-kindje-registreren-in-de-brp-daaf8#case_%7BB104B52F-9A3B-4923-8B5D-1FA60B6F3591%7D",
         "makeAppointMentWeesp": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/afspraakmaken.aspx",
         "marriage": "https://www.amsterdam.nl/burgerzaken/trouwen-en-partnerschap/",
