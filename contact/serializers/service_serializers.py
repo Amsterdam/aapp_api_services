@@ -1,5 +1,6 @@
 from typing import Any, Dict
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from contact.enums.base import ChoicesEnum, ModuleSourceChoices, SerializerMapping
@@ -259,9 +260,75 @@ class ListPropertySerializer(serializers.Serializer):
     type = serializers.CharField()
 
 
+@extend_schema_field(
+    {
+        "oneOf": [
+            # Point: [lon, lat]
+            {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {"type": "number", "format": "double"},
+            },
+            # LineString / MultiPoint: [[lon, lat], ...]
+            {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {"type": "number", "format": "double"},
+                },
+            },
+            # Polygon: [[[lon, lat], ...], ...]
+            {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": {"type": "number", "format": "double"},
+                    },
+                },
+            },
+            # MultiPolygon: [[[[lon, lat], ...], ...], ...]
+            {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": {"type": "number", "format": "double"},
+                        },
+                    },
+                },
+            },
+        ],
+        "description": "GeoJSON coordinates. Shape depends on geometry type (Point, LineString/MultiPoint, Polygon, MultiPolygon).",
+    }
+)
+class GeoJSONCoordinatesField(serializers.JSONField):
+    """GeoJSON coordinates.
+
+    Runtime validation happens in `GeometrySerializer.validate()`.
+    """
+
+
 class GeometrySerializer(serializers.Serializer):
     type = serializers.CharField()
-    coordinates = serializers.JSONField()
+    coordinates = GeoJSONCoordinatesField()
 
     @staticmethod
     def _is_number(value: Any) -> bool:
@@ -297,6 +364,26 @@ class GeometrySerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     {
                         "coordinates": "Polygon coordinates must be nested [lon, lat] positions."
+                    }
+                )
+
+        if geometry_type == "MultiPolygon":
+            # Expect: [ [ [ [lon, lat], ... ] , ... ] , ... ] (one or more polygons)
+            if not (
+                isinstance(coordinates, list)
+                and coordinates
+                and isinstance(coordinates[0], list)
+                and coordinates[0]
+                and isinstance(coordinates[0][0], list)
+                and coordinates[0][0]
+                and isinstance(coordinates[0][0][0], list)
+                and len(coordinates[0][0][0]) >= 2
+                and self._is_number(coordinates[0][0][0][0])
+                and self._is_number(coordinates[0][0][0][1])
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "coordinates": "MultiPolygon coordinates must be nested [lon, lat] positions."
                     }
                 )
 
