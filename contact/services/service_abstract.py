@@ -55,6 +55,7 @@ class ServiceAbstract:
         filters: ChoicesEnum,
         layers: ChoicesEnum,
         properties_to_include: ChoicesEnum,
+        silent_properties: ChoicesEnum | None = None,
         list_property: ListPropertyClass | None = None,
         icons: ChoicesEnum | None = None,
     ) -> Dict[str, Any]:
@@ -65,6 +66,9 @@ class ServiceAbstract:
             "filters": filters.choices_as_list(),
             "layers": layers.choices_as_list(),
             "properties_to_include": properties_to_include.choices_as_list(),
+            "silent_properties": silent_properties.choices_as_list()
+            if silent_properties
+            else None,
             "list_property": list_property._asdict() if list_property else None,
             "icons_to_include": icons.choices_as_dict() if icons else None,
             "data": {

@@ -43,6 +43,13 @@ class FilterClass(NamedTuple):
     filter_value: str | bool | int
 
 
+class LayerClass(NamedTuple):
+    label: str
+    filter_key: str
+    filter_value: str | bool | int
+    icon_label: str
+
+
 class PropertiesClass(NamedTuple):
     label: str | None
     property_key: str

@@ -27,9 +27,17 @@ class PropertySerializers(ChoicesEnum):
         type="boolean",
         serializer=serializers.BooleanField,
     )
+    FLOAT = SerializerMapping(
+        type="float",
+        serializer=serializers.FloatField,
+    )
     IMAGE = SerializerMapping(
         type="image",
         serializer=serializers.URLField,
+    )
+    INTEGER = SerializerMapping(
+        type="integer",
+        serializer=serializers.IntegerField,
     )
     MALFUNCTION = SerializerMapping(
         type="malfunction",
@@ -78,6 +86,7 @@ filter_serializer_mapping = {
 
 def build_dynamic_properties_serializer(
     properties: list[Dict[str, Any]],
+    silent_properties: list[Dict[str, Any]] | None,
     filters: list[Dict[str, Any]],
     layers: list[Dict[str, Any]],
     list_property: Dict[str, Any] | None,
@@ -106,6 +115,15 @@ def build_dynamic_properties_serializer(
             fields[prop["property_key"]] = field_class(many=True, allow_null=True)
         else:
             fields[prop["property_key"]] = field_class(allow_null=True)
+
+    # Add silent_property fields (if not already included)
+    for silent_prop in silent_properties or []:
+        key = silent_prop["property_key"]
+        if key not in fields:
+            field_class = property_serializer_mapping.get(
+                silent_prop.get("property_type"), serializers.CharField
+            )
+            fields[key] = field_class(allow_null=True)
 
     # Add filter fields (if not already included)
     for filt in filters:
@@ -139,13 +157,14 @@ def build_dynamic_properties_serializer(
 
 def build_service_list_serializer(
     properties: list[Dict[str, Any]],
+    silent_properties: list[Dict[str, Any]] | None,
     filters: list[Dict[str, Any]],
     layers: list[Dict[str, Any]],
     list_property: Dict[str, Any],
     include_icons: bool = True,
 ) -> serializers.Serializer:
     DynamicPropertiesSerializer = build_dynamic_properties_serializer(
-        properties, filters, layers, list_property, include_icons
+        properties, silent_properties, filters, layers, list_property, include_icons
     )
 
     class DynamicServiceListSerializer(serializers.Serializer):
@@ -159,13 +178,14 @@ def build_service_list_serializer(
 
 def build_geojson_serializer(
     properties: list[Dict[str, Any]],
+    silent_properties: list[Dict[str, Any]] | None,
     filters: list[Dict[str, Any]],
     layers: list[Dict[str, Any]],
     list_property: Dict[str, Any],
     include_icons: bool = True,
 ) -> serializers.Serializer:
     DynamicListSerializer = build_service_list_serializer(
-        properties, filters, layers, list_property, include_icons
+        properties, silent_properties, filters, layers, list_property, include_icons
     )
 
     class DynamicGeoJsonSerializer(serializers.Serializer):
@@ -177,13 +197,14 @@ def build_geojson_serializer(
 
 def build_map_response_serializer(
     properties: list[Dict[str, Any]],
+    silent_properties: list[Dict[str, Any]] | None,
     filters: list[Dict[str, Any]],
     layers: list[Dict[str, Any]],
     list_property: Dict[str, Any],
     include_icons: bool = True,
 ) -> serializers.Serializer:
     DynamicGeoJsonSerializer = build_geojson_serializer(
-        properties, filters, layers, list_property, include_icons
+        properties, silent_properties, filters, layers, list_property, include_icons
     )
 
     class DynamicMapResponseSerializer(ServiceMapResponseSerializer):
@@ -220,6 +241,10 @@ class FiltersSerializer(serializers.Serializer):
     label = serializers.CharField()
     filter_key = serializers.CharField()
     filter_value = FlexibleValueField()
+
+
+class LayersSerializer(FiltersSerializer):
+    icon_label = serializers.CharField()
 
 
 class PropertiesSerializer(serializers.Serializer):
@@ -318,7 +343,7 @@ class ServiceMapGeoJsonSerializer(serializers.Serializer):
 
 class ServiceMapResponseSerializer(serializers.Serializer):
     filters = FiltersSerializer(many=True)
-    layers = FiltersSerializer(many=True)
+    layers = LayersSerializer(many=True)
     properties_to_include = PropertiesSerializer(many=True)
     list_property = ListPropertySerializer(allow_null=True)
     icons_to_include = serializers.DictField(

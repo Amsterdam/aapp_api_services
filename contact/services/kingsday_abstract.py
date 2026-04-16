@@ -27,6 +27,7 @@ class KingsdayAbstractService(ServiceAbstract):
     filters_enum: type[ChoicesEnum] | None = None
     layers_enum: type[ChoicesEnum] | None = None
     properties_enum: type[ChoicesEnum] | None = None
+    silent_properties_enum: type[ChoicesEnum] | None = None
     icons_enum: type[ChoicesEnum] | None = None
     list_property: ListPropertyClass | None = None
 
@@ -74,10 +75,11 @@ class KingsdayAbstractService(ServiceAbstract):
             all_features.extend(features)
 
         return self.build_response_payload(
-            all_features,
-            self.filters_enum,
-            self.layers_enum,
-            self.properties_enum,
+            items=all_features,
+            filters=self.filters_enum,
+            layers=self.layers_enum,
+            properties_to_include=self.properties_enum,
+            silent_properties=self.silent_properties_enum,
             list_property=self.list_property,
             icons=self.icons_enum,
         )

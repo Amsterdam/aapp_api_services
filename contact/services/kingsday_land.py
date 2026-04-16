@@ -7,6 +7,7 @@ from contact.enums.kingsday_land import (
     KingsdayLandIcons,
     KingsdayLandLayers,
     KingsdayLandProperties,
+    KingsdayLandSilentProperties,
 )
 from contact.services.kingsday_abstract import KingsdayAbstractService
 
@@ -16,6 +17,7 @@ class KingsdayLandService(KingsdayAbstractService):
     filters_enum = KingsdayLandFilters
     layers_enum = KingsdayLandLayers
     properties_enum = KingsdayLandProperties
+    silent_properties_enum = KingsdayLandSilentProperties
     icons_enum = KingsdayLandIcons
     list_property = LIST_PROPERTY
 
@@ -26,8 +28,24 @@ class KingsdayLandService(KingsdayAbstractService):
         layer_type: str,
         icon_name: str | None,
     ) -> Dict[str, Any]:
+        """
+        Returns a dictionary of custom properties for a given data point,
+        based on the original properties, geometry, layer type, and icon name.
+
+        All custom properties are prefixed with 'aapp_' to avoid conflicts with original properties.
+        However, the fill and fill_opacity properties for the 'Omleiding' layer are not prefixed,
+        as they are used for styling the layer and the geojson standard is used.
+        """
         address = self._get_address_from_properties(properties, geom)
         prefix = self.properties_prefix
+
+        if layer_type == "Omleiding" and geom.get("type") == "Polygon":
+            # for detour we want to add fill and opacity properties
+            fill = "#EC0000"
+            fill_opacity = 0.2
+        else:
+            fill = None
+            fill_opacity = None
 
         return {
             f"{prefix}title": properties.get("title", ""),
@@ -40,6 +58,8 @@ class KingsdayLandService(KingsdayAbstractService):
             f"{prefix}toilet_table": self._create_toilet_table(
                 properties.get("meta", [])
             ),
+            "fill": fill,
+            "fill-opacity": fill_opacity,
         }
 
     def _create_toilet_table(

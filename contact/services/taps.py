@@ -40,10 +40,10 @@ class TapService(ServiceAbstract):
             )
 
         full_data = self.build_response_payload(
-            full_tap_data,
-            TapFilters,
-            TapLayers,
-            TapProperties,
+            items=full_tap_data,
+            filters=TapFilters,
+            layers=TapLayers,
+            properties_to_include=TapProperties,
             list_property=None,
             icons=TapIcons,
         )

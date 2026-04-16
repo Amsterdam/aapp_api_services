@@ -51,11 +51,11 @@ class ToiletService(ServiceAbstract):
             )
 
         full_data = self.build_response_payload(
-            full_toilet_data,
-            ToiletFilters,
-            ToiletLayers,
-            ToiletProperties,
-            LIST_PROPERTY,
+            items=full_toilet_data,
+            filters=ToiletFilters,
+            layers=ToiletLayers,
+            properties_to_include=ToiletProperties,
+            list_property=LIST_PROPERTY,
         )
 
         return full_data

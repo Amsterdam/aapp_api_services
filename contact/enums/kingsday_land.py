@@ -1,8 +1,8 @@
 from contact.enums.base import (
     ChoicesEnum,
     DataLayer,
-    FilterClass,
     IconClass,
+    LayerClass,
     ListPropertyClass,
     PropertiesClass,
 )
@@ -29,27 +29,41 @@ class KingsdayLandFilters(ChoicesEnum):
 
 
 class KingsdayLandLayers(ChoicesEnum):
-    EVENT = FilterClass(
-        label="Evenement", filter_key="aapp_subtitle", filter_value="Evenement"
+    EVENT = LayerClass(
+        label="Evenement",
+        filter_key="aapp_subtitle",
+        filter_value="Evenement",
+        icon_label="event",
     )
-    FIRST_AID = FilterClass(
-        label="EHBO-post", filter_key="aapp_subtitle", filter_value="EHBO-post"
+    FIRST_AID = LayerClass(
+        label="EHBO-post",
+        filter_key="aapp_subtitle",
+        filter_value="EHBO-post",
+        icon_label="first_aid",
     )
-    RECYCLE_DROP_OFF = FilterClass(
+    RECYCLE_DROP_OFF = LayerClass(
         label="Inleverpunt overgebleven spullen",
         filter_key="aapp_subtitle",
         filter_value="Inleverpunt overgebleven spullen",
+        icon_label="recycle_drop_off",
     )
-    TOILET = FilterClass(
-        label="Toilet", filter_key="aapp_subtitle", filter_value="Toilet"
+    TOILET = LayerClass(
+        label="Toilet",
+        filter_key="aapp_subtitle",
+        filter_value="Toilet",
+        icon_label="toilet",
     )
-    DETOUR = FilterClass(
-        label="Omleiding", filter_key="aapp_subtitle", filter_value="Omleiding"
+    DETOUR = LayerClass(
+        label="Omleiding",
+        filter_key="aapp_subtitle",
+        filter_value="Omleiding",
+        icon_label="detour",
     )
-    CLOSED_PARKING_LOT = FilterClass(
+    CLOSED_PARKING_LOT = LayerClass(
         label="Afgesloten parkeergarage",
         filter_key="aapp_subtitle",
         filter_value="Afgesloten parkeergarage",
+        icon_label="closed_parking_lot",
     )
 
 
@@ -80,6 +94,21 @@ class KingsdayLandProperties(ChoicesEnum):
     )
 
 
+class KingsdayLandSilentProperties(ChoicesEnum):
+    FILL = PropertiesClass(
+        label=None,
+        property_key="fill",
+        property_type="string",
+        icon=None,
+    )
+    FILL_OPACITY = PropertiesClass(
+        label=None,
+        property_key="fill-opacity",
+        property_type="float",
+        icon=None,
+    )
+
+
 class KingsdayLandIcons(ChoicesEnum):
     EVENT = IconClass(
         label="event",
@@ -101,7 +130,7 @@ class KingsdayLandIcons(ChoicesEnum):
     )
     TOILET = IconClass(
         label="toilet",
-        path=IconPath["toilet"],
+        path=IconPath["kingsday-toilet"],
         circle_color="#FFE600",
         path_color="#181818",
     )
