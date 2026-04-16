@@ -34,12 +34,19 @@ class KingsdayLandService(KingsdayAbstractService):
 
         for layer in self.data_layers:
             layer_label = layer["label"]
+
             if layer_label == "Drinkwater":  # for taps, we use a different URL
                 url = settings.TAP_URL
             else:
                 url = f"{base_url}{layer['code']}.json"
+
             try:
                 features = self._get_geojson_items_for_url(url)
+
+                if layer_label == "Drinkwater":
+                    # filter taps to only include those that are within the municipality of Amsterdam,
+                    # based on the "plaats" property in the properties, which should contain "Amsterdam" or "Weesp"
+                    features = self._filter_tap_data(features)
             except Exception as e:
                 logger.error(f"Error fetching geojson items for URL {url}: {e}")
                 features = []
@@ -78,6 +85,19 @@ class KingsdayLandService(KingsdayAbstractService):
             list_property=self.list_property,
             icons=self.icons_enum,
         )
+
+    def _filter_tap_data(self, data: list[Dict[str, Any]]) -> list[Dict[str, Any]]:
+        """
+        We only want to return taps that are within the municipality of Amsterdam, so we filter data based on the "plaats" property,
+        which should contain "Amsterdam" or "Weesp".
+        """
+        filtered_data = [
+            tap
+            for tap in data
+            if tap.get("properties", {}).get("plaats")
+            in ["Amsterdam", "Weesp", "Amsterdamse bos"]
+        ]
+        return filtered_data
 
     def _get_tap_geometry_from_properties(
         self, properties: Dict[str, Any]
