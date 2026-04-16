@@ -179,17 +179,18 @@ class TestSurveyVersionEntryListView(AbstractSurveyTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("survey-entries-list")
-        self.survey_version = SurveyVersion.objects.first().version
+        self.survey_version = SurveyVersion.objects.filter(version=1).first().version
+        entry_point = "Parkeer module"
         test_entry_payload = {
             "answers": [
                 {"question": q.id, "answer": "string"} for q in Question.objects.all()
             ],
-            "entry_point": "Parkeer module",
             "metadata": {
                 "app_version": "1.0.0",
             },
         }
-        for _i in range(9):
+        for i in range(9):
+            test_entry_payload["entry_point"] = f"{chr(65 + i)} {entry_point}"
             self.client.post(
                 reverse(
                     "survey-version-entries",
@@ -199,30 +200,41 @@ class TestSurveyVersionEntryListView(AbstractSurveyTestCase):
                 format="json",
                 headers=self.api_headers,
             )
+        for i in range(2):
+            test_entry_payload["entry_point"] = f"{chr(65 + 9 + i)} {entry_point}"
+            self.client.post(
+                reverse(
+                    "survey-version-entries",
+                    kwargs={"unique_code": "ams-app", "version": 2},
+                ),
+                data=test_entry_payload,
+                format="json",
+                headers=self.api_headers,
+            )
 
     def test_get_successfully(self):
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["results"]), 9)
+        self.assertEqual(len(response.data["results"]), 11)
 
     def test_get_first_page(self):
-        data = {"page": 1, "page_size": 5}
+        data = {"page": 1, "page_size": 10}
         response = self.client.get(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["results"]), 5)
+        self.assertEqual(len(response.data["results"]), 10)
         self.assertIsNotNone(response.data.get("next"))
         self.assertIsNone(response.data.get("previous"))
 
     def test_get_second_page(self):
-        data = {"page": 2, "page_size": 5}
+        data = {"page": 2, "page_size": 10}
         response = self.client.get(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["results"]), 4)
+        self.assertEqual(len(response.data["results"]), 1)
         self.assertIsNone(response.data.get("next"))
         self.assertIsNotNone(response.data.get("previous"))
 
     def test_get_wrong_page(self):
-        data = {"page": 3, "page_size": 5}
+        data = {"page": 3, "page_size": 10}
         response = self.client.get(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 404)
 
@@ -230,9 +242,15 @@ class TestSurveyVersionEntryListView(AbstractSurveyTestCase):
         data = {"survey_unique_code": "ams-app"}
         response = self.client.get(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["results"]), 9)
+        self.assertEqual(len(response.data["results"]), 11)
 
     def test_get_survey_unique_code_filter_empty(self):
+        data = {"survey_unique_code": ""}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 11)
+
+    def test_get_survey_unique_code_filter_nonexistent(self):
         data = {"survey_unique_code": "foobar"}
         response = self.client.get(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
@@ -245,7 +263,84 @@ class TestSurveyVersionEntryListView(AbstractSurveyTestCase):
         self.assertEqual(len(response.data["results"]), 9)
 
     def test_get_survey_version_filter_empty(self):
-        data = {"survey_version": "2"}
+        data = {"survey_version": ""}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 11)
+
+    def test_get_survey_version_filter_nonexistent(self):
+        data = {"survey_version": "3"}
         response = self.client.get(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["results"]), 0)
+
+    def test_get_sort_by_created_at_asc(self):
+        data = {"sort_by": "created_at", "sort_order": "asc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        created_at_list = [entry["created_at"] for entry in response.data["results"]]
+        self.assertEqual(created_at_list, sorted(created_at_list))
+
+    def test_get_sort_by_created_at_desc(self):
+        data = {"sort_by": "created_at", "sort_order": "desc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        created_at_list = [entry["created_at"] for entry in response.data["results"]]
+        self.assertEqual(created_at_list, sorted(created_at_list, reverse=True))
+
+    def test_get_sort_by_entry_point_asc(self):
+        data = {"sort_by": "entry_point", "sort_order": "asc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        entry_points = [entry["entry_point"] for entry in response.data["results"]]
+        self.assertEqual(entry_points, sorted(entry_points))
+        self.assertEqual(entry_points[0], "A Parkeer module")
+
+    def test_get_sort_by_entry_point_desc(self):
+        data = {"sort_by": "entry_point", "sort_order": "desc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        entry_points = [entry["entry_point"] for entry in response.data["results"]]
+        self.assertEqual(entry_points, sorted(entry_points, reverse=True))
+
+    def test_get_sort_by_id_asc(self):
+        data = {"sort_by": "id", "sort_order": "asc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        id_list = [entry["id"] for entry in response.data["results"]]
+        self.assertEqual(id_list, sorted(id_list))
+
+    def test_get_sort_by_id_desc(self):
+        data = {"sort_by": "id", "sort_order": "desc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        id_list = [entry["id"] for entry in response.data["results"]]
+        self.assertEqual(id_list, sorted(id_list, reverse=True))
+
+    def test_get_sort_by_survey_version_asc(self):
+        data = {"sort_by": "survey_version", "sort_order": "asc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        survey_version_list = [
+            entry["survey_version"] for entry in response.data["results"]
+        ]
+        self.assertEqual(survey_version_list, sorted(survey_version_list))
+
+    def test_get_sort_by_survey_version_desc(self):
+        data = {"sort_by": "survey_version", "sort_order": "desc"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        survey_version_list = [
+            entry["survey_version"] for entry in response.data["results"]
+        ]
+        self.assertEqual(survey_version_list, sorted(survey_version_list, reverse=True))
+
+    def test_get_sort_by_invalid_field(self):
+        data = {"sort_by": "invalid_field"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 400)
+
+    def test_get_sort_by_valid_field_invalid_order(self):
+        data = {"sort_by": "entry_point", "sort_order": "invalid_order"}
+        response = self.client.get(self.url, data, headers=self.api_headers)
+        self.assertEqual(response.status_code, 400)

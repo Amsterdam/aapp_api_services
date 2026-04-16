@@ -1,5 +1,7 @@
 from core.settings.base import *  # isort:skip
 
+import os
+
 SERVICE_NAME = "survey"
 INSTALLED_APPS += [
     "survey.apps.SurveyConfig",
@@ -25,3 +27,5 @@ TIME_INPUT_FORMATS = ["%H:%M"]
 
 MOCK_ENTRA_AUTH = False
 ADMIN_ROLES += ["survey-delegated", "survey-publisher"]
+
+DAYS_UNTIL_EMAIL_DELETION = int(os.getenv("DAYS_UNTIL_EMAIL_DELETION", "90"))

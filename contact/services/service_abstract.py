@@ -21,6 +21,7 @@ class ServiceAbstract:
         """
         Returns a dictionary containing:
         - filters: available filters for the frontend
+        - layers: available layers for the frontend
         - properties_to_include: properties to include and their order
         - list_property: property that is shown in the list view
         - data: list of items with selected and custom properties
@@ -52,7 +53,9 @@ class ServiceAbstract:
         self,
         items: list[Dict[str, Any]],
         filters: ChoicesEnum,
+        layers: ChoicesEnum,
         properties_to_include: ChoicesEnum,
+        silent_properties: ChoicesEnum | None = None,
         list_property: ListPropertyClass | None = None,
         icons: ChoicesEnum | None = None,
     ) -> Dict[str, Any]:
@@ -61,7 +64,11 @@ class ServiceAbstract:
         """
         full_data = {
             "filters": filters.choices_as_list(),
+            "layers": layers.choices_as_list(),
             "properties_to_include": properties_to_include.choices_as_list(),
+            "silent_properties": silent_properties.choices_as_list()
+            if silent_properties
+            else None,
             "list_property": list_property._asdict() if list_property else None,
             "icons_to_include": icons.choices_as_dict() if icons else None,
             "data": {

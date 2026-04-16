@@ -131,6 +131,10 @@ survey_mock_data: check-service
 	# Load mock data for the survey service
 	$(manage) surveymockdata
 
+survey_clean_email: check-service
+	# Clean email addresses from survey answers
+	$(manage) cleanupemailaddresses
+
 spectacular: check-service
     # Generate OpenAPI schema
 	$(manage) spectacular --file /app/${SERVICE_NAME}/openapi-schema.yaml

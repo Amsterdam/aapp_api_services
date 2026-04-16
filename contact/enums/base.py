@@ -4,7 +4,16 @@ from typing import Callable, Literal, NamedTuple, Optional
 from rest_framework import serializers
 
 property_types = Literal[
-    "address", "boolean", "image", "price", "string", "malfunction"
+    "address",
+    "boolean",
+    "float",
+    "image",
+    "integer",
+    "key_value_table",
+    "price",
+    "string",
+    "malfunction",
+    "url",
 ]
 
 
@@ -18,17 +27,36 @@ class ChoicesEnum(Enum):
         return {item.value._asdict()["label"]: item.value._asdict() for item in cls}
 
 
+class ModuleSourceChoices(Enum):
+    HANDIG_IN_DE_STAD = "handig-in-de-stad"
+    KONINGSDAG = "koningsdag"
+
+
 class ServiceClass(NamedTuple):
     id: int
     title: str
     icon: str
+    input_module: str
     dataservice: Optional[Callable] = None
+
+
+class DataLayer(NamedTuple):
+    label: str
+    code: int
+    icon_label: str
 
 
 class FilterClass(NamedTuple):
     label: str
     filter_key: str
     filter_value: str | bool | int
+
+
+class LayerClass(NamedTuple):
+    label: str
+    filter_key: str
+    filter_value: str | bool | int
+    icon_label: str
 
 
 class PropertiesClass(NamedTuple):

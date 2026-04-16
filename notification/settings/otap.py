@@ -20,4 +20,8 @@ DATABASES = {
     },
 }
 
+# We should use super short conn_max_age (1 second) to prevent connection build-up
+DATABASES["default"]["CONN_MAX_AGE"] = 1
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+
 DATABASE_ROUTERS = []

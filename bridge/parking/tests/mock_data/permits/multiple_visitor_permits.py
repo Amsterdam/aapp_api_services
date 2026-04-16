@@ -1,7 +1,7 @@
 MOCK_RESPONSE = {
     "page": 1,
     "row_per_page": 10,
-    "count": 8,
+    "count": 4,
     "data": [
         {
             "type": "client_product",
@@ -21,7 +21,7 @@ MOCK_RESPONSE = {
             "vrns": [
                 {
                     "id": 1003,
-                    "vrn": "AB1003",
+                    "vrn": "ABC003",
                     "temporary_vrn": None,
                     "temporary_ended_at": None,
                     "activated_at": "2025-04-02T14:22:17+00:00",
@@ -68,7 +68,7 @@ MOCK_RESPONSE = {
             "vrns": [
                 {
                     "id": 1002,
-                    "vrn": "67WFD6",
+                    "vrn": "ABC002",
                     "temporary_vrn": None,
                     "temporary_ended_at": None,
                     "activated_at": "2023-01-01T00:00:00+00:00",
@@ -79,6 +79,23 @@ MOCK_RESPONSE = {
                     "has_parking_session": False,
                 }
             ],
+        },
+        {
+            "type": "client_product",
+            "id": 10002,
+            "zone": "BA01B West-1.2",
+            "zone_group": None,
+            "permit_description": "Tarief \u20ac5,00, 150 uur 65% korting",
+            "permit_name": "Bezoekersparkeervergunning",
+            "permit_type": "visitor",
+            "is_webform": False,
+            "parent_request_id": None,
+            "started_at": "2024-09-09T22:00:00+00:00",
+            "ended_at": "2124-09-09T22:00:00+00:00",
+            "cancelled_at": None,
+            "is_overflow_permit": False,
+            "status": "ACTIVE",
+            "vrns": [],
         },
     ],
 }
