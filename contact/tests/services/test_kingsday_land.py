@@ -31,7 +31,15 @@ class KingsdayLandServiceTest(ResponsesActivatedAPITestCase):
         self.assertEqual(
             full_data["icons_to_include"], KingsdayLandIcons.choices_as_dict()
         )
-        self.assertEqual(len(full_data["data"]["features"]), 2)
+        features = full_data["data"]["features"]
+        self.assertEqual(len(features), 2)
+        self.assertEqual([feature.get("id") for feature in features], [1, 2])
+        self.assertTrue(
+            all(
+                (feature.get("properties") or {}).get("aapp_subtitle") == "Evenement"
+                for feature in features
+            )
+        )
 
     def test_get_full_data_does_not_mutate_data_url(self):
         self.service.data_layers = [

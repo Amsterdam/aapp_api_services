@@ -121,6 +121,18 @@ class KingsdayLandSilentProperties(ChoicesEnum):
         property_type="float",
         icon=None,
     )
+    STROKE = PropertiesClass(
+        label=None,
+        property_key="stroke",
+        property_type="string",
+        icon=None,
+    )
+    STROKE_WIDTH = PropertiesClass(
+        label=None,
+        property_key="stroke-width",
+        property_type="integer",
+        icon=None,
+    )
 
 
 class KingsdayLandIcons(ChoicesEnum):

@@ -46,6 +46,19 @@ class KingsdayAbstractService(ServiceAbstract):
 
         self.data_layers = self.data_enum.choices_as_list()
 
+    def _layer_url(self, *, base_url: str, layer: Dict[str, Any]) -> str:
+        return f"{base_url}{layer['code']}.json"
+
+    def _preprocess_layer_features(
+        self, *, features: list[Dict[str, Any]], layer: Dict[str, Any]
+    ) -> list[Dict[str, Any]]:
+        return features
+
+    def _preprocess_feature(
+        self, *, feature: Dict[str, Any], layer: Dict[str, Any]
+    ) -> None:
+        return
+
     def get_full_data(self) -> Dict[str, Any]:
         base_url = self.data_url
 
@@ -54,14 +67,20 @@ class KingsdayAbstractService(ServiceAbstract):
 
         for layer in self.data_layers:
             layer_label = layer["label"]
-            url = f"{base_url}{layer['code']}.json"
+            url = self._layer_url(base_url=base_url, layer=layer)
             try:
                 features = self._get_geojson_items_for_url(url)
+                features = self._preprocess_layer_features(
+                    features=features,
+                    layer=layer,
+                )
             except Exception as e:
                 logger.error(f"Error fetching geojson items for URL {url}: {e}")
                 features = []
 
             for feature in features:
+                self._preprocess_feature(feature=feature, layer=layer)
+
                 feature_properties = feature.get("properties", {}) or {}
                 feature_geom = feature.get("geometry", {}) or {}
 
@@ -127,63 +146,64 @@ class KingsdayAbstractService(ServiceAbstract):
     ) -> Dict[str, Any]:
 
         coords = None
+        geom_type = geom.get("type")
+        coordinates = geom.get("coordinates")
 
         if (
-            geom.get("type") == "Point"
-            and isinstance(geom.get("coordinates"), list)
-            and len(geom.get("coordinates")) == 2
+            geom_type == "Point"
+            and isinstance(coordinates, list)
+            and len(coordinates) == 2
         ):
-            coords = geom["coordinates"]
+            coords = coordinates
 
-        elif geom.get("type") == "MultiPoint":
+        elif geom_type == "MultiPoint":
             if (
-                isinstance(geom.get("coordinates"), list)
-                and len(geom["coordinates"]) > 0
+                isinstance(coordinates, list)
+                and coordinates
+                and isinstance(coordinates[0], list)
             ):
-                geom["coordinates"] = geom["coordinates"][0]
-                geom["type"] = "Point"
-                coords = geom["coordinates"]
+                coords = coordinates[0]
             else:
                 logger.error("MultiPoint geometry does not contain valid coordinates.")
 
-        elif geom.get("type") == "Polygon":
+        elif geom_type == "Polygon":
             if (
-                isinstance(geom.get("coordinates"), list)
-                and len(geom.get("coordinates")) > 0
-                and isinstance(geom["coordinates"][0], list)
-                and len(geom["coordinates"][0]) > 0
+                isinstance(coordinates, list)
+                and coordinates
+                and isinstance(coordinates[0], list)
+                and coordinates[0]
+                and isinstance(coordinates[0][0], list)
             ):
-                coords = geom["coordinates"][0][0]
+                coords = coordinates[0][0]
             else:
                 logger.error("Polygon geometry does not contain valid coordinates.")
 
-        elif geom.get("type") == "MultiPolygon":
+        elif geom_type == "MultiPolygon":
             if (
-                isinstance(geom.get("coordinates"), list)
-                and len(geom.get("coordinates")) > 0
-                and isinstance(geom["coordinates"][0], list)
-                and len(geom["coordinates"][0]) > 0
-                and isinstance(geom["coordinates"][0][0], list)
-                and len(geom["coordinates"][0][0]) > 0
+                isinstance(coordinates, list)
+                and coordinates
+                and isinstance(coordinates[0], list)
+                and coordinates[0]
+                and isinstance(coordinates[0][0], list)
+                and coordinates[0][0]
+                and isinstance(coordinates[0][0][0], list)
             ):
-                coords = geom["coordinates"][0][0][0]
+                coords = coordinates[0][0][0]
             else:
                 logger.error(
                     "MultiPolygon geometry does not contain valid coordinates."
                 )
 
         else:
-            logger.error(f"Unexpected geometry type: {geom.get('type')}")
+            logger.error(f"Unexpected geometry type: {geom_type}")
 
         lat = coords[1] if isinstance(coords, list) and len(coords) >= 2 else None
         lon = coords[0] if isinstance(coords, list) and len(coords) >= 2 else None
 
-        address_object = {
+        return {
             "street": properties.get("street", ""),
             "number": properties.get("street_number", None),
             "postcode": properties.get("zip", ""),
             "city": properties.get("city", "Amsterdam"),
             "coordinates": {"lat": lat, "lon": lon},
         }
-
-        return address_object
