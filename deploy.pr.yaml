@@ -79,37 +79,10 @@ stages:
   # --------------------
   # BUILD
   # --------------------
-  - stage: build
-    displayName: Build & push
-    jobs:
-      - job: build
-        pool: ManagedDevOpsPools
-        steps:
-          - checkout: self
-
-          - script: env | sort
-            displayName: Show ENV vars
-
-          - task: Docker@2
-            inputs:
-              command: login
-              containerRegistry: Shared-Dockerhub-Datapunt
-            displayName: Docker hub login
-
-          - script: |
-              az login --identity
-              az acr login -n $(registry)
-            displayName: ACR login
-
-          - ${{ each svc in parameters.services }}:
-            # BUILD
-            - script: SERVICE_NAME=${{svc}} make build
-              displayName: make build (${{svc}})
-
-            # PUSH IMAGE
-            - script: |
-                SERVICE_NAME=${{svc}} make push || echo "Image already exists, ignoring"
-              displayName: make push (${{svc}})
+  - template: deploy.build-stage.yaml
+    parameters:
+      services: ${{ parameters.services }}
+      stageDisplayName: Build & push
 
   # --------------------
   # DEV

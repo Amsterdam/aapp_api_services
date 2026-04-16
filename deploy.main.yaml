@@ -85,95 +85,11 @@ stages:
   # --------------------
   # BUILD
   # --------------------
-  - stage: build
-    displayName: Build, test, analyze & push
-    jobs:
-      - job: build
-        pool: ManagedDevOpsPools
-        steps:
-          - checkout: self
-
-          - script: env | sort
-            displayName: Show ENV vars
-
-          - task: Docker@2
-            inputs:
-              command: login
-              containerRegistry: Shared-Dockerhub-Datapunt
-            displayName: Docker hub login
-
-          - script: |
-              az login --identity
-              az acr login -n $(registry)
-            displayName: ACR login
-
-          - ${{ each svc in parameters.services }}:
-            # BUILD
-            - script: SERVICE_NAME=${{svc}} make build
-              displayName: make build (${{svc}})
-
-            # PUSH IMAGE
-            - script: |
-                SERVICE_NAME=${{svc}} make push || echo "Image already exists, ignoring"
-              displayName: make push (${{svc}})
-
-      - job: QA
-        pool: ManagedDevOpsPools
-        dependsOn: build
-        strategy:
-          matrix:
-            ${{ each service in parameters.services }}:
-              ${{ service }}:
-                SERVICE_NAME: ${{ service }}
-        steps:
-          - checkout: self
-
-          - script: env | sort
-            displayName: Show ENV vars
-
-          - task: Docker@2
-            inputs:
-              command: login
-              containerRegistry: Shared-Dockerhub-Datapunt
-            displayName: Docker hub login
-
-          - script: |
-              az login --identity
-              az acr login -n $(registry)
-            displayName: ACR login
-
-          # UNITTESTING & LINTING
-          - script: make test
-            displayName: make test
-
-          # BACKWARDS COMPATIBILITY TESTING
-          - script: |
-              make openapi-diff | tee diff_output.txt
-              if grep -q "API changes broke backward compatibility" diff_output.txt; then
-                echo "##vso[task.complete result=SucceededWithIssues;]Breaking OpenAPI changes detected!"
-              fi
-            displayName: make openapi-diff
-
-          # SECURITY SCANNER
-          - template: pipelines/aks/analyze.job.yaml@templates
-            parameters:
-              registry: $(registry)
-              images:
-                - aapp/images/app-$(SERVICE_NAME)
-              version: $(version)
-              trivyImage: docker.io/aquasec/trivy:0.62.1
-              trivyDbImage: docker.io/aquasec/trivy-db:2
-              trivyJavaDbImage: docker.io/aquasec/trivy-java-db:1
-              trivySkipFiles:
-                - '**/site-packages/PyJWT-*/METADATA'
-                - '**/site-packages/pyjwt-*/METADATA'
-              trivySkipDirectories: []
-              trivyTimeout: 5m0s
-
-          # LOCK PRODUCED IMAGES
-          - script: |
-              az acr repository update --write-enabled false --name $(registry) --image aapp/images/app-$(SERVICE_NAME):$(version)
-            displayName: "Lock image: aapp/images/app-$(SERVICE_NAME)"
+  - template: deploy.build-stage.yaml
+    parameters:
+      services: ${{ parameters.services }}
+      stageDisplayName: Build, test, analyze & push
+      includeQA: true
 
   # --------------------
   # TEST
