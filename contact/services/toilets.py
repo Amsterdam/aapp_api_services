@@ -4,7 +4,12 @@ from urllib.parse import quote
 
 from django.conf import settings
 
-from contact.enums.toilets import LIST_PROPERTY, ToiletFilters, ToiletProperties
+from contact.enums.toilets import (
+    LIST_PROPERTY,
+    ToiletFilters,
+    ToiletLayers,
+    ToiletProperties,
+)
 from contact.services.service_abstract import ServiceAbstract
 
 logger = logging.getLogger(__name__)
@@ -46,7 +51,11 @@ class ToiletService(ServiceAbstract):
             )
 
         full_data = self.build_response_payload(
-            full_toilet_data, ToiletFilters, ToiletProperties, LIST_PROPERTY
+            items=full_toilet_data,
+            filters=ToiletFilters,
+            layers=ToiletLayers,
+            properties_to_include=ToiletProperties,
+            list_property=LIST_PROPERTY,
         )
 
         return full_data

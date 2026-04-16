@@ -41,7 +41,7 @@ class ServiceMapsView(APIView):
         return Response(response_serializer.data)
 
 
-@method_decorator(cache_page(60 * 60 * 24), name="get")
+@method_decorator(cache_page(60 * 60 * 12), name="get")
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 
@@ -73,10 +73,12 @@ class ServiceMapView(APIView):
         response_payload = data_service.get_full_data()
 
         DynamicMapSerializer = build_map_response_serializer(
-            response_payload.get("properties_to_include", []),
-            response_payload.get("filters", []),
-            response_payload.get("list_property", {}),
-            response_payload.get("icons_to_include", None) is not None,
+            properties=response_payload.get("properties_to_include", []),
+            silent_properties=response_payload.get("silent_properties", []),
+            filters=response_payload.get("filters", []),
+            layers=response_payload.get("layers", []),
+            list_property=response_payload.get("list_property", {}),
+            include_icons=response_payload.get("icons_to_include", None) is not None,
         )
 
         response_serializer = DynamicMapSerializer(data=response_payload)

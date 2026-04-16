@@ -4,7 +4,16 @@ from typing import Callable, Literal, NamedTuple, Optional
 from rest_framework import serializers
 
 property_types = Literal[
-    "address", "boolean", "image", "price", "string", "malfunction"
+    "address",
+    "boolean",
+    "float",
+    "image",
+    "integer",
+    "key_value_table",
+    "price",
+    "string",
+    "malfunction",
+    "url",
 ]
 
 
@@ -31,10 +40,23 @@ class ServiceClass(NamedTuple):
     dataservice: Optional[Callable] = None
 
 
+class DataLayer(NamedTuple):
+    label: str
+    code: int
+    icon_label: str
+
+
 class FilterClass(NamedTuple):
     label: str
     filter_key: str
     filter_value: str | bool | int
+
+
+class LayerClass(NamedTuple):
+    label: str
+    filter_key: str
+    filter_value: str | bool | int
+    icon_label: str
 
 
 class PropertiesClass(NamedTuple):

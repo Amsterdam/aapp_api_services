@@ -6,6 +6,10 @@ class TapFilters(ChoicesEnum):
     pass
 
 
+class TapLayers(ChoicesEnum):
+    pass
+
+
 class TapProperties(ChoicesEnum):
     MALFUNCTION = PropertiesClass(
         label=None,
