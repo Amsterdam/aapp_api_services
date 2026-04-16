@@ -18,6 +18,7 @@ from contact.tests.mock_data.kingsday import (
     direction,
     events,
     first_aid,
+    park_and_ride,
     recycle_boat,
     recycle_drop_off,
     toilet,
@@ -246,6 +247,56 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         # Mock the response from the external API
         url = f"{settings.KINGSDAY_URL}6.json"
         responses.get(url, json=closed_parking_lot.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 3})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch(
+        "contact.services.kingsday_land.KingsdayLandData.choices_as_list",
+        return_value=[
+            {
+                "label": "Drinkwater",
+                "code": 0,
+                "icon_label": "drink_water",
+            }
+        ],
+    )
+    def test_success_get_service_map_view_kingsday_land_drink_water(
+        self, mock_data_layers
+    ):
+        # Mock the response from the external API
+        url = f"{settings.TAP_URL}"
+        responses.get(url, json=taps.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 3})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch(
+        "contact.services.kingsday_land.KingsdayLandData.choices_as_list",
+        return_value=[
+            {
+                "label": "P+R",
+                "code": 61,
+                "icon_label": "park_and_ride",
+            }
+        ],
+    )
+    def test_success_get_service_map_view_kingsday_land_park_and_ride(
+        self, mock_data_layers
+    ):
+        # Mock the response from the external API
+        url = f"{settings.KINGSDAY_URL}61.json"
+        responses.get(url, json=park_and_ride.MOCK_DATA)
 
         url = reverse("service-map", kwargs={"service_id": 3})
         response = self.client.get(

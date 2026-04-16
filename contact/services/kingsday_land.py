@@ -53,8 +53,8 @@ class KingsdayLandService(KingsdayAbstractService):
                     feature["geometry"] = self._get_tap_geometry_from_properties(
                         feature_properties
                     )
-                else:
-                    feature_geom = feature.get("geometry", {}) or {}
+
+                feature_geom = feature.get("geometry", {}) or {}
 
                 custom_properties = self.get_custom_properties(
                     feature_properties,

@@ -23,6 +23,7 @@ class KingsdayLandData(ChoicesEnum):
         label="Afgesloten parkeergarage", code=44273, icon_label="closed_parking_lot"
     )
     TAPS = DataLayer(label="Drinkwater", code=0, icon_label="tap")
+    PARK_AND_RIDE = DataLayer(label="P+R", code=44276, icon_label="park_and_ride")
 
 
 class KingsdayLandFilters(ChoicesEnum):
@@ -71,6 +72,12 @@ class KingsdayLandLayers(ChoicesEnum):
         filter_key="aapp_subtitle",
         filter_value="Afgesloten parkeergarage",
         icon_label="closed_parking_lot",
+    )
+    PARK_AND_RIDE = LayerClass(
+        label="P+R",
+        filter_key="aapp_subtitle",
+        filter_value="P+R",
+        icon_label="park_and_ride",
     )
 
 
@@ -157,6 +164,12 @@ class KingsdayLandIcons(ChoicesEnum):
         label="closed_parking_lot",
         path=IconPath["kingsday-parking-lot"],
         circle_color="#E50082",
+        path_color="#FFFFFF",
+    )
+    PARK_AND_RIDE = IconClass(
+        label="park_and_ride",
+        path=IconPath["kingsday-park-and-ride"],
+        circle_color="#004699",
         path_color="#FFFFFF",
     )
 
