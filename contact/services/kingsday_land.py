@@ -48,8 +48,19 @@ class KingsdayLandService(KingsdayAbstractService):
     def _preprocess_feature(
         self, *, feature: Dict[str, Any], layer: Dict[str, Any]
     ) -> None:
-        # no preprocessing needed for non-tap layers
+
         if layer.get("label") != "Drinkwater":
+            # if geometry is a multipoint, convert it to a point with the coordinates of the first point, as the frontend expects a point geometry for taps
+            geom = feature.get("geometry", {}) or {}
+            if (
+                geom.get("type") == "MultiPoint"
+                and isinstance(geom.get("coordinates"), list)
+                and len(geom["coordinates"]) > 0
+            ):
+                feature["geometry"] = {
+                    "type": "Point",
+                    "coordinates": geom["coordinates"][0],
+                }
             return
 
         properties = feature.get("properties", {}) or {}

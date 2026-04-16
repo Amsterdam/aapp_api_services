@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import responses
 from django.conf import settings
+from django.test.utils import override_settings
 from django.urls import reverse
 from rest_framework import status
 
@@ -28,6 +29,9 @@ from contact.tests.mock_data.kingsday import (
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
 
+@override_settings(
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}},
+)
 class TestServiceMapsView(ResponsesActivatedAPITestCase):
     def test_success_get_service_maps_view_no_module_source(self):
         url = reverse("service-maps")
@@ -97,6 +101,9 @@ class TestServiceMapsView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+@override_settings(
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}},
+)
 class TestServiceMapView(ResponsesActivatedAPITestCase):
     def test_success_get_service_map_view_toilets(self):
         # Mock the response from the external API

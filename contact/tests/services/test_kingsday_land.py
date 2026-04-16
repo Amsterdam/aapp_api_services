@@ -7,7 +7,7 @@ from contact.enums.kingsday_land import (
     KingsdayLandProperties,
 )
 from contact.services.kingsday_land import KingsdayLandService
-from contact.tests.mock_data.kingsday import events
+from contact.tests.mock_data.kingsday import events, first_aid
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
 
@@ -75,3 +75,28 @@ class KingsdayLandServiceTest(ResponsesActivatedAPITestCase):
         self.assertEqual(
             custom_properties["aapp_address"]["coordinates"]["lon"], 4.89489158
         )
+
+    def test_first_aid_multipoint_geometry_is_converted_to_point(self):
+        self.service.data_layers = [
+            {"label": "EHBO", "code": 1, "icon_label": "first_aid"}
+        ]
+        url = f"{self.service.data_url}{self.service.data_layers[0]['code']}.json"
+
+        responses.get(url, json=first_aid.MOCK_DATA)
+        full_data = self.service.get_full_data()
+
+        features = full_data["data"]["features"]
+
+        # MultiPoint features should be converted to Point features (frontend expects a Point geometry)
+        first = next(
+            f for f in features if (f.get("properties") or {}).get("id") == "12619310"
+        )
+        self.assertEqual(first["geometry"]["type"], "Point")
+        self.assertEqual(first["geometry"]["coordinates"], [4.899551, 52.377938])
+
+        # Point features should remain unchanged
+        another = next(
+            f for f in features if (f.get("properties") or {}).get("id") == "12619313"
+        )
+        self.assertEqual(another["geometry"]["type"], "Point")
+        self.assertEqual(another["geometry"]["coordinates"], [4.893404, 52.372925])
