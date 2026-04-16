@@ -1,4 +1,7 @@
+import logging
 from typing import Any, Dict, List
+
+from django.conf import settings
 
 from contact.enums.kingsday_land import (
     LIST_PROPERTY,
@@ -11,6 +14,8 @@ from contact.enums.kingsday_land import (
 )
 from contact.services.kingsday_abstract import KingsdayAbstractService
 
+logger = logging.getLogger(__name__)
+
 
 class KingsdayLandService(KingsdayAbstractService):
     data_enum = KingsdayLandData
@@ -20,6 +25,79 @@ class KingsdayLandService(KingsdayAbstractService):
     silent_properties_enum = KingsdayLandSilentProperties
     icons_enum = KingsdayLandIcons
     list_property = LIST_PROPERTY
+
+    def get_full_data(self) -> Dict[str, Any]:
+        base_url = self.data_url
+
+        all_features: list[Dict[str, Any]] = []
+        id_counter = 1
+
+        for layer in self.data_layers:
+            layer_label = layer["label"]
+            if layer_label == "Drinkwater":  # for taps, we use a different URL
+                url = settings.TAP_URL
+            else:
+                url = f"{base_url}{layer['code']}.json"
+            try:
+                features = self._get_geojson_items_for_url(url)
+            except Exception as e:
+                logger.error(f"Error fetching geojson items for URL {url}: {e}")
+                features = []
+
+            for feature in features:
+                feature_properties = feature.get("properties", {}) or {}
+
+                if layer_label == "Drinkwater":
+                    # for taps, we want to add the title property based on the description, as the original data does not have a title field
+                    feature_properties["title"] = self._tap_title(feature_properties)
+                    feature["geometry"] = self._get_tap_geometry_from_properties(
+                        feature_properties
+                    )
+                else:
+                    feature_geom = feature.get("geometry", {}) or {}
+
+                custom_properties = self.get_custom_properties(
+                    feature_properties,
+                    feature_geom,
+                    layer_type=layer_label,
+                    icon_name=layer.get("icon_label"),
+                )
+
+                feature["properties"] = {**feature_properties, **custom_properties}
+                feature["id"] = id_counter
+                id_counter += 1
+
+            all_features.extend(features)
+
+        return self.build_response_payload(
+            items=all_features,
+            filters=self.filters_enum,
+            layers=self.layers_enum,
+            properties_to_include=self.properties_enum,
+            silent_properties=self.silent_properties_enum,
+            list_property=self.list_property,
+            icons=self.icons_enum,
+        )
+
+    def _get_tap_geometry_from_properties(
+        self, properties: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Original API returns rd coordinates in the tap geometry field and lat/lon in the properties,
+        but we want to return lat/lon in the geometry field to be consistent with other services.
+        """
+        if (
+            properties.get("latitude") is not None
+            and properties.get("longitude") is not None
+        ):
+            return {
+                "type": "Point",
+                "coordinates": [
+                    properties.get("longitude"),
+                    properties.get("latitude"),
+                ],
+            }
+        return {}
 
     def get_custom_properties(
         self,
@@ -36,7 +114,7 @@ class KingsdayLandService(KingsdayAbstractService):
         However, the fill and fill_opacity properties for the 'Omleiding' layer are not prefixed,
         as they are used for styling the layer and the geojson standard is used.
         """
-        address = self._get_address_from_properties(properties, geom)
+
         prefix = self.properties_prefix
 
         if layer_type == "Omleiding" and geom.get("type") == "Polygon":
@@ -47,8 +125,15 @@ class KingsdayLandService(KingsdayAbstractService):
             fill = None
             fill_opacity = None
 
+        if layer_type == "Drinkwater":
+            title = self._tap_title(properties)
+            address = None  # for taps we don't want to show the address, as it is often not accurate and clutters the info box
+        else:
+            title = properties.get("title", "")
+            address = self._get_address_from_properties(properties, geom)
+
         return {
-            f"{prefix}title": properties.get("title", ""),
+            f"{prefix}title": title,
             f"{prefix}subtitle": layer_type,
             f"{prefix}icon_type": icon_name,
             f"{prefix}description": self._clean_html(properties.get("description"))
@@ -61,6 +146,10 @@ class KingsdayLandService(KingsdayAbstractService):
             "fill": fill,
             "fill-opacity": fill_opacity,
         }
+
+    def _tap_title(self, properties: Dict[str, Any]) -> str:
+        description = (properties.get("beschrijvi") or "").lower()
+        return "Drinkfontein" if "fontein" in description else "Watertap"
 
     def _create_toilet_table(
         self, meta: List[Dict[str, str]]

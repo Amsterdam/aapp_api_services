@@ -55,7 +55,11 @@ class KingsdayAbstractService(ServiceAbstract):
         for layer in self.data_layers:
             layer_label = layer["label"]
             url = f"{base_url}{layer['code']}.json"
-            features = self._get_geojson_items_for_url(url)
+            try:
+                features = self._get_geojson_items_for_url(url)
+            except Exception as e:
+                logger.error(f"Error fetching geojson items for URL {url}: {e}")
+                features = []
 
             for feature in features:
                 feature_properties = feature.get("properties", {}) or {}

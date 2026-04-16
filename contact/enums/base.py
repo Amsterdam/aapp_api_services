@@ -4,7 +4,16 @@ from typing import Callable, Literal, NamedTuple, Optional
 from rest_framework import serializers
 
 property_types = Literal[
-    "address", "boolean", "image", "price", "string", "malfunction"
+    "address",
+    "boolean",
+    "float",
+    "image",
+    "integer",
+    "key_value_table",
+    "price",
+    "string",
+    "malfunction",
+    "url",
 ]
 
 

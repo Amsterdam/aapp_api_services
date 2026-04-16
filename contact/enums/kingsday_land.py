@@ -22,6 +22,7 @@ class KingsdayLandData(ChoicesEnum):
     CLOSED_PARKING_LOT = DataLayer(
         label="Afgesloten parkeergarage", code=44273, icon_label="closed_parking_lot"
     )
+    TAPS = DataLayer(label="Drinkwater", code=0, icon_label="tap")
 
 
 class KingsdayLandFilters(ChoicesEnum):
@@ -46,6 +47,12 @@ class KingsdayLandLayers(ChoicesEnum):
         filter_key="aapp_subtitle",
         filter_value="Inleverpunt overgebleven spullen",
         icon_label="recycle_drop_off",
+    )
+    TAP = LayerClass(
+        label="Drinkwater",
+        filter_key="aapp_subtitle",
+        filter_value="Drinkwater",
+        icon_label="tap",
     )
     TOILET = LayerClass(
         label="Toilet",
@@ -126,6 +133,12 @@ class KingsdayLandIcons(ChoicesEnum):
         label="recycle_drop_off",
         path=IconPath["kingsday-recycle"],
         circle_color="#00A03C",
+        path_color="#FFFFFF",
+    )
+    TAP = IconClass(
+        label="tap",
+        path=IconPath["kingsday-tap"],
+        circle_color="#009DE6",
         path_color="#FFFFFF",
     )
     TOILET = IconClass(
