@@ -1,6 +1,6 @@
 #################################################
 #
-# Deployment pipeline
+# Deployment pipeline, legacy, replaced by deploy.main.yaml and deploy.pr.yaml. Kept for reference and to not break existing PRs.
 #
 #################################################
 
