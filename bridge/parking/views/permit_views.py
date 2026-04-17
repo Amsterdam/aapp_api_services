@@ -335,6 +335,9 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
     def _interpret_days(self, payload):
         interpret_days = []
         time_frame_data = payload["data"]["time_frame_data"]
+        if not time_frame_data:
+            return []
+
         assert len(time_frame_data) >= 7, "Expected 7 days in time_frame_data"
         for n, weekday in enumerate(self.weekdays):
             day = time_frame_data[n]

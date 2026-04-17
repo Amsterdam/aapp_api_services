@@ -57,3 +57,12 @@ MOCK_RESPONSE_WITH_RATE = {
         ],
     },
 }
+
+MOCK_RESPONSE_WITHOUT_TIME_FRAME_DATA = {
+    "result": "success",
+    "data": {
+        "zone_id": 100000000,
+        "zone_description": "Tariefzone 2 (€6,73) ma-za 09:00-21:00",
+        "time_frame_data": None,
+    },
+}
