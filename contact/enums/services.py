@@ -24,14 +24,14 @@ class Services(ChoicesEnum):
     KINGSDAY_LAND = ServiceClass(
         id=3,
         title="Op straat",
-        icon=IconPath.get("info"),
+        icon=IconPath.get("kingsday-land"),
         dataservice=KingsdayLandService,
         input_module=ModuleSourceChoices.KONINGSDAG.value,
     )
     KINGSDAY_WATER = ServiceClass(
         id=4,
         title="Op het water",
-        icon=IconPath.get("info"),
+        icon=IconPath.get("kingsday-water"),
         dataservice=KingsdayWaterService,
         input_module=ModuleSourceChoices.KONINGSDAG.value,
     )
