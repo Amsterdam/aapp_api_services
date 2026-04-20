@@ -32,7 +32,7 @@ class KingsdayLandFilters(ChoicesEnum):
 
 
 class KingsdayLandLayers(ChoicesEnum):
-    EVENT = LayerClass(
+    KID_FLEA_MARKET = LayerClass(
         label="Kindervrijmarkt",
         filter_key="aapp_subtitle",
         filter_value="Kindervrijmarkt",
