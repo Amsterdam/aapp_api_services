@@ -3,13 +3,7 @@ MOCK_DATA = {
     "features": [
         {
             "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    4.89772303,
-                    52.36231791
-                ]
-            },
+            "geometry": {"type": "Point", "coordinates": [4.89772303, 52.36231791]},
             "properties": {
                 "id": "12345673",
                 "title": "Kindervrijmarkt Amstelveld (tot aan de speeltoestellen)",
@@ -19,18 +13,12 @@ MOCK_DATA = {
                 "zip": "1017 JD",
                 "city": "Amsterdam",
                 "website": "http:\/\/www.amsterdam.nl\/koningsdag",
-                "meta": []
-            }
+                "meta": [],
+            },
         },
         {
             "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    4.82184893,
-                    52.37973118
-                ]
-            },
+            "geometry": {"type": "Point", "coordinates": [4.82184893, 52.37973118]},
             "properties": {
                 "id": "12345674",
                 "title": "Kindervrijmarkt Plein \u201840-\u201845",
@@ -40,18 +28,12 @@ MOCK_DATA = {
                 "zip": "1063 KP",
                 "city": "Amsterdam",
                 "website": "http:\/\/www.amsterdam.nl\/koningsdag",
-                "meta": []
-            }
+                "meta": [],
+            },
         },
         {
             "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    4.89548725,
-                    52.36598396
-                ]
-            },
+            "geometry": {"type": "Point", "coordinates": [4.89548725, 52.36598396]},
             "properties": {
                 "id": "12345675",
                 "title": "Kindervrijmarkt Rembrandtplein",
@@ -61,18 +43,12 @@ MOCK_DATA = {
                 "zip": "1017 CV",
                 "city": "Amsterdam",
                 "website": "http:\/\/www.amsterdam.nl\/koningsdag",
-                "meta": []
-            }
+                "meta": [],
+            },
         },
         {
             "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    4.90114087,
-                    52.36991696
-                ]
-            },
+            "geometry": {"type": "Point", "coordinates": [4.90114087, 52.36991696]},
             "properties": {
                 "id": "12345676",
                 "title": "Kindervrijmarkt Sint Antoniesluis tot de rijbaan van de auto\u2019s",
@@ -82,18 +58,12 @@ MOCK_DATA = {
                 "zip": "1011 JB",
                 "city": "Amsterdam",
                 "website": "http:\/\/www.amsterdam.nl\/koningsdag",
-                "meta": []
-            }
+                "meta": [],
+            },
         },
         {
             "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    4.88120577,
-                    52.38620006
-                ]
-            },
+            "geometry": {"type": "Point", "coordinates": [4.88120577, 52.38620006]},
             "properties": {
                 "id": "12345677",
                 "title": "Kindervrijmarkt Westerpark",
@@ -103,18 +73,12 @@ MOCK_DATA = {
                 "zip": "1013 RR",
                 "city": "Amsterdam",
                 "website": "http:\/\/www.amsterdam.nl\/koningsdag",
-                "meta": []
-            }
+                "meta": [],
+            },
         },
         {
             "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    5.04041173,
-                    52.30805691
-                ]
-            },
+            "geometry": {"type": "Point", "coordinates": [5.04041173, 52.30805691]},
             "properties": {
                 "id": "12345679",
                 "title": "Kindervrijmarkt Weesp (tussen Breedstraat en Binnenveer)",
@@ -124,18 +88,12 @@ MOCK_DATA = {
                 "zip": "1381 CD",
                 "city": "Amsterdam",
                 "website": "http:\/\/www.amsterdam.nl\/koningsdag",
-                "meta": []
-            }
+                "meta": [],
+            },
         },
         {
             "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    5.04205888,
-                    52.30750369
-                ]
-            },
+            "geometry": {"type": "Point", "coordinates": [5.04205888, 52.30750369]},
             "properties": {
                 "id": "12345678",
                 "title": "Kindervrijmarkt Weesp (tussen Pleinbrug en Slijkstraatbrug)",
@@ -144,8 +102,8 @@ MOCK_DATA = {
                 "zip": "1381 BB",
                 "city": "Amsterdam",
                 "website": "http:\/\/www.amsterdam.nl\/koningsdag",
-                "meta": []
-            }
-        }
-    ]
+                "meta": [],
+            },
+        },
+    ],
 }

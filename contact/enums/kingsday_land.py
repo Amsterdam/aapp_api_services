@@ -10,7 +10,9 @@ from contact.icons import IconPath
 
 
 class KingsdayLandData(ChoicesEnum):
-    KID_FLEA_MARKET = DataLayer(label="Kindervrijmarkt", code=44279, icon_label="kid_flea_market")
+    KID_FLEA_MARKET = DataLayer(
+        label="Kindervrijmarkt", code=44279, icon_label="kid_flea_market"
+    )
     EVENTS = DataLayer(label="Evenement", code=44249, icon_label="event")
     FIRST_AID = DataLayer(label="EHBO-post", code=44267, icon_label="first_aid")
     LEFTOVER_STUFF = DataLayer(
@@ -147,7 +149,7 @@ class KingsdayLandIcons(ChoicesEnum):
         label="kid_flea_market",
         path=IconPath["kingsday-kid-flea-market"],
         circle_color="#009DE6",
-        path_color="#181818"
+        path_color="#181818",
     )
     EVENT = IconClass(
         label="event",

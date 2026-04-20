@@ -86,7 +86,10 @@ class KingsdayLandService(KingsdayAbstractService):
 
         prefix = self.properties_prefix
 
-        if layer_type == "Omleiding" and geom.get("type") in ["Polygon", "MultiPolygon"]:
+        if layer_type == "Omleiding" and geom.get("type") in [
+            "Polygon",
+            "MultiPolygon",
+        ]:
             # for detour we want to add fill and opacity properties
             fill = "#EC0000"
             fill_opacity = 0.2
