@@ -21,6 +21,7 @@ from contact.tests.mock_data.kingsday import (
     direction,
     events,
     first_aid,
+    kid_flea_market,
     park_and_ride,
     recycle_boat,
     recycle_drop_off,
@@ -205,6 +206,14 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "url": f"{settings.KINGSDAY_URL}61.json",
                 "mock": park_and_ride.MOCK_DATA,
                 "expected_features": len(park_and_ride.MOCK_DATA["features"]),
+            },
+            {
+                "label": "Kindervrijmarkt",
+                "code": 61,
+                "icon_label": "kid_flea_market",
+                "url": f"{settings.KINGSDAY_URL}61.json",
+                "mock": kid_flea_market.MOCK_DATA,
+                "expected_features": len(kid_flea_market.MOCK_DATA["features"]),
             },
         ]
 
