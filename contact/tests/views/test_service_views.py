@@ -236,8 +236,8 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                         headers=self.api_headers,
                     )
 
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
                 payload = response.json()
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
 
                 self.assertEqual(
                     payload["properties_to_include"],
