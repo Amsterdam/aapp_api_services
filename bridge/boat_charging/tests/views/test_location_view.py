@@ -10,6 +10,7 @@ from bridge.boat_charging.tests.mock_data import (
     tariff_detail,
 )
 from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
+from bridge.boat_charging.views.base_view import BaseView
 
 
 class TestLocationView(BoatChargingTestCase):
@@ -60,3 +61,33 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(resp_tariff.call_count, 1)
         self.assertEqual(len(response.data["charging_stations"]), 2)
+
+    def test_get_addr(self):
+        input = "Tilanusstraat 10-2"
+        street, number = BaseView.split_address(input)
+        self.assertEqual(street, "Tilanusstraat ")
+        self.assertEqual(number, "10-2")
+
+    def test_get_addr_2(self):
+        input = "Amstel 1"
+        street, number = BaseView.split_address(input)
+        self.assertEqual(street, "Amstel ")
+        self.assertEqual(number, "1")
+
+    def test_get_addr_3(self):
+        input = "Retief Straat 15h/2"
+        street, number = BaseView.split_address(input)
+        self.assertEqual(street, "Retief Straat ")
+        self.assertEqual(number, "15h/2")
+
+    def test_get_addr4(self):
+        input = "Main Street 12 bis"
+        street, number = BaseView.split_address(input)
+        self.assertEqual(street, "Main Street ")
+        self.assertEqual(number, "12 bis")
+
+    def test_get_addr5(self):
+        input = "Kraanspoor 7L3"
+        street, number = BaseView.split_address(input)
+        self.assertEqual(street, "Kraanspoor ")
+        self.assertEqual(number, "7L3")

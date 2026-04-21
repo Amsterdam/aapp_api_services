@@ -98,12 +98,15 @@ class BaseView(GenericAPIView):
         return
 
     def get_location_data(self, item) -> dict:
+        street, number = self.split_address(item["address"])
+
         return {
             "id": item["id"],
             "name": item["name"],
             "address": {
                 "city": item["city"],
-                "street": item["address"],  # The street contains the house number!
+                "street": street,
+                "number": number,
                 "coordinates": {
                     "lat": item["coordinates"]["latitude"],
                     "lon": item["coordinates"]["longitude"],
@@ -129,6 +132,14 @@ class BaseView(GenericAPIView):
             raise ValidationError("Invalid session id")
         safe_param = urllib_parse_quote(param, safe="")
         return safe_param
+
+    @staticmethod
+    def split_address(addr):
+        pattern = re.compile(r"^(?P<street>.*?\s)(?P<number>\d.*)$")
+        m = pattern.match(addr)
+        if not m:
+            return addr, ""  # fallback: no number part found
+        return m.group("street"), m.group("number")
 
 
 def boat_charging_openapi_decorator(
