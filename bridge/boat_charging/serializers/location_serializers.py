@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from core.serializers.address_serializers import AddressSerializer
 
-OPERATION_STATE_CHOICES = ["OPERATIVE", "INOPERATIVE", "OFFLINE", "UNKNOWN"]
+OPERATION_STATE_CHOICES = ["OPERATIVE", "INOPERATIVE", "OFFLINE", "UNKNOWN", "OCCUPIED"]
 
 
 class OpeningTimesSerializer(serializers.Serializer):
@@ -39,6 +39,7 @@ class ConnectorSerializer(serializers.Serializer):
 
 class EVSESerializer(serializers.Serializer):
     id = serializers.CharField()
+    display_name = serializers.CharField()
     ocpp_evse_id = serializers.IntegerField()
     evse_id = serializers.CharField()
     status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES)

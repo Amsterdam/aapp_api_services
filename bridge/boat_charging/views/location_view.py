@@ -86,6 +86,7 @@ class LocationDetailView(LocationView):
             "evses": [
                 {
                     "id": evs["id"],
+                    "display_name": f'{cs_json["id"]}-{evs["id"]}',
                     "ocpp_evse_id": evs["ocppEvseId"],
                     "evse_id": evs["evseId"],
                     "status": evs["status"],
