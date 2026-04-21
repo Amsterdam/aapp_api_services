@@ -1,7 +1,7 @@
 import copy
 import logging
+from core.enums import NotificationType
 
-from django.conf import settings
 from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
 from django.utils import timezone
 
@@ -15,10 +15,6 @@ from notification.services.push import PushService
 
 logger = logging.getLogger(__name__)
 
-
-PUSH_ONLY_NOTIFICATION_TYPES = getattr(
-    settings, 'NOTIFICATION_PUSH_ONLY_TYPES', ['push_only_notification']
-)
 
 class NotificationCRUD:
     def __init__(
@@ -44,6 +40,9 @@ class NotificationCRUD:
         self.total_enabled_count = 0
         self.failed_token_count = 0
         self.notifications_with_push, self.notifications_without_push = [], []
+        self.push_only_notification_types = [
+            NotificationType.PARKING_REMINDER.value
+        ]  # These notifications should not be saved to the database, only pushed to Firebase
         self.devices_for_push = []
         self.push_service = PushService() if push_enabled else None
         self._build_default_context()
@@ -124,7 +123,10 @@ class NotificationCRUD:
         """
         self.source_notification.id = None
         with_push, without_push = [], []
-        push_only = self.source_notification.notification_type in PUSH_ONLY_NOTIFICATION_TYPES
+        push_only = (
+            self.source_notification.notification_type
+            in self.push_only_notification_types
+        )
         for c in device_list:
             new_notification: Notification = copy.copy(self.source_notification)
             new_notification.context = copy.deepcopy(self.source_notification.context)
@@ -142,7 +144,9 @@ class NotificationCRUD:
             self.notifications_without_push = without_push
         else:
             self.notifications_with_push = Notification.objects.bulk_create(with_push)
-            self.notifications_without_push = Notification.objects.bulk_create(without_push)
+            self.notifications_without_push = Notification.objects.bulk_create(
+                without_push
+            )
         return self.notifications_with_push
 
     @property

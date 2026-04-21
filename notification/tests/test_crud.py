@@ -290,25 +290,37 @@ class TestNotificationCRUD(TestCase):
         device = baker.make(Device, firebase_token="abc_token")
         notification_crud = NotificationCRUD(self.notification)
 
-        device_list = notification_crud._collect_and_annotate_devices(Device.objects.all())
+        device_list = notification_crud._collect_and_annotate_devices(
+            Device.objects.all()
+        )
         notifications_with_push = notification_crud._create_notifications(device_list)
 
         self.assertEqual(len(notifications_with_push), 1)
-        self.assertEqual(notifications_with_push[0].device_external_id, device.external_id)
-        notifications = Notification.objects.filter(device_external_id=device.external_id)
+        self.assertEqual(
+            notifications_with_push[0].device_external_id, device.external_id
+        )
+        notifications = Notification.objects.filter(
+            device_external_id=device.external_id
+        )
         self.assertEqual(notifications.count(), 1)
 
-    @override_settings(PUSH_ONLY_NOTIFICATION_TYPES=["foobar-type"])
     def test_create_notifications_push_only(self):
         device = baker.make(Device, firebase_token="abc_token")
         notification_crud = NotificationCRUD(self.notification)
+        notification_crud.push_only_notification_types = [
+            "foobar-type"
+        ]  # Override the push only types for this test
 
-        device_list = notification_crud._collect_and_annotate_devices(Device.objects.all())
+        device_list = notification_crud._collect_and_annotate_devices(
+            Device.objects.all()
+        )
         notifications_with_push = notification_crud._create_notifications(device_list)
 
         self.assertEqual(len(notifications_with_push), 1)
-        self.assertEqual(notifications_with_push[0].device_external_id, device.external_id)
-        notifications = Notification.objects.filter(device_external_id=device.external_id)
+        self.assertEqual(
+            notifications_with_push[0].device_external_id, device.external_id
+        )
+        notifications = Notification.objects.filter(
+            device_external_id=device.external_id
+        )
         self.assertEqual(notifications.count(), 0)
-
-
