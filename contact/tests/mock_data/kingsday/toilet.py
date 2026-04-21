@@ -5,7 +5,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.9556858, 52.316098]},
             "properties": {
-                "id": "12575988",
+                "id": "12345678",
                 "title": "Anton de Komplein 152",
                 "street": "Anton de Komplein 152",
                 "meta": [
@@ -28,7 +28,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.8812294, 52.3780068]},
             "properties": {
-                "id": "12576231",
+                "id": "12345677",
                 "title": "Westerstraat t/o nr. 202 op middenstuk ",
                 "street": "Westerstraat t/o nr. 202 op middenstuk ",
                 "meta": [
@@ -57,7 +57,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.884716, 52.382265]},
             "properties": {
-                "id": "12576240",
+                "id": "12345676",
                 "title": "Palmgracht / Brouwersgracht",
                 "street": "Palmgracht / Brouwersgracht",
                 "meta": [
@@ -80,7 +80,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.8652343, 52.3595267]},
             "properties": {
-                "id": "12576372",
+                "id": "12345675",
                 "title": "Vondelparkwerf Kattenlaan 6",
                 "street": "Vondelparkwerf Kattenlaan 6",
                 "meta": [

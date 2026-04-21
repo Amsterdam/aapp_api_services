@@ -21,6 +21,7 @@ from contact.tests.mock_data.kingsday import (
     direction,
     events,
     first_aid,
+    kid_flea_market,
     park_and_ride,
     recycle_boat,
     recycle_drop_off,
@@ -200,11 +201,19 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
             },
             {
                 "label": "P+R",
-                "code": 61,
+                "code": 7,
                 "icon_label": "park_and_ride",
-                "url": f"{settings.KINGSDAY_URL}61.json",
+                "url": f"{settings.KINGSDAY_URL}7.json",
                 "mock": park_and_ride.MOCK_DATA,
                 "expected_features": len(park_and_ride.MOCK_DATA["features"]),
+            },
+            {
+                "label": "Kindervrijmarkt",
+                "code": 8,
+                "icon_label": "kid_flea_market",
+                "url": f"{settings.KINGSDAY_URL}8.json",
+                "mock": kid_flea_market.MOCK_DATA,
+                "expected_features": len(kid_flea_market.MOCK_DATA["features"]),
             },
         ]
 
@@ -227,8 +236,8 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                         headers=self.api_headers,
                     )
 
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
                 payload = response.json()
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
 
                 self.assertEqual(
                     payload["properties_to_include"],
@@ -243,25 +252,25 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         cases = [
             {
                 "label": "Invaarverbod",
-                "code": 7,
+                "code": 9,
                 "icon_label": "boating_ban",
                 "mock": boating_ban.MOCK_DATA,
             },
             {
                 "label": "Afsluiting",
-                "code": 8,
+                "code": 10,
                 "icon_label": "boat_block",
                 "mock": boat_block.MOCK_DATA,
             },
             {
                 "label": "Afvalboot",
-                "code": 9,
+                "code": 11,
                 "icon_label": "recycle_boat",
                 "mock": recycle_boat.MOCK_DATA,
             },
             {
                 "label": "Vaarrichting",
-                "code": 10,
+                "code": 12,
                 "icon_label": "boat_direction",
                 "mock": direction.MOCK_DATA,
             },
@@ -369,7 +378,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         polygon_features = [
             f
             for f in payload["data"]["features"]
-            if f.get("geometry", {}).get("type") == "Polygon"
+            if f.get("geometry", {}).get("type") in ["Polygon", "MultiPolygon"]
         ]
         self.assertTrue(polygon_features)
 

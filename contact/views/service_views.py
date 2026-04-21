@@ -20,7 +20,7 @@ from core.utils.openapi_utils import extend_schema_for_api_key
 logger = logging.getLogger(__name__)
 
 
-@method_decorator(cache_page(60 * 60 * 24), name="get")
+@method_decorator(cache_page(30 * 60), name="get")
 class ServiceMapsView(APIView):
     @extend_schema_for_api_key(
         success_response=ServiceMapsResponseSerializer(many=True),
@@ -41,7 +41,7 @@ class ServiceMapsView(APIView):
         return Response(response_serializer.data)
 
 
-@method_decorator(cache_page(60 * 60 * 12), name="get")
+@method_decorator(cache_page(30 * 60), name="get")
 class ServiceMapView(APIView):
     response_serializer_class = ServiceMapResponseSerializer
 

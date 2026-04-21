@@ -5,7 +5,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "MultiPoint", "coordinates": [[4.899551, 52.377938]]},
             "properties": {
-                "id": "12619310",
+                "id": "12345678",
                 "title": "EHBO-post Centraal Station",
                 "description": "<p>EHBO-posten voor eerste hulp bij ongevallen tijdens Koningsdag 11.30 - 23.30 uur</p>",
                 "street": "Burgwallen-Nieuwezijds",
@@ -19,7 +19,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.893404, 52.372925]},
             "properties": {
-                "id": "12619313",
+                "id": "12345677",
                 "title": "EHBO-post Dam",
                 "description": "EHBO-posten voor eerste hulp bij ongevallen tijdens Koningsdag 12.30 - 22.30 uur",
                 "street": "Dam",
@@ -33,7 +33,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "MultiPoint", "coordinates": [[4.897163, 52.366412]]},
             "properties": {
-                "id": "12619316",
+                "id": "12345676",
                 "title": "EHBO-post Rembrandtplein",
                 "description": "<p>EHBO-posten voor eerste hulp bij ongevallen tijdens Koningsdag 12.30 - 22.30 uur</p>",
                 "street": "Rembrandtplein",
@@ -45,37 +45,9 @@ MOCK_DATA = {
         },
         {
             "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [4.882545, 52.363981]},
-            "properties": {
-                "id": "12619319",
-                "title": "EHBO-post Leidseplein",
-                "description": "EHBO-posten voor eerste hulp bij ongevallen tijdens Koningsdag 12.30 - 23.30 uur",
-                "street": "Leidseplein",
-                "street_number": "26",
-                "city": "Amsterdam",
-                "website": "http://www.amsterdam.nl/koningsdag",
-                "meta": [],
-            },
-        },
-        {
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [4.869144, 52.358035]},
-            "properties": {
-                "id": "12619322",
-                "title": "EHBO-post Vondelpark",
-                "description": "EHBO-posten voor eerste hulp bij ongevallen tijdens Koningsdag 09.00 - 18.00 uur",
-                "street": "Vondelpark",
-                "street_number": "52,358035 4,869144",
-                "city": "Amsterdam",
-                "website": "http://www.amsterdam.nl/koningsdag",
-                "meta": [],
-            },
-        },
-        {
-            "type": "Feature",
             "geometry": {"type": "MultiPoint", "coordinates": [[4.887322, 52.37996]]},
             "properties": {
-                "id": "12619325",
+                "id": "12345675",
                 "title": "EHBO-post Noordermarkt",
                 "description": "<p>EHBO-posten voor eerste hulp bij ongevallen tijdens Koningsdag 11.00 - 22.30 uur</p>",
                 "street": "Noordermarkt",
@@ -89,7 +61,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.889467, 52.367448]},
             "properties": {
-                "id": "12619328",
+                "id": "12345674",
                 "title": "EHBO-post Koningsplein",
                 "description": "EHBO-posten voor eerste hulp bij ongevallen tijdens Koningsdag 12.30 - 22.30 uur",
                 "street": "Koningsplein ",
@@ -103,7 +75,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "MultiPoint", "coordinates": [[4.88439, 52.374169]]},
             "properties": {
-                "id": "12619331",
+                "id": "12345673",
                 "title": "EHBO-post Westerstraat",
                 "description": "<p>EHBO-posten voor eerste hulp bij ongevallen tijdens Koningsdag 13.00 - 20.00 uur</p>",
                 "street": "Westermarkt",
