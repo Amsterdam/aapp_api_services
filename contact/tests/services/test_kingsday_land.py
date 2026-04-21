@@ -85,14 +85,14 @@ class KingsdayLandServiceTest(ResponsesActivatedAPITestCase):
 
         # extract the id of the feature with MultiPoint geometry and later check if it has been converted to Point geometry
         multipoint_id = [
-            feature.get("id")
+            (feature.get("properties") or {}).get("id")
             for feature in mock_data["features"]
             if feature.get("geometry", {}).get("type") == "MultiPoint"
         ][0]
 
         # also extract the id of a feature with Point geometry to check that it remains unchanged
         point_id = [
-            feature.get("id")
+            (feature.get("properties") or {}).get("id")
             for feature in mock_data["features"]
             if feature.get("geometry", {}).get("type") == "Point"
         ][0]
