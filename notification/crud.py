@@ -1,10 +1,11 @@
 import copy
 import logging
-from core.enums import NotificationType
+import uuid
 
 from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
 from django.utils import timezone
 
+from core.enums import NotificationType
 from notification.models import (
     Device,
     Notification,
@@ -132,6 +133,8 @@ class NotificationCRUD:
             new_notification.context = copy.deepcopy(self.source_notification.context)
             new_notification.device = c
             new_notification.device_external_id = c.external_id
+            if push_only:
+                new_notification.id = uuid.uuid4()  # ID is required for push context, but these notifications won't be saved to DB
             if c in self.devices_for_push and self.push_service:
                 new_notification.pushed_at = timezone.now()
                 with_push.append(new_notification)
