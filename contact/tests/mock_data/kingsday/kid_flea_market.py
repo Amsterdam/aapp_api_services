@@ -75,35 +75,6 @@ MOCK_DATA = {
                 "website": "http:\/\/www.amsterdam.nl\/koningsdag",
                 "meta": [],
             },
-        },
-        {
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [5.04041173, 52.30805691]},
-            "properties": {
-                "id": "12345679",
-                "title": "Kindervrijmarkt Weesp (tussen Breedstraat en Binnenveer)",
-                "description": "Deze vrijmarkt is speciaal voor kinderen (tot 16 jaar)",
-                "street": "Oudegracht",
-                "street_number": "5",
-                "zip": "1381 CD",
-                "city": "Amsterdam",
-                "website": "http:\/\/www.amsterdam.nl\/koningsdag",
-                "meta": [],
-            },
-        },
-        {
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [5.04205888, 52.30750369]},
-            "properties": {
-                "id": "12345678",
-                "title": "Kindervrijmarkt Weesp (tussen Pleinbrug en Slijkstraatbrug)",
-                "description": "Deze vrijmarkt is speciaal voor kinderen (tot 16 jaar)",
-                "street": "Pleinbrug",
-                "zip": "1381 BB",
-                "city": "Amsterdam",
-                "website": "http:\/\/www.amsterdam.nl\/koningsdag",
-                "meta": [],
-            },
-        },
+        }
     ],
 }
