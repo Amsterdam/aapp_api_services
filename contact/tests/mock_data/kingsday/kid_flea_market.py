@@ -75,6 +75,6 @@ MOCK_DATA = {
                 "website": "http:\/\/www.amsterdam.nl\/koningsdag",
                 "meta": [],
             },
-        }
+        },
     ],
 }
