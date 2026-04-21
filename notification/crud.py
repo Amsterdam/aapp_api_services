@@ -1,6 +1,7 @@
 import copy
 import logging
 
+from django.conf import settings
 from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
 from django.utils import timezone
 
@@ -14,6 +15,10 @@ from notification.services.push import PushService
 
 logger = logging.getLogger(__name__)
 
+
+PUSH_ONLY_NOTIFICATION_TYPES = getattr(
+    settings, 'NOTIFICATION_PUSH_ONLY_TYPES', ['push_only_notification']
+)
 
 class NotificationCRUD:
     def __init__(
@@ -119,6 +124,7 @@ class NotificationCRUD:
         """
         self.source_notification.id = None
         with_push, without_push = [], []
+        push_only = self.source_notification.notification_type in PUSH_ONLY_NOTIFICATION_TYPES
         for c in device_list:
             new_notification: Notification = copy.copy(self.source_notification)
             new_notification.context = copy.deepcopy(self.source_notification.context)
@@ -130,8 +136,13 @@ class NotificationCRUD:
             else:
                 without_push.append(new_notification)
 
-        self.notifications_with_push = Notification.objects.bulk_create(with_push)
-        self.notifications_without_push = Notification.objects.bulk_create(without_push)
+        if push_only:
+            # Do not save to DB, just return notifications to be pushed
+            self.notifications_with_push = with_push
+            self.notifications_without_push = without_push
+        else:
+            self.notifications_with_push = Notification.objects.bulk_create(with_push)
+            self.notifications_without_push = Notification.objects.bulk_create(without_push)
         return self.notifications_with_push
 
     @property
