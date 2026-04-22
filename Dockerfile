@@ -73,9 +73,12 @@ RUN addgroup -S -g ${APP_GID} app \
 COPY --from=builder --chown=appuser:app /app /app
 USER appuser
 
-### Core stages for administrative tasks
-# These need root to write to the home dir, so we use the core image for these tasks
-FROM runtime AS app-core
+### Linting stage for administrative tasks
+#   Needs root to write to the home dir, so we use the core image for these tasks
+FROM runtime AS lint
+COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /uvx /bin/
+ENV UV_CACHE_DIR=${XDG_CACHE_HOME}/uv \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
 USER root
 
 ### City Pass stages
