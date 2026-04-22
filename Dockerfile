@@ -22,10 +22,10 @@ RUN apk add --no-cache --virtual .build-deps \
     build-base \
     linux-headers
 
-# Install dependencies, but not the project itself yet, for caching purposes
+# Install dependencies
 COPY pyproject.toml ./
 COPY uv.lock ./
-RUN uv sync --frozen --no-install-project
+RUN uv sync --frozen
 
 # Copy application code
 COPY manage.py ./
@@ -34,9 +34,6 @@ COPY gunicorn.conf.py ./
 COPY core ./core
 COPY deploy ./deploy
 COPY notification ./notification
-
-# Install dependencies
-RUN uv sync --frozen
 
 # Collect static assets
 RUN DJANGO_SETTINGS_MODULE=core.settings.base uv run python manage.py collectstatic --no-input
@@ -67,14 +64,14 @@ ARG APP_UID=1000
 ARG APP_GID=1000
 
 RUN addgroup -S -g ${APP_GID} app \
-    && adduser -S -D -u ${APP_UID} -G app appuser \
-    && mkdir -p "$AZURE_CONFIG_DIR" "$PYTHONPYCACHEPREFIX"
+    && adduser -S -D -u ${APP_UID} -G app appuser
 
 COPY --from=builder --chown=appuser:app /app /app
 USER appuser
+RUN mkdir -p "$AZURE_CONFIG_DIR" "$PYTHONPYCACHEPREFIX"
 
 ### Linting stage for administrative tasks
-#   Needs root to write to the home dir, so we use the core image for these tasks
+#   Needs root to write to the home dir and uv runtime
 FROM runtime AS lint
 COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /uvx /bin/
 ENV UV_CACHE_DIR=${XDG_CACHE_HOME}/uv \
