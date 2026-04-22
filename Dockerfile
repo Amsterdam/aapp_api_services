@@ -1,88 +1,114 @@
-### Builds core application
-FROM python:3.14-alpine AS core
+########################
+# BUILDER STAGE
+########################
+FROM python:3.14-alpine AS builder
 COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /uvx /bin/
 ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=on
-
-# Any process that requires to write in the home dir
-# we write to /tmp since we have no home dir
-ENV APP_TMPDIR=/tmp
-ENV HOME=${APP_TMPDIR} \
-    TMPDIR=${APP_TMPDIR} \
-    AZURE_CONFIG_DIR=${APP_TMPDIR}/.azure \
-    XDG_CACHE_HOME=${APP_TMPDIR}/.cache \
-    COVERAGE_FILE=${APP_TMPDIR}/.coverage \
+    PIP_NO_CACHE_DIR=on \
+    HOME=/tmp \
+    TMPDIR=/tmp \
+    AZURE_CONFIG_DIR=/tmp/.azure \
+    COVERAGE_FILE=/tmp/.coverage \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPYCACHEPREFIX=${APP_TMPDIR}/pycache
-ENV UV_CACHE_DIR=${XDG_CACHE_HOME}/uv
+    PYTHONPYCACHEPREFIX=/tmp/pycache \
+    XDG_CACHE_HOME=/tmp/.cache \
+    UV_CACHE_DIR=${XDG_CACHE_HOME}/uv \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
+
 WORKDIR /app
 
+# Build-only packages
+RUN apk add --no-cache --virtual .build-deps \
+    build-base \
+    linux-headers
+
+# Install dependencies, but not the project itself yet, for caching purposes
+COPY pyproject.toml ./
+COPY uv.lock ./
+RUN uv sync --frozen --no-install-project
+
+# Copy application code
+COPY manage.py ./
+COPY uwsgi.ini ./
+COPY gunicorn.conf.py ./
+COPY core ./core
+COPY deploy ./deploy
+COPY notification ./notification
+
 # Install dependencies
-RUN apk add --no-cache --virtual .build-deps build-base linux-headers
+RUN uv sync --frozen
+
+# Collect static assets
+RUN DJANGO_SETTINGS_MODULE=core.settings.base uv run python manage.py collectstatic --no-input
+
+########################
+# RUNTIME STAGE
+########################
+FROM python:3.14-alpine AS runtime
+ENV PYTHONUNBUFFERED=1 \
+    HOME=/tmp \
+    TMPDIR=/tmp \
+    AZURE_CONFIG_DIR=/tmp/.azure \
+    COVERAGE_FILE=/tmp/.coverage \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPYCACHEPREFIX=/tmp/pycache \
+    XDG_CACHE_HOME=/tmp/.cache \
+    PATH="/app/.venv/bin:$PATH"
+
+WORKDIR /app
+
+# Runtime packages
 RUN apk add --no-cache \
     libheif \
     bash \
     curl
 
-COPY pyproject.toml /app/pyproject.toml
-COPY uv.lock /app/uv.lock
-RUN uv sync --frozen
-
 ARG APP_UID=1000
 ARG APP_GID=1000
+
 RUN addgroup -S -g ${APP_GID} app \
-    && adduser -S -D -u ${APP_UID} -G app appuser
+    && adduser -S -D -u ${APP_UID} -G app appuser \
+    && mkdir -p "$AZURE_CONFIG_DIR" "$PYTHONPYCACHEPREFIX"
 
-COPY manage.py /app/
-RUN dos2unix /app/manage.py
-COPY uwsgi.ini /app/
-COPY gunicorn.conf.py /app/
-COPY /core /app/core
-COPY /deploy /app/deploy
-
-RUN DJANGO_SETTINGS_MODULE=core.settings.base uv run python manage.py collectstatic --no-input
-RUN mkdir -p "$AZURE_CONFIG_DIR" "$PYTHONPYCACHEPREFIX" "$UV_CACHE_DIR" \
-    && chown -R appuser:app "$AZURE_CONFIG_DIR" "$PYTHONPYCACHEPREFIX" "$XDG_CACHE_HOME"
+COPY --from=builder --chown=appuser:app /app /app
 USER appuser
-WORKDIR /app
-COPY notification /app/notification
 
 ### Core stages for administrative tasks
 # These need root to write to the home dir, so we use the core image for these tasks
-FROM core AS app-core
+FROM runtime AS app-core
 USER root
 
 ### City Pass stages
-FROM core AS app-city_pass
+FROM runtime AS app-city_pass
 COPY city_pass /app/city_pass
 
 ### Modules stages
-FROM core AS app-modules
+FROM runtime AS app-modules
 COPY modules /app/modules
 
 ### Contact stages
-FROM core AS app-contact
+FROM runtime AS app-contact
 COPY contact /app/contact
 
 ### Construction Work stages
-FROM core AS app-construction_work
+FROM runtime AS app-construction_work
 COPY construction_work /app/construction_work
 
 ### Bridge stages
-FROM core AS app-bridge
+FROM runtime AS app-bridge
 COPY bridge /app/bridge
 
 ### Notification stages
-FROM core AS app-notification
+FROM runtime AS app-notification
 
 ### Image stages
-FROM core AS app-image
+FROM runtime AS app-image
 COPY image /app/image
 
 ### Waste stages
-FROM core AS app-waste
+FROM runtime AS app-waste
 COPY waste /app/waste
 
 ### Survey stages
-FROM core AS app-survey
+FROM runtime AS app-survey
 COPY survey /app/survey
