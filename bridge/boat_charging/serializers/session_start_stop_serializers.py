@@ -6,7 +6,7 @@ class StartTransactionRequestSerializer(serializers.Serializer):
 
 
 class StartTransactionResponseSerializer(serializers.Serializer):
-    api_correlation_token = serializers.CharField()
+    transaction_ids = serializers.ListField(child=serializers.CharField())
 
 
 class StopTransactionRequestSerializer(serializers.Serializer):
