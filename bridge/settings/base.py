@@ -86,4 +86,7 @@ BOAT_CHARGING_ENDPOINTS = {
         BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/transactions"
     ),
     "TOKENS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/tokens"),
+    "COMMAND_RESULT": urljoin(
+        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/ocpp-command-results"
+    ),
 }

@@ -25,3 +25,9 @@ class BoatChargingAuthError(BaseApiException):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = "Authentication error with boat charging API"
     default_code = "BOAT_CHARGING_AUTH_ERROR"
+
+
+class BoatChargingTransactionRejected(BaseApiException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = "Transaction rejected"
+    default_code = "BOAT_CHARGING_TRANSACTION_REJECTED"
