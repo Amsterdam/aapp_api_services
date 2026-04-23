@@ -1,4 +1,5 @@
 from drf_spectacular.utils import OpenApiExample
+from firebase_admin import CertificateFetchError, InvalidIdTokenError, auth
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
@@ -45,6 +46,15 @@ class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
         """
         serializer = DeviceRegisterRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get("firebase_token"):
+            try:
+                auth.verify_id_token(serializer.validated_data["firebase_token"])
+            except InvalidIdTokenError:
+                raise InputDataException("Invalid Firebase token")
+            except CertificateFetchError:
+                raise InputDataException("Failed to fetch Firebase certificate")
+            except Exception:
+                raise InputDataException("Invalid Firebase token")
         device, _ = Device.objects.update_or_create(
             external_id=self.device_id, defaults=serializer.validated_data
         )
