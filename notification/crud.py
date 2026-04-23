@@ -43,7 +43,7 @@ class NotificationCRUD:
         self.notifications_with_push, self.notifications_without_push = [], []
         self.push_only_notification_types = [
             NotificationType.PARKING_REMINDER.value
-        ]  # These notifications should not be saved to the database, only pushed to Firebase
+        ]  # These notifications should have the is_visible flag set to False
         self.devices_for_push = []
         self.push_service = PushService() if push_enabled else None
         self._build_default_context()
@@ -128,28 +128,21 @@ class NotificationCRUD:
             self.source_notification.notification_type
             in self.push_only_notification_types
         )
+        if push_only:
+            self.source_notification.is_visible = False
         for c in device_list:
             new_notification: Notification = copy.copy(self.source_notification)
             new_notification.context = copy.deepcopy(self.source_notification.context)
             new_notification.device = c
             new_notification.device_external_id = c.external_id
-            if push_only:
-                new_notification.id = uuid.uuid4()  # ID is required for push context, but these notifications won't be saved to DB
             if c in self.devices_for_push and self.push_service:
                 new_notification.pushed_at = timezone.now()
                 with_push.append(new_notification)
             else:
                 without_push.append(new_notification)
 
-        if push_only:
-            # Do not save to DB, just return notifications to be pushed
-            self.notifications_with_push = with_push
-            self.notifications_without_push = without_push
-        else:
-            self.notifications_with_push = Notification.objects.bulk_create(with_push)
-            self.notifications_without_push = Notification.objects.bulk_create(
-                without_push
-            )
+        self.notifications_with_push = Notification.objects.bulk_create(with_push)
+        self.notifications_without_push = Notification.objects.bulk_create(without_push)
         return self.notifications_with_push
 
     @property

@@ -305,37 +305,23 @@ class TestNotificationCRUD(TestCase):
         self.assertEqual(notifications.count(), 1)
 
     def test_create_notifications_push_only(self):
-        device_1 = baker.make(Device, firebase_token="abc_token")
-        device_2 = baker.make(Device, firebase_token="def_token")
+        device = baker.make(Device, firebase_token="abc_token")
         notification_crud = NotificationCRUD(self.notification)
         notification_crud.push_only_notification_types = [
-            "foobar-type"
-        ]  # Override the push only types for this test
+            self.notification.notification_type
+        ]
 
         device_list = notification_crud._collect_and_annotate_devices(
             Device.objects.all()
         )
         notifications_with_push = notification_crud._create_notifications(device_list)
 
-        # check that the right devices are in the notifications with push
-        self.assertEqual(len(notifications_with_push), 2)
-        self.assertSetEqual(
-            {
-                notification.device_external_id
-                for notification in notifications_with_push
-            },
-            {device_1.external_id, device_2.external_id},
+        self.assertEqual(len(notifications_with_push), 1)
+        self.assertEqual(
+            notifications_with_push[0].device_external_id, device.external_id
         )
-
-        # check that the notifications with push have unique IDs (required for push context)
-        notification_ids = [notification.pk for notification in notifications_with_push]
-        self.assertTrue(
-            all(notification_id is not None for notification_id in notification_ids)
-        )
-        self.assertEqual(len(set(notification_ids)), len(notification_ids))
-
-        # check that no notifications were saved to the database
         notifications = Notification.objects.filter(
-            device_external_id__in=[device_1.external_id, device_2.external_id]
+            device_external_id=device.external_id
         )
-        self.assertEqual(notifications.count(), 0)
+        self.assertEqual(notifications.count(), 1)
+        self.assertFalse(notifications[0].is_visible)
