@@ -150,6 +150,17 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
         self.assertEqual(response.data[1]["id"], str(notification_2.id))
         self.assertEqual(response.data[2]["id"], str(notification_1.id))
 
+    def test_list_notifications_only_visible(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        baker.make(Notification, device=device_1, is_visible=True)
+        baker.make(Notification, device=device_1, is_visible=False)
+
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            len(response.data), 1
+        )  # Only notifications with is_visible=True should be returned
+
 
 class NotificationReadViewTests(BaseNotificationViewTestCase):
     def setUp(self):
@@ -211,6 +222,18 @@ class NotificationReadViewTests(BaseNotificationViewTestCase):
             "Missing header: DeviceId",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+
+    def test_mark_all_as_read_visible_only(self):
+        baker.make(
+            Notification, device=self.test_device, is_read=False, is_visible=True
+        )
+        baker.make(
+            Notification, device=self.test_device, is_read=False, is_visible=False
+        )
+
+        response = self.client.post(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("1 notifications marked as read.", response.data["detail"])
 
 
 class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
@@ -292,4 +315,15 @@ class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
             response,
             "Missing header: DeviceId",
             status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_get_notification_detail_invisible(self):
+        self.notification.is_visible = False
+        self.notification.save()
+
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertContains(
+            response,
+            "No Notification matches the given query.",
+            status_code=status.HTTP_404_NOT_FOUND,
         )
