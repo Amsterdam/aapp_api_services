@@ -28,12 +28,6 @@ class SSPServerError(BaseApiException):
     default_code = "SSP_SERVER_ERROR"
 
 
-class SSPCancelledError(BaseApiException):
-    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    default_detail = "SSP request was cancelled"
-    default_code = "SSP_REQUEST_CANCELLED"
-
-
 class SSPUnavailableError(BaseApiException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     default_detail = "SSP service is temporarily unavailable"

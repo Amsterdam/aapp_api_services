@@ -4,6 +4,7 @@ import logging
 from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
 from django.utils import timezone
 
+from core.enums import NotificationType
 from notification.models import (
     Device,
     Notification,
@@ -39,6 +40,9 @@ class NotificationCRUD:
         self.total_enabled_count = 0
         self.failed_token_count = 0
         self.notifications_with_push, self.notifications_without_push = [], []
+        self.push_only_notification_types = [
+            NotificationType.PARKING_REMINDER.value
+        ]  # These notifications should have the is_visible flag set to False
         self.devices_for_push = []
         self.push_service = PushService() if push_enabled else None
         self._build_default_context()
@@ -119,6 +123,12 @@ class NotificationCRUD:
         """
         self.source_notification.id = None
         with_push, without_push = [], []
+        push_only = (
+            self.source_notification.notification_type
+            in self.push_only_notification_types
+        )
+        if push_only:
+            self.source_notification.is_visible = False
         for c in device_list:
             new_notification: Notification = copy.copy(self.source_notification)
             new_notification.context = copy.deepcopy(self.source_notification.context)

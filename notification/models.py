@@ -99,6 +99,7 @@ class Notification(BaseNotification):
     - device_id: fk to Device.id
     - is_read: to be set when device has read the notification
     - pushed_at: set to true when notification was pushed successfully
+    - is_visible: determines if the notification should be visible in the notification history in the app
     """
 
     class Meta:
@@ -113,6 +114,7 @@ class Notification(BaseNotification):
     device_external_id = models.CharField(max_length=1000)
     is_read = models.BooleanField(default=False)
     pushed_at = models.DateTimeField(null=True, blank=True)
+    is_visible = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.module_slug} - {self.title}"
@@ -159,6 +161,7 @@ class NotificationPushModuleDisabled(models.Model):
 class NotificationLast(models.Model):
     """
     Record that determines the last time a notification was created for a device.
+    This is used for 'Mijn Amsterdam' notifications.
 
     device: fk to Device.id
     module_slug: the module slug of the notification

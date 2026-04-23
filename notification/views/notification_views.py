@@ -30,6 +30,7 @@ class NotificationListView(DeviceIdMixin, generics.ListAPIView):
         return (
             Notification.objects.select_related("device")
             .filter(device__external_id=self.device_id)
+            .filter(is_visible=True)
             .order_by("-created_at")
         )
 
@@ -54,7 +55,7 @@ class NotificationMarkAllReadView(DeviceIdMixin, generics.UpdateAPIView):
         # Perform the bulk update
         updated_count = (
             Notification.objects.select_related("device")
-            .filter(device_external_id=self.device_id, is_read=False)
+            .filter(device_external_id=self.device_id, is_read=False, is_visible=True)
             .update(is_read=True)
         )
         return Response({"detail": f"{updated_count} notifications marked as read."})
@@ -67,8 +68,10 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
     http_method_names = ["get", "patch"]
 
     def get_queryset(self):
-        return Notification.objects.select_related("device").filter(
-            device__external_id=self.device_id
+        return (
+            Notification.objects.select_related("device")
+            .filter(device__external_id=self.device_id)
+            .filter(is_visible=True)
         )
 
     @extend_schema_for_device_id(

@@ -60,7 +60,7 @@ services:
       SECRET_KEY: secret-key-for-development
       EDITOR_GROUP_ID: editor-group-id-for-development
       PUBLISHER_GROUP_ID: publisher-group-id-for-development
-    command: uv run python ./manage.py runserver 0.0.0.0:8000
+    command: python ./manage.py runserver 0.0.0.0:8000
 
   test:
     <<: *base-app
@@ -74,7 +74,7 @@ services:
       EDITOR_GROUP_ID: editor-group-id-for-testing
       PUBLISHER_GROUP_ID: publisher-group-id-for-testing
       MOCK_FIREBASE: "true"
-    command: uv run pytest
+    command: pytest
 
   app:
     <<: *base-app
@@ -86,7 +86,13 @@ services:
 
   lint:
     <<: *base-app
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/lint-${SERVICE_NAME}:${VERSION:-latest}
+    build:
+      context: .
+      target: lint
+      args:
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/lint:${VERSION:-latest}
     volumes:
       - ./core:/app/core
       - ./manage.py:/app/manage.py
