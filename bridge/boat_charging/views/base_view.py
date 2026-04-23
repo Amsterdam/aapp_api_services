@@ -106,7 +106,7 @@ class BaseView(GenericAPIView):
             "address": {
                 "city": item["city"],
                 "street": street,
-                "number": number,
+                "number": number if number else None,
                 "coordinates": {
                     "lat": item["coordinates"]["latitude"],
                     "lon": item["coordinates"]["longitude"],

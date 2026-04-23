@@ -8,7 +8,10 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-from bridge.boat_charging.exceptions import BoatChargingServerError
+from bridge.boat_charging.exceptions import (
+    BoatChargingServerError,
+    BoatChargingTransactionRejected,
+)
 from bridge.boat_charging.serializers.session_start_stop_serializers import (
     StartTransactionRequestSerializer,
     StartTransactionResponseSerializer,
@@ -84,14 +87,14 @@ class SessionStartStopView(BaseView):
             "get",
             endpoint=endpoint,
         )
-        if not response_json["resultTime"]:
+        if not response_json.get("resultTime"):
             raise ValidationError("Charging station did not respond")
         command_result = response_json.get("commandResult")
         if not command_result:
             raise ValidationError("Charging station has not confirmed the request")
         status = command_result.get("status")
         if status != "ACCEPTED":
-            raise ValidationError(f"Charging station did not accept the request. Status: {status}")
+            raise BoatChargingTransactionRejected(f"Charging station did not accept the request. Status: {status}")
 
     @retry(
         stop=stop_after_attempt(10),  # We poll for 10 seconds, on advice from Bojan Djekic
