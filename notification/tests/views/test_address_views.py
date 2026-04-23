@@ -44,8 +44,8 @@ class TestAddressView(ResponsesActivatedAPITestCase):
             },
             "bagId": "test-bag-id",
             "postcode": "1023",
-            "additionalLetter": None,
-            "additionalNumber": None,
+            "additionLetter": None,
+            "additionNumber": None,
         }
         response = self.client.post(
             self.url, data, format="json", headers=self.api_headers
@@ -62,8 +62,8 @@ class TestAddressView(ResponsesActivatedAPITestCase):
             },
             "bagId": "test-bag-id",
             "postcode": "1023",
-            "additionalLetter": "",
-            "additionalNumber": "",
+            "additionLetter": "",
+            "additionNumber": "",
         }
         response = self.client.post(
             self.url, data, format="json", headers=self.api_headers
