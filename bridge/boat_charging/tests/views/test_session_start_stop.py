@@ -30,7 +30,9 @@ class TestSessionStartStopView(BoatChargingTestCase):
             return_value=httpx.Response(200, json=start_transaction.MOCK_RESPONSE)
         )
         correlation_token = start_transaction.MOCK_RESPONSE["apiCorrelationToken"]
-        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['COMMAND_RESULT']}/{correlation_token}"
+        endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['COMMAND_RESULT']}/{correlation_token}"
+        )
 
         resp_command = respx.get(endpoint).mock(
             return_value=httpx.Response(200, json=command_result.MOCK_RESPONSE_ACCEPTED)

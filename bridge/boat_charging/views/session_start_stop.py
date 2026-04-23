@@ -41,11 +41,15 @@ class SessionStartStopView(BaseView):
             "identifyingToken": {"token": token},
         }
         charging_station_id = self.get_safe_path_param(kwargs["charging_station_id"])
-        api_correlation_token = await self._request_transaction(request_transaction_payload, charging_station_id)
+        api_correlation_token = await self._request_transaction(
+            request_transaction_payload, charging_station_id
+        )
         await self._assert_command_result(api_correlation_token)
         transaction_ids = await self._get_transaction_ids(charging_station_id)
 
-        serializer = StartTransactionResponseSerializer(data={"transaction_ids": transaction_ids})
+        serializer = StartTransactionResponseSerializer(
+            data={"transaction_ids": transaction_ids}
+        )
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)
 
@@ -63,7 +67,9 @@ class SessionStartStopView(BaseView):
             raise ValidationError("No valid token uid is available from CPMS")
         return token
 
-    async def _request_transaction(self, request_transaction_payload: dict, charging_station_id: str):
+    async def _request_transaction(
+        self, request_transaction_payload: dict, charging_station_id: str
+    ):
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{charging_station_id}/start-transaction"
         response_json = await self.api_call(
             "post",
@@ -76,13 +82,19 @@ class SessionStartStopView(BaseView):
         return api_correlation_token
 
     @retry(
-        stop=stop_after_attempt(10),  # We poll for 10 seconds, on advice from Bojan Djekic
+        stop=stop_after_attempt(
+            10
+        ),  # We poll for 10 seconds, on advice from Bojan Djekic
         wait=wait_fixed(1),
-        retry=retry_if_exception_type((ValidationError, httpx.HTTPError, BoatChargingServerError)),
+        retry=retry_if_exception_type(
+            (ValidationError, httpx.HTTPError, BoatChargingServerError)
+        ),
         reraise=True,  # reraise error after retries are exhausted
     )
     async def _assert_command_result(self, correlation_token: str):
-        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['COMMAND_RESULT']}/{correlation_token}"
+        endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['COMMAND_RESULT']}/{correlation_token}"
+        )
         response_json = await self.api_call(
             "get",
             endpoint=endpoint,
@@ -94,28 +106,36 @@ class SessionStartStopView(BaseView):
             raise ValidationError("Charging station has not confirmed the request")
         status = command_result.get("status")
         if status != "ACCEPTED":
-            raise BoatChargingTransactionRejected(f"Charging station did not accept the request. Status: {status}")
+            raise BoatChargingTransactionRejected(
+                f"Charging station did not accept the request. Status: {status}"
+            )
 
     @retry(
-        stop=stop_after_attempt(10),  # We poll for 10 seconds, on advice from Bojan Djekic
+        stop=stop_after_attempt(
+            10
+        ),  # We poll for 10 seconds, on advice from Bojan Djekic
         wait=wait_fixed(1),
-        retry=retry_if_exception_type((ValidationError, httpx.HTTPError, BoatChargingServerError)),
+        retry=retry_if_exception_type(
+            (ValidationError, httpx.HTTPError, BoatChargingServerError)
+        ),
         reraise=True,  # reraise error after retries are exhausted
     )
     async def _get_transaction_ids(self, charging_station_id: str):
-        endpoint = settings.BOAT_CHARGING_ENDPOINTS['TRANSACTIONS']
+        endpoint = settings.BOAT_CHARGING_ENDPOINTS["TRANSACTIONS"]
         transactions = await self.api_call(
             "get",
             endpoint=endpoint,
             query_params={
                 "filter": f"((chargingStationId≡'{charging_station_id}')∧(stoppedTimestamp is null))",
                 "sort": "startedTimestamp,desc",
-                "size": 20
+                "size": 20,
             },
-            paginated=True
+            paginated=True,
         )
         if not transactions:
-            raise ValidationError("No active transaction is available on charging station")
+            raise ValidationError(
+                "No active transaction is available on charging station"
+            )
         return [t["id"] for t in transactions]
 
     @boat_charging_openapi_decorator(
