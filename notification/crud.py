@@ -1,6 +1,5 @@
 import copy
 import logging
-import uuid
 
 from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
 from django.utils import timezone
