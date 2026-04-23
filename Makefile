@@ -16,8 +16,8 @@ API_AUTH_TOKENS ?= insecure-token
 
 dc = SERVICE_NAME=${SERVICE_NAME} docker compose
 run = $(dc) run --rm
-lint = $(run) lint uv run
-manage = $(run) dev uv run python manage.py
+lint = $(run) lint
+manage = $(run) dev python manage.py
 
 help:
     # Show this help.
@@ -70,12 +70,12 @@ run-test:
 
 coverage:
 	# Run pytest coverage
-	$(call dc_for_all,run --rm test sh -c "uv run coverage run -m pytest $$s core && uv run coverage report")
+	$(call dc_for_all,run --rm test sh -c "coverage run -m pytest $$s core && coverage report")
 
 integration-test:
 	# Run integration tests
 	# Don't forget to set the API_AUTH_TOKENS environment variable!
-	$(call dc_for_all,run --rm --env API_AUTH_TOKENS='$(API_AUTH_TOKENS)' dev uv run pytest -m integration)
+	$(call dc_for_all,run --rm --env API_AUTH_TOKENS='$(API_AUTH_TOKENS)' dev pytest -m integration)
 
 test: coverage lint
 	# Run tests (via coverage), coverage and lint checks
@@ -96,11 +96,11 @@ openapi-diff:
 	@if [ -z "$(SERVICE_NAME)" ]; then \
 	  for s in $(ALL_SERVICES); do \
 		SERVICE_NAME_HYPHEN=$$(printf '%s\n' "$$s" | tr '_' '-'); \
-		SERVICE_NAME=$$s docker compose run --rm dev uv run python manage.py spectacular --file /app/$$s/openapi-schema.yaml;\
+		SERVICE_NAME=$$s docker compose run --rm dev python manage.py spectacular --file /app/$$s/openapi-schema.yaml;\
 		SERVICE_NAME=$$s docker compose run --rm openapi-diff https://test.app.amsterdam.nl/$${SERVICE_NAME_HYPHEN}/api/v1/openapi/ /specs/openapi-schema.yaml --fail-on-incompatible || exit $$?; \
 	  done; \
 	else \
-        SERVICE_NAME=$$SERVICE_NAME docker compose run --rm dev uv run python manage.py spectacular --file /app/$$SERVICE_NAME/openapi-schema.yaml;\
+        SERVICE_NAME=$$SERVICE_NAME docker compose run --rm dev python manage.py spectacular --file /app/$$SERVICE_NAME/openapi-schema.yaml;\
         SERVICE_NAME=$$SERVICE_NAME docker compose run --rm openapi-diff https://test.app.amsterdam.nl/$${SERVICE_NAME_HYPHEN}/api/v1/openapi/ /specs/openapi-schema.yaml --fail-on-incompatible || exit $$?; \
 	fi
 

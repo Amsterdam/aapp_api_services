@@ -5,7 +5,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.89274394, 52.37107917]},
             "properties": {
-                "id": "12624938",
+                "id": "12345678",
                 "title": "Rokin (gemeente)",
                 "description": "Niet geopend op Koningsdag",
                 "street": "Rokin",
@@ -17,37 +17,9 @@ MOCK_DATA = {
         },
         {
             "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [4.89404573, 52.37679018]},
-            "properties": {
-                "id": "12624941",
-                "title": "Q-park Nieuwezijds Kolk",
-                "description": "Niet geopend op Koningsdag",
-                "street": "Nieuwezijds Voorburgwal",
-                "street_number": "40",
-                "zip": "1012SB",
-                "city": "Amsterdam",
-                "meta": [],
-            },
-        },
-        {
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [4.89516483, 52.37387383]},
-            "properties": {
-                "id": "12624944",
-                "title": "Q-park Bijenkorf",
-                "description": "Niet geopend op Koningsdag",
-                "street": "Q-park Bijenkorf",
-                "street_number": "15",
-                "zip": "1012JW",
-                "city": "Amsterdam",
-                "meta": [],
-            },
-        },
-        {
-            "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.89678461, 52.37884542]},
             "properties": {
-                "id": "12624947",
+                "id": "12345677",
                 "title": "Q-park P 1 (CS)",
                 "description": "Niet geopend op Koningsdag",
                 "street": "Prins Hendrikkade",
@@ -59,23 +31,9 @@ MOCK_DATA = {
         },
         {
             "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [4.87672199, 52.36993104]},
-            "properties": {
-                "id": "12624950",
-                "title": "Q-park Europarking, Marnixstraat",
-                "description": "Niet geopend op Koningsdag",
-                "street": "Marnixstraat",
-                "street_number": "250",
-                "zip": "1016TL",
-                "city": "Amsterdam",
-                "meta": [],
-            },
-        },
-        {
-            "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.88000013, 52.36190111]},
             "properties": {
-                "id": "12624953",
+                "id": "12345676",
                 "title": "Q-park Byzantium",
                 "description": "Niet geopend op Koningsdag",
                 "street": "Tesselschadestraat",
@@ -89,7 +47,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.8907596, 52.36729441]},
             "properties": {
-                "id": "12624956",
+                "id": "12345675",
                 "title": "Q-park Kalverstraat",
                 "description": "Niet geopend op Koningsdag",
                 "street": "Q-park Kalverstraat",
@@ -103,7 +61,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.89605496, 52.36642671]},
             "properties": {
-                "id": "12624959",
+                "id": "12345674",
                 "title": "Q-park Rembrandtplein",
                 "description": "Niet geopend op Koningsdag",
                 "street": "Rembrandtplein",

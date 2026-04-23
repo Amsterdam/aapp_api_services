@@ -5,7 +5,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.93058195, 52.35551239]},
             "properties": {
-                "id": "12619334",
+                "id": "12345678",
                 "title": "Bredeweg  / Bredewegfestival",
                 "street": "Bredeweg  / Bredewegfestival",
                 "city": "Amsterdam",
@@ -16,7 +16,7 @@ MOCK_DATA = {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [4.93033146, 52.35567983]},
             "properties": {
-                "id": "12619370",
+                "id": "12345677",
                 "title": "Bredeweg t.h.v. Hogeweg",
                 "street": "Bredeweg t.h.v. Hogeweg",
                 "city": "Amsterdam",
@@ -67,7 +67,7 @@ MOCK_DATA = {
                 ],
             },
             "properties": {
-                "id": "12619373",
+                "id": "12345676",
                 "title": "Afsluiting centrum voor autoverkeer op Koningsdag",
                 "description": "<p>Let op: een groot deel van het centrum is op 27 april vanaf 7.00 uur afgesloten voor autoverkeer.</p><p>Niet afgesloten:</p><ul><li><p>De Houtmankade – Westerdoksdijk – Michiel de Ruijterkade (incl. tunnel) – Piet Heinkade</p></li><li><p>Haarlemmerhouttuinen, Nassaukade, Stadhouderskade behalve tussen de Weteringlaan en de Overtoom.</p></li></ul>",
                 "meta": [],
@@ -133,7 +133,7 @@ MOCK_DATA = {
                 ],
             },
             "properties": {
-                "id": "12619374",
+                "id": "12345675",
                 "title": "Afsluiting ander gebied op Koningsdag",
                 "description": "Afsluiting van een aantal gebieden in de stad op Koningsdag. De afsluitingen zijn van 7.00 uur tot 21.00 uur.",
                 "meta": [],
