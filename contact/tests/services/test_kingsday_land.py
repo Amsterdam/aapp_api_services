@@ -81,22 +81,46 @@ class KingsdayLandServiceTest(ResponsesActivatedAPITestCase):
             {"label": "EHBO", "code": 1, "icon_label": "first_aid"}
         ]
         url = f"{self.service.data_url}{self.service.data_layers[0]['code']}.json"
+        mock_data = first_aid.MOCK_DATA
 
-        responses.get(url, json=first_aid.MOCK_DATA)
+        # extract the id of the feature with MultiPoint geometry and later check if it has been converted to Point geometry
+        multipoint_id = [
+            (feature.get("properties") or {}).get("id")
+            for feature in mock_data["features"]
+            if feature.get("geometry", {}).get("type") == "MultiPoint"
+        ][0]
+
+        # also extract the id of a feature with Point geometry to check that it remains unchanged
+        point_id = [
+            (feature.get("properties") or {}).get("id")
+            for feature in mock_data["features"]
+            if feature.get("geometry", {}).get("type") == "Point"
+        ][0]
+
+        responses.get(url, json=mock_data)
         full_data = self.service.get_full_data()
 
         features = full_data["data"]["features"]
 
+        multipoint_feature = [
+            feature
+            for feature in features
+            if (feature.get("properties") or {}).get("id") == multipoint_id
+        ][0]
+
         # MultiPoint features should be converted to Point features (frontend expects a Point geometry)
-        first = next(
-            f for f in features if (f.get("properties") or {}).get("id") == "12619310"
+        self.assertEqual(multipoint_feature["geometry"]["type"], "Point")
+        self.assertEqual(
+            multipoint_feature["geometry"]["coordinates"], [4.899551, 52.377938]
         )
-        self.assertEqual(first["geometry"]["type"], "Point")
-        self.assertEqual(first["geometry"]["coordinates"], [4.899551, 52.377938])
 
         # Point features should remain unchanged
-        another = next(
-            f for f in features if (f.get("properties") or {}).get("id") == "12619313"
+        point_feature = [
+            feature
+            for feature in features
+            if (feature.get("properties") or {}).get("id") == point_id
+        ][0]
+        self.assertEqual(point_feature["geometry"]["type"], "Point")
+        self.assertEqual(
+            point_feature["geometry"]["coordinates"], [4.893404, 52.372925]
         )
-        self.assertEqual(another["geometry"]["type"], "Point")
-        self.assertEqual(another["geometry"]["coordinates"], [4.893404, 52.372925])

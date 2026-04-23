@@ -86,7 +86,10 @@ class KingsdayLandService(KingsdayAbstractService):
 
         prefix = self.properties_prefix
 
-        if layer_type == "Omleiding" and geom.get("type") == "Polygon":
+        if layer_type == "Omleiding" and geom.get("type") in [
+            "Polygon",
+            "MultiPolygon",
+        ]:
             # for detour we want to add fill and opacity properties
             fill = "#EC0000"
             fill_opacity = 0.2
@@ -111,7 +114,7 @@ class KingsdayLandService(KingsdayAbstractService):
             f"{prefix}icon_type": icon_name,
             f"{prefix}description": self._clean_html(properties.get("description"))
             or None,
-            f"{prefix}website": properties.get("website") or None,
+            f"{prefix}website": self._get_website(properties),
             f"{prefix}address": address,
             f"{prefix}toilet_table": self._create_toilet_table(
                 properties.get("meta", [])
@@ -121,6 +124,11 @@ class KingsdayLandService(KingsdayAbstractService):
             "stroke": stroke,
             "stroke-width": stroke_width,
         }
+
+    def _get_website(self, properties: dict[str, Any]) -> Any | None:
+        website = properties.get("website")
+        website_clean = website.replace("\\/", "/") if website else None
+        return website_clean
 
     def _create_toilet_table(
         self, meta: List[Dict[str, str]]
