@@ -51,8 +51,10 @@ class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
             try:
                 message = messaging.Message(token=firebase_token)
                 messaging.send(message, dry_run=True)
-            except (ValueError, InvalidArgumentError):
-                raise InputDataException("The registration token is not a valid FCM registration token")
+            except ValueError, InvalidArgumentError:
+                raise InputDataException(
+                    "The registration token is not a valid FCM registration token"
+                )
         device, _ = Device.objects.update_or_create(
             external_id=self.device_id, defaults=serializer.validated_data
         )
