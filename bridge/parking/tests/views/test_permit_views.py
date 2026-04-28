@@ -9,6 +9,7 @@ from uritemplate import URITemplate
 from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
 from bridge.parking.tests.mock_data import paid_parking_zone
 from bridge.parking.tests.mock_data.permit import (
+    visitor,
     visitor_holder,
     visitor_holder_geojson_as_string,
     visitor_holder_no_visitor,
@@ -28,7 +29,7 @@ class TestParkingPermitsView(BaseSSPTestCase):
         self.url = reverse("parking-permits")
         self.mock_response = multiple_visitor_permits.MOCK_RESPONSE
 
-    def _setup_permit_mocks(self, permit_detail_mock_data):
+    def _setup_permit_mocks_user(self, permit_detail_mock_data):
         resp = respx.get(ParkingPermitsView.ssp_endpoint).mock(
             return_value=httpx.Response(200, json=self.mock_response)
         )
@@ -52,22 +53,37 @@ class TestParkingPermitsView(BaseSSPTestCase):
         )
         return resp
 
-    def test_permits_status_code_and_call_count(self):
-        resp = self._setup_permit_mocks(visitor_holder.MOCK_RESPONSE)
+    def _setup_permit_mocks_visitor(self, permit_detail_mock_data):
+        permit_detail_template = SSPEndpoint.PERMIT.value
+        parking_zone_template = SSPEndpoint.PAID_PARKING_ZONE.value
+        permit_detail_url = URITemplate(permit_detail_template).expand(permit_id="1234")
+        respx.get(permit_detail_url).mock(
+            return_value=httpx.Response(200, json=permit_detail_mock_data)
+        )
+        parking_zone_url = URITemplate(parking_zone_template).expand(permit_id="1234")
+        respx.get(parking_zone_url).mock(
+            return_value=httpx.Response(200, json=paid_parking_zone.MOCK_RESPONSE)
+        )
+        self.api_headers[settings.SSP_ACCESS_TOKEN_HEADER] = (
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NTY4MTYxOTQsImV4cCI6MTc1NjgxOTc5NCwicm9sZXMiOlsiUk9MRV9WSVNJVE9SX1NTUCJdLCJsb2dpbl9tZXRob2QiOiJsb2dpbl9mb3JtX3NzcCIsInVzZXJuYW1lIjoiZmlwczp0RmswZlJMUDA3WERLUll4YXU3TTJ6MUJ2djZGZmlLYUpsSjlLaDUtaW1nTlAtRWlEVHBVeW9JYXp0Vkc3YkNxdks2X1VhQWkxN2NhZjF1d3Z6NmFsQXBIZ2xobzVQdlJvWHpadDlFVlF6MjhTZ1U3c3F0TnU4WmR2QlFORUR2MHEwV0Z2OF9leG9FPSIsImxvY2FsZSI6Im5sLU5MIn0.8i6b8u7bEPq-KSQwY2d-N2fUarfwsqglRYYYvkBMahE%AMSTERDAMAPP%eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NjAzNjY0MjYsImV4cCI6MTc2MDM3MDAyNiwicm9sZXMiOlsiUk9MRV9WSVNJVE9SX1NTUCJdfQ.amWX37X4GFuflBT8HWEQtr4G1PGjQnhAwo55XKSyV7Y"
+        )
+
+    def test_permits_user_status_code_and_call_count(self):
+        resp = self._setup_permit_mocks_user(visitor_holder.MOCK_RESPONSE)
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
 
-    def test_permits_information(self):
-        self._setup_permit_mocks(visitor_holder.MOCK_RESPONSE)
+    def test_permits_user_information(self):
+        self._setup_permit_mocks_user(visitor_holder.MOCK_RESPONSE)
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.data[0]["permit_type"], "Bezoekersvergunning")
         self.assertEqual(response.data[0]["visitor_account"]["seconds_remaining"], 3600)
         self.assertEqual(response.data[0]["parking_machine_favorite"], "10528")
         self.assertEqual(len(response.data), 4)
 
-    def test_permits_validity_dates(self):
-        self._setup_permit_mocks(visitor_holder.MOCK_RESPONSE)
+    def test_permits_user_validity_dates(self):
+        self._setup_permit_mocks_user(visitor_holder.MOCK_RESPONSE)
         response = self.client.get(self.url, headers=self.api_headers)
         expected_validity = {
             "1003": {
@@ -95,17 +111,42 @@ class TestParkingPermitsView(BaseSSPTestCase):
             permit_report_code = permit["report_code"]
             self.assertIn(permit_report_code, expected_validity)
             self.assertEqual(
-                permit["started_at"], expected_validity[permit_report_code]["started_at"]
+                permit["started_at"],
+                expected_validity[permit_report_code]["started_at"],
             )
             self.assertEqual(
                 permit["ended_at"], expected_validity[permit_report_code]["ended_at"]
             )
             self.assertEqual(
-                permit["cancelled_at"], expected_validity[permit_report_code]["cancelled_at"]
+                permit["cancelled_at"],
+                expected_validity[permit_report_code]["cancelled_at"],
             )
 
+    def test_permits_visitor_status_code_and_call_count(self):
+        resp = self._setup_permit_mocks_visitor(visitor.MOCK_RESPONSE)
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 0)
+
+    def test_permits_visitor_information(self):
+        self._setup_permit_mocks_visitor(visitor.MOCK_RESPONSE)
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.data[0]["permit_type"], "Bezoekersvergunning")
+        self.assertEqual(response.data[0]["visitor_account"]["time_balance"], 3600)
+        self.assertEqual(response.data[0]["parking_machine_favorite"], None)
+        self.assertEqual(len(response.data), 1)
+
+    def test_permits_visitor_validity_dates_none(self):
+        self._setup_permit_mocks_visitor(visitor.MOCK_RESPONSE)
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        for permit in response.data:
+            self.assertEqual(permit["started_at"], None)
+            self.assertEqual(permit["ended_at"], None)
+            self.assertEqual(permit["cancelled_at"], None)
+
     def test_success_visitor_holder_no_visitor(self):
-        self._setup_permit_mocks(visitor_holder_no_visitor.MOCK_RESPONSE)
+        self._setup_permit_mocks_user(visitor_holder_no_visitor.MOCK_RESPONSE)
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.data[0]["parking_machine_favorite"], "10528")
         self.assertEqual(response.data[0]["permit_type"], "Bezoekersvergunning")
