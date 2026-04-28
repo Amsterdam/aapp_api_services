@@ -34,6 +34,42 @@ class TestAddressView(ResponsesActivatedAPITestCase):
             WasteDevice.objects.filter(device_id=self.device_id).count(), 0
         )
 
+    def test_additional_information_none(self):
+        data = {
+            "city": "Amsterdam",
+            "street": "Teststraat",
+            "coordinates": {
+                "lat": 52.370216,
+                "lon": 4.895168,
+            },
+            "bagId": "test-bag-id",
+            "postcode": "1023",
+            "additionLetter": None,
+            "additionNumber": None,
+        }
+        response = self.client.post(
+            self.url, data, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_additional_information_empty(self):
+        data = {
+            "city": "Amsterdam",
+            "street": "Teststraat",
+            "coordinates": {
+                "lat": 52.370216,
+                "lon": 4.895168,
+            },
+            "bagId": "test-bag-id",
+            "postcode": "1023",
+            "additionLetter": "",
+            "additionNumber": "",
+        }
+        response = self.client.post(
+            self.url, data, format="json", headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_update_waste_existing_address(self):
         baker.make(
             WasteDevice, device_id=self.device_id, bag_nummeraanduiding_id="old-bag-id"
