@@ -84,6 +84,7 @@ class ParkingPermitsView(BaseSSPView):
                 ssp_access_token, options={"verify_signature": False}
             )
             client_product_id = decoded_jwt.get("client_product_id", "")
+            print(f"Visitor client_product_id from token: {client_product_id}")
             permits_data = [{"id": client_product_id}]
         else:
             permits_data = await self.collect_all_pages()
