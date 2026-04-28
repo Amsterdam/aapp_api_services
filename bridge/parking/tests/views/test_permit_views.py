@@ -92,16 +92,16 @@ class TestParkingPermitsView(BaseSSPTestCase):
             },
         }
         for permit in response.data:
-            permit_id = permit["id"]
-            self.assertIn(permit_id, expected_validity)
+            permit_report_code = permit["report_code"]
+            self.assertIn(permit_report_code, expected_validity)
             self.assertEqual(
-                permit["started_at"], expected_validity[permit_id]["started_at"]
+                permit["started_at"], expected_validity[permit_report_code]["started_at"]
             )
             self.assertEqual(
-                permit["ended_at"], expected_validity[permit_id]["ended_at"]
+                permit["ended_at"], expected_validity[permit_report_code]["ended_at"]
             )
             self.assertEqual(
-                permit["cancelled_at"], expected_validity[permit_id]["cancelled_at"]
+                permit["cancelled_at"], expected_validity[permit_report_code]["cancelled_at"]
             )
 
     def test_success_visitor_holder_no_visitor(self):
