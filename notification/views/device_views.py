@@ -1,5 +1,6 @@
 from drf_spectacular.utils import OpenApiExample
 from firebase_admin import messaging
+from firebase_admin.exceptions import InvalidArgumentError
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
@@ -41,8 +42,8 @@ class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
     )
     def post(self, request, *args, **kwargs):
         """
-        Create a new device with firebase token and os if device id is not known yet.
-        Update device with firebase token and os if device is already known.
+        Create a new device with firebase registration token and os if device id is not known yet.
+        Update device with firebase registration token and os if device is already known.
         """
         serializer = DeviceRegisterRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -50,8 +51,8 @@ class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
             try:
                 message = messaging.Message(token=firebase_token)
                 messaging.send(message, dry_run=True)
-            except ValueError:
-                raise InputDataException("The provided ID token is invalid")
+            except ValueError, InvalidArgumentError:
+                raise InputDataException("The registration token is not a valid FCM registration token")
         device, _ = Device.objects.update_or_create(
             external_id=self.device_id, defaults=serializer.validated_data
         )
