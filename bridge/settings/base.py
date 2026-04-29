@@ -72,7 +72,10 @@ MIJN_AMS_API_PATHS = {
 }
 
 # CMPS Evinity varen API
-BOAT_CHARGING_OAUTH_URL = os.getenv("BOAT_CHARGING_OAUTH_URL", "https://evinity-infuse-staging.auth.eu-central-1.amazoncognito.com/oauth2/token")
+BOAT_CHARGING_OAUTH_URL = os.getenv(
+    "BOAT_CHARGING_OAUTH_URL",
+    "https://evinity-infuse-staging.auth.eu-central-1.amazoncognito.com/oauth2/token",
+)
 BOAT_CHARGING_OAUTH_ID = os.getenv("EVINITY_OAUTH_CLIENT_ID", "")
 BOAT_CHARGING_OAUTH_SECRET = os.getenv("EVINITY_OAUTH_CLIENT_SECRET", "")
 

@@ -12,9 +12,7 @@ from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
 class TestGuestLoginView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
-        self.url = reverse(
-            "boat-charging-guest-login"
-        )
+        self.url = reverse("boat-charging-guest-login")
 
     def test_guest_login_success(self):
         resp_token = respx.post(settings.BOAT_CHARGING_OAUTH_URL).mock(

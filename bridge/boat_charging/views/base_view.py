@@ -76,7 +76,9 @@ class BaseView(GenericAPIView):
         retry=retry_if_exception_type(httpx.HTTPError),
         reraise=True,  # reraise error after retries are exhausted
     )
-    async def make_request(self, *, body_data, endpoint, headers, method, query_params=None, auth=None):
+    async def make_request(
+        self, *, body_data, endpoint, headers, method, query_params=None, auth=None
+    ):
         response = await client.request(
             method=method,
             url=endpoint,

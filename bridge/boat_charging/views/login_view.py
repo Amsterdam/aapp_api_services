@@ -12,13 +12,8 @@ class GuestLoginView(BaseView):
     response_serializer_class = GuestLoginResponseSerializer
 
     async def get(self, request, *args, **kwargs):
-        payload = {
-            "grant_type": "client_credentials",
-            "scope": "infuse/admin"
-        }
-        headers = {
-            'content-type': "application/x-www-form-urlencoded"
-        }
+        payload = {"grant_type": "client_credentials", "scope": "infuse/admin"}
+        headers = {"content-type": "application/x-www-form-urlencoded"}
         auth = httpx.BasicAuth(
             username=settings.BOAT_CHARGING_OAUTH_ID,
             password=settings.BOAT_CHARGING_OAUTH_SECRET,
@@ -28,7 +23,7 @@ class GuestLoginView(BaseView):
             endpoint=settings.BOAT_CHARGING_OAUTH_URL,
             body_data=payload,
             headers=headers,
-            auth=auth
+            auth=auth,
         )
 
         serializer = self.response_serializer_class(data=response_json)
