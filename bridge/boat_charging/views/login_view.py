@@ -11,7 +11,7 @@ from bridge.boat_charging.views.base_view import BaseView
 class GuestLoginView(BaseView):
     response_serializer_class = GuestLoginResponseSerializer
 
-    async def get(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         payload = {"grant_type": "client_credentials", "scope": "infuse/admin"}
         headers = {"content-type": "application/x-www-form-urlencoded"}
         auth = httpx.BasicAuth(
