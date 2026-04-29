@@ -89,15 +89,16 @@ class BaseView(GenericAPIView):
         )
         if response.is_success:
             return response.json()
+        logger.warning(response.text)
         return await self.raise_exception(response)
 
     async def raise_exception(self, response):
         if response.status_code >= 500:
-            raise BoatChargingServerError()
+            raise BoatChargingServerError(response.text)
         if response.status_code == 401:
             raise BoatChargingAuthError()
         if response.status_code >= 400:
-            raise BoatChargingClientError()
+            raise BoatChargingClientError(response.text)
         return
 
     def get_location_data(self, item) -> dict:
