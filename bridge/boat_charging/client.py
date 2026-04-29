@@ -17,17 +17,8 @@ _client = httpx.AsyncClient(timeout=TIMEOUT, limits=LIMITS)
 
 
 class Client:
-    async def request(
-        self, *, method, url, params=None, json=None, headers=None, auth=None
-    ):
-        return await _client.request(
-            method=method,
-            url=url,
-            params=params,
-            json=json,
-            headers=headers,
-            auth=auth,
-        )
+    async def request(self, **kwargs):
+        return await _client.request(**kwargs)
 
 
 client = Client()

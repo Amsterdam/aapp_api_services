@@ -77,19 +77,30 @@ class BaseView(GenericAPIView):
         reraise=True,  # reraise error after retries are exhausted
     )
     async def make_request(
-        self, *, body_data, endpoint, headers, method, query_params=None, auth=None
+        self,
+        *,
+        endpoint,
+        headers,
+        method,
+        body_data=None,
+        query_params=None,
+        auth=None,
+        data=None,
     ):
+        assert not (body_data and data), (
+            "Either body_data or data must be provided, not both"
+        )
         response = await client.request(
             method=method,
             url=endpoint,
             params=query_params,
-            json=body_data,
+            json=body_data,  # json payload
+            data=data,  # for form data
             headers=headers,
             auth=auth,
         )
         if response.is_success:
             return response.json()
-        logger.warning(response.text)
         return await self.raise_exception(response)
 
     async def raise_exception(self, response):

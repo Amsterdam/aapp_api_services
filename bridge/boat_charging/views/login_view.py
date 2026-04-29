@@ -21,7 +21,7 @@ class GuestLoginView(BaseView):
         response_json = await self.make_request(
             method="POST",
             endpoint=settings.BOAT_CHARGING_OAUTH_URL,
-            body_data=payload,
+            data=payload,
             headers=headers,
             auth=auth,
         )
