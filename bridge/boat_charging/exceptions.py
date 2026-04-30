@@ -9,6 +9,12 @@ class BoatChargingClientError(BaseApiException):
     default_code = "BOAT_CHARGING_CLIENT_ERROR"
 
 
+class BoatChargingLocationNotFoundError(BaseApiException):
+    status_code = status.HTTP_404_NOT_FOUND
+    default_detail = "Location not found"
+    default_code = "BOAT_CHARGING_LOCATION_NOT_FOUND"
+
+
 class BoatChargingServerError(BaseApiException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = "Error processing request"

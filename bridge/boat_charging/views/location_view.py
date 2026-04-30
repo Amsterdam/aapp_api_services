@@ -4,9 +4,13 @@ from urllib.parse import quote
 from django.conf import settings
 from rest_framework.response import Response
 
+from bridge.boat_charging.exceptions import (
+    BoatChargingClientError,
+    BoatChargingLocationNotFoundError,
+)
 from bridge.boat_charging.serializers.location_serializers import (
     LocationDetailResponseSerializer,
-    LocationResponseSerializer,
+    LocationListResponseSerializer,
 )
 from bridge.boat_charging.views.base_view import (
     BaseView,
@@ -15,25 +19,29 @@ from bridge.boat_charging.views.base_view import (
 
 
 @boat_charging_openapi_decorator(
-    response_serializer_class=LocationResponseSerializer(many=True)
+    response_serializer_class=LocationListResponseSerializer
 )
 class LocationView(BaseView):
-    response_serializer_class = LocationResponseSerializer
-    paginated = True
+    response_serializer_class = LocationListResponseSerializer
 
     async def get(self, request, *args, **kwargs):
         response_json = await self.api_call(
             "get",
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"],
         )
-        serializer_data = [self.get_location_data(item) for item in response_json]
-        serializer = self.response_serializer_class(data=serializer_data, many=True)
+
+        serializer_data = {
+            "type": "FeatureCollection",
+            "features": [self.get_location_data(item) for item in response_json],
+        }
+        serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)
 
 
 @boat_charging_openapi_decorator(
-    response_serializer_class=LocationDetailResponseSerializer
+    response_serializer_class=LocationDetailResponseSerializer,
+    exceptions=[BoatChargingLocationNotFoundError],
 )
 class LocationDetailView(LocationView):
     response_serializer_class = LocationDetailResponseSerializer
@@ -42,7 +50,10 @@ class LocationDetailView(LocationView):
     async def get(self, request, *args, **kwargs):
         location_id = self.get_safe_path_param(kwargs["location_id"])
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{location_id}"
-        response_json = await self.api_call("get", endpoint=endpoint)
+        try:
+            response_json = await self.api_call("get", endpoint=endpoint)
+        except BoatChargingClientError:
+            raise BoatChargingLocationNotFoundError
         serializer_data = self.get_location_data(response_json)
 
         # Enrich data with tariff

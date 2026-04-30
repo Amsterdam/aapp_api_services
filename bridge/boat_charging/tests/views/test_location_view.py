@@ -26,6 +26,22 @@ class TestLocationView(BoatChargingTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
 
+        # check that the address is returned in the expected format
+        self.assertEqual("address" in response.data["features"][0]["properties"], True)
+        self.assertEqual(
+            response.data["features"][0]["properties"]["address"],
+            {
+                "street_name": "Transformatorweg",
+                "street_number": "104",
+                "postal_code": "1234 AM",
+                "city": "Amsterdam",
+                "coordinates": {
+                    "lat": 52.387313,
+                    "lon": 4.822313,
+                },
+            },
+        )
+
 
 class TestLocationDetailView(BoatChargingTestCase):
     def setUp(self):
@@ -61,6 +77,22 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(resp_tariff.call_count, 1)
         self.assertEqual(len(response.data["charging_stations"]), 2)
+
+    def test_unknown_location_id(self):
+        ext_endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{self.location_id}"
+        )
+        resp = respx.get(ext_endpoint).mock(return_value=httpx.Response(403))
+
+        tariff_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['TARIFFS']}/NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY"
+        resp_tariff = respx.get(tariff_endpoint).mock(
+            return_value=httpx.Response(200, json=tariff_detail.MOCK_RESPONSE)
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(resp.call_count, 1)
+        self.assertEqual(resp_tariff.call_count, 0)
 
     def test_get_addr(self):
         input_str = "Tilanusstraat 10-2"

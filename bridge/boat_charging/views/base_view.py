@@ -116,26 +116,36 @@ class BaseView(GenericAPIView):
         street, number = self.split_address(item["address"])
 
         return {
-            "id": item["id"],
-            "name": item["name"],
-            "address": {
-                "city": item["city"],
-                "street": street,
-                "number": number if number else None,
-                "coordinates": {
-                    "lat": item["coordinates"]["latitude"],
-                    "lon": item["coordinates"]["longitude"],
+            "type": "Feature",
+            "properties": {
+                "id": item["id"],
+                "name": item["name"],
+                "address": {
+                    "city": item["city"],
+                    "street": street,
+                    "number": number if number else None,
+                    "coordinates": {
+                        "lat": item["coordinates"]["latitude"],
+                        "lon": item["coordinates"]["longitude"],
+                    },
+                    "postcode": item["postalCode"],
                 },
-                "postcode": item["postalCode"],
+                "opening_times": {
+                    "regular_hours": item["openingTimes"]["regularHours"],
+                    "twentyfourseven": item["openingTimes"]["twentyfourseven"],
+                    "exceptional_openings": item["openingTimes"]["exceptionalOpenings"],
+                    "exceptional_closings": item["openingTimes"]["exceptionalClosings"],
+                },
+                # "available_sockets": item["chargingStationCount"],
+                "total_sockets": item["chargingStationCount"],
             },
-            "opening_times": {
-                "regular_hours": item["openingTimes"]["regularHours"],
-                "twentyfourseven": item["openingTimes"]["twentyfourseven"],
-                "exceptional_openings": item["openingTimes"]["exceptionalOpenings"],
-                "exceptional_closings": item["openingTimes"]["exceptionalClosings"],
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    item["coordinates"]["longitude"],
+                    item["coordinates"]["latitude"],
+                ],
             },
-            # "available_sockets": item["chargingStationCount"],
-            "total_sockets": item["chargingStationCount"],
         }
 
     def get_safe_path_param(self, param) -> str:

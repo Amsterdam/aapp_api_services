@@ -12,13 +12,29 @@ class OpeningTimesSerializer(serializers.Serializer):
     exceptional_closings = serializers.ListField(child=serializers.IntegerField())
 
 
-class LocationResponseSerializer(serializers.Serializer):
+class PointGeometrySerializer(serializers.Serializer):
+    type = serializers.CharField("Point")
+    coordinates = serializers.ListField(child=serializers.FloatField())
+
+
+class LocationPropertiesSerializer(serializers.Serializer):
     id = serializers.CharField()
     name = serializers.CharField()
-    address = AddressSerializer()
+    address = AddressSerializer(source="*")
     opening_times = OpeningTimesSerializer()
     # available_sockets = serializers.IntegerField()
     total_sockets = serializers.IntegerField()
+
+
+class LocationListItemSerializer(serializers.Serializer):
+    type = serializers.CharField("Feature")
+    geometry = PointGeometrySerializer()
+    properties = LocationPropertiesSerializer()
+
+
+class LocationListResponseSerializer(serializers.Serializer):
+    type = serializers.CharField("FeatureCollection")
+    features = LocationListItemSerializer(many=True)
 
 
 class TariffSerializer(serializers.Serializer):
@@ -53,6 +69,6 @@ class ChargingStationSerializer(serializers.Serializer):
     evses = serializers.ListField(child=EVSESerializer())
 
 
-class LocationDetailResponseSerializer(LocationResponseSerializer):
+class LocationDetailResponseSerializer(LocationPropertiesSerializer):
     tariff = TariffSerializer()
     charging_stations = serializers.ListField(child=ChargingStationSerializer())
