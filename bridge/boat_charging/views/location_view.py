@@ -8,6 +8,7 @@ from bridge.boat_charging.serializers.location_serializers import (
     LocationDetailResponseSerializer,
     LocationResponseSerializer,
 )
+from bridge.boat_charging.utils import get_charging_station_statuses
 from bridge.boat_charging.views.base_view import (
     BaseView,
     boat_charging_openapi_decorator,
@@ -27,6 +28,10 @@ class LocationView(BaseView):
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"],
         )
         serializer_data = [self.get_location_data(item) for item in response_json]
+        status_mapping = await get_charging_station_statuses()
+        for item in serializer_data:
+            location_id = item["id"]
+            item["status"] = status_mapping.get(location_id, "UNKNOWN")
         serializer = self.response_serializer_class(data=serializer_data, many=True)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)

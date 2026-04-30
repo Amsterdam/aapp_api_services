@@ -19,6 +19,7 @@ class LocationResponseSerializer(serializers.Serializer):
     opening_times = OpeningTimesSerializer()
     # available_sockets = serializers.IntegerField()
     total_sockets = serializers.IntegerField()
+    status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES)
 
 
 class TariffSerializer(serializers.Serializer):
