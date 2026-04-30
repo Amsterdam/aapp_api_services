@@ -126,11 +126,16 @@ class TestParkingPermitsView(BaseSSPTestCase):
 
     def _compare_actual_and_expected_dates(self, actual, expected):
         if actual and expected:
-            actual_dt = timezone.make_aware(parse_datetime(actual))
-            expected_dt = timezone.make_aware(parse_datetime(expected))
+            actual_dt = self._ensure_aware(parse_datetime(actual))
+            expected_dt = self._ensure_aware(parse_datetime(expected))
             self.assertEqual(actual_dt, expected_dt)
         else:
             self.assertEqual(actual, expected)
+
+    def _ensure_aware(self, dt):
+        if dt and timezone.is_naive(dt):
+            return timezone.make_aware(dt)
+        return dt
 
     def test_permits_visitor_status_code_and_call_count(self):
         self._setup_permit_mocks_visitor(visitor.MOCK_RESPONSE)
