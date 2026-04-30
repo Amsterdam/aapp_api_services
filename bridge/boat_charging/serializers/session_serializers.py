@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from bridge.boat_charging.serializers.location_serializers import (
-    LocationResponseSerializer,
+    LocationPropertiesSerializer,
 )
 
 
@@ -26,4 +26,4 @@ class TransactionSerializer(serializers.Serializer):
 
 class SessionDetailResponseSerializer(SessionResponseSerializer):
     transaction = TransactionSerializer()
-    location = LocationResponseSerializer()
+    location = LocationPropertiesSerializer()
