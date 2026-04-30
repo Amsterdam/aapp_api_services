@@ -20,7 +20,7 @@ class PointGeometrySerializer(serializers.Serializer):
 class LocationPropertiesSerializer(serializers.Serializer):
     id = serializers.CharField()
     name = serializers.CharField()
-    address = AddressSerializer(source="address")
+    address = AddressSerializer()
     opening_times = OpeningTimesSerializer()
     # available_sockets = serializers.IntegerField()
     total_sockets = serializers.IntegerField()
