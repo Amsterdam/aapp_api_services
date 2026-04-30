@@ -167,6 +167,9 @@ class ParkingPermitsView(BaseSSPView):
                 ],
                 "max_session_length_in_days": self.get_max_session_length(permit),
                 "can_select_zone": permit["details"]["config"]["can_select_zone"],
+                "started_at": permit.get("started_at") or None,
+                "ended_at": permit.get("ended_at") or None,
+                "cancelled_at": permit.get("cancelled_at") or None,
             }
             response_payload.append(permit_json)
         return response_payload

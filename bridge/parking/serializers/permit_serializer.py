@@ -102,3 +102,6 @@ class PermitItemSerializer(serializers.Serializer):
     max_session_length_in_days = serializers.IntegerField(required=True)
     permit_name = serializers.CharField()
     can_select_zone = serializers.BooleanField()
+    started_at = serializers.DateTimeField(allow_null=True)
+    ended_at = serializers.DateTimeField(allow_null=True)
+    cancelled_at = serializers.DateTimeField(allow_null=True)
