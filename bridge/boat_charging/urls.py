@@ -2,12 +2,18 @@ from django.urls import path
 
 from bridge.boat_charging.views import (
     location_view,
+    login_view,
     session_start_stop,
     session_view,
 )
 
 BASE_PATH = "boat-charging/api/v1"
 urlpatterns = [
+    path(
+        BASE_PATH + "/login/guest",
+        login_view.GuestLoginView.as_view(),
+        name="boat-charging-guest-login",
+    ),
     path(
         BASE_PATH + "/locations",
         location_view.LocationView.as_view(),

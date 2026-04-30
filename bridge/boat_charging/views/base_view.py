@@ -76,13 +76,28 @@ class BaseView(GenericAPIView):
         retry=retry_if_exception_type(httpx.HTTPError),
         reraise=True,  # reraise error after retries are exhausted
     )
-    async def make_request(self, *, body_data, endpoint, headers, method, query_params):
+    async def make_request(
+        self,
+        *,
+        endpoint,
+        headers,
+        method,
+        body_data=None,
+        query_params=None,
+        auth=None,
+        data=None,
+    ):
+        assert not (body_data and data), (
+            "Either body_data or data must be provided, not both"
+        )
         response = await client.request(
             method=method,
             url=endpoint,
             params=query_params,
-            json=body_data,
+            json=body_data,  # json payload
+            data=data,  # for form data
             headers=headers,
+            auth=auth,
         )
         if response.is_success:
             return response.json()
@@ -90,11 +105,11 @@ class BaseView(GenericAPIView):
 
     async def raise_exception(self, response):
         if response.status_code >= 500:
-            raise BoatChargingServerError()
+            raise BoatChargingServerError(response.text)
         if response.status_code == 401:
             raise BoatChargingAuthError()
         if response.status_code >= 400:
-            raise BoatChargingClientError()
+            raise BoatChargingClientError(response.text)
         return
 
     def get_location_data(self, item) -> dict:
