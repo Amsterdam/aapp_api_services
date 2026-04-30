@@ -13,6 +13,7 @@ def custom_extend_schema(
     success_response=None,
     exceptions=None,
     additional_params=None,
+    additional_responses=None,
     **kwargs,
 ):  # pragma: no cover
     """
@@ -27,7 +28,11 @@ def custom_extend_schema(
 
     base_decorator = default_extend_schema(
         parameters=parameters,
-        responses={200: success_response, **error_response_serializers},
+        responses={
+            200: success_response,
+            **error_response_serializers,
+            **(additional_responses or {}),
+        },
         **kwargs,
     )
 
@@ -43,19 +48,28 @@ def custom_extend_schema(
 
 
 def extend_schema_for_api_key(
-    success_response=None, exceptions=None, additional_params=None, **kwargs
+    success_response=None,
+    exceptions=None,
+    additional_params=None,
+    additional_responses=None,
+    **kwargs,
 ):  # pragma: no cover
     return custom_extend_schema(
         default_exceptions=[ApiKeyInvalidException],
         success_response=success_response,
         exceptions=exceptions,
         additional_params=additional_params,
+        additional_responses=additional_responses,
         **kwargs,
     )
 
 
 def extend_schema_for_device_id(
-    success_response=None, exceptions=None, additional_params=None, **kwargs
+    success_response=None,
+    exceptions=None,
+    additional_params=None,
+    additional_responses=None,
+    **kwargs,
 ):  # pragma: no cover
     device_id_param = OpenApiParameter(
         settings.HEADER_DEVICE_ID,
@@ -70,5 +84,6 @@ def extend_schema_for_device_id(
         success_response=success_response,
         exceptions=exceptions,
         additional_params=params,
+        additional_responses=additional_responses,
         **kwargs,
     )

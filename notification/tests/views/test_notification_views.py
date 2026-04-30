@@ -322,8 +322,20 @@ class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
         self.notification.save()
 
         response = self.client.get(self.url, headers=self.headers_with_device_id)
-        self.assertContains(
-            response,
-            "No Notification matches the given query.",
-            status_code=status.HTTP_404_NOT_FOUND,
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_update_notification_detail_invisible(self):
+        self.notification.is_visible = False
+        self.notification.save()
+
+        response = self.client.patch(
+            self.url,
+            data={"is_read": True},
+            format="json",
+            headers=self.headers_with_device_id,
         )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.notification.refresh_from_db()
+        self.assertEqual(
+            self.notification.is_read, False
+        )  # Status should not be updated since notification is invisible
