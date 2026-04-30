@@ -81,7 +81,7 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
     )
     def get(self, request, *args, **kwargs):
         """Retrieve a single notification."""
-        instance = super().get_object()
+        instance = self.get_object()
         if not instance.is_visible:
             return Response(
                 status=status.HTTP_204_NO_CONTENT,
@@ -99,7 +99,7 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
     )
     def patch(self, request, *args, **kwargs):
         """Update a single notification to status "is_read" = true."""
-        instance = super().get_object()
+        instance = self.get_object()
         if not instance.is_visible:
             return Response(
                 status=status.HTTP_204_NO_CONTENT,
