@@ -4,6 +4,8 @@ import respx
 from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from uritemplate import URITemplate
 
 from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
@@ -87,40 +89,48 @@ class TestParkingPermitsView(BaseSSPTestCase):
         response = self.client.get(self.url, headers=self.api_headers)
         expected_validity = {
             "1003": {
-                "started_at": "2025-04-02T16:22:03+02:00",
-                "ended_at": "2025-09-13T23:59:59+02:00",
-                "cancelled_at": "2025-09-13T23:59:59+02:00",
+                "started_at": self.mock_response["data"][0]["started_at"],
+                "ended_at": self.mock_response["data"][0]["ended_at"],
+                "cancelled_at": self.mock_response["data"][0]["cancelled_at"],
             },
             "10001": {
-                "started_at": "2025-09-10T00:00:00+02:00",
-                "ended_at": "2124-09-10T00:00:00+02:00",
-                "cancelled_at": None,
+                "started_at": self.mock_response["data"][1]["started_at"],
+                "ended_at": self.mock_response["data"][1]["ended_at"],
+                "cancelled_at": self.mock_response["data"][1]["cancelled_at"],
             },
             "1001": {
-                "started_at": "2022-01-01T02:00:00+02:00",
-                "ended_at": "2025-04-03T01:59:59+02:00",
-                "cancelled_at": None,
+                "started_at": self.mock_response["data"][2]["started_at"],
+                "ended_at": self.mock_response["data"][2]["ended_at"],
+                "cancelled_at": self.mock_response["data"][2]["cancelled_at"],
             },
             "10002": {
-                "started_at": "2024-09-10T00:00:00+02:00",
-                "ended_at": "2124-09-10T00:00:00+02:00",
-                "cancelled_at": None,
+                "started_at": self.mock_response["data"][3]["started_at"],
+                "ended_at": self.mock_response["data"][3]["ended_at"],
+                "cancelled_at": self.mock_response["data"][3]["cancelled_at"],
             },
         }
         for permit in response.data:
             permit_report_code = permit["report_code"]
             self.assertIn(permit_report_code, expected_validity)
-            self.assertEqual(
+            self._compare_actual_and_expected_dates(
                 permit["started_at"],
                 expected_validity[permit_report_code]["started_at"],
             )
-            self.assertEqual(
+            self._compare_actual_and_expected_dates(
                 permit["ended_at"], expected_validity[permit_report_code]["ended_at"]
             )
-            self.assertEqual(
+            self._compare_actual_and_expected_dates(
                 permit["cancelled_at"],
                 expected_validity[permit_report_code]["cancelled_at"],
             )
+
+    def _compare_actual_and_expected_dates(self, actual, expected):
+        if actual and expected:
+            actual_dt = timezone.make_aware(parse_datetime(actual))
+            expected_dt = timezone.make_aware(parse_datetime(expected))
+            self.assertEqual(actual_dt, expected_dt)
+        else:
+            self.assertEqual(actual, expected)
 
     def test_permits_visitor_status_code_and_call_count(self):
         self._setup_permit_mocks_visitor(visitor.MOCK_RESPONSE)
