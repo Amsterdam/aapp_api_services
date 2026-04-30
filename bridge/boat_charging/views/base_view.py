@@ -109,7 +109,9 @@ class BaseView(GenericAPIView):
         if response.status_code == 401:
             raise BoatChargingAuthError()
         if response.status_code >= 400:
-            raise BoatChargingClientError(response.text)
+            raise BoatChargingClientError(
+                detail=response.text, status_code=response.status_code
+            )
         return
 
     def get_location_feature_data(self, item) -> dict:
@@ -120,8 +122,8 @@ class BaseView(GenericAPIView):
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    item["coordinates"]["longitude"],
-                    item["coordinates"]["latitude"],
+                    item["address"]["lon"],
+                    item["address"]["lat"],
                 ],
             },
         }
@@ -136,10 +138,8 @@ class BaseView(GenericAPIView):
                 "city": item["city"],
                 "street": street,
                 "number": number if number else None,
-                "coordinates": {
-                    "lat": item["coordinates"]["latitude"],
-                    "lon": item["coordinates"]["longitude"],
-                },
+                "lat": item["coordinates"]["latitude"],
+                "lon": item["coordinates"]["longitude"],
                 "postcode": item["postalCode"],
             },
             "opening_times": {
