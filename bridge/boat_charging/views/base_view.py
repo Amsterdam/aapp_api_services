@@ -123,8 +123,8 @@ class BaseView(GenericAPIView):
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    item["address"]["lon"],
-                    item["address"]["lat"],
+                    item["coordinates"]["longitude"],
+                    item["coordinates"]["latitude"],
                 ],
             },
         }

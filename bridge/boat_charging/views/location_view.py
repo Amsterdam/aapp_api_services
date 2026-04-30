@@ -39,7 +39,7 @@ class LocationView(BaseView):
         }
         serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=200)
+        return Response(serializer.data, status=200)
 
 
 @boat_charging_openapi_decorator(
@@ -82,7 +82,7 @@ class LocationDetailView(LocationView):
 
         serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=200)
+        return Response(serializer.data, status=200)
 
     def get_tariff_data(self, tariff_json) -> dict:
         return {
