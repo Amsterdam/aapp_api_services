@@ -256,6 +256,10 @@ MOCK_RESPONSE = {
     },
     "ssp": {
         "favorite_machine_number": None,
-        "visitor_account": {"username": "12345678", "pin": "1234", "time_balance": 3600},
+        "visitor_account": {
+            "username": "12345678",
+            "pin": "1234",
+            "time_balance": 3600,
+        },
     },
 }
