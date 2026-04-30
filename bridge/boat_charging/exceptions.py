@@ -9,6 +9,12 @@ class BoatChargingClientError(BaseApiException):
     default_code = "BOAT_CHARGING_CLIENT_ERROR"
 
 
+class BoatChargingForbiddenError(BaseApiException):
+    status_code = status.HTTP_403_FORBIDDEN
+    default_detail = "Forbidden"
+    default_code = "BOAT_CHARGING_FORBIDDEN_ERROR"
+
+
 class BoatChargingLocationNotFoundError(BaseApiException):
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = "Location not found"

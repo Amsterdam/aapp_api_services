@@ -5,7 +5,7 @@ from django.conf import settings
 from rest_framework.response import Response
 
 from bridge.boat_charging.exceptions import (
-    BoatChargingClientError,
+    BoatChargingForbiddenError,
     BoatChargingLocationNotFoundError,
 )
 from bridge.boat_charging.serializers.location_serializers import (
@@ -55,12 +55,9 @@ class LocationDetailView(LocationView):
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{location_id}"
         try:
             response_json = await self.api_call("get", endpoint=endpoint)
-        except BoatChargingClientError as exc:
-            if (
-                getattr(exc, "status_code", None) == 403
-            ):  # 403 is returned when a location with the given id is not found
-                raise BoatChargingLocationNotFoundError
-            raise
+        except BoatChargingForbiddenError:
+            raise BoatChargingLocationNotFoundError
+
         serializer_data = self.get_location_data(response_json)
 
         # Enrich data with tariff

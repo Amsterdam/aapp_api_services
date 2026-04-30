@@ -14,6 +14,7 @@ from bridge.boat_charging.client import client
 from bridge.boat_charging.exceptions import (
     BoatChargingAuthError,
     BoatChargingClientError,
+    BoatChargingForbiddenError,
     BoatChargingMissingAccessToken,
     BoatChargingServerError,
 )
@@ -108,10 +109,10 @@ class BaseView(GenericAPIView):
             raise BoatChargingServerError(response.text)
         if response.status_code == 401:
             raise BoatChargingAuthError()
+        if response.status_code == 403:
+            raise BoatChargingForbiddenError()
         if response.status_code >= 400:
-            raise BoatChargingClientError(
-                detail=response.text, status_code=response.status_code
-            )
+            raise BoatChargingClientError(response.text)
         return
 
     def get_location_feature_data(self, item) -> dict:
