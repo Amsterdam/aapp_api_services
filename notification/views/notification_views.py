@@ -1,7 +1,7 @@
 import logging
 
 from drf_spectacular.utils import inline_serializer
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import CharField
 from rest_framework.response import Response
@@ -73,13 +73,30 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
             .filter(device__external_id=self.device_id)
             .filter(is_visible=True)
         )
-
+    
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        lookup_value = self.kwargs.get(lookup_url_kwarg)
+        filter_kwargs = {self.lookup_field: lookup_value}
+        try:
+            return queryset.get(**filter_kwargs)
+        except Notification.DoesNotExist:
+            return None  # or handle as you wish
+    
     @extend_schema_for_device_id(
         success_response=NotificationResultSerializer,
     )
     def get(self, request, *args, **kwargs):
         """Retrieve a single notification."""
-        return super().get(request, *args, **kwargs)
+        instance = self.get_object()
+        if instance is None:
+            return Response(
+                {"detail": "No Notification matches the given query."},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     @extend_schema_for_device_id(
         request=NotificationUpdateSerializer,
@@ -89,6 +106,11 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
     def patch(self, request, *args, **kwargs):
         """Update a single notification to status "is_read" = true."""
         instance = self.get_object()
+        if instance is None:
+            return Response(
+                {"detail": "No Notification matches the given query."},
+                status=status.HTTP_204_NO_CONTENT,
+            )
         serializer = NotificationUpdateSerializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
