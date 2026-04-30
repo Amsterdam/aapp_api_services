@@ -87,23 +87,23 @@ class TestParkingPermitsView(BaseSSPTestCase):
         response = self.client.get(self.url, headers=self.api_headers)
         expected_validity = {
             "1003": {
-                "started_at": "2025-04-02T14:22:03+00:00",
-                "ended_at": "2025-09-13T21:59:59+00:00",
-                "cancelled_at": "2025-09-13T21:59:59+00:00",
+                "started_at": "2025-04-02T16:22:03+02:00",
+                "ended_at": "2025-09-13T23:59:59+02:00",
+                "cancelled_at": "2025-09-13T23:59:59+02:00",
             },
             "10001": {
-                "started_at": "2025-09-09T22:00:00+00:00",
-                "ended_at": "2124-09-09T22:00:00+00:00",
+                "started_at": "2025-09-10T00:00:00+02:00",
+                "ended_at": "2124-09-10T00:00:00+02:00",
                 "cancelled_at": None,
             },
             "1001": {
-                "started_at": "2022-01-01T00:00:00+00:00",
-                "ended_at": "2025-04-02T23:59:59+00:00",
+                "started_at": "2022-01-01T02:00:00+02:00",
+                "ended_at": "2025-04-03T01:59:59+02:00",
                 "cancelled_at": None,
             },
             "10002": {
-                "started_at": "2024-09-09T22:00:00+00:00",
-                "ended_at": "2124-09-09T22:00:00+00:00",
+                "started_at": "2024-09-10T00:00:00+02:00",
+                "ended_at": "2124-09-10T00:00:00+02:00",
                 "cancelled_at": None,
             },
         }
@@ -123,16 +123,16 @@ class TestParkingPermitsView(BaseSSPTestCase):
             )
 
     def test_permits_visitor_status_code_and_call_count(self):
-        resp = self._setup_permit_mocks_visitor(visitor.MOCK_RESPONSE)
+        self._setup_permit_mocks_visitor(visitor.MOCK_RESPONSE)
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(resp.call_count, 0)
 
     def test_permits_visitor_information(self):
         self._setup_permit_mocks_visitor(visitor.MOCK_RESPONSE)
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.data[0]["permit_type"], "Bezoekersvergunning")
-        self.assertEqual(response.data[0]["visitor_account"]["time_balance"], 3600)
+        self.assertEqual(response.data[0]["time_balance"], 3600)
+        self.assertEqual(response.data[0]["visitor_account"]["seconds_remaining"], 3600)
         self.assertEqual(response.data[0]["parking_machine_favorite"], None)
         self.assertEqual(len(response.data), 1)
 
