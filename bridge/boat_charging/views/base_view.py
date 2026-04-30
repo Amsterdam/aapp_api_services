@@ -139,8 +139,10 @@ class BaseView(GenericAPIView):
                 "city": item["city"],
                 "street": street,
                 "number": number if number else None,
-                "lat": item["coordinates"]["latitude"],
-                "lon": item["coordinates"]["longitude"],
+                "coordinates": {
+                    "lat": item["coordinates"]["latitude"],
+                    "lon": item["coordinates"]["longitude"],
+                },
                 "postcode": item["postalCode"],
             },
             "opening_times": {
