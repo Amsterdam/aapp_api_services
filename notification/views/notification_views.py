@@ -73,27 +73,15 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
             device__external_id=self.device_id
         )
 
-    def get_object(self):
-        queryset = self.filter_queryset(self.get_queryset())
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        lookup_value = self.kwargs.get(lookup_url_kwarg)
-        filter_kwargs = {self.lookup_field: lookup_value}
-        try:
-            return queryset.get(**filter_kwargs)
-        except Notification.DoesNotExist:
-            return None  # Return None instead of raising an exception to handle 404 and 204 in the view methods
-
     @extend_schema_for_device_id(
         success_response=NotificationResultSerializer,
+        additional_responses={
+            204: inline_serializer(name="NoContentResponse", fields={})
+        },
     )
     def get(self, request, *args, **kwargs):
         """Retrieve a single notification."""
-        instance = self.get_object()
-        if instance is None:
-            return Response(
-                {"detail": "No Notification matches the given query."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        instance = super().get_object()
         if not instance.is_visible:
             return Response(
                 status=status.HTTP_204_NO_CONTENT,
@@ -105,15 +93,13 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
         request=NotificationUpdateSerializer,
         success_response=NotificationResultSerializer,
         exceptions=[ValidationError],
+        additional_responses={
+            204: inline_serializer(name="NoContentResponse", fields={})
+        },
     )
     def patch(self, request, *args, **kwargs):
         """Update a single notification to status "is_read" = true."""
-        instance = self.get_object()
-        if instance is None:
-            return Response(
-                {"detail": "No Notification matches the given query."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        instance = super().get_object()
         if not instance.is_visible:
             return Response(
                 status=status.HTTP_204_NO_CONTENT,

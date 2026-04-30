@@ -335,3 +335,7 @@ class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
             headers=self.headers_with_device_id,
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.notification.refresh_from_db()
+        self.assertEqual(
+            self.notification.is_read, False
+        )  # Status should not be updated since notification is invisible
