@@ -322,11 +322,7 @@ class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
         self.notification.save()
 
         response = self.client.get(self.url, headers=self.headers_with_device_id)
-        self.assertContains(
-            response,
-            "No Notification matches the given query.",
-            status_code=status.HTTP_204_NO_CONTENT,
-        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_update_notification_detail_invisible(self):
         self.notification.is_visible = False
@@ -338,8 +334,4 @@ class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
             format="json",
             headers=self.headers_with_device_id,
         )
-        self.assertContains(
-            response,
-            "No Notification matches the given query.",
-            status_code=status.HTTP_204_NO_CONTENT,
-        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)

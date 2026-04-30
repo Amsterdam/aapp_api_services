@@ -68,12 +68,11 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
     http_method_names = ["get", "patch"]
 
     def get_queryset(self):
-        return (
-            Notification.objects.select_related("device")
-            .filter(device__external_id=self.device_id)
-            .filter(is_visible=True)
+        # Only filter by device_id, not is_visible
+        return Notification.objects.select_related("device").filter(
+            device__external_id=self.device_id
         )
-    
+
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
@@ -82,8 +81,8 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
         try:
             return queryset.get(**filter_kwargs)
         except Notification.DoesNotExist:
-            return None  # or handle as you wish
-    
+            return None  # Return None instead of raising an exception to handle 404 and 204 in the view methods
+
     @extend_schema_for_device_id(
         success_response=NotificationResultSerializer,
     )
@@ -93,6 +92,10 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
         if instance is None:
             return Response(
                 {"detail": "No Notification matches the given query."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if not instance.is_visible:
+            return Response(
                 status=status.HTTP_204_NO_CONTENT,
             )
         serializer = self.get_serializer(instance)
@@ -109,6 +112,10 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
         if instance is None:
             return Response(
                 {"detail": "No Notification matches the given query."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if not instance.is_visible:
+            return Response(
                 status=status.HTTP_204_NO_CONTENT,
             )
         serializer = NotificationUpdateSerializer(instance, data=request.data)
