@@ -13,27 +13,27 @@ class OpeningTimesSerializer(serializers.Serializer):
 
 
 class PointGeometrySerializer(serializers.Serializer):
-    type = serializers.CharField("Point")
+    type = serializers.CharField(default="Point", read_only=True)
     coordinates = serializers.ListField(child=serializers.FloatField())
 
 
 class LocationPropertiesSerializer(serializers.Serializer):
     id = serializers.CharField()
     name = serializers.CharField()
-    address = AddressSerializer(source="*")
+    address = AddressSerializer(source="address")
     opening_times = OpeningTimesSerializer()
     # available_sockets = serializers.IntegerField()
     total_sockets = serializers.IntegerField()
 
 
 class LocationListItemSerializer(serializers.Serializer):
-    type = serializers.CharField("Feature")
+    type = serializers.CharField(default="Feature", read_only=True)
     geometry = PointGeometrySerializer()
     properties = LocationPropertiesSerializer()
 
 
 class LocationListResponseSerializer(serializers.Serializer):
-    type = serializers.CharField("FeatureCollection")
+    type = serializers.CharField(default="FeatureCollection", read_only=True)
     features = LocationListItemSerializer(many=True)
 
 

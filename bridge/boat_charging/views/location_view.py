@@ -23,6 +23,7 @@ from bridge.boat_charging.views.base_view import (
 )
 class LocationView(BaseView):
     response_serializer_class = LocationListResponseSerializer
+    paginated = True
 
     async def get(self, request, *args, **kwargs):
         response_json = await self.api_call(
@@ -32,7 +33,9 @@ class LocationView(BaseView):
 
         serializer_data = {
             "type": "FeatureCollection",
-            "features": [self.get_location_data(item) for item in response_json],
+            "features": [
+                self.get_location_feature_data(item) for item in response_json
+            ],
         }
         serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)
@@ -52,8 +55,12 @@ class LocationDetailView(LocationView):
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{location_id}"
         try:
             response_json = await self.api_call("get", endpoint=endpoint)
-        except BoatChargingClientError:
-            raise BoatChargingLocationNotFoundError
+        except BoatChargingClientError as exc:
+            if (
+                getattr(exc, "status_code", None) == 403
+            ):  # 403 is returned when a location with the given id is not found
+                raise BoatChargingLocationNotFoundError
+            raise
         serializer_data = self.get_location_data(response_json)
 
         # Enrich data with tariff

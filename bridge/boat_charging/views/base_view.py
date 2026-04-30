@@ -112,33 +112,11 @@ class BaseView(GenericAPIView):
             raise BoatChargingClientError(response.text)
         return
 
-    def get_location_data(self, item) -> dict:
-        street, number = self.split_address(item["address"])
-
+    def get_location_feature_data(self, item) -> dict:
+        item_dict = self.get_location_data(item)
         return {
             "type": "Feature",
-            "properties": {
-                "id": item["id"],
-                "name": item["name"],
-                "address": {
-                    "city": item["city"],
-                    "street": street,
-                    "number": number if number else None,
-                    "coordinates": {
-                        "lat": item["coordinates"]["latitude"],
-                        "lon": item["coordinates"]["longitude"],
-                    },
-                    "postcode": item["postalCode"],
-                },
-                "opening_times": {
-                    "regular_hours": item["openingTimes"]["regularHours"],
-                    "twentyfourseven": item["openingTimes"]["twentyfourseven"],
-                    "exceptional_openings": item["openingTimes"]["exceptionalOpenings"],
-                    "exceptional_closings": item["openingTimes"]["exceptionalClosings"],
-                },
-                # "available_sockets": item["chargingStationCount"],
-                "total_sockets": item["chargingStationCount"],
-            },
+            "properties": item_dict,
             "geometry": {
                 "type": "Point",
                 "coordinates": [
@@ -146,6 +124,32 @@ class BaseView(GenericAPIView):
                     item["coordinates"]["latitude"],
                 ],
             },
+        }
+
+    def get_location_data(self, item) -> dict:
+        street, number = self.split_address(item["address"])
+
+        return {
+            "id": item["id"],
+            "name": item["name"],
+            "address": {
+                "city": item["city"],
+                "street": street,
+                "number": number if number else None,
+                "coordinates": {
+                    "lat": item["coordinates"]["latitude"],
+                    "lon": item["coordinates"]["longitude"],
+                },
+                "postcode": item["postalCode"],
+            },
+            "opening_times": {
+                "regular_hours": item["openingTimes"]["regularHours"],
+                "twentyfourseven": item["openingTimes"]["twentyfourseven"],
+                "exceptional_openings": item["openingTimes"]["exceptionalOpenings"],
+                "exceptional_closings": item["openingTimes"]["exceptionalClosings"],
+            },
+            # "available_sockets": item["chargingStationCount"],
+            "total_sockets": item["chargingStationCount"],
         }
 
     def get_safe_path_param(self, param) -> str:

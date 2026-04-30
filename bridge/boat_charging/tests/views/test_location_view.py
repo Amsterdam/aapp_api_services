@@ -31,9 +31,9 @@ class TestLocationView(BoatChargingTestCase):
         self.assertEqual(
             response.data["features"][0]["properties"]["address"],
             {
-                "street_name": "Transformatorweg",
-                "street_number": "104",
-                "postal_code": "1234 AM",
+                "street": "Transformatorweg",
+                "number": "104",
+                "postcode": "1234 AM",
                 "city": "Amsterdam",
                 "coordinates": {
                     "lat": 52.387313,
