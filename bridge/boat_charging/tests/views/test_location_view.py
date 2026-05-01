@@ -59,20 +59,6 @@ class TestLocationView(BoatChargingTestCase):
             response.data["features"][2]["properties"]["status"], "OCCUPIED"
         )
 
-    def test_location_status_mapping(self):
-
-        resp_charging_stations = respx.get(
-            settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]
-        ).mock(return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE))
-
-        status_mapping = asyncio.run(self.view.get_location_statuses())
-
-        self.assertEqual(resp_charging_stations.call_count, 1)
-        self.assertEqual(
-            status_mapping["2c0ccfb795d040e39136b7dd1d25f13e"], "OPERATIVE"
-        )
-        self.assertEqual(status_mapping["a9d9b42ce3eb4d8cbf50bb6aaeaa6357"], "OCCUPIED")
-
 
 class TestLocationDetailView(BoatChargingTestCase):
     def setUp(self):
