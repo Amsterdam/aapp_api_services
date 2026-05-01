@@ -22,7 +22,7 @@ class TestLocationView(BoatChargingTestCase):
         self.url = reverse("boat-charging-locations")
         self.view = LocationView()
 
-    def test_success(self):
+    def _setup_mock_location_response(self):
         resp = respx.get(settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"]).mock(
             return_value=httpx.Response(200, json=locations.MOCK_RESPONSE)
         )
@@ -30,10 +30,16 @@ class TestLocationView(BoatChargingTestCase):
             settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]
         ).mock(return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE))
         response = self.client.get(self.url, headers=self.api_headers)
+        return resp, resp_charging_stations, response
+
+    def test_success_basic_params(self):
+        resp, resp_charging_stations, response = self._setup_mock_location_response()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(resp_charging_stations.call_count, 1)
 
+    def test_success_address_format(self):
+        _, _, response = self._setup_mock_location_response()
         # check that the address is returned in the expected format
         self.assertEqual("address" in response.data["features"][0]["properties"], True)
         self.assertEqual(
@@ -50,6 +56,8 @@ class TestLocationView(BoatChargingTestCase):
             },
         )
 
+    def test_success_location_status_mapping(self):
+        _, _, response = self._setup_mock_location_response()
         # location 2 (AmsterdamBoatTest1) has two charging stations, one operative and one offline station -> "OPERATIVE"
         self.assertEqual(
             response.data["features"][1]["properties"]["status"], "OPERATIVE"
