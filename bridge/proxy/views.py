@@ -7,9 +7,9 @@ import requests
 from django.conf import settings
 from django.db import connections
 from django.http import HttpResponse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from djanto.utils import timezone
 from drf_spectacular.utils import extend_schema
 from requests import JSONDecodeError
 from rest_framework import status
