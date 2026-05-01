@@ -5,6 +5,7 @@ import freezegun
 import responses
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 
 from bridge.proxy.tests import mock_data
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
@@ -245,9 +246,12 @@ class TestServerTimeView(ResponsesActivatedAPITestCase):
         super().setUp()
         self.url = reverse("server-time")
 
-    @freezegun.freeze_time("2026-05-10 12:00:00")
+    @freezegun.freeze_time("2026-05-10 12:00:00", tz_offset=2)
     def test_server_time_view(self):
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
+        print(f"{timezone.localtime().isoformat()=}")
+        print(f"{timezone.now().isoformat()=}")
+        print(f"{response.data['server_time']=}")
         # check that the returned server time is in isoformat and matches the frozen time
-        self.assertEqual(response.data["server_time"], "2026-05-10T12:00:00Z")
+        self.assertEqual(response.data["server_time"], "2026-05-10T12:00:00+02:00")
