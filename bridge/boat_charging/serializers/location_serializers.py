@@ -5,8 +5,19 @@ from core.serializers.address_serializers import AddressSerializer
 OPERATION_STATE_CHOICES = ["OPERATIVE", "INOPERATIVE", "OFFLINE", "UNKNOWN", "OCCUPIED"]
 
 
+class HourMinuteField(serializers.Serializer):
+    hours = serializers.IntegerField()
+    minutes = serializers.IntegerField()
+
+
+class RegularOpeningHoursSerializer(serializers.Serializer):
+    dayOfWeek = serializers.IntegerField()
+    opening = HourMinuteField()
+    closing = HourMinuteField()
+
+
 class OpeningTimesSerializer(serializers.Serializer):
-    regular_hours = serializers.ListField(child=serializers.IntegerField())
+    regular_hours = RegularOpeningHoursSerializer(many=True, allow_empty=True)
     twentyfourseven = serializers.BooleanField()
     exceptional_openings = serializers.ListField(child=serializers.IntegerField())
     exceptional_closings = serializers.ListField(child=serializers.IntegerField())

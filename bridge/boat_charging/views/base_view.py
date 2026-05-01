@@ -146,7 +146,9 @@ class BaseView(GenericAPIView):
                 "postcode": item["postalCode"],
             },
             "opening_times": {
-                "regular_hours": item["openingTimes"]["regularHours"],
+                "regular_hours": self._convert_regular_hours(
+                    item["openingTimes"]["regularHours"]
+                ),
                 "twentyfourseven": item["openingTimes"]["twentyfourseven"],
                 "exceptional_openings": item["openingTimes"]["exceptionalOpenings"],
                 "exceptional_closings": item["openingTimes"]["exceptionalClosings"],
@@ -154,6 +156,46 @@ class BaseView(GenericAPIView):
             # "available_sockets": item["chargingStationCount"],
             "total_sockets": item["chargingStationCount"],
         }
+
+    def _convert_regular_hours(self, regular_hours: list) -> list:
+        """
+        The regular hour from the API are in the format:
+        {
+            "weekday": 1,
+            "periodBegin": "08:00",
+            "periodEnd": "18:00"
+        },
+        Convert this to the format expected by the frontend:
+        {
+            "dayOfWeek": 1,
+            "opening": {
+              "hours": 8,
+              "minutes": 0
+            },
+            "closing": {
+              "hours": 18,
+              "minutes": 0
+            }
+          },
+        Where also the number of the day of week is converted from 1-7 (Monday-Sunday) to 0-6 (Sunday-Saturday)
+        """
+        converted_hours = []
+        for entry in regular_hours:
+            weekday = entry["weekday"] % 7  # convert 1-7 to 0-6
+            opening_time = entry["periodBegin"]
+            closing_time = entry["periodEnd"]
+
+            opening_hours, opening_minutes = map(int, opening_time.split(":"))
+            closing_hours, closing_minutes = map(int, closing_time.split(":"))
+
+            converted_hours.append(
+                {
+                    "dayOfWeek": weekday,
+                    "opening": {"hours": opening_hours, "minutes": opening_minutes},
+                    "closing": {"hours": closing_hours, "minutes": closing_minutes},
+                }
+            )
+        return converted_hours
 
     def get_safe_path_param(self, param) -> str:
         """
