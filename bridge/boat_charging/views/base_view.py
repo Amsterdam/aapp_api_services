@@ -191,6 +191,7 @@ def boat_charging_openapi_decorator(
             BoatChargingClientError,
             BoatChargingServerError,
             BoatChargingMissingAccessToken,
+            BoatChargingForbiddenError,
         ],
     }
     if exceptions:

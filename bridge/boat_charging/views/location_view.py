@@ -56,7 +56,7 @@ class LocationDetailView(LocationView):
         try:
             response_json = await self.api_call("get", endpoint=endpoint)
         except BoatChargingForbiddenError:
-            raise BoatChargingLocationNotFoundError
+            raise BoatChargingLocationNotFoundError()
 
         serializer_data = self.get_location_data(response_json)
 
