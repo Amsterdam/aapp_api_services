@@ -4,9 +4,13 @@ from urllib.parse import quote
 from django.conf import settings
 from rest_framework.response import Response
 
+from bridge.boat_charging.exceptions import (
+    BoatChargingForbiddenError,
+    BoatChargingLocationNotFoundError,
+)
 from bridge.boat_charging.serializers.location_serializers import (
     LocationDetailResponseSerializer,
-    LocationResponseSerializer,
+    LocationListResponseSerializer,
 )
 from bridge.boat_charging.utils import get_charging_station_statuses
 from bridge.boat_charging.views.base_view import (
@@ -16,10 +20,10 @@ from bridge.boat_charging.views.base_view import (
 
 
 @boat_charging_openapi_decorator(
-    response_serializer_class=LocationResponseSerializer(many=True)
+    response_serializer_class=LocationListResponseSerializer
 )
 class LocationView(BaseView):
-    response_serializer_class = LocationResponseSerializer
+    response_serializer_class = LocationListResponseSerializer
     paginated = True
 
     async def get(self, request, *args, **kwargs):
@@ -27,18 +31,23 @@ class LocationView(BaseView):
             "get",
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"],
         )
-        serializer_data = [self.get_location_data(item) for item in response_json]
         status_mapping = await get_charging_station_statuses()
-        for item in serializer_data:
-            location_id = item["id"]
-            item["status"] = status_mapping.get(location_id, "UNKNOWN")
-        serializer = self.response_serializer_class(data=serializer_data, many=True)
+        features = [self.get_location_feature_data(item) for item in response_json]
+        for item in features:
+            location_id = item["properties"]["id"]
+            item["properties"]["status"] = status_mapping.get(location_id, "UNKNOWN")
+        serializer_data = {
+            "type": "FeatureCollection",
+            "features": features,
+        }
+        serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=200)
+        return Response(serializer.data, status=200)
 
 
 @boat_charging_openapi_decorator(
-    response_serializer_class=LocationDetailResponseSerializer
+    response_serializer_class=LocationDetailResponseSerializer,
+    exceptions=[BoatChargingLocationNotFoundError],
 )
 class LocationDetailView(LocationView):
     response_serializer_class = LocationDetailResponseSerializer
@@ -47,7 +56,11 @@ class LocationDetailView(LocationView):
     async def get(self, request, *args, **kwargs):
         location_id = self.get_safe_path_param(kwargs["location_id"])
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{location_id}"
-        response_json = await self.api_call("get", endpoint=endpoint)
+        try:
+            response_json = await self.api_call("get", endpoint=endpoint)
+        except BoatChargingForbiddenError:
+            raise BoatChargingLocationNotFoundError()
+
         serializer_data = self.get_location_data(response_json)
 
         # Enrich data with tariff
@@ -72,7 +85,7 @@ class LocationDetailView(LocationView):
 
         serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=200)
+        return Response(serializer.data, status=200)
 
     def get_tariff_data(self, tariff_json) -> dict:
         return {
