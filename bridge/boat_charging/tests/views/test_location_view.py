@@ -1,5 +1,3 @@
-import asyncio
-
 import httpx
 import respx
 from django.conf import settings
