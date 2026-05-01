@@ -5,17 +5,20 @@ from django.urls import reverse
 
 from bridge.boat_charging.tests.mock_data import (
     charging_station_detail,
+    charging_stations,
     location_detail,
     locations,
     tariff_detail,
 )
 from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
+from bridge.boat_charging.views.location_view import LocationView
 
 
 class TestLocationView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("boat-charging-locations")
+        self.view = LocationView.as_view()
 
     def test_success(self):
         resp = respx.get(settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"]).mock(
@@ -40,6 +43,29 @@ class TestLocationView(BoatChargingTestCase):
                 },
             },
         )
+
+        # location 2 (AmsterdamBoatTest1) has two charging stations, one operative and one offline station -> "OPERATIVE"
+        self.assertEqual(
+            response.data["features"][1]["properties"]["status"], "OPERATIVE"
+        )
+        # location 3 (AmsterdamBoatTest3) has one occupied station -> "OCCUPIED"
+        self.assertEqual(
+            response.data["features"][2]["properties"]["status"], "OCCUPIED"
+        )
+
+    def test_location_status_mapping(self):
+
+        resp_charging_stations = respx.get(
+            settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]
+        ).mock(return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE))
+
+        status_mapping = self.view.get_location_statuses()
+
+        self.assertEqual(resp_charging_stations.call_count, 1)
+        self.assertEqual(
+            status_mapping["2c0ccfb795d040e39136b7dd1d25f13e"], "OPERATIVE"
+        )
+        self.assertEqual(status_mapping["a9d9b42ce3eb4d8cbf50bb6aaeaa6357"], "OCCUPIED")
 
 
 class TestLocationDetailView(BoatChargingTestCase):
