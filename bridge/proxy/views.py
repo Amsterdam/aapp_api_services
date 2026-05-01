@@ -4,11 +4,12 @@ import re
 from urllib.error import HTTPError
 
 import requests
-from django.conf import settings, timezone
+from django.conf import settings
 from django.db import connections
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from djanto.utils import timezone
 from drf_spectacular.utils import extend_schema
 from requests import JSONDecodeError
 from rest_framework import status
@@ -313,5 +314,8 @@ class HealthCheckView(GenericAPIView):
 
 
 class ServerTimeView(GenericAPIView):
-    def get(self):
-        return Response({"server_time": timezone.now()}, status=status.HTTP_200_OK)
+    def get(self, request, *args, **kwargs) -> Response:
+        """Returns the current server time"""
+        return Response(
+            {"server_time": timezone.now().isoformat()}, status=status.HTTP_200_OK
+        )
