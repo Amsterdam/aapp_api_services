@@ -10,7 +10,6 @@ from bridge.boat_charging.tests.mock_data import (
     tariff_detail,
 )
 from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
-from bridge.boat_charging.views.base_view import BaseView
 
 
 class TestLocationView(BoatChargingTestCase):
