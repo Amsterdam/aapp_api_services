@@ -7,7 +7,7 @@ import sys
 from django.core.cache import cache
 
 
-def cache_function(timeout: int):
+def cache_function(timeout: int, ignore_first_arg: bool = False):
     """
     Decorator to cache function results for timeout seconds. Cache key is based on function name and arguments.
     """
@@ -26,7 +26,8 @@ def cache_function(timeout: int):
 
         def get_cache_key(args, kwargs) -> str:
             # Stable cache key based on function + arguments
-            raw_key = f"{func.__module__}.{func.__qualname__}:{args}:{kwargs}"
+            args_for_key = args[1:] if ignore_first_arg and args else args
+            raw_key = f"{func.__module__}.{func.__qualname__}:{args_for_key}:{kwargs}"
             return f"aapp:{hashlib.sha256(raw_key.encode()).hexdigest()}"
 
         if inspect.iscoroutinefunction(func):

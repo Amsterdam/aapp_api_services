@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 import respx
 from django.conf import settings
@@ -18,15 +20,19 @@ class TestLocationView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("boat-charging-locations")
-        self.view = LocationView.as_view()
+        self.view = LocationView()
 
     def test_success(self):
         resp = respx.get(settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"]).mock(
             return_value=httpx.Response(200, json=locations.MOCK_RESPONSE)
         )
+        resp_charging_stations = respx.get(
+            settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]
+        ).mock(return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE))
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
+        self.assertEqual(resp_charging_stations.call_count, 1)
 
         # check that the address is returned in the expected format
         self.assertEqual("address" in response.data["features"][0]["properties"], True)
@@ -59,7 +65,7 @@ class TestLocationView(BoatChargingTestCase):
             settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]
         ).mock(return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE))
 
-        status_mapping = self.view.get_location_statuses()
+        status_mapping = asyncio.run(self.view.get_location_statuses())
 
         self.assertEqual(resp_charging_stations.call_count, 1)
         self.assertEqual(
