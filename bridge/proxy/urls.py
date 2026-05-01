@@ -39,7 +39,7 @@ urlpatterns += [
     ),
     # server time
     path(
-        "bridge/api/v1/server-time",
+        "bridge/api/v1/time",
         ServerTimeView.as_view(),
         name="server-time",
     ),
