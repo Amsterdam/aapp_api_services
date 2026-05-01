@@ -10,7 +10,7 @@ from core.utils.caching_utils import cache_function
 class TestCacheFunction(TestCase):
     @patch.dict(os.environ, {"CACHE_FUNCTION_ENABLED_PYTEST": "true"})
     def test_cache_function_ignores_self_for_methods(self):
-        
+
         cache.clear()
         call_counter = {"calls": 0}
 
