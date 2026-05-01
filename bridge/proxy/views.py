@@ -4,7 +4,7 @@ import re
 from urllib.error import HTTPError
 
 import requests
-from django.conf import settings
+from django.conf import settings, timezone
 from django.db import connections
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
@@ -310,3 +310,8 @@ class HealthCheckView(GenericAPIView):
                 {"status": "unready"}, status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         return Response({"status": "ok"})
+
+
+class ServerTimeView(GenericAPIView):
+    def get(self):
+        return Response({"server_time": timezone.now()}, status=status.HTTP_200_OK)

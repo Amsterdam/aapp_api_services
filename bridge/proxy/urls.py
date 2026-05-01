@@ -10,6 +10,7 @@ from bridge.proxy.views import (
     EgisProxyView,
     HealthCheckView,
     PollingStationsView,
+    ServerTimeView,
     WasteGuideView,
 )
 
@@ -35,6 +36,12 @@ urlpatterns += [
         "bridge/api/v1/health-check",
         HealthCheckView.as_view(),
         name="health-check",
+    ),
+    # server time
+    path(
+        "bridge/api/v1/server-time",
+        ServerTimeView.as_view(),
+        name="server-time",
     ),
     # afvalwijzer
     path(
