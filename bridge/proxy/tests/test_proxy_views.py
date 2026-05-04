@@ -5,7 +5,6 @@ import freezegun
 import responses
 from django.conf import settings
 from django.urls import reverse
-from django.utils import timezone
 
 from bridge.proxy.tests import mock_data
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
