@@ -38,7 +38,6 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         }
         self.url = reverse("notification-register-device")
 
-    @patch("notification.views.device_views.messaging.send")
     def test_registration_ok(self, _):
         """Test registering a new device"""
         data = {"firebase_token": "foobar_token", "os": "ios"}
@@ -66,7 +65,6 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         devices_with_token = Device.objects.filter(firebase_token__isnull=False)
         self.assertEqual(devices_with_token.count(), 1)
 
-    @patch("notification.views.device_views.messaging.send")
     def test_update_existing_device(self, _):
         """Test updating an existing device"""
         baker.make(
