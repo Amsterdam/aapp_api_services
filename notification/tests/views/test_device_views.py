@@ -1,5 +1,4 @@
 import datetime
-from unittest.mock import patch
 
 import freezegun
 from django.conf import settings
@@ -38,8 +37,7 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         }
         self.url = reverse("notification-register-device")
 
-    @patch("notification.views.device_views.messaging.send")
-    def test_registration_ok(self, _):
+    def test_registration_ok(self):
         """Test registering a new device"""
         data = {"firebase_token": "foobar_token", "os": "ios"}
 
@@ -66,8 +64,7 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         devices_with_token = Device.objects.filter(firebase_token__isnull=False)
         self.assertEqual(devices_with_token.count(), 1)
 
-    @patch("notification.views.device_views.messaging.send")
-    def test_update_existing_device(self, _):
+    def test_update_existing_device(self):
         """Test updating an existing device"""
         baker.make(
             Device,
@@ -77,7 +74,6 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
             last_seen=timezone.now() - datetime.timedelta(days=10),
         )
         new_data = {"firebase_token": "foobar_token2", "os": "ios2"}
-
         response = self.client.post(
             self.url, new_data, headers=self.headers_with_device_id
         )
