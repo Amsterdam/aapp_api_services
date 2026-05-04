@@ -12,12 +12,10 @@ logger = logging.getLogger(__name__)
 
 class ArticleNotificationService(AbstractNotificationService):
     module_slug = Module.CONSTRUCTION_WORK.value
-    notification_type = (
-        NotificationType.CONSTRUCTION_WORK_WARNING_MESSAGE.value
-    )  # same type as warning message, as there is no difference for the user
+    notification_type = NotificationType.CONSTRUCTION_WORK_ARTICLE_MESSAGE.value
 
     def send(self, notification_data: NotificationData):
-        self.process(notification_data)
+        self.upsert(notification_data)
 
 
 class WarningNotificationService(AbstractNotificationService):
@@ -44,7 +42,7 @@ class WarningNotificationService(AbstractNotificationService):
             image_set_id=image_set_id,
         )
 
-        self.process(notification_data)
+        self.upsert(notification_data)
 
         warning.notification_sent = True
         warning.save()

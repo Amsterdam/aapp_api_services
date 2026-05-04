@@ -20,3 +20,13 @@ IMAGE_ENDPOINTS = {
     "POST_IMAGE_FROM_URL": urljoin(IMAGE_BASE_URL, "image/from_url"),
     "DETAIL": urljoin(IMAGE_BASE_URL, "image"),
 }
+
+# temporary settings for notification service, to be removed after migration
+NOTIFICATION_API = os.getenv("NOTIFICATION_API", "https://ontw.app.amsterdam.nl")
+NOTIFICATION_BASE_URL_EXTERNAL = urljoin(
+    NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH_EXT", "/notification/api/v1/")
+)
+NOTIFICATION_ENDPOINT = {
+    "WASTE": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/waste"),
+    "BURNING_GUIDE": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/burning-guide"),
+}

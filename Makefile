@@ -4,6 +4,8 @@ ALL_SERVICES = bridge city_pass construction_work contact image modules notifica
 
 ifdef SERVICE_NAME
 export SERVICE_NAME_HYPHEN=$(subst _,-,$(SERVICE_NAME))
+else
+export SERVICE_NAME=core
 endif
 
 ifdef TARGET_MIGRATION
@@ -14,8 +16,8 @@ API_AUTH_TOKENS ?= insecure-token
 
 dc = SERVICE_NAME=${SERVICE_NAME} docker compose
 run = $(dc) run --rm
-lint = $(run) lint uv run
-manage = $(run) dev uv run python manage.py
+lint = $(run) lint
+manage = $(run) dev python manage.py
 
 help:
     # Show this help.
@@ -40,7 +42,7 @@ requirements: lock-packages pip-freeze
 ### MAKEFILE TARGETS THAT CAN LOOP THROUGH ALL SERVICES ###
 # Interprets code 5 (no tests found) as 0 (success)
 define dc_for_all
-	@if [ -z "$(SERVICE_NAME)" ]; then \
+	@if [ "$(SERVICE_NAME)" = "core" ]; then \
 	  for s in $(ALL_SERVICES); do \
 		SERVICE_NAME=$$s docker compose $(1);  \
 	    status=$$?; if [ $$status -ne 0 ] && [ $$status -ne 5 ]; then exit $$status; fi; \
@@ -68,12 +70,12 @@ run-test:
 
 coverage:
 	# Run pytest coverage
-	$(call dc_for_all,run --rm test sh -c "uv run coverage run -m pytest $$s core && uv run coverage report")
+	$(call dc_for_all,run --rm test sh -c "coverage run -m pytest $$s core && coverage report")
 
 integration-test:
 	# Run integration tests
 	# Don't forget to set the API_AUTH_TOKENS environment variable!
-	$(call dc_for_all,run --rm --env API_AUTH_TOKENS='$(API_AUTH_TOKENS)' dev uv run pytest -m integration)
+	$(call dc_for_all,run --rm --env API_AUTH_TOKENS='$(API_AUTH_TOKENS)' dev pytest -m integration)
 
 test: coverage lint
 	# Run tests (via coverage), coverage and lint checks
@@ -94,11 +96,11 @@ openapi-diff:
 	@if [ -z "$(SERVICE_NAME)" ]; then \
 	  for s in $(ALL_SERVICES); do \
 		SERVICE_NAME_HYPHEN=$$(printf '%s\n' "$$s" | tr '_' '-'); \
-		SERVICE_NAME=$$s docker compose run --rm dev uv run python manage.py spectacular --file /app/$$s/openapi-schema.yaml;\
+		SERVICE_NAME=$$s docker compose run --rm dev python manage.py spectacular --file /app/$$s/openapi-schema.yaml;\
 		SERVICE_NAME=$$s docker compose run --rm openapi-diff https://test.app.amsterdam.nl/$${SERVICE_NAME_HYPHEN}/api/v1/openapi/ /specs/openapi-schema.yaml --fail-on-incompatible || exit $$?; \
 	  done; \
 	else \
-        SERVICE_NAME=$$SERVICE_NAME docker compose run --rm dev uv run python manage.py spectacular --file /app/$$SERVICE_NAME/openapi-schema.yaml;\
+        SERVICE_NAME=$$SERVICE_NAME docker compose run --rm dev python manage.py spectacular --file /app/$$SERVICE_NAME/openapi-schema.yaml;\
         SERVICE_NAME=$$SERVICE_NAME docker compose run --rm openapi-diff https://test.app.amsterdam.nl/$${SERVICE_NAME_HYPHEN}/api/v1/openapi/ /specs/openapi-schema.yaml --fail-on-incompatible || exit $$?; \
 	fi
 
@@ -108,7 +110,7 @@ prepare-for-pr: requirements lintfix test openapi-diff
 ### SINGLE SERVICE COMMANDS ###
 check-service:
 	# Check if SERVICE_NAME is set in environment variables
-	@if [ -z "$(SERVICE_NAME)" ]; then \
+	@if [ "$(SERVICE_NAME)" = "core" ]; then \
 		echo "ERROR: SERVICE_NAME is not set"; \
 		exit 1; \
 	fi
@@ -128,6 +130,10 @@ send_mijnamsterdam_notifications: check-service
 survey_mock_data: check-service
 	# Load mock data for the survey service
 	$(manage) surveymockdata
+
+survey_clean_email: check-service
+	# Clean email addresses from survey answers
+	$(manage) cleanupemailaddresses
 
 spectacular: check-service
     # Generate OpenAPI schema
@@ -149,6 +155,9 @@ settings: check-service
 dev: check-service
     # Start Django app with runserver
 	$(run) --service-ports dev
+
+dev-rebuild: build dev
+	# Rebuild Docker image and start Django app with runserver
 
 app: check-service
     # Start Django app with UWsgi

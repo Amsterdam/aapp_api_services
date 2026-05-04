@@ -1,7 +1,7 @@
 import logging
 
 from drf_spectacular.utils import inline_serializer
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import CharField
 from rest_framework.response import Response
@@ -30,6 +30,7 @@ class NotificationListView(DeviceIdMixin, generics.ListAPIView):
         return (
             Notification.objects.select_related("device")
             .filter(device__external_id=self.device_id)
+            .filter(is_visible=True)
             .order_by("-created_at")
         )
 
@@ -54,7 +55,7 @@ class NotificationMarkAllReadView(DeviceIdMixin, generics.UpdateAPIView):
         # Perform the bulk update
         updated_count = (
             Notification.objects.select_related("device")
-            .filter(device_external_id=self.device_id, is_read=False)
+            .filter(device_external_id=self.device_id, is_read=False, is_visible=True)
             .update(is_read=True)
         )
         return Response({"detail": f"{updated_count} notifications marked as read."})
@@ -67,25 +68,42 @@ class NotificationDetailView(DeviceIdMixin, generics.RetrieveUpdateAPIView):
     http_method_names = ["get", "patch"]
 
     def get_queryset(self):
+        # Only filter by device_id, not is_visible
         return Notification.objects.select_related("device").filter(
             device__external_id=self.device_id
         )
 
     @extend_schema_for_device_id(
         success_response=NotificationResultSerializer,
+        additional_responses={
+            204: inline_serializer(name="NoContentResponse", fields={})
+        },
     )
     def get(self, request, *args, **kwargs):
         """Retrieve a single notification."""
-        return super().get(request, *args, **kwargs)
+        instance = self.get_object()
+        if not instance.is_visible:
+            return Response(
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     @extend_schema_for_device_id(
         request=NotificationUpdateSerializer,
         success_response=NotificationResultSerializer,
         exceptions=[ValidationError],
+        additional_responses={
+            204: inline_serializer(name="NoContentResponse", fields={})
+        },
     )
     def patch(self, request, *args, **kwargs):
         """Update a single notification to status "is_read" = true."""
         instance = self.get_object()
+        if not instance.is_visible:
+            return Response(
+                status=status.HTTP_204_NO_CONTENT,
+            )
         serializer = NotificationUpdateSerializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()

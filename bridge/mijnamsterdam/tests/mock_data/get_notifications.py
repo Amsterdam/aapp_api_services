@@ -10,7 +10,6 @@ MIJN_AMS_NOTIFICATIONS_RESPONSE = {
                         {
                             "id": "belasting-4",
                             "title": "Betaal uw aanslag",
-                            "themaId": "BELASTINGEN",
                             "datePublished": "2025-12-12T14:14:40Z",
                         }
                     ],
@@ -27,7 +26,7 @@ MIJN_AMS_NOTIFICATIONS_RESPONSE = {
                     "status": "OK",
                     "content": [],
                     "serviceId": "belasting",
-                    "dateUpdated": "2025-12-12T14:14:40.202Z",
+                    "dateUpdated": "2025-12-12T14:14:40Z",
                 }
             ],
         },
@@ -41,7 +40,6 @@ MIJN_AMS_NOTIFICATIONS_RESPONSE = {
                         {
                             "id": "belasting-4",
                             "title": "Betaal uw aanslag",
-                            "themaId": "BELASTINGEN",
                             "datePublished": "2025-12-12T14:14:40Z",
                         }
                     ],
@@ -60,14 +58,12 @@ MIJN_AMS_NOTIFICATIONS_RESPONSE = {
                         {
                             "id": "belasting-4",
                             "title": "Betaal uw aanslag",
-                            "themaId": "BELASTINGEN",
                             "datePublished": "2025-11-12T14:14:40Z",
                         },
                         {
                             "id": "belasting-5",
                             "title": "Betaal uw aanslag",
-                            "themaId": "BELASTINGEN",
-                            "datePublished": "2026-03-24T03:16:40Z",
+                            "datePublished": "2026-03-24T03:16:00Z",
                         },
                     ],
                     "serviceId": "belasting",

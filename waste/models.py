@@ -162,3 +162,32 @@ class OpeningHoursException(OpeningHourAbstract):
         if self.description:
             return f"{self.description} ({date})"
         return date
+
+
+class WasteCollectionRouteName(models.Model):
+    """Model to store waste collection route names"""
+
+    class Meta:
+        ordering = ["name"]
+
+    name = models.CharField(primary_key=True, max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class WasteCollectionException(models.Model):
+    """Model for exceptions to regular waste collections"""
+
+    class Meta:
+        verbose_name = "Afvalophaling uitzondering"
+        verbose_name_plural = "Afvalophaling uitzonderingen"
+
+    date = models.DateField(verbose_name="Datum", unique=True)
+    reason = models.CharField(verbose_name="Reden van de uitzondering", max_length=200)
+    affected_routes = models.ManyToManyField(
+        WasteCollectionRouteName,
+        verbose_name="afvalwijzerRoutenaam",
+        help_text="Selecteer de afvalophaalroutes waar deze uitzondering voor geldt",
+        blank=True,
+    )

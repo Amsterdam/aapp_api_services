@@ -1,18 +1,10 @@
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from core.services.image_set import ImageSetService
-from notification.exceptions import (
-    ImageSetNotFoundError,
-    ScheduledNotificationIdentifierError,
-    ScheduledNotificationInPastError,
-)
 from notification.models import (
-    Device,
     Notification,
     NotificationLast,
-    ScheduledNotification,
 )
 
 
@@ -28,8 +20,24 @@ class NotificationImageSerializer(serializers.Serializer):
     sources = NotificationImageSourceSerializer(many=True, source="variants")
 
 
+class NotificationContextSerializer(serializers.Serializer):
+    linkSourceid = serializers.CharField(allow_null=True, required=False)
+    type = serializers.CharField()
+    module_slug = serializers.CharField()
+    url = serializers.CharField(allow_null=True, required=False)
+    deeplink = serializers.CharField(allow_null=True, required=False)
+
+    def validate(self, data):
+        if data.get("url") and data.get("deeplink"):
+            raise serializers.ValidationError(
+                "url and deeplink cannot both be set. Please choose one or the other."
+            )
+        return data
+
+
 class NotificationResultSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
+    context = serializers.SerializerMethodField()
 
     class Meta:
         model = Notification
@@ -53,95 +61,16 @@ class NotificationResultSerializer(serializers.ModelSerializer):
         image_set_data = ImageSetService().get(obj.image)
         return NotificationImageSerializer(image_set_data).data
 
+    @extend_schema_field(NotificationContextSerializer)
+    def get_context(self, obj: Notification) -> dict:
+        context_data = obj.context or {
+            "type": obj.notification_type,
+            "module_slug": obj.module_slug,
+        }
 
-class NotificationCreateSerializer(serializers.ModelSerializer):
-    device_ids = serializers.ListField(child=serializers.CharField(), write_only=True)
-    make_push = serializers.BooleanField(default=True, write_only=True)
-
-    class Meta:
-        model = Notification
-        fields = [
-            "title",
-            "body",
-            "module_slug",
-            "context",
-            "created_at",
-            "device_ids",
-            "notification_type",
-            "image",
-            "make_push",
-        ]
-
-    def validate_device_ids(self, device_ids):
-        if len(device_ids) != len(set(device_ids)):
-            raise serializers.ValidationError("Duplicate device ids found in input")
-        return device_ids
-
-    def validate_image(self, image_id):
-        if not ImageSetService().exists(image_id):
-            raise ImageSetNotFoundError()
-        return image_id
-
-    def validate_context(self, context):
-        if not isinstance(context, dict):
-            raise serializers.ValidationError("Context must be a dictionary")
-        return context
-
-
-class ScheduledNotificationDetailSerializer(NotificationCreateSerializer):
-    scheduled_for = serializers.DateTimeField()
-    device_ids = serializers.SlugRelatedField(
-        many=True,
-        queryset=Device.objects.all(),
-        slug_field="external_id",
-        source="devices",
-    )
-
-    class Meta:
-        model = ScheduledNotification
-        fields = [
-            "title",
-            "body",
-            "module_slug",
-            "context",
-            "created_at",
-            "device_ids",
-            "notification_type",
-            "image",
-            "scheduled_for",
-            "expires_at",
-            "make_push",
-        ]
-
-    def validate_scheduled_for(self, scheduled_date):
-        # Subtract 1 minute to account for possible clock differences and delays
-        if scheduled_date < timezone.now() - timezone.timedelta(minutes=1):
-            raise ScheduledNotificationInPastError()
-        return scheduled_date
-
-
-class ScheduledNotificationSerializer(ScheduledNotificationDetailSerializer):
-    identifier = serializers.CharField()
-    device_ids = serializers.ListField(child=serializers.CharField(), write_only=True)
-
-    class Meta:
-        model = ScheduledNotification
-        fields = ScheduledNotificationDetailSerializer.Meta.fields + [
-            "identifier",
-        ]
-
-    def validate(self, attrs):
-        if attrs.get("expires_at") and attrs["expires_at"] <= attrs["scheduled_for"]:
-            raise serializers.ValidationError("Expires at must be after scheduled for")
-        return attrs
-
-    def validate_identifier(self, identifier):
-        module_slug = self.initial_data.get("module_slug")
-        if not identifier:
-            raise serializers.ValidationError("Identifier is required.")
-        if module_slug and not identifier.startswith(module_slug):
-            raise ScheduledNotificationIdentifierError()
-        return identifier
+        serializer = NotificationContextSerializer(data=context_data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data
 
 
 class NotificationUpdateSerializer(serializers.ModelSerializer):

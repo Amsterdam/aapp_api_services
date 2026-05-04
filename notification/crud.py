@@ -1,14 +1,13 @@
 import copy
 import logging
 
-from django.conf import settings
 from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Value, When
 from django.utils import timezone
 
+from core.enums import NotificationType
 from notification.models import (
     Device,
     Notification,
-    NotificationLast,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
 )
@@ -41,8 +40,19 @@ class NotificationCRUD:
         self.total_enabled_count = 0
         self.failed_token_count = 0
         self.notifications_with_push, self.notifications_without_push = [], []
+        self.push_only_notification_types = [
+            NotificationType.PARKING_REMINDER.value
+        ]  # These notifications should have the is_visible flag set to False
         self.devices_for_push = []
         self.push_service = PushService() if push_enabled else None
+        self._build_default_context()
+
+    def _build_default_context(self):
+        if not self.source_notification.context:
+            self.source_notification.context = {
+                "type": self.source_notification.notification_type,
+                "module_slug": self.source_notification.module_slug,
+            }
 
     def create(self, device_qs: QuerySet):
         """
@@ -54,7 +64,6 @@ class NotificationCRUD:
         device_list = self._collect_and_annotate_devices(device_qs)
         self.total_device_count = len(device_list)
         notifications_with_push = self._create_notifications(device_list)
-        self._update_last_timestamps(device_list)
 
         if notifications_with_push and self.push_service:
             try:
@@ -114,8 +123,15 @@ class NotificationCRUD:
         """
         self.source_notification.id = None
         with_push, without_push = [], []
+        push_only = (
+            self.source_notification.notification_type
+            in self.push_only_notification_types
+        )
+        if push_only:
+            self.source_notification.is_visible = False
         for c in device_list:
             new_notification: Notification = copy.copy(self.source_notification)
+            new_notification.context = copy.deepcopy(self.source_notification.context)
             new_notification.device = c
             new_notification.device_external_id = c.external_id
             if c in self.devices_for_push and self.push_service:
@@ -127,32 +143,6 @@ class NotificationCRUD:
         self.notifications_with_push = Notification.objects.bulk_create(with_push)
         self.notifications_without_push = Notification.objects.bulk_create(without_push)
         return self.notifications_with_push
-
-    def _update_last_timestamps(self, device_list: list[Device]) -> None:
-        """
-        Update the last timestamps for all devices.
-        This is used to determine when the last notification was created
-        """
-        if (
-            self.source_notification.module_slug
-            not in settings.NOTIFICATION_MODULE_SLUG_LAST_TIMESTAMP
-        ):
-            return
-
-        notifications_last = [
-            NotificationLast(
-                device=device,
-                module_slug=self.source_notification.module_slug,
-                notification_scope=self.source_notification.notification_type,
-            )
-            for device in device_list
-        ]
-        NotificationLast.objects.bulk_create(
-            notifications_last,
-            update_fields=["last_create"],
-            unique_fields=["device", "notification_scope"],
-            update_conflicts=True,
-        )
 
     @property
     def response_data(self):

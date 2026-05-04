@@ -9,7 +9,7 @@ from core.services.notification_service import (
 def send_article_notifications(
     current_foreign_ids: list[int], found_articles: list[int]
 ):
-    notification_service = ArticleNotificationService()
+    notification_service = ArticleNotificationService(use_image_service=True)
     new_article_ids = get_new_articles(
         current_foreign_ids=current_foreign_ids, found_article_ids=found_articles
     )

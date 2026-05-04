@@ -1,0 +1,55 @@
+MOCK_RESPONSE = {
+    "id": "VCPS-MX1VV",
+    "protocol": "OCPPJ16",
+    "accepted": True,
+    "reservable": False,
+    "configured": True,
+    "blocked": False,
+    "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
+    "locationName": "AmsterdamBoatTest1",
+    "availability": "OPERATIVE",
+    "status": "OFFLINE",
+    "aggregateStatus": "OFFLINE",
+    "localAuthorizationListVersion": 0,
+    "localAuths": [],
+    "openingTimes": [],
+    "evses": [
+        {
+            "id": 2,
+            "ocppEvseId": 1,
+            "evseId": "1",
+            "status": "UNKNOWN",
+            "connectors": [
+                {
+                    "connectorId": 1,
+                    "maxAmp": 32,
+                    "phase": 3,
+                    "voltage": 400,
+                    "current": "AC",
+                    "connectorType": "S_309_3P_32A",
+                    "status": "UNKNOWN",
+                    "availability": "OPERATIVE",
+                }
+            ],
+            "availability": "OPERATIVE",
+            "evseStatus": "ACTIVE",
+            "capabilities": [],
+            "parkingRestrictions": [],
+        }
+    ],
+    "attributes": {
+        "vendorId": "Tritium",
+        "model": "TRI153-RTM-01",
+        "firmwareVersion": "VCPS-062023",
+    },
+    "confItems": {},
+    "firstSeen": "2025-10-30T14:11:12.162+00:00",
+    "lastSeen": "2025-10-30T14:11:12.162+00:00",
+    "securitySettings": {
+        "securedConnection": False,
+        "ipAddress": "84.87.178.95",
+        "securityProfile": "PROFILE_0",
+    },
+    "pools": [],
+    "lastStatusUpdate": "2025-10-30T14:11:49.174949Z",
+}

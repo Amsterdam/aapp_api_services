@@ -9,8 +9,9 @@ POSTGRES_PASSWORD = azure.auth.db_password
 DATABASES["default"]["PASSWORD"] = POSTGRES_PASSWORD
 DATABASES["notification"]["PASSWORD"] = POSTGRES_PASSWORD
 
-# Enables persistent connections to the database
-# Helps smooth over database connection issues
+# IMPORTANT: because we redefine the default database in the notification service,
+# these settings will not be inherited, so we need to set them explicitly in the notification
+# service as well.
 DATABASES["default"]["CONN_MAX_AGE"] = 60
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 

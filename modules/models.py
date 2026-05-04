@@ -227,6 +227,14 @@ class Notification(models.Model):
     class Meta:
         verbose_name = "Notificatie"
         verbose_name_plural = "Notificaties"
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(url__isnull=True) | models.Q(deeplink__isnull=True)
+                ),
+                name="url_and_deeplink_mutually_exclusive",
+            )
+        ]
 
     title = models.CharField("Titel", max_length=255)
     message = models.TextField("Bericht")
@@ -241,10 +249,18 @@ class Notification(models.Model):
         related_name="notifications",
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    send_at = models.DateTimeField("Verstuurd op", null=True, blank=True)
-    nr_sessions = models.PositiveIntegerField(
-        "Aantal berichten verstuurd", default=0, editable=False
-    )
+    send_at = models.DateTimeField("Versturen op", null=True, blank=True)
+    nr_sessions = models.PositiveIntegerField("Bereik", default=0, editable=False)
+    is_test = models.BooleanField("Test notificatie", default=True)
 
     def __str__(self) -> str:
         return f"Notificatie: {self.title[:50]}"
+
+
+class TestDevice(models.Model):
+    class Meta:
+        verbose_name = "Test toestel"
+        verbose_name_plural = "Test toestellen"
+
+    device_id = models.CharField("Device ID", max_length=255, unique=True)
+    name = models.CharField("Naam", max_length=255, blank=True, null=True)

@@ -13,7 +13,7 @@ from bridge.parking.serializers.pagination_serializers import (
     PaginationLinksSerializer,
     PaginationPageSerializer,
 )
-from bridge.utils import validate_digits
+from core.utils.validation_utils import validate_digits
 
 
 class ParkingSessionListRequestSerializer(serializers.Serializer):

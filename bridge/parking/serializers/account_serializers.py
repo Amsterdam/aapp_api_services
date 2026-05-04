@@ -13,7 +13,7 @@ class AccountLoginResponseSerializer(serializers.Serializer):
     version = serializers.ChoiceField(choices=[1, 2])
 
 
-class AddressSerializer(serializers.Serializer):
+class SSPAddressSerializer(serializers.Serializer):
     street = serializers.CharField()
     house_number = serializers.CharField()
     house_letter = serializers.CharField(allow_blank=True, required=False)
@@ -38,7 +38,7 @@ class AccountDetailsResponseSerializer(serializers.Serializer):
     email = serializers.CharField(
         allow_blank=True, required=False, help_text="DEPRECATED"
     )
-    address = AddressSerializer(required=False, help_text="DEPRECATED")
+    address = SSPAddressSerializer(required=False, help_text="DEPRECATED")
     phone_number = serializers.CharField(
         allow_blank=True, required=False, help_text="DEPRECATED"
     )

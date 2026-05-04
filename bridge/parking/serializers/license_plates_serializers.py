@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from bridge.utils import validate_digits
+from core.utils.validation_utils import validate_digits
 
 
 class LicensePlatesGetRequestSerializer(serializers.Serializer):

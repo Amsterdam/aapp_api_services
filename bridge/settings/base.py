@@ -64,9 +64,36 @@ SSP_API_TIMEOUT_SECONDS = int(os.getenv("SSP_API_TIMEOUT_SECONDS", 10))
 MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
 MIJN_AMS_API_KEY_INBOUND = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
 MIJN_AMS_API_DOMAIN = os.getenv(
-    "MIJN_AMS_API_DOMAIN", "https://mams-t-appservice-bff.azurewebsites.net/"
+    "MIJN_AMS_API_DOMAIN", "https://mams-t-appservice-bff.azurewebsites.net"
 )
 MIJN_AMS_API_PATHS = {
     "NOTIFICATIONS": "/private/api/v1/services/amsapp/notifications",
-    "DEVICES": "/api/v1/services/amsapp/notifications/consumer/",
+    "DEVICES": "/private/api/v1/services/amsapp/notifications/consumer/",
+}
+
+# CMPS Evinity varen API
+BOAT_CHARGING_OAUTH_URL = os.getenv(
+    "BOAT_CHARGING_OAUTH_URL",
+    "https://evinity-infuse-staging.auth.eu-central-1.amazoncognito.com/oauth2/token",
+)
+BOAT_CHARGING_OAUTH_ID = os.getenv("EVINITY_OAUTH_CLIENT_ID", "")
+BOAT_CHARGING_OAUTH_SECRET = os.getenv("EVINITY_OAUTH_CLIENT_SECRET", "")
+
+BOAT_CHARGING_DOMAIN = os.getenv(
+    "BOAT_CHARGING_DOMAIN", "https://cpms.service.staging.evinity.io"
+)
+BOAT_CHARGING_ENDPOINTS = {
+    "LOCATIONS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/locations"),
+    "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/sessions"),
+    "TARIFFS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/tariffs"),
+    "CHARGING_STATIONS": urljoin(
+        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/charging-stations"
+    ),
+    "TRANSACTIONS": urljoin(
+        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/transactions"
+    ),
+    "TOKENS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/tokens"),
+    "COMMAND_RESULT": urljoin(
+        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/ocpp-command-results"
+    ),
 }

@@ -17,6 +17,8 @@ class LinksOutSerializer(serializers.Serializer):
     feedbackForm = serializers.URLField()
     immigration = serializers.URLField()
     income_help = serializers.URLField()
+    kingsday = serializers.URLField()
+    kingsdayEvents = serializers.URLField()
     lifelessBirth = serializers.URLField()
     makeAppointMentWeesp = serializers.URLField()
     marriage = serializers.URLField()

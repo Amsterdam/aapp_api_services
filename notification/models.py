@@ -1,9 +1,10 @@
 import uuid
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
+
+from core.validators import context_validator
 
 
 class Device(models.Model):
@@ -17,6 +18,7 @@ class Device(models.Model):
     external_id = models.CharField(max_length=1000, unique=True)
     os = models.CharField()
     firebase_token = models.CharField(max_length=1000, null=True)
+    last_seen = models.DateTimeField(auto_now=True)
 
 
 class BaseNotification(models.Model):
@@ -38,10 +40,22 @@ class BaseNotification(models.Model):
     title = models.CharField(max_length=1000)
     body = models.CharField(max_length=1000)
     module_slug = models.CharField()
-    context = models.JSONField()
+    context = models.JSONField(validators=[context_validator])
     notification_type = models.CharField()
-    image = models.IntegerField(default=None, null=True)
+    image = models.IntegerField(default=None, null=True, blank=True)
     created_at = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        # note: save is not called when using bulk_create or bulk_update
+        if not self.context:
+            self.context = {
+                "type": self.notification_type,
+                "module_slug": self.module_slug,
+            }
+
+        # make sure validation is actually triggered when saving a notification instance,
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class ScheduledNotification(BaseNotification):
@@ -57,7 +71,7 @@ class ScheduledNotification(BaseNotification):
         constraints = [
             models.UniqueConstraint(fields=["identifier"], name="unique_identifier"),
             models.CheckConstraint(
-                check=Q(expires_at__gt=F("scheduled_for")),
+                condition=Q(expires_at__gt=F("scheduled_for")),
                 name="expires_after_scheduled_for",
             ),
         ]
@@ -73,6 +87,7 @@ class ScheduledNotification(BaseNotification):
     devices = models.ManyToManyField(Device, related_name="scheduled_notifications")
     expires_at = models.DateTimeField(default="3000-01-01")
     make_push = models.BooleanField(default=True)
+    is_ready = models.BooleanField(default=False)
 
     def __str__(self):
         return f"[SCHEDULED] {self.module_slug} - {self.title}"
@@ -84,6 +99,7 @@ class Notification(BaseNotification):
     - device_id: fk to Device.id
     - is_read: to be set when device has read the notification
     - pushed_at: set to true when notification was pushed successfully
+    - is_visible: determines if the notification should be visible in the notification history in the app
     """
 
     class Meta:
@@ -97,7 +113,8 @@ class Notification(BaseNotification):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     device_external_id = models.CharField(max_length=1000)
     is_read = models.BooleanField(default=False)
-    pushed_at = models.DateTimeField(null=True)
+    pushed_at = models.DateTimeField(null=True, blank=True)
+    is_visible = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.module_slug} - {self.title}"
@@ -144,6 +161,7 @@ class NotificationPushModuleDisabled(models.Model):
 class NotificationLast(models.Model):
     """
     Record that determines the last time a notification was created for a device.
+    This is used for 'Mijn Amsterdam' notifications.
 
     device: fk to Device.id
     module_slug: the module slug of the notification
@@ -160,13 +178,35 @@ class NotificationLast(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     module_slug = models.CharField()
     notification_scope = models.CharField()
-    last_create = models.DateTimeField(auto_now=True)
+    last_create = models.DateTimeField()
 
     def clean(self):
         if not self.notification_scope.startswith(self.module_slug):
             raise ValidationError("Notification scope must start with module slug")
 
-        if self.notification_scope not in settings.NOTIFICATION_SCOPES:
-            raise ValidationError(
-                f"Notification scope {self.notification_scope} is not in the list of allowed scopes"
-            )
+
+class WasteDevice(models.Model):
+    """
+    Record to determine which device wants to receive waste notifications and
+    for which address (bag_nummeraanduiding_id).
+
+    Note: updated_at is not used to keep track of when a user updates their bag_nummeraanduiding_id,
+    but to determine if the scheduled notification should be sent (again).
+    """
+
+    device_id = models.CharField(max_length=255, primary_key=True)
+    bag_nummeraanduiding_id = models.CharField(max_length=255, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True)
+
+
+class BurningGuideDevice(models.Model):
+    """
+    Record to determine which device wants to receive burning guide notifications and
+    for which address (postal_code).
+    """
+
+    device_id = models.CharField(max_length=255, primary_key=True)
+    postal_code = models.CharField(max_length=4, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    send_at = models.DateTimeField(null=True)

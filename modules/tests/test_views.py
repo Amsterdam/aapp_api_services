@@ -3,6 +3,7 @@ from django.urls import reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import BasicAPITestCase
+from modules.icons import ModuleIconPath
 from modules.models import AppRelease, Module, ReleaseModuleStatus
 
 
@@ -44,6 +45,7 @@ class TestReleaseDetailView(BasicAPITestCase):
         self.release_2_10 = baker.make(
             AppRelease,
             version="2.10.0",
+            modules=[self.module_1_version_2],
         )
 
     def test_version_latest(self):
@@ -52,6 +54,10 @@ class TestReleaseDetailView(BasicAPITestCase):
         response = self.client.get(url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["version"], "2.10.0")
+        self.assertEqual(
+            response.data["modules"][0]["iconPath"],
+            ModuleIconPath[self.module_1_version_2.icon],
+        )
 
     def test_version_specific(self):
         url = reverse("modules-release-detail", kwargs={"version": "2.0.0"})

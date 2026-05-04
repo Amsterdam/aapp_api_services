@@ -4,7 +4,13 @@ from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 from model_bakery import baker
 
-from modules.models import AppRelease, Module, ModuleVersion, ReleaseModuleStatus
+from modules.models import (
+    AppRelease,
+    Module,
+    ModuleVersion,
+    Notification,
+    ReleaseModuleStatus,
+)
 
 
 class TestModuleModel(TestCase):
@@ -219,3 +225,14 @@ class TestReleaseModuleStatusModel(TestCase):
 
         with self.assertRaises(ValidationError):
             rms.save()
+
+
+class TestNotificationModel(TestCase):
+    def setUp(self):
+        self.notification = baker.make(
+            Notification,
+            title="Egg",
+        )
+
+    def test_print_value(self):
+        self.assertEqual(str(self.notification), "Notificatie: Egg")

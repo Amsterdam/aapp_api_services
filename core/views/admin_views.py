@@ -1,5 +1,6 @@
 from django.contrib.auth import login
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseForbidden
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
@@ -10,7 +11,7 @@ from core.permissions import AdminPermission
 
 
 class AdminLoginView(View):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):  # pragma: no cover
         # The authentication class is a DRF authentication class,
         # so it will raise an APIException if the authentication fails.
         # We need to catch this and raise a PermissionDenied instead.
@@ -32,3 +33,8 @@ class AdminLoginView(View):
         login(request, request.user)
         url_lookup = reverse("admin:index")
         return redirect(url_lookup)
+
+
+class OIDCLoginFailureView(View):
+    def get(self, request, *args, **kwargs):  # pragma: no cover
+        return HttpResponseForbidden("Login failed")

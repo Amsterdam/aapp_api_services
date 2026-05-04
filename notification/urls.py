@@ -2,6 +2,7 @@ from django.urls import path
 
 from core.urls import get_swagger_paths
 from notification.views import (
+    address_views,
     device_views,
     notification_views,
 )
@@ -33,6 +34,21 @@ urlpatterns = [
         BASE_PATH + "/device/disabled_push_modules",
         device_views.NotificationPushModuleDisabledListView.as_view(),
         name="notification-device-push-module-disabled-list",
+    ),
+    path(
+        BASE_PATH + "/device/waste",
+        device_views.WasteDeviceView.as_view(),
+        name="waste-guide-notification",
+    ),
+    path(
+        BASE_PATH + "/device/burning-guide",
+        device_views.BurningGuideDeviceView.as_view(),
+        name="burning-guide-notification",
+    ),
+    path(
+        BASE_PATH + "/address",
+        address_views.AddressView.as_view(),
+        name="notification-address",
     ),
     path(
         BASE_PATH + "/notifications/<uuid:notification_id>",

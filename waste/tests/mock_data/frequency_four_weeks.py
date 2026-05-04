@@ -39,7 +39,7 @@ MOCK_DATA = {
                 "afvalwijzerBuitenzetten": "Donderdag vanaf 21.00 tot vrijdag 07.00 uur",
                 "afvalwijzerButtontekst": None,
                 "afvalwijzerUrl": None,
-                "bagNummeraanduidingId": "123",
+                "bagNummeraanduidingId": "12345",
             },
         ]
     }

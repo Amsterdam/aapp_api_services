@@ -167,6 +167,9 @@ class ParkingPermitsView(BaseSSPView):
                 ],
                 "max_session_length_in_days": self.get_max_session_length(permit),
                 "can_select_zone": permit["details"]["config"]["can_select_zone"],
+                "started_at": permit.get("started_at") or None,
+                "ended_at": permit.get("ended_at") or None,
+                "cancelled_at": permit.get("cancelled_at") or None,
             }
             response_payload.append(permit_json)
         return response_payload
@@ -264,9 +267,9 @@ class ParkingPermitZoneView(BaseSSPView):
         if response_data["permit"]["geo_json"] is None:
             response_data["permit"]["geo_json"] = "{}"
 
-        response_payload = {
-            "geojson": json.loads(response_data["permit"]["geo_json"]),
-        }
+        geojson = response_data["permit"]["geo_json"]
+        geojson = geojson if type(geojson) is dict else json.loads(geojson)
+        response_payload = {"geojson": geojson}
         response_serializer = self.response_serializer_class(data=response_payload)
         response_serializer.is_valid(raise_exception=True)
         return Response(
@@ -335,6 +338,9 @@ class ParkingPermitZoneByMachineView(BaseSSPView):
     def _interpret_days(self, payload):
         interpret_days = []
         time_frame_data = payload["data"]["time_frame_data"]
+        if not time_frame_data:
+            return []
+
         assert len(time_frame_data) >= 7, "Expected 7 days in time_frame_data"
         for n, weekday in enumerate(self.weekdays):
             day = time_frame_data[n]

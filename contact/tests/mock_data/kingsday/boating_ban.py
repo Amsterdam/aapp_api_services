@@ -1,0 +1,93 @@
+MOCK_DATA = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.88798433, 52.38111358]},
+            "properties": {
+                "id": "12345678",
+                "title": "Brouwersgracht",
+                "description": "Invaarverbod",
+                "street": "Brouwersgracht",
+                "street_number": "1",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.8885153, 52.38016437]},
+            "properties": {
+                "id": "12345679",
+                "title": "Brouwersgracht",
+                "description": "Invaarverbod",
+                "street": "Brouwersgracht",
+                "street_number": "101",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.8933304, 52.38334319]},
+            "properties": {
+                "id": "12345677",
+                "title": "Westerdoksluis",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Westerdoksdijk",
+                "street_number": "2",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.91978668, 52.36648685]},
+            "properties": {
+                "id": "12345676",
+                "title": "Westertoegang",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.818551, 52.32565123]},
+            "properties": {
+                "id": "12345675",
+                "title": "Stadiongracht",
+                "description": "Uitsluitend schepen tot 10 meter lengte en rondvaart",
+                "street": "Piet Kranenburgpad",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.90561562, 52.3729641]},
+            "properties": {
+                "id": "12345674",
+                "title": "Waalseilandsgracht",
+                "description": "Invaarverbod",
+                "street": "Binnenkant",
+                "street_number": "1A",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.89487095, 52.37998911]},
+            "properties": {
+                "id": "12345673",
+                "title": "Singel/haarlemmersluis",
+                "description": "Invaarverbod",
+                "street": "Droogbak",
+                "street_number": "1Z",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+    ],
+}

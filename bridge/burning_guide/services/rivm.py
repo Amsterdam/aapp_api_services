@@ -3,7 +3,6 @@ import logging
 
 import requests
 from django.conf import settings
-from django.core.cache import cache
 from rest_framework import status
 
 from bridge.burning_guide.serializers.advice import AdviceResponseSerializer
@@ -13,6 +12,7 @@ from bridge.burning_guide.utils import (
 )
 from bridge.utils import load_postal_area_shapes
 from core.exceptions import BaseApiException
+from core.utils.caching_utils import cache_function
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ class UnknownPostalcodeError(BaseApiException):
     default_code = "RIVM_UNKNOWN_POSTAL_CODE"
 
 
+@cache_function(timeout=60 * 60 * 24)  # Cache for 24 hours
 def load_postal_data():
     """
     Function to load the postal data:
@@ -33,11 +34,6 @@ def load_postal_data():
         - calculate bbox
         - save to dict
     """
-    cache_key = f"{__name__}.load_postal_data"
-    cached_data = cache.get(cache_key)
-    if cached_data:
-        return cached_data
-
     postal_area_shapes = load_postal_area_shapes()
 
     final_dict = {}
@@ -51,7 +47,6 @@ def load_postal_data():
         # add bbox to final dict
         final_dict[postal_code] = bbox
 
-    cache.set(cache_key, final_dict, timeout=60 * 60 * 24)
     return final_dict
 
 
@@ -118,7 +113,6 @@ class RIVMService:
         response_payload["definitive_6"] = response_payload["definitief_6"]
         response_payload["definitive_12"] = response_payload["definitief_12"]
         response_payload["definitive_18"] = response_payload["definitief_18"]
-        response_payload["wind_direction"] = response_payload["windrichting"]
 
         request_serializer = AdviceResponseSerializer(data=response_payload)
         request_serializer.is_valid(raise_exception=True)

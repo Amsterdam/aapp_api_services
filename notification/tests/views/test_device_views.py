@@ -1,19 +1,30 @@
+import datetime
+
+import freezegun
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from model_bakery import baker
 from rest_framework import status
 
 from core.authentication import APIKeyAuthentication
 from core.enums import Module
 from core.exceptions import MissingDeviceIdHeader
-from core.tests.test_authentication import AuthenticatedAPITestCase
+from core.tests.test_authentication import (
+    AuthenticatedAPITestCase,
+    ResponsesActivatedAPITestCase,
+)
 from notification.models import (
+    BurningGuideDevice,
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
+    WasteDevice,
 )
 
 
+@freezegun.freeze_time("2026-02-25T12:00:00Z")
 class TestDeviceRegisterView(AuthenticatedAPITestCase):
     authentication_class = APIKeyAuthentication
 
@@ -35,9 +46,16 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["firebase_token"], data["firebase_token"])
         self.assertEqual(response.data["os"], data["os"])
+        self.assertEqual(parse_datetime(response.data["last_seen"]), timezone.now())
 
-        # Silent discard second call
-        response = self.client.post(self.url, data, headers=self.headers_with_device_id)
+        # Silent accept second call
+        with freezegun.freeze_time("2026-02-26T12:00:00Z"):
+            response = self.client.post(
+                self.url, data, headers=self.headers_with_device_id
+            )
+            # But last seen should be updated!
+            self.assertEqual(parse_datetime(response.data["last_seen"]), timezone.now())
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["firebase_token"], data["firebase_token"])
         self.assertEqual(response.data["os"], data["os"])
@@ -49,7 +67,11 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
     def test_update_existing_device(self):
         """Test updating an existing device"""
         baker.make(
-            Device, external_id=self.device_id, firebase_token="foobar_token", os="ios1"
+            Device,
+            external_id=self.device_id,
+            firebase_token="foobar_token",
+            os="ios1",
+            last_seen=timezone.now() - datetime.timedelta(days=10),
         )
         new_data = {"firebase_token": "foobar_token2", "os": "ios2"}
         response = self.client.post(
@@ -59,6 +81,7 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["firebase_token"], new_data["firebase_token"])
         self.assertEqual(response.data["os"], new_data["os"])
+        self.assertEqual(parse_datetime(response.data["last_seen"]), timezone.now())
 
     def test_delete_registration(self):
         """Test removing a device registration"""
@@ -445,3 +468,178 @@ class TestNotificationPushModuleDisabledListView(AuthenticatedAPITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
+
+
+class TestWasteDeviceView(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("waste-guide-notification")
+        self.device_id = "test-device-id"
+        self.api_headers["DeviceId"] = self.device_id
+
+    def test_success(self):
+        payload = {
+            "bag_nummeraanduiding_id": "12345",
+        }
+        response = self.client.post(self.url, data=payload, headers=self.api_headers)
+        self.assertEqual(response.status_code, 201)
+        WasteDevice.objects.get(device_id=self.device_id)
+
+    def test_create_missing_body_returns_validation_error(self):
+        response = self.client.post(self.url, data={}, headers=self.api_headers)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"bag_nummeraanduiding_id": ["This field is required."]},
+        )
+
+    def test_create_missing_bag_nummeraanduiding_id_returns_validation_error(self):
+        response = self.client.post(
+            self.url,
+            data={"updated_at": "2020-01-01T00:00:00Z"},
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"bag_nummeraanduiding_id": ["This field is required."]},
+        )
+
+    def test_upsert_second_post_updates(self):
+        WasteDevice.objects.create(
+            bag_nummeraanduiding_id="old",
+            device_id=self.device_id,
+        )
+
+        payload = {
+            "bag_nummeraanduiding_id": "new",
+        }
+        response = self.client.post(self.url, data=payload, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        updated_notification = WasteDevice.objects.get(device_id=self.device_id)
+        self.assertEqual(
+            updated_notification.bag_nummeraanduiding_id,
+            payload["bag_nummeraanduiding_id"],
+        )
+
+    def test_update_missing_body_returns_validation_error(self):
+        WasteDevice.objects.create(
+            bag_nummeraanduiding_id="old",
+            device_id=self.device_id,
+        )
+        response = self.client.post(self.url, data={}, headers=self.api_headers)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"bag_nummeraanduiding_id": ["This field is required."]},
+        )
+
+    def test_retrieve_success(self):
+        self.notification = WasteDevice.objects.create(
+            bag_nummeraanduiding_id="1091",
+            device_id="test-device-id",
+        )
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+
+    def test_retrieve_no_content(self):
+        WasteDevice.objects.all().delete()
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "error", "message": "not found"})
+
+    def test_update_success(self):
+        self.notification = WasteDevice.objects.create(
+            bag_nummeraanduiding_id="1091",
+            device_id="test-device-id",
+        )
+        payload = {
+            "bag_nummeraanduiding_id": "1012",
+        }
+        response = self.client.post(self.url, data=payload, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        updated_notification = WasteDevice.objects.get(
+            device_id=self.notification.device_id
+        )
+        self.assertEqual(
+            updated_notification.bag_nummeraanduiding_id,
+            payload["bag_nummeraanduiding_id"],
+        )
+
+    def test_delete_success(self):
+        self.notification = WasteDevice.objects.create(
+            bag_nummeraanduiding_id="1091",
+            device_id="test-device-id",
+        )
+        response = self.client.delete(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 204)
+        notification_records = WasteDevice.objects.all()
+        self.assertEqual(notification_records.count(), 0)
+
+    def test_delete_not_found(self):
+        WasteDevice.objects.all().delete()
+        response = self.client.delete(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 204)
+
+
+class TestBurningGuideDeviceView(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("burning-guide-notification")
+        self.device_id = "test-device-id"
+        self.api_headers["DeviceId"] = self.device_id
+
+    def test_success(self):
+        payload = {
+            "postal_code": "1091",
+        }
+        response = self.client.post(self.url, data=payload, headers=self.api_headers)
+        self.assertEqual(response.status_code, 201)
+        BurningGuideDevice.objects.get(device_id=self.device_id)
+
+    def test_invalid_postal_code(self):
+        payload = {
+            "postal_code": "9999",
+        }
+        response = self.client.post(self.url, data=payload, headers=self.api_headers)
+        self.assertEqual(response.status_code, 400)
+        notification_records = BurningGuideDevice.objects.all()
+        self.assertEqual(notification_records.count(), 0)
+
+    def test_retrieve_success(self):
+        self.notification = BurningGuideDevice.objects.create(
+            postal_code="1091",
+            device_id="test-device-id",
+        )
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+
+    def test_retrieve_no_content(self):
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "error", "message": "not found"})
+
+    def test_update_success(self):
+        burning_guide_device = baker.make(
+            BurningGuideDevice, device_id=self.device_id, postal_code="1091"
+        )
+        payload = {
+            "postal_code": "1012",
+        }
+        response = self.client.post(self.url, data=payload, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        updated_notification = BurningGuideDevice.objects.get(
+            device_id=burning_guide_device.device_id
+        )
+        self.assertEqual(updated_notification.postal_code, payload["postal_code"])
+
+    def test_delete_success(self):
+        baker.make(BurningGuideDevice, device_id=self.device_id, postal_code="1091")
+        response = self.client.delete(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 204)
+        notification_records = BurningGuideDevice.objects.all()
+        self.assertEqual(notification_records.count(), 0)
+
+    def test_delete_not_found(self):
+        response = self.client.delete(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 204)

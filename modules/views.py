@@ -43,7 +43,7 @@ class ReleaseDetailView(generics.RetrieveAPIView):
                 raise ReleaseNotFoundException
             version = VersionQueries.get_highest_version([x.version for x in releases])
 
-        release = AppRelease.objects.filter(version=version).first()
+        release = self.get_queryset().filter(version=version).first()
         if release is None:
             raise ReleaseNotFoundException(
                 f"Release version '{version}' does not exist."

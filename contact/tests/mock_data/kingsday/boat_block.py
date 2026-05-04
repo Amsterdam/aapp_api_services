@@ -1,0 +1,70 @@
+MOCK_DATA = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.88943159, 52.37965592]},
+            "properties": {
+                "id": "12345678",
+                "title": "Brouwersgracht",
+                "description": "Vaarweg ter plaatse gestremd",
+                "street": "Brouwersgracht",
+                "street_number": "63",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.88298718, 52.38373944]},
+            "properties": {
+                "id": "12345679",
+                "title": "Brouwersgracht/Bullebak brug",
+                "description": "Vaarweg ter plaatse gestremd",
+                "street": "Brouwersgracht",
+                "street_number": "302",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.89237232, 52.37935368]},
+            "properties": {
+                "id": "12345678",
+                "title": "Brouwersgracht",
+                "description": "Flexibele stremming/verkeersaanwijzing mogelijk",
+                "street": "Brouwersgracht",
+                "street_number": "54",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.87603095, 52.37366618]},
+            "properties": {
+                "id": "12345675",
+                "title": "Bullebaksluis",
+                "description": "Vaarweg ter plaatse gestremd",
+                "street": "Marnixstraat",
+                "street_number": "148",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [4.87659313, 52.37055859]},
+            "properties": {
+                "id": "12345698",
+                "title": "Doorvaart PQ",
+                "description": "Vaarweg ter plaatse gestremd",
+                "street": "Marnixstraat",
+                "street_number": "244",
+                "city": "Amsterdam",
+                "meta": [],
+            },
+        },
+    ],
+}

@@ -83,7 +83,21 @@ class TestWasteGuideView(ResponsesActivatedAPITestCase):
         self.assertEqual(self.rsp_get.call_count, 1)
 
     def test_cache(self):
-        self.assert_caching(self.url, rsp_get=self.rsp_get)
+        # note: we do not use the self.assert_caching helper here, because it depends on the authentication class.
+        # The waste guide view does not have authentication.
+        # First call
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.rsp_get.call_count, 1)
+
+        # Second call
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            self.rsp_get.call_count, 1
+        )  # Cache should be used, so call count should not increase
 
 
 class TestAddressSearchByNameView(ResponsesActivatedAPITestCase):

@@ -1,12 +1,14 @@
 import logging
 from abc import ABC, abstractmethod
 
+import amsterdam_django_oidc
 import jwt
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.db import transaction
 from django.http import HttpRequest
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
+from mozilla_django_oidc.auth import default_username_algo
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -179,7 +181,37 @@ class EntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         return "".join(v for _, v in sorted(chunks.items()))
 
 
-class MockEntraCookieTokenAuthentication(BaseAuthentication, EntraTokenMixin):
+class OIDCAuthenticationBackend(amsterdam_django_oidc.OIDCAuthenticationBackend):
+    def create_user(self, claims):
+        """Return object for a newly created user account."""
+        email = claims.get("upn")
+
+        # TODO: fix updating existing user, email is same but name changed
+        user, created = User.objects.update_or_create(
+            username=default_username_algo(email),
+            email=email,
+            defaults={
+                "first_name": claims.get("given_name"),
+                "last_name": claims.get("family_name"),
+                "is_staff": True,
+                "is_superuser": True,
+            },
+        )
+        if created:
+            logger.info(f"User created: {user}")
+
+        self._update_user_groups(user, claims)
+        return user
+
+    @transaction.atomic
+    def _update_user_groups(self, user: User, claims: dict):
+        user.groups.clear()
+        for group_name in claims.get("roles", []):
+            group, _ = Group.objects.get_or_create(name=group_name)
+            user.groups.add(group)
+
+
+class MockEntraTokenAuthentication(BaseAuthentication, EntraTokenMixin):
     def authenticate(self, request):  # pragma: no cover
         email = "mock.user@amsterdam.nl"
 

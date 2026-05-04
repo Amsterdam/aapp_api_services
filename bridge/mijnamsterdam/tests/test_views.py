@@ -29,7 +29,9 @@ class TestMijnAmsterdamDeviceView(ResponsesActivatedAPITestCase):
         response = self.client.get(self.url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "OK"})
+        self.assertEqual(
+            response.json(), {"status": "OK", "profile_name": "J.M. Stephenson"}
+        )
 
     def test_success_delete(self):
         url = self._get_mijnams_url(self.device_id)
@@ -80,7 +82,9 @@ class TestMijnAmsterdamDeviceView(ResponsesActivatedAPITestCase):
             response = self.client.get(self.url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "OK"})
+        self.assertEqual(
+            response.json(), {"status": "OK", "profile_name": "J.M. Stephenson"}
+        )
 
     def _get_mijnams_url(self, device_id):
         return (

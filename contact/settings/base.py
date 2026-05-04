@@ -36,3 +36,21 @@ TIME_INPUT_FORMATS = ["%H:%M"]
 
 MOCK_ENTRA_AUTH = False
 ADMIN_ROLES += ["cbs-time-delegated", "cbs-time-publisher"]
+
+LOGIN_REDIRECT_URL = "/contact/admin/"
+LOGIN_REDIRECT_URL_FAILURE = "/contact/admin/login/failure/"
+
+PUBLIC_TOILET_URL = os.getenv(
+    "PUBLIC_TOILET_URL",
+    "https://maps.amsterdam.nl/open_geodata/geojson_lnglat.php?KAARTLAAG=OPENBARE_TOILETTEN&THEMA=openbare_toiletten",
+)
+PUBLIC_TOILET_IMAGE_BASE_URL = os.getenv(
+    "PUBLIC_TOILET_IMAGE_BASE_URL",
+    "https://maps.amsterdam.nl/openbare_toiletten/Downloads/",
+)
+TAP_URL = os.getenv(
+    "TAP_URL",
+    "https://data.rivm.nl/geo/alo/wfs?request=GetFeature&service=WFS&version=1.1.0&outputFormat=json&typeName=alo:rivm_drinkwaterkranen_actueel",
+)
+
+KINGSDAY_URL = os.getenv("KINGSDAY_URL", "https://kaart.amsterdam.nl/api/layers/")

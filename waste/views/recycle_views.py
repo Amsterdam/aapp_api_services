@@ -11,7 +11,7 @@ from waste.serializers.recycle_location_serializers import (
 )
 
 
-@method_decorator(cache_page(60 * 60), name="dispatch")
+@method_decorator(cache_page(60 * 60), name="get")
 class RecycleLocationsView(generics.ListAPIView):
     queryset = RecycleLocation.objects.all()
     serializer_class = RecycleLocationResponseSerializer

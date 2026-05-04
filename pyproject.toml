@@ -2,9 +2,9 @@
 name = "aapp-api-services"
 version = "0.1.0"
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.14,<3.15"
 dependencies = [
-  "django==5.1",  # Later versions were not supported by django-admin-sortable2
+  "django",
   "djangorestframework",
   "adrf",
   "psycopg2-binary",
@@ -18,6 +18,8 @@ dependencies = [
   "dos2unix",
   "whitenoise",
   "pyproj",
+  "rich",
+  "more-itertools",
   # polygon operations
   "shapely",
   # pdf
@@ -46,18 +48,16 @@ dependencies = [
   "azure-monitor-opentelemetry",
   "azure-monitor-opentelemetry-exporter",
   "opentelemetry-instrumentation-httpx",
-  "opentelemetry-api==1.38",  # Temp fix: https://github.com/Azure/azure-sdk-for-python/issues/44237
   # Integration and unit testing
   "freezegun",
   "pytest-django",
-  "pytest-dotenv",
-  "pytest-env",
   "model-bakery",
   "ruff",
   "aioresponses",
   "pytest-asyncio", # anyio pytest plugin?
   "coverage",
   "responses",
+  "amsterdam-django-oidc>=0.2.0",
   "respx",
 ]
 
@@ -74,7 +74,7 @@ cache-dir = "/tmp/.cache/ruff"
 [tool.ruff.lint]
 # Enable flake8-bugbear (`B`) rules, isort (`I`) rules
 select = ["E4", "E7", "E9", "F", "B", "I"]
-ignore = ["B904"]
+ignore = ["B904", "B017"]
 # Avoid trying to fix flake8-bugbear (`B`) violations.
 unfixable = ["B"]
 

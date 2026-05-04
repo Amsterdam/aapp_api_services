@@ -1,71 +1,71 @@
-from django.db import IntegrityError
+from django.conf import settings
 from rest_framework import status
 from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
 from bridge.burning_guide.serializers.notification import (
-    NotificationSerializer,
+    BurningGuideNotificationRequestSerializer,
+    BurningGuideNotificationResponseSerializer,
 )
-from bridge.models import BurningGuideNotification
+from core.services.internal_http_client import InternalServiceSession
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 
+internal_client = InternalServiceSession()
 
-@extend_schema_for_device_id(success_response=NotificationSerializer)
+
+@extend_schema_for_device_id(
+    success_response=BurningGuideNotificationResponseSerializer
+)
 class BurningGuideNotificationCreateView(DeviceIdMixin, CreateAPIView):
-    serializer_class = NotificationSerializer
+    serializer_class = BurningGuideNotificationRequestSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(
-            data=request.data, context={"device_id": self.device_id}
+        response = internal_client.post(
+            url=settings.NOTIFICATION_ENDPOINT["BURNING_GUIDE"],
+            data=request.data,
+            headers={
+                settings.HEADER_DEVICE_ID: self.device_id,
+                settings.API_KEY_HEADER: request.headers.get(settings.API_KEY_HEADER),
+            },
         )
-        serializer.is_valid(raise_exception=True)
-        try:
-            self.perform_create(serializer)
-        except IntegrityError:
-            return Response(
-                {"detail": "Notification schedule for this device already exists."},
-                status=status.HTTP_409_CONFLICT,
-            )
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            {"status": "success"}, status=status.HTTP_201_CREATED, headers=headers
-        )
+        return Response(response.json(), status=response.status_code)
 
 
-@extend_schema_for_device_id(success_response=NotificationSerializer)
+@extend_schema_for_device_id(
+    success_response=BurningGuideNotificationResponseSerializer
+)
 class BurningGuideNotificationView(DeviceIdMixin, RetrieveUpdateDestroyAPIView):
-    queryset = BurningGuideNotification.objects.all()
-    serializer_class = NotificationSerializer
-    lookup_field = "device_id"
+    serializer_class = BurningGuideNotificationRequestSerializer
     http_method_names = ["get", "patch", "delete"]
 
-    def get_object(self):
-        return self.get_queryset().get(device_id=self.device_id)
-
     def retrieve(self, request, *args, **kwargs):
-        try:
-            self.get_object()
-        except BurningGuideNotification.DoesNotExist:
-            return Response(data={"status": "error", "message": "not found"})
-        return Response({"status": "success"})
+        response = internal_client.get(
+            url=settings.NOTIFICATION_ENDPOINT["BURNING_GUIDE"],
+            headers={
+                settings.HEADER_DEVICE_ID: self.device_id,
+                settings.API_KEY_HEADER: request.headers.get(settings.API_KEY_HEADER),
+            },
+        )
+        return Response(response.json(), status=response.status_code)
 
     def update(self, request, *args, **kwargs):
-        try:
-            instance = self.get_object()
-        except BurningGuideNotification.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response({"status": "success"})
+        response = internal_client.post(
+            url=settings.NOTIFICATION_ENDPOINT["BURNING_GUIDE"],
+            data=request.data,
+            headers={
+                settings.HEADER_DEVICE_ID: self.device_id,
+                settings.API_KEY_HEADER: request.headers.get(settings.API_KEY_HEADER),
+            },
+        )
+        return Response(response.json(), status=response.status_code)
 
     def destroy(self, request, *args, **kwargs):
-        try:
-            instance = self.get_object()
-        except BurningGuideNotification.DoesNotExist:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        instance.delete()
+        internal_client.delete(
+            url=settings.NOTIFICATION_ENDPOINT["BURNING_GUIDE"],
+            headers={
+                settings.HEADER_DEVICE_ID: self.device_id,
+                settings.API_KEY_HEADER: request.headers.get(settings.API_KEY_HEADER),
+            },
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)

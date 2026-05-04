@@ -11,7 +11,7 @@ from construction_work.models.article_models import (
 )
 from construction_work.models.manage_models import Image, WarningImage, WarningMessage
 from construction_work.models.project_models import Project
-from construction_work.tests import mock_data
+from construction_work.tests.mock_data import articles, projects, warning_message
 from construction_work.tests.views.test_project_views import BaseTestProjectView
 from construction_work.utils.date_utils import translate_timezone as tt
 from core.tests.test_authentication import BasicAPITestCase
@@ -23,25 +23,25 @@ class TestArticleDetailView(BasicAPITestCase):
         super().setUp()
         self.api_url = reverse("construction-work:get-article")
 
-        projects = []
-        for project_data in mock_data.projects:
+        project_list = []
+        for project_data in projects.MOCK_DATA:
             project = Project.objects.create(**project_data)
-            projects.append(project)
+            project_list.append(project)
 
-        articles = []
-        for article_data in mock_data.articles:
+        article_list = []
+        for article_data in articles.MOCK_DATA:
             article = Article.objects.create(**article_data)
-            articles.append(article)
+            article_list.append(article)
 
-        articles[0].projects.add(projects[0])
-        articles[0].publication_date = "2023-01-01T12:00:00+00:00"
-        articles[0].save()
+        article_list[0].projects.add(project_list[0])
+        article_list[0].publication_date = "2023-01-01T12:00:00+00:00"
+        article_list[0].save()
 
-        articles[1].projects.add(projects[1])
-        articles[1].publication_date = "2023-01-01T11:00:00+00:00"
-        articles[1].save()
+        article_list[1].projects.add(project_list[1])
+        article_list[1].publication_date = "2023-01-01T11:00:00+00:00"
+        article_list[1].save()
 
-        baker.make(ArticleImage, id=1, parent=articles[0])
+        baker.make(ArticleImage, id=1, parent=article_list[0])
 
     def test_get_single_article(self):
         """Test retrieving single article"""
@@ -112,26 +112,26 @@ class TestArticleListView(BaseTestProjectView):
         super().setUp()
         self.api_url = reverse("construction-work:article-list")
 
-        projects = []
-        for project_data in mock_data.projects:
+        project_list = []
+        for project_data in projects.MOCK_DATA:
             project = Project.objects.create(**project_data)
-            projects.append(project)
+            project_list.append(project)
 
-        articles = []
-        for article_data in mock_data.articles:
+        article_list = []
+        for article_data in articles.MOCK_DATA:
             article = Article.objects.create(**article_data)
-            articles.append(article)
+            article_list.append(article)
 
-        articles[0].projects.add(projects[0])
-        articles[0].publication_date = "2023-01-01T12:00:00+00:00"
-        articles[0].save()
+        article_list[0].projects.add(project_list[0])
+        article_list[0].publication_date = "2023-01-01T12:00:00+00:00"
+        article_list[0].save()
 
-        articles[1].projects.add(projects[1])
-        articles[1].publication_date = "2023-01-01T11:00:00+00:00"
-        articles[1].save()
+        article_list[1].projects.add(project_list[1])
+        article_list[1].publication_date = "2023-01-01T11:00:00+00:00"
+        article_list[1].save()
 
-        warning_data = mock_data.warning_message.copy()
-        warning_data["project_id"] = projects[0].pk
+        warning_data = warning_message.MOCK_DATA.copy()
+        warning_data["project_id"] = project_list[0].pk
         warning = WarningMessage.objects.create(**warning_data)
         warning.publication_date = "2023-01-01T10:00:00+00:00"
         warning.save()
@@ -222,7 +222,7 @@ class TestArticleListView(BaseTestProjectView):
             "image_set": 123,
         }
 
-        article_data = mock_data.articles[0].copy()
+        article_data = articles.MOCK_DATA[0].copy()
         article_data["foreign_id"] = 9999
         article = Article.objects.create(**article_data)
         image = baker.make(
@@ -240,7 +240,7 @@ class TestArticleListView(BaseTestProjectView):
         # Refresh from db to create datetime objects from datetime strings
         article.refresh_from_db()
 
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 9999
         project = Project.objects.create(**project_data)
 
@@ -286,11 +286,11 @@ class TestArticleListView(BaseTestProjectView):
 
     def test_warning_content_with_image(self):
         """Test if content of warning with image is as expected"""
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 9999
         project = Project.objects.create(**project_data)
 
-        warning_data = mock_data.warning_message.copy()
+        warning_data = warning_message.MOCK_DATA.copy()
         warning_data["project_id"] = project.pk
         warning = WarningMessage.objects.create(**warning_data)
         warning.refresh_from_db()

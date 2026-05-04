@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.test import override_settings
 from model_bakery import baker
 
@@ -22,7 +24,7 @@ class TestWarningNotificationService(ResponsesActivatedAPITestCase):
         self.warning = baker.make(
             WarningMessage, project=self.project, title="Test Warning"
         )
-        self.notification_service = WarningNotificationService()
+        self.notification_service = WarningNotificationService(use_image_service=True)
 
     def test_call_notification_service_success_no_image(self):
         self.notification_service.send(self.warning)
@@ -30,13 +32,16 @@ class TestWarningNotificationService(ResponsesActivatedAPITestCase):
 
     def test_call_notification_service_with_image(self):
         self._set_mock_warning_image()
-        self.notification_service.send(self.warning)
+        with patch.object(
+            self.notification_service.image_service, "exists", return_value=True
+        ):
+            self.notification_service.send(self.warning)
 
-        notification = ScheduledNotification.objects.first()
-        self.assertIsNotNone(notification)
-        self.assertEqual(notification.image, 123)
+            notification = ScheduledNotification.objects.first()
+            self.assertIsNotNone(notification)
+            self.assertEqual(notification.image, 123)
 
-        self.assertTrue(self.warning.notification_sent)
+            self.assertTrue(self.warning.notification_sent)
 
     def _set_mock_warning_image(self):
         """Helper function to create a mock warning image with associated image."""

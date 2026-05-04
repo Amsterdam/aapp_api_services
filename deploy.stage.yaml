@@ -1,0 +1,93 @@
+#################################################
+#
+# Deployment stage template
+#
+#################################################
+
+parameters:
+  - name: environment
+    type: string
+
+  - name: devopsEnvironment
+    type: string
+
+  - name: pool
+    type: string
+
+  - name: namespace
+    type: string
+
+  - name: kubernetesServiceConnection
+    type: string
+
+  - name: services
+    type: object
+
+  - name: force
+    type: boolean
+    default: false
+
+  - name: migrationRollbackTarget
+    type: string
+    default: ' '
+
+  - name: condition
+    type: string
+    default: ''
+
+
+stages:
+- stage: ${{ parameters.environment }}
+  displayName: Deploy to ${{ parameters.environment }}
+
+  ${{ if parameters.condition }}:
+    condition: ${{ parameters.condition }}
+
+  jobs:
+    - ${{ each service in parameters.services }}:
+      - deployment: deploy_${{ service }}
+        displayName: Deploy ${{ service }}
+        pool: ${{ parameters.pool }}
+        environment: ${{ parameters.devopsEnvironment }}
+        variables:
+          environment: ${{ parameters.environment }}
+          service_name: ${{ replace(service, '_', '-') }}
+
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: source
+
+                - task: Kubernetes@1
+                  displayName: Login to cluster
+                  inputs:
+                    connectionType: Kubernetes Service Connection
+                    kubernetesServiceEndpoint: ${{ parameters.kubernetesServiceConnection }}
+                    namespace: ${{ parameters.namespace }}
+                    command: login
+
+                - script: |
+                    kubectl config set-context deploy --namespace=${{ parameters.namespace }}
+                    kubectl config use-context deploy
+                  displayName: Setup kubectl
+
+                - ${{ if eq(parameters.force, true) }}:
+                  - script: helm uninstall $(service_name)
+                    displayName: Helm uninstall $(service_name)
+
+                - ${{ if ne(parameters.migrationRollbackTarget, ' ') }}:
+                  - script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/$(service_name)
+                    displayName: Rollback migration ($(service_name))
+
+                - script: make deploy/$(service_name)
+                  displayName: Deploy $(service_name)
+
+                - ${{ if eq(parameters.environment, 'acc') }}:
+                  - script: |
+                      docker run --rm openapitools/openapi-diff:latest "https://app.amsterdam.nl/$(service_name)/api/v1/openapi" "https://acc.app.amsterdam.nl/$(service_name)/api/v1/openapi" | tee diff_output.txt
+                      cat diff_output.txt
+                      if grep -q "API changes broke backward compatibility" diff_output.txt; then
+                        echo "##vso[task.complete result=SucceededWithIssues;]Breaking OpenAPI changes detected!"
+                      fi
+                    displayName: Run openapi-diff

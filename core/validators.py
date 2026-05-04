@@ -1,4 +1,32 @@
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
+from jsonschema import ValidationError as SchemaError
+from jsonschema import validate
+
+CONTEXT_SCHEMA = {
+    "type": "object",
+    "required": ["type", "module_slug"],
+    "properties": {
+        "linkSourceid": {"type": "string"},
+        "type": {"type": "string"},
+        "module_slug": {"type": "string"},
+        "url": {"type": "string"},
+        "deeplink": {"type": "string"},
+        "reminderKey": {"type": "string"},
+        "reportCode": {"type": "string"},
+    },
+    "additionalProperties": False,
+    "not": {
+        "required": ["url", "deeplink"],
+    },
+}
+
+
+def context_validator(value):
+    try:
+        validate(value, CONTEXT_SCHEMA)
+    except SchemaError as e:
+        raise ValidationError(f"Invalid context: {e.message}")
 
 
 class AappDeeplinkValidator(RegexValidator):

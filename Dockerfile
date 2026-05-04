@@ -1,75 +1,114 @@
-### Builds core application
-FROM python:3.11-alpine AS core
-COPY --from=ghcr.io/astral-sh/uv:0.7.13 /uv /uvx /bin/
+########################
+# BUILDER STAGE
+########################
+FROM python:3.14-alpine AS builder
+COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /uvx /bin/
 ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=on
-
-# Any process that requires to write in the home dir
-# we write to /tmp since we have no home dir
-ENV HOME=/tmp \
+    PIP_NO_CACHE_DIR=on \
+    HOME=/tmp \
     TMPDIR=/tmp \
+    AZURE_CONFIG_DIR=/tmp/.azure \
+    COVERAGE_FILE=/tmp/.coverage \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPYCACHEPREFIX=/tmp/pycache
+    PYTHONPYCACHEPREFIX=/tmp/pycache \
+    XDG_CACHE_HOME=/tmp/.cache \
+    UV_CACHE_DIR=${XDG_CACHE_HOME}/uv \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
+
 WORKDIR /app
 
+# Build-only packages
+RUN apk add --no-cache --virtual .build-deps \
+    build-base \
+    linux-headers
+
 # Install dependencies
-RUN apk add --no-cache --virtual .build-deps build-base linux-headers
+COPY pyproject.toml ./
+COPY uv.lock ./
+RUN uv sync --frozen
+
+# Copy application code
+COPY manage.py ./
+COPY uwsgi.ini ./
+COPY gunicorn.conf.py ./
+COPY core ./core
+COPY deploy ./deploy
+COPY notification ./notification
+
+# Collect static assets
+RUN DJANGO_SETTINGS_MODULE=core.settings.base uv run python manage.py collectstatic --no-input
+
+########################
+# RUNTIME STAGE
+########################
+FROM python:3.14-alpine AS runtime
+ENV PYTHONUNBUFFERED=1 \
+    HOME=/tmp \
+    TMPDIR=/tmp \
+    AZURE_CONFIG_DIR=/tmp/.azure \
+    COVERAGE_FILE=/tmp/.coverage \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPYCACHEPREFIX=/tmp/pycache \
+    XDG_CACHE_HOME=/tmp/.cache \
+    PATH="/app/.venv/bin:$PATH"
+
+WORKDIR /app
+
+# Runtime packages
 RUN apk add --no-cache \
     libheif \
     bash \
     curl
 
-COPY pyproject.toml /app/pyproject.toml
-COPY uv.lock /app/uv.lock
-RUN uv sync --frozen
+ARG APP_UID=1000
+ARG APP_GID=1000
 
-RUN addgroup -S app && adduser -S app -G app
+RUN addgroup -S -g ${APP_GID} app \
+    && adduser -S -D -u ${APP_UID} -G app appuser
 
-COPY manage.py /app/
-RUN dos2unix /app/manage.py
-COPY uwsgi.ini /app/
-COPY gunicorn.conf.py /app/
-COPY /core /app/core
-COPY /deploy /app/deploy
+COPY --from=builder --chown=appuser:app /app /app
+USER appuser
+RUN mkdir -p "$AZURE_CONFIG_DIR" "$PYTHONPYCACHEPREFIX"
 
-RUN DJANGO_SETTINGS_MODULE=core.settings.base uv run python manage.py collectstatic --no-input
-RUN mkdir /home/app/.azure
-RUN chown app:app /home/app/.azure
+### Linting stage for administrative tasks
+#   Needs root to write to the home dir and uv runtime
+FROM runtime AS lint
+COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /uvx /bin/
+ENV UV_CACHE_DIR=${XDG_CACHE_HOME}/uv \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
 USER root
-WORKDIR /app
-COPY notification /app/notification
 
 ### City Pass stages
-FROM core AS app-city_pass
+FROM runtime AS app-city_pass
 COPY city_pass /app/city_pass
 
 ### Modules stages
-FROM core AS app-modules
+FROM runtime AS app-modules
 COPY modules /app/modules
 
 ### Contact stages
-FROM core AS app-contact
+FROM runtime AS app-contact
 COPY contact /app/contact
 
 ### Construction Work stages
-FROM core AS app-construction_work
+FROM runtime AS app-construction_work
 COPY construction_work /app/construction_work
 
 ### Bridge stages
-FROM core AS app-bridge
+FROM runtime AS app-bridge
 COPY bridge /app/bridge
 
 ### Notification stages
-FROM core AS app-notification
+FROM runtime AS app-notification
 
 ### Image stages
-FROM core AS app-image
+FROM runtime AS app-image
 COPY image /app/image
 
 ### Waste stages
-FROM core AS app-waste
+FROM runtime AS app-waste
 COPY waste /app/waste
 
-### Waste stages
-FROM core AS app-survey
+### Survey stages
+FROM runtime AS app-survey
 COPY survey /app/survey

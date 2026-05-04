@@ -2,14 +2,14 @@
 
 ## About
 
-This repository contains the backend files for the Amsterdam App. The Amsterdam App is a native app for citizens, entrepreneurs, and visitors of the City of Amsterdam to provide information, allow communication, and streamline transactions.
+This repository contains the backend files for the Amsterdam App. The Amsterdam App is a native app for citizens, entrepreneurs, and visitors of the municipality of Amsterdam to provide information, allow communication, and streamline transactions.
 
 The backend is built using Django, and more specifically the REST framework of Django. Django allows us to have a modular approach, where each module is linked to a module in the application.
 
 ## Prerequisites
 
 The following programs and tooling should be installed on your device:
-- Python (3.12.3)
+- Python 3
 - UV
 - Docker
 
@@ -25,7 +25,7 @@ The following steps should be followed to set up this project:
 - Clone the repository: `git clone git@ssh.dev.azure.com:v3/CloudCompetenceCenter/Amsterdam-App/aapp_api_services`
 - Switch to the repo directory: `cd aapp_api_services`
 - Check your python version: `python3 --version`
-- Install matching venv version: `sudo apt install python3.12-venv` (if your python version is 3.12)
+- Install matching venv version: `sudo apt install python3.14-venv` (if your python version is 3.14)
 - Install python3-dev: `sudo apt install python3-dev`
 - Create a virtual environment: `python3 -m venv .venv`
 - Activate the virtual environment: `./.venv/bin/activate`
@@ -130,9 +130,9 @@ Here are some common issues and their solutions:
 
 
 ## Pre commit hooks
-To use the pre-commit hooks as specified in `.pre-commit-config.yml`, first install `pre-commit` by running: `pip install pre-commit` (inside your virtual environment). Then run: `pre-commit install`.
+To use the pre-commit hooks as specified in `.pre-commit-config.yaml`, first install `pre-commit` by running: `pip install pre-commit` (inside your virtual environment). Then run: `pre-commit install`.
 
-If the `.pre-commit-config.yml` changes, you have to install the new pre-commit hooks. This will not update automatically.
+If the `.pre-commit-config.yaml` changes, you have to install the new pre-commit hooks. This will not update automatically.
 
 ## Adding new packages
 If a new package is needed in the project, this has to be added in the `pryproject.toml` file. Then run

@@ -84,12 +84,13 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "debug_toolbar",
+    "mozilla_django_oidc",
     "adminsortable2",
     "core.apps.CoreConfig",
 ]
 
 MIDDLEWARE = [
-    "core.middleware.db_retry_on_timeout.DatabaseRetryMiddleware",
+    "core.middleware.db_retry_on_timeout.database_retry_middleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -99,20 +100,72 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "core.middleware.set_headers.DefaultHeadersMiddleware",
-    "core.middleware.log_4xx_status.Log4xxMiddleware",
+    "core.middleware.set_headers.default_headers_middleware",
+    "core.middleware.log_4xx_status.log_4xx_status_middleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
+    # "core.authentication.OIDCAuthenticationBackend",
 ]
 
 ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
 
-ENTRA_TENANT_ID = os.getenv("TENANT_ID")
+ENTRA_TENANT_ID = os.getenv("TENANT_ID", "72fca1b1-2c2e-4376-a445-294d80196804")
 ENTRA_CLIENT_ID = os.getenv("CLIENT_ID")
 
 ENTRA_TOKEN_COOKIE_NAME = "__Host-Access-Token"
+
+# Required by mozilla_django_oidc
+OIDC_BASE_URL = os.getenv(
+    "OIDC_BASE_URL", f"https://login.microsoftonline.com/{ENTRA_TENANT_ID}"
+)
+OIDC_RP_CLIENT_ID = os.getenv("OIDC_RP_CLIENT_ID", ENTRA_CLIENT_ID)
+OIDC_RP_CLIENT_SECRET = os.getenv("OIDC_RP_CLIENT_SECRET")
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_RP_SCOPES = os.getenv("OIDC_RP_SCOPES", "openid profile email")
+OIDC_OP_AUTHORIZATION_ENDPOINT = os.getenv(
+    "OIDC_OP_AUTHORIZATION_ENDPOINT", f"{OIDC_BASE_URL}/oauth2/v2.0/authorize"
+)
+OIDC_OP_TOKEN_ENDPOINT = os.getenv(
+    "OIDC_OP_TOKEN_ENDPOINT", f"{OIDC_BASE_URL}/oauth2/v2.0/token"
+)
+OIDC_OP_USER_ENDPOINT = os.getenv(
+    "OIDC_OP_USER_ENDPOINT", "https://graph.microsoft.com/oidc/userinfo"
+)
+OIDC_OP_JWKS_ENDPOINT = os.getenv(
+    "OIDC_OP_JWKS_ENDPOINT", f"{OIDC_BASE_URL}/discovery/v2.0/keys"
+)
+OIDC_OP_LOGOUT_ENDPOINT = os.getenv(
+    "OIDC_OP_LOGOUT_ENDPOINT", f"{OIDC_BASE_URL}/oauth2/v2.0/logout"
+)
+OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"prompt": "select_account"}
+OIDC_USE_NONCE = False
+OIDC_USE_PKCE = True
+
+### MONKEY PATCH
+# Add callback w/o trailing slash in mozilla_django_oidc
+# This is a workaround as long as the redirect uri is not updated in Entra
+import mozilla_django_oidc.urls  # noqa: E402
+from django.urls import path  # noqa: E402
+
+mozilla_django_oidc.urls.urlpatterns.append(
+    path(
+        "callback",
+        mozilla_django_oidc.views.OIDCAuthenticationCallbackView.as_view(),
+        name="oidc_authentication_callback",
+    ),  # noqa: E501, F541
+)
+### END OF MONKEY PATCH
+
+# Required by amsterdam_django_oidc
+OIDC_OP_ISSUER = os.getenv(
+    "OIDC_OP_ISSUER", f"https://sts.windows.net/{ENTRA_TENANT_ID}/"
+)
+OIDC_VERIFY_AUDIENCE = os.getenv("OIDC_VERIFY_AUDIENCE", True)
+OIDC_TRUSTED_AUDIENCES = os.getenv(
+    "OIDC_TRUSTED_AUDIENCES", [f"api://{OIDC_RP_CLIENT_ID}"]
+)
 
 
 TEMPLATES = [
@@ -201,13 +254,22 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "default": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
+        "default": {
+            "()": "core.logging_formatters.PrettyExtraFormatter",
+            "format": "%(name)s - %(message)s",
+        },
     },
     "handlers": {
         "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
+            "class": "rich.logging.RichHandler",
             "formatter": "default",
+            "level": "INFO",
+            # RichHandler options:
+            "rich_tracebacks": True,
+            "show_time": True,
+            "show_level": True,
+            "show_path": False,
+            "markup": False,
         },
     },
     "root": {
@@ -232,15 +294,19 @@ LOGGING = {
         },
         "azure.core.pipeline.policies.http_logging_policy": {
             "handlers": ["console"],
-            "level": "ERROR",  # Set to INFO to log what is being logged by OpenTelemetry
+            "level": "ERROR",
         },
         "azure.monitor.opentelemetry.exporter.export._base": {
             "handlers": ["console"],
-            "level": "ERROR",  # Set to INFO to log what is being logged by OpenTelemetry
+            "level": "ERROR",
         },
         "azure.identity._internal.get_token_mixin": {
             "handlers": ["console"],
             "level": "WARNING",  # Suppresses "WorkloadIdentityCredential.get_token succeeded" message
+        },
+        "azure.monitor.opentelemetry.exporter._configuration._utils": {
+            "handlers": ["console"],
+            "level": "ERROR",  # Suppresses "OneSettings request timed out" message
         },
         "opentelemetry.attributes": {
             "handlers": ["console"],
@@ -295,3 +361,15 @@ CACHES = {
 
 ADMIN_ROLES = []
 MOCK_FIREBASE = False
+FIREBASE_CREDENTIALS = os.getenv("FIREBASE_JSON")
+NOTIFICATION_DEVICE_BATCH_SIZE = 5000
+
+# temporary settings for notification service, to be removed after migration
+NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://api-notification:8000")
+NOTIFICATION_BASE_URL_EXTERNAL = urljoin(
+    NOTIFICATION_API, os.getenv("NOTIFICATION_BASE_PATH_EXT", "/notification/api/v1/")
+)
+NOTIFICATION_ENDPOINT = {
+    "WASTE": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/waste"),
+    "BURNING_GUIDE": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/burning-guide"),
+}

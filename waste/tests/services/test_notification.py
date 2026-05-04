@@ -2,8 +2,8 @@ import freezegun
 from django.contrib.auth.models import User
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import ScheduledNotification
-from waste.models import ManualNotification, NotificationSchedule
+from notification.models import ScheduledNotification, WasteDevice
+from waste.models import ManualNotification
 from waste.services.notification import ManualNotificationService, NotificationService
 
 
@@ -11,7 +11,7 @@ from waste.services.notification import ManualNotificationService, NotificationS
 class NotificationServiceTest(ResponsesActivatedAPITestCase):
     def test_call_notification_service(self):
         notification_service = NotificationService()
-        notification_service.send_waste_notification(
+        notification_service.send(
             device_ids=["device1", "device2"],
             waste_type="glas",
         )
@@ -28,7 +28,7 @@ class NotificationServiceTest(ResponsesActivatedAPITestCase):
 class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
     def test_call_notification_service(self):
         for device in ["device1", "device2", "device3"]:
-            NotificationSchedule.objects.create(
+            WasteDevice.objects.create(
                 device_id=device, bag_nummeraanduiding_id="foobar"
             )
 

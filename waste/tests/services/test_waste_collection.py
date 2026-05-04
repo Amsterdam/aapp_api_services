@@ -21,26 +21,26 @@ from waste.tests.mock_data import (
 class WasteCollectionServiceTest(TestCase):
     @override_settings(CALENDAR_LENGTH=60)
     def setUp(self):
-        self.service = WasteCollectionService(bag_nummeraanduiding_id="1234")
+        self.service = WasteCollectionService()
 
     @responses.activate
-    def set_validated_mock_data(self, mock_data):
+    def get_validated_mock_data(self, mock_data):
         responses.get(
             re.compile(settings.WASTE_GUIDE_URL + ".*"),
             json=mock_data,
         )
-        self.service.get_validated_data()
+        return self.service.get_validated_data_for_bag_id("1234")
 
     def test_create_calendar(self):
-        self.set_validated_mock_data(frequency_weekly.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(frequency_weekly.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
 
         self.assertEqual(
             calendar,
             [
                 {
                     "date": date(2025, 12, 10),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -56,7 +56,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2025, 12, 17),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -72,7 +72,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2025, 12, 24),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -88,7 +88,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2025, 12, 31),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -104,7 +104,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2026, 1, 7),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -120,7 +120,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2026, 1, 14),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -136,7 +136,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2026, 1, 21),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -152,7 +152,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2026, 1, 28),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -168,7 +168,7 @@ class WasteCollectionServiceTest(TestCase):
                 },
                 {
                     "date": date(2026, 2, 4),
-                    "label": "Restafval",
+                    "label": "Aangepaste rest naam",
                     "code": "Rest",
                     "curb_rules_from": "Dinsdag vanaf 21.00",
                     "curb_rules_to": "tot woensdag 07.00 uur",
@@ -185,70 +185,9 @@ class WasteCollectionServiceTest(TestCase):
             ],
         )
 
-    def test_get_next_dates(self):
-        self.set_validated_mock_data(frequency_weekly.MOCK_DATA)
-        calendar = self.service.create_calendar()
-        next_dates = self.service.get_next_dates(calendar)
-
-        self.assertDictEqual(
-            next_dates,
-            {
-                "Rest": date(2025, 12, 10),
-                "GA": date(2025, 12, 10),
-                "Papier": None,
-                "GFT": None,
-                "Glas": None,
-                "Textiel": None,
-            },
-        )
-
-    def test_get_types(self):
-        self.set_validated_mock_data(frequency_weekly.MOCK_DATA)
-        calendar = self.service.create_calendar()
-        next_dates = self.service.get_next_dates(calendar)
-        waste_types = self.service.get_waste_types(next_dates)
-
-        self.assertEqual(
-            waste_types,
-            [
-                {
-                    "label": "Restafval",
-                    "code": "Rest",
-                    "curb_rules": "Dinsdag vanaf 21.00 tot woensdag 07.00 uur",
-                    "alert": None,
-                    "note": None,
-                    "days_array": ["woensdag"],
-                    "how": "In rolcontainer",
-                    "where": "Aan de rand van de stoep of op de vaste plek",
-                    "button_text": None,
-                    "url": None,
-                    "frequency": None,
-                    "is_collection_by_appointment": False,
-                    "next_date": date(2025, 12, 10),
-                    "info_link": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/restafval/",
-                },
-                {
-                    "label": "Grof afval",
-                    "code": "GA",
-                    "curb_rules": "Dinsdag vanaf 21.00 tot woensdag 07.00 uur",
-                    "alert": None,
-                    "note": None,
-                    "days_array": ["woensdag"],
-                    "how": "Breng uw grof afval naar een Recyclepunt of buiten zetten",
-                    "where": "Aan de rand van de stoep of op de vaste plek",
-                    "button_text": None,
-                    "url": "https://kaart.amsterdam.nl/recyclepunten",
-                    "frequency": None,
-                    "is_collection_by_appointment": False,
-                    "next_date": date(2025, 12, 10),
-                    "info_link": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/grofvuil/",
-                },
-            ],
-        )
-
     def test_calendar_even_oneven_weesp(self):
-        self.set_validated_mock_data(frequency_weekly_oneven.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(frequency_weekly_oneven.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
 
         self.assertEqual(
             calendar,
@@ -329,8 +268,10 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_calendar_specific_dates_weesp(self):
-        self.set_validated_mock_data(frequency_hardcoded_wo_year.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(
+            frequency_hardcoded_wo_year.MOCK_DATA
+        )
+        calendar = self.service.create_calendar(validated_data)
 
         # interpret date string as datetime
         self.assertEqual(
@@ -353,8 +294,10 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_calendar_specific_dates_weesp_with_year(self):
-        self.set_validated_mock_data(frequency_hardcoded_with_year.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(
+            frequency_hardcoded_with_year.MOCK_DATA
+        )
+        calendar = self.service.create_calendar(validated_data)
 
         # interpret date string as datetime
         self.assertEqual(
@@ -377,8 +320,8 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_calendar_montly_frequency_success(self):
-        self.set_validated_mock_data(frequency_monthly.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(frequency_monthly.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
 
         # interpret date string as datetime
         self.assertEqual(
@@ -396,8 +339,8 @@ class WasteCollectionServiceTest(TestCase):
         )
 
     def test_calendar_four_weeks(self):
-        self.set_validated_mock_data(frequency_four_weeks.MOCK_DATA)
-        calendar = self.service.create_calendar()
+        validated_data = self.get_validated_mock_data(frequency_four_weeks.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
 
         # interpret date string as datetime
         self.assertEqual(
@@ -411,5 +354,90 @@ class WasteCollectionServiceTest(TestCase):
                     "curb_rules_to": "tot vrijdag 07.00 uur",
                     "alert": None,
                 }
+            ],
+        )
+
+    def test_get_next_dates(self):
+        validated_data = self.get_validated_mock_data(frequency_weekly.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
+        next_dates = self.service.get_next_dates(calendar)
+
+        self.assertDictEqual(
+            next_dates,
+            {
+                "Rest": date(2025, 12, 10),
+                "GA": date(2025, 12, 10),
+                "Papier": None,
+                "GFT": None,
+                "Glas": None,
+                "Textiel": None,
+            },
+        )
+
+    def test_get_waste_types(self):
+        validated_data = self.get_validated_mock_data(frequency_weekly.MOCK_DATA)
+        calendar = self.service.create_calendar(validated_data)
+        next_dates = self.service.get_next_dates(calendar)
+        waste_types = self.service.get_waste_types(validated_data, next_dates)
+
+        self.assertEqual(
+            waste_types,
+            [
+                {
+                    "label": "Aangepaste rest naam",
+                    "code": "Rest",
+                    "order": 1,
+                    "curb_rules": "Dinsdag vanaf 21.00 tot woensdag 07.00 uur",
+                    "alert": None,
+                    "note": None,
+                    "days_array": ["woensdag"],
+                    "how": "In rolcontainer",
+                    "where": "Aan de rand van de stoep of op de vaste plek",
+                    "button_text": None,
+                    "url": None,
+                    "frequency": None,
+                    "is_collection_by_appointment": False,
+                    "next_date": date(2025, 12, 10),
+                    "info_link": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/restafval/",
+                },
+                {
+                    "label": "Grof afval",
+                    "code": "GA",
+                    "order": 3,
+                    "curb_rules": "Dinsdag vanaf 21.00 tot woensdag 07.00 uur",
+                    "alert": None,
+                    "note": None,
+                    "days_array": ["woensdag"],
+                    "how": "Breng uw grof afval naar een Recyclepunt of buiten zetten",
+                    "where": "Aan de rand van de stoep of op de vaste plek",
+                    "button_text": None,
+                    "url": "https://kaart.amsterdam.nl/recyclepunten",
+                    "frequency": None,
+                    "is_collection_by_appointment": False,
+                    "next_date": date(2025, 12, 10),
+                    "info_link": "https://www.milieucentraal.nl/minder-afval/afval-scheiden/grofvuil/",
+                },
+            ],
+        )
+
+    def test_sort_waste_types_by_order(self):
+        waste_types = [
+            {"code": "GFT", "order": 3},
+            {"code": "Rest", "order": 1},
+            {"code": "Papier", "order": 2},
+            {"code": "Textiel", "order": 0},
+            {"code": "Glas", "order": None},
+        ]
+
+        sorted_waste_types = self.service.sort_waste_types_by_order(waste_types)
+
+        self.assertEqual(
+            sorted_waste_types,
+            [
+                {"code": "Textiel", "order": 0},
+                {"code": "Rest", "order": 1},
+                {"code": "Papier", "order": 2},
+                {"code": "GFT", "order": 3},
+                {"code": "Glas", "order": None},
             ],
         )

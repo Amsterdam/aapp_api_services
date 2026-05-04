@@ -121,3 +121,4 @@ class ProjectContact(models.Model):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="contacts"
     )
+    extra = models.CharField(null=True, blank=True)

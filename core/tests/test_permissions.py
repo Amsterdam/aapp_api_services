@@ -41,3 +41,20 @@ class IsTimeAdminPermissionTest(TestCase):
         request = self.factory.get("/")
         request.user = user
         self.assertFalse(self.permission.has_permission(request, None))
+
+    @override_settings(ENVIRONMENT_SLUG="a")
+    def test_roles_different_environment(self):
+        user = User.objects.create(username="testuser")
+        user.groups.add(self.time_publisher)
+        request = self.factory.get("/")
+        request.user = user
+        self.assertFalse(self.permission.has_permission(request, None))
+
+    @override_settings(ENVIRONMENT_SLUG="a")
+    def test_roles_environments_constructed_correctly(self):
+        user = User.objects.create(username="testuser")
+        group = Group.objects.create(name="a-cbs-time-publisher")
+        user.groups.add(group)
+        request = self.factory.get("/")
+        request.user = user
+        self.assertTrue(self.permission.has_permission(request, None))

@@ -1,0 +1,160 @@
+#################################################
+#
+# Main pipeline (full CICD flow)
+# - Triggers on pushes/merges to main
+# - Builds, tests, analyzes & pushes images
+# - Deploys to test (and optionally acc/prod)
+# - Also triggers on infra deployments/** changes (aapp_infra_azure)
+#
+#################################################
+
+# Disable PR triggers for this pipeline
+pr: none
+
+trigger:
+  branches:
+    include:
+      - main
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      endpoint: Amsterdam
+      name: Amsterdam/common-azure-pipelines
+      ref: refs/tags/1.20.3
+
+    - repository: source
+      type: git
+      name: Amsterdam-App/aapp_infra_azure
+      ref: main
+      trigger:
+        branches:
+          include:
+            - main
+        paths:
+          include:
+            - deployments/**
+
+parameters:
+  - name: versionOverride
+    type: string
+    default: ' '
+
+  - name: migrationRollbackTarget
+    type: string
+    default: ' '
+
+  - name: forceDeploy
+    type: boolean
+    default: false
+
+  - name: services
+    type: object
+    default:
+      - bridge
+      - city_pass
+      - construction_work
+      - contact
+      - image
+      - modules
+      - notification
+      - waste
+      - survey
+
+variables:
+  - name: Docker.Buildkit
+    value: "1"
+
+  - name: Self.Ref
+    value: $[ variables['Build.SourceBranch'] ]
+
+  - name: Self.BranchName
+    value: $[ replace(replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', ''), 'refs/pull/', '') ]
+
+  - name: registry
+    value: saks01weuacrpgpgo5qvmwo.azurecr.io
+
+  - name: version
+    ${{ if eq(parameters.versionOverride, ' ') }}:
+      value: $[ format('{0}-{1}', replace(variables['Self.BranchName'], '/', '-'), variables['Build.SourceVersion']) ]
+    ${{ else }}:
+      value: ${{ parameters.versionOverride }}
+
+stages:
+  # --------------------
+  # BUILD
+  # --------------------
+  - template: deploy.build-stage.yaml
+    parameters:
+      services: ${{ parameters.services }}
+      stageDisplayName: Build, test, analyze & push
+      includeQA: true
+
+  # --------------------
+  # TEST
+  # --------------------
+  - template: deploy.stage.yaml
+    parameters:
+      environment: test
+      devopsEnvironment: api-test
+      pool: ManagedDevOpsPools
+      namespace: ns-ccc-aapp-tst-01-aapp-test
+      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-tst-01-aapp-test
+      services: ${{ parameters.services }}
+      force: ${{ parameters.forceDeploy }}
+      migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
+      condition: |
+        and(
+          not(or(failed(), canceled())),
+          or(
+            eq(variables['Self.Ref'], 'refs/heads/main'),
+            eq(variables['Build.Reason'], 'Manual')
+          )
+        )
+
+  # --------------------
+  # ACC
+  # --------------------
+  - template: deploy.stage.yaml
+    parameters:
+      environment: acc
+      devopsEnvironment: api-acc
+      pool: ManagedDevOpsPools
+      namespace: ns-ccc-aapp-acc-01-aapp-acc
+      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-acc-01-aapp-acc
+      services: ${{ parameters.services }}
+      force: ${{ parameters.forceDeploy }}
+      migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
+      condition: |
+        and(
+          not(or(failed(), canceled())),
+          or(
+            eq(variables['Self.Ref'], 'refs/heads/main'),
+            eq(variables['Build.Reason'], 'Manual')
+          ),
+          startsWith(variables['version'], 'main')
+        )
+
+  # --------------------
+  # PROD
+  # --------------------
+  - template: deploy.stage.yaml
+    parameters:
+      environment: prod
+      devopsEnvironment: api-prod
+      pool: ManagedDevOpsPools
+      namespace: ns-ccc-aapp-prd-01-aapp-prd
+      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-prd-01-aapp-prd
+      services: ${{ parameters.services }}
+      force: ${{ parameters.forceDeploy }}
+      migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
+      condition: |
+        and(
+          not(or(failed(), canceled())),
+          or(
+            eq(variables['Self.Ref'], 'refs/heads/main'),
+            eq(variables['Build.Reason'], 'Manual')
+          ),
+          startsWith(variables['version'], 'main')
+        )

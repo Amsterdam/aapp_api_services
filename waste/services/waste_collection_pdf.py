@@ -3,7 +3,6 @@ from datetime import date
 
 from fpdf import FPDF
 
-from waste.constants import WASTE_TYPES_MAPPING_READABLE
 from waste.services.waste_collection_abstract import WasteCollectionAbstractService
 from waste.services.waste_pdf import (
     WastePDF,
@@ -11,17 +10,19 @@ from waste.services.waste_pdf import (
 
 
 class WasteCollectionPDFService(WasteCollectionAbstractService):
-    def __init__(self, bag_nummeraanduiding_id: str):
-        super().__init__(bag_nummeraanduiding_id)
-
-    def get_pdf_calendar(self) -> FPDF:
+    def get_pdf_calendar(self, validated_data) -> FPDF:
         # get all necessary data
-        waste_collection_by_date = self.create_pdf_calendar_dates()
+        waste_collection_by_date, code_label_list = self.create_pdf_calendar_dates(
+            validated_data
+        )
         days = self.all_dates
         months = self.group_days_by_month(days)
 
         # initialize pdf and get settings
-        pdf = WastePDF(address=self._generate_address_string())
+        pdf = WastePDF(
+            address=self._generate_address_string(validated_data),
+            code_label_list=code_label_list,
+        )
         pdf.add_page()
         pdf.add_title()
 
@@ -34,17 +35,29 @@ class WasteCollectionPDFService(WasteCollectionAbstractService):
 
         return pdf
 
-    def create_pdf_calendar_dates(self) -> dict[date, list[str]]:
+    def create_pdf_calendar_dates(
+        self, validated_data
+    ) -> tuple[dict[date, list[str]], list]:
         waste_collection_by_date = {}
-        for item in self.validated_data:
+        code_label_list = []
+        for item in validated_data:
             if item.get("basisroutetypeCode") not in ["BIJREST", "GROFAFSPR"]:
                 dates = self.get_dates_for_waste_item(item)
                 for date in dates:
                     waste_collection_by_date.setdefault(date, []).append(
-                        WASTE_TYPES_MAPPING_READABLE.get(item.get("code"))
+                        item.get("code")
+                    )
+                    code_label_list.append(
+                        (
+                            item.get("code"),
+                            item.get("label"),
+                            item.get("order", 999) or 999,
+                        )
                     )
 
-        return waste_collection_by_date
+        return waste_collection_by_date, sorted(
+            set(code_label_list), key=lambda x: x[2]
+        )
 
     @staticmethod
     def group_days_by_month(days: list[date]) -> OrderedDict:
@@ -54,10 +67,10 @@ class WasteCollectionPDFService(WasteCollectionAbstractService):
             months.setdefault(key, []).append(d)
         return months
 
-    def _generate_address_string(self) -> str:
-        if not self.validated_data or len(self.validated_data) == 0:
+    def _generate_address_string(self, validated_data) -> str:
+        if not validated_data or len(validated_data) == 0:
             return ""
-        first_item = self.validated_data[0]
+        first_item = validated_data[0]
         street_name = first_item.get("street_name", "")
         house_number = first_item.get("house_number", "")
         house_letter = first_item.get("house_letter", "")

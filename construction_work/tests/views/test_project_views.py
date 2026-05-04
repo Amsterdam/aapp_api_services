@@ -20,7 +20,13 @@ from construction_work.models.manage_models import (
     WarningMessage,
 )
 from construction_work.models.project_models import Project
-from construction_work.tests import mock_data
+from construction_work.tests.mock_data import (
+    articles,
+    devices,
+    project_managers,
+    projects,
+    warning_message,
+)
 from construction_work.utils.date_utils import translate_timezone as tt
 from core.tests.test_authentication import BasicAPITestCase
 
@@ -55,13 +61,13 @@ class BaseTestProjectView(BasicAPITestCase):
         self, project_foreign_id, article_pub_date, project_pub_date=None
     ):
         """Create project and article"""
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = project_foreign_id
         if project_pub_date:
             project_data["publication_date"] = project_pub_date
         project = Project.objects.create(**project_data)
 
-        article_data = mock_data.articles[0].copy()
+        article_data = articles.MOCK_DATA[0].copy()
         article_data["foreign_id"] = project_foreign_id + 1
         article_data["publication_date"] = article_pub_date
         article = Article.objects.create(**article_data)
@@ -71,11 +77,11 @@ class BaseTestProjectView(BasicAPITestCase):
 
     def create_project_and_warning(self, project_foreign_id, pub_date):
         """Create project and warning"""
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = project_foreign_id
         project = Project.objects.create(**project_data)
 
-        warning_data = mock_data.warning_message.copy()
+        warning_data = warning_message.MOCK_DATA.copy()
         warning_data["project"] = project
         warning = WarningMessage.objects.create(**warning_data)
         warning.publication_date = pub_date
@@ -85,7 +91,7 @@ class BaseTestProjectView(BasicAPITestCase):
 
     def add_article_to_project(self, project: Project, foreign_id, pub_date):
         """Add article to projects"""
-        article_data = mock_data.articles[0].copy()
+        article_data = articles.MOCK_DATA[0].copy()
         article_data["foreign_id"] = foreign_id
         article_data["publication_date"] = pub_date
         article = Article.objects.create(**article_data)
@@ -94,7 +100,7 @@ class BaseTestProjectView(BasicAPITestCase):
 
     def add_warning_to_project(self, project: Project, pub_date):
         """Add warning to project"""
-        warning_data = mock_data.warning_message.copy()
+        warning_data = warning_message.MOCK_DATA.copy()
         warning_data["project"] = project
         warning = WarningMessage.objects.create(**warning_data)
         warning.publication_date = pub_date
@@ -132,7 +138,7 @@ class TestProjectListView(BaseTestProjectView):
         location = self.test_locations[location_index]
         return Project.objects.create(
             **{
-                **mock_data.projects[0].copy(),
+                **projects.MOCK_DATA[0].copy(),
                 "foreign_id": foreign_id,
                 "coordinates_lat": location[0],
                 "coordinates_lon": location[1],
@@ -146,15 +152,15 @@ class TestProjectListView(BaseTestProjectView):
         project_pub_dates: list[str] = None,
     ) -> list[Project]:
         """Helper to create multiple projects with articles at given timestamps"""
-        projects = []
+        projects_list = []
         for i, article_timestamp in enumerate(article_pub_dates):
             project, _ = self.create_project_and_article(
                 base_foreign_id + i,
                 article_timestamp,
                 project_pub_dates[i] if project_pub_dates else None,
             )
-            projects.append(project)
-        return projects
+            projects_list.append(project)
+        return projects_list
 
     @freeze_time("2023-01-02")
     def test_followed_projects_with_articles_and_device_location(self):
@@ -181,7 +187,7 @@ class TestProjectListView(BaseTestProjectView):
         ]
 
         # Create device and follow all projects
-        device = Device.objects.create(**mock_data.devices[0].copy())
+        device = Device.objects.create(**devices.MOCK_DATA[0].copy())
         device.followed_projects.set(article_projects + location_projects)
 
         # Perform request with location
@@ -227,7 +233,7 @@ class TestProjectListView(BaseTestProjectView):
 
         # Create projects without articles but with different publication dates
         no_article_projects = []
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
 
         # Earlier publication date
         project_data["foreign_id"] = 30
@@ -235,13 +241,13 @@ class TestProjectListView(BaseTestProjectView):
         no_article_projects.append(Project.objects.create(**project_data))
 
         # Later publication date
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 40
         project_data["publication_date"] = "2023-01-01T11:30:00+00:00"
         no_article_projects.append(Project.objects.create(**project_data))
 
         # Create device and follow all projects
-        device = Device.objects.create(**mock_data.devices[0].copy())
+        device = Device.objects.create(**devices.MOCK_DATA[0].copy())
         device.followed_projects.set(article_projects + no_article_projects)
 
         # Perform request without location
@@ -267,14 +273,14 @@ class TestProjectListView(BaseTestProjectView):
         - Projects should be sorted by distance only
         """
         # Create projects at different locations
-        projects = [
+        project_list = [
             self.create_project_with_location(10, 1),  # Middle
             self.create_project_with_location(20, 2),  # Furthest
             self.create_project_with_location(30, 0),  # Closest
         ]
 
         # Create device but don't follow any projects
-        device = Device.objects.create(**mock_data.devices[0].copy())
+        device = Device.objects.create(**devices.MOCK_DATA[0].copy())
 
         # Perform request with location
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
@@ -288,7 +294,7 @@ class TestProjectListView(BaseTestProjectView):
             headers=self.api_headers,
         )
 
-        expected_order = [projects[2].pk, projects[0].pk, projects[1].pk]
+        expected_order = [project_list[2].pk, project_list[0].pk, project_list[1].pk]
         actual_order = [x["id"] for x in response.json()["result"]]
         self.assertEqual(actual_order, expected_order)
 
@@ -299,28 +305,28 @@ class TestProjectListView(BaseTestProjectView):
         - Projects should be sorted by most recent project publication date
         """
         # Create projects with different publication dates
-        projects = []
-        project_data = mock_data.projects[0].copy()
+        project_list = []
+        project_data = projects.MOCK_DATA[0].copy()
 
         # Oldest
         project_data["foreign_id"] = 10
         project_data["publication_date"] = "2023-01-01T12:00:00+00:00"
-        projects.append(Project.objects.create(**project_data))
+        project_list.append(Project.objects.create(**project_data))
 
         # Newest
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 20
         project_data["publication_date"] = "2023-01-01T12:30:00+00:00"
-        projects.append(Project.objects.create(**project_data))
+        project_list.append(Project.objects.create(**project_data))
 
         # Middle
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 30
         project_data["publication_date"] = "2023-01-01T12:15:00+00:00"
-        projects.append(Project.objects.create(**project_data))
+        project_list.append(Project.objects.create(**project_data))
 
         # Create device but don't follow any projects
-        device = Device.objects.create(**mock_data.devices[0].copy())
+        device = Device.objects.create(**devices.MOCK_DATA[0].copy())
 
         # Perform request without location
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
@@ -329,9 +335,9 @@ class TestProjectListView(BaseTestProjectView):
         )
 
         expected_order = [
-            projects[1].pk,  # Newest publication date
-            projects[2].pk,  # Middle publication date
-            projects[0].pk,  # Oldest publication date
+            project_list[1].pk,  # Newest publication date
+            project_list[2].pk,  # Middle publication date
+            project_list[0].pk,  # Oldest publication date
         ]
         actual_order = [x["id"] for x in response.json()["result"]]
         self.assertEqual(actual_order, expected_order)
@@ -360,7 +366,7 @@ class TestProjectListView(BaseTestProjectView):
         )
 
         # Create device but don't follow any projects
-        device = Device.objects.create(**mock_data.devices[0].copy())
+        device = Device.objects.create(**devices.MOCK_DATA[0].copy())
 
         # Perform request without location
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
@@ -408,7 +414,7 @@ class TestProjectListView(BaseTestProjectView):
         ]
 
         # Create device and follow specific projects
-        device = Device.objects.create(**mock_data.devices[0].copy())
+        device = Device.objects.create(**devices.MOCK_DATA[0].copy())
         device.followed_projects.set(
             followed_article_projects + followed_location_projects
         )
@@ -455,7 +461,7 @@ class TestProjectListView(BaseTestProjectView):
 
         # Create followed projects without articles but with different publication dates
         followed_no_article_projects = []
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
 
         # Earlier publication date
         project_data["foreign_id"] = 30
@@ -463,7 +469,7 @@ class TestProjectListView(BaseTestProjectView):
         followed_no_article_projects.append(Project.objects.create(**project_data))
 
         # Later publication date
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 40
         project_data["publication_date"] = "2023-01-01T11:30:00+00:00"
         followed_no_article_projects.append(Project.objects.create(**project_data))
@@ -484,7 +490,7 @@ class TestProjectListView(BaseTestProjectView):
         )
 
         # Create device and follow specific projects
-        device = Device.objects.create(**mock_data.devices[0].copy())
+        device = Device.objects.create(**devices.MOCK_DATA[0].copy())
         device.followed_projects.set(
             followed_article_projects + followed_no_article_projects
         )
@@ -516,14 +522,14 @@ class TestProjectListView(BaseTestProjectView):
         ]
 
         # Create project with NULL coordinates
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 30
         project_data["coordinates_lat"] = None
         project_data["coordinates_lon"] = None
         null_coord_project = Project.objects.create(**project_data)
 
         # Create device
-        device = Device.objects.create(**mock_data.devices[0].copy())
+        device = Device.objects.create(**devices.MOCK_DATA[0].copy())
 
         # Perform request with location
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
@@ -554,12 +560,12 @@ class TestProjectListView(BaseTestProjectView):
         # Create 100 projects with different publication dates
         all_projects = []
         for i in range(100):
-            project_data = mock_data.projects[0].copy()
+            project_data = projects.MOCK_DATA[0].copy()
             project_data["foreign_id"] = i
             all_projects.append(Project.objects.create(**project_data))
 
         # Create device and make it follow 42 random projects
-        device = Device.objects.create(**mock_data.devices[0].copy())
+        device = Device.objects.create(**devices.MOCK_DATA[0].copy())
         device.followed_projects.set(random.sample(all_projects, 42))
 
         # Set up for collecting all projects across pages
@@ -573,8 +579,8 @@ class TestProjectListView(BaseTestProjectView):
 
         while True:
             data = response.json()
-            projects = data["result"]
-            all_received_projects.extend(projects)
+            project_result = data["result"]
+            all_received_projects.extend(project_result)
 
             # Break if no next page
             if "_links" not in data or "next" not in data["_links"]:
@@ -605,12 +611,12 @@ class TestProjectListView(BaseTestProjectView):
         """Test pagination"""
         # Create a total of 10 projects
         for i in range(1, 10 + 1):
-            project_data = mock_data.projects[0].copy()
+            project_data = projects.MOCK_DATA[0].copy()
             project_data["foreign_id"] = i * 10
             Project.objects.create(**project_data)
         self.assertEqual(len(Project.objects.all()), 10)
 
-        device = Device.objects.create(**mock_data.devices[0].copy())
+        device = Device.objects.create(**devices.MOCK_DATA[0].copy())
         self.api_headers[settings.HEADER_DEVICE_ID] = device.device_id
 
         # With page size of 4, 4 projects should be returned
@@ -651,7 +657,7 @@ class TestProjectListView(BaseTestProjectView):
         )
         self.api_headers[settings.HEADER_DEVICE_ID] = my_device.device_id
 
-        unfollowed_project_data = mock_data.projects[0].copy()
+        unfollowed_project_data = projects.MOCK_DATA[0].copy()
         unfollowed_project_data["title"] = "this_unfollowed_project_will_be_deactivated"
         unfollowed_project_data["foreign_id"] = 888
 
@@ -660,7 +666,7 @@ class TestProjectListView(BaseTestProjectView):
         unfollowed_project.active = True
         unfollowed_project.save()
 
-        followed_project_data = mock_data.projects[0].copy()
+        followed_project_data = projects.MOCK_DATA[0].copy()
         followed_project_data["title"] = "this_followed_project_will_be_deactivated"
         followed_project_data["foreign_id"] = 999
 
@@ -746,7 +752,7 @@ class TestProjectDetailsView(BaseTestProjectView):
 
     def test_get_project_details(self):
         """Test getting project details"""
-        project = Project.objects.create(**mock_data.projects[0].copy())
+        project = Project.objects.create(**projects.MOCK_DATA[0].copy())
 
         new_device_id = "new_foobar_device"
         self.api_headers[settings.HEADER_DEVICE_ID] = new_device_id
@@ -769,7 +775,7 @@ class TestProjectSearchView(BaseTestProjectView):
         super().setUp()
         self.api_url = reverse("construction-work:project-search")
 
-        for project in mock_data.projects:
+        for project in projects.MOCK_DATA:
             Project.objects.create(**project)
 
     def test_no_text(self):
@@ -871,7 +877,7 @@ class TestProjectSearchView(BaseTestProjectView):
         """Check if only active projects are returned"""
         self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
 
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project_data["title"] = "this_project_will_be_deactivated"
         project_data["foreign_id"] = 999
 
@@ -911,7 +917,7 @@ class TestFollowProjectView(BaseTestProjectView):
 
         self.api_url = reverse("construction-work:follow-project")
 
-        for project in mock_data.projects:
+        for project in projects.MOCK_DATA:
             Project.objects.create(**project)
 
     def test_missing_device_id(self):
@@ -1038,10 +1044,10 @@ class TestWarningMessageDetailView(BaseTestProjectView):
 
         self.api_url = reverse("construction-work:get-warning")
 
-        for project in mock_data.projects:
+        for project in projects.MOCK_DATA:
             Project.objects.create(**project)
 
-        for project_manager in mock_data.project_managers:
+        for project_manager in project_managers.MOCK_DATA:
             ProjectManager.objects.create(**project_manager)
 
     def create_message_from_data(self, data) -> WarningMessage:

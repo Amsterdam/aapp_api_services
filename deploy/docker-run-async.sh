@@ -5,4 +5,4 @@ set -e   # stop on any error
 set -x   # print what we are doing
 
 cd /app
-uv run gunicorn --config /app/gunicorn.conf.py
+exec gunicorn --config /app/gunicorn.conf.py

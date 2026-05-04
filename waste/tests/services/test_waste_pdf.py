@@ -7,7 +7,10 @@ from waste.services.waste_pdf import WastePDF
 
 class FakeWastePDF(WastePDF):
     def __init__(self):
-        super().__init__("fake_address_string")
+        super().__init__(
+            "fake_address_string",
+            code_label_list=[("GFT", "Groen en Fruit en Tuin", 11)],
+        )
         self.calls = []
 
     def add_page(self, *args, **kwargs):

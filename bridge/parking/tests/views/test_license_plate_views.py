@@ -12,7 +12,13 @@ from bridge.parking.tests.mock_data import (
     license_plate_add,
     license_plate_delete,
     license_plates,
-    permit,
+)
+from bridge.parking.tests.mock_data.permit import (
+    business,
+    ga_resident_driver,
+    ga_resident_passenger,
+    informal_care,
+    visitor_holder,
 )
 from bridge.parking.tests.views.base_ssp_view import BaseSSPTestCase
 
@@ -29,7 +35,7 @@ class TestParkingLicensePlateListView(BaseSSPTestCase):
         # two calls are made, the first doesn't have any vrns, so falls back to favorite vrns
         url = URITemplate(SSPEndpoint.PERMIT.value).expand(permit_id=report_code)
         respx.get(url).mock(
-            return_value=httpx.Response(200, json=permit.MOCK_RESPONSE_VISITOR_HOLDER)
+            return_value=httpx.Response(200, json=visitor_holder.MOCK_RESPONSE)
         )
         resp = respx.get(SSPEndpoint.LICENSE_PLATES.value).mock(
             return_value=httpx.Response(200, json=self.test_response)
@@ -48,7 +54,7 @@ class TestParkingLicensePlateListView(BaseSSPTestCase):
         url = URITemplate(SSPEndpoint.PERMIT.value).expand(permit_id=report_code)
 
         respx.get(url).mock(
-            return_value=httpx.Response(200, json=permit.MOCK_RESPONSE_BUSINESS)
+            return_value=httpx.Response(200, json=business.MOCK_RESPONSE)
         )
         respx.get(SSPEndpoint.LICENSE_PLATES.value).mock(
             return_value=httpx.Response(200, json=self.test_response)
@@ -58,27 +64,30 @@ class TestParkingLicensePlateListView(BaseSSPTestCase):
             self.url + f"?report_code={report_code}", headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 4)
+
+        permit_vrns = business.MOCK_RESPONSE.get("vrns", [])
+        favorite_vrns = self.test_response.get("favorite_vrns", [])
+        count_full_vrns = len(permit_vrns) + len(favorite_vrns)
+        self.assertEqual(len(response.data), count_full_vrns)
 
     def test_sucessful_informal_care(self):
         report_code = 10003
+        mock_data = informal_care.MOCK_RESPONSE
+        mock_vrns = mock_data.get("vrns", [])
 
         # only one call is made, because can_start_parking_session is False
         url = URITemplate(SSPEndpoint.PERMIT.value).expand(permit_id=report_code)
 
-        respx.get(url).mock(
-            return_value=httpx.Response(200, json=permit.MOCK_RESPONSE_INFORMAL_CARE)
-        )
+        respx.get(url).mock(return_value=httpx.Response(200, json=mock_data))
 
         response = self.client.get(
             self.url + f"?report_code={report_code}", headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data), len(mock_vrns))
 
-        vrns = permit.MOCK_RESPONSE_INFORMAL_CARE.get("vrns", [])
-        with freeze_time("2025-11-01 12:00"):
-            for vrn in vrns:
+        with freeze_time("2026-04-07 12:00"):
+            for vrn in response.data:
                 is_future = vrn["is_future"]
                 activated_at = vrn["activated_at"]
                 self.assertEqual(
@@ -94,9 +103,7 @@ class TestParkingLicensePlateListView(BaseSSPTestCase):
         url = URITemplate(SSPEndpoint.PERMIT.value).expand(permit_id=report_code)
 
         respx.get(url).mock(
-            return_value=httpx.Response(
-                200, json=permit.MOCK_RESPONSE_GA_RESIDENT_PASSENGER
-            )
+            return_value=httpx.Response(200, json=ga_resident_passenger.MOCK_RESPONSE)
         )
 
         response = self.client.get(
@@ -112,9 +119,7 @@ class TestParkingLicensePlateListView(BaseSSPTestCase):
         url = URITemplate(SSPEndpoint.PERMIT.value).expand(permit_id=report_code)
 
         respx.get(url).mock(
-            return_value=httpx.Response(
-                200, json=permit.MOCK_RESPONSE_GA_RESIDENT_DRIVER
-            )
+            return_value=httpx.Response(200, json=ga_resident_driver.MOCK_RESPONSE)
         )
 
         response = self.client.get(

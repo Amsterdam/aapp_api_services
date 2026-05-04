@@ -1,12 +1,10 @@
-from django.contrib import admin
 from django.urls import path
 
-from core.urls import get_swagger_paths
-from core.views.admin_views import AdminLoginView
+from core.urls import get_admin_paths, get_swagger_paths
 from survey import views
 
 BASE_PATH = "survey/api/v1"
-
+BASE_PATH_ADMIN = "survey/admin"
 
 urlpatterns = [
     path(
@@ -44,12 +42,7 @@ urlpatterns = [
         views.SurveyVersionEntryListView.as_view(),
         name="survey-entries-list",
     ),
-    path(
-        "survey/admin/login/",
-        AdminLoginView.as_view(),
-        name="survey-admin-login",
-    ),
-    path("survey/admin/", admin.site.urls),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH)
+urlpatterns += get_admin_paths(BASE_PATH_ADMIN, enable_oidc=False)

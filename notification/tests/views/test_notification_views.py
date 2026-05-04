@@ -1,6 +1,7 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 from model_bakery import baker
@@ -56,6 +57,31 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
         self.assertIn("title", response.data[0])
         self.assertIn("body", response.data[0])
         self.assertIn("module_slug", response.data[0])
+
+    def test_list_notifications_without_context(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        baker.make(
+            Notification, device=device_1, context={}, notification_type="test_type"
+        )
+
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["context"].get("type"), "test_type")
+
+    def test_list_notifications_with_url_and_deeplink_context(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        with self.assertRaises(ValidationError):
+            baker.make(
+                Notification,
+                device=device_1,
+                context={
+                    "type": "test_type",
+                    "module_slug": "test_slug",
+                    "deeplink": "amsterdam://test",
+                    "url": "https://example.com",
+                },
+                notification_type="test_type",
+            )
 
     @patch("notification.serializers.notification_serializers.ImageSetService")
     def test_list_notifications_with_and_without_image(self, mock_image_set_service):
@@ -124,6 +150,17 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
         self.assertEqual(response.data[1]["id"], str(notification_2.id))
         self.assertEqual(response.data[2]["id"], str(notification_1.id))
 
+    def test_list_notifications_only_visible(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        baker.make(Notification, device=device_1, is_visible=True)
+        baker.make(Notification, device=device_1, is_visible=False)
+
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            len(response.data), 1
+        )  # Only notifications with is_visible=True should be returned
+
 
 class NotificationReadViewTests(BaseNotificationViewTestCase):
     def setUp(self):
@@ -185,6 +222,18 @@ class NotificationReadViewTests(BaseNotificationViewTestCase):
             "Missing header: DeviceId",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+
+    def test_mark_all_as_read_visible_only(self):
+        baker.make(
+            Notification, device=self.test_device, is_read=False, is_visible=True
+        )
+        baker.make(
+            Notification, device=self.test_device, is_read=False, is_visible=False
+        )
+
+        response = self.client.post(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("1 notifications marked as read.", response.data["detail"])
 
 
 class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
@@ -267,3 +316,26 @@ class NotificationDetailViewTests(BaseNotificationViewGetTestCase):
             "Missing header: DeviceId",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+
+    def test_get_notification_detail_invisible(self):
+        self.notification.is_visible = False
+        self.notification.save()
+
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_update_notification_detail_invisible(self):
+        self.notification.is_visible = False
+        self.notification.save()
+
+        response = self.client.patch(
+            self.url,
+            data={"is_read": True},
+            format="json",
+            headers=self.headers_with_device_id,
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.notification.refresh_from_db()
+        self.assertEqual(
+            self.notification.is_read, False
+        )  # Status should not be updated since notification is invisible

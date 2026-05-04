@@ -163,14 +163,17 @@ class ParkingAccountDetailsView(BaseSSPView):
             and p["permit_type"] in self.permit_types_with_balance
         ]
         if permits:
-            url_template = SSPEndpoint.PERMIT.value
-            url = URITemplate(url_template).expand(permit_id=permits[0]["id"])
-            response_data = await self.ssp_api_call(
-                method="GET",
-                endpoint=url,
-            )
-            balance_in_cents = response_data["ssp"]["main_account"]["money_balance"]
-            balance = (balance_in_cents or 0.0) / 100
+            for permit in permits:
+                url_template = SSPEndpoint.PERMIT.value
+                url = URITemplate(url_template).expand(permit_id=permit["id"])
+                response_data = await self.ssp_api_call(
+                    method="GET",
+                    endpoint=url,
+                )
+                balance_in_cents = response_data["ssp"]["main_account"]["money_balance"]
+                balance = (balance_in_cents or 0.0) / 100
+                if balance_in_cents is not None:
+                    break
         else:
             balance = None
 

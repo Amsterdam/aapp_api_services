@@ -1,6 +1,8 @@
 from django.apps import AppConfig
 from django.conf import settings
 
+from notification.firebase import get_firebase_app
+
 
 class NotificationsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
@@ -11,3 +13,5 @@ class NotificationsConfig(AppConfig):
 
         if settings.MOCK_FIREBASE:
             setup_local_development_patches()
+        elif settings.FIREBASE_CREDENTIALS:
+            get_firebase_app()

@@ -33,7 +33,7 @@ class Device(models.Model):
             # or not an empty unique string
             models.CheckConstraint(
                 name="firebase_token_unique_or_null",
-                check=models.Q(firebase_token__isnull=True)
+                condition=models.Q(firebase_token__isnull=True)
                 | ~models.Q(firebase_token=""),
             ),
         ]

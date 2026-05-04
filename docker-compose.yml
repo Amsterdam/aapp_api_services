@@ -2,6 +2,9 @@ x-app: &base-app
   build:
     context: .
     target: app-${SERVICE_NAME}
+    args:
+      APP_UID: ${APP_UID:-1000}
+      APP_GID: ${APP_GID:-1000}
   environment: &base-app-env
     POSTGRES_PASSWORD: dev
     POSTGRES_USER: dev
@@ -14,6 +17,7 @@ x-app: &base-app
     ALLOW_NOTIFICATION_DB_MIGRATE: "true"
   volumes:
     - ./core:/app/core
+    - ./notification:/app/notification
     - ./${SERVICE_NAME}:/app/${SERVICE_NAME}
     - ./pyproject.toml:/app/pyproject.toml
     - ./manage.py:/app/manage.py
@@ -47,7 +51,7 @@ services:
 
   dev:
     <<: *base-app
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/dev-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.local"
@@ -56,11 +60,11 @@ services:
       SECRET_KEY: secret-key-for-development
       EDITOR_GROUP_ID: editor-group-id-for-development
       PUBLISHER_GROUP_ID: publisher-group-id-for-development
-    command: uv run python ./manage.py runserver 0.0.0.0:8000
+    command: python ./manage.py runserver 0.0.0.0:8000
 
   test:
     <<: *base-app
-    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/app-${SERVICE_NAME}:${VERSION:-latest}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/test-${SERVICE_NAME}:${VERSION:-latest}
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.base"
@@ -69,7 +73,8 @@ services:
       SECRET_KEY: secret-key-for-testing
       EDITOR_GROUP_ID: editor-group-id-for-testing
       PUBLISHER_GROUP_ID: publisher-group-id-for-testing
-    command: uv run pytest
+      MOCK_FIREBASE: "true"
+    command: pytest
 
   app:
     <<: *base-app
@@ -81,6 +86,13 @@ services:
 
   lint:
     <<: *base-app
+    build:
+      context: .
+      target: lint
+      args:
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    image: ${REGISTRY:-localhost:5000}/${REPOSITORY:-aapp/images}/lint:${VERSION:-latest}
     volumes:
       - ./core:/app/core
       - ./manage.py:/app/manage.py
@@ -96,6 +108,7 @@ services:
       - ./pyproject.toml:/app/pyproject.toml
       - ./requirements.txt:/app/requirements.txt
       - ./uv.lock:/app/uv.lock
+
   openapi-diff:
     image: openapitools/openapi-diff:latest
     volumes:
@@ -111,3 +124,12 @@ services:
       interval: 5s
       retries: 5
       timeout: 3s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    command: ["start-dev"]

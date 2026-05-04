@@ -1,7 +1,6 @@
 import hashlib
 import json
 import logging
-from asyncio import CancelledError
 from datetime import datetime
 
 import httpx
@@ -19,7 +18,6 @@ from bridge.parking.exceptions import (
     SSLMissingAccessTokenError,
     SSPBadGatewayError,
     SSPCallError,
-    SSPCancelledError,
     SSPForbiddenError,
     SSPNotFoundError,
     SSPPermitNotFoundError,
@@ -110,13 +108,6 @@ class BaseSSPView(generics.GenericAPIView):
                 query_params=query_params,
                 body_data=body_data,
             )
-        except CancelledError as exc:
-            logger.warning(
-                "Task is cancelled by client (%s)",
-                type(exc).__name__,
-                exc_info=True,
-            )
-            raise SSPCancelledError from exc
         except httpx.HTTPError as exc:
             logger.warning(
                 "SSP request failed before response (%s)",
@@ -163,6 +154,8 @@ class BaseSSPView(generics.GenericAPIView):
             raise exceptions.SSPServerError(detail=content)  # Map to 500 status
         if ssp_response.status_code == 502:
             raise exceptions.SSPBadGatewayError()  # Map to 502 status
+        if ssp_response.status_code == 503:
+            raise exceptions.SSPUnavailableError()
         for error in exceptions.SSP_COMMON_ERRORS:
             if error.default_detail in content:
                 raise error()  # Map to common error status

@@ -19,7 +19,12 @@ from construction_work.models.manage_models import (
     WarningMessage,
 )
 from construction_work.models.project_models import Project
-from construction_work.tests import mock_data
+from construction_work.tests.mock_data import (
+    articles,
+    devices,
+    projects,
+    warning_message,
+)
 from construction_work.utils.patch_utils import (
     create_bearer_token,
 )
@@ -73,7 +78,7 @@ class BaseTestManageView(APITestCase):
         self.api_headers["Authorization"] = jwt_token
 
     def create_project_and_publisher(self):
-        project_data = mock_data.projects[0]
+        project_data = projects.MOCK_DATA[0]
         project = Project.objects.create(**project_data)
 
         publisher = ProjectManager.objects.create(
@@ -369,7 +374,7 @@ class TestPublisherAssignProjectView(BaseTestManageView):
         self.api_url_str = "construction-work:manage-publisher-assign-project"
 
     def test_assign_publisher_to_project(self):
-        project = Project.objects.create(**mock_data.projects[0])
+        project = Project.objects.create(**projects.MOCK_DATA[0])
         publisher = ProjectManager.objects.create(
             name="foobar", email="publisher@amsterdam.nl"
         )
@@ -395,7 +400,7 @@ class TestPublisherAssignProjectView(BaseTestManageView):
         self.assertEqual(result.status_code, 403)
 
     def test_assign_unknown_publisher_to_project(self):
-        project = Project.objects.create(**mock_data.projects[0])
+        project = Project.objects.create(**projects.MOCK_DATA[0])
 
         self.update_headers_with_editor_data()
         result = self.client.post(
@@ -449,7 +454,7 @@ class TestPublisherUnassignProjectView(BaseTestManageView):
         self.assertEqual(result.status_code, 403)
 
     def test_unassign_publisher_from_project_that_were_not_linked(self):
-        project = Project.objects.create(**mock_data.projects[0])
+        project = Project.objects.create(**projects.MOCK_DATA[0])
         publisher = ProjectManager.objects.create(
             name="foobar", email="publisher@amsterdam.nl"
         )
@@ -467,7 +472,7 @@ class TestPublisherUnassignProjectView(BaseTestManageView):
         self.assertFalse(project in publisher.projects.all())
 
     def test_unassign_unknown_publisher_from_project(self):
-        project = Project.objects.create(**mock_data.projects[0])
+        project = Project.objects.create(**projects.MOCK_DATA[0])
         self.update_headers_with_editor_data()
         result = self.client.delete(
             reverse(self.api_url_str, kwargs={"pk": 9999, "project_id": project.pk}),
@@ -497,8 +502,8 @@ class TestProjectListForManageView(BaseTestManageView):
         self.api_url = reverse("construction-work:manage-project-list")
 
     def assert_get_all_projects(self):
-        project1 = Project.objects.create(**mock_data.projects[0])
-        project2 = Project.objects.create(**mock_data.projects[1])
+        project1 = Project.objects.create(**projects.MOCK_DATA[0])
+        project2 = Project.objects.create(**projects.MOCK_DATA[1])
 
         result = self.client.get(self.api_url, headers=self.api_headers)
         self.assertEqual(result.status_code, 200)
@@ -519,9 +524,9 @@ class TestProjectListForManageView(BaseTestManageView):
     def test_project_article_warning_count(self):
         self.update_headers_with_editor_data()
 
-        project = Project.objects.create(**mock_data.projects[0])
+        project = Project.objects.create(**projects.MOCK_DATA[0])
 
-        warning_data = mock_data.warning_message.copy()
+        warning_data = warning_message.MOCK_DATA.copy()
         warning_data["project_id"] = project.pk
 
         warnings = [
@@ -530,7 +535,7 @@ class TestProjectListForManageView(BaseTestManageView):
             WarningMessage.objects.create(**warning_data),
         ]
 
-        for article_data in mock_data.articles:
+        for article_data in articles.MOCK_DATA:
             article = Article.objects.create(**article_data)
             article.projects.add(project)
 
@@ -542,17 +547,17 @@ class TestProjectListForManageView(BaseTestManageView):
         )
 
         self.assertEqual(relevant_project["warning_count"], len(warnings))
-        self.assertEqual(relevant_project["article_count"], len(mock_data.articles))
+        self.assertEqual(relevant_project["article_count"], len(articles.MOCK_DATA))
 
     def test_get_projects_related_to_publisher(self):
         publisher = ProjectManager.objects.create(email="publisher@amsterdam.nl")
 
-        project_related = Project.objects.create(**mock_data.projects[0])
+        project_related = Project.objects.create(**projects.MOCK_DATA[0])
 
         publisher.projects.add(project_related)
         publisher.save()
 
-        project_unrelated = Project.objects.create(**mock_data.projects[1])
+        project_unrelated = Project.objects.create(**projects.MOCK_DATA[1])
 
         self.update_headers_with_publisher_data(publisher.email)
 
@@ -570,7 +575,7 @@ class TestProjectListForManageView(BaseTestManageView):
         self.assertEqual(result.status_code, 403)
 
     def test_get_projects_with_related_publishers_name_and_emails(self):
-        project = Project.objects.create(**mock_data.projects[0])
+        project = Project.objects.create(**projects.MOCK_DATA[0])
         manager1 = ProjectManager.objects.create(
             name="Publisher 1", email="publisher1@amsterdam.nl"
         )
@@ -603,7 +608,7 @@ class TestProjectDetailsForManageView(BaseTestManageView):
     def test_get_project_details_success(self):
         self.update_headers_with_editor_data()
 
-        project = Project.objects.create(**mock_data.projects[0])
+        project = Project.objects.create(**projects.MOCK_DATA[0])
 
         manager1 = ProjectManager.objects.create(email="editor@amsterdam.nl")
         manager1.projects.add(project)
@@ -613,7 +618,7 @@ class TestProjectDetailsForManageView(BaseTestManageView):
         manager2.projects.add(project)
         manager2.save()
 
-        warning_data = mock_data.warning_message.copy()
+        warning_data = warning_message.MOCK_DATA.copy()
         warning_data["project_id"] = project.pk
 
         warning1 = WarningMessage.objects.create(**warning_data)
@@ -650,7 +655,7 @@ class TestProjectDetailsForManageView(BaseTestManageView):
         self.assertEqual(result.status_code, 200)
 
     def test_get_unassigned_project_as_publisher(self):
-        project_data = mock_data.projects[0]
+        project_data = projects.MOCK_DATA[0]
         project = Project.objects.create(**project_data)
 
         self.update_headers_with_publisher_data()
@@ -765,7 +770,7 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         When editor creates warning, they are automatically linked
         as project manager to related project.
         """
-        project_data = mock_data.projects[0].copy()
+        project_data = projects.MOCK_DATA[0].copy()
         project = Project.objects.create(**project_data)
 
         editor_email = "editor@amsterdam.nl"
@@ -896,7 +901,7 @@ class TestWarningMessageCreateView(TestWarningMessageCRUDBaseView):
         }
 
         # Add follower of project, so notification will be sent
-        device_data = mock_data.devices[0].copy()
+        device_data = devices.MOCK_DATA[0].copy()
         new_device = Device.objects.create(**device_data)
         new_device.followed_projects.add(project)
 
@@ -920,7 +925,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         self.api_url_str = "construction-work:manage-warning-read-update-delete"
 
     def create_warning(self, project, publisher):
-        warning_data = mock_data.warning_message.copy()
+        warning_data = warning_message.MOCK_DATA.copy()
         warning_data["project"] = project
         warning_data["project_manager"] = publisher
         return WarningMessage.objects.create(**warning_data)
@@ -1108,7 +1113,7 @@ class TestWarningMessageDetailView(TestWarningMessageCRUDBaseView):
         self.update_headers_with_publisher_data(publisher.email)
 
         # Add follower of project, so notification will be sent
-        device_data = mock_data.devices[0].copy()
+        device_data = devices.MOCK_DATA[0].copy()
         new_device = Device.objects.create(**device_data)
         new_device.followed_projects.add(project)
 
