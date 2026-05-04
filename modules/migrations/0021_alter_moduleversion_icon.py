@@ -4,15 +4,39 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('modules', '0020_alter_moduleversion_icon'),
+        ("modules", "0020_alter_moduleversion_icon"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='moduleversion',
-            name='icon',
-            field=models.CharField(choices=[('alert', 'alert'), ('announcement', 'announcement'), ('boat-charging', 'boat-charging'), ('chat', 'chat'), ('chatting', 'chatting'), ('city-pass', 'city-pass'), ('crown', 'crown'), ('eye', 'eye'), ('facade', 'facade'), ('fire', 'fire'), ('housing', 'housing'), ('info', 'info'), ('map-marker-on-map', 'map-marker-on-map'), ('my-amsterdam', 'my-amsterdam'), ('organic-waste-container', 'organic-waste-container'), ('construction-work', 'construction-work'), ('parking', 'parking'), ('trash-bin', 'trash-bin'), ('trash-bag', 'trash-bag'), ('vote', 'vote')], max_length=100, verbose_name='Icoon'),
+            model_name="moduleversion",
+            name="icon",
+            field=models.CharField(
+                choices=[
+                    ("alert", "alert"),
+                    ("announcement", "announcement"),
+                    ("boat-charging", "boat-charging"),
+                    ("chat", "chat"),
+                    ("chatting", "chatting"),
+                    ("city-pass", "city-pass"),
+                    ("crown", "crown"),
+                    ("eye", "eye"),
+                    ("facade", "facade"),
+                    ("fire", "fire"),
+                    ("housing", "housing"),
+                    ("info", "info"),
+                    ("map-marker-on-map", "map-marker-on-map"),
+                    ("my-amsterdam", "my-amsterdam"),
+                    ("organic-waste-container", "organic-waste-container"),
+                    ("construction-work", "construction-work"),
+                    ("parking", "parking"),
+                    ("trash-bin", "trash-bin"),
+                    ("trash-bag", "trash-bag"),
+                    ("vote", "vote"),
+                ],
+                max_length=100,
+                verbose_name="Icoon",
+            ),
         ),
     ]
