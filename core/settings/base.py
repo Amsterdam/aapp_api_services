@@ -238,7 +238,7 @@ ALLOW_NOTIFICATION_DB_MIGRATE = (
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "nl-NL"
 
 TIME_ZONE = "Europe/Amsterdam"
 USE_I18N = True
