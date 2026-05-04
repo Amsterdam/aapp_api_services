@@ -41,7 +41,7 @@ parameters:
 
   - name: forceDeploy
     type: boolean
-    default: true
+    default: false
 
   - name: services
     type: object
