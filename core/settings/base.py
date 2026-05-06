@@ -250,6 +250,7 @@ DEFAULT_CHARSET = "utf-8"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+REQUEST_LOG_SAMPLE_RATE = float(os.getenv("REQUEST_LOG_SAMPLE_RATE", 1.0))
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -259,10 +260,16 @@ LOGGING = {
             "format": "%(name)s - %(message)s",
         },
     },
+    "filters": {
+        "request_sampling": {
+            "()": "core.utils.logging_utils.RequestLogSamplingFilter",
+        },
+    },
     "handlers": {
         "console": {
             "class": "rich.logging.RichHandler",
             "formatter": "default",
+            "filters": ["request_sampling"],
             "level": "INFO",
             # RichHandler options:
             "rich_tracebacks": True,
