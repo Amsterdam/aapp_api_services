@@ -45,7 +45,7 @@ class LocationView(BaseView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=200)
 
-    @cache_function(timeout=60)
+    @cache_function(timeout=60, ignore_first_arg=True)
     async def get_location_statuses(self) -> dict[str, str]:
         """Fetch all charging status data and construct a mapping of location IDs.
 

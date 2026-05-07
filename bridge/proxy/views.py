@@ -7,6 +7,7 @@ import requests
 from django.conf import settings
 from django.db import connections
 from django.http import HttpResponse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import extend_schema
@@ -310,3 +311,11 @@ class HealthCheckView(GenericAPIView):
                 {"status": "unready"}, status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         return Response({"status": "ok"})
+
+
+class ServerTimeView(GenericAPIView):
+    def get(self, request, *args, **kwargs) -> Response:
+        """Returns the current server time"""
+        return Response(
+            {"server_time": timezone.now().isoformat()}, status=status.HTTP_200_OK
+        )

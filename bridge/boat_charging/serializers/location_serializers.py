@@ -49,6 +49,17 @@ class LocationListResponseSerializer(serializers.Serializer):
     features = LocationListItemSerializer(many=True)
 
 
+class LocationListItemSerializer(serializers.Serializer):
+    type = serializers.CharField(default="Feature", read_only=True)
+    geometry = PointGeometrySerializer()
+    properties = LocationPropertiesSerializer()
+
+
+class LocationListResponseSerializer(serializers.Serializer):
+    type = serializers.CharField(default="FeatureCollection", read_only=True)
+    features = LocationListItemSerializer(many=True)
+
+
 class TariffSerializer(serializers.Serializer):
     id = serializers.CharField()
     energy_price_per_kwh = serializers.FloatField()

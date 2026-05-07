@@ -65,6 +65,22 @@ class TestLocationView(BoatChargingTestCase):
             response.data["features"][2]["properties"]["status"], "OCCUPIED"
         )
 
+        # check that the address is returned in the expected format
+        self.assertEqual("address" in response.data["features"][0]["properties"], True)
+        self.assertEqual(
+            response.data["features"][0]["properties"]["address"],
+            {
+                "street": "Transformatorweg",
+                "number": "104",
+                "postcode": "1234 AM",
+                "city": "Amsterdam",
+                "coordinates": {
+                    "lat": 52.387313,
+                    "lon": 4.822313,
+                },
+            },
+        )
+
 
 class TestLocationDetailView(BoatChargingTestCase):
     def setUp(self):
