@@ -94,7 +94,7 @@ COPY contact /app/contact
 FROM runtime AS app-construction_work
 COPY construction_work /app/construction_work
 
-### Construction Work stages
+### News stages
 FROM runtime AS app-news
 COPY news /app/news
 
