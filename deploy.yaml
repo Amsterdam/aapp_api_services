@@ -48,6 +48,7 @@ parameters:
       - bridge
       - city_pass
       - construction_work
+      - news
       - contact
       - image
       - modules

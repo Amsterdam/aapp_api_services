@@ -1,9 +1,11 @@
+import logging
 import re
 from unittest.mock import patch
 
 import freezegun
 import responses
 from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 
 from bridge.proxy.tests import mock_data
@@ -99,6 +101,13 @@ class TestWasteGuideView(ResponsesActivatedAPITestCase):
         self.assertEqual(
             self.rsp_get.call_count, 1
         )  # Cache should be used, so call count should not increase
+
+    @override_settings(REQUEST_LOG_SAMPLE_RATE=1.0)  # Ensure all requests are logged during this test
+    def test_logging_polling(self):
+        logger = logging.getLogger("django.server")
+        with self.assertLogs(logger, level="INFO") as log:
+            self.client.get(self.url, headers=self.api_headers)
+            self.assertTrue(any("/waste-guide/api/v1" in message for message in log.output))
 
 
 class TestAddressSearchByNameView(ResponsesActivatedAPITestCase):
