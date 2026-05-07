@@ -10,6 +10,11 @@ from django.core.cache import cache
 def cache_function(timeout: int, ignore_first_arg: bool = False):
     """
     Decorator to cache function results for timeout seconds. Cache key is based on function name and arguments.
+
+    Args:
+        timeout (int): Cache timeout in seconds
+        ignore_first_arg (bool): Whether to ignore the first argument when generating the cache key.
+            This is useful for instance methods where the first argument is 'self' and should not be part of the cache key.
     """
 
     def decorator(func):
