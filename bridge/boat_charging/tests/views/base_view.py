@@ -16,17 +16,15 @@ class TestBaseView(BoatChargingTestCase):
         self.view = BaseView()
 
     def test_convert_regular_hours(self):
-        regular_hours = (
-            [
-                {"weekday": 1, "periodBegin": "08:00", "periodEnd": "18:00"},
-                {"weekday": 2, "periodBegin": "08:00", "periodEnd": "18:00"},
-                {"weekday": 3, "periodBegin": "09:00", "periodEnd": "19:30"},
-                {"weekday": 4, "periodBegin": "04:12", "periodEnd": "08:12"},
-                {"weekday": 5, "periodBegin": "07:12", "periodEnd": "13:12"},
-                {"weekday": 6, "periodBegin": "08:12", "periodEnd": "21:12"},
-                {"weekday": 7, "periodBegin": "07:19", "periodEnd": "08:19"},
-            ],
-        )
+        regular_hours = [
+            {"weekday": 1, "periodBegin": "08:00", "periodEnd": "18:00"},
+            {"weekday": 2, "periodBegin": "08:00", "periodEnd": "18:00"},
+            {"weekday": 3, "periodBegin": "09:00", "periodEnd": "19:30"},
+            {"weekday": 4, "periodBegin": "04:12", "periodEnd": "08:12"},
+            {"weekday": 5, "periodBegin": "07:12", "periodEnd": "13:12"},
+            {"weekday": 6, "periodBegin": "08:12", "periodEnd": "21:12"},
+            {"weekday": 7, "periodBegin": "07:19", "periodEnd": "08:19"},
+        ]
         converted_hours = self.view._convert_regular_hours(regular_hours)
         expected_converted_hours = [
             {

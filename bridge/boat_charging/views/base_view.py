@@ -181,7 +181,7 @@ class BaseView(GenericAPIView):
         """
         converted_hours = []
         for entry in regular_hours:
-            weekday = entry["weekday"] % 7  # convert 1-7 to 0-6
+            weekday = entry["weekday"] % 7  # convert 7 to 0. Keep other days the same
             opening_time = entry["periodBegin"]
             closing_time = entry["periodEnd"]
 
