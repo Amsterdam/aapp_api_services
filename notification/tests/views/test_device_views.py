@@ -490,7 +490,7 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             response.json(),
-            {"bag_nummeraanduiding_id": ["This field is required."]},
+            {"bag_nummeraanduiding_id": ["Dit veld is vereist."]},
         )
 
     def test_create_missing_bag_nummeraanduiding_id_returns_validation_error(self):
@@ -502,7 +502,7 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             response.json(),
-            {"bag_nummeraanduiding_id": ["This field is required."]},
+            {"bag_nummeraanduiding_id": ["Dit veld is vereist."]},
         )
 
     def test_upsert_second_post_updates(self):
@@ -531,7 +531,7 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             response.json(),
-            {"bag_nummeraanduiding_id": ["This field is required."]},
+            {"bag_nummeraanduiding_id": ["Dit veld is vereist."]},
         )
 
     def test_retrieve_success(self):

@@ -73,7 +73,7 @@ stages:
                   displayName: Setup kubectl
 
                 - ${{ if eq(parameters.force, true) }}:
-                  - script: helm uninstall $(service_name)
+                  - script: helm uninstall $(service_name) --ignore-not-found
                     displayName: Helm uninstall $(service_name)
 
                 - ${{ if ne(parameters.migrationRollbackTarget, ' ') }}:
