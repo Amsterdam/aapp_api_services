@@ -99,6 +99,7 @@ services:
       - ./bridge:/app/bridge
       - ./city_pass:/app/city_pass
       - ./construction_work:/app/construction_work
+      - ./news:/app/news
       - ./contact:/app/contact
       - ./image:/app/image
       - ./modules:/app/modules
