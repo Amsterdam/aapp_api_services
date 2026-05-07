@@ -63,7 +63,7 @@ class SessionDetailView(SessionView):
         serializer_data = self.get_session_data(response_json)
 
         # Enrich data with transaction
-        transaction_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['TRANSACTIONS']}/{quote(response_json['transactionId'], safe='')}"
+        transaction_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['TRANSACTIONS']}/{quote(response_json['transactionId'].split('_')[-1], safe='')}"
         transaction_json = await self.api_call("get", endpoint=transaction_endpoint)
         serializer_data["transaction"] = self.get_transaction_data(transaction_json)
 
