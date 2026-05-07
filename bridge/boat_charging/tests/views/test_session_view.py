@@ -43,7 +43,7 @@ class TestSessionDetailView(BoatChargingTestCase):
         )
 
         transaction_endpoint = (
-            f"{settings.BOAT_CHARGING_ENDPOINTS['TRANSACTIONS']}/VCPS-7BMY3_OCPPJ16_243"
+            f"{settings.BOAT_CHARGING_ENDPOINTS['TRANSACTIONS']}/243"
         )
         resp_transaction = respx.get(transaction_endpoint).mock(
             return_value=httpx.Response(200, json=transaction_detail.MOCK_RESPONSE)
