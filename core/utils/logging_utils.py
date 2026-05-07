@@ -28,19 +28,20 @@ def setup_opentelemetry():
         return
 
     logger.debug("Setting up OpenTelemetry...")
+    instrumentation_options = {
+        "azure_sdk": {"enabled": True},
+        "django": {"enabled": True},
+        "psycopg2": {"enabled": settings.ENVIRONMENT_SLUG in ("o", "t")},
+        "requests": {"enabled": True},
+        "urllib": {"enabled": True},
+        "urllib3": {"enabled": True},
+        # "httpx": {"enabled": True},  # Doesn't work via configure_azure_monitor
+    }
     configure_azure_monitor(
         connection_string=settings.APPLICATIONINSIGHTS_CONNECTION_STRING,
         enable_live_metrics=True,
         logger_name="root",
-        instrumentation_options={
-            "azure_sdk": {"enabled": True},
-            "django": {"enabled": True},
-            "psycopg2": {"enabled": True},
-            "requests": {"enabled": True},
-            "urllib": {"enabled": True},
-            "urllib3": {"enabled": True},
-            # "httpx": {"enabled": True},  # Doesn't work via configure_azure_monitor
-        },
+        instrumentation_options=instrumentation_options,
         resource=Resource.create({SERVICE_NAME: f"api-{settings.SERVICE_NAME}"}),
     )
     HTTPXClientInstrumentor().instrument()
