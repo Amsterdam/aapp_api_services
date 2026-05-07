@@ -115,8 +115,14 @@ class BaseView(GenericAPIView):
             raise BoatChargingClientError(response.text)
         return
 
-    def get_location_feature_data(self, item) -> dict:
+    def get_location_feature_data(
+        self, item: dict[str, any], status_mapping: dict[str, str]
+    ) -> dict[str, any]:
         item_dict = self.get_location_data(item)
+
+        # add status to the properties based on the location id and the status mapping
+        location_id = item_dict["id"]
+        item_dict["status"] = status_mapping.get(location_id, "UNKNOWN")
         return {
             "type": "Feature",
             "properties": item_dict,
@@ -129,7 +135,7 @@ class BaseView(GenericAPIView):
             },
         }
 
-    def get_location_data(self, item) -> dict:
+    def get_location_data(self, item: dict[str, any]) -> dict[str, any]:
         street, number = self.split_address(item["address"])
 
         return {
@@ -157,7 +163,9 @@ class BaseView(GenericAPIView):
             "total_sockets": item["chargingStationCount"],
         }
 
-    def _convert_regular_hours(self, regular_hours: list) -> list:
+    def _convert_regular_hours(
+        self, regular_hours: list[dict[str, str | int]]
+    ) -> list[dict[str, any]]:
         """
         The regular hour from the API are in the format:
         {

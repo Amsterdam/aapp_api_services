@@ -33,10 +33,10 @@ class LocationView(BaseView):
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"],
         )
         status_mapping = await self.get_location_statuses()
-        features = [self.get_location_feature_data(item) for item in response_json]
-        for item in features:
-            location_id = item["properties"]["id"]
-            item["properties"]["status"] = status_mapping.get(location_id, "UNKNOWN")
+        features = [
+            self.get_location_feature_data(item, status_mapping)
+            for item in response_json
+        ]
         serializer_data = {
             "type": "FeatureCollection",
             "features": features,
