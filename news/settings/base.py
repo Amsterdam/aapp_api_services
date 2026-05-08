@@ -15,3 +15,5 @@ REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
 SPECTACULAR_SETTINGS["TITLE"] = "News API"
 
 STATIC_URL = "/news/static/"
+
+IPROX_SERVER = os.getenv("IPROX_SERVER", "https://www.acc.amsterdam.nl/")
