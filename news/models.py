@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils import timezone
 
-
 ARTICLE_TYPE_CHOICES = [
     ("article", "Article"),
     ("highlight", "Highlight"),
