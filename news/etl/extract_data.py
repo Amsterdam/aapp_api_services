@@ -101,7 +101,7 @@ class IproxFetcher:
 
         for source in self.sources:
             logger.info(f"Collecting list of items for source {source}")
-            source_url = urljoin(self.iprox_fetch_url, source["index"])
+            source_url = urljoin(self.iprox_fetch_url.rstrip("/") + "/", source["index"])
             if self.is_paginated:
                 # If the API is paginated, we need to fetch all pages
                 page = 0
@@ -158,7 +158,7 @@ class IproxFetcher:
 
     def fetch_items_data(self, items: dict) -> list:
         urls = [
-            urljoin(self.iprox_detail_url, str(item_id)) for item_id in items.keys()
+            urljoin(self.iprox_detail_url.rstrip("/") + "/", str(item_id)) for item_id in items.keys()
         ]
         logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
         upsert_item_data = asyncio.run(self._async_fetch(urls))
