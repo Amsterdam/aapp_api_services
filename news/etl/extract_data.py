@@ -165,6 +165,20 @@ class IproxFetcher:
         logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
         upsert_item_data = asyncio.run(self._async_fetch(urls))
         print("Fetched item details:", upsert_item_data)
+        print(len(upsert_item_data), "items fetched, but only", len(items), "items expected based on input IDs")
+        for item in upsert_item_data:
+            print("Processing item detail:", item)
+            if item is None:
+                logger.warning("Received None for an item detail fetch, skipping")
+                continue
+            item_id = item.get("id")
+            if item_id is None:
+                logger.warning("Received item detail without ID, skipping: %s", item)
+                continue
+            if item_id not in items:
+                logger.warning(f"Received item detail with ID {item_id} not in input items, skipping")
+                continue
+            print({**item, **items[item["id"]]})
         upsert_item_data = [
             {**item, **items[item["id"]]}
             for item in upsert_item_data
