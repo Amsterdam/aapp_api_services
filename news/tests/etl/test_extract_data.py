@@ -12,10 +12,7 @@ class ExtractDataTest(TestCase):
     def setUp(self):
         self.fetch_url = "https://api.example.com/fetch/"
         self.detail_url = "https://api.example.com/detail/"
-        self.sources = [
-            {"index": "highlighted", "type": "highlighted", "district": None},
-            {"index": "liveblogs", "type": "liveblog", "district": None},
-        ]
+        
 
     def test_fetch_all_items_single_source(self):
         resp = respx.get(f"{self.fetch_url}/highlighted").mock(
@@ -39,8 +36,12 @@ class ExtractDataTest(TestCase):
         resp_liveblogs = respx.get(f"{self.fetch_url}/liveblogs?page=0").mock(
             return_value=httpx.Response(200, json=liveblogs.MOCK_RESPONSE)
         )
+        sources = [
+            {"index": "highlighted", "type": "highlighted", "district": None},
+            {"index": "liveblogs", "type": "liveblog", "district": None},
+        ]
         fetcher = IproxFetcher(
-            self.fetch_url, self.detail_url, sources=self.sources, is_paginated=True
+            self.fetch_url, self.detail_url, sources=sources, is_paginated=True
         )
 
         items = fetcher.fetch_all_items()
@@ -59,7 +60,10 @@ class ExtractDataTest(TestCase):
         resp_highlighted_detail_2 = respx.get(f"{self.detail_url}/1101235").mock(
             return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
         )
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
+        sources = [
+            {"index": "highlighted", "type": "highlighted", "district": None}
+        ]
+        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources, is_paginated=True)
         # Prepare items dict
         items = {
             1101234: {"id": 1101234, "type": "highlighted", "district": None},
@@ -116,7 +120,10 @@ class ExtractDataTest(TestCase):
         resp_highlighted_detail_2 = respx.get(f"{self.detail_url}/1101235").mock(
             return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
         )
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
+        sources = [
+            {"index": "highlighted", "type": "highlighted", "district": None}
+        ]
+        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources, is_paginated=True)
 
         result = fetcher.extract()
 
@@ -136,7 +143,10 @@ class ExtractDataTest(TestCase):
         resp_highlighted_detail_2 = respx.get(f"{self.detail_url}/1101235").mock(
             return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
         )
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
+        sources = [
+            {"index": "highlighted", "type": "highlighted", "district": None}
+        ]
+        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources, is_paginated=True)
 
         result = fetcher.extract()
         self.assertEqual(resp_highlighted.call_count, 1)
