@@ -1,9 +1,11 @@
-from unittest.mock import AsyncMock, patch
-
+import httpx
+import respx
 from django.test import TestCase
+from model_bakery import baker
 
 from news.etl.extract_data import IproxFetcher
-from news.tests.mock_data import highlighted, liveblogs
+from news.models import NewsArticle
+from news.tests.mock_data import highlighted, item_article, liveblogs
 
 
 class ExtractDataTest(TestCase):
@@ -15,58 +17,65 @@ class ExtractDataTest(TestCase):
             {"index": "liveblogs", "type": "liveblog", "district": None},
         ]
 
-    @patch("news.etl.extract_data.IproxFetcher._async_fetch", new_callable=AsyncMock)
-    def test_fetch_all_items_single_source(self, mock_async_fetch):
+    def test_fetch_all_items_single_source(self):
+        resp = respx.get(f"{self.fetch_url}/highlighted").mock(
+            return_value=httpx.Response(200, json=highlighted.MOCK_RESPONSE)
+        )
         # Simulate no sources (default fetch)
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
-        # Return highlighted mock data
-        mock_async_fetch.return_value = highlighted.MOCK_RESPONSE
 
         items = fetcher.fetch_all_items()
+        self.assertEqual(resp.call_count, 1)
         self.assertIsInstance(items, dict)
         self.assertIn(1101234, items)
         self.assertIn(1101235, items)
         self.assertEqual(items[1101234]["type"], None)
         self.assertEqual(items[1101234]["district"], None)
 
-    @patch("news.etl.extract_data.IproxFetcher._async_fetch", new_callable=AsyncMock)
-    def test_fetch_all_items_multiple_sources(self, mock_async_fetch):
+    def test_fetch_all_items_multiple_sources(self):
+        resp_highlighted = respx.get(f"{self.fetch_url}/highlighted?page=0").mock(
+            return_value=httpx.Response(200, json=highlighted.MOCK_RESPONSE)
+        )
+        resp_liveblogs = respx.get(f"{self.fetch_url}/liveblogs?page=0").mock(
+            return_value=httpx.Response(200, json=liveblogs.MOCK_RESPONSE)
+        )
         fetcher = IproxFetcher(
             self.fetch_url, self.detail_url, sources=self.sources, is_paginated=True
         )
-        # Return highlighted for first, liveblogs for second
-        mock_async_fetch.side_effect = [
-            highlighted.MOCK_RESPONSE,
-            liveblogs.MOCK_RESPONSE,
-        ]
 
         items = fetcher.fetch_all_items()
+        self.assertEqual(resp_highlighted.call_count, 1)
+        self.assertEqual(resp_liveblogs.call_count, 1)
         self.assertIsInstance(items, dict)
         self.assertIn(1101234, items)
         self.assertIn(1321234, items)
         self.assertEqual(items[1101234]["type"], "highlighted")
         self.assertEqual(items[1321234]["type"], "liveblog")
 
-    @patch("news.etl.extract_data.IproxFetcher._async_fetch", new_callable=AsyncMock)
-    def test_fetch_items_data_merges_details(self, mock_async_fetch):
+    def test_fetch_items_data_merges_details(self):
+        resp_highlighted_detail_1 = respx.get(f"{self.detail_url}/1101234").mock(
+            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
+        )
+        resp_highlighted_detail_2 = respx.get(f"{self.detail_url}/1101235").mock(
+            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
+        )
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
         # Prepare items dict
         items = {
             1101234: {"id": 1101234, "type": "highlighted", "district": None},
             1101235: {"id": 1101235, "type": "highlighted", "district": None},
         }
-        # Mock detail responses
-        detail_data = [
-            {"id": 1101234, "extra": "foo"},
-            {"id": 1101235, "extra": "bar"},
-        ]
-        mock_async_fetch.return_value = detail_data
+
         result = fetcher.fetch_items_data(items)
+        self.assertEqual(resp_highlighted_detail_1.call_count, 1)
+        self.assertEqual(resp_highlighted_detail_2.call_count, 1)
         self.assertEqual(len(result), 2)
-        self.assertEqual(result[0]["extra"], "foo")
+        self.assertEqual(result[0]["title"], item_article.MOCK_RESPONSE["title"])
         self.assertEqual(result[0]["type"], "highlighted")
         self.assertEqual(result[0]["district"], None)
-        self.assertEqual(result[1]["extra"], "bar")
+        self.assertEqual(result[1]["title"], item_article.MOCK_RESPONSE["title"])
+        self.assertEqual(result[1]["type"], "highlighted")
+        self.assertEqual(result[1]["district"], None)
 
     def test_is_altered(self):
         # db_item and item are dicts with relevant fields
@@ -97,55 +106,40 @@ class ExtractDataTest(TestCase):
         item3["type"] = "liveblog"
         self.assertTrue(IproxFetcher.is_altered(db_item, item3))
 
-    @patch("news.etl.extract_data.IproxFetcher.fetch_all_items")
-    @patch("news.etl.extract_data.IproxFetcher.fetch_items_data")
-    def test_extract(self, mock_fetch_items_data, mock_fetch_all_items):
+    def test_extract_new(self):
+        resp_highlighted = respx.get(f"{self.fetch_url}/highlighted?page=0").mock(
+            return_value=httpx.Response(200, json=highlighted.MOCK_RESPONSE)
+        )
+        resp_highlighted_detail = respx.get(f"{self.detail_url}/1101234").mock(
+            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
+        )
+        resp_highlighted_detail_2 = respx.get(f"{self.detail_url}/1101235").mock(
+            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
+        )
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
-        # Simulate all_iprox_items and db_articles
-        mock_fetch_all_items.return_value = {
-            1: {
-                "id": 1,
-                "created": "2024-01-01",
-                "modified": "2024-01-02",
-                "publication_date": "2024-01-03",
-                "expiration_date": "2024-01-04",
-                "type": "highlighted",
-                "district": None,
-            },
-            2: {
-                "id": 2,
-                "created": "2024-01-01",
-                "modified": "2024-01-02",
-                "publication_date": "2024-01-03",
-                "expiration_date": "2024-01-04",
-                "type": "highlighted",
-                "district": None,
-            },
-        }
-        # Patch NewsArticle.objects.values to simulate DB
-        with patch("news.etl.extract_data.NewsArticle.objects.values") as mock_values:
-            mock_values.return_value = [
-                {
-                    "foreign_id": 1,
-                    "creation_date": "2024-01-01",
-                    "modification_date": "2024-01-02",
-                    "publication_date": "2024-01-03",
-                    "expiration_date": "2024-01-04",
-                    "type": "highlighted",
-                    "district": None,
-                },
-            ]
-            # Only item 2 is new
-            mock_fetch_items_data.return_value = [
-                {
-                    "id": 2,
-                    "created": "2024-01-01",
-                    "modified": "2024-01-02",
-                    "publication_date": "2024-01-03",
-                    "expiration_date": "2024-01-04",
-                    "type": "highlighted",
-                    "district": None,
-                }
-            ]
-            result = fetcher.extract()
-            self.assertEqual(result, mock_fetch_items_data.return_value)
+
+        result = fetcher.extract()
+
+        self.assertEqual(resp_highlighted.call_count, 1)
+        self.assertEqual(resp_highlighted_detail.call_count, 1)
+        self.assertEqual(resp_highlighted_detail_2.call_count, 1)
+        self.assertEqual(len(result), 2)
+
+    def test_extract_altered(self):
+        baker.make(NewsArticle, foreign_id=1101234, modification_date="2024-01-01")
+        resp_highlighted = respx.get(f"{self.fetch_url}/highlighted?page=0").mock(
+            return_value=httpx.Response(200, json=highlighted.MOCK_RESPONSE)
+        )
+        resp_highlighted_detail = respx.get(f"{self.detail_url}/1101234").mock(
+            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
+        )
+        resp_highlighted_detail_2 = respx.get(f"{self.detail_url}/1101235").mock(
+            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
+        )
+        fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
+
+        result = fetcher.extract()
+        self.assertEqual(resp_highlighted.call_count, 1)
+        self.assertEqual(resp_highlighted_detail.call_count, 1)
+        self.assertEqual(resp_highlighted_detail_2.call_count, 1)
+        self.assertEqual(len(result), 2)

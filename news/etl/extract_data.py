@@ -109,7 +109,6 @@ class IproxFetcher:
                     paginated_url = f"{source_url}?page={page}"
                     result = asyncio.run(self._async_fetch([paginated_url]))
                     items = result.get("items", [])
-
                     for item in items:
                         date_string = item.get("modified", settings.EPOCH)
                         item["modified"] = datetime.strptime(
@@ -123,7 +122,7 @@ class IproxFetcher:
                             )
                         all_items[item["id"]] = item
                     pages = result.get("pages", 1)
-                    if page == pages:
+                    if page == pages - 1:
                         break
                     page += 1
             else:
