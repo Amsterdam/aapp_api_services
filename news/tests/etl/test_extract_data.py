@@ -9,8 +9,8 @@ from news.tests.mock_data import highlighted, item_article, liveblogs
 
 class ExtractDataTest(TestCase):
     def setUp(self):
-        self.fetch_url = "https://api.example.com/fetch/"
-        self.detail_url = "https://api.example.com/detail/"
+        self.fetch_url = "https://api.example.com/fetch"
+        self.detail_url = "https://api.example.com/detail"
 
     def test_fetch_all_items_single_source(self):
         # Simulate no sources (default fetch)
