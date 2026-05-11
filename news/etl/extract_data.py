@@ -99,36 +99,21 @@ class IproxFetcher:
     def fetch_all_items(self) -> dict:
         """Get a list of items from the IPROX API."""
         all_items = {}
+
         if self.sources is None:
             result = asyncio.run(self._async_fetch([self.iprox_fetch_url]))[0]
             if not result:
                 return None
-                        
+
             if not self.is_paginated:
                 print("Result for URL", self.iprox_fetch_url, ":", result)
-                for item in result:
-                    date_string = item.get("modified", settings.EPOCH)
-                    item["modified"] = datetime.strptime(
-                        date_string, settings.DATE_FORMAT_IPROX
-                    )
-                    item["type"] = None
-                    item["district"] = None
-                    all_items[item["id"]] = item
+                all_items = self._process_items(result, all_items)
                 return all_items
-            
             else:
                 print("Result for URL", self.iprox_fetch_url, ":", result)
                 items = result.get("items", [])
-                for item in items:
-                    date_string = item.get("modified", settings.EPOCH)
-                    item["modified"] = datetime.strptime(
-                        date_string, settings.DATE_FORMAT_IPROX
-                    )
-                    item["type"] = None
-                    item["district"] = None
-                    all_items[item["id"]] = item
+                all_items = self._process_items(items, all_items)
                 return all_items
-
 
         for source in self.sources:
             logger.info(f"Collecting list of items for source {source}")
@@ -141,18 +126,7 @@ class IproxFetcher:
                     result = asyncio.run(self._async_fetch([paginated_url]))[0]
                     print("Result for URL", paginated_url, ":", result)
                     items = result.get("items", [])
-                    for item in items:
-                        date_string = item.get("modified", settings.EPOCH)
-                        item["modified"] = datetime.strptime(
-                            date_string, settings.DATE_FORMAT_IPROX
-                        )
-                        item["type"] = source["type"]
-                        item["district"] = source.get("district")
-                        if item["id"] in all_items:
-                            logger.warning(
-                                f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
-                            )
-                        all_items[item["id"]] = item
+                    all_items = self._process_items(items, all_items, source["type"], source.get("district"), source)
                     pages = result.get("pages", 1)
                     if page == pages - 1:
                         break
@@ -161,20 +135,35 @@ class IproxFetcher:
                 result = asyncio.run(self._async_fetch([source_url]))[0]
                 if not result:
                     return None
-                for item in result:
-                    date_string = item.get("modified", settings.EPOCH)
-                    item["modified"] = datetime.strptime(
-                        date_string, settings.DATE_FORMAT_IPROX
-                    )
-                    item["type"] = source["type"]
-                    item["district"] = source.get("district")
-                    if item["id"] in all_items:
-                        logger.warning(
-                            f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
-                        )
-                    all_items[item["id"]] = item
+                all_items = self._process_items(result, all_items, source["type"], source.get("district"), source)
         return all_items
+    
+    @staticmethod
+    def _process_items(items, all_items, type_value=None, district_value=None, source=None):
+        
+        for item in items:
+            # convert dates from string to datetime objects
+            created_string = item.get("created", settings.EPOCH)
+            item["created"] = datetime.strptime(created_string, settings.DATE_FORMAT_IPROX)
 
+            modified_string = item.get("modified", settings.EPOCH)
+            item["modified"] = datetime.strptime(modified_string, settings.DATE_FORMAT_IPROX)
+
+            publication_date_string = item.get("publicationDate", settings.EPOCH)
+            item["publicationDate"] = datetime.strptime(publication_date_string, settings.DATE_FORMAT_IPROX)
+
+            expiration_date_string = item.get("expirationDate", settings.EPOCH)
+            item["expirationDate"] = datetime.strptime(expiration_date_string, settings.DATE_FORMAT_IPROX)
+
+            item["type"] = type_value
+            item["district"] = district_value
+            if item["id"] in all_items and source is not None:
+                logger.warning(
+                    f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
+                )
+            all_items[item["id"]] = item
+            return all_items
+        
     @staticmethod
     def is_altered(db_item: NewsArticle, item: dict) -> bool:
         return any(

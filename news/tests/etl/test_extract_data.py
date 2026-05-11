@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from aioresponses import aioresponses
 from django.test import TestCase
+from django.utils import timezone
 from model_bakery import baker
 
 from news.etl.extract_data import IproxFetcher
@@ -162,9 +165,9 @@ class ExtractDataTest(TestCase):
         baker.make(
             NewsArticle,
             foreign_id=123123,
-            modification_date="2018-07-04T08:49:00+02:00",
-            creation_date="2018-07-03T08:49:00+02:00",
-            publication_date="2026-05-08T10:13:00+02:00",
+            modification_date=datetime(2018, 7, 4, 6, 49, tzinfo=timezone.utc),
+            creation_date=datetime(2018, 7, 3, 6, 49, tzinfo=timezone.utc),
+            publication_date=datetime(2026, 5, 8, 8, 13, tzinfo=timezone.utc),
             type="highlighted",
             district=None,
         )
