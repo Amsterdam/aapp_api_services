@@ -25,10 +25,10 @@ class ExtractDataTest(TestCase):
 
             items = fetcher.fetch_all_items()
             self.assertIsInstance(items, dict)
-            self.assertIn(1101234, items)
-            self.assertIn(1101235, items)
-            self.assertEqual(items[1101234]["type"], None)
-            self.assertEqual(items[1101234]["district"], None)
+            self.assertIn(123123, items)
+            self.assertIn(123124, items)
+            self.assertEqual(items[123123]["type"], None)
+            self.assertEqual(items[123123]["district"], None)
 
     def test_fetch_all_items_multiple_sources(self):
         sources = [
@@ -158,13 +158,15 @@ class ExtractDataTest(TestCase):
             result = fetcher.extract()
             self.assertEqual(len(result), 2)
 
-    def test_extract_one_altered(self):
+    def test_extract_one_new(self):
         baker.make(
             NewsArticle,
             foreign_id=123123,
             modification_date="2018-07-04T08:49:00+02:00",
             creation_date="2018-07-03T08:49:00+02:00",
             publication_date="2026-05-08T10:13:00+02:00",
+            type="highlighted",
+            district=None,
         )
         sources = [{"index": "highlighted", "type": "highlighted", "district": None}]
         fetcher = IproxFetcher(
