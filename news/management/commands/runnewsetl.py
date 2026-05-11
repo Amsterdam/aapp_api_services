@@ -18,7 +18,7 @@ iprox_fetcher = IproxFetcher(
     iprox_detail_url=IPROX_ARTICLES_URL,
     sources=NEWS_ARTICLE_TYPES,
     max_concurrent_requests=20,
-    is_paginated=True
+    is_paginated=True,
 )
 
 
