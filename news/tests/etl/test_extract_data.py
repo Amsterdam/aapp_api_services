@@ -1,5 +1,4 @@
-import httpx
-import respx
+from aioresponses import aioresponses
 from django.test import TestCase
 from model_bakery import baker
 
@@ -14,27 +13,23 @@ class ExtractDataTest(TestCase):
         self.detail_url = "https://api.example.com/detail/"
 
     def test_fetch_all_items_single_source(self):
-        resp = respx.get(f"{self.fetch_url}/highlighted").mock(
-            return_value=httpx.Response(200, json=highlighted.MOCK_RESPONSE)
-        )
         # Simulate no sources (default fetch)
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
 
-        items = fetcher.fetch_all_items()
-        self.assertEqual(resp.call_count, 1)
-        self.assertIsInstance(items, dict)
-        self.assertIn(1101234, items)
-        self.assertIn(1101235, items)
-        self.assertEqual(items[1101234]["type"], None)
-        self.assertEqual(items[1101234]["district"], None)
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{self.fetch_url}/highlighted?page=0",
+                payload=highlighted.MOCK_RESPONSE,
+            )
+
+            items = fetcher.fetch_all_items()
+            self.assertIsInstance(items, dict)
+            self.assertIn(1101234, items)
+            self.assertIn(1101235, items)
+            self.assertEqual(items[1101234]["type"], None)
+            self.assertEqual(items[1101234]["district"], None)
 
     def test_fetch_all_items_multiple_sources(self):
-        resp_highlighted = respx.get(f"{self.fetch_url}/highlighted?page=0").mock(
-            return_value=httpx.Response(200, json=highlighted.MOCK_RESPONSE)
-        )
-        resp_liveblogs = respx.get(f"{self.fetch_url}/liveblogs?page=0").mock(
-            return_value=httpx.Response(200, json=liveblogs.MOCK_RESPONSE)
-        )
         sources = [
             {"index": "highlighted", "type": "highlighted", "district": None},
             {"index": "liveblogs", "type": "liveblog", "district": None},
@@ -43,22 +38,22 @@ class ExtractDataTest(TestCase):
             self.fetch_url, self.detail_url, sources=sources, is_paginated=True
         )
 
-        items = fetcher.fetch_all_items()
-        self.assertEqual(resp_highlighted.call_count, 1)
-        self.assertEqual(resp_liveblogs.call_count, 1)
-        self.assertIsInstance(items, dict)
-        self.assertIn(1101234, items)
-        self.assertIn(1321234, items)
-        self.assertEqual(items[1101234]["type"], "highlighted")
-        self.assertEqual(items[1321234]["type"], "liveblog")
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{self.fetch_url}/highlighted?page=0",
+                payload=highlighted.MOCK_RESPONSE,
+            )
+            mocked.get(
+                f"{self.fetch_url}/liveblogs?page=0", payload=liveblogs.MOCK_RESPONSE
+            )
+            items = fetcher.fetch_all_items()
+            self.assertIsInstance(items, dict)
+            self.assertIn(1101234, items)
+            self.assertIn(1321234, items)
+            self.assertEqual(items[1101234]["type"], "highlighted")
+            self.assertEqual(items[1321234]["type"], "liveblog")
 
     def test_fetch_items_data_merges_details(self):
-        resp_highlighted_detail_1 = respx.get(f"{self.detail_url}/1101234").mock(
-            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
-        )
-        resp_highlighted_detail_2 = respx.get(f"{self.detail_url}/1101235").mock(
-            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
-        )
         sources = [{"index": "highlighted", "type": "highlighted", "district": None}]
         fetcher = IproxFetcher(
             self.fetch_url, self.detail_url, sources=sources, is_paginated=True
@@ -69,16 +64,18 @@ class ExtractDataTest(TestCase):
             1101235: {"id": 1101235, "type": "highlighted", "district": None},
         }
 
-        result = fetcher.fetch_items_data(items)
-        self.assertEqual(resp_highlighted_detail_1.call_count, 1)
-        self.assertEqual(resp_highlighted_detail_2.call_count, 1)
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0]["title"], item_article.MOCK_RESPONSE["title"])
-        self.assertEqual(result[0]["type"], "highlighted")
-        self.assertEqual(result[0]["district"], None)
-        self.assertEqual(result[1]["title"], item_article.MOCK_RESPONSE["title"])
-        self.assertEqual(result[1]["type"], "highlighted")
-        self.assertEqual(result[1]["district"], None)
+        with aioresponses() as mocked:
+            mocked.get(f"{self.detail_url}/1101234", payload=item_article.MOCK_RESPONSE)
+            mocked.get(f"{self.detail_url}/1101235", payload=item_article.MOCK_RESPONSE)
+
+            result = fetcher.fetch_items_data(items)
+            self.assertEqual(len(result), 2)
+            self.assertEqual(result[0]["title"], item_article.MOCK_RESPONSE["title"])
+            self.assertEqual(result[0]["type"], "highlighted")
+            self.assertEqual(result[0]["district"], None)
+            self.assertEqual(result[1]["title"], item_article.MOCK_RESPONSE["title"])
+            self.assertEqual(result[1]["type"], "highlighted")
+            self.assertEqual(result[1]["district"], None)
 
     def test_is_altered(self):
         # db_item and item are dicts with relevant fields
@@ -110,45 +107,59 @@ class ExtractDataTest(TestCase):
         self.assertTrue(IproxFetcher.is_altered(db_item, item3))
 
     def test_extract_new(self):
-        resp_highlighted = respx.get(f"{self.fetch_url}/highlighted?page=0").mock(
-            return_value=httpx.Response(200, json=highlighted.MOCK_RESPONSE)
-        )
-        resp_highlighted_detail = respx.get(f"{self.detail_url}/1101234").mock(
-            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
-        )
-        resp_highlighted_detail_2 = respx.get(f"{self.detail_url}/1101235").mock(
-            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
-        )
         sources = [{"index": "highlighted", "type": "highlighted", "district": None}]
         fetcher = IproxFetcher(
             self.fetch_url, self.detail_url, sources=sources, is_paginated=True
         )
-
-        result = fetcher.extract()
-
-        self.assertEqual(resp_highlighted.call_count, 1)
-        self.assertEqual(resp_highlighted_detail.call_count, 1)
-        self.assertEqual(resp_highlighted_detail_2.call_count, 1)
-        self.assertEqual(len(result), 2)
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{self.fetch_url}/highlighted?page=0",
+                payload=highlighted.MOCK_RESPONSE,
+            )
+            mocked.get(f"{self.detail_url}/1101234", payload=item_article.MOCK_RESPONSE)
+            mocked.get(f"{self.detail_url}/1101235", payload=item_article.MOCK_RESPONSE)
+            result = fetcher.extract()
+            self.assertEqual(len(result), 2)
 
     def test_extract_altered(self):
         baker.make(NewsArticle, foreign_id=1101234, modification_date="2024-01-01")
-        resp_highlighted = respx.get(f"{self.fetch_url}/highlighted?page=0").mock(
-            return_value=httpx.Response(200, json=highlighted.MOCK_RESPONSE)
+        sources = [{"index": "highlighted", "type": "highlighted", "district": None}]
+        fetcher = IproxFetcher(
+            self.fetch_url, self.detail_url, sources=sources, is_paginated=True
         )
-        resp_highlighted_detail = respx.get(f"{self.detail_url}/1101234").mock(
-            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
-        )
-        resp_highlighted_detail_2 = respx.get(f"{self.detail_url}/1101235").mock(
-            return_value=httpx.Response(200, json=item_article.MOCK_RESPONSE)
+
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{self.fetch_url}/highlighted?page=0",
+                payload=highlighted.MOCK_RESPONSE,
+            )
+            mocked.get(f"{self.detail_url}/1101234", payload=item_article.MOCK_RESPONSE)
+            mocked.get(f"{self.detail_url}/1101235", payload=item_article.MOCK_RESPONSE)
+
+            result = fetcher.extract()
+            self.assertEqual(len(result), 2)
+
+    def test_extract_one_altered(self):
+        baker.make(
+            NewsArticle,
+            foreign_id=1101234,
+            modification_date="2018-07-04T08:49:00+02:00",
+            creation_date="2018-07-03T08:49:00+02:00",
+            publication_date="2026-05-08T10:13:00+02:00",
         )
         sources = [{"index": "highlighted", "type": "highlighted", "district": None}]
         fetcher = IproxFetcher(
             self.fetch_url, self.detail_url, sources=sources, is_paginated=True
         )
 
-        result = fetcher.extract()
-        self.assertEqual(resp_highlighted.call_count, 1)
-        self.assertEqual(resp_highlighted_detail.call_count, 1)
-        self.assertEqual(resp_highlighted_detail_2.call_count, 1)
-        self.assertEqual(len(result), 2)
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{self.fetch_url}/highlighted?page=0",
+                payload=highlighted.MOCK_RESPONSE,
+            )
+            mocked.get(f"{self.detail_url}/1101234", payload=item_article.MOCK_RESPONSE)
+            mocked.get(f"{self.detail_url}/1101235", payload=item_article.MOCK_RESPONSE)
+
+            result = fetcher.extract()
+            print(result)
+            self.assertEqual(len(result), 1)
