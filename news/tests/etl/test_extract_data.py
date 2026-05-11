@@ -1,4 +1,3 @@
-import json
 from unittest.mock import AsyncMock, patch
 
 from django.test import TestCase
@@ -66,3 +65,85 @@ class ExtractDataTest(TestCase):
         self.assertEqual(result[0]["type"], "highlighted")
         self.assertEqual(result[0]["district"], None)
         self.assertEqual(result[1]["extra"], "bar")
+
+    def test_is_altered(self):
+        # db_item and item are dicts with relevant fields
+        db_item = {
+            "creation_date": "2024-01-01",
+            "modification_date": "2024-01-02",
+            "publication_date": "2024-01-03",
+            "expiration_date": "2024-01-04",
+            "type": "highlighted",
+            "district": None,
+        }
+        # No change
+        item = {
+            "created": "2024-01-01",
+            "modified": "2024-01-02",
+            "publication_date": "2024-01-03",
+            "expiration_date": "2024-01-04",
+            "type": "highlighted",
+            "district": None,
+        }
+        self.assertFalse(IproxFetcher.is_altered(db_item, item))
+        # Change in modification_date
+        item2 = dict(item)
+        item2["modified"] = "2024-01-05"
+        self.assertTrue(IproxFetcher.is_altered(db_item, item2))
+        # Change in type
+        item3 = dict(item)
+        item3["type"] = "liveblog"
+        self.assertTrue(IproxFetcher.is_altered(db_item, item3))
+
+    @patch("news.etl.extract_data.IproxFetcher.fetch_all_items")
+    @patch("news.etl.extract_data.IproxFetcher.fetch_items_data")
+    def test_extract(self, mock_fetch_items_data, mock_fetch_all_items):
+        fetcher = IproxFetcher(self.fetch_url, self.detail_url)
+        # Simulate all_iprox_items and db_articles
+        mock_fetch_all_items.return_value = {
+            1: {
+                "id": 1,
+                "created": "2024-01-01",
+                "modified": "2024-01-02",
+                "publication_date": "2024-01-03",
+                "expiration_date": "2024-01-04",
+                "type": "highlighted",
+                "district": None,
+            },
+            2: {
+                "id": 2,
+                "created": "2024-01-01",
+                "modified": "2024-01-02",
+                "publication_date": "2024-01-03",
+                "expiration_date": "2024-01-04",
+                "type": "highlighted",
+                "district": None,
+            },
+        }
+        # Patch NewsArticle.objects.values to simulate DB
+        with patch("news.etl.extract_data.NewsArticle.objects.values") as mock_values:
+            mock_values.return_value = [
+                {
+                    "foreign_id": 1,
+                    "creation_date": "2024-01-01",
+                    "modification_date": "2024-01-02",
+                    "publication_date": "2024-01-03",
+                    "expiration_date": "2024-01-04",
+                    "type": "highlighted",
+                    "district": None,
+                },
+            ]
+            # Only item 2 is new
+            mock_fetch_items_data.return_value = [
+                {
+                    "id": 2,
+                    "created": "2024-01-01",
+                    "modified": "2024-01-02",
+                    "publication_date": "2024-01-03",
+                    "expiration_date": "2024-01-04",
+                    "type": "highlighted",
+                    "district": None,
+                }
+            ]
+            result = fetcher.extract()
+            self.assertEqual(result, mock_fetch_items_data.return_value)

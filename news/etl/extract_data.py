@@ -1,5 +1,3 @@
-"""Fetch all news article data from IPROX via its API (object-oriented, sync/async capable)"""
-
 import asyncio
 import logging
 from datetime import datetime
@@ -8,6 +6,10 @@ from urllib.parse import urljoin
 import aiohttp
 from django.conf import settings
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+
+from news.models import NewsArticle
+
+logger = logging.getLogger(__name__)
 
 
 class FetchError(Exception):
@@ -26,7 +28,44 @@ class IproxFetcher:
         self.iprox_detail_url = iprox_detail_url
         self.sources = sources
         self.max_concurrent_requests = max_concurrent_requests
-        self.logger = logging.getLogger(__name__)
+
+    def extract(self) -> list[dict]:
+        # Step 1: Extract base info for all items
+        logger.info("Extracting base info for all news articles from source")
+        all_iprox_items = self.fetch_all_items()  # dict: id -> base info
+
+        # Step 2: Query DB for existing articles (fetch only needed fields)
+        db_articles = {
+            a["foreign_id"]: a
+            for a in NewsArticle.objects.values(
+                "foreign_id",
+                "creation_date",
+                "modification_date",
+                "publication_date",
+                "expiration_date",
+                "type",
+                "district",
+            )
+        }
+
+        # Step 3: Determine new and altered items
+        new_or_altered = {
+            item_id: item
+            for item_id, item in all_iprox_items.items()
+            if (db_item := db_articles.get(item_id)) is None
+            or self.is_altered(db_item, item)
+        }
+
+        if not new_or_altered:
+            return None
+
+        # Step 4: Fetch details only for new/altered items
+        logger.info(
+            f"Found {len(new_or_altered)} new or altered news articles to update."
+        )
+        extracted_data = self.fetch_items_data(items=new_or_altered)
+        logger.info(f"Extracted {len(extracted_data)} news articles from source")
+        return extracted_data
 
     def fetch_all_items(self) -> dict:
         """Get a list of items from the IPROX API."""
@@ -45,7 +84,7 @@ class IproxFetcher:
             return all_items
 
         for source in self.sources:
-            self.logger.info(f"Collecting list of items for source {source}")
+            logger.info(f"Collecting list of items for source {source}")
             source_url = urljoin(self.iprox_fetch_url, source["index"])
             result = asyncio.run(self._async_fetch([source_url]))[0]
             if not result:
@@ -58,11 +97,23 @@ class IproxFetcher:
                 item["type"] = source["type"]
                 item["district"] = source.get("district")
                 if item["id"] in all_items:
-                    self.logger.warning(
+                    logger.warning(
                         f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
                     )
                 all_items[item["id"]] = item
         return all_items
+
+    def is_altered(db_item: NewsArticle, item: dict) -> bool:
+        return any(
+            [
+                db_item["creation_date"] != item.get("created"),
+                db_item["modification_date"] != item.get("modified"),
+                db_item["publication_date"] != item.get("publication_date"),
+                db_item["expiration_date"] != item.get("expiration_date"),
+                db_item["type"] != item.get("type"),
+                db_item["district"] != item.get("district"),
+            ]
+        )
 
     def fetch_items_data(self, items: dict) -> list:
         urls = [
