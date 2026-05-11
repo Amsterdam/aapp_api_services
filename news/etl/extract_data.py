@@ -23,7 +23,18 @@ class IproxFetcher:
         iprox_detail_url: str,
         sources: list[dict] | None = None,
         max_concurrent_requests: int = 20,
+        is_paginated: bool = False,
     ):
+        """Initialize the fetcher with URLs and settings.
+        Args:
+            iprox_fetch_url (str): The URL to fetch the list of items.
+            iprox_detail_url (str): The URL to fetch item details.
+            sources (list[dict] | None): Optional list of sources to fetch from.
+            max_concurrent_requests (int): Maximum number of concurrent requests.
+            is_paginated (bool): Whether the API is paginated. This determines if
+                the fetch_all_items method needs to handle pagination and if the
+                response is a list (non-paginated) or a dict with a "items" key (paginated).
+        """
         # check that urls are defined, otherwise raise an error
         if not iprox_fetch_url or not iprox_detail_url:
             raise ValueError(
@@ -33,6 +44,7 @@ class IproxFetcher:
         self.iprox_detail_url = iprox_detail_url
         self.sources = sources
         self.max_concurrent_requests = max_concurrent_requests
+        self.is_paginated = is_paginated
 
     def extract(self) -> list[dict]:
         # Step 1: Extract base info for all items
@@ -76,8 +88,7 @@ class IproxFetcher:
         """Get a list of items from the IPROX API."""
         all_items = {}
         if self.sources is None:
-            source_url = urljoin(self.iprox_fetch_url)
-            result = asyncio.run(self._async_fetch([source_url]))[0]
+            result = asyncio.run(self._async_fetch([self.iprox_fetch_url]))[0]
             for item in result:
                 date_string = item.get("modified", settings.EPOCH)
                 item["modified"] = datetime.strptime(
@@ -91,21 +102,46 @@ class IproxFetcher:
         for source in self.sources:
             logger.info(f"Collecting list of items for source {source}")
             source_url = urljoin(self.iprox_fetch_url, source["index"])
-            result = asyncio.run(self._async_fetch([source_url]))[0]
-            if not result:
-                return None
-            for item in result:
-                date_string = item.get("modified", settings.EPOCH)
-                item["modified"] = datetime.strptime(
-                    date_string, settings.DATE_FORMAT_IPROX
-                )
-                item["type"] = source["type"]
-                item["district"] = source.get("district")
-                if item["id"] in all_items:
-                    logger.warning(
-                        f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
+            if self.is_paginated:
+                # If the API is paginated, we need to fetch all pages
+                page = 0
+                while True:
+                    paginated_url = f"{source_url}?page={page}"
+                    result = asyncio.run(self._async_fetch([paginated_url]))
+                    items = result.get("items", [])
+
+                    for item in items:
+                        date_string = item.get("modified", settings.EPOCH)
+                        item["modified"] = datetime.strptime(
+                            date_string, settings.DATE_FORMAT_IPROX
+                        )
+                        item["type"] = source["type"]
+                        item["district"] = source.get("district")
+                        if item["id"] in all_items:
+                            logger.warning(
+                                f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
+                            )
+                        all_items[item["id"]] = item
+                    pages = result.get("pages", 1)
+                    if page == pages:
+                        break
+                    page += 1
+            else:
+                result = asyncio.run(self._async_fetch([source_url]))[0]
+                if not result:
+                    return None
+                for item in result:
+                    date_string = item.get("modified", settings.EPOCH)
+                    item["modified"] = datetime.strptime(
+                        date_string, settings.DATE_FORMAT_IPROX
                     )
-                all_items[item["id"]] = item
+                    item["type"] = source["type"]
+                    item["district"] = source.get("district")
+                    if item["id"] in all_items:
+                        logger.warning(
+                            f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
+                        )
+                    all_items[item["id"]] = item
         return all_items
 
     @staticmethod

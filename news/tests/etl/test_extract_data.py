@@ -18,7 +18,7 @@ class ExtractDataTest(TestCase):
     @patch("news.etl.extract_data.IproxFetcher._async_fetch", new_callable=AsyncMock)
     def test_fetch_all_items_single_source(self, mock_async_fetch):
         # Simulate no sources (default fetch)
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url)
+        fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
         # Return highlighted mock data
         mock_async_fetch.return_value = highlighted.MOCK_RESPONSE
 
@@ -31,7 +31,9 @@ class ExtractDataTest(TestCase):
 
     @patch("news.etl.extract_data.IproxFetcher._async_fetch", new_callable=AsyncMock)
     def test_fetch_all_items_multiple_sources(self, mock_async_fetch):
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=self.sources)
+        fetcher = IproxFetcher(
+            self.fetch_url, self.detail_url, sources=self.sources, is_paginated=True
+        )
         # Return highlighted for first, liveblogs for second
         mock_async_fetch.side_effect = [
             highlighted.MOCK_RESPONSE,
@@ -47,7 +49,7 @@ class ExtractDataTest(TestCase):
 
     @patch("news.etl.extract_data.IproxFetcher._async_fetch", new_callable=AsyncMock)
     def test_fetch_items_data_merges_details(self, mock_async_fetch):
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url)
+        fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
         # Prepare items dict
         items = {
             1101234: {"id": 1101234, "type": "highlighted", "district": None},
@@ -98,7 +100,7 @@ class ExtractDataTest(TestCase):
     @patch("news.etl.extract_data.IproxFetcher.fetch_all_items")
     @patch("news.etl.extract_data.IproxFetcher.fetch_items_data")
     def test_extract(self, mock_fetch_items_data, mock_fetch_all_items):
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url)
+        fetcher = IproxFetcher(self.fetch_url, self.detail_url, is_paginated=True)
         # Simulate all_iprox_items and db_articles
         mock_fetch_all_items.return_value = {
             1: {
