@@ -63,20 +63,27 @@ class ExtractDataTest(TestCase):
         )
         # Prepare items dict
         items = {
-            1101234: {"id": 1101234, "type": "highlighted", "district": None},
-            1101235: {"id": 1101235, "type": "highlighted", "district": None},
+            123123: {"id": 123123, "type": "highlighted", "district": None},
+            123124: {"id": 123124, "type": "highlighted", "district": None},
         }
-
         with aioresponses() as mocked:
-            mocked.get(f"{self.detail_url}/1101234", payload=item_article.MOCK_RESPONSE)
-            mocked.get(f"{self.detail_url}/1101235", payload=item_article.MOCK_RESPONSE)
+            mocked.get(
+                f"{self.detail_url}/123123", payload=item_article.MOCK_RESPONSE_123123
+            )
+            mocked.get(
+                f"{self.detail_url}/123124", payload=item_article.MOCK_RESPONSE_123124
+            )
 
             result = fetcher.fetch_items_data(items)
             self.assertEqual(len(result), 2)
-            self.assertEqual(result[0]["title"], item_article.MOCK_RESPONSE["title"])
+            self.assertEqual(
+                result[0]["title"], item_article.MOCK_RESPONSE_123123["title"]
+            )
             self.assertEqual(result[0]["type"], "highlighted")
             self.assertEqual(result[0]["district"], None)
-            self.assertEqual(result[1]["title"], item_article.MOCK_RESPONSE["title"])
+            self.assertEqual(
+                result[1]["title"], item_article.MOCK_RESPONSE_123124["title"]
+            )
             self.assertEqual(result[1]["type"], "highlighted")
             self.assertEqual(result[1]["district"], None)
 
@@ -120,13 +127,17 @@ class ExtractDataTest(TestCase):
                 payload=highlighted.MOCK_RESPONSE,
             )
             print("Mocked URL:", f"{self.fetch_url}/highlighted?page=0")
-            mocked.get(f"{self.detail_url}/1101234", payload=item_article.MOCK_RESPONSE)
-            mocked.get(f"{self.detail_url}/1101235", payload=item_article.MOCK_RESPONSE)
+            mocked.get(
+                f"{self.detail_url}/123123", payload=item_article.MOCK_RESPONSE_123123
+            )
+            mocked.get(
+                f"{self.detail_url}/123124", payload=item_article.MOCK_RESPONSE_123124
+            )
             result = fetcher.extract()
-            self.assertEqual(len(result), 2)
+            self.assertEqual(len(result), 1)
 
     def test_extract_altered(self):
-        baker.make(NewsArticle, foreign_id=1101234, modification_date="2024-01-01")
+        baker.make(NewsArticle, foreign_id=123123, modification_date="2024-01-01")
         sources = [{"index": "highlighted", "type": "highlighted", "district": None}]
         fetcher = IproxFetcher(
             self.fetch_url, self.detail_url, sources=sources, is_paginated=True
@@ -137,8 +148,12 @@ class ExtractDataTest(TestCase):
                 f"{self.fetch_url}/highlighted?page=0",
                 payload=highlighted.MOCK_RESPONSE,
             )
-            mocked.get(f"{self.detail_url}/1101234", payload=item_article.MOCK_RESPONSE)
-            mocked.get(f"{self.detail_url}/1101235", payload=item_article.MOCK_RESPONSE)
+            mocked.get(
+                f"{self.detail_url}/123123", payload=item_article.MOCK_RESPONSE_123123
+            )
+            mocked.get(
+                f"{self.detail_url}/123124", payload=item_article.MOCK_RESPONSE_123124
+            )
 
             result = fetcher.extract()
             self.assertEqual(len(result), 2)
@@ -146,7 +161,7 @@ class ExtractDataTest(TestCase):
     def test_extract_one_altered(self):
         baker.make(
             NewsArticle,
-            foreign_id=1101234,
+            foreign_id=123123,
             modification_date="2018-07-04T08:49:00+02:00",
             creation_date="2018-07-03T08:49:00+02:00",
             publication_date="2026-05-08T10:13:00+02:00",
@@ -161,8 +176,12 @@ class ExtractDataTest(TestCase):
                 f"{self.fetch_url}/highlighted?page=0",
                 payload=highlighted.MOCK_RESPONSE,
             )
-            mocked.get(f"{self.detail_url}/1101234", payload=item_article.MOCK_RESPONSE)
-            mocked.get(f"{self.detail_url}/1101235", payload=item_article.MOCK_RESPONSE)
+            mocked.get(
+                f"{self.detail_url}/123123", payload=item_article.MOCK_RESPONSE_123123
+            )
+            mocked.get(
+                f"{self.detail_url}/123124", payload=item_article.MOCK_RESPONSE_123124
+            )
 
             result = fetcher.extract()
             print(result)

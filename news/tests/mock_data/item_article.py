@@ -1,9 +1,35 @@
-MOCK_RESPONSE = {
+MOCK_RESPONSE_123123 = {
     "id": 123123,
     "created": "2018-07-03T10:13:00+02:00",
     "modified": "2026-05-08T10:19:00+02:00",
     "publicationDate": "2018-07-04T08:49:00+02:00",
     "title": "Award voor Amsterdam: 44% vrouwen in de top",
+    "summary": "\u003cdiv\u003e\u003cp\u003eAmsterdam streeft naar een diverse organisatie en heeft daarmee een prijs in de wacht gesleept.\u003c/p\u003e\u003c/div\u003e",
+    "intro": "\u003cdiv\u003e\u003cp\u003eAmsterdam streeft naar een diverse organisatie en heeft daarmee een prijs in de wacht gesleept.\u003c/p\u003e\u003c/div\u003e",
+    "body": '\u003cdiv\u003e\u003cp\u003eLorem ipsum.\u003c/p\u003e\u003ch3 id="h375386e4-e42e-401c-8c76-f03090776b04"\u003eTitle\u003c/h3\u003e\u003cp\u003eNog meer informatie:\u003c/p\u003e\u003cul\u003e\u003cli\u003ePunt 1\u003c/li\u003e\u003cli\u003ePunt 2\u003c/li\u003e\u003cli\u003ePunt x\u003c/li\u003e\u003c/ul\u003e\u003cp\u003ePunt y.\u003c/p\u003e\u003ch3 id="h3199ed3a-071d-4428-8046-a0bba74546d5"\u003eStichting Talent naar de Top\u003c/h3\u003e\u003cp\u003eInformatie Talent naar de Top.\u003c/p\u003e\u003ch3 id="ha07de15c-24c1-4ca4-1234-c16ea123a62d"\u003eZie ook:\u003c/h3\u003e\u003cp\u003e\u003ca href="https://example.com/charter" class="externLink"\u003eCharter Example\u003c/a\u003e\u003c/p\u003e\u003c/div\u003e',
+    "image_url": "https://example.com/image.jpg",
+    "image": {
+        "id": 18901234,
+        "aspectRatio": 2.26506024096386,
+        "sources": [
+            {"url": "https://example.com/image.jpg", "width": 940, "height": 415},
+            {"url": "https://example.com/image_220.jpg", "width": 220, "height": 97},
+            {"url": "https://example.com/image_460.jpg", "width": 460, "height": 203},
+            {"url": "https://example.com/image_700.jpg", "width": 700, "height": 309},
+            {"url": "https://example.com/image_80.jpg", "width": 80, "height": 35},
+        ],
+    },
+    "type": "nieuwsartikel",
+    "is_active_liveblog": False,
+    "url": "https://example.com/news/highlighted/women-top/",
+}
+
+MOCK_RESPONSE_123124 = {
+    "id": 123124,
+    "created": "2018-05-22T19:12:00+02:00",
+    "modified": "2018-09-07T19:12:00+02:00",
+    "publicationDate": "2026-05-08T00:00:00+02:00",
+    "title": "Nog een award voor Amsterdam",
     "summary": "\u003cdiv\u003e\u003cp\u003eAmsterdam streeft naar een diverse organisatie en heeft daarmee een prijs in de wacht gesleept.\u003c/p\u003e\u003c/div\u003e",
     "intro": "\u003cdiv\u003e\u003cp\u003eAmsterdam streeft naar een diverse organisatie en heeft daarmee een prijs in de wacht gesleept.\u003c/p\u003e\u003c/div\u003e",
     "body": '\u003cdiv\u003e\u003cp\u003eLorem ipsum.\u003c/p\u003e\u003ch3 id="h375386e4-e42e-401c-8c76-f03090776b04"\u003eTitle\u003c/h3\u003e\u003cp\u003eNog meer informatie:\u003c/p\u003e\u003cul\u003e\u003cli\u003ePunt 1\u003c/li\u003e\u003cli\u003ePunt 2\u003c/li\u003e\u003cli\u003ePunt x\u003c/li\u003e\u003c/ul\u003e\u003cp\u003ePunt y.\u003c/p\u003e\u003ch3 id="h3199ed3a-071d-4428-8046-a0bba74546d5"\u003eStichting Talent naar de Top\u003c/h3\u003e\u003cp\u003eInformatie Talent naar de Top.\u003c/p\u003e\u003ch3 id="ha07de15c-24c1-4ca4-1234-c16ea123a62d"\u003eZie ook:\u003c/h3\u003e\u003cp\u003e\u003ca href="https://example.com/charter" class="externLink"\u003eCharter Example\u003c/a\u003e\u003c/p\u003e\u003c/div\u003e',
