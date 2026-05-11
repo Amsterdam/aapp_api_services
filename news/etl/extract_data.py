@@ -117,7 +117,9 @@ class IproxFetcher:
 
         for source in self.sources:
             logger.info(f"Collecting list of items for source {source}")
-            source_url = urljoin(self.iprox_fetch_url.rstrip("/") + "/", source["index"])
+            source_url = urljoin(
+                self.iprox_fetch_url.rstrip("/") + "/", source["index"]
+            )
             if self.is_paginated:
                 # If the API is paginated, we need to fetch all pages
                 page = 0
@@ -126,7 +128,9 @@ class IproxFetcher:
                     result = asyncio.run(self._async_fetch([paginated_url]))[0]
                     print("Result for URL", paginated_url, ":", result)
                     items = result.get("items", [])
-                    all_items = self._process_items(items, all_items, source["type"], source.get("district"), source)
+                    all_items = self._process_items(
+                        items, all_items, source["type"], source.get("district"), source
+                    )
                     pages = result.get("pages", 1)
                     if page == pages - 1:
                         break
@@ -135,25 +139,37 @@ class IproxFetcher:
                 result = asyncio.run(self._async_fetch([source_url]))[0]
                 if not result:
                     return None
-                all_items = self._process_items(result, all_items, source["type"], source.get("district"), source)
+                all_items = self._process_items(
+                    result, all_items, source["type"], source.get("district"), source
+                )
         return all_items
-    
+
     @staticmethod
-    def _process_items(items, all_items, type_value=None, district_value=None, source=None):
-        
+    def _process_items(
+        items, all_items, type_value=None, district_value=None, source=None
+    ):
+
         for item in items:
             # convert dates from string to datetime objects
             created_string = item.get("created", settings.EPOCH)
-            item["created"] = datetime.strptime(created_string, settings.DATE_FORMAT_IPROX)
+            item["created"] = datetime.strptime(
+                created_string, settings.DATE_FORMAT_IPROX
+            )
 
             modified_string = item.get("modified", settings.EPOCH)
-            item["modified"] = datetime.strptime(modified_string, settings.DATE_FORMAT_IPROX)
+            item["modified"] = datetime.strptime(
+                modified_string, settings.DATE_FORMAT_IPROX
+            )
 
             publication_date_string = item.get("publicationDate", settings.EPOCH)
-            item["publicationDate"] = datetime.strptime(publication_date_string, settings.DATE_FORMAT_IPROX)
+            item["publicationDate"] = datetime.strptime(
+                publication_date_string, settings.DATE_FORMAT_IPROX
+            )
 
             expiration_date_string = item.get("expirationDate", settings.EPOCH)
-            item["expirationDate"] = datetime.strptime(expiration_date_string, settings.DATE_FORMAT_IPROX)
+            item["expirationDate"] = datetime.strptime(
+                expiration_date_string, settings.DATE_FORMAT_IPROX
+            )
 
             item["type"] = type_value
             item["district"] = district_value
@@ -163,7 +179,7 @@ class IproxFetcher:
                 )
             all_items[item["id"]] = item
             return all_items
-        
+
     @staticmethod
     def is_altered(db_item: NewsArticle, item: dict) -> bool:
         return any(
@@ -179,12 +195,18 @@ class IproxFetcher:
 
     def fetch_items_data(self, items: dict) -> list:
         urls = [
-            urljoin(self.iprox_detail_url.rstrip("/") + "/", str(item_id)) for item_id in items.keys()
+            urljoin(self.iprox_detail_url.rstrip("/") + "/", str(item_id))
+            for item_id in items.keys()
         ]
         logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
         upsert_item_data = asyncio.run(self._async_fetch(urls))
         print("Fetched item details:", upsert_item_data)
-        print(len(upsert_item_data), "items fetched, but only", len(items), "items expected based on input IDs")
+        print(
+            len(upsert_item_data),
+            "items fetched, but only",
+            len(items),
+            "items expected based on input IDs",
+        )
         for item in upsert_item_data:
             print("Processing item detail:", item)
             if item is None:
@@ -195,7 +217,9 @@ class IproxFetcher:
                 logger.warning("Received item detail without ID, skipping: %s", item)
                 continue
             if item_id not in items:
-                logger.warning(f"Received item detail with ID {item_id} not in input items, skipping")
+                logger.warning(
+                    f"Received item detail with ID {item_id} not in input items, skipping"
+                )
                 continue
             print({**item, **items[item["id"]]})
         upsert_item_data = [

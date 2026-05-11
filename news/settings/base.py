@@ -17,5 +17,5 @@ SPECTACULAR_SETTINGS["TITLE"] = "News API"
 STATIC_URL = "/news/static/"
 
 IPROX_SERVER = os.getenv("IPROX_SERVER", "https://www.acc.amsterdam.nl/")
-EPOCH = "1970-01-01 00:00:00"
+EPOCH = "1970-01-01T00:00:00+02:00"
 DATE_FORMAT_IPROX = "%Y-%m-%dT%H:%M:%S%z"
