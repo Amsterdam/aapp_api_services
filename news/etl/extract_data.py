@@ -50,6 +50,7 @@ class IproxFetcher:
         # Step 1: Extract base info for all items
         logger.info("Extracting base info for all news articles from source")
         all_iprox_items = self.fetch_all_items()  # dict: id -> base info
+        print("Fetched all items:", all_iprox_items)
 
         # Step 2: Query DB for existing articles (fetch only needed fields)
         db_articles = {

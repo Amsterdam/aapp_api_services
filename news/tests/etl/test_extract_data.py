@@ -140,6 +140,11 @@ class ExtractDataTest(TestCase):
             self.assertEqual(len(result), 2)
 
     def test_extract_altered(self):
+        """
+        Simulate an existing article with an older modification date, so it should be extracted 
+        as altered.
+        The other article is new and should also be extracted, so we expect 2 results.
+        """
         baker.make(NewsArticle, foreign_id=123123, modification_date="2024-01-01")
         sources = [{"index": "highlighted", "type": "highlighted", "district": None}]
         fetcher = IproxFetcher(
@@ -165,9 +170,9 @@ class ExtractDataTest(TestCase):
         baker.make(
             NewsArticle,
             foreign_id=123123,
-            modification_date=datetime(2018, 7, 4, 6, 49, tzinfo=timezone.utc),
-            creation_date=datetime(2018, 7, 3, 6, 49, tzinfo=timezone.utc),
-            publication_date=datetime(2026, 5, 8, 8, 13, tzinfo=timezone.utc),
+            modification_date=datetime(2018, 7, 4, 6, 49, tzinfo=timezone.UTC),
+            creation_date=datetime(2018, 7, 3, 6, 49, tzinfo=timezone.UTC),
+            publication_date=datetime(2026, 5, 8, 8, 13, tzinfo=timezone.UTC),
             type="highlighted",
             district=None,
         )
