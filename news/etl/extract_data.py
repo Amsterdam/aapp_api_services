@@ -24,6 +24,11 @@ class IproxFetcher:
         sources: list[dict] | None = None,
         max_concurrent_requests: int = 20,
     ):
+        # check that urls are defined, otherwise raise an error
+        if not iprox_fetch_url or not iprox_detail_url:
+            raise ValueError(
+                "Both iprox_fetch_url and iprox_detail_url must be provided"
+            )
         self.iprox_fetch_url = iprox_fetch_url
         self.iprox_detail_url = iprox_detail_url
         self.sources = sources
@@ -103,6 +108,7 @@ class IproxFetcher:
                 all_items[item["id"]] = item
         return all_items
 
+    @staticmethod
     def is_altered(db_item: NewsArticle, item: dict) -> bool:
         return any(
             [
@@ -119,14 +125,14 @@ class IproxFetcher:
         urls = [
             urljoin(self.iprox_detail_url, str(item_id)) for item_id in items.keys()
         ]
-        self.logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
+        logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
         upsert_item_data = asyncio.run(self._async_fetch(urls))
         upsert_item_data = [
             {**item, **items[item["id"]]}
             for item in upsert_item_data
             if item and item.get("id") in items
         ]
-        self.logger.info(
+        logger.info(
             f"Finished async fetch. Successfully collected {len(upsert_item_data)} items"
         )
         return upsert_item_data
@@ -144,7 +150,7 @@ class IproxFetcher:
             try:
                 return await self._fetch(session, url)
             except Exception:
-                self.logger.error(f"Failed to fetch {url}")
+                logger.error(f"Failed to fetch {url}")
 
     @retry(
         stop=stop_after_attempt(3),
