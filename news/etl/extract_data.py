@@ -179,7 +179,7 @@ class IproxFetcher:
                     f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
                 )
             all_items[item["id"]] = item
-            return all_items
+        return all_items
 
     @staticmethod
     def is_altered(db_item: NewsArticle, item: dict) -> bool:
