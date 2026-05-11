@@ -66,12 +66,24 @@ class IproxFetcher:
         }
 
         # Step 3: Determine new and altered items
-        new_or_altered = {
-            item_id: item
-            for item_id, item in all_iprox_items.items()
-            if (db_item := db_articles.get(item_id)) is None
-            or self.is_altered(db_item, item)
-        }
+        new_or_altered = {}
+        for item_id, item in all_iprox_items.items():
+            db_item = db_articles.get(item_id)
+            if db_item is None:
+                print(f"Item ID {item_id} is new")
+                new_or_altered[item_id] = item
+            elif self.is_altered(db_item, item):
+                print(f"Item ID {item_id} is altered")
+                print(f"DB item: {db_item}")
+                print(f"Source item: {item}")
+                new_or_altered[item_id] = item
+
+        # new_or_altered = {
+        #     item_id: item
+        #     for item_id, item in all_iprox_items.items()
+        #     if (db_item := db_articles.get(item_id)) is None
+        #     or self.is_altered(db_item, item)
+        # }
 
         if not new_or_altered:
             return None
@@ -89,16 +101,34 @@ class IproxFetcher:
         all_items = {}
         if self.sources is None:
             result = asyncio.run(self._async_fetch([self.iprox_fetch_url]))[0]
-            print("Result for URL", self.iprox_fetch_url, ":", result)
-            for item in result:
-                date_string = item.get("modified", settings.EPOCH)
-                item["modified"] = datetime.strptime(
-                    date_string, settings.DATE_FORMAT_IPROX
-                )
-                item["type"] = None
-                item["district"] = None
-                all_items[item["id"]] = item
-            return all_items
+            if not result:
+                return None
+                        
+            if not self.is_paginated:
+                print("Result for URL", self.iprox_fetch_url, ":", result)
+                for item in result:
+                    date_string = item.get("modified", settings.EPOCH)
+                    item["modified"] = datetime.strptime(
+                        date_string, settings.DATE_FORMAT_IPROX
+                    )
+                    item["type"] = None
+                    item["district"] = None
+                    all_items[item["id"]] = item
+                return all_items
+            
+            else:
+                print("Result for URL", self.iprox_fetch_url, ":", result)
+                items = result.get("items", [])
+                for item in items:
+                    date_string = item.get("modified", settings.EPOCH)
+                    item["modified"] = datetime.strptime(
+                        date_string, settings.DATE_FORMAT_IPROX
+                    )
+                    item["type"] = None
+                    item["district"] = None
+                    all_items[item["id"]] = item
+                return all_items
+
 
         for source in self.sources:
             logger.info(f"Collecting list of items for source {source}")

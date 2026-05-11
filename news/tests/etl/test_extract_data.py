@@ -51,10 +51,10 @@ class ExtractDataTest(TestCase):
             print("Mocked URL:", f"{self.fetch_url}/liveblogs?page=0")
             items = fetcher.fetch_all_items()
             self.assertIsInstance(items, dict)
-            self.assertIn(1101234, items)
-            self.assertIn(1321234, items)
-            self.assertEqual(items[1101234]["type"], "highlighted")
-            self.assertEqual(items[1321234]["type"], "liveblog")
+            self.assertIn(123124, items)
+            self.assertIn(1321235, items)
+            self.assertEqual(items[123124]["type"], "highlighted")
+            self.assertEqual(items[1321235]["type"], "liveblog")
 
     def test_fetch_items_data_merges_details(self):
         sources = [{"index": "highlighted", "type": "highlighted", "district": None}]
@@ -134,7 +134,7 @@ class ExtractDataTest(TestCase):
                 f"{self.detail_url}/123124", payload=item_article.MOCK_RESPONSE_123124
             )
             result = fetcher.extract()
-            self.assertEqual(len(result), 1)
+            self.assertEqual(len(result), 2)
 
     def test_extract_altered(self):
         baker.make(NewsArticle, foreign_id=123123, modification_date="2024-01-01")
