@@ -88,7 +88,7 @@ class IproxFetcher:
         """Get a list of items from the IPROX API."""
         all_items = {}
         if self.sources is None:
-            result = asyncio.run(self._async_fetch([self.iprox_fetch_url]))
+            result = asyncio.run(self._async_fetch([self.iprox_fetch_url]))[0]
             print("Result for URL", self.iprox_fetch_url, ":", result)
             for item in result:
                 date_string = item.get("modified", settings.EPOCH)
@@ -108,7 +108,7 @@ class IproxFetcher:
                 page = 0
                 while True:
                     paginated_url = f"{source_url}?page={page}"
-                    result = asyncio.run(self._async_fetch([paginated_url]))
+                    result = asyncio.run(self._async_fetch([paginated_url]))[0]
                     print("Result for URL", paginated_url, ":", result)
                     items = result.get("items", [])
                     for item in items:

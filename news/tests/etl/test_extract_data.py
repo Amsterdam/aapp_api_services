@@ -18,10 +18,10 @@ class ExtractDataTest(TestCase):
 
         with aioresponses() as mocked:
             mocked.get(
-                f"{self.fetch_url}/highlighted?page=0",
+                f"{self.fetch_url}",
                 payload=highlighted.MOCK_RESPONSE,
             )
-            print("Mocked URL:", f"{self.fetch_url}/highlighted?page=0")
+            print("Mocked URL:", f"{self.fetch_url}")
 
             items = fetcher.fetch_all_items()
             self.assertIsInstance(items, dict)
