@@ -19,6 +19,7 @@ class IproxFetcher:
         iprox_detail_url: str,
         sources: list[dict],
         max_concurrent_requests: int = 20,
+        timeout_total: float = 30.0,
     ):
         """Initialize the fetcher with URLs and settings.
         Args:
@@ -36,6 +37,7 @@ class IproxFetcher:
         self.iprox_detail_url = iprox_detail_url
         self.sources = sources
         self.max_concurrent_requests = max_concurrent_requests
+        self.timeout = aiohttp.ClientTimeout(total=timeout_total)
 
     def extract(self) -> list[dict]:
         """
@@ -127,9 +129,9 @@ class IproxFetcher:
         return item_result
 
     async def _async_fetch(self, urls):
-        """Fetch all URLs with limited concurrency."""
+        """Fetch all URLs with limited concurrency and timeouts."""
         sem = asyncio.Semaphore(self.max_concurrent_requests)
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=self.timeout) as session:
             tasks = [self._fetch_with_sem(sem, session, url) for url in urls]
             return await asyncio.gather(*tasks)
 
