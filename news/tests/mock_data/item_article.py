@@ -26,9 +26,9 @@ MOCK_RESPONSE_123123 = {
 
 MOCK_RESPONSE_123124 = {
     "id": 123124,
-    "created": "2018-05-22T19:12:00+02:00",
-    "modified": "2018-09-07T19:12:00+02:00",
-    "publicationDate": "2026-05-08T00:00:00+02:00",
+    "created": "2019-05-22T19:12:00+02:00",
+    "modified": "2020-09-07T19:12:00+02:00",
+    "publicationDate": "2021-05-08T00:00:00+02:00",
     "title": "Nog een award voor Amsterdam",
     "summary": "\u003cdiv\u003e\u003cp\u003eAmsterdam streeft naar een diverse organisatie en heeft daarmee een prijs in de wacht gesleept.\u003c/p\u003e\u003c/div\u003e",
     "intro": "\u003cdiv\u003e\u003cp\u003eAmsterdam streeft naar een diverse organisatie en heeft daarmee een prijs in de wacht gesleept.\u003c/p\u003e\u003c/div\u003e",

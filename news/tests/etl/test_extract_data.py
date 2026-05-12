@@ -167,12 +167,19 @@ class ExtractDataTest(TestCase):
             self.assertEqual(len(result), 2)
 
     def test_extract_one_new(self):
+
         baker.make(
             NewsArticle,
             foreign_id=123123,
-            modification_date=datetime.fromisoformat("2026-05-08T10:19:00+02:00"),
-            creation_date=datetime.fromisoformat("2018-07-03T10:13:00+02:00"),
-            publication_date=datetime.fromisoformat("2018-07-04T08:49:00+02:00"),
+            modification_date=datetime.fromisoformat(
+                item_article.MOCK_RESPONSE_123123["modified"]
+            ),
+            creation_date=datetime.fromisoformat(
+                item_article.MOCK_RESPONSE_123123["created"]
+            ),
+            publication_date=datetime.fromisoformat(
+                item_article.MOCK_RESPONSE_123123["publicationDate"]
+            ),
             type="highlighted",
             district=None,
         )

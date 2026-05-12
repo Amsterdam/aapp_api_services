@@ -182,7 +182,7 @@ class IproxFetcher:
         return all_items
 
     @staticmethod
-    def is_altered(db_item: NewsArticle, item: dict) -> bool:
+    def is_altered(db_item: dict, item: dict) -> bool:
         print("Comparing DB item and source item for ID", db_item["foreign_id"])
         print(f"Creation date - DB: {db_item['creation_date']}, Source: {item.get('created')}")
         print(f"Modification date - DB: {db_item['modification_date']}, Source: {item.get('modified')}")
