@@ -93,6 +93,7 @@ class ExtractDataTest(TestCase):
     def test_is_altered(self):
         # db_item and item are dicts with relevant fields
         db_item = {
+            "foreign_id": 1000000,
             "creation_date": "2024-01-01",
             "modification_date": "2024-01-02",
             "publication_date": "2024-01-03",
@@ -168,17 +169,19 @@ class ExtractDataTest(TestCase):
 
     def test_extract_one_new(self):
 
+        mock_data = item_article.MOCK_RESPONSE_123123
+
         baker.make(
             NewsArticle,
             foreign_id=123123,
-            modification_date=datetime.fromisoformat(
-                item_article.MOCK_RESPONSE_123123["modified"]
-            ),
             creation_date=datetime.fromisoformat(
-                item_article.MOCK_RESPONSE_123123["created"]
+                mock_data["created"]
+            ),
+            modification_date=datetime.fromisoformat(
+                mock_data["modified"]
             ),
             publication_date=datetime.fromisoformat(
-                item_article.MOCK_RESPONSE_123123["publicationDate"]
+                mock_data["publicationDate"]
             ),
             type="highlighted",
             district=None,

@@ -153,22 +153,22 @@ class IproxFetcher:
         for item in items:
             # convert dates from string to datetime objects
             created_string = item.get("created", settings.EPOCH)
-            item["created"] = datetime.strptime(
+            item["creation_date"] = datetime.strptime(
                 created_string, settings.DATE_FORMAT_IPROX
             )
 
             modified_string = item.get("modified", settings.EPOCH)
-            item["modified"] = datetime.strptime(
+            item["modification_date"] = datetime.strptime(
                 modified_string, settings.DATE_FORMAT_IPROX
             )
 
             publication_date_string = item.get("publicationDate", settings.EPOCH)
-            item["publicationDate"] = datetime.strptime(
+            item["publication_date"] = datetime.strptime(
                 publication_date_string, settings.DATE_FORMAT_IPROX
             )
 
             expiration_date_string = item.get("expirationDate", settings.EPOCH)
-            item["expirationDate"] = datetime.strptime(
+            item["expiration_date"] = datetime.strptime(
                 expiration_date_string, settings.DATE_FORMAT_IPROX
             )
 
@@ -184,16 +184,16 @@ class IproxFetcher:
     @staticmethod
     def is_altered(db_item: dict, item: dict) -> bool:
         print("Comparing DB item and source item for ID", db_item["foreign_id"])
-        print(f"Creation date - DB: {db_item['creation_date']}, Source: {item.get('created')}")
-        print(f"Modification date - DB: {db_item['modification_date']}, Source: {item.get('modified')}")
+        print(f"Creation date - DB: {db_item['creation_date']}, Source: {item.get('creation_date')}")
+        print(f"Modification date - DB: {db_item['modification_date']}, Source: {item.get('modification_date')}")
         print(f"Publication date - DB: {db_item['publication_date']}, Source: {item.get('publication_date')}")
         print(f"Expiration date - DB: {db_item['expiration_date']}, Source: {item.get('expiration_date')}")
         print(f"Type - DB: {db_item['type']}, Source: {item.get('type')}")
         print(f"District - DB: {db_item['district']}, Source: {item.get('district')}")
         return any(
             [
-                db_item["creation_date"] != item.get("created"),
-                db_item["modification_date"] != item.get("modified"),
+                db_item["creation_date"] != item.get("creation_date"),
+                db_item["modification_date"] != item.get("modification_date"),
                 db_item["publication_date"] != item.get("publication_date"),
                 db_item["expiration_date"] != item.get("expiration_date"),
                 db_item["type"] != item.get("type"),
