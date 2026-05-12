@@ -84,3 +84,23 @@ class ExtractDataTest(TestCase):
 
             extracted_data = fetcher.extract()
             self.assertEqual(len(extracted_data), 2)
+
+    def test_combine_detailed_and_basic_info(self):
+        """
+        Test the combination of detailed and basic information into a single dictionary.
+        It is key that the type of the basic info is preserved, as this is used to store in the database.
+        """
+        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=[])
+        basic_info = {"id": 123123, "type": "highlighted", "district": None}
+        detailed_info = {
+            "id": 123123,
+            "title": "Test Article",
+            "type": "nieuwsartikel",
+            "body": "Lorem ipsum",
+        }
+        combined = fetcher._combine_detailed_and_basic_info(detailed_info, basic_info)
+        self.assertEqual(combined["id"], 123123)
+        self.assertEqual(combined["type"], "highlighted")
+        self.assertEqual(combined["district"], None)
+        self.assertEqual(combined["title"], "Test Article")
+        self.assertEqual(combined["body"], "Lorem ipsum")

@@ -111,16 +111,20 @@ class IproxFetcher:
             for item_id in items.keys()
         ]
         logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
-        upsert_item_data = asyncio.run(self._async_fetch(urls))
-        upsert_item_data = [
-            {**item, **items[item["id"]]}
-            for item in upsert_item_data
-            if item and item.get("id") in items
-        ]
+        item_details = asyncio.run(self._async_fetch(urls))
+
+        item_result = []
+        for item in item_details:
+            if item and item.get("id") in items:
+                merged_item = self._combine_detailed_and_basic_info(
+                    item, items[item["id"]]
+                )
+                item_result.append(merged_item)
+
         logger.info(
-            f"Finished async fetch. Successfully collected {len(upsert_item_data)} items"
+            f"Finished async fetch. Successfully collected {len(item_result)} items"
         )
-        return upsert_item_data
+        return item_result
 
     async def _async_fetch(self, urls):
         """Fetch all URLs with limited concurrency."""
@@ -153,3 +157,20 @@ class IproxFetcher:
                 return await response.json()
         except aiohttp.ClientError as e:
             raise FetchError(f"Failed to fetch {url}: {str(e)}") from e
+
+    def _combine_detailed_and_basic_info(
+        self,
+        detailed_info: dict,
+        basic_info: dict,
+        preserve_basic_info_keys: tuple = ("type", "district"),
+    ) -> dict:
+        """Combine detailed and basic information into a single dictionary."""
+        combined_info = {
+            **detailed_info,
+            **{
+                key: basic_info[key]
+                for key in preserve_basic_info_keys
+                if key in basic_info
+            },
+        }
+        return combined_info
