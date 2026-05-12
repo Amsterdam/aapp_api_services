@@ -26,7 +26,6 @@ iprox_fetcher = IproxFetcher(
 
 class DataLoadView(APIView):
     def get(self, request, *args, **kwargs):
-        
         """Temporary view to call extract step"""
         extracted_data = iprox_fetcher.extract()
         if not extracted_data:
