@@ -97,11 +97,16 @@ class LocationDetailView(LocationView):
 
         # Enrich data with tariff (if available)
         if "tariffId" not in response_json:
+            # tariffId not available
             serializer_data["tariff"] = None
         else:
-            tariff_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['TARIFFS']}/{quote(response_json['tariffId'], safe='')}"
-            tariff_json = await self.api_call("get", endpoint=tariff_endpoint)
-            serializer_data["tariff"] = self.get_tariff_data(tariff_json)
+            try:
+                tariff_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['TARIFFS']}/{quote(response_json['tariffId'], safe='')}"
+                tariff_json = await self.api_call("get", endpoint=tariff_endpoint)
+                serializer_data["tariff"] = self.get_tariff_data(tariff_json)
+            except BoatChargingForbiddenError:
+                # tariffId is available but tariff details cannot be accessed
+                serializer_data["tariff"] = None
 
         # Enrich data with charging station ids
         charging_station_ids = response_json["chargingStationsIds"]
