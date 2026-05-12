@@ -1,13 +1,9 @@
 import asyncio
 import logging
-from datetime import datetime
 from urllib.parse import urljoin
 
 import aiohttp
-from django.conf import settings
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
-
-from news.models import NewsArticle
 
 logger = logging.getLogger(__name__)
 
@@ -21,19 +17,15 @@ class IproxFetcher:
         self,
         iprox_fetch_url: str,
         iprox_detail_url: str,
-        sources: list[dict] | None = None,
+        sources: list[dict],
         max_concurrent_requests: int = 20,
-        is_paginated: bool = False,
     ):
         """Initialize the fetcher with URLs and settings.
         Args:
             iprox_fetch_url (str): The URL to fetch the list of items.
             iprox_detail_url (str): The URL to fetch item details.
-            sources (list[dict] | None): Optional list of sources to fetch from.
+            sources (list[dict]): List of sources to fetch from.
             max_concurrent_requests (int): Maximum number of concurrent requests.
-            is_paginated (bool): Whether the API is paginated. This determines if
-                the fetch_all_items method needs to handle pagination and if the
-                response is a list (non-paginated) or a dict with a "items" key (paginated).
         """
         # check that urls are defined, otherwise raise an error
         if not iprox_fetch_url or not iprox_detail_url:
@@ -44,56 +36,36 @@ class IproxFetcher:
         self.iprox_detail_url = iprox_detail_url
         self.sources = sources
         self.max_concurrent_requests = max_concurrent_requests
-        self.is_paginated = is_paginated
 
     def extract(self) -> list[dict]:
+        """
+        Main method to extract articles from the IPROX API.
+
+        The method performs the following steps:
+        1. Fetches a list of all items from the IPROX API, including their base information.
+        2. Fetches the detailed information from the IPROX API.
+        3. Returns a list of dictionaries containing the detailed information for all items.
+
+        Returns:
+            list[dict]: A list of dictionaries, each containing detailed information about a news article.
+
+        In the future this method could be extended to first check which items are new or have been altered since the last fetch,
+        and only then fetch the details for those items. This would reduce the number of API calls and improve performance,
+        especially if the number of items is large and only a few are new or altered.
+        The steps would then be:
+            1. Fetches a list of all items from the IPROX API, including their base information.
+            2. Queries the database for existing articles to determine which items are new or have been altered since the last fetch.
+            3. For new or altered items, fetches the detailed information from the IPROX API.
+            4. Returns a list of dictionaries containing the detailed information for new or altered items.
+        """
+
         # Step 1: Extract base info for all items
         logger.info("Extracting base info for all news articles from source")
         all_iprox_items = self.fetch_all_items()  # dict: id -> base info
         print("Fetched all items:", all_iprox_items)
 
-        # Step 2: Query DB for existing articles (fetch only needed fields)
-        db_articles = {
-            a["foreign_id"]: a
-            for a in NewsArticle.objects.values(
-                "foreign_id",
-                "creation_date",
-                "modification_date",
-                "publication_date",
-                "expiration_date",
-                "type",
-                "district",
-            )
-        }
-
-        # Step 3: Determine new and altered items
-        new_or_altered = {}
-        for item_id, item in all_iprox_items.items():
-            db_item = db_articles.get(item_id)
-            if db_item is None:
-                print(f"Item ID {item_id} is new")
-                new_or_altered[item_id] = item
-            elif self.is_altered(db_item, item):
-                print(f"Item ID {item_id} is altered")
-                print(f"DB item: {db_item}")
-                print(f"Source item: {item}")
-                new_or_altered[item_id] = item
-
-        # new_or_altered = {
-        #     item_id: item
-        #     for item_id, item in all_iprox_items.items()
-        #     if (db_item := db_articles.get(item_id)) is None
-        #     or self.is_altered(db_item, item)
-        # }
-
-        if not new_or_altered:
-            return None
-
-        # Step 4: Fetch details only for new/altered items
-        logger.info(
-            f"Found {len(new_or_altered)} new or altered news articles to update."
-        )
-        extracted_data = self.fetch_items_data(items=new_or_altered)
+        # Step 2: Fetch details for all items
+        extracted_data = self.fetch_items_details(items=all_iprox_items)
         logger.info(f"Extracted {len(extracted_data)} news articles from source")
         return extracted_data
 
@@ -101,107 +73,37 @@ class IproxFetcher:
         """Get a list of items from the IPROX API."""
         all_items = {}
 
-        if self.sources is None:
-            result = asyncio.run(self._async_fetch([self.iprox_fetch_url]))[0]
-            if not result:
-                return None
-
-            if not self.is_paginated:
-                print("Result for URL", self.iprox_fetch_url, ":", result)
-                all_items = self._process_items(result, all_items)
-                return all_items
-            else:
-                print("Result for URL", self.iprox_fetch_url, ":", result)
-                items = result.get("items", [])
-                all_items = self._process_items(items, all_items)
-                return all_items
-
         for source in self.sources:
+            source_type = source.get("type")
+            source_district = source.get("district")
             logger.info(f"Collecting list of items for source {source}")
             source_url = urljoin(
                 self.iprox_fetch_url.rstrip("/") + "/", source["index"]
             )
-            if self.is_paginated:
-                # If the API is paginated, we need to fetch all pages
-                page = 0
-                while True:
-                    paginated_url = f"{source_url}?page={page}"
-                    result = asyncio.run(self._async_fetch([paginated_url]))[0]
-                    print("Result for URL", paginated_url, ":", result)
-                    items = result.get("items", [])
-                    all_items = self._process_items(
-                        items, all_items, source["type"], source.get("district"), source
-                    )
-                    pages = result.get("pages", 1)
-                    if page == pages - 1:
-                        break
-                    page += 1
-            else:
-                result = asyncio.run(self._async_fetch([source_url]))[0]
-                if not result:
-                    return None
-                all_items = self._process_items(
-                    result, all_items, source["type"], source.get("district"), source
-                )
+            # We need to fetch all pages
+            page = 0
+            while True:
+                paginated_url = f"{source_url}?page={page}"
+                result = asyncio.run(self._async_fetch([paginated_url]))[0]
+                print("Result for URL", paginated_url, ":", result)
+                items = result.get("items", [])
+
+                for item in items:
+                    item["type"] = source_type
+                    item["district"] = source_district
+                    if item["id"] in all_items and source is not None:
+                        logger.warning(
+                            f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
+                        )
+                    all_items[item["id"]] = item
+
+                pages = result.get("pages", 1)
+                if page == pages - 1:
+                    break
+                page += 1
         return all_items
 
-    @staticmethod
-    def _process_items(
-        items, all_items, type_value=None, district_value=None, source=None
-    ):
-
-        for item in items:
-            # convert dates from string to datetime objects
-            created_string = item.get("created", settings.EPOCH)
-            item["creation_date"] = datetime.strptime(
-                created_string, settings.DATE_FORMAT_IPROX
-            )
-
-            modified_string = item.get("modified", settings.EPOCH)
-            item["modification_date"] = datetime.strptime(
-                modified_string, settings.DATE_FORMAT_IPROX
-            )
-
-            publication_date_string = item.get("publicationDate", settings.EPOCH)
-            item["publication_date"] = datetime.strptime(
-                publication_date_string, settings.DATE_FORMAT_IPROX
-            )
-
-            expiration_date_string = item.get("expirationDate", settings.EPOCH)
-            item["expiration_date"] = datetime.strptime(
-                expiration_date_string, settings.DATE_FORMAT_IPROX
-            )
-
-            item["type"] = type_value
-            item["district"] = district_value
-            if item["id"] in all_items and source is not None:
-                logger.warning(
-                    f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
-                )
-            all_items[item["id"]] = item
-        return all_items
-
-    @staticmethod
-    def is_altered(db_item: dict, item: dict) -> bool:
-        print("Comparing DB item and source item for ID", db_item["foreign_id"])
-        print(f"Creation date - DB: {db_item['creation_date']}, Source: {item.get('creation_date')}")
-        print(f"Modification date - DB: {db_item['modification_date']}, Source: {item.get('modification_date')}")
-        print(f"Publication date - DB: {db_item['publication_date']}, Source: {item.get('publication_date')}")
-        print(f"Expiration date - DB: {db_item['expiration_date']}, Source: {item.get('expiration_date')}")
-        print(f"Type - DB: {db_item['type']}, Source: {item.get('type')}")
-        print(f"District - DB: {db_item['district']}, Source: {item.get('district')}")
-        return any(
-            [
-                db_item["creation_date"] != item.get("creation_date"),
-                db_item["modification_date"] != item.get("modification_date"),
-                db_item["publication_date"] != item.get("publication_date"),
-                db_item["expiration_date"] != item.get("expiration_date"),
-                db_item["type"] != item.get("type"),
-                db_item["district"] != item.get("district"),
-            ]
-        )
-
-    def fetch_items_data(self, items: dict) -> list:
+    def fetch_items_details(self, items: dict) -> list:
         urls = [
             urljoin(self.iprox_detail_url.rstrip("/") + "/", str(item_id))
             for item_id in items.keys()
