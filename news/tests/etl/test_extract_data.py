@@ -12,7 +12,7 @@ class ExtractDataTest(TestCase):
 
     def test_fetch_all_items(self):
         sources = [
-            {"index": "highlighted", "type": "highlighted", "district": None},
+            {"index": "highlighted", "type": "highlight", "district": None},
             {"index": "liveblogs", "type": "liveblog", "district": None},
         ]
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
@@ -29,16 +29,16 @@ class ExtractDataTest(TestCase):
             self.assertIsInstance(items, dict)
             self.assertIn(123124, items)
             self.assertIn(1321235, items)
-            self.assertEqual(items[123124]["type"], "highlighted")
+            self.assertEqual(items[123124]["type"], "highlight")
             self.assertEqual(items[1321235]["type"], "liveblog")
 
     def test_fetch_items_details(self):
-        sources = [{"index": "highlighted", "type": "highlighted", "district": None}]
+        sources = [{"index": "highlighted", "type": "highlight", "district": None}]
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
         # Prepare items dict
         items = {
-            123123: {"id": 123123, "type": "highlighted", "district": None},
-            123124: {"id": 123124, "type": "highlighted", "district": None},
+            123123: {"id": 123123, "type": "highlight", "district": None},
+            123124: {"id": 123124, "type": "highlight", "district": None},
         }
         with aioresponses() as mocked:
             mocked.get(
@@ -53,18 +53,18 @@ class ExtractDataTest(TestCase):
             self.assertEqual(
                 result[0]["title"], item_article.MOCK_RESPONSE_123123["title"]
             )
-            self.assertEqual(result[0]["type"], "highlighted")
+            self.assertEqual(result[0]["type"], "highlight")
             self.assertEqual(result[0]["district"], None)
             self.assertEqual(
                 result[1]["title"], item_article.MOCK_RESPONSE_123124["title"]
             )
-            self.assertEqual(result[1]["type"], "highlighted")
+            self.assertEqual(result[1]["type"], "highlight")
             self.assertEqual(result[1]["district"], None)
 
     def test_extract(self):
         """Test the full extract process, including fetching all items and their details"""
         sources = [
-            {"index": "highlighted", "type": "highlighted", "district": None},
+            {"index": "highlighted", "type": "highlight", "district": None},
         ]
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
 
@@ -91,7 +91,7 @@ class ExtractDataTest(TestCase):
         It is key that the type of the basic info is preserved, as this is used to store in the database.
         """
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=[])
-        basic_info = {"id": 123123, "type": "highlighted", "district": None}
+        basic_info = {"id": 123123, "type": "highlight", "district": None}
         detailed_info = {
             "id": 123123,
             "title": "Test Article",
@@ -100,7 +100,7 @@ class ExtractDataTest(TestCase):
         }
         combined = fetcher._combine_detailed_and_basic_info(detailed_info, basic_info)
         self.assertEqual(combined["id"], 123123)
-        self.assertEqual(combined["type"], "highlighted")
+        self.assertEqual(combined["type"], "highlight")
         self.assertEqual(combined["district"], None)
         self.assertEqual(combined["title"], "Test Article")
         self.assertEqual(combined["body"], "Lorem ipsum")
