@@ -141,7 +141,7 @@ class ExtractDataTest(TestCase):
 
     def test_extract_altered(self):
         """
-        Simulate an existing article with an older modification date, so it should be extracted 
+        Simulate an existing article with an older modification date, so it should be extracted
         as altered.
         The other article is new and should also be extracted, so we expect 2 results.
         """
@@ -170,9 +170,9 @@ class ExtractDataTest(TestCase):
         baker.make(
             NewsArticle,
             foreign_id=123123,
-            modification_date=datetime(2018, 7, 4, 6, 49, tzinfo=timezone.UTC),
-            creation_date=datetime(2018, 7, 3, 6, 49, tzinfo=timezone.UTC),
-            publication_date=datetime(2026, 5, 8, 8, 13, tzinfo=timezone.UTC),
+            modification_date=datetime.fromisoformat("2026-05-08T10:19:00+02:00"),
+            creation_date=datetime.fromisoformat("2018-07-03T10:13:00+02:00"),
+            publication_date=datetime.fromisoformat("2018-07-04T08:49:00+02:00"),
             type="highlighted",
             district=None,
         )
