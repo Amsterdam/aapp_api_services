@@ -84,6 +84,10 @@ class IproxFetcher:
             while True:
                 paginated_url = f"{source_url}?page={page}"
                 result = asyncio.run(self._async_fetch([paginated_url]))[0]
+                if not result:
+                    # no need to log an error here, because a error is already logged in the _fetch method. 
+                    # We just break the loop and continue with the next source.
+                    break
                 items = result.get("items", [])
 
                 for item in items:
