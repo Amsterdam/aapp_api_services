@@ -61,8 +61,7 @@ class IproxFetcher:
 
         # Step 1: Extract base info for all items
         logger.info("Extracting base info for all news articles from source")
-        all_iprox_items = self.fetch_all_items()  # dict: id -> base info
-        print("Fetched all items:", all_iprox_items)
+        all_iprox_items = self.fetch_all_items()
 
         # Step 2: Fetch details for all items
         extracted_data = self.fetch_items_details(items=all_iprox_items)
@@ -85,7 +84,6 @@ class IproxFetcher:
             while True:
                 paginated_url = f"{source_url}?page={page}"
                 result = asyncio.run(self._async_fetch([paginated_url]))[0]
-                print("Result for URL", paginated_url, ":", result)
                 items = result.get("items", [])
 
                 for item in items:
@@ -110,28 +108,6 @@ class IproxFetcher:
         ]
         logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
         upsert_item_data = asyncio.run(self._async_fetch(urls))
-        print("Fetched item details:", upsert_item_data)
-        print(
-            len(upsert_item_data),
-            "items fetched, but only",
-            len(items),
-            "items expected based on input IDs",
-        )
-        for item in upsert_item_data:
-            print("Processing item detail:", item)
-            if item is None:
-                logger.warning("Received None for an item detail fetch, skipping")
-                continue
-            item_id = item.get("id")
-            if item_id is None:
-                logger.warning("Received item detail without ID, skipping: %s", item)
-                continue
-            if item_id not in items:
-                logger.warning(
-                    f"Received item detail with ID {item_id} not in input items, skipping"
-                )
-                continue
-            print({**item, **items[item["id"]]})
         upsert_item_data = [
             {**item, **items[item["id"]]}
             for item in upsert_item_data

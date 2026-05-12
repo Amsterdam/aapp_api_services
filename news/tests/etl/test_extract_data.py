@@ -22,11 +22,9 @@ class ExtractDataTest(TestCase):
                 f"{self.fetch_url}/highlighted?page=0",
                 payload=highlighted.MOCK_RESPONSE,
             )
-            print("Mocked URL:", f"{self.fetch_url}/highlighted?page=0")
             mocked.get(
                 f"{self.fetch_url}/liveblogs?page=0", payload=liveblogs.MOCK_RESPONSE
             )
-            print("Mocked URL:", f"{self.fetch_url}/liveblogs?page=0")
             items = fetcher.fetch_all_items()
             self.assertIsInstance(items, dict)
             self.assertIn(123124, items)
