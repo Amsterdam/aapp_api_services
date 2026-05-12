@@ -1,7 +1,7 @@
 from .base import ChoicesEnum, NewsArticleExtract
 
 
-class NewsArticle(ChoicesEnum):
+class NewsArticleSource(ChoicesEnum):
     HIGHLIGHT = NewsArticleExtract(index="highlighted", type="highlight", district=None)
     LIVEBLOG = NewsArticleExtract(index="liveblogs", type="liveblog", district=None)
     DISTRICT_NOORD = NewsArticleExtract(
