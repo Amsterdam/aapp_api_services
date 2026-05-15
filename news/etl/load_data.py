@@ -87,20 +87,20 @@ class NewsArticleLoader:
                 ],
             )
 
-    def _get_news_articles_dict(self) -> dict[int, NewsArticle]:
+    def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()
-        return {article.foreign_id: article for article in news_article_objects}
+        return {str(article.foreign_id): article for article in news_article_objects}
 
     def _delete_all_liveblog_items(self):
         with transaction.atomic():
             LiveBlogItem.objects.all().delete()
 
     def _gather_article_images(
-        self, transformed_data: list[dict], news_articles_dict: dict[int, NewsArticle]
+        self, transformed_data: list[dict], news_articles_dict: dict[str, NewsArticle]
     ) -> list[NewsArticleImage]:
         all_article_images = []
         for article in transformed_data:
-            news_article = news_articles_dict.get(article.get("foreign_id"))
+            news_article = news_articles_dict.get(str(article.get("foreign_id")))
             if article.get("image_url") is not None:
                 try:
                     image_set_data = self.image_set_service.get_or_upload_from_url(
@@ -122,11 +122,11 @@ class NewsArticleLoader:
         return all_article_images
 
     def _create_liveblog_items_and_gather_liveblog_item_images(
-        self, transformed_data: list[dict], news_articles_dict: dict[int, NewsArticle]
+        self, transformed_data: list[dict], news_articles_dict: dict[str, NewsArticle]
     ) -> list[LiveBlogItemImage]:
         all_liveblog_item_images = []
         for article in transformed_data:
-            news_article = news_articles_dict.get(article.get("foreign_id"))
+            news_article = news_articles_dict.get(str(article.get("foreign_id")))
             if article.get("type") == "liveblog" and isinstance(
                 article.get("body"), list
             ):
@@ -149,7 +149,7 @@ class NewsArticleLoader:
                             continue
                         image_sources = [
                             LiveBlogItemImage(
-                                liveblogitem=liveblog_item,
+                                liveblog_item=liveblog_item,
                                 url=v["image"],
                                 width=v["width"],
                                 height=v["height"],

@@ -90,14 +90,14 @@ class LoadDataTest(TestCase):
             modification_date="2024-01-01T12:00:00Z",
         )
         articles_dict = self.loader._get_news_articles_dict()
-        self.assertIn(article.foreign_id, articles_dict)
-        self.assertEqual(articles_dict[article.foreign_id].title, article.title)
+        self.assertIn(str(article.foreign_id), articles_dict)
+        self.assertEqual(articles_dict[str(article.foreign_id)].title, article.title)
 
     @patch("news.etl.load_data.ImageSetService")
     def test_gather_article_images(self, mock_image_set_service):
         transformed_data = [
             {
-                "foreign_id": 123123,
+                "foreign_id": "123123",
                 "type": "article",
                 "body": "A body",
                 "image_url": "https://example.com/image-test.jpg",
@@ -110,7 +110,7 @@ class LoadDataTest(TestCase):
             url="https://example.com/test-article",
             modification_date="2024-01-01T12:00:00Z",
         )
-        news_articles_dict = {news_article.foreign_id: news_article}
+        news_articles_dict = {str(news_article.foreign_id): news_article}
 
         self._set_mock_image_set_service_side_effect(mock_image_set_service)
 
@@ -127,7 +127,7 @@ class LoadDataTest(TestCase):
     def test_gather_liveblog_item_images(self, mock_image_set_service):
         transformed_data = [
             {
-                "foreign_id": 123123,
+                "foreign_id": "123123",
                 "type": "liveblog",
                 "body": [
                     {
@@ -151,7 +151,7 @@ class LoadDataTest(TestCase):
             url="https://example.com/test-article",
             modification_date="2024-01-01T12:00:00Z",
         )
-        news_articles_dict = {news_article.foreign_id: news_article}
+        news_articles_dict = {str(news_article.foreign_id): news_article}
 
         self._set_mock_image_set_service_side_effect(mock_image_set_service)
 
@@ -173,7 +173,7 @@ class LoadDataTest(TestCase):
     def test_gather_liveblog_item_images_http_error(self, mock_image_set_service):
         transformed_data = [
             {
-                "foreign_id": 123123,
+                "foreign_id": "123123",
                 "type": "liveblog",
                 "body": [
                     {
@@ -197,7 +197,7 @@ class LoadDataTest(TestCase):
             url="https://example.com/test-article",
             modification_date="2024-01-01T12:00:00Z",
         )
-        news_articles_dict = {news_article.foreign_id: news_article}
+        news_articles_dict = {str(news_article.foreign_id): news_article}
 
         mock_image_set_service.return_value.get_or_upload_from_url.side_effect = (
             HTTPError("Failed to fetch or upload image")
@@ -220,7 +220,7 @@ class LoadDataTest(TestCase):
     def test_load_news_articles(self, mock_image_set_service):
         transformed_data = [
             {
-                "foreign_id": 123123,
+                "foreign_id": "123123",
                 "title": "Test Article",
                 "url": "https://example.com/test-article",
                 "modification_date": "2024-01-01T12:00:00Z",
@@ -231,7 +231,7 @@ class LoadDataTest(TestCase):
                 "expiration_date": None,
             },
             {
-                "foreign_id": 1321235,
+                "foreign_id": "1321235",
                 "title": "Test Liveblog",
                 "url": "https://example.com/test-article-2",
                 "modification_date": "2024-01-02T12:00:00Z",

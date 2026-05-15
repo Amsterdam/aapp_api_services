@@ -79,9 +79,9 @@ class NewsArticleImage(BaseImage):
 
 
 class LiveBlogItemImage(BaseImage):
-    liveblogitem = models.ForeignKey(
+    liveblog_item = models.ForeignKey(
         LiveBlogItem, on_delete=models.CASCADE, related_name="images"
     )
 
     def __str__(self):
-        return f"{self.liveblogitem.title} - {self.width}x{self.height}"
+        return f"{self.liveblog_item.title} - {self.width}x{self.height}"
