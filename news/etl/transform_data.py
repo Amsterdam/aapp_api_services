@@ -103,20 +103,21 @@ def transform(extracted_data: list[dict]) -> list[dict]:
         article_id = article.get("id")
         url = article.get("url")
 
-        # Deduplication by id
-        if article_id in seen_ids:
-            logger.warning(
-                f"Duplicate article ID found: {article_id}. Skipping duplicate."
-            )
-            continue
-        seen_ids.add(article_id)
-
         # Validate required fields
         if not validate_article(article):
             logger.warning(
                 f"Skipping article with id {article_id} due to validation failure."
             )
             continue
+
+        # Deduplication by id
+        if article_id in seen_ids:
+            logger.warning(
+                f"Duplicate article ID found: {article_id}. Skipping duplicate."
+            )
+            continue
+
+        seen_ids.add(article_id)
 
         # Clean and transform fields
         transformed.append(

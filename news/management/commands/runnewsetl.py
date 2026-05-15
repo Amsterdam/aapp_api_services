@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 
 from news.enums.news_article import NewsArticleSource
 from news.etl.extract_data import IproxFetcher
-from news.etl.transform_data import transform_news_articles
+from news.etl.transform_data import transform
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class Command(BaseCommand):
             logger.info("No articles found. Ending ETL process.")
             return
 
-        transformed_data = transform_news_articles(extracted_data)
+        transformed_data = transform(extracted_data)
 
         logger.info(
             f"Now we continue with the load steps for {len(transformed_data)} news articles."
