@@ -51,13 +51,37 @@ class NewsArticle(models.Model):
         return self.title
 
 
-class NewsArticleImage(models.Model):
+class LiveBlogItem(models.Model):
     article = models.ForeignKey(
-        NewsArticle, on_delete=models.CASCADE, related_name="images"
+        NewsArticle, on_delete=models.CASCADE, related_name="liveblog_items"
     )
+    datetime = models.DateTimeField()
+    title = models.CharField(max_length=1000)
+    body = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-datetime"]
+
+
+class BaseImage(models.Model):
     url = models.URLField(max_length=2048)
     width = models.IntegerField()
     height = models.IntegerField()
 
+    class Meta:
+        abstract = True
+
+
+class NewsArticleImage(BaseImage):
+    article = models.ForeignKey(
+        NewsArticle, on_delete=models.CASCADE, related_name="images"
+    )
+
+
+class LiveBlogItemImage(BaseImage):
+    liveblogitem = models.ForeignKey(
+        LiveBlogItem, on_delete=models.CASCADE, related_name="images"
+    )
+
     def __str__(self):
-        return f"{self.article.title} - {self.width}x{self.height}"
+        return f"{self.liveblogitem.title} - {self.width}x{self.height}"
