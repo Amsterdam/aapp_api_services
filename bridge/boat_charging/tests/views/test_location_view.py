@@ -117,6 +117,56 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.assertEqual(resp_tariff.call_count, 1)
         self.assertEqual(len(response.data["charging_stations"]), 2)
 
+    def test_no_tariff(self):
+        ext_endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{self.location_id}"
+        )
+        resp = respx.get(ext_endpoint).mock(
+            return_value=httpx.Response(
+                200, json=location_detail.MOCK_RESPONSE_NO_TARIFF
+            )
+        )
+
+        for charging_station_id in ["cs_id_1", "cs_id_2"]:
+            charging_station_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{charging_station_id}"
+            respx.get(charging_station_endpoint).mock(
+                return_value=httpx.Response(
+                    200, json=charging_station_detail.MOCK_RESPONSE
+                )
+            )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertEqual(response.data["tariff"], None)
+        self.assertEqual(len(response.data["charging_stations"]), 2)
+
+    def test_tariff_not_accessible(self):
+        ext_endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{self.location_id}"
+        )
+        resp = respx.get(ext_endpoint).mock(
+            return_value=httpx.Response(200, json=location_detail.MOCK_RESPONSE)
+        )
+
+        tariff_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['TARIFFS']}/NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY"
+        resp_tariff = respx.get(tariff_endpoint).mock(return_value=httpx.Response(403))
+
+        for charging_station_id in ["cs_id_1", "cs_id_2"]:
+            charging_station_endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{charging_station_id}"
+            respx.get(charging_station_endpoint).mock(
+                return_value=httpx.Response(
+                    200, json=charging_station_detail.MOCK_RESPONSE
+                )
+            )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertEqual(resp_tariff.call_count, 1)
+        self.assertEqual(response.data["tariff"], None)
+        self.assertEqual(len(response.data["charging_stations"]), 2)
+
     def test_unknown_location_id(self):
         ext_endpoint = (
             f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{self.location_id}"

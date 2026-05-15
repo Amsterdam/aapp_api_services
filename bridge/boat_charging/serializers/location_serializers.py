@@ -82,5 +82,5 @@ class ChargingStationSerializer(serializers.Serializer):
 
 
 class LocationDetailResponseSerializer(LocationPropertiesSerializer):
-    tariff = TariffSerializer()
+    tariff = TariffSerializer(allow_null=True)
     charging_stations = serializers.ListField(child=ChargingStationSerializer())
