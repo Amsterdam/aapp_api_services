@@ -102,7 +102,7 @@ class IproxFetcher:
                     all_items[item["id"]] = item
 
                 pages = result.get("pages", 1)
-                if page == pages - 1:
+                if page >= pages - 1:
                     break
                 page += 1
         return all_items
@@ -123,9 +123,6 @@ class IproxFetcher:
                 )
                 item_result.append(merged_item)
 
-        logger.info(
-            f"Finished async fetch. Successfully collected {len(item_result)} items"
-        )
         return item_result
 
     async def _async_fetch(self, urls):
