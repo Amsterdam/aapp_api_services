@@ -1,6 +1,7 @@
 from django.test import TestCase
 
 from news.etl.transform_data import (
+    change_date_string_to_iso,
     decode_and_strip_outer_div,
     parse_liveblog_messages,
     transform,
@@ -58,6 +59,17 @@ class TransformDataTest(TestCase):
         self.assertIn("Details of the second update.", messages[1]["body"])
         self.assertIsNone(messages[1]["image_url"])
         self.assertIsNone(messages[1]["image_description"])
+
+    def test_change_date_string_to_iso_valid(self):
+        input_str = "12-01-2024, 14:30"
+        expected = "2024-01-12T14:30:00"
+        result = change_date_string_to_iso(input_str)
+        self.assertEqual(result, expected)
+
+    def test_change_date_string_to_iso_invalid(self):
+        input_str = "invalid date string"
+        result = change_date_string_to_iso(input_str)
+        self.assertEqual(result, input_str)  # Should return original string on failure
 
     def test_validate_article_valid(self):
         article = {

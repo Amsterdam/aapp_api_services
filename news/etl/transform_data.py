@@ -1,3 +1,4 @@
+import datetime
 import html
 import logging
 import re
@@ -27,6 +28,7 @@ def parse_liveblog_messages(input_str: str | None) -> list[dict]:
     datetimes = soup.find_all("p", class_="datetime")
     for dt_tag in datetimes:
         dt = dt_tag.get_text(strip=True)
+        date_string = change_date_string_to_iso(dt)
 
         # Find all elements between this datetime and the next datetime
         next_sibling = dt_tag.find_next_sibling()
@@ -72,13 +74,28 @@ def parse_liveblog_messages(input_str: str | None) -> list[dict]:
         messages.append(
             {
                 "title": title,
-                "datetime": dt,
+                "datetime": date_string,
                 "body": body_html.strip(),
                 "image_url": image_url,
                 "image_description": image_desc,
             }
         )
     return messages
+
+
+def change_date_string_to_iso(input_str: str) -> str:
+    """
+    Convert a datetime string from "DD-MM-YYYY, HH:MM" format to ISO 8601 format "YYYY-MM-DDTHH:MM:SS".
+    Example input: "12-01-2024, 14:30"
+    Desired output: "2024-01-12T14:30:00"
+    """
+    try:
+        datetime_format = "%d-%m-%Y, %H:%M"
+        dt = datetime.datetime.strptime(input_str, datetime_format)
+        return dt.isoformat()
+    except ValueError as e:
+        logger.error(f"Error parsing datetime string '{input_str}': {e}")
+        return input_str  # Return original string if parsing fails
 
 
 def validate_article(article: dict) -> bool:
