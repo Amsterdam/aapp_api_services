@@ -93,7 +93,7 @@ clean:
 	$(call dc_for_all,down -v --remove-orphans)
 
 openapi-diff:
-	@if [ -z "$(SERVICE_NAME)" ]; then \
+	@if [ "$(SERVICE_NAME)" = "core" ]; then \
 	  for s in $(ALL_SERVICES); do \
 		SERVICE_NAME_HYPHEN=$$(printf '%s\n' "$$s" | tr '_' '-'); \
 		SERVICE_NAME=$$s docker compose run --rm lint python manage.py spectacular --file /app/$$s/openapi-schema.yaml;\
