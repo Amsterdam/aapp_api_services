@@ -317,5 +317,5 @@ class ServerTimeView(GenericAPIView):
     def get(self, request, *args, **kwargs) -> Response:
         """Returns the current server time"""
         return Response(
-            {"server_time": timezone.now().isoformat()}, status=status.HTTP_200_OK
+            {"server_time": timezone.localtime().isoformat()}, status=status.HTTP_200_OK
         )
