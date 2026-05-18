@@ -38,14 +38,14 @@ class NewsArticle(models.Model):
         default=None,
     )
     url = models.URLField(max_length=2048)
-    creation_date = models.DateTimeField(
+    creation_datetime = models.DateTimeField(
         default=timezone.now
     )  # If no date is provided use the current date
-    modification_date = models.DateTimeField(
+    modification_datetime = models.DateTimeField(
         default=timezone.now
     )  # If no date is provided use the current date
-    publication_date = models.DateTimeField()
-    expiration_date = models.DateTimeField(default=None, null=True)
+    publication_datetime = models.DateTimeField()
+    expiration_datetime = models.DateTimeField(default=None, null=True)
 
     def __str__(self):
         return self.title
@@ -55,12 +55,12 @@ class LiveBlogItem(models.Model):
     article = models.ForeignKey(
         NewsArticle, on_delete=models.CASCADE, related_name="liveblog_items"
     )
-    datetime = models.DateTimeField()
+    creation_datetime = models.DateTimeField()
     title = models.CharField(max_length=1000)
     body = models.TextField(blank=True, null=True)
 
     class Meta:
-        ordering = ["-datetime"]
+        ordering = ["-creation_datetime"]
 
 
 class BaseImage(models.Model):
