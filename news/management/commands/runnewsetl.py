@@ -45,3 +45,5 @@ class Command(BaseCommand):
         )
 
         data_loader.load(transformed_data)
+
+        logger.info("ETL process completed successfully.")

@@ -1,5 +1,3 @@
-
-
 from unittest.mock import patch
 
 from aioresponses import aioresponses
@@ -99,7 +97,9 @@ class RunNewsETLTest(TestCase):
 
         self.assertEqual(NewsArticle.objects.count(), 2)
 
-        article = NewsArticle.objects.get(foreign_id=item_article.MOCK_RESPONSE_123123["id"])
+        article = NewsArticle.objects.get(
+            foreign_id=item_article.MOCK_RESPONSE_123123["id"]
+        )
         liveblog_article = NewsArticle.objects.get(
             foreign_id=item_liveblog.MOCK_RESPONSE["id"]
         )
@@ -116,13 +116,19 @@ class RunNewsETLTest(TestCase):
         self.assertEqual(liveblog_article.url, item_liveblog.MOCK_RESPONSE["url"])
         self.assertIsNone(liveblog_article.body)
 
-        self.assertGreater(LiveBlogItem.objects.filter(article=liveblog_article).count(), 0)
-        self.assertGreater(NewsArticleImage.objects.count(), 0)
-        self.assertGreater(LiveBlogItemImage.objects.count(), 0)
+        self.assertEqual(
+            LiveBlogItem.objects.filter(article=liveblog_article).count(), 19
+        )
+        self.assertEqual(NewsArticleImage.objects.count(), 4)
+        self.assertEqual(LiveBlogItemImage.objects.count(), 18)
 
         self.assertTrue(
-            NewsArticleImage.objects.filter(url="https://example.com/image.jpg").exists()
+            NewsArticleImage.objects.filter(
+                url="https://example.com/image.jpg"
+            ).exists()
         )
         self.assertTrue(
-            LiveBlogItemImage.objects.filter(url="https://example.com/image.jpg").exists()
+            LiveBlogItemImage.objects.filter(
+                url="https://example.com/image.jpg"
+            ).exists()
         )
