@@ -8,6 +8,67 @@ from bs4 import BeautifulSoup
 logger = logging.getLogger(__name__)
 
 
+def transform(extracted_data: list[dict]) -> list[dict]:
+    """
+    Transform the extracted news articles data into a list of transformed articles (dicts).
+    - Cleans 'body' and text fields
+    - Deduplicates by id
+    - Logs and skips invalid articles
+    """
+    seen_ids = set()
+    transformed = []
+    for article in extracted_data:
+        article_id = article.get("id")
+        url = article.get("url")
+
+        # Validate required fields
+        if not validate_article(article):
+            logger.warning(
+                f"Skipping article with id {article_id} due to validation failure."
+            )
+            continue
+
+        # Deduplication by id
+        if article_id in seen_ids:
+            logger.warning(
+                f"Duplicate article ID found: {article_id}. Skipping duplicate."
+            )
+            continue
+
+        seen_ids.add(article_id)
+
+        # Clean and transform fields
+        transformed.append(
+            {
+                "foreign_id": article_id,
+                "title": decode_and_strip_outer_div(article.get("title")),
+                "body": decode_and_strip_outer_div(article.get("body"))
+                if article.get("type") != "liveblog"
+                else parse_liveblog_messages(article.get("body")),
+                "summary": decode_and_strip_outer_div(article.get("summary")),
+                "intro": decode_and_strip_outer_div(article.get("intro")),
+                "type": article.get("type"),
+                "district": article.get("district"),
+                "url": url,
+                "creation_date": article.get("created"),
+                "modification_date": article.get("modified"),
+                "publication_date": article.get("publicationDate"),
+                "expiration_date": article.get("expirationDate"),
+                "image_url": article.get("image_url"),
+            }
+        )
+    return transformed
+
+
+def validate_article(article: dict) -> bool:
+    required_fields = ["id", "title", "body"]
+    for field in required_fields:
+        value = article.get(field)
+        if not value:
+            return False
+    return True
+
+
 def decode_and_strip_outer_div(input_str: str | None) -> str:
     if not input_str:
         return ""
@@ -96,64 +157,3 @@ def change_date_string_to_iso(input_str: str) -> str:
     except ValueError as e:
         logger.error(f"Error parsing datetime string '{input_str}': {e}")
         return input_str  # Return original string if parsing fails
-
-
-def validate_article(article: dict) -> bool:
-    required_fields = ["id", "title", "body"]
-    for field in required_fields:
-        value = article.get(field)
-        if not value:
-            return False
-    return True
-
-
-def transform(extracted_data: list[dict]) -> list[dict]:
-    """
-    Transform the extracted news articles data into a list of transformed articles (dicts).
-    - Cleans 'body' and text fields
-    - Deduplicates by id
-    - Logs and skips invalid articles
-    """
-    seen_ids = set()
-    transformed = []
-    for article in extracted_data:
-        article_id = article.get("id")
-        url = article.get("url")
-
-        # Validate required fields
-        if not validate_article(article):
-            logger.warning(
-                f"Skipping article with id {article_id} due to validation failure."
-            )
-            continue
-
-        # Deduplication by id
-        if article_id in seen_ids:
-            logger.warning(
-                f"Duplicate article ID found: {article_id}. Skipping duplicate."
-            )
-            continue
-
-        seen_ids.add(article_id)
-
-        # Clean and transform fields
-        transformed.append(
-            {
-                "foreign_id": article_id,
-                "title": decode_and_strip_outer_div(article.get("title")),
-                "body": decode_and_strip_outer_div(article.get("body"))
-                if article.get("type") != "liveblog"
-                else parse_liveblog_messages(article.get("body")),
-                "summary": decode_and_strip_outer_div(article.get("summary")),
-                "intro": decode_and_strip_outer_div(article.get("intro")),
-                "type": article.get("type"),
-                "district": article.get("district"),
-                "url": url,
-                "creation_date": article.get("created"),
-                "modification_date": article.get("modified"),
-                "publication_date": article.get("publicationDate"),
-                "expiration_date": article.get("expirationDate"),
-                "image_url": article.get("image_url"),
-            }
-        )
-    return transformed
