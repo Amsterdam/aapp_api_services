@@ -58,9 +58,10 @@ class LiveBlogItem(models.Model):
     creation_datetime = models.DateTimeField()
     title = models.CharField(max_length=1000)
     body = models.TextField(blank=True, null=True)
+    message_order = models.IntegerField(default=0)
 
     class Meta:
-        ordering = ["-creation_datetime"]
+        ordering = ["message_order"]
 
 
 class BaseImage(models.Model):
@@ -77,11 +78,14 @@ class NewsArticleImage(BaseImage):
         NewsArticle, on_delete=models.CASCADE, related_name="images"
     )
 
+    class Meta:
+        unique_together = ("article", "url")
+
 
 class LiveBlogItemImage(BaseImage):
     liveblog_item = models.ForeignKey(
         LiveBlogItem, on_delete=models.CASCADE, related_name="images"
     )
 
-    def __str__(self):
-        return f"{self.liveblog_item.title} - {self.width}x{self.height}"
+    class Meta:
+        unique_together = ("liveblog_item", "url")

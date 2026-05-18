@@ -53,10 +53,10 @@ def transform(extracted_data: list[dict]) -> list[dict]:
                 "type": article.get("type"),
                 "district": article.get("district"),
                 "url": url,
-                "creation_date": article.get("created"),
-                "modification_date": article.get("modified"),
-                "publication_date": article.get("publicationDate"),
-                "expiration_date": article.get("expirationDate"),
+                "creation_datetime": article.get("created"),
+                "modification_datetime": article.get("modified"),
+                "publication_datetime": article.get("publicationDate"),
+                "expiration_datetime": article.get("expirationDate"),
                 "image_url": article.get("image_url"),
             }
         )
@@ -103,7 +103,7 @@ def parse_liveblog_messages(input_str: str | None) -> list[dict]:
         messages.append(
             {
                 "title": title,
-                "datetime": date_string,
+                "creation_datetime": date_string,
                 "body": body,
                 "image_url": image_url,
                 "image_description": image_desc,

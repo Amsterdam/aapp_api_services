@@ -29,20 +29,9 @@ class NewsArticleLoader:
         ]
         self._upsert_news_articles(news_articles_list)
 
-        news_articles_dict = self._get_news_articles_dict()
+        news_articles_dict = self._get_news_articles_dict()  # {foreign_id: NewsArticle instance} for all articles in the database after upsert
 
-        all_article_images = self._gather_article_images(
-            transformed_data, news_articles_dict
-        )
-        self._replace_article_images(all_article_images)
-
-        self._delete_all_liveblog_items()
-        all_liveblog_item_images = (
-            self._create_liveblog_items_and_gather_liveblog_item_images(
-                transformed_data, news_articles_dict
-            )
-        )
-        self._replace_liveblog_item_images(all_liveblog_item_images)
+        self._upsert_images_and_liveblog_items(transformed_data, news_articles_dict)
 
     def _get_news_article_object(self, data: dict) -> NewsArticle:
         """
@@ -58,10 +47,10 @@ class NewsArticleLoader:
             type=data.get("type"),
             district=data.get("district"),
             url=data.get("url"),
-            creation_date=data.get("creation_date"),
-            modification_date=data.get("modification_date"),
-            publication_date=data.get("publication_date"),
-            expiration_date=data.get("expiration_date"),
+            creation_datetime=data.get("creation_datetime"),
+            modification_datetime=data.get("modification_datetime"),
+            publication_datetime=data.get("publication_datetime"),
+            expiration_datetime=data.get("expiration_datetime"),
             last_seen=timezone.now(),
         )
 
@@ -79,10 +68,10 @@ class NewsArticleLoader:
                     "type",
                     "district",
                     "url",
-                    "creation_date",
-                    "modification_date",
-                    "publication_date",
-                    "expiration_date",
+                    "creation_datetime",
+                    "modification_datetime",
+                    "publication_datetime",
+                    "expiration_datetime",
                     "last_seen",
                 ],
             )
@@ -91,84 +80,132 @@ class NewsArticleLoader:
         news_article_objects = NewsArticle.objects.all()
         return {str(article.foreign_id): article for article in news_article_objects}
 
-    def _delete_all_liveblog_items(self):
-        with transaction.atomic():
-            LiveBlogItem.objects.all().delete()
-
-    def _gather_article_images(
+    def _upsert_images_and_liveblog_items(
         self, transformed_data: list[dict], news_articles_dict: dict[str, NewsArticle]
-    ) -> list[NewsArticleImage]:
-        all_article_images = []
-        for article in transformed_data:
-            news_article = news_articles_dict.get(str(article.get("foreign_id")))
-            if article.get("image_url") is not None:
-                try:
-                    image_set_data = self.image_set_service.get_or_upload_from_url(
-                        article.get("image_url")
-                    )
-                except HTTPError as e:
-                    logger.error(f"Error getting or uploading image: {e}")
-                    continue
-                image_sources = [
-                    NewsArticleImage(
-                        article=news_article,
-                        url=v["image"],
-                        width=v["width"],
-                        height=v["height"],
-                    )
-                    for v in image_set_data["variants"]
-                ]
-                all_article_images.extend(image_sources)
-        return all_article_images
-
-    def _create_liveblog_items_and_gather_liveblog_item_images(
-        self, transformed_data: list[dict], news_articles_dict: dict[str, NewsArticle]
-    ) -> list[LiveBlogItemImage]:
-        all_liveblog_item_images = []
-        for article in transformed_data:
-            news_article = news_articles_dict.get(str(article.get("foreign_id")))
-            if article.get("type") == "liveblog" and isinstance(
-                article.get("body"), list
-            ):
-                for message in article.get("body"):
-                    liveblog_item = LiveBlogItem.objects.create(
-                        article=news_article,
-                        datetime=message.get("datetime"),
-                        title=message.get("title"),
-                        body=message.get("body"),
-                    )
-                    if message.get("image_url") is not None:
-                        try:
-                            image_set_data = (
-                                self.image_set_service.get_or_upload_from_url(
-                                    message.get("image_url")
-                                )
-                            )
-                        except HTTPError as e:
-                            logger.error(f"Error getting or uploading image: {e}")
-                            continue
-                        image_sources = [
-                            LiveBlogItemImage(
-                                liveblog_item=liveblog_item,
-                                url=v["image"],
-                                width=v["width"],
-                                height=v["height"],
-                            )
-                            for v in image_set_data["variants"]
-                        ]
-                        all_liveblog_item_images.extend(image_sources)
-        return all_liveblog_item_images
-
-    def _replace_article_images(self, all_article_images: list[NewsArticleImage]):
-        with transaction.atomic():
-            NewsArticleImage.objects.all().delete()
-            if all_article_images:
-                NewsArticleImage.objects.bulk_create(all_article_images)
-
-    def _replace_liveblog_item_images(
-        self, all_liveblog_item_images: list[LiveBlogItemImage]
     ):
-        with transaction.atomic():
-            LiveBlogItemImage.objects.all().delete()
-            if all_liveblog_item_images:
-                LiveBlogItemImage.objects.bulk_create(all_liveblog_item_images)
+        """
+        Function to upsert the images (both article images and liveblog item images) and liveblog items for the transformed articles.
+
+        We need the transformed data to stil access the image urls and liveblog item data,
+        and we need the news_articles_dict to associate the images and liveblog items with the correct NewsArticle instances in the database.
+        """
+        for article in transformed_data:
+            news_article = news_articles_dict.get(str(article.get("foreign_id")))
+
+            self._upsert_article_images(article, news_article)
+
+            self._upsert_liveblog_items_and_liveblog_item_images(article, news_article)
+
+    def _upsert_article_images(self, article: dict, news_article: NewsArticle):
+        """
+        Upsert article images for a given article. If the article has an image_url, we will attempt to get or upload the image using the ImageSetService.
+        Then we will upsert the NewsArticleImage instances for the article based on the image variants returned by the ImageSetService.
+        The logic is as follows:
+        - If an image with the same url already exists for the article, update its width and height
+        - If there is an image for an article, but the url is different than the existing one, delete the old image and create a new one
+        - If there is no image for an article, create a new one
+        """
+        if article.get("image_url") is not None:
+            try:
+                image_set_data = self.image_set_service.get_or_upload_from_url(
+                    article.get("image_url")
+                )
+            except HTTPError as e:
+                logger.error(f"Error getting or uploading image: {e}")
+                return
+
+            # upsert article images
+            image_sources = [
+                NewsArticleImage(
+                    article=news_article,
+                    url=v["image"],
+                    width=v["width"],
+                    height=v["height"],
+                )
+                for v in image_set_data["variants"]
+            ]
+            # Gather all URLs for this article from the new image_sources
+            new_urls = {img.url for img in image_sources}
+            # Find all existing images for this article
+            existing_images = NewsArticleImage.objects.filter(article=news_article)
+            # Delete images for this article whose URL is not in the new set
+            images_to_delete = existing_images.exclude(url__in=new_urls)
+            if images_to_delete.exists():
+                images_to_delete.delete()
+
+            # Upsert new images (create or update width/height)
+            NewsArticleImage.objects.bulk_create(
+                image_sources,
+                update_conflicts=True,
+                unique_fields=["article", "url"],
+                update_fields=["width", "height"],
+            )
+
+    def _upsert_liveblog_items_and_liveblog_item_images(
+        self, article: dict, news_article: NewsArticle
+    ):
+
+        if article.get("type") == "liveblog" and isinstance(article.get("body"), list):
+            messages = article.get("body")
+            # make sure messages are sorted by creation_datetime ascending before creating LiveBlogItems
+            messages.sort(key=lambda x: x.get("creation_datetime"))
+
+            for i, message in enumerate(messages):
+                liveblog_item, _ = LiveBlogItem.objects.update_or_create(
+                    article=news_article,
+                    creation_datetime=message.get("creation_datetime"),
+                    title=message.get("title"),
+                    body=message.get("body"),
+                    defaults={
+                        "message_order": i,
+                        "article": news_article,
+                    },
+                )
+
+                self._upsert_liveblog_item_images(message, liveblog_item)
+
+    def _upsert_liveblog_item_images(self, message: dict, liveblog_item: LiveBlogItem):
+        """
+        Upsert liveblog item images for a given liveblog item. If the liveblog item has an image_url, we will attempt to get or upload the image using the ImageSetService.
+        Then we will upsert the LiveBlogItemImage instances for the liveblog item based on the image variants returned by the ImageSetService.
+        The logic is as follows:
+        - If an image with the same url already exists for the liveblog item, update its width and height
+        - If there is an image for a liveblog item, but the url is different than the existing one, delete the old image and create a new one
+        - If there is no image for a liveblog item, create a new one
+        """
+        if message.get("image_url") is not None:
+            try:
+                image_set_data = self.image_set_service.get_or_upload_from_url(
+                    message.get("image_url")
+                )
+            except HTTPError as e:
+                logger.error(f"Error getting or uploading image: {e}")
+                return
+            image_sources = [
+                LiveBlogItemImage(
+                    liveblog_item=liveblog_item,
+                    url=v["image"],
+                    width=v["width"],
+                    height=v["height"],
+                )
+                for v in image_set_data["variants"]
+            ]
+
+            # Gather all URLs for this liveblog item from the new image_sources
+            new_urls = {img.url for img in image_sources}
+            # Find all existing images for this liveblog item
+            existing_images = LiveBlogItemImage.objects.filter(
+                liveblog_item=liveblog_item
+            )
+            # Delete images for this liveblog item whose URL is not in the new set
+            images_to_delete = existing_images.exclude(url__in=new_urls)
+            if images_to_delete.exists():
+                images_to_delete.delete()
+
+            # Upsert new images (create or update width/height)
+            LiveBlogItemImage.objects.bulk_create(
+                image_sources,
+                update_conflicts=True,
+                unique_fields=["liveblog_item", "url"],
+                update_fields=["width", "height"],
+            )
