@@ -5,6 +5,8 @@ import re
 
 from bs4 import BeautifulSoup
 
+from news.serializers.article_serializer import NewsArticleTransformSerializer
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +33,8 @@ def transform(extracted_data: list[dict]) -> list[dict]:
         # Deduplication by id
         if article_id in seen_ids:
             logger.warning(
-                f"Duplicate article ID found: {article_id}. Skipping duplicate."
+                "Duplicate article ID found. Skipping duplicate.",
+                extra={"article_id": article_id},
             )
             continue
 
@@ -61,12 +64,8 @@ def transform(extracted_data: list[dict]) -> list[dict]:
 
 
 def validate_article(article: dict) -> bool:
-    required_fields = ["id", "title", "body"]
-    for field in required_fields:
-        value = article.get(field)
-        if not value:
-            return False
-    return True
+    news_article_serializer = NewsArticleTransformSerializer(data=article)
+    return news_article_serializer.is_valid()
 
 
 def decode_and_strip_outer_div(input_str: str | None) -> str:
@@ -139,6 +138,7 @@ def extract_title_from_elements(elements) -> str:
             break
     return title
 
+
 def extract_first_image_from_elements(elements) -> tuple[str | None, str | None]:
     """
     For now we assume that each liveblog item only contains one image.
@@ -159,6 +159,7 @@ def extract_first_image_from_elements(elements) -> tuple[str | None, str | None]
             break
     return image_url, image_desc
 
+
 def extract_body_from_elements(elements, title) -> str:
     """Build the body HTML by concatenating the HTML of all elements, but skip the title element if it
     matches the provided title."""
@@ -168,6 +169,7 @@ def extract_body_from_elements(elements, title) -> str:
             continue
         body_html += str(el)
     return body_html.strip()
+
 
 def change_date_string_to_iso(input_str: str) -> str:
     """
