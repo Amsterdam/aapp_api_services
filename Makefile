@@ -96,11 +96,11 @@ openapi-diff:
 	@if [ -z "$(SERVICE_NAME)" ]; then \
 	  for s in $(ALL_SERVICES); do \
 		SERVICE_NAME_HYPHEN=$$(printf '%s\n' "$$s" | tr '_' '-'); \
-		SERVICE_NAME=$$s docker compose run --rm dev python manage.py spectacular --file /app/$$s/openapi-schema.yaml;\
+		SERVICE_NAME=$$s docker compose run --rm lint python manage.py spectacular --file /app/$$s/openapi-schema.yaml;\
 		SERVICE_NAME=$$s docker compose run --rm openapi-diff https://test.app.amsterdam.nl/$${SERVICE_NAME_HYPHEN}/api/v1/openapi/ /specs/openapi-schema.yaml --fail-on-incompatible || exit $$?; \
 	  done; \
 	else \
-        SERVICE_NAME=$$SERVICE_NAME docker compose run --rm dev python manage.py spectacular --file /app/$$SERVICE_NAME/openapi-schema.yaml;\
+        SERVICE_NAME=$$SERVICE_NAME docker compose run --rm lint python manage.py spectacular --file /app/$$SERVICE_NAME/openapi-schema.yaml;\
         SERVICE_NAME=$$SERVICE_NAME docker compose run --rm openapi-diff https://test.app.amsterdam.nl/$${SERVICE_NAME_HYPHEN}/api/v1/openapi/ /specs/openapi-schema.yaml --fail-on-incompatible || exit $$?; \
 	fi
 
