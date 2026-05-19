@@ -24,15 +24,14 @@ class TestArticleListView(BasicAPITestCase):
 
         response = self.client.get(self.url, headers=self.api_headers)
 
-        print(response)
-        print(response.data)
-        print(response.json())
-
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data["results"]), 2)
+        self.assertEqual(response.data["count"], 2)
 
         article_1_response = [
-            article for article in response.data if article["id"] == self.article_1.id
+            article
+            for article in response.data["results"]
+            if article["id"] == self.article_1.id
         ][0]
         self.assertEqual(article_1_response["title"], self.article_1.title)
         self.assertEqual(
@@ -41,7 +40,9 @@ class TestArticleListView(BasicAPITestCase):
         self.assertEqual(len(article_1_response["images"]), 2)
 
         article_2_response = [
-            article for article in response.data if article["id"] == self.article_2.id
+            article
+            for article in response.data["results"]
+            if article["id"] == self.article_2.id
         ][0]
         self.assertEqual(article_2_response["title"], self.article_2.title)
         self.assertEqual(
