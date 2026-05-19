@@ -49,3 +49,12 @@ class TestArticleListView(BasicAPITestCase):
             article_2_response["publication_date"], "2024-10-12T14:45:15+02:00"
         )
         self.assertEqual(len(article_2_response["images"]), 0)
+
+    def test_article_list_pagination(self):
+
+        params = {"page_size": 1}
+        response = self.client.get(self.url, headers=self.api_headers, data=params)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 1)  # Page size set to 1
+        self.assertEqual(response.data["count"], 2)  # Total articles
