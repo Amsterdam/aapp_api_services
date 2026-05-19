@@ -11,6 +11,11 @@ urlpatterns = [
         article_views.ArticleListView.as_view(),
         name="news-article-list",
     ),
+    path(
+        BASE_PATH + "/articles/<int:id>/",
+        article_views.ArticleDetailView.as_view(),
+        name="news-article-detail",
+    ),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH)

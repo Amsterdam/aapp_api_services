@@ -1,6 +1,6 @@
 import logging
 
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView
 
 from news.models import NewsArticle
 from news.serializers.article_serializers import NewsArticleListResponseSerializer
@@ -15,3 +15,11 @@ class ArticleListView(ListAPIView):
         )
 
     serializer_class = NewsArticleListResponseSerializer
+
+
+class ArticleDetailView(RetrieveAPIView):
+    def get_queryset(self):
+        return NewsArticle.objects.prefetch_related("images")
+
+    serializer_class = NewsArticleListResponseSerializer
+    lookup_field = "id"
