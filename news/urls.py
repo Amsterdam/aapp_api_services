@@ -12,6 +12,11 @@ urlpatterns = [
         name="news-article-list",
     ),
     path(
+        BASE_PATH + "/articles/<int:id>",
+        article_views.ArticleDetailView.as_view(),
+        name="news-article-detail",
+    ),
+    path(
         BASE_PATH + "/districts",
         districts_views.DistrictListView.as_view(),
         name="news-districts-list",
