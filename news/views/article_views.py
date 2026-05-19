@@ -48,3 +48,9 @@ class ArticleDetailView(RetrieveAPIView):
 
     serializer_class = NewsArticleResponseSerializer
     lookup_field = "id"
+
+    @extend_schema_for_api_key(
+        success_response=NewsArticleResponseSerializer,
+    )
+    def get(self, *args, **kwargs):
+        return super().get(*args, **kwargs)
