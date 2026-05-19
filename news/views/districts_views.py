@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from news.models import DISTRICT_TYPE_CHOICES
+from news.serializers.districts_serializers import DistrictListResponseSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,8 @@ CITY_AREAS = ["weesp"]  # list of city ares,
 
 @method_decorator(cache_page(60 * 60), name="get")
 class DistrictListView(APIView):
+    serializer_class = DistrictListResponseSerializer
+
     def get(self, request, *args, **kwargs):
 
         data = []
@@ -24,4 +27,7 @@ class DistrictListView(APIView):
             else:
                 name = f"Stadsdeel {name}"
             data.append({"label": label, "name": name})
-        return Response({"data": data}, status=status.HTTP_200_OK)
+
+        serializer = self.serializer_class(data={"data": data})
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
