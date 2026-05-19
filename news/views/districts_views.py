@@ -11,7 +11,9 @@ from news.serializers.districts_serializers import DistrictListResponseSerialize
 
 logger = logging.getLogger(__name__)
 
-CITY_AREAS = ["weesp"]  # list of city ares,
+CITY_AREAS = [
+    "weesp"
+]  # list of city ares, used to prefix name with "Stadsgebied" instead of "Stadsdeel"
 
 
 @method_decorator(cache_page(60 * 60), name="get")
