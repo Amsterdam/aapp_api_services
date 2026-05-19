@@ -65,6 +65,9 @@ class LiveBlogItem(models.Model):
 
 
 class BaseImage(models.Model):
+    foreign_id = models.BigIntegerField(
+        default=0
+    )  # needs default value for migration, but will be set to the article's foreign_id when creating an image.
     url = models.URLField(max_length=2048)
     width = models.IntegerField()
     height = models.IntegerField()

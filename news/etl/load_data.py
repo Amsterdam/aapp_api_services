@@ -122,6 +122,9 @@ class NewsArticleLoader:
             image_sources = [
                 NewsArticleImage(
                     article=news_article,
+                    foreign_id=image_set_data[
+                        "id"
+                    ],  # use the image set id as the image foreign_id for reference.
                     url=v["image"],
                     width=v["width"],
                     height=v["height"],
@@ -191,6 +194,9 @@ class NewsArticleLoader:
             image_sources = [
                 LiveBlogItemImage(
                     liveblog_item=liveblog_item,
+                    foreign_id=image_set_data[
+                        "id"
+                    ],  # use the image set id as the image foreign_id for reference.
                     url=v["image"],
                     width=v["width"],
                     height=v["height"],
