@@ -5,7 +5,7 @@ import re
 
 from bs4 import BeautifulSoup
 
-from news.serializers.article_serializer import NewsArticleTransformSerializer
+from news.serializers.article_serializers import NewsArticleTransformSerializer
 
 logger = logging.getLogger(__name__)
 
