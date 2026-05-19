@@ -36,7 +36,9 @@ class TestArticleListView(BasicAPITestCase):
         self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
 
     def test_article_list(self):
-        response = self.client.get(self.url, data={"type", "article"}, headers=self.api_headers)
+        response = self.client.get(
+            self.url, data={"type", "article"}, headers=self.api_headers
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -60,41 +62,55 @@ class TestArticleListView(BasicAPITestCase):
         self.assertEqual(len(article_2_response["images"]), 0)
 
     def test_highlight_list(self):
-        response = self.client.get(self.url, data={"type", "highlight"}, headers=self.api_headers)
+        response = self.client.get(
+            self.url, data={"type", "highlight"}, headers=self.api_headers
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
 
     def test_liveblog_list(self):
-        response = self.client.get(self.url, data={"type", "liveblog"}, headers=self.api_headers)
+        response = self.client.get(
+            self.url, data={"type", "liveblog"}, headers=self.api_headers
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
     def test_foobar_list(self):
-        response = self.client.get(self.url, data={"type", "foobar"}, headers=self.api_headers)
+        response = self.client.get(
+            self.url, data={"type", "foobar"}, headers=self.api_headers
+        )
         self.assertEqual(response.status_code, 400)
 
     def test_district_list(self):
         response = self.client.get(
-            self.url, data={"type": "district", "district": "noord"}, headers=self.api_headers
+            self.url,
+            data={"type": "district", "district": "noord"},
+            headers=self.api_headers,
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
 
     def test_district_list_empty(self):
         response = self.client.get(
-            self.url, data={"type": "district", "district": "zuid"}, headers=self.api_headers
+            self.url,
+            data={"type": "district", "district": "zuid"},
+            headers=self.api_headers,
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
     def test_district_list_invalid(self):
         response = self.client.get(
-            self.url, data={"type": "district", "district": "foobar"}, headers=self.api_headers
+            self.url,
+            data={"type": "district", "district": "foobar"},
+            headers=self.api_headers,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_district_list_without_district(self):
-        response = self.client.get(self.url, data={"type": "district"}, headers=self.api_headers)
+        response = self.client.get(
+            self.url, data={"type": "district"}, headers=self.api_headers
+        )
         self.assertEqual(response.status_code, 400)
 
 

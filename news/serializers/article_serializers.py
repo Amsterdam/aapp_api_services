@@ -18,9 +18,9 @@ class NewsArticleRequestSerializer(serializers.Serializer):
         has_district = attrs.get("district") is not None
 
         if is_district_type != has_district:
-            raise serializers.ValidationError({
-                "district": "Required only when type is 'district'."
-            })
+            raise serializers.ValidationError(
+                {"district": "Required only when type is 'district'."}
+            )
         return attrs
 
 
