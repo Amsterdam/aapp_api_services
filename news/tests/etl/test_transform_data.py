@@ -148,23 +148,23 @@ class TransformDataTest(TestCase):
     def test_parse_liveblog_messages(self):
         input_str = """
         <div>
-            <p class="datetime">2024-01-01T12:00:00Z</p>
+            <p class="datetime">2024-01-01, 12:00</p>
             <h3>First update</h3>
             <p>Details of the first update.</p>
             <img src="https://example.com/image1.jpg" alt="Image 1 description">
-            <p class="datetime">2024-01-01T13:00:00Z</p>
+            <p class="datetime">2024-01-01, 13:00</p>
             <h4>Second update</h4>
             <p>Details of the second update.</p>
         </div>
         """
         messages = parse_liveblog_messages(input_str)
         self.assertEqual(len(messages), 2)
-        self.assertEqual(messages[0]["datetime"], "2024-01-01T12:00:00Z")
+        self.assertEqual(messages[0]["creation_datetime"], "2024-01-01T12:00:00")
         self.assertEqual(messages[0]["title"], "First update")
         self.assertIn("Details of the first update.", messages[0]["body"])
         self.assertEqual(messages[0]["image_url"], "https://example.com/image1.jpg")
         self.assertEqual(messages[0]["image_description"], "Image 1 description")
-        self.assertEqual(messages[1]["datetime"], "2024-01-01T13:00:00Z")
+        self.assertEqual(messages[1]["creation_datetime"], "2024-01-01T13:00:00")
         self.assertEqual(messages[1]["title"], "Second update")
         self.assertIn("Details of the second update.", messages[1]["body"])
         self.assertIsNone(messages[1]["image_url"])
@@ -172,11 +172,11 @@ class TransformDataTest(TestCase):
 
     def test_find_elements_between_datetimes(self):
         html = """<div>
-            <p class="datetime">2024-01-01T12:00:00Z</p>
+            <p class="datetime">2024-01-01, 12:00</p>
             <h3>First update</h3>
             <p>Details of the first update.</p>
             <img src="https://example.com/image1.jpg" alt="Image 1 description">
-            <p class="datetime">2024-01-01T13:00:00Z</p>
+            <p class="datetime">2024-01-01, 13:00</p>
             <h4>Second update</h4>
             <p>Details of the second update.</p>
         </div>"""
