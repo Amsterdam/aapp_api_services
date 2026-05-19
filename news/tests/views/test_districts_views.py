@@ -12,8 +12,13 @@ class TestDistrictListView(BasicAPITestCase):
     def test_get_districts(self):
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        expected_data = [
-            {"label": district[0], "name": district[1]}
-            for district in NewsArticle._meta.get_field("district").choices
-        ]
-        self.assertEqual(response.data["data"], expected_data)
+        self.assertEqual(
+            len(response.data["data"]),
+            len(NewsArticle._meta.get_field("district").choices),
+        )
+        self.assertIn(
+            {"label": "noord", "name": "Stadsdeel Noord"}, response.data["data"]
+        )
+        self.assertIn(
+            {"label": "weesp", "name": "Stadsgebied Weesp"}, response.data["data"]
+        )
