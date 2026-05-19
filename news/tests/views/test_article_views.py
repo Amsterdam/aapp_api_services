@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import BasicAPITestCase
@@ -10,12 +10,21 @@ from news.models import NewsArticle, NewsArticleImage
 class TestArticleListView(BasicAPITestCase):
     def setUp(self):
         super().setUp()
-        self.url = reverse("news-article-list")
+        self.url = reverse("news-article-list", kwargs={"type": "article"})
         self.article_1 = baker.make(
-            NewsArticle, publication_date=datetime(2024, 10, 11, 12, 30, 10).isoformat()
+            NewsArticle,
+            publication_date=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
+            type="article"
         )
         self.article_2 = baker.make(
-            NewsArticle, publication_date=datetime(2024, 10, 12, 14, 45, 15).isoformat()
+            NewsArticle,
+            publication_date=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
+            type="article"
+        )
+        self.article_3 = baker.make(
+            NewsArticle,
+            publication_date=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
+            type="highlight"
         )
         self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
         self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
@@ -44,6 +53,23 @@ class TestArticleListView(BasicAPITestCase):
         )
         self.assertEqual(len(article_2_response["images"]), 0)
 
+    def test_highlight_list(self):
+        url = reverse("news-article-list", kwargs={"type": "highlight"})
+        response = self.client.get(url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+
+    def test_liveblog_list(self):
+        url = reverse("news-article-list", kwargs={"type": "liveblog"})
+        response = self.client.get(url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_foobar_list(self):
+        # Article types have to be in the ARTICLE_TYPE_CHOICES list
+        with self.assertRaises(NoReverseMatch):
+            reverse("news-article-list", kwargs={"type": "foobar"})
+
 
 class TestArticleDetailView(BasicAPITestCase):
     def setUp(self):
@@ -51,10 +77,13 @@ class TestArticleDetailView(BasicAPITestCase):
         article_id = 123
         self.url = reverse("news-article-detail", kwargs={"id": article_id})
         self.article_1 = baker.make(
-            NewsArticle, id=article_id, publication_date=datetime(2024, 10, 11, 12, 30, 10).isoformat()
+            NewsArticle,
+            id=article_id,
+            publication_date=datetime(2024, 10, 11, 12, 30, 10).isoformat()
         )
         self.article_2 = baker.make(
-            NewsArticle, publication_date=datetime(2024, 10, 12, 14, 45, 15).isoformat()
+            NewsArticle,
+            publication_date=datetime(2024, 10, 12, 14, 45, 15).isoformat()
         )
         self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
         self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)

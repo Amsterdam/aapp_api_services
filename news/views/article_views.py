@@ -10,8 +10,11 @@ logger = logging.getLogger(__name__)
 
 class ArticleListView(ListAPIView):
     def get_queryset(self):
-        return NewsArticle.objects.prefetch_related("images").order_by(
-            "-publication_date"
+        return (
+            NewsArticle.objects
+            .filter(type=self.kwargs["type"])
+            .prefetch_related("images")
+            .order_by("-publication_date")
         )
 
     serializer_class = NewsArticleListResponseSerializer
