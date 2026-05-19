@@ -14,7 +14,13 @@ class NewsArticleResponseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NewsArticle
-        fields = ["id", "title", "images", "publication_datetime", "modification_datetime"]
+        fields = [
+            "id",
+            "title",
+            "images",
+            "publication_datetime",
+            "modification_datetime",
+        ]
 
 
 class NewsArticleTransformSerializer(serializers.Serializer):
