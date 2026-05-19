@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 @method_decorator(cache_page(60 * 60), name="get")
-class DistrictsView(APIView):
-
+class DistrictListView(APIView):
     def get(self, request, *args, **kwargs):
         data = [
-            {"label": district[0], "name": district[1]} for district in DISTRICT_TYPE_CHOICES
+            {"label": district[0], "name": district[1]}
+            for district in DISTRICT_TYPE_CHOICES
         ]
         return Response({"data": data}, status=status.HTTP_200_OK)

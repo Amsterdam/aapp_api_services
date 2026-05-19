@@ -16,7 +16,7 @@ class ArticleListView(ListAPIView):
         max_page_size = 100
 
     queryset = NewsArticle.objects.prefetch_related("images").order_by(
-        "-publication_date"
+        "-publication_datetime"
     )
     pagination_class = DefaultPagination
     serializer_class = NewsArticleListResponseSerializer

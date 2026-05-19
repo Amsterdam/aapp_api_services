@@ -3,6 +3,28 @@ from rest_framework import serializers
 from news.models import NewsArticle, NewsArticleImage
 
 
+class NewsArticleTransformSerializer(serializers.Serializer):
+    """
+    Serializer for validating and transforming news article data during ETL process,
+    not directly tied to the NewsArticle model. These fields are designed to match the
+    expected input data structure from the source system.
+    """
+
+    id = serializers.CharField()
+    title = serializers.CharField()
+    body = serializers.CharField()
+    summary = serializers.CharField(required=False, allow_blank=True)
+    intro = serializers.CharField(required=False, allow_blank=True)
+    type = serializers.CharField(allow_blank=True)
+    district = serializers.CharField(allow_blank=True, allow_null=True)
+    url = serializers.URLField(allow_blank=True)
+    created = serializers.DateTimeField(required=False)
+    modified = serializers.DateTimeField(required=False)
+    publicationDate = serializers.DateTimeField()
+    expirationDate = serializers.DateTimeField(required=False)
+    image_url = serializers.URLField(required=False, allow_blank=True)
+
+
 class NewsArticleImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsArticleImage
@@ -14,4 +36,10 @@ class NewsArticleListResponseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NewsArticle
-        fields = ["id", "title", "images", "publication_date", "modification_date"]
+        fields = [
+            "id",
+            "title",
+            "images",
+            "publication_datetime",
+            "modification_datetime",
+        ]

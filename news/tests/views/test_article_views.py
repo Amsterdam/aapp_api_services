@@ -12,10 +12,12 @@ class TestArticleListView(BasicAPITestCase):
         super().setUp()
         self.url = reverse("news-article-list")
         self.article_1 = baker.make(
-            NewsArticle, publication_date=datetime(2024, 10, 11, 12, 30, 10).isoformat()
+            NewsArticle,
+            publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
         )
         self.article_2 = baker.make(
-            NewsArticle, publication_date=datetime(2024, 10, 12, 14, 45, 15).isoformat()
+            NewsArticle,
+            publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
         )
         self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
         self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
@@ -35,7 +37,7 @@ class TestArticleListView(BasicAPITestCase):
         ][0]
         self.assertEqual(article_1_response["title"], self.article_1.title)
         self.assertEqual(
-            article_1_response["publication_date"], "2024-10-11T12:30:10+02:00"
+            article_1_response["publication_datetime"], "2024-10-11T12:30:10+02:00"
         )
         self.assertEqual(len(article_1_response["images"]), 2)
 
@@ -46,7 +48,7 @@ class TestArticleListView(BasicAPITestCase):
         ][0]
         self.assertEqual(article_2_response["title"], self.article_2.title)
         self.assertEqual(
-            article_2_response["publication_date"], "2024-10-12T14:45:15+02:00"
+            article_2_response["publication_datetime"], "2024-10-12T14:45:15+02:00"
         )
         self.assertEqual(len(article_2_response["images"]), 0)
 
