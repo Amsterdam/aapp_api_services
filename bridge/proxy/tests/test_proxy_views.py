@@ -249,5 +249,5 @@ class TestServerTimeView(ResponsesActivatedAPITestCase):
     def test_server_time_view(self):
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
-        # check that the returned server time is in isoformat and matches the frozen time
-        self.assertEqual(response.data["server_time"], "2026-05-10T12:00:00+00:00")
+        # check that the returned server time matches the frozen time in ISO format with timezone
+        self.assertEqual(response.data["server_time"], "2026-05-10T14:00:00+02:00")

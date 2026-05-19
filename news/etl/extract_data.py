@@ -107,7 +107,7 @@ class IproxFetcher:
                 page += 1
         return all_items
 
-    def fetch_items_details(self, items: dict) -> list:
+    def fetch_items_details(self, items: dict) -> list[dict]:
         urls = [
             urljoin(self.iprox_detail_url.rstrip("/") + "/", str(item_id))
             for item_id in items.keys()
