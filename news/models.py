@@ -47,26 +47,57 @@ class NewsArticle(models.Model):
         default=None,
     )
     url = models.URLField(max_length=2048)
-    creation_date = models.DateTimeField(
+    creation_datetime = models.DateTimeField(
         default=timezone.now
     )  # If no date is provided use the current date
-    modification_date = models.DateTimeField(
+    modification_datetime = models.DateTimeField(
         default=timezone.now
     )  # If no date is provided use the current date
-    publication_date = models.DateTimeField()
-    expiration_date = models.DateTimeField(default=None, null=True)
+    publication_datetime = models.DateTimeField()
+    expiration_datetime = models.DateTimeField(default=None, null=True)
 
     def __str__(self):
         return self.title
 
 
-class NewsArticleImage(models.Model):
+class LiveBlogItem(models.Model):
     article = models.ForeignKey(
-        NewsArticle, on_delete=models.CASCADE, related_name="images"
+        NewsArticle, on_delete=models.CASCADE, related_name="liveblog_items"
     )
+    creation_datetime = models.DateTimeField()
+    title = models.CharField(max_length=1000)
+    body = models.TextField(blank=True, null=True)
+    message_order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["message_order"]
+
+
+class BaseImage(models.Model):
+    foreign_id = models.BigIntegerField(
+        default=0
+    )  # needs default value for migration, but will be set to the article's foreign_id when creating an image.
     url = models.URLField(max_length=2048)
     width = models.IntegerField()
     height = models.IntegerField()
 
-    def __str__(self):
-        return f"{self.article.title} - {self.width}x{self.height}"
+    class Meta:
+        abstract = True
+
+
+class NewsArticleImage(BaseImage):
+    article = models.ForeignKey(
+        NewsArticle, on_delete=models.CASCADE, related_name="images"
+    )
+
+    class Meta:
+        unique_together = ("article", "url")
+
+
+class LiveBlogItemImage(BaseImage):
+    liveblog_item = models.ForeignKey(
+        LiveBlogItem, on_delete=models.CASCADE, related_name="images"
+    )
+
+    class Meta:
+        unique_together = ("liveblog_item", "url")

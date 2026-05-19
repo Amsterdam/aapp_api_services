@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand
 
 from news.enums.news_article import NewsArticleSource
 from news.etl.extract_data import IproxFetcher
+from news.etl.load_data import NewsArticleLoader
 from news.etl.transform_data import transform
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,8 @@ iprox_fetcher = IproxFetcher(
     sources=NEWS_ARTICLE_TYPES,
     max_concurrent_requests=20,
 )
+
+data_loader = NewsArticleLoader()
 
 
 class Command(BaseCommand):
@@ -40,3 +43,7 @@ class Command(BaseCommand):
         logger.info(
             f"Now we continue with the load steps for {len(transformed_data)} news articles."
         )
+
+        data_loader.load(transformed_data)
+
+        logger.info("ETL process completed successfully.")

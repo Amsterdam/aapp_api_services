@@ -1,6 +1,5 @@
-import logging
-
 from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.pagination import PageNumberPagination
 
 from core.utils.openapi_utils import extend_schema_for_api_key
 from news.models import NewsArticle
@@ -9,11 +8,12 @@ from news.serializers.article_serializers import (
     NewsArticleResponseSerializer,
 )
 
-logger = logging.getLogger(__name__)
-
 
 class ArticleListView(ListAPIView):
-    serializer_class = NewsArticleResponseSerializer
+    class DefaultPagination(PageNumberPagination):
+        page_size = 10
+        page_size_query_param = "page_size"
+        max_page_size = 100
 
     def get_queryset(self):
         query_serializer = NewsArticleRequestSerializer(data=self.request.query_params)
@@ -23,13 +23,16 @@ class ArticleListView(ListAPIView):
         queryset = (
             NewsArticle.objects.filter(type=article_type)
             .prefetch_related("images")
-            .order_by("-publication_date")
+            .order_by("-publication_datetime")
         )
 
         if article_type == "district":
             district = query_serializer.validated_data.get("district")
             queryset = queryset.filter(district=district)
         return queryset
+
+    pagination_class = DefaultPagination
+    serializer_class = NewsArticleResponseSerializer
 
     @extend_schema_for_api_key(
         additional_params=[NewsArticleRequestSerializer],

@@ -5,7 +5,7 @@ import re
 
 from bs4 import BeautifulSoup
 
-from news.serializers.article_serializer import NewsArticleTransformSerializer
+from news.serializers.article_serializers import NewsArticleTransformSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -53,10 +53,10 @@ def transform(extracted_data: list[dict]) -> list[dict]:
                 "type": article.get("type"),
                 "district": article.get("district"),
                 "url": url,
-                "creation_date": article.get("created"),
-                "modification_date": article.get("modified"),
-                "publication_date": article.get("publicationDate"),
-                "expiration_date": article.get("expirationDate"),
+                "creation_datetime": article.get("created"),
+                "modification_datetime": article.get("modified"),
+                "publication_datetime": article.get("publicationDate"),
+                "expiration_datetime": article.get("expirationDate"),
                 "image_url": article.get("image_url"),
             }
         )
@@ -103,7 +103,7 @@ def parse_liveblog_messages(input_str: str | None) -> list[dict]:
         messages.append(
             {
                 "title": title,
-                "datetime": date_string,
+                "creation_datetime": date_string,
                 "body": body,
                 "image_url": image_url,
                 "image_description": image_desc,
@@ -173,14 +173,19 @@ def extract_body_from_elements(elements, title) -> str:
 
 def change_date_string_to_iso(input_str: str) -> str:
     """
-    Convert a datetime string from "DD-MM-YYYY, HH:MM" format to ISO 8601 format "YYYY-MM-DDTHH:MM:SS".
-    Example input: "12-01-2024, 14:30"
+    Convert a datetime string from "DD-MM-YYYY, HH:MM" or "YYYY-MM-DD, HH:MM" format to ISO 8601 format "YYYY-MM-DDTHH:MM:SS".
+    Example input: "12-01-2024, 14:30" or "2024-01-12, 14:30"
     Desired output: "2024-01-12T14:30:00"
     """
-    try:
+    # first check which format the date string is in, then parse accordingly
+    if len(input_str.split("-")[0]) == 4:  # Format is likely "YYYY-MM-DD, HH:MM"
+        datetime_format = "%Y-%m-%d, %H:%M"
+    else:  # Format is likely "DD-MM-YYYY, HH:MM"
         datetime_format = "%d-%m-%Y, %H:%M"
+
+    try:
         dt = datetime.datetime.strptime(input_str, datetime_format)
         return dt.isoformat()
     except ValueError as e:
         logger.error(f"Error parsing datetime string '{input_str}': {e}")
-        return input_str  # Return original string if parsing fails
+    return input_str  # Return original string if parsing fails

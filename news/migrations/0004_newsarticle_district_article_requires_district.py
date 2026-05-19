@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("news", "0001_initial"),
+        ("news", "0003_liveblogitemimage_foreign_id_and_more"),
     ]
 
     operations = [

@@ -12,7 +12,7 @@ urlpatterns = [
         name="news-article-list",
     ),
     path(
-        BASE_PATH + "/articles/<int:id>/",
+        BASE_PATH + "/articles/<int:id>",
         article_views.ArticleDetailView.as_view(),
         name="news-article-detail",
     ),
