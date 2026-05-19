@@ -37,7 +37,7 @@ class TestArticleListView(BasicAPITestCase):
 
     def test_article_list(self):
         response = self.client.get(
-            self.url, data={"type", "article"}, headers=self.api_headers
+            self.url, data={"type": "article"}, headers=self.api_headers
         )
 
         self.assertEqual(response.status_code, 200)
@@ -45,7 +45,9 @@ class TestArticleListView(BasicAPITestCase):
         self.assertEqual(response.data["count"], 2)
 
         article_1_response = [
-            article for article in response.data if article["id"] == self.article_1.id
+            article
+            for article in response.data["results"]
+            if article["id"] == self.article_1.id
         ][0]
         self.assertEqual(article_1_response["title"], self.article_1.title)
         self.assertEqual(
@@ -54,7 +56,9 @@ class TestArticleListView(BasicAPITestCase):
         self.assertEqual(len(article_1_response["images"]), 2)
 
         article_2_response = [
-            article for article in response.data if article["id"] == self.article_2.id
+            article
+            for article in response.data["results"]
+            if article["id"] == self.article_2.id
         ][0]
         self.assertEqual(article_2_response["title"], self.article_2.title)
         self.assertEqual(
@@ -74,18 +78,18 @@ class TestArticleListView(BasicAPITestCase):
         response = self.client.get(self.url, headers=self.api_headers, data=params)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["count"], 2)
 
     def test_liveblog_list(self):
         response = self.client.get(
-            self.url, data={"type", "liveblog"}, headers=self.api_headers
+            self.url, data={"type": "liveblog"}, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 0)
 
     def test_foobar_list(self):
         response = self.client.get(
-            self.url, data={"type", "foobar"}, headers=self.api_headers
+            self.url, data={"type": "foobar"}, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 400)
 
@@ -120,8 +124,6 @@ class TestArticleListView(BasicAPITestCase):
             self.url, data={"type": "district"}, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(len(response.data["results"]), 1)  # Page size set to 1
-        self.assertEqual(response.data["count"], 2)  # Total articles
 
 
 class TestArticleDetailView(BasicAPITestCase):

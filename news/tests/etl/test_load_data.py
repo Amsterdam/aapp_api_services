@@ -113,6 +113,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
+            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -126,6 +127,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
+            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -147,6 +149,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
+            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -171,6 +174,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
+            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -200,6 +204,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
+            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -229,6 +234,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
+            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -244,6 +250,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
+            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T13:00:00Z",
         )
@@ -279,6 +286,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
+            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T13:00:00Z",
         )
@@ -341,8 +349,10 @@ class LoadDataTest(TestCase):
 
     @patch("news.etl.load_data.ImageSetService")
     def test_upsert_liveblog_item_images_http_error(self, mock_image_set_service):
+        article = baker.make(NewsArticle, type="article")
         liveblog_item = baker.make(
             LiveBlogItem,
+            article=article,
             title="A title",
             body="Some body",
             creation_datetime="2024-01-01T12:00:00Z",
@@ -363,8 +373,10 @@ class LoadDataTest(TestCase):
 
     @patch("news.etl.load_data.ImageSetService")
     def test_upsert_liveblog_item_images_existing_remove(self, mock_image_set_service):
+        article = baker.make(NewsArticle, type="article")
         liveblog_item = baker.make(
             LiveBlogItem,
+            article=article,
             title="A title",
             body="Some body",
             creation_datetime="2024-01-01T12:00:00Z",
@@ -392,8 +404,10 @@ class LoadDataTest(TestCase):
 
     @patch("news.etl.load_data.ImageSetService")
     def test_upsert_liveblog_item_images_existing_update(self, mock_image_set_service):
+        article = baker.make(NewsArticle, type="article")
         liveblog_item = baker.make(
             LiveBlogItem,
+            article=article,
             title="A title",
             body="Some body",
             creation_datetime="2024-01-01T12:00:00Z",
@@ -423,8 +437,10 @@ class LoadDataTest(TestCase):
         )
 
     def test_upsert_liveblog_item_images_no_image(self):
+        article = baker.make(NewsArticle, type="article")
         liveblog_item = baker.make(
             LiveBlogItem,
+            article=article,
             title="A title",
             body="Some body",
             creation_datetime="2024-01-01T12:00:00Z",

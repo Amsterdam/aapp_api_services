@@ -38,8 +38,8 @@ class ArticleListView(ListAPIView):
         additional_params=[NewsArticleRequestSerializer],
         success_response=NewsArticleResponseSerializer(many=True),
     )
-    def get(self):
-        return super().get(self.request)
+    def get(self, *args, **kwargs):
+        return super().get(*args, **kwargs)
 
 
 class ArticleDetailView(RetrieveAPIView):
