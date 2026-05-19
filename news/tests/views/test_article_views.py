@@ -149,7 +149,6 @@ class TestArticleDetailView(BasicAPITestCase):
         response = self.client.get(self.url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
-
         self.assertEqual(response.data["title"], self.article_1.title)
         self.assertEqual(
             response.data["publication_datetime"], "2024-10-11T12:30:10+02:00"
