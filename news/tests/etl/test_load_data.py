@@ -286,7 +286,7 @@ class LoadDataTest(TestCase):
             LiveBlogItem,
             article=article,
             title="A liveblog item",
-            body="Some body",
+            body="With a body",
             creation_datetime="2024-01-01T12:00:00Z",
             message_order=0,
         )
@@ -297,7 +297,7 @@ class LoadDataTest(TestCase):
             "type": "liveblog",
             "body": [
                 {
-                    "title": "A liveblog item",
+                    "title": "Some title",
                     "creation_datetime": "2024-01-01T12:00:00Z",
                     "body": "Some body",
                 },
@@ -311,9 +311,12 @@ class LoadDataTest(TestCase):
         self.loader._upsert_liveblog_items_and_liveblog_item_images(
             liveblog_article_data, article
         )
+
+        # number of liveblog items should still be 2 (the existing one should be updated, not duplicated, and the new one should be created)
         self.assertEqual(LiveBlogItem.objects.count(), 2)
+        message_order_0_item = LiveBlogItem.objects.get(message_order=0)
         self.assertEqual(
-            LiveBlogItem.objects.first().title,
+            message_order_0_item.title,
             liveblog_article_data["body"][0]["title"],
         )
 

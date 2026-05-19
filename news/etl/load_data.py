@@ -86,7 +86,7 @@ class NewsArticleLoader:
         """
         Function to upsert the images (both article images and liveblog item images) and liveblog items for the transformed articles.
 
-        We need the transformed data to stil access the image urls and liveblog item data,
+        We need the transformed data to still access the image urls and liveblog item data,
         and we need the news_articles_dict to associate the images and liveblog items with the correct NewsArticle instances in the database.
         """
         for article in transformed_data:
@@ -105,13 +105,17 @@ class NewsArticleLoader:
         - If there is an image for an article, but the url is different than the existing one, delete the old image and create a new one
         - If there is no image for an article, create a new one
         """
-        if article.get("image_url") is not None:
+        image_url = article.get("image_url")
+        if image_url:
             try:
                 image_set_data = self.image_set_service.get_or_upload_from_url(
-                    article.get("image_url")
+                    image_url
                 )
             except HTTPError as e:
-                logger.error(f"Error getting or uploading image: {e}")
+                logger.error(
+                    "Error getting or uploading image",
+                    extra={"image_url": image_url, "error": str(e)},
+                )
                 return
 
             # upsert article images
@@ -153,12 +157,11 @@ class NewsArticleLoader:
             for i, message in enumerate(messages):
                 liveblog_item, _ = LiveBlogItem.objects.update_or_create(
                     article=news_article,
-                    creation_datetime=message.get("creation_datetime"),
-                    title=message.get("title"),
-                    body=message.get("body"),
+                    message_order=i,
                     defaults={
-                        "message_order": i,
-                        "article": news_article,
+                        "creation_datetime": message.get("creation_datetime"),
+                        "title": message.get("title"),
+                        "body": message.get("body"),
                     },
                 )
 
@@ -173,13 +176,17 @@ class NewsArticleLoader:
         - If there is an image for a liveblog item, but the url is different than the existing one, delete the old image and create a new one
         - If there is no image for a liveblog item, create a new one
         """
-        if message.get("image_url") is not None:
+        image_url = message.get("image_url")
+        if image_url:
             try:
                 image_set_data = self.image_set_service.get_or_upload_from_url(
-                    message.get("image_url")
+                    image_url
                 )
             except HTTPError as e:
-                logger.error(f"Error getting or uploading image: {e}")
+                logger.error(
+                    "Error getting or uploading image",
+                    extra={"image_url": image_url, "error": str(e)},
+                )
                 return
             image_sources = [
                 LiveBlogItemImage(
