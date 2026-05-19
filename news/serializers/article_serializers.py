@@ -9,7 +9,7 @@ class NewsArticleImageSerializer(serializers.ModelSerializer):
         fields = ["url", "width", "height"]
 
 
-class NewsArticleListResponseSerializer(serializers.ModelSerializer):
+class NewsArticleResponseSerializer(serializers.ModelSerializer):
     images = NewsArticleImageSerializer(many=True, read_only=True)
 
     class Meta:

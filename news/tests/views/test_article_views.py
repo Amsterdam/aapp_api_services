@@ -51,7 +51,9 @@ class TestArticleDetailView(BasicAPITestCase):
         article_id = 123
         self.url = reverse("news-article-detail", kwargs={"id": article_id})
         self.article_1 = baker.make(
-            NewsArticle, id=article_id, publication_date=datetime(2024, 10, 11, 12, 30, 10).isoformat()
+            NewsArticle,
+            id=article_id,
+            publication_date=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
         )
         self.article_2 = baker.make(
             NewsArticle, publication_date=datetime(2024, 10, 12, 14, 45, 15).isoformat()
@@ -65,9 +67,7 @@ class TestArticleDetailView(BasicAPITestCase):
         self.assertEqual(response.status_code, 200)
 
         self.assertEqual(response.data["title"], self.article_1.title)
-        self.assertEqual(
-            response.data["publication_date"], "2024-10-11T12:30:10+02:00"
-        )
+        self.assertEqual(response.data["publication_date"], "2024-10-11T12:30:10+02:00")
         self.assertEqual(len(response.data["images"]), 2)
 
     def test_article_id_not_found(self):
