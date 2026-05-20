@@ -1,7 +1,7 @@
 from django.urls import path
 
 from core.urls import get_swagger_paths
-from news.views import article_views
+from news.views import article_views, districts_views
 
 BASE_PATH = "news/api/v1"
 
@@ -15,6 +15,11 @@ urlpatterns = [
         BASE_PATH + "/articles/<int:id>",
         article_views.ArticleDetailView.as_view(),
         name="news-article-detail",
+    ),
+    path(
+        BASE_PATH + "/districts",
+        districts_views.DistrictListView.as_view(),
+        name="news-districts-list",
     ),
 ]
 

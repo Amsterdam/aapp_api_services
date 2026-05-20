@@ -45,7 +45,11 @@ class NewsArticleResponseSerializer(serializers.ModelSerializer):
 
 
 class NewsArticleTransformSerializer(serializers.Serializer):
-    """Serializer for validating and transforming news article data during ETL process"""
+    """
+    Serializer for validating and transforming news article data during ETL process,
+    not directly tied to the NewsArticle model. These fields are designed to match the
+    expected input data structure from the source system.
+    """
 
     id = serializers.CharField()
     title = serializers.CharField()
