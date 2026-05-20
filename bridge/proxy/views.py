@@ -23,7 +23,6 @@ from bridge.proxy.serializers import (
     AddressSearchByNameSerializer,
     AddressSearchRequestSerializer,
     AddressSearchResponseSerializer,
-    WasteGuideRequestSerializer,
 )
 from bridge.utils import load_postal_area_shapes
 from core.utils.openapi_utils import extend_schema_for_api_key
@@ -77,25 +76,6 @@ class EgisProxyView(GenericAPIView):
 
 class EgisProxyExternalView(EgisProxyView):
     base_url = settings.SSP_BASE_URL_EXTERNAL
-
-
-@method_decorator(cache_page(60 * 60 * 24), name="get")
-class WasteGuideView(GenericAPIView):
-    authentication_classes = []
-    serializer_class = WasteGuideRequestSerializer
-
-    @extend_schema(parameters=[WasteGuideRequestSerializer])
-    def get(self, request):
-        self.get_serializer(data=request.query_params).is_valid(raise_exception=True)
-
-        url = settings.WASTE_GUIDE_URL
-        api_key = settings.WASTE_GUIDE_API_KEY
-        response = requests.get(url, params=request.GET, headers={"X-Api-Key": api_key})
-        return HttpResponse(
-            response.content,
-            status=response.status_code,
-            content_type=response.headers.get("Content-Type"),
-        )
 
 
 @method_decorator(cache_page(60 * 5), name="get")

@@ -11,7 +11,6 @@ from bridge.proxy.views import (
     HealthCheckView,
     PollingStationsView,
     ServerTimeView,
-    WasteGuideView,
 )
 
 urlpatterns = []
@@ -42,12 +41,6 @@ urlpatterns += [
         "bridge/api/v1/time",
         ServerTimeView.as_view(),
         name="server-time",
-    ),
-    # afvalwijzer
-    path(
-        "waste-guide/api/v1/search",
-        WasteGuideView.as_view(),
-        name="waste-guide-search",
     ),
     # election locations
     path(
