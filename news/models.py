@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 ARTICLE_TYPE_CHOICES = [
@@ -22,6 +23,14 @@ DISTRICT_TYPE_CHOICES = [
 
 class NewsArticle(models.Model):
     """News Article db model"""
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="district_article_requires_district",
+                condition=(~Q(type="district") | Q(district__isnull=False)),
+            ),
+        ]
 
     foreign_id = models.BigIntegerField(unique=True)
     last_seen = models.DateTimeField(auto_now=True)

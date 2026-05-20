@@ -14,16 +14,31 @@ class TestArticleListView(BasicAPITestCase):
         self.article_1 = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
+            type="article",
         )
         self.article_2 = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
+            type="article",
+        )
+        self.article_3 = baker.make(
+            NewsArticle,
+            publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
+            type="highlight",
+        )
+        self.article_4 = baker.make(
+            NewsArticle,
+            publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
+            type="district",
+            district="noord",
         )
         self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
         self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
 
     def test_article_list(self):
-        response = self.client.get(self.url, headers=self.api_headers)
+        response = self.client.get(
+            self.url, data={"type": "article"}, headers=self.api_headers
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["results"]), 2)
@@ -51,13 +66,65 @@ class TestArticleListView(BasicAPITestCase):
         )
         self.assertEqual(len(article_2_response["images"]), 0)
 
+    def test_highlight_list(self):
+        response = self.client.get(
+            self.url, data={"type": "highlight"}, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+
     def test_article_list_pagination(self):
-        params = {"page_size": 1}
+        params = {"page_size": 1, "type": "article"}
         response = self.client.get(self.url, headers=self.api_headers, data=params)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["results"]), 1)  # Page size set to 1
-        self.assertEqual(response.data["count"], 2)  # Total articles
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["count"], 2)
+
+    def test_liveblog_list(self):
+        response = self.client.get(
+            self.url, data={"type": "liveblog"}, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 0)
+
+    def test_foobar_list(self):
+        response = self.client.get(
+            self.url, data={"type": "foobar"}, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_district_list(self):
+        response = self.client.get(
+            self.url,
+            data={"type": "district", "district": "noord"},
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+
+    def test_district_list_empty(self):
+        response = self.client.get(
+            self.url,
+            data={"type": "district", "district": "zuid"},
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 0)
+
+    def test_district_list_invalid(self):
+        response = self.client.get(
+            self.url,
+            data={"type": "district", "district": "foobar"},
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_district_list_without_district(self):
+        response = self.client.get(
+            self.url, data={"type": "district"}, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 400)
 
 
 class TestArticleDetailView(BasicAPITestCase):
@@ -68,10 +135,12 @@ class TestArticleDetailView(BasicAPITestCase):
         self.article_1 = baker.make(
             NewsArticle,
             id=article_id,
+            type="article",
             publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
         )
         self.article_2 = baker.make(
             NewsArticle,
+            type="article",
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
         )
         self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
@@ -81,7 +150,6 @@ class TestArticleDetailView(BasicAPITestCase):
         response = self.client.get(self.url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
-
         self.assertEqual(response.data["title"], self.article_1.title)
         self.assertEqual(
             response.data["publication_datetime"], "2024-10-11T12:30:10+02:00"
