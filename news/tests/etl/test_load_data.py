@@ -330,8 +330,10 @@ class LoadDataTest(TestCase):
 
     @patch("news.etl.load_data.ImageSetService")
     def test_upsert_liveblog_item_images(self, mock_image_set_service):
+        article = baker.make(NewsArticle, type="liveblog")
         liveblog_item = baker.make(
             LiveBlogItem,
+            article=article,
             title="A title",
             body="Some body",
             creation_datetime="2024-01-01T12:00:00Z",
@@ -349,7 +351,7 @@ class LoadDataTest(TestCase):
 
     @patch("news.etl.load_data.ImageSetService")
     def test_upsert_liveblog_item_images_http_error(self, mock_image_set_service):
-        article = baker.make(NewsArticle, type="article")
+        article = baker.make(NewsArticle, type="liveblog")
         liveblog_item = baker.make(
             LiveBlogItem,
             article=article,

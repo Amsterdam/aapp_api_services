@@ -78,6 +78,7 @@ class TestArticleListView(BasicAPITestCase):
         response = self.client.get(self.url, headers=self.api_headers, data=params)
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 1)
         self.assertEqual(response.data["count"], 2)
 
     def test_liveblog_list(self):
