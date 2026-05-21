@@ -36,6 +36,7 @@ class LocationPropertiesSerializer(serializers.Serializer):
     # available_sockets = serializers.IntegerField()
     total_sockets = serializers.IntegerField()
     status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES, required=False)
+    max_kw = serializers.FloatField(required=False, allow_null=True)
 
 
 class LocationListItemSerializer(serializers.Serializer):

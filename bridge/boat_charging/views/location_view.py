@@ -32,9 +32,9 @@ class LocationView(BaseView):
             "get",
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"],
         )
-        status_mapping = await self.get_location_statuses()
+        location_status_kw_mapping = await self.get_location_statuses_and_kw()
         features = [
-            self.get_location_feature_data(item, status_mapping)
+            self.get_location_feature_data(item, location_status_kw_mapping)
             for item in response_json
         ]
         serializer_data = {
@@ -46,35 +46,88 @@ class LocationView(BaseView):
         return Response(serializer.data, status=200)
 
     @cache_function(timeout=60, ignore_first_arg=True)
-    async def get_location_statuses(self) -> dict[str, str]:
-        """Fetch all charging status data and construct a mapping of location IDs.
-
-        There are three possible status values for a charging station:
-        - "OPERATIVE": at least one station at the location is available
-        - "OCCUPIED": all stations at the location are occupied
-        - "INOPERATIVE": no station is available and at least one station is out of order
+    async def get_location_statuses_and_kw(self) -> dict[str, dict[str, str | None]]:
+        """
+        1. Fetch data of charging stations. Each charging station has a list of evses and each evse has a list of connectors.
+        2. Iterate through the connectors per charging station and check the status and wattage of each connector.
+        3. Append the status and wattage of each connector to a list of statuses for the location that the charging station belongs to.
+        4. Determine the overall status and wattage of the location based on the list of statuses of its connectors.
         """
 
         data = await self.api_call(
             "get",
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"],
+            paginated=True,
         )
 
-        pre_status_mapping = defaultdict(list)
+        location_connectors = defaultdict(list)
         for item in data:
             location_id = item["locationId"]
-            pre_status_mapping[location_id].append(item["status"])
 
-        status_mapping = {}
-        for location_id, statuses in pre_status_mapping.items():
-            if "OPERATIVE" in statuses:
-                status_mapping[location_id] = "OPERATIVE"
-            elif any(s in statuses for s in ("INOPERATIVE", "OFFLINE", "UNKNOWN")):
-                status_mapping[location_id] = "INOPERATIVE"
+            evses = item.get("evses", [])
+            for evs in evses:
+                connectors = evs.get("connectors", [])
+                for conn in connectors:
+                    status = conn.get("status")
+                    wattage = conn.get("maxElectricPower")
+                    location_connectors[location_id].append((status, wattage))
+
+        return self.determine_overall_status_and_wattage(location_connectors)
+
+    def determine_overall_status_and_wattage(
+        self, location_connectors: defaultdict[str, list[tuple[str, int]]]
+    ) -> dict[str, dict[str, str | None]]:
+        """
+        To determine the overall status and wattage of each location based on the statuses and wattages of its connectors, the logic described below is followed.
+
+        There are three possible status values for a charging station:
+        - "OPERATIVE": at least one connector at the location is available
+        - "OCCUPIED": all connectors at the location are occupied
+        - "INOPERATIVE": no connector is available and at least one connector is out of order
+
+        The wattage of the location is determined by the connector with the highest wattage that is available at the location,
+        or if no connector is available, the connector with the highest wattage that is out of order/not available.
+        """
+        # Determine overall status and wattage per location
+        result = {}
+
+        for location_id, connectors in location_connectors.items():
+            available = [(s, kw) for s, kw in connectors if s == "AVAILABLE"]
+            occupied = [(s, kw) for s, kw in connectors if s == "OCCUPIED"]
+            out_of_order = [
+                (s, kw) for s, kw in connectors if s not in ("AVAILABLE", "OCCUPIED")
+            ]
+
+            if available:
+                overall_status = "OPERATIVE"
+                # check if any wattage values are available for the available connectors before calculating the best wattage
+                wattage_defined = [kw for _, kw in available if kw is not None]
+                best_wattage = max(wattage_defined) if wattage_defined else None
+            elif out_of_order:
+                overall_status = "INOPERATIVE"
+                wattage_defined_out_of_order = [
+                    kw for _, kw in out_of_order if kw is not None
+                ]
+                wattage_defined_occupied = [kw for _, kw in occupied if kw is not None]
+                best_wattage = (
+                    max(wattage_defined_out_of_order + wattage_defined_occupied)
+                    if (wattage_defined_out_of_order + wattage_defined_occupied)
+                    else None
+                )
             else:
-                status_mapping[location_id] = "OCCUPIED"
+                # All connectors are occupied
+                overall_status = "OCCUPIED"
+                wattage_defined = [kw for _, kw in occupied if kw is not None]
+                best_wattage = max(wattage_defined) if wattage_defined else None
 
-        return status_mapping
+            result[location_id] = {
+                "status": overall_status,
+                "max_kw": best_wattage / 1000
+                if best_wattage
+                else None,  # Convert W to kW
+            }
+
+        return result
 
 
 @boat_charging_openapi_decorator(
@@ -122,6 +175,19 @@ class LocationDetailView(LocationView):
             self.get_charging_station_data(charging_station_json)
             for charging_station_json in charging_station_responses
         ]
+
+        # Enrich data with overall location status and wattage based on the charging stations' connectors
+        location_status_kw_mapping = await self.get_location_statuses_and_kw()
+        if location_id in location_status_kw_mapping:
+            serializer_data["status"] = location_status_kw_mapping[location_id][
+                "status"
+            ]
+            serializer_data["max_kw"] = location_status_kw_mapping[location_id][
+                "max_kw"
+            ]
+        else:
+            serializer_data["status"] = "UNKNOWN"
+            serializer_data["max_kw"] = None
 
         serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)

@@ -116,13 +116,20 @@ class BaseView(GenericAPIView):
         return
 
     def get_location_feature_data(
-        self, item: dict[str, any], status_mapping: dict[str, str]
+        self,
+        item: dict[str, any],
+        location_status_kw_mapping: dict[str, dict[str, str | None]],
     ) -> dict[str, any]:
         item_dict = self.get_location_data(item)
 
         # add status to the properties based on the location id and the status mapping
         location_id = item_dict["id"]
-        item_dict["status"] = status_mapping.get(location_id, "UNKNOWN")
+        item_dict["status"] = location_status_kw_mapping.get(location_id, {}).get(
+            "status", "UNKNOWN"
+        )
+        item_dict["max_kw"] = location_status_kw_mapping.get(location_id, {}).get(
+            "max_kw"
+        )
         return {
             "type": "Feature",
             "properties": item_dict,
