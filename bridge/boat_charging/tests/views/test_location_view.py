@@ -57,10 +57,10 @@ class TestLocationView(BoatChargingTestCase):
     def test_determine_overall_status_and_wattage(self):
 
         location_connectors = {
-            "loc_1": [("AVAILABLE", 22), ("OCCUPIED", 11)],
+            "loc_1": [("OPERATIVE", 22), ("OCCUPIED", 11)],
             "loc_2": [("OCCUPIED", 22), ("INOPERATIVE", 11)],
             "loc_3": [("INOPERATIVE", 22), ("INOPERATIVE", 11)],
-            "loc_4": [("OCCUPIED", 22), ("AVAILABLE", 11)],
+            "loc_4": [("OCCUPIED", 22), ("OPERATIVE", 11)],
             "loc_5": [("OCCUPIED", 22), ("OCCUPIED", 11)],
         }
         result = self.view.determine_overall_status_and_wattage(location_connectors)
@@ -71,7 +71,6 @@ class TestLocationView(BoatChargingTestCase):
             "loc_4": {"status": "OPERATIVE", "max_kw": 0.011},
             "loc_5": {"status": "OCCUPIED", "max_kw": 0.022},
         }
-        print(result)
         self.assertEqual(result, expected_result)
 
     def test_determine_overall_status_and_wattage_missing_wattage(self):

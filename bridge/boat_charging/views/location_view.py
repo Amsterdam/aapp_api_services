@@ -46,7 +46,9 @@ class LocationView(BaseView):
         return Response(serializer.data, status=200)
 
     @cache_function(timeout=60, ignore_first_arg=True)
-    async def get_location_statuses_and_kw(self) -> dict[str, dict[str, str | None]]:
+    async def get_location_statuses_and_kw(
+        self,
+    ) -> dict[str, dict[str, str | float | None]]:
         """
         1. Fetch data of charging stations. Each charging station has a list of evses and each evse has a list of connectors.
         2. Iterate through the connectors per charging station and check the status and wattage of each connector.
@@ -75,8 +77,8 @@ class LocationView(BaseView):
         return self.determine_overall_status_and_wattage(location_connectors)
 
     def determine_overall_status_and_wattage(
-        self, location_connectors: defaultdict[str, list[tuple[str, int]]]
-    ) -> dict[str, dict[str, str | None]]:
+        self, location_connectors: defaultdict[str, list[tuple[str, float | None]]]
+    ) -> dict[str, dict[str, str | float | None]]:
         """
         To determine the overall status and wattage of each location based on the statuses and wattages of its connectors, the logic described below is followed.
 
@@ -92,10 +94,10 @@ class LocationView(BaseView):
         result = {}
 
         for location_id, connectors in location_connectors.items():
-            available = [(s, kw) for s, kw in connectors if s == "AVAILABLE"]
+            available = [(s, kw) for s, kw in connectors if s == "OPERATIVE"]
             occupied = [(s, kw) for s, kw in connectors if s == "OCCUPIED"]
             out_of_order = [
-                (s, kw) for s, kw in connectors if s not in ("AVAILABLE", "OCCUPIED")
+                (s, kw) for s, kw in connectors if s not in ("OPERATIVE", "OCCUPIED")
             ]
 
             if available:
@@ -123,7 +125,7 @@ class LocationView(BaseView):
             result[location_id] = {
                 "status": overall_status,
                 "max_kw": best_wattage / 1000
-                if best_wattage
+                if best_wattage is not None
                 else None,  # Convert W to kW
             }
 
