@@ -70,37 +70,6 @@ class TestEgisExternalProxyView(ResponsesActivatedAPITestCase):
         self.assertEqual(rsp_post.call_count, 1)
 
 
-class TestWasteGuideView(ResponsesActivatedAPITestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("waste-guide-search")
-        self.rsp_get = responses.get(
-            re.compile(settings.WASTE_GUIDE_URL + ".*"), json=mock_data.ADDRESS_DATA
-        )
-
-    def test_waste_guide_view(self):
-        self.client.get(self.url, headers=self.api_headers)
-
-        self.assertEqual(self.rsp_get.call_count, 1)
-
-    def test_cache(self):
-        # note: we do not use the self.assert_caching helper here, because it depends on the authentication class.
-        # The waste guide view does not have authentication.
-        # First call
-        response = self.client.get(self.url, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.rsp_get.call_count, 1)
-
-        # Second call
-        response = self.client.get(self.url, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            self.rsp_get.call_count, 1
-        )  # Cache should be used, so call count should not increase
-
-
 class TestAddressSearchByNameView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()

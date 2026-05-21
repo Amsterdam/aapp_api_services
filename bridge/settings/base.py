@@ -16,12 +16,6 @@ SPECTACULAR_SETTINGS["TITLE"] = "Bridge API"
 
 STATIC_URL = "/bridge/static/"
 
-# Waste guide
-WASTE_GUIDE_URL = os.getenv(
-    "WASTE_GUIDE_URL", "https://api.data.amsterdam.nl/v1/afvalwijzer/afvalwijzer/"
-)
-WASTE_GUIDE_API_KEY = os.getenv("WASTE_GUIDE_API_KEY")
-
 # Election locations
 POLLING_STATIONS_URL = os.getenv(
     "POLLING_STATIONS_URL",
