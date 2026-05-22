@@ -4,6 +4,7 @@ from django.conf import settings
 from django.urls import reverse
 
 from bridge.boat_charging.tests.mock_data import (
+    charging_stations,
     location_detail,
     session_detail,
     sessions,
@@ -18,12 +19,16 @@ class TestSessionView(BoatChargingTestCase):
         self.url = reverse("boat-charging-sessions")
 
     def test_success(self):
+        resp_charging_stations = respx.get(
+            settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]
+        ).mock(return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE))
         resp = respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
             return_value=httpx.Response(200, json=sessions.MOCK_RESPONSE)
         )
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
+        self.assertEqual(resp_charging_stations.call_count, 1)
 
 
 class TestSessionDetailView(BoatChargingTestCase):
@@ -35,6 +40,9 @@ class TestSessionDetailView(BoatChargingTestCase):
         )
 
     def test_success(self):
+        resp_charging_stations = respx.get(
+            settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]
+        ).mock(return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE))
         ext_endpoint = (
             f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{self.session_id}"
         )
@@ -57,3 +65,4 @@ class TestSessionDetailView(BoatChargingTestCase):
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(resp_transaction.call_count, 1)
         self.assertEqual(resp_location.call_count, 1)
+        self.assertEqual(resp_charging_stations.call_count, 1)

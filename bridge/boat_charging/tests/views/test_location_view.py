@@ -187,6 +187,9 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.assertEqual(len(response.data["charging_stations"]), 2)
 
     def test_unknown_location_id(self):
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]).mock(
+            return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE)
+        )
         ext_endpoint = (
             f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{self.location_id}"
         )
