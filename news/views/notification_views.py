@@ -23,12 +23,11 @@ class NotificationView(DeviceIdMixin, generics.GenericAPIView):
         additional_responses={204: None},
     )
     def get(self, request, *args, **kwargs):
-        article = LiveblogNotification.objects.filter(device_id=self.device_id)
+        article = LiveblogNotification.objects.filter(device_id=self.device_id).first()
         if not article:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        serializer = self.serializer_class(data=article)
-        serializer.is_valid(raise_exception=True)
+        serializer = self.serializer_class(article)
         return Response(serializer.data)
 
     @extend_schema_for_device_id(
@@ -38,15 +37,15 @@ class NotificationView(DeviceIdMixin, generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         request_serializer = NotificationRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
+        article = request_serializer.validated_data["article"]
 
-        article, _ = LiveblogNotification.objects.update_or_create(
+        notification, _ = LiveblogNotification.objects.update_or_create(
             device_id=self.device_id,
             defaults={
-                "article_id": request_serializer.validated_data["article_id"],
-            }
+                "article": article,
+            },
         )
-        serializer = self.serializer_class(data=article)
-        serializer.is_valid(raise_exception=True)
+        serializer = self.serializer_class(notification)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema_for_device_id(

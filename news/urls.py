@@ -24,7 +24,7 @@ urlpatterns = [
     path(
         BASE_PATH + "/liveblog-notifications",
         notification_views.NotificationView.as_view(),
-        name="news-notification-list",
+        name="news-notification",
     ),
 ]
 

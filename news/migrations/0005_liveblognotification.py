@@ -5,21 +5,34 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('news', '0004_newsarticle_district_article_requires_district'),
+        ("news", "0004_newsarticle_district_article_requires_district"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='LiveblogNotification',
+            name="LiveblogNotification",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('device_id', models.CharField(max_length=100)),
-                ('article', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='news.newsarticle')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("device_id", models.CharField(max_length=100)),
+                (
+                    "article",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="news.newsarticle",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('article', 'device_id')},
+                "unique_together": {("article", "device_id")},
             },
         ),
     ]
