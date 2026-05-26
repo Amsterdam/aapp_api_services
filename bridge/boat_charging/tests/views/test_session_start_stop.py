@@ -4,6 +4,7 @@ from django.conf import settings
 from django.urls import reverse
 
 from bridge.boat_charging.tests.mock_data import (
+    charging_stations,
     command_result,
     start_transaction,
     tokens,
@@ -22,6 +23,9 @@ class TestSessionStartStopView(BoatChargingTestCase):
         )
 
     def test_start_transaction_success(self):
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]).mock(
+            return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE)
+        )
         resp_token = respx.get(settings.BOAT_CHARGING_ENDPOINTS["TOKENS"]).mock(
             return_value=httpx.Response(200, json=tokens.MOCK_RESPONSE)
         )
@@ -53,6 +57,9 @@ class TestSessionStartStopView(BoatChargingTestCase):
         self.assertEqual(len(response.data["transaction_ids"]), 8)
 
     def test_stop_transaction_success(self):
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]).mock(
+            return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE)
+        )
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{self.station_id}/stop-transaction"
         resp = respx.post(endpoint).mock(
             return_value=httpx.Response(200, json=start_transaction.MOCK_RESPONSE)

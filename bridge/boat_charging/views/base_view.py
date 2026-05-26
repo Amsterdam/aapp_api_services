@@ -18,6 +18,8 @@ from bridge.boat_charging.exceptions import (
     BoatChargingMissingAccessToken,
     BoatChargingServerError,
 )
+from bridge.utils import max_or_none
+from core.utils.caching_utils import cache_function
 from core.utils.openapi_utils import extend_schema_for_api_key
 
 logger = logging.getLogger(__name__)
@@ -29,6 +31,10 @@ class BaseView(GenericAPIView):
     response_serializer_class = None
     requires_access_token = False
     paginated = False
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.location_status_kw_mapping = None
 
     async def api_call(
         self,
@@ -115,28 +121,14 @@ class BaseView(GenericAPIView):
             raise BoatChargingClientError(response.text)
         return
 
-    def get_location_feature_data(
-        self, item: dict[str, any], status_mapping: dict[str, str]
-    ) -> dict[str, any]:
-        item_dict = self.get_location_data(item)
-
-        # add status to the properties based on the location id and the status mapping
-        location_id = item_dict["id"]
-        item_dict["status"] = status_mapping.get(location_id, "UNKNOWN")
-        return {
-            "type": "Feature",
-            "properties": item_dict,
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    item["coordinates"]["longitude"],
-                    item["coordinates"]["latitude"],
-                ],
-            },
-        }
-
     def get_location_data(self, item: dict[str, any]) -> dict[str, any]:
         street, number = self.split_address(item["address"])
+
+        location_id = item["id"]
+        status = self.location_status_kw_mapping.get(location_id, {}).get(
+            "status", "UNKNOWN"
+        )
+        max_kw = self.location_status_kw_mapping.get(location_id, {}).get("max_kw")
 
         return {
             "id": item["id"],
@@ -161,6 +153,8 @@ class BaseView(GenericAPIView):
             },
             # "available_sockets": item["chargingStationCount"],
             "total_sockets": item["chargingStationCount"],
+            "status": status,
+            "max_kw": max_kw,
         }
 
     def _convert_regular_hours(
@@ -204,6 +198,74 @@ class BaseView(GenericAPIView):
                 }
             )
         return converted_hours
+
+    @cache_function(timeout=60, ignore_first_arg=True)
+    async def get_location_statuses_and_kw(self) -> dict[str, dict[str, any]]:
+        """
+        We need to determine the overall status and wattage of each location. To do this we need the data of all charging stations (and their corresponding evses and connectors).
+        We loop over each charging station to collect the status and wattage of its connectors, and store this to their corresponding location id.
+
+        Then we can find the max wattage of the connectors and the overall status of the location. We need to take the following steps:
+        1. Fetch data of charging stations. Each charging station has a list of evses and each evse has a list of connectors.
+        2. Iterate through the connectors per charging station and check the status and wattage of each connector.
+        3. Append the status and wattage of each connector to a list of statuses for the location that the charging station belongs to.
+        4. Determine the overall status and wattage of the location based on the list of statuses of its connectors.
+        """
+        charging_stations = await self.api_call(
+            "get",
+            endpoint=settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"],
+            paginated=True,
+        )
+
+        result = {}
+        for item in charging_stations:
+            location_connectors = []
+
+            for evs in item.get("evses", []):
+                for connector in evs.get("connectors", []):
+                    state = connector.get("status")
+                    wattage = connector.get("maxElectricPower")
+                    location_connectors.append((state, wattage))
+
+            status_and_wattage = self.determine_overall_status_and_wattage(
+                location_connectors
+            )
+            result[item["locationId"]] = status_and_wattage
+
+        return result
+
+    def determine_overall_status_and_wattage(
+        self, connectors: list[tuple[str, int | None]]
+    ) -> dict[str, str | float | None]:
+        """
+        To determine the overall status and wattage of each location based on the statuses and wattages of its connectors, the logic described below is followed.
+
+        There are three possible status values for a charging station:
+        - "OPERATIVE": at least one connector at the location is available
+        - "OCCUPIED": all connectors at the location are occupied
+        - "INOPERATIVE": no connector is available and at least one connector is out of order
+
+        The wattage of the location is determined by the connector with the highest wattage that is available at the location,
+        or if no connector is available, the connector with the highest wattage that is out of order/not available.
+        """
+        available = [kw for s, kw in connectors if s == "OPERATIVE"]
+        occupied = [kw for s, kw in connectors if s == "OCCUPIED"]
+        out_of_order = [
+            kw for s, kw in connectors if s not in ("OPERATIVE", "OCCUPIED")
+        ]
+
+        if available:
+            overall_status = "OPERATIVE"
+            max_wattage = max_or_none(available)
+        elif occupied:
+            overall_status = "OCCUPIED"
+            max_wattage = max_or_none(occupied)
+        else:
+            overall_status = "INOPERATIVE"
+            max_wattage = max_or_none(out_of_order)
+
+        max_kw = max_wattage / 1000.0 if max_wattage else None
+        return {"status": overall_status, "max_kw": max_kw}
 
     def get_safe_path_param(self, param) -> str:
         """

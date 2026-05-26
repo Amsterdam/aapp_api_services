@@ -54,32 +54,56 @@ class TestLocationView(BoatChargingTestCase):
             },
         )
 
-    def test_success_location_status_mapping(self):
-        _, _, response = self._setup_mock_location_response()
-        # location 2 (AmsterdamBoatTest1) has two charging stations, one operative and one offline station -> "OPERATIVE"
-        self.assertEqual(
-            response.data["features"][1]["properties"]["status"], "OPERATIVE"
-        )
-        # location 3 (AmsterdamBoatTest3) has one occupied station -> "OCCUPIED"
-        self.assertEqual(
-            response.data["features"][2]["properties"]["status"], "OCCUPIED"
-        )
+    def test_determine_overall_status_and_wattage_1(self):
+        connectors = [("OPERATIVE", 22), ("OCCUPIED", 11)]
+        expected_result = {"status": "OPERATIVE", "max_kw": 0.022}
 
-        # check that the address is returned in the expected format
-        self.assertEqual("address" in response.data["features"][0]["properties"], True)
-        self.assertEqual(
-            response.data["features"][0]["properties"]["address"],
-            {
-                "street": "Transformatorweg",
-                "number": "104",
-                "postcode": "1234 AM",
-                "city": "Amsterdam",
-                "coordinates": {
-                    "lat": 52.387313,
-                    "lon": 4.822313,
-                },
-            },
-        )
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_2(self):
+        connectors = [("OCCUPIED", 22), ("INOPERATIVE", 11)]
+        expected_result = {"status": "OCCUPIED", "max_kw": 0.022}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_3(self):
+        connectors = [("INOPERATIVE", 22), ("INOPERATIVE", 11)]
+        expected_result = {"status": "INOPERATIVE", "max_kw": 0.022}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_4(self):
+        connectors = [("OCCUPIED", 22), ("OPERATIVE", 11)]
+        expected_result = {"status": "OPERATIVE", "max_kw": 0.011}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_5(self):
+        connectors = [("OCCUPIED", 22), ("OCCUPIED", 11)]
+        expected_result = {"status": "OCCUPIED", "max_kw": 0.022}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_missing_wattage_1(self):
+        # this is the situation on the staging environment on 21-05-2026
+        connectors = [("INOPERATIVE", 2200), ("UNKNOWN", None)]
+        expected_result = {"status": "INOPERATIVE", "max_kw": 2.2}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_missing_wattage_2(self):
+        # this is the situation on the staging environment on 21-05-2026
+        connectors = [("OCCUPIED", None)]
+        expected_result = {"status": "OCCUPIED", "max_kw": None}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
 
 
 class TestLocationDetailView(BoatChargingTestCase):
@@ -111,11 +135,17 @@ class TestLocationDetailView(BoatChargingTestCase):
                 )
             )
 
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]).mock(
+            return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE)
+        )
+
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(resp_tariff.call_count, 1)
         self.assertEqual(len(response.data["charging_stations"]), 2)
+        self.assertEqual(response.data["max_kw"], None)
+        self.assertEqual(response.data["status"], "UNKNOWN")
 
     def test_no_tariff(self):
         ext_endpoint = (
@@ -134,6 +164,10 @@ class TestLocationDetailView(BoatChargingTestCase):
                     200, json=charging_station_detail.MOCK_RESPONSE
                 )
             )
+
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]).mock(
+            return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE)
+        )
 
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
@@ -160,6 +194,10 @@ class TestLocationDetailView(BoatChargingTestCase):
                 )
             )
 
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]).mock(
+            return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE)
+        )
+
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
@@ -168,6 +206,9 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.assertEqual(len(response.data["charging_stations"]), 2)
 
     def test_unknown_location_id(self):
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]).mock(
+            return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE)
+        )
         ext_endpoint = (
             f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{self.location_id}"
         )

@@ -31,3 +31,7 @@ def load_postal_area_shapes():
         final_dict[postal_code] = polygon_object
 
     return final_dict
+
+
+def max_or_none(values):
+    return max((v for v in values if v is not None), default=None)

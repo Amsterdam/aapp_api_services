@@ -1,5 +1,4 @@
 import asyncio
-from collections import defaultdict
 from urllib.parse import quote
 
 from django.conf import settings
@@ -17,7 +16,6 @@ from bridge.boat_charging.views.base_view import (
     BaseView,
     boat_charging_openapi_decorator,
 )
-from core.utils.caching_utils import cache_function
 
 
 @boat_charging_openapi_decorator(
@@ -28,15 +26,14 @@ class LocationView(BaseView):
     paginated = True
 
     async def get(self, request, *args, **kwargs):
+        self.location_status_kw_mapping = await self.get_location_statuses_and_kw()
+
         response_json = await self.api_call(
             "get",
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"],
         )
-        status_mapping = await self.get_location_statuses()
-        features = [
-            self.get_location_feature_data(item, status_mapping)
-            for item in response_json
-        ]
+        features = [self.get_location_feature_data(item) for item in response_json]
+
         serializer_data = {
             "type": "FeatureCollection",
             "features": features,
@@ -45,36 +42,19 @@ class LocationView(BaseView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=200)
 
-    @cache_function(timeout=60, ignore_first_arg=True)
-    async def get_location_statuses(self) -> dict[str, str]:
-        """Fetch all charging status data and construct a mapping of location IDs.
-
-        There are three possible status values for a charging station:
-        - "OPERATIVE": at least one station at the location is available
-        - "OCCUPIED": all stations at the location are occupied
-        - "INOPERATIVE": no station is available and at least one station is out of order
-        """
-
-        data = await self.api_call(
-            "get",
-            endpoint=settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"],
-        )
-
-        pre_status_mapping = defaultdict(list)
-        for item in data:
-            location_id = item["locationId"]
-            pre_status_mapping[location_id].append(item["status"])
-
-        status_mapping = {}
-        for location_id, statuses in pre_status_mapping.items():
-            if "OPERATIVE" in statuses:
-                status_mapping[location_id] = "OPERATIVE"
-            elif any(s in statuses for s in ("INOPERATIVE", "OFFLINE", "UNKNOWN")):
-                status_mapping[location_id] = "INOPERATIVE"
-            else:
-                status_mapping[location_id] = "OCCUPIED"
-
-        return status_mapping
+    def get_location_feature_data(self, item: dict[str, any]) -> dict[str, any]:
+        item_dict = self.get_location_data(item)
+        return {
+            "type": "Feature",
+            "properties": item_dict,
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    item["coordinates"]["longitude"],
+                    item["coordinates"]["latitude"],
+                ],
+            },
+        }
 
 
 @boat_charging_openapi_decorator(
@@ -86,6 +66,8 @@ class LocationDetailView(LocationView):
     paginated = False
 
     async def get(self, request, *args, **kwargs):
+        self.location_status_kw_mapping = await self.get_location_statuses_and_kw()
+
         location_id = self.get_safe_path_param(kwargs["location_id"])
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{location_id}"
         try:
