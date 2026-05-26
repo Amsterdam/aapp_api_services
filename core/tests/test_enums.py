@@ -39,5 +39,6 @@ class TestNotificationType(TestCase):
         expected_type_data = {
             "type": self.notification_type.value,
             "description": self.notification_type._value_.description,
+            "visibility": "visible",
         }
         self.assertIn(expected_type_data, module_data["types"])
