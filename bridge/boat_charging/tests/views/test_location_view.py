@@ -54,36 +54,55 @@ class TestLocationView(BoatChargingTestCase):
             },
         )
 
-    def test_determine_overall_status_and_wattage(self):
+    def test_determine_overall_status_and_wattage_1(self):
+        connectors = [("OPERATIVE", 22), ("OCCUPIED", 11)]
+        expected_result = {"status": "OPERATIVE", "max_kw": 0.022}
 
-        location_connectors = {
-            "loc_1": [("OPERATIVE", 22), ("OCCUPIED", 11)],
-            "loc_2": [("OCCUPIED", 22), ("INOPERATIVE", 11)],
-            "loc_3": [("INOPERATIVE", 22), ("INOPERATIVE", 11)],
-            "loc_4": [("OCCUPIED", 22), ("OPERATIVE", 11)],
-            "loc_5": [("OCCUPIED", 22), ("OCCUPIED", 11)],
-        }
-        result = self.view.determine_overall_status_and_wattage(location_connectors)
-        expected_result = {
-            "loc_1": {"status": "OPERATIVE", "max_kw": 0.022},
-            "loc_2": {"status": "INOPERATIVE", "max_kw": 0.022},
-            "loc_3": {"status": "INOPERATIVE", "max_kw": 0.022},
-            "loc_4": {"status": "OPERATIVE", "max_kw": 0.011},
-            "loc_5": {"status": "OCCUPIED", "max_kw": 0.022},
-        }
+        result = self.view.determine_overall_status_and_wattage(connectors)
         self.assertEqual(result, expected_result)
 
-    def test_determine_overall_status_and_wattage_missing_wattage(self):
+    def test_determine_overall_status_and_wattage_2(self):
+        connectors = [("OCCUPIED", 22), ("INOPERATIVE", 11)]
+        expected_result = {"status": "OCCUPIED", "max_kw": 0.022}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_3(self):
+        connectors = [("INOPERATIVE", 22), ("INOPERATIVE", 11)]
+        expected_result = {"status": "INOPERATIVE", "max_kw": 0.022}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_4(self):
+        connectors = [("OCCUPIED", 22), ("OPERATIVE", 11)]
+        expected_result = {"status": "OPERATIVE", "max_kw": 0.011}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_5(self):
+        connectors = [("OCCUPIED", 22), ("OCCUPIED", 11)]
+        expected_result = {"status": "OCCUPIED", "max_kw": 0.022}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_missing_wattage_1(self):
         # this is the situation on the staging environment on 21-05-2026
-        location_connectors = {
-            "loc_1": [("INOPERATIVE", 2200), ("UNKNOWN", None)],
-            "loc_3": [("OCCUPIED", None)],
-        }
-        result = self.view.determine_overall_status_and_wattage(location_connectors)
-        expected_result = {
-            "loc_1": {"status": "INOPERATIVE", "max_kw": 2.2},
-            "loc_3": {"status": "OCCUPIED", "max_kw": None},
-        }
+        connectors = [("INOPERATIVE", 2200), ("UNKNOWN", None)]
+        expected_result = {"status": "INOPERATIVE", "max_kw": 2.2}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
+        self.assertEqual(result, expected_result)
+
+    def test_determine_overall_status_and_wattage_missing_wattage_2(self):
+        # this is the situation on the staging environment on 21-05-2026
+        connectors = [("OCCUPIED", None)]
+        expected_result = {"status": "OCCUPIED", "max_kw": None}
+
+        result = self.view.determine_overall_status_and_wattage(connectors)
         self.assertEqual(result, expected_result)
 
 

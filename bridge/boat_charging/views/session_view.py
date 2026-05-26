@@ -57,6 +57,8 @@ class SessionDetailView(SessionView):
     paginated = False
 
     async def get(self, request, *args, **kwargs):
+        self.location_status_kw_mapping = await self.get_location_statuses_and_kw()
+
         session_id = self.get_safe_path_param(kwargs["session_id"])
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{session_id}"
         response_json = await self.api_call("get", endpoint=endpoint)

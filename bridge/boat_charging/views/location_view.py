@@ -26,6 +26,8 @@ class LocationView(BaseView):
     paginated = True
 
     async def get(self, request, *args, **kwargs):
+        self.location_status_kw_mapping = await self.get_location_statuses_and_kw()
+
         response_json = await self.api_call(
             "get",
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"],
@@ -64,6 +66,8 @@ class LocationDetailView(LocationView):
     paginated = False
 
     async def get(self, request, *args, **kwargs):
+        self.location_status_kw_mapping = await self.get_location_statuses_and_kw()
+
         location_id = self.get_safe_path_param(kwargs["location_id"])
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{location_id}"
         try:

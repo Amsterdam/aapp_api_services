@@ -10,7 +10,6 @@ from bridge.boat_charging.views.base_view import BaseView
 
 class GuestLoginView(BaseView):
     response_serializer_class = GuestLoginResponseSerializer
-    prefetch_location_status_kw = False
 
     async def post(self, request, *args, **kwargs):
         payload = {"grant_type": "client_credentials", "scope": "infuse/admin"}
