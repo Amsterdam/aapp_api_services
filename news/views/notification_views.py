@@ -33,7 +33,9 @@ class NotificationView(DeviceIdMixin, generics.GenericAPIView):
         return Response(serializer.data)
 
     @extend_schema_for_device_id(
+        request=None,
         success_response=NotificationResponseSerializer,
+        additional_responses={201: NotificationResponseSerializer},
     )
     def post(self, request, *args, **kwargs):
         article_id = kwargs.get("article_id")
