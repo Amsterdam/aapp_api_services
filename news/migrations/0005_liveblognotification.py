@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("device_id", models.CharField(max_length=100)),
+                ("device_id", models.CharField(max_length=255)),
                 (
                     "article",
                     models.ForeignKey(

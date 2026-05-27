@@ -22,7 +22,7 @@ urlpatterns = [
         name="news-districts-list",
     ),
     path(
-        BASE_PATH + "/liveblog-notifications",
+        BASE_PATH + "/liveblog-notifications/<int:article_id>",
         notification_views.NotificationView.as_view(),
         name="news-notification",
     ),
