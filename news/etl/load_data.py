@@ -53,13 +53,11 @@ class NewsArticleLoader:
             publication_datetime=data.get("publication_datetime"),
             expiration_datetime=data.get("expiration_datetime"),
             last_seen=timezone.now(),
+            is_active_liveblog=data.get("is_active_liveblog")
         )
 
     def _upsert_news_articles(self, news_articles_list: list[NewsArticle]):
         with transaction.atomic():
-            existing_articles = set(
-                NewsArticle.objects.values_list("foreign_id", flat=True)
-            )
             articles = NewsArticle.objects.bulk_create(
                 news_articles_list,
                 update_conflicts=True,
@@ -82,15 +80,19 @@ class NewsArticleLoader:
             )
             for a in articles:
                 if (
-                    a.type == "is_active_liveblog"
-                    and a.foreign_id not in existing_articles
+                    a.is_active_liveblog
+                    and not a.liveblog_notification_send
                 ):
                     logger.info(
-                        f"New active liveblog article created with foreign_id {a.foreign_id}"
+                        f"New active liveblog with foreign_id {a.foreign_id}"
                     )
 
                     notification_service = NewLiveblogNotificationService()
                     notification_service.send(liveblog_id=a.id, liveblog_title=a.title)
+
+                    # Make sure notifications will only be send once per liveblog
+                    a.liveblog_notification_send = True
+                    a.save()
 
     def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()
