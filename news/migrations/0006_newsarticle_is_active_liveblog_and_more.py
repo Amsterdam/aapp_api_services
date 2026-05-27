@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('news', '0005_liveblognotification'),
+        ("news", "0005_liveblognotification"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='newsarticle',
-            name='is_active_liveblog',
+            model_name="newsarticle",
+            name="is_active_liveblog",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='newsarticle',
-            name='liveblog_notification_send',
+            model_name="newsarticle",
+            name="liveblog_notification_send",
             field=models.BooleanField(default=False),
         ),
     ]

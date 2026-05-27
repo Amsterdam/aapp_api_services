@@ -53,7 +53,7 @@ class NewsArticleLoader:
             publication_datetime=data.get("publication_datetime"),
             expiration_datetime=data.get("expiration_datetime"),
             last_seen=timezone.now(),
-            is_active_liveblog=data.get("is_active_liveblog")
+            is_active_liveblog=data.get("is_active_liveblog"),
         )
 
     def _upsert_news_articles(self, news_articles_list: list[NewsArticle]):
@@ -79,13 +79,8 @@ class NewsArticleLoader:
                 ],
             )
             for a in articles:
-                if (
-                    a.is_active_liveblog
-                    and not a.liveblog_notification_send
-                ):
-                    logger.info(
-                        f"New active liveblog with foreign_id {a.foreign_id}"
-                    )
+                if a.is_active_liveblog and not a.liveblog_notification_send:
+                    logger.info(f"New active liveblog with foreign_id {a.foreign_id}")
 
                     notification_service = NewLiveblogNotificationService()
                     notification_service.send(liveblog_id=a.id, liveblog_title=a.title)
