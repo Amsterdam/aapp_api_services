@@ -55,6 +55,7 @@ class NewsArticle(models.Model):
     )  # If no date is provided use the current date
     publication_datetime = models.DateTimeField()
     expiration_datetime = models.DateTimeField(default=None, null=True)
+    liveblog_version = models.IntegerField(default=0)
 
     def __str__(self):
         return self.title

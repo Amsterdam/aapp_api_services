@@ -5,7 +5,14 @@ from django.utils import timezone
 from requests.exceptions import HTTPError
 
 from core.services.image_set import ImageSetService
-from news.models import LiveBlogItem, LiveBlogItemImage, NewsArticle, NewsArticleImage
+from news.models import (
+    LiveBlogItem,
+    LiveBlogItemImage,
+    LiveblogNotification,
+    NewsArticle,
+    NewsArticleImage,
+)
+from news.services import LiveblogUpdateNotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +165,7 @@ class NewsArticleLoader:
             messages.sort(key=lambda x: x.get("creation_datetime"))
 
             for i, message in enumerate(messages):
-                liveblog_item, _ = LiveBlogItem.objects.update_or_create(
+                liveblog_item, created = LiveBlogItem.objects.update_or_create(
                     article=news_article,
                     message_order=i,
                     defaults={
@@ -167,6 +174,20 @@ class NewsArticleLoader:
                         "body": message.get("body"),
                     },
                 )
+
+                if created:
+                    device_ids = LiveblogNotification.objects.filter(
+                        article=news_article
+                    ).values_list("device_id", flat=True)
+                    if device_ids:
+                        update_notification_service = (
+                            LiveblogUpdateNotificationService()
+                        )
+                        update_notification_service.send(
+                            device_ids=device_ids,
+                            update_title=message.get("title"),
+                            liveblog_item_id=liveblog_item.id,
+                        )
 
                 self._upsert_liveblog_item_images(message, liveblog_item)
 

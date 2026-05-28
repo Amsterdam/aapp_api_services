@@ -4,6 +4,7 @@ from django.test import TestCase
 from model_bakery import baker
 from requests.exceptions import HTTPError
 
+from core.services.notification_service import ScheduledNotification
 from news.etl.load_data import NewsArticleLoader
 from news.models import LiveBlogItem, LiveBlogItemImage, NewsArticle, NewsArticleImage
 
@@ -327,6 +328,98 @@ class LoadDataTest(TestCase):
             message_order_0_item.title,
             liveblog_article_data["body"][0]["title"],
         )
+
+    def test_upsert_liveblog_items_creates_notifications_for_created_items_only(self):
+        article = baker.make(
+            NewsArticle,
+            foreign_id=123123,
+            title="A title",
+            type="article",
+            url="https://example.com/article/123123",
+            modification_datetime="2024-01-01T13:00:00Z",
+        )
+        baker.make(
+            LiveBlogItem,
+            article=article,
+            title="Existing liveblog item",
+            body="With a body",
+            creation_datetime="2024-01-01T12:00:00Z",
+            message_order=0,
+        )
+
+        loader = NewsArticleLoader()
+        liveblog_article_data = {
+            "foreign_id": "123123",
+            "title": "A title",
+            "modification_datetime": "2024-01-01T13:00:00Z",
+            "type": "liveblog",
+            "body": [
+                {
+                    "title": "Updated existing item",
+                    "creation_datetime": "2024-01-01T12:00:00Z",
+                    "body": "Some body",
+                },
+                {
+                    "title": "Brand new item",
+                    "creation_datetime": "2024-01-01T13:00:00Z",
+                    "body": "Some other body",
+                },
+            ],
+        }
+
+        loader._upsert_liveblog_items_and_liveblog_item_images(
+            liveblog_article_data, article
+        )
+
+        notifications = ScheduledNotification.objects.all()
+
+        self.assertEqual(
+            notifications.count(), 1
+        )  # one notification is added (for the new liveblog item)
+        self.assertEqual(notifications[0].title, "Liveblog gestart")
+        self.assertEqual(notifications[0].body, "Brand new item")
+
+    def test_upsert_liveblog_items_no_notifications_for_updates(self):
+        article = baker.make(
+            NewsArticle,
+            foreign_id=123123,
+            title="A title",
+            type="article",
+            url="https://example.com/article/123123",
+            modification_datetime="2024-01-01T13:00:00Z",
+        )
+        baker.make(
+            LiveBlogItem,
+            article=article,
+            title="Existing liveblog item",
+            body="With a body",
+            creation_datetime="2024-01-01T12:00:00Z",
+            message_order=0,
+        )
+        loader = NewsArticleLoader()
+        liveblog_article_data = {
+            "foreign_id": "123123",
+            "title": "A title",
+            "modification_datetime": "2024-01-01T13:00:00Z",
+            "type": "liveblog",
+            "body": [
+                {
+                    "title": "Updated existing item",
+                    "creation_datetime": "2024-01-01T12:00:00Z",
+                    "body": "Some body",
+                },
+            ],
+        }
+
+        loader._upsert_liveblog_items_and_liveblog_item_images(
+            liveblog_article_data, article
+        )
+
+        notifications = ScheduledNotification.objects.all()
+
+        self.assertEqual(
+            notifications.count(), 0
+        )  # no notifications are added for updated liveblog items
 
     @patch("news.etl.load_data.ImageSetService")
     def test_upsert_liveblog_item_images(self, mock_image_set_service):
