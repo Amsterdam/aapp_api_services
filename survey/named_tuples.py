@@ -33,9 +33,9 @@ class Orientation(TextChoices):
 
 
 class TeamCode(TextChoices):
-    AAPP = "aapp"  # Amsterdam App
-    MAMS = "mams"  # Mijn Amsterdam
-    SIA = "sia"  # Signalen
+    AAPP = "aapp", "Amsterdam App"
+    MAMS = "mams", "Mijn Amsterdam"
+    SIA = "sia", "Signalen"
 
 
 class Choice(NamedTuple):
