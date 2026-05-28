@@ -6,6 +6,7 @@ from requests.exceptions import HTTPError
 
 from core.services.image_set import ImageSetService
 from news.models import LiveBlogItem, LiveBlogItemImage, NewsArticle, NewsArticleImage
+from news.services.notification import NewLiveblogNotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -52,11 +53,12 @@ class NewsArticleLoader:
             publication_datetime=data.get("publication_datetime"),
             expiration_datetime=data.get("expiration_datetime"),
             last_seen=timezone.now(),
+            is_active_liveblog=data.get("is_active_liveblog") or False,
         )
 
     def _upsert_news_articles(self, news_articles_list: list[NewsArticle]):
         with transaction.atomic():
-            NewsArticle.objects.bulk_create(
+            articles = NewsArticle.objects.bulk_create(
                 news_articles_list,
                 update_conflicts=True,
                 unique_fields=["foreign_id"],
@@ -73,8 +75,23 @@ class NewsArticleLoader:
                     "publication_datetime",
                     "expiration_datetime",
                     "last_seen",
+                    "is_active_liveblog",
                 ],
             )
+            for a in articles:
+                if (
+                    a.is_active_liveblog
+                    and a.type == "liveblog"
+                    and a.liveblog_notification_send is None
+                ):
+                    logger.info(f"New active liveblog with foreign_id {a.foreign_id}")
+
+                    notification_service = NewLiveblogNotificationService()
+                    notification_service.send(liveblog_id=a.id, liveblog_title=a.title)
+
+                    # Make sure notifications will only be send once per liveblog
+                    a.liveblog_notification_send = timezone.now()
+                    a.save()
 
     def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()

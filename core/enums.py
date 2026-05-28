@@ -1,6 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import NamedTuple
+from typing import Literal, NamedTuple
 
 
 class ChoicesEnum(Enum):
@@ -16,6 +16,7 @@ class Module(ChoicesEnum):
     MIJN_AMS = "mijn-amsterdam"
     CITY_PASS = "city-pass"
     BURNING_GUIDE = "burning-guide"
+    NEWS = "news"
 
     @property
     def notification_description(self):
@@ -26,6 +27,7 @@ class Module(ChoicesEnum):
             Module.MIJN_AMS: "Blijf op de hoogte van uw aanvragen of klachten.",
             Module.CITY_PASS: "Over uw saldo, regelingen en tips.",
             Module.BURNING_GUIDE: "U ontvangt meldingen als het code rood is voor 'Mijn adres'.",
+            Module.NEWS: "U ontvangt meldingen als er nieuwe liveblogs zijn",
         }
         return descriptions[self]
 
@@ -34,6 +36,7 @@ class NotificationTypeClass(NamedTuple):
     module: Module
     name: str
     description: str
+    visibility: Literal["visible", "invisible", "deeplink"]
 
     def __str__(self):
         return f"{self.module.value}:{self.name}"
@@ -44,41 +47,61 @@ class NotificationType(ChoicesEnum):
         module=Module.CONSTRUCTION_WORK,
         name="warning-message",
         description="Berichten van projecten die u volgt",
+        visibility="visible",
     )
     CONSTRUCTION_WORK_ARTICLE_MESSAGE = NotificationTypeClass(
         module=Module.CONSTRUCTION_WORK,
         name="article-message",
         description="Nieuwsartikelen van projecten die u volgt",
+        visibility="visible",
     )
     PARKING_REMINDER = NotificationTypeClass(
         module=Module.PARKING,
         name="parking-reminder",
         description="Parkeersessie loopt af",
+        visibility="visible",
     )
     WASTE_DATE_REMINDER = NotificationTypeClass(
         module=Module.WASTE,
         name="date-reminder",
         description="Herinnering buitenzetten container",
+        visibility="visible",
     )
     WASTE_MANUAL_NOTIFICATION = NotificationTypeClass(
         module=Module.WASTE,
         name="manual-notification",
         description="A&G meldingen over afvalinzameling",
+        visibility="deeplink",
     )
     MIJN_AMS_NOTIFICATION = NotificationTypeClass(
         module=Module.MIJN_AMS,
         name="mijn-ams-notification",
         description="Nieuwe berichten op Mijn Amsterdam",
+        visibility="visible",
     )
     CITY_PASS_NOTIFICATION = NotificationTypeClass(
         module=Module.CITY_PASS,
         name="notification",
         description="Nieuws over regelingen",
+        visibility="visible",
     )
     BURNING_GUIDE_NOTIFICATION = NotificationTypeClass(
         module=Module.BURNING_GUIDE,
         name="notification",
         description="U ontvangt meldingen als het code rood is voor 'Mijn adres'",
+        visibility="deeplink",
+    )
+    NEWS_NEW_LIVEBLOG = NotificationTypeClass(
+        module=Module.NEWS,
+        name="new-liveblog",
+        description="U ontvangt een melding als er een nieuwe liveblog start",
+        visibility="visible",
+    )
+    NEWS_LIVEBLOG_UPDATE = NotificationTypeClass(
+        module=Module.NEWS,
+        name="liveblog-update",
+        description="Updates op liveblogs",
+        visibility="invisible",
     )
 
     @property
@@ -100,6 +123,7 @@ class NotificationType(ChoicesEnum):
                 {
                     "type": notification_type.value,
                     "description": notification_type._value_.description,
+                    "visibility": notification_type._value_.visibility,
                 }
             )
 
