@@ -27,5 +27,6 @@ class LiveblogUpdateNotificationService(AbstractNotificationService):
             title="Liveblog update",
             message=update_title,
             link_source_id=liveblog_item_id,
+            device_ids=device_ids,
         )
-        self.upsert(notification_data, expiry_minutes=60, device_ids=device_ids)
+        self.upsert(notification_data, expiry_minutes=60)

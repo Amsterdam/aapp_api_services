@@ -195,9 +195,11 @@ class NewsArticleLoader:
                 )
 
                 if created:
-                    device_ids = LiveblogNotification.objects.filter(
-                        article=news_article
-                    ).values_list("device_id", flat=True)
+                    device_ids = list(
+                        LiveblogNotification.objects.filter(
+                            article=news_article
+                        ).values_list("device_id", flat=True)
+                    )
                     if device_ids:
                         update_notification_service = (
                             LiveblogUpdateNotificationService()

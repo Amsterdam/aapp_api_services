@@ -27,7 +27,8 @@ class Command(BaseCommand):
     3. If there are updates, fetch the latest data for the liveblog from the Iprox API.
     4. Transform the data to match the format of our database models.
     5. Load the transformed data into the database, updating existing records and creating new ones as necessary.
-    6. Send notifications if there is a new update for the liveblog.
+       When creating new liveblog items, also check if there are notifications for the liveblog and send an update notification if there are.
+    6. Update the liveblog version in the database
     """
 
     help = "Check for updates in active liveblogs"
@@ -40,10 +41,9 @@ class Command(BaseCommand):
         active_liveblogs = NewsArticle.objects.filter(
             type="liveblog",
             is_active_liveblog=True,
-        ).values_list("foreign_id", "liveblog_version", flat=True)
+        ).values_list("foreign_id", "liveblog_version")
 
         if not active_liveblogs:
-            logger.info("No active liveblogs found. Exiting.")
             return
 
         logger.info(
@@ -51,48 +51,70 @@ class Command(BaseCommand):
         )
 
         for foreign_id, liveblog_version in active_liveblogs:
-            logger.info(
-                f"Checking liveblog with foreign_id {foreign_id} and version {liveblog_version}..."
-            )
-
-            # Step 2: Check if there are updates for the liveblog by comparing the latest version from the Iprox API with the version stored in the database.
+            # Step 2: Check if there are updates for the active liveblogs by comparing the latest version from the Iprox API with the version stored in the database.
             liveblog_version_url = urljoin(
-                IPROX_DETAIL_URL, f"/{foreign_id}/latest-version"
+                IPROX_DETAIL_URL, f"{foreign_id}/latest-version"
             )
             response = requests.get(liveblog_version_url)
             if response.status_code != 200:
                 logger.error(
-                    f"Failed to fetch latest version for liveblog {foreign_id}. Status code: {response.status_code}"
+                    "Failed to fetch latest version for liveblog.",
+                    extra={"foreign_id": foreign_id},
                 )
                 continue
+
             latest_version = response.json().get("Vrs")
             if latest_version is None:
                 logger.error(
-                    f"Latest version not found in response for liveblog {foreign_id}. Response: {response.text}"
+                    "Latest version not found in response for liveblog.",
+                    extra={"foreign_id": foreign_id},
                 )
                 continue
 
-            if int(latest_version) <= liveblog_version:
+            current_version = liveblog_version if liveblog_version is not None else -1
+
+            if int(latest_version) <= current_version:
                 logger.info(
-                    f"No new updates for liveblog {foreign_id}. Current version: {liveblog_version}, Latest version: {latest_version}"
+                    "No new updates for liveblog.",
+                    extra={
+                        "foreign_id": foreign_id,
+                        "current_version": current_version,
+                        "latest_version": latest_version,
+                    },
                 )
                 continue
 
-            # Step 3: If there are updates, fetch the latest data for the liveblog.
+            # Step 3: If there are updates, fetch the latest data for the liveblog from the Iprox API
             logger.info(
-                f"Updates found for liveblog {foreign_id}. Transforming and loading data..."
+                "Updates found for liveblog. Transforming and loading data...",
+                extra={"foreign_id": foreign_id},
             )
             liveblog_latest_version_url = urljoin(
-                IPROX_DETAIL_URL, f"/{foreign_id}/retrieve-version/{latest_version}"
+                IPROX_DETAIL_URL, f"{foreign_id}/retrieve-version/{latest_version}"
             )
             response = requests.get(liveblog_latest_version_url)
             if response.status_code != 200:
                 logger.error(
-                    f"Failed to fetch latest version for liveblog {foreign_id}. Status code: {response.status_code}"
+                    "Failed to fetch latest version data for liveblog.",
+                    extra={"foreign_id": foreign_id},
                 )
                 continue
 
-            transformed_data = transform([response.json()])
+            # Step 4: Transform the data to match the format of our database models.
+            transformed_data = transform(
+                [{**response.json(), "type": "liveblog", "district": None}]
+            )
+
+            # Step 5: Load the transformed data into the database, updating existing records and creating new ones as necessary.
+            # When creating new liveblog items, also check if there are notifications for the liveblog and send an update notification if there are.
             data_loader.load(transformed_data)
 
-            logger.info(f"Liveblog {foreign_id} updated to version {latest_version}.")
+            # Step 6: Update the liveblog version in the database
+            NewsArticle.objects.filter(foreign_id=foreign_id).update(
+                liveblog_version=latest_version
+            )
+
+            logger.info(
+                "Liveblog updated.",
+                extra={"foreign_id": foreign_id, "latest_version": latest_version},
+            )
