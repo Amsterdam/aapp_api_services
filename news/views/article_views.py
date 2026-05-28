@@ -17,9 +17,7 @@ class ArticleListView(ListAPIView):
         max_page_size = 100
 
     def get_queryset(self):
-        query_serializer = NewsArticleListResponseSerializer(
-            data=self.request.query_params
-        )
+        query_serializer = NewsArticleRequestSerializer(data=self.request.query_params)
         query_serializer.is_valid(raise_exception=True)
 
         article_type = query_serializer.validated_data["type"]
