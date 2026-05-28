@@ -101,3 +101,11 @@ class LiveBlogItemImage(BaseImage):
 
     class Meta:
         unique_together = ("liveblog_item", "url")
+
+
+class LiveblogNotification(models.Model):
+    class Meta:
+        unique_together = ("article", "device_id")
+
+    device_id = models.CharField(max_length=255)
+    article = models.ForeignKey(NewsArticle, on_delete=models.CASCADE)
