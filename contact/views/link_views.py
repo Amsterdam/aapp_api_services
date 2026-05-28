@@ -36,7 +36,7 @@ class LinksView(generics.RetrieveAPIView):
         "my_parking": "https://parkeervergunningen.amsterdam.nl/",
         "my_reported_problems": "https://meldingen.amsterdam.nl/mijn-meldingen/login",
         "naturalisation": "https://www.amsterdam.nl/burgerzaken/naturalisatie",
-        "newsLetter": "https://cloud.nieuwsbrief.amsterdam.nl/nieuwsbrief-aanmelden?type=amsterdam",
+        "newsletter": "https://cloud.nieuwsbrief.amsterdam.nl/nieuwsbrief-aanmelden?type=amsterdam",
         "parking": "https://www.amsterdam.nl/parkeren/",
         "parking_request_license_plate_ga_bewoners": "https://www.amsterdam.nl/parkeren/parkeren-gehandicapten/parkeervergunning-gehandicapte-bewoners/gehandicapte-bewoners-kenteken-wijzigen/",
         "parking_request_license_plate_ga_bezoekers": "https://www.amsterdam.nl/parkeren/parkeren-gehandicapten/parkeervergunning-gehandicapte-bezoekers/gehandicapte-bezoekers-kenteken-wijzigen/",

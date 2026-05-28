@@ -26,7 +26,7 @@ class LinksOutSerializer(serializers.Serializer):
     my_parking = serializers.URLField()
     my_reported_problems = serializers.URLField()
     naturalisation = serializers.URLField()
-    newsLetter = serializers.URLField()
+    newsletter = serializers.URLField()
     parking = serializers.URLField()
     parking_request_license_plate_ga_bewoners = serializers.URLField()
     parking_request_license_plate_ga_bezoekers = serializers.URLField()
