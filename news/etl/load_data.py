@@ -79,7 +79,11 @@ class NewsArticleLoader:
                 ],
             )
             for a in articles:
-                if a.is_active_liveblog and a.liveblog_notification_send is None:
+                if (
+                    a.is_active_liveblog
+                    and a.type == "liveblog"
+                    and a.liveblog_notification_send is None
+                ):
                     logger.info(f"New active liveblog with foreign_id {a.foreign_id}")
 
                     notification_service = NewLiveblogNotificationService()
