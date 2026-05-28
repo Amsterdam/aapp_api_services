@@ -139,9 +139,11 @@ spectacular: check-service
     # Generate OpenAPI schema
 	$(manage) spectacular --file /app/${SERVICE_NAME}/openapi-schema.yaml
 
-migrations: check-service
+makemigrations: check-service
     # Run Django migrations on database
 	$(manage) makemigrations
+
+migrations: makemigrations lintfix
 
 migrate: check-service
     # Run Django migrations on database

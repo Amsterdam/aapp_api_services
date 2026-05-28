@@ -4,8 +4,9 @@ from rest_framework.pagination import PageNumberPagination
 from core.utils.openapi_utils import extend_schema_for_api_key
 from news.models import NewsArticle
 from news.serializers.article_serializers import (
+    NewsArticleDetailResponseSerializer,
+    NewsArticleListResponseSerializer,
     NewsArticleRequestSerializer,
-    NewsArticleResponseSerializer,
 )
 
 
@@ -32,11 +33,11 @@ class ArticleListView(ListAPIView):
         return queryset
 
     pagination_class = DefaultPagination
-    serializer_class = NewsArticleResponseSerializer
+    serializer_class = NewsArticleListResponseSerializer
 
     @extend_schema_for_api_key(
         additional_params=[NewsArticleRequestSerializer],
-        success_response=NewsArticleResponseSerializer(many=True),
+        success_response=NewsArticleListResponseSerializer(many=True),
     )
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)
@@ -46,11 +47,11 @@ class ArticleDetailView(RetrieveAPIView):
     def get_queryset(self):
         return NewsArticle.objects.prefetch_related("images")
 
-    serializer_class = NewsArticleResponseSerializer
+    serializer_class = NewsArticleDetailResponseSerializer
     lookup_field = "id"
 
     @extend_schema_for_api_key(
-        success_response=NewsArticleResponseSerializer,
+        success_response=NewsArticleDetailResponseSerializer,
     )
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)

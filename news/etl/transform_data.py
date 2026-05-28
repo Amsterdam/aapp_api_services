@@ -58,6 +58,7 @@ def transform(extracted_data: list[dict]) -> list[dict]:
                 "publication_datetime": article.get("publicationDate"),
                 "expiration_datetime": article.get("expirationDate"),
                 "image_url": article.get("image_url"),
+                "is_active_liveblog": article.get("is_active_liveblog", False),
             }
         )
     return transformed

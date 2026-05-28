@@ -30,7 +30,7 @@ class NewsArticleImageSerializer(serializers.ModelSerializer):
         fields = ["url", "width", "height"]
 
 
-class NewsArticleResponseSerializer(serializers.ModelSerializer):
+class NewsArticleListResponseSerializer(serializers.ModelSerializer):
     images = NewsArticleImageSerializer(many=True, read_only=True)
 
     class Meta:
@@ -42,6 +42,14 @@ class NewsArticleResponseSerializer(serializers.ModelSerializer):
             "publication_datetime",
             "modification_datetime",
         ]
+
+
+class NewsArticleDetailResponseSerializer(serializers.ModelSerializer):
+    images = NewsArticleImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = NewsArticle
+        fields = "__all__"
 
 
 class NewsArticleTransformSerializer(serializers.Serializer):

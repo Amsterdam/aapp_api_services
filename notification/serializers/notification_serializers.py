@@ -99,6 +99,7 @@ class NotificationLastRequestSerializer(serializers.ModelSerializer):
 class NotificationTypeSerializer(serializers.Serializer):
     type = serializers.CharField()
     description = serializers.CharField()
+    visibility = serializers.ChoiceField(choices=["visible", "invisible", "deeplink"])
 
 
 class ModuleNotificationTypeSerializer(serializers.Serializer):

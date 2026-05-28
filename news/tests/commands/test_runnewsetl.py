@@ -7,9 +7,12 @@ from django.test import TestCase
 from news.management.commands import runnewsetl
 from news.models import LiveBlogItem, LiveBlogItemImage, NewsArticle, NewsArticleImage
 from news.tests.mock_data import item_article, item_liveblog
+from notification.models import ScheduledNotification
 
 
 class RunNewsETLTest(TestCase):
+    databases = ["default", "notification"]
+
     @patch(
         "news.management.commands.runnewsetl.data_loader.image_set_service.get_or_upload_from_url"
     )
@@ -132,3 +135,8 @@ class RunNewsETLTest(TestCase):
                 url="https://example.com/image.jpg"
             ).exists()
         )
+
+        # Assert notification was created
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
+        active_liveblog = NewsArticle.objects.filter(is_active_liveblog=True).first()
+        self.assertIsNotNone(active_liveblog.liveblog_notification_send)
