@@ -207,6 +207,8 @@ class NewsArticleLoader:
                     },
                 )
 
+                image_set_id = self._upsert_liveblog_item_images(message, liveblog_item)
+
                 if created:
                     device_ids = list(
                         LiveblogNotification.objects.filter(
@@ -214,18 +216,19 @@ class NewsArticleLoader:
                         ).values_list("device_id", flat=True)
                     )
                     if device_ids:
-                        update_notification_service = (
-                            LiveblogUpdateNotificationService()
+                        update_notification_service = LiveblogUpdateNotificationService(
+                            use_image_service=True
                         )
                         update_notification_service.send(
                             device_ids=device_ids,
                             update_title=message.get("title"),
                             liveblog_item_id=liveblog_item.id,
+                            image_set_id=image_set_id,
                         )
 
-                self._upsert_liveblog_item_images(message, liveblog_item)
-
-    def _upsert_liveblog_item_images(self, message: dict, liveblog_item: LiveBlogItem):
+    def _upsert_liveblog_item_images(
+        self, message: dict, liveblog_item: LiveBlogItem
+    ) -> int | None:
         """
         Upsert liveblog item images for a given liveblog item. If the liveblog item has an image_url, we will attempt to get or upload the image using the ImageSetService.
         Then we will upsert the LiveBlogItemImage instances for the liveblog item based on the image variants returned by the ImageSetService.
@@ -246,12 +249,11 @@ class NewsArticleLoader:
                     extra={"image_url": image_url, "error": str(e)},
                 )
                 return
+            image_set_id = image_set_data["id"]
             image_sources = [
                 LiveBlogItemImage(
                     liveblog_item=liveblog_item,
-                    foreign_id=image_set_data[
-                        "id"
-                    ],  # use the image set id as the image foreign_id for reference.
+                    foreign_id=image_set_id,  # use the image set id as the image foreign_id for reference.
                     url=v["image"],
                     width=v["width"],
                     height=v["height"],
@@ -277,3 +279,5 @@ class NewsArticleLoader:
                 unique_fields=["liveblog_item", "url"],
                 update_fields=["width", "height"],
             )
+
+            return image_set_id
