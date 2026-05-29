@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 import responses
 from django.conf import settings
 from django.core.management import call_command
+from django.utils import timezone
 from model_bakery import baker
 
 from core.services.notification_service import ScheduledNotification
@@ -173,6 +174,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             title="Test Liveblog",
             type="liveblog",
             is_active_liveblog=True,
+            liveblog_notification_send=timezone.now(),  # This is to test that no new liveblog notification is created
         )
 
         # mock the response from the Iprox API for the latest version of the liveblog
@@ -195,8 +197,8 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             LiveBlogItem.objects.count(), 19
         )  # There are 19 items in the mocked response
         self.assertEqual(
-            ScheduledNotification.objects.count(), 1
-        )  # There should be a notification for the start of the liveblog
+            ScheduledNotification.objects.count(), 0
+        )  # There should be no notifications because the liveblog already exists in the database (so no new liveblog notification)
 
     @patch.object(liveblogupdate.data_loader, "image_set_service")
     def test_run_news_etl_with_active_liveblogs_and_notifications(
@@ -213,6 +215,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             title="Test Liveblog",
             type="liveblog",
             is_active_liveblog=True,
+            liveblog_notification_send=None,
         )
 
         baker.make(

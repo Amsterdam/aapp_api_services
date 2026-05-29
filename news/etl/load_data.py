@@ -67,7 +67,7 @@ class NewsArticleLoader:
 
     def _upsert_news_articles(self, news_articles_list: list[NewsArticle]):
         with transaction.atomic():
-            articles = NewsArticle.objects.bulk_create(
+            NewsArticle.objects.bulk_create(
                 news_articles_list,
                 update_conflicts=True,
                 unique_fields=["foreign_id"],
@@ -87,7 +87,20 @@ class NewsArticleLoader:
                     "is_active_liveblog",
                 ],
             )
-            for a in articles:
+
+            # With update_conflicts=True, returned objects may still contain values from
+            # the input instances (e.g. liveblog_notification_send=None). Read persisted
+            # rows to decide whether this is truly a new liveblog notification.
+            foreign_ids = [article.foreign_id for article in news_articles_list]
+            persisted_articles = NewsArticle.objects.filter(
+                foreign_id__in=foreign_ids
+            ).in_bulk(field_name="foreign_id")
+
+            for article in news_articles_list:
+                a = persisted_articles.get(article.foreign_id)
+                if a is None:
+                    continue
+
                 if (
                     a.is_active_liveblog
                     and a.type == "liveblog"
@@ -100,7 +113,7 @@ class NewsArticleLoader:
 
                     # Make sure notifications will only be send once per liveblog
                     a.liveblog_notification_send = timezone.now()
-                    a.save()
+                    a.save(update_fields=["liveblog_notification_send"])
 
     def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()
