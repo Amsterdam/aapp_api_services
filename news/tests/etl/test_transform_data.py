@@ -41,7 +41,10 @@ class TransformDataTest(TestCase):
 
     def test_transform_liveblog(self):
         extracted_data = [
-            {**item_liveblog.MOCK_RESPONSE, **{"type": "liveblog", "district": None}}
+            {
+                **item_liveblog.MOCK_RESPONSE_1234123,
+                **{"type": "liveblog", "district": None},
+            }
         ]
         transformed = transform(extracted_data)
         self.assertEqual(len(transformed), 1)
@@ -159,16 +162,43 @@ class TransformDataTest(TestCase):
         """
         messages = parse_liveblog_messages(input_str)
         self.assertEqual(len(messages), 2)
-        self.assertEqual(messages[0]["creation_datetime"], "2024-01-01T12:00:00")
+        self.assertEqual(messages[0]["creation_datetime"], "2024-01-01T12:00:00+01:00")
         self.assertEqual(messages[0]["title"], "First update")
+        self.assertNotIn("<img", messages[0]["body"])  # Image should be removed from body
         self.assertIn("Details of the first update.", messages[0]["body"])
         self.assertEqual(messages[0]["image_url"], "https://example.com/image1.jpg")
         self.assertEqual(messages[0]["image_description"], "Image 1 description")
-        self.assertEqual(messages[1]["creation_datetime"], "2024-01-01T13:00:00")
+        self.assertEqual(messages[1]["creation_datetime"], "2024-01-01T13:00:00+01:00")
         self.assertEqual(messages[1]["title"], "Second update")
         self.assertIn("Details of the second update.", messages[1]["body"])
         self.assertIsNone(messages[1]["image_url"])
         self.assertIsNone(messages[1]["image_description"])
+
+    def test_parse_liveblog_messages_image_nesting(self):
+        input_str = """
+        <div>
+            <p class="datetime">2024-06-09, 23:03</p>
+            <h3 id="a3"><strong>Derde titel</strong></h3>
+            <p>Eerste deel tekst.</p>
+            <p>
+                <img src="https://www.example.com/image1.jpg" width="609" data-sources="[{&quot;width&quot;:80,&quot;height&quot;:80,&quot;src&quot;:&quot;/publish/pages/1072780/80px/ep_2024_corr.jpg&quot;,&quot;sizeClass&quot;:&quot;size_80px&quot;},{&quot;width&quot;:220,&quot;height&quot;:220,&quot;src&quot;:&quot;/publish/pages/1072780/220px/ep_2024_corr.jpg&quot;,&quot;sizeClass&quot;:&quot;size_220px&quot;},{&quot;width&quot;:609,&quot;height&quot;:609,&quot;src&quot;:&quot;/publish/pages/1072780/ep_2024_corr.jpg&quot;}]" height="609" data-id="1072780" alt="" id="img_pagvld_23966763_0" class="img_pagvld_23966763_0" resolved="true" />
+            </p>
+            <p>Tweede deel tekst.</p>
+            <p>Derde deel tekst.</p>
+            <p class="Calltoaction-blauw">
+                <a href="https://example.com/action-punt" class="externLink">Meer over de voorlopige uitslag</a>
+            </p>
+        </div>
+        """
+        messages = parse_liveblog_messages(input_str)
+        self.assertEqual(len(messages), 1)
+
+        self.assertNotIn("<img", messages[0]["body"])  # Image should be removed from body
+        self.assertIn("Eerste deel tekst.", messages[0]["body"])
+        self.assertIn("Tweede deel tekst.", messages[0]["body"])
+        self.assertIn("Derde deel tekst.", messages[0]["body"])
+        self.assertEqual(messages[0]["image_url"], "https://www.example.com/image1.jpg")
+        self.assertEqual(messages[0]["image_description"], "")
 
     def test_find_elements_between_datetimes(self):
         html = """<div>
@@ -235,7 +265,7 @@ class TransformDataTest(TestCase):
 
     def test_change_date_string_to_iso_valid(self):
         input_str = "12-01-2024, 14:30"
-        expected = "2024-01-12T14:30:00"
+        expected = "2024-01-12T14:30:00+01:00"
         result = change_date_string_to_iso(input_str)
         self.assertEqual(result, expected)
 

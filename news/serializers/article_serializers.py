@@ -4,6 +4,8 @@ from rest_framework.fields import ChoiceField
 from news.models import (
     ARTICLE_TYPE_CHOICES,
     DISTRICT_TYPE_CHOICES,
+    LiveBlogItem,
+    LiveBlogItemImage,
     NewsArticle,
     NewsArticleImage,
 )
@@ -30,6 +32,20 @@ class NewsArticleImageSerializer(serializers.ModelSerializer):
         fields = ["url", "width", "height"]
 
 
+class NewsArticleLiveblogItemImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LiveBlogItemImage
+        fields = ["url", "width", "height"]
+
+
+class NewsArticleLiveblogItemSerializer(serializers.ModelSerializer):
+    images = NewsArticleLiveblogItemImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LiveBlogItem
+        fields = "__all__"
+
+
 class NewsArticleListResponseSerializer(serializers.ModelSerializer):
     images = NewsArticleImageSerializer(many=True, read_only=True)
 
@@ -46,6 +62,7 @@ class NewsArticleListResponseSerializer(serializers.ModelSerializer):
 
 class NewsArticleDetailResponseSerializer(serializers.ModelSerializer):
     images = NewsArticleImageSerializer(many=True, read_only=True)
+    liveblog_items = NewsArticleLiveblogItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = NewsArticle
