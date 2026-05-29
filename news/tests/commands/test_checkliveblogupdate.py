@@ -1,3 +1,4 @@
+import json
 from unittest.mock import patch
 from urllib.parse import urljoin
 
@@ -6,10 +7,11 @@ from django.conf import settings
 from django.core.management import call_command
 from django.utils import timezone
 from model_bakery import baker
+from requests import Response
 
 from core.services.notification_service import ScheduledNotification
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from news.management.commands import liveblogupdate
+from news.management.commands import checkliveblogupdate
 from news.models import (
     LiveBlogItem,
     LiveblogNotification,
@@ -50,7 +52,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
 
     def test_run_news_etl_no_liveblogs(self):
         """Test that the command runs without errors when there are no active liveblogs in the database."""
-        call_command("liveblogupdate")
+        call_command("checkliveblogupdate")
         self.assertEqual(NewsArticle.objects.count(), 0)
         self.assertEqual(LiveBlogItem.objects.count(), 0)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
@@ -65,7 +67,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             is_active_liveblog=False,
         )
 
-        call_command("liveblogupdate")
+        call_command("checkliveblogupdate")
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(LiveBlogItem.objects.count(), 0)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
@@ -83,12 +85,12 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
         # mock the response as invalid from the Iprox API for the latest version of the liveblog
         responses.get(urljoin(IPROX_DETAIL_URL, "1234123/latest-version"), status=503)
 
-        call_command("liveblogupdate")
+        call_command("checkliveblogupdate")
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(LiveBlogItem.objects.count(), 0)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
 
-    def test_run_news_etl_active_liveblogs_no_valid_version_number(self):
+    def test_run_news_etl_active_liveblogs_no_valid_version_key(self):
         """Test that the command runs without errors when there are active liveblogs in the database but none of them have a version number."""
         baker.make(
             NewsArticle,
@@ -105,7 +107,29 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             json={"invalid_key": "invalid_value"},
         )
 
-        call_command("liveblogupdate")
+        call_command("checkliveblogupdate")
+        self.assertEqual(NewsArticle.objects.count(), 1)
+        self.assertEqual(LiveBlogItem.objects.count(), 0)
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
+
+    def test_run_news_etl_active_liveblogs_no_valid_version_value(self):
+        """Test that the command runs without errors when there are active liveblogs in the database but none of them have a version number."""
+        baker.make(
+            NewsArticle,
+            foreign_id=1234123,
+            title="Test Liveblog",
+            type="liveblog",
+            is_active_liveblog=True,
+        )
+
+        # mock the response as invalid from the Iprox API for the latest version of the liveblog
+        responses.get(
+            urljoin(IPROX_DETAIL_URL, "1234123/latest-version"),
+            status=200,
+            json={"Vrs": "invalid_value"},
+        )
+
+        call_command("checkliveblogupdate")
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(LiveBlogItem.objects.count(), 0)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
@@ -128,7 +152,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             json=liveblog_latest_version.MOCK_RESPONSE,
         )
 
-        call_command("liveblogupdate")
+        call_command("checkliveblogupdate")
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(LiveBlogItem.objects.count(), 0)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
@@ -157,12 +181,12 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             status=503,
         )
 
-        call_command("liveblogupdate")
+        call_command("checkliveblogupdate")
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(LiveBlogItem.objects.count(), 0)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
 
-    @patch.object(liveblogupdate.data_loader, "image_set_service")
+    @patch.object(checkliveblogupdate.data_loader, "image_set_service")
     def test_run_news_etl_with_active_liveblogs(self, mock_image_set_service):
         """Test that the command runs without errors when there are active liveblogs in the database."""
 
@@ -191,7 +215,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             json=item_liveblog.MOCK_RESPONSE,
         )
 
-        call_command("liveblogupdate")
+        call_command("checkliveblogupdate")
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(
             LiveBlogItem.objects.count(), 19
@@ -203,7 +227,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
     @patch(
         "core.services.notification_service.ImageSetService.exists", return_value=True
     )
-    @patch.object(liveblogupdate.data_loader, "image_set_service")
+    @patch.object(checkliveblogupdate.data_loader, "image_set_service")
     def test_run_news_etl_with_active_liveblogs_and_notifications(
         self, mock_image_set_service, _mock_image_exists
     ):
@@ -241,7 +265,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             json=item_liveblog.MOCK_RESPONSE,
         )
 
-        call_command("liveblogupdate")
+        call_command("checkliveblogupdate")
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(
             LiveBlogItem.objects.count(), 19
@@ -255,3 +279,24 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
         ).first()
         self.assertIsNotNone(notification_with_image)
         self.assertEqual(notification_with_image.image, 12345)
+
+    @patch("news.management.commands.checkliveblogupdate.requests.get")
+    def test_make_request_succeeds_after_retry(self, mock_get):
+        # Simulate a 500 error on the first request
+        mock_response_1 = Response()
+        mock_response_1.status_code = 500
+        mock_response_1._content = json.dumps(
+            {"status": "ERROR", "message": "Internal Server Error"}
+        ).encode("utf-8")
+
+        # Simulate a successful response on the second request
+        mock_response_2 = Response()
+        mock_response_2.status_code = 200
+        mock_response_2._content = json.dumps(
+            {"content": liveblog_latest_version.MOCK_RESPONSE, "status": "SUCCESS"}
+        ).encode("utf-8")
+
+        mock_get.side_effect = [mock_response_1, mock_response_2]
+
+        resp = checkliveblogupdate.Command()._make_request("some_url")
+        self.assertEqual(resp.status_code, 200)

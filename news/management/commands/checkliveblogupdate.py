@@ -118,6 +118,13 @@ class Command(BaseCommand):
                 [{**response.json(), "type": "liveblog", "district": None}]
             )
 
+            if not transformed_data:
+                logger.error(
+                    "Failed to transform data for liveblog.",
+                    extra={"foreign_id": foreign_id},
+                )
+                continue
+
             # Step 5: Load the transformed data into the database, updating existing records and creating new ones as necessary.
             # When creating new liveblog items, also check if there are notifications for the liveblog and send an update notification if there are.
             data_loader.load(transformed_data)
@@ -140,9 +147,6 @@ class Command(BaseCommand):
     )
     def _make_request(self, url) -> requests.Response:
         """Make the HTTP request for with retries and a timeout."""
-        try:
-            response = requests.get(url, timeout=5)
-            response.raise_for_status()
-            return response
-        except requests.exceptions.RequestException:
-            raise
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        return response
