@@ -40,14 +40,14 @@ class TestArticleListView(BasicAPITestCase):
             self.url, data={"type": "article"}, headers=self.api_headers
         )
 
+        response_result = response.data["result"]
+
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["results"]), 2)
-        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(len(response_result), 2)
+        self.assertEqual(response.data["page"]["totalElements"], 2)
 
         article_1_response = [
-            article
-            for article in response.data["results"]
-            if article["id"] == self.article_1.id
+            article for article in response_result if article["id"] == self.article_1.id
         ][0]
         self.assertEqual(article_1_response["title"], self.article_1.title)
         self.assertEqual(
@@ -56,9 +56,7 @@ class TestArticleListView(BasicAPITestCase):
         self.assertEqual(len(article_1_response["images"]), 2)
 
         article_2_response = [
-            article
-            for article in response.data["results"]
-            if article["id"] == self.article_2.id
+            article for article in response_result if article["id"] == self.article_2.id
         ][0]
         self.assertEqual(article_2_response["title"], self.article_2.title)
         self.assertEqual(
@@ -71,22 +69,22 @@ class TestArticleListView(BasicAPITestCase):
             self.url, data={"type": "highlight"}, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["page"]["totalElements"], 1)
 
     def test_article_list_pagination(self):
         params = {"page_size": 1, "type": "article"}
         response = self.client.get(self.url, headers=self.api_headers, data=params)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(len(response.data["result"]), 1)
+        self.assertEqual(response.data["page"]["totalElements"], 2)
 
     def test_liveblog_list(self):
         response = self.client.get(
             self.url, data={"type": "liveblog"}, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(response.data["page"]["totalElements"], 0)
 
     def test_foobar_list(self):
         response = self.client.get(
@@ -101,7 +99,7 @@ class TestArticleListView(BasicAPITestCase):
             headers=self.api_headers,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["page"]["totalElements"], 1)
 
     def test_district_list_empty(self):
         response = self.client.get(
@@ -110,7 +108,7 @@ class TestArticleListView(BasicAPITestCase):
             headers=self.api_headers,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(response.data["page"]["totalElements"], 0)
 
     def test_district_list_invalid(self):
         response = self.client.get(

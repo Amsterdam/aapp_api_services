@@ -142,18 +142,18 @@ class NewsArticleLoader:
                     foreign_id=image_set_data[
                         "id"
                     ],  # use the image set id as the image foreign_id for reference.
-                    url=v["image"],
+                    uri=v["image"],
                     width=v["width"],
                     height=v["height"],
                 )
                 for v in image_set_data["variants"]
             ]
-            # Gather all URLs for this article from the new image_sources
-            new_urls = {img.url for img in image_sources}
+            # Gather all URIs for this article from the new image_sources
+            new_uris = {img.uri for img in image_sources}
             # Find all existing images for this article
             existing_images = NewsArticleImage.objects.filter(article=news_article)
-            # Delete images for this article whose URL is not in the new set
-            images_to_delete = existing_images.exclude(url__in=new_urls)
+            # Delete images for this article whose URI is not in the new set
+            images_to_delete = existing_images.exclude(uri__in=new_uris)
             if images_to_delete.exists():
                 images_to_delete.delete()
 
@@ -161,7 +161,7 @@ class NewsArticleLoader:
             NewsArticleImage.objects.bulk_create(
                 image_sources,
                 update_conflicts=True,
-                unique_fields=["article", "url"],
+                unique_fields=["article", "uri"],
                 update_fields=["width", "height"],
             )
 
@@ -214,21 +214,21 @@ class NewsArticleLoader:
                     foreign_id=image_set_data[
                         "id"
                     ],  # use the image set id as the image foreign_id for reference.
-                    url=v["image"],
+                    uri=v["image"],
                     width=v["width"],
                     height=v["height"],
                 )
                 for v in image_set_data["variants"]
             ]
 
-            # Gather all URLs for this liveblog item from the new image_sources
-            new_urls = {img.url for img in image_sources}
+            # Gather all URIs for this liveblog item from the new image_sources
+            new_uris = {img.uri for img in image_sources}
             # Find all existing images for this liveblog item
             existing_images = LiveBlogItemImage.objects.filter(
                 liveblog_item=liveblog_item
             )
-            # Delete images for this liveblog item whose URL is not in the new set
-            images_to_delete = existing_images.exclude(url__in=new_urls)
+            # Delete images for this liveblog item whose URI is not in the new set
+            images_to_delete = existing_images.exclude(uri__in=new_uris)
             if images_to_delete.exists():
                 images_to_delete.delete()
 
@@ -236,6 +236,6 @@ class NewsArticleLoader:
             LiveBlogItemImage.objects.bulk_create(
                 image_sources,
                 update_conflicts=True,
-                unique_fields=["liveblog_item", "url"],
+                unique_fields=["liveblog_item", "uri"],
                 update_fields=["width", "height"],
             )
