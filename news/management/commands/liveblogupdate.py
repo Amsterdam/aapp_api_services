@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from news.etl.load_data import NewsArticleLoader
 from news.etl.transform_data import transform
@@ -55,8 +56,9 @@ class Command(BaseCommand):
             liveblog_version_url = urljoin(
                 IPROX_DETAIL_URL, f"{foreign_id}/latest-version"
             )
-            response = requests.get(liveblog_version_url)
-            if response.status_code != 200:
+            try:
+                response = self._make_request(liveblog_version_url)
+            except requests.exceptions.RequestException:
                 logger.error(
                     "Failed to fetch latest version for liveblog.",
                     extra={"foreign_id": foreign_id},
@@ -71,9 +73,19 @@ class Command(BaseCommand):
                 )
                 continue
 
+            # check if latest version can be cast to int, if not log error and continue with next liveblog
+            try:
+                latest_version = int(latest_version)
+            except ValueError:
+                logger.error(
+                    "Latest version is not a valid integer for liveblog.",
+                    extra={"foreign_id": foreign_id, "latest_version": latest_version},
+                )
+                continue
+
             current_version = liveblog_version if liveblog_version is not None else -1
 
-            if int(latest_version) <= current_version:
+            if latest_version <= current_version:
                 logger.info(
                     "No new updates for liveblog.",
                     extra={
@@ -92,8 +104,9 @@ class Command(BaseCommand):
             liveblog_latest_version_url = urljoin(
                 IPROX_DETAIL_URL, f"{foreign_id}/retrieve-version/{latest_version}"
             )
-            response = requests.get(liveblog_latest_version_url)
-            if response.status_code != 200:
+            try:
+                response = self._make_request(liveblog_latest_version_url)
+            except requests.exceptions.RequestException:
                 logger.error(
                     "Failed to fetch latest version data for liveblog.",
                     extra={"foreign_id": foreign_id},
@@ -118,3 +131,18 @@ class Command(BaseCommand):
                 "Liveblog updated.",
                 extra={"foreign_id": foreign_id, "latest_version": latest_version},
             )
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(2),
+        retry=retry_if_exception_type(requests.exceptions.RequestException),
+        reraise=True,  # Reraise the RequestException after retries
+    )
+    def _make_request(self, url) -> requests.Response:
+        """Make the HTTP request for with retries and a timeout."""
+        try:
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.RequestException:
+            raise
