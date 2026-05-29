@@ -57,6 +57,7 @@ class NewsArticle(models.Model):
     expiration_datetime = models.DateTimeField(default=None, null=True)
     is_active_liveblog = models.BooleanField(default=False)
     liveblog_notification_send = models.DateTimeField(default=None, null=True)
+    liveblog_version = models.IntegerField(default=None, null=True)
 
     def __str__(self):
         return self.title
