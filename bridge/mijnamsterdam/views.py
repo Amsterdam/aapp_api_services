@@ -6,7 +6,11 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-from bridge.mijnamsterdam.serializers.device_serializers import DeviceResponseSerializer
+from bridge.mijnamsterdam.serializers.device_serializers import (
+    DeviceResponseSerializer,
+    LogoutNotificationRequestSerializer,
+)
+from bridge.mijnamsterdam.services.notifications import LogoutNotificationService
 from core.enums import Module
 from core.services.notification_last import NotificationLastService
 from core.utils.openapi_utils import extend_schema_for_api_key
@@ -77,3 +81,20 @@ class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
         response = requests.request(method, url, headers=headers, timeout=10)
         response.raise_for_status()
         return response.json()
+
+
+@extend_schema_for_api_key(success_response=DeviceResponseSerializer)
+class LogoutNotificationView(generics.GenericAPIView):
+    serializer_class = LogoutNotificationRequestSerializer
+    logout_notification_service = LogoutNotificationService()
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.logout_notification_service.send(
+            device_ids=serializer.validated_data["device_ids"]
+        )
+
+        response_serializer = DeviceResponseSerializer(data={"status": "OK"})
+        response_serializer.is_valid(raise_exception=True)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
