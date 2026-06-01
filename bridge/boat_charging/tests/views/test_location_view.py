@@ -20,7 +20,7 @@ class TestLocationView(BoatChargingTestCase):
         self.url = reverse("boat-charging-locations")
         self.view = LocationView()
 
-    def _setup_mock_location_response(self):
+    def test_success(self):
         resp = respx.get(settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"]).mock(
             return_value=httpx.Response(200, json=locations.MOCK_RESPONSE)
         )
@@ -28,16 +28,11 @@ class TestLocationView(BoatChargingTestCase):
             settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]
         ).mock(return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE))
         response = self.client.get(self.url, headers=self.api_headers)
-        return resp, resp_charging_stations, response
 
-    def test_success_basic_params(self):
-        resp, resp_charging_stations, response = self._setup_mock_location_response()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(resp_charging_stations.call_count, 1)
 
-    def test_success_address_format(self):
-        _, _, response = self._setup_mock_location_response()
         # check that the address is returned in the expected format
         self.assertEqual("address" in response.data["features"][0]["properties"], True)
         self.assertEqual(
@@ -52,6 +47,20 @@ class TestLocationView(BoatChargingTestCase):
                     "lon": 4.822313,
                 },
             },
+        )
+
+        # Check that the status and max_kw are determined correctly
+        location_properties = {
+            feature["properties"]["id"]: feature["properties"]
+            for feature in response.data["features"]
+        }
+        self.assertEqual(
+            location_properties["2c0ccfb795d040e39136b7dd1d25f13e"]["status"],
+            "OPERATIVE",
+        )
+        self.assertEqual(
+            location_properties["2c0ccfb795d040e39136b7dd1d25f13e"]["max_kw"],
+            16.0,
         )
 
     def test_determine_overall_status_and_wattage_1(self):
