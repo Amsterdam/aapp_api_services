@@ -6,21 +6,21 @@ from django.core.management.base import BaseCommand
 from news.etl.load_data import NewsArticleLoader
 from news.etl.transform_data import transform
 from news.models import NewsArticle
-from news.tests.mock_data import item_article, item_liveblog
+from news.tests.mock_data import item_liveblog
 
 logger = logging.getLogger(__name__)
 
 FULL_DATASET = [
-    {**item_article.MOCK_RESPONSE_123123, **{"type": "article", "district": None}},
-    {**item_article.MOCK_RESPONSE_123124, **{"type": "article", "district": None}},
-    {**item_article.MOCK_RESPONSE_100000, **{"type": "article", "district": None}},
+    # {**item_article.MOCK_RESPONSE_123123, **{"type": "article", "district": None}},
+    # {**item_article.MOCK_RESPONSE_123124, **{"type": "article", "district": None}},
+    # {**item_article.MOCK_RESPONSE_100000, **{"type": "article", "district": None}},
     {**item_liveblog.MOCK_RESPONSE_1234123, **{"type": "liveblog", "district": None}},
     {**item_liveblog.MOCK_RESPONSE_1321235, **{"type": "liveblog", "district": None}},
     {**item_liveblog.MOCK_RESPONSE_1000001, **{"type": "liveblog", "district": None}},
 ]
 
 TYPE_MAP = {
-    "nieuwsartikel": "highlight",
+    # "nieuwsartikel": "highlight",
     "livefeed": "liveblog",
 }
 
@@ -37,9 +37,9 @@ class Command(BaseCommand):
             help="Delete existing news records before injecting mock data.",
         )
         parser.add_argument(
-            "--with-images",
+            "--without-images",
             action="store_true",
-            help="Keep image URLs so loader can upsert images.",
+            help="Remove image URLs so loader does not upsert images.",
         )
         parser.add_argument(
             "--with-liveblog-notification",
@@ -51,7 +51,7 @@ class Command(BaseCommand):
 
         extracted_data = deepcopy(FULL_DATASET)
         reset_news = kwargs["reset_news"]
-        with_images = kwargs["with_images"]
+        without_images = kwargs["without_images"]
         with_liveblog_notification = kwargs["with_liveblog_notification"]
 
         if reset_news:
@@ -60,7 +60,7 @@ class Command(BaseCommand):
                 self.style.WARNING(f"Reset existing news rows: {deleted}")
             )
 
-        if not with_images:
+        if without_images:
             self._strip_images(extracted_data)
 
         if not with_liveblog_notification:
@@ -69,7 +69,7 @@ class Command(BaseCommand):
 
         transformed_data = transform(extracted_data)
 
-        if not with_images:
+        if without_images:
             self._strip_transformed_liveblog_images(transformed_data)
 
         logger.info(
