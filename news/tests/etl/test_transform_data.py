@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 from django.test import TestCase
 
 from news.etl.transform_data import (
+    add_quotes_around_blockquotes,
     change_date_string_to_iso,
     decode_and_strip_outer_div,
     extract_body_from_elements,
@@ -142,6 +143,12 @@ class TransformDataTest(TestCase):
         result = decode_and_strip_outer_div(html)
         self.assertEqual(result, expected)
 
+    def test_add_quotes_around_blockquotes(self):
+        html = "<div><blockquote>This is a quote.</blockquote></div>"
+        expected = '<div><blockquote>"This is a quote."</blockquote></div>'
+        result = add_quotes_around_blockquotes(html)
+        self.assertEqual(result, expected)
+
     def test_decode_and_strip_outer_div_None(self):
         html = None
         expected = ""
@@ -164,7 +171,9 @@ class TransformDataTest(TestCase):
         self.assertEqual(len(messages), 2)
         self.assertEqual(messages[0]["creation_datetime"], "2024-01-01T12:00:00+01:00")
         self.assertEqual(messages[0]["title"], "First update")
-        self.assertNotIn("<img", messages[0]["body"])  # Image should be removed from body
+        self.assertNotIn(
+            "<img", messages[0]["body"]
+        )  # Image should be removed from body
         self.assertIn("Details of the first update.", messages[0]["body"])
         self.assertEqual(messages[0]["image_url"], "https://example.com/image1.jpg")
         self.assertEqual(messages[0]["image_description"], "Image 1 description")
@@ -193,7 +202,9 @@ class TransformDataTest(TestCase):
         messages = parse_liveblog_messages(input_str)
         self.assertEqual(len(messages), 1)
 
-        self.assertNotIn("<img", messages[0]["body"])  # Image should be removed from body
+        self.assertNotIn(
+            "<img", messages[0]["body"]
+        )  # Image should be removed from body
         self.assertIn("Eerste deel tekst.", messages[0]["body"])
         self.assertIn("Tweede deel tekst.", messages[0]["body"])
         self.assertIn("Derde deel tekst.", messages[0]["body"])

@@ -210,9 +210,11 @@ def add_quotes_around_blockquotes(input_str: str) -> str:
 
 def change_date_string_to_iso(input_str: str) -> str:
     """
-    Convert a datetime string from "DD-MM-YYYY, HH:MM" or "YYYY-MM-DD, HH:MM" format to ISO 8601 format "YYYY-MM-DDTHH:MM:SS".
+    Convert a datetime string from "DD-MM-YYYY, HH:MM" or "YYYY-MM-DD, HH:MM" format to ISO 8601
+    datetime string with timezone offset (using Django's default timezone).
+
     Example input: "12-01-2024, 14:30" or "2024-01-12, 14:30"
-    Desired output: "2024-01-12T14:30:00"
+    Desired output: "2024-01-12T14:30:00+01:00" (assuming default timezone is CET/CEST)
     """
     # First check which format the date string is in, then parse accordingly.
     if len(input_str.split("-")[0]) == 4:  # Format is likely "YYYY-MM-DD, HH:MM"
