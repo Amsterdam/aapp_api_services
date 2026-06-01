@@ -88,32 +88,16 @@ class NewsArticleLoader:
                 ],
             )
 
-            # With update_conflicts=True, returned objects may still contain values from
-            # the input instances (e.g. liveblog_notification_send=None). Read persisted
-            # rows to decide whether this is truly a new liveblog notification.
-            foreign_ids = [article.foreign_id for article in news_articles_list]
-            persisted_articles = NewsArticle.objects.filter(
-                foreign_id__in=foreign_ids
-            ).in_bulk(field_name="foreign_id")
+            unsend_liveblogs = NewsArticle.objects.filter(type="liveblog", is_active_liveblog=True, liveblog_notification_send=None)
+            for liveblog in unsend_liveblogs:
+                logger.info(f"New active liveblog with foreign_id {liveblog.foreign_id}")
 
-            for article in news_articles_list:
-                a = persisted_articles.get(article.foreign_id)
-                if a is None:
-                    continue
+                notification_service = NewLiveblogNotificationService()
+                notification_service.send(liveblog_id=liveblog.id, liveblog_title=liveblog.title)
 
-                if (
-                    a.is_active_liveblog
-                    and a.type == "liveblog"
-                    and a.liveblog_notification_send is None
-                ):
-                    logger.info(f"New active liveblog with foreign_id {a.foreign_id}")
-
-                    notification_service = NewLiveblogNotificationService()
-                    notification_service.send(liveblog_id=a.id, liveblog_title=a.title)
-
-                    # Make sure notifications will only be send once per liveblog
-                    a.liveblog_notification_send = timezone.now()
-                    a.save(update_fields=["liveblog_notification_send"])
+                # Make sure notifications will only be send once per liveblog
+                liveblog.liveblog_notification_send = timezone.now()
+                liveblog.save(update_fields=["liveblog_notification_send"])
 
     def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()
