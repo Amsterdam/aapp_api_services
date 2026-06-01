@@ -50,8 +50,11 @@ class NewsArticleLoader:
             try:
                 self._upsert_images_and_liveblog_items(article, news_article)
             except ArticleLoaderError as e:
-                logger.error("Unable to load article images or liveblog items",
-                             extra={"news_article_foreign_id": news_article.foreign_id}, exc_info=e)
+                logger.error(
+                    "Unable to load article images or liveblog items",
+                    extra={"news_article_foreign_id": news_article.foreign_id},
+                    exc_info=e,
+                )
 
     def _get_news_article_object(self, data: dict) -> NewsArticle:
         """
@@ -98,14 +101,12 @@ class NewsArticleLoader:
         )
 
         unsend_liveblogs = NewsArticle.objects.filter(
-                type="liveblog",
-                is_active_liveblog=True,
-                liveblog_notification_send=None,
-            )
+            type="liveblog",
+            is_active_liveblog=True,
+            liveblog_notification_send=None,
+        )
         for liveblog in unsend_liveblogs:
-            logger.info(
-                    f"New active liveblog with foreign_id {liveblog.foreign_id}"
-                )
+            logger.info(f"New active liveblog with foreign_id {liveblog.foreign_id}")
 
             with transaction.atomic():
                 notification_service = NewLiveblogNotificationService()
@@ -134,7 +135,9 @@ class NewsArticleLoader:
 
         if article.get("type") == "liveblog":
             if not isinstance(article.get("body"), list):
-                raise ArticleLoaderError("Something went wrong with importing the liveblog data")
+                raise ArticleLoaderError(
+                    "Something went wrong with importing the liveblog data"
+                )
 
             self._upsert_liveblog_items_and_liveblog_item_images(article, news_article)
 
@@ -210,13 +213,21 @@ class NewsArticleLoader:
 
             image_set_id = self._upsert_liveblog_item_images(message, liveblog_item)
             if created:
-                self.send_liveblog_updates(image_set_id, liveblog_item, message, news_article)
+                self.send_liveblog_updates(
+                    image_set_id, liveblog_item, message, news_article
+                )
 
-    def send_liveblog_updates(self, image_set_id: int | None, liveblog_item, message, news_article: NewsArticle):
+    def send_liveblog_updates(
+        self,
+        image_set_id: int | None,
+        liveblog_item,
+        message,
+        news_article: NewsArticle,
+    ):
         device_ids = list(
-            LiveblogNotification.objects.filter(
-                article=news_article
-            ).values_list("device_id", flat=True)
+            LiveblogNotification.objects.filter(article=news_article).values_list(
+                "device_id", flat=True
+            )
         )
         if device_ids:
             update_notification_service = LiveblogUpdateNotificationService(
