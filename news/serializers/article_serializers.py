@@ -27,7 +27,7 @@ class NewsArticleRequestSerializer(serializers.Serializer):
 class NewsArticleImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsArticleImage
-        fields = ["url", "width", "height"]
+        fields = ["uri", "width", "height"]
 
 
 class NewsArticleListResponseSerializer(serializers.ModelSerializer):

@@ -127,12 +127,12 @@ class RunNewsETLTest(TestCase):
 
         self.assertTrue(
             NewsArticleImage.objects.filter(
-                url="https://example.com/image.jpg"
+                uri="https://example.com/image.jpg"
             ).exists()
         )
         self.assertTrue(
             LiveBlogItemImage.objects.filter(
-                url="https://example.com/image.jpg"
+                uri="https://example.com/image.jpg"
             ).exists()
         )
 

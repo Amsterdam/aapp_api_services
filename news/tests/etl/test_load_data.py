@@ -149,7 +149,7 @@ class LoadDataTest(TestCase):
         loader._upsert_article_images(article_data, article)
         self.assertEqual(NewsArticleImage.objects.count(), 3)
         self.assertEqual(
-            NewsArticleImage.objects.first().url, "https://example.com/image.jpg"
+            NewsArticleImage.objects.first().uri, "https://example.com/image.jpg"
         )
 
     @patch("news.etl.load_data.ImageSetService")
@@ -190,7 +190,7 @@ class LoadDataTest(TestCase):
         article_image = baker.make(
             NewsArticleImage,
             article=article,
-            url="https://example.com/other-image.jpg",
+            uri="https://example.com/other-image.jpg",
             width=123,
             height=456,
         )
@@ -203,7 +203,7 @@ class LoadDataTest(TestCase):
         loader._upsert_article_images(article_data, article)
         self.assertEqual(NewsArticleImage.objects.count(), 3)
         self.assertEqual(
-            NewsArticleImage.objects.first().url, "https://example.com/image.jpg"
+            NewsArticleImage.objects.first().uri, "https://example.com/image.jpg"
         )
         self.assertFalse(NewsArticleImage.objects.filter(id=article_image.id).exists())
 
@@ -220,7 +220,7 @@ class LoadDataTest(TestCase):
         article_image = baker.make(
             NewsArticleImage,
             article=article,
-            url="https://example.com/image.jpg",
+            uri="https://example.com/image.jpg",
             width=10000,
             height=10000,
         )
@@ -233,7 +233,7 @@ class LoadDataTest(TestCase):
         loader._upsert_article_images(article_data, article)
         self.assertEqual(NewsArticleImage.objects.count(), 3)
         self.assertEqual(
-            NewsArticleImage.objects.first().url, "https://example.com/image.jpg"
+            NewsArticleImage.objects.first().uri, "https://example.com/image.jpg"
         )
         self.assertTrue(NewsArticleImage.objects.filter(id=article_image.id).exists())
         self.assertEqual(NewsArticleImage.objects.get(id=article_image.id).width, 123)
@@ -500,7 +500,7 @@ class LoadDataTest(TestCase):
         loader._upsert_liveblog_item_images(message, liveblog_item)
         self.assertEqual(LiveBlogItemImage.objects.count(), 3)
         self.assertEqual(
-            LiveBlogItemImage.objects.first().url, "https://example.com/image.jpg"
+            LiveBlogItemImage.objects.first().uri, "https://example.com/image.jpg"
         )
 
     @patch("news.etl.load_data.ImageSetService")
@@ -540,7 +540,7 @@ class LoadDataTest(TestCase):
         liveblog_item_image = baker.make(
             LiveBlogItemImage,
             liveblog_item=liveblog_item,
-            url="https://example.com/other-image.jpg",
+            uri="https://example.com/other-image.jpg",
             width=123,
             height=456,
         )
@@ -552,7 +552,7 @@ class LoadDataTest(TestCase):
         loader._upsert_liveblog_item_images(message, liveblog_item)
         self.assertEqual(LiveBlogItemImage.objects.count(), 3)
         self.assertEqual(
-            LiveBlogItemImage.objects.first().url, "https://example.com/image.jpg"
+            LiveBlogItemImage.objects.first().uri, "https://example.com/image.jpg"
         )
         self.assertFalse(
             LiveBlogItemImage.objects.filter(id=liveblog_item_image.id).exists()
@@ -571,7 +571,7 @@ class LoadDataTest(TestCase):
         liveblog_item_image = baker.make(
             LiveBlogItemImage,
             liveblog_item=liveblog_item,
-            url="https://example.com/image.jpg",
+            uri="https://example.com/image.jpg",
             width=10000,
             height=10000,
         )
@@ -583,7 +583,7 @@ class LoadDataTest(TestCase):
         loader._upsert_liveblog_item_images(message, liveblog_item)
         self.assertEqual(LiveBlogItemImage.objects.count(), 3)
         self.assertEqual(
-            LiveBlogItemImage.objects.first().url, "https://example.com/image.jpg"
+            LiveBlogItemImage.objects.first().uri, "https://example.com/image.jpg"
         )
         self.assertTrue(
             LiveBlogItemImage.objects.filter(id=liveblog_item_image.id).exists()
