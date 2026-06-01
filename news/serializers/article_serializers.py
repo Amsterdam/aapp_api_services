@@ -43,7 +43,7 @@ class NewsArticleLiveblogItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LiveBlogItem
-        exclude = ["article"]
+        fields = ["id", "creation_datetime", "title", "body", "message_order", "images"]
 
 
 class NewsArticleListResponseSerializer(serializers.ModelSerializer):
