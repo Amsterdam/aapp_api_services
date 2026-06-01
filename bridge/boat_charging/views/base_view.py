@@ -1,5 +1,7 @@
 import logging
 import re
+from collections import defaultdict
+from typing import Any
 from urllib.parse import quote as urllib_parse_quote
 
 import httpx
@@ -216,8 +218,23 @@ class BaseView(GenericAPIView):
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"],
             paginated=True,
         )
+        location_state_and_wattage = self.collect_location_state_and_wattage(
+            charging_stations
+        )
 
         result = {}
+        for location_id, location_connectors in location_state_and_wattage.items():
+            status_and_wattage = self.determine_overall_status_and_wattage(
+                location_connectors
+            )
+            result[location_id] = status_and_wattage
+
+        return result
+
+    def collect_location_state_and_wattage(
+        self, charging_stations: list[dict[str, Any]]
+    ) -> dict[str, list]:
+        location_state_and_wattage = defaultdict(list)
         for item in charging_stations:
             location_connectors = []
 
@@ -227,12 +244,8 @@ class BaseView(GenericAPIView):
                     wattage = connector.get("maxElectricPower")
                     location_connectors.append((state, wattage))
 
-            status_and_wattage = self.determine_overall_status_and_wattage(
-                location_connectors
-            )
-            result[item["locationId"]] = status_and_wattage
-
-        return result
+            location_state_and_wattage[item["locationId"]] += location_connectors
+        return location_state_and_wattage
 
     def determine_overall_status_and_wattage(
         self, connectors: list[tuple[str, int | None]]
