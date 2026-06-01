@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from model_bakery import baker
 from requests.exceptions import HTTPError
 
@@ -439,6 +439,57 @@ class LoadDataTest(TestCase):
         )  # one notification is added (for the new liveblog item)
         self.assertEqual(notifications[0].title, "Liveblog update")
         self.assertEqual(notifications[0].body, "Brand new item")
+
+    @override_settings(ENABLE_LIVEBLOG_NOTIFICATIONS=False)
+    def test_upsert_liveblog_items_skips_notifications_when_disabled(self):
+        article = baker.make(
+            NewsArticle,
+            foreign_id=123123,
+            title="A title",
+            type="liveblog",
+            url="https://example.com/article/123123",
+            modification_datetime="2024-01-01T13:00:00Z",
+        )
+        baker.make(
+            LiveBlogItem,
+            article=article,
+            title="Existing liveblog item",
+            body="With a body",
+            creation_datetime="2024-01-01T12:00:00Z",
+            message_order=0,
+        )
+        baker.make(
+            LiveblogNotification,
+            article=article,
+            device_id="device123",
+        )
+
+        loader = NewsArticleLoader()
+        liveblog_article_data = {
+            "foreign_id": "123123",
+            "title": "A title",
+            "modification_datetime": "2024-01-01T13:00:00Z",
+            "type": "liveblog",
+            "body": [
+                {
+                    "title": "Updated existing item",
+                    "creation_datetime": "2024-01-01T12:00:00Z",
+                    "body": "Some body",
+                },
+                {
+                    "title": "Brand new item",
+                    "creation_datetime": "2024-01-01T13:00:00Z",
+                    "body": "Some other body",
+                },
+            ],
+        }
+
+        loader._upsert_liveblog_items_and_liveblog_item_images(
+            liveblog_article_data, article
+        )
+
+        self.assertEqual(LiveBlogItem.objects.count(), 2)
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
 
     def test_upsert_liveblog_items_no_notifications_for_updates(self):
         article = baker.make(

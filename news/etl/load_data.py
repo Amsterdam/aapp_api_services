@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from requests.exceptions import HTTPError
@@ -109,10 +110,16 @@ class NewsArticleLoader:
             logger.info(f"New active liveblog with foreign_id {liveblog.foreign_id}")
 
             with transaction.atomic():
-                notification_service = NewLiveblogNotificationService()
-                notification_service.send(
-                    liveblog_id=liveblog.id, liveblog_title=liveblog.title
-                )
+                if settings.ENABLE_LIVEBLOG_NOTIFICATIONS:
+                    notification_service = NewLiveblogNotificationService()
+                    notification_service.send(
+                        liveblog_id=liveblog.id, liveblog_title=liveblog.title
+                    )
+                else:
+                    logger.info(
+                        "Liveblog notifications are disabled; suppressing new liveblog notification",
+                        extra={"news_article_foreign_id": liveblog.foreign_id},
+                    )
 
                 # Make sure notifications will only be send once per liveblog
                 liveblog.liveblog_notification_send = timezone.now()
@@ -224,6 +231,13 @@ class NewsArticleLoader:
         message,
         news_article: NewsArticle,
     ):
+        if not settings.ENABLE_LIVEBLOG_NOTIFICATIONS:
+            logger.info(
+                "Liveblog notifications are disabled; suppressing liveblog update notification",
+                extra={"news_article_foreign_id": news_article.foreign_id},
+            )
+            return
+
         device_ids = list(
             LiveblogNotification.objects.filter(article=news_article).values_list(
                 "device_id", flat=True
