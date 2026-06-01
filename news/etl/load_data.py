@@ -97,13 +97,21 @@ class NewsArticleLoader:
             ],
         )
 
-        unsend_liveblogs = NewsArticle.objects.filter(type="liveblog", is_active_liveblog=True, liveblog_notification_send=None)
+        unsend_liveblogs = NewsArticle.objects.filter(
+                type="liveblog",
+                is_active_liveblog=True,
+                liveblog_notification_send=None,
+            )
         for liveblog in unsend_liveblogs:
-            logger.info(f"New active liveblog with foreign_id {liveblog.foreign_id}")
+            logger.info(
+                    f"New active liveblog with foreign_id {liveblog.foreign_id}"
+                )
 
             with transaction.atomic():
                 notification_service = NewLiveblogNotificationService()
-                notification_service.send(liveblog_id=liveblog.id, liveblog_title=liveblog.title)
+                notification_service.send(
+                    liveblog_id=liveblog.id, liveblog_title=liveblog.title
+                )
 
                 # Make sure notifications will only be send once per liveblog
                 liveblog.liveblog_notification_send = timezone.now()
