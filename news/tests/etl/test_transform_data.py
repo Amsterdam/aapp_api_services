@@ -101,9 +101,7 @@ class TransformDataTest(TestCase):
         with self.assertLogs(level="WARNING") as log:
             transformed = transform(extracted_data)
             self.assertEqual(len(transformed), 0)
-            self.assertIn(
-                "Skipping article with id 123 due to validation failure.", log.output[0]
-            )
+            self.assertIn("Skipping article due to validation failure.", log.output[0])
 
     def test_validate_article_valid(self):
         article = {
