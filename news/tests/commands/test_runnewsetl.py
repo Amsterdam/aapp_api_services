@@ -177,11 +177,13 @@ class RunNewsETLTest(TestCase):
         liveblogs_list_payload = {
             "items": [
                 {
-                    "id": item_liveblog.MOCK_RESPONSE["id"],
-                    "created": item_liveblog.MOCK_RESPONSE["created"],
-                    "modified": item_liveblog.MOCK_RESPONSE["modified"],
-                    "publicationDate": item_liveblog.MOCK_RESPONSE["publicationDate"],
-                    "image_url": item_liveblog.MOCK_RESPONSE["image_url"],
+                    "id": item_liveblog.MOCK_RESPONSE_1234123["id"],
+                    "created": item_liveblog.MOCK_RESPONSE_1234123["created"],
+                    "modified": item_liveblog.MOCK_RESPONSE_1234123["modified"],
+                    "publicationDate": item_liveblog.MOCK_RESPONSE_1234123[
+                        "publicationDate"
+                    ],
+                    "image_url": item_liveblog.MOCK_RESPONSE_1234123["image_url"],
                     "is_active_liveblog": True,
                 }
             ],
@@ -206,8 +208,8 @@ class RunNewsETLTest(TestCase):
                     payload=item_article.MOCK_RESPONSE_123123,
                 )
                 mocked.get(
-                    f"{runnewsetl.IPROX_DETAIL_URL}{item_liveblog.MOCK_RESPONSE['id']}",
-                    payload=item_liveblog.MOCK_RESPONSE,
+                    f"{runnewsetl.IPROX_DETAIL_URL}{item_liveblog.MOCK_RESPONSE_1234123['id']}",
+                    payload=item_liveblog.MOCK_RESPONSE_1234123,
                 )
 
                 call_command("runnewsetl")
