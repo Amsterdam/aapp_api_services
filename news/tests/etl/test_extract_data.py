@@ -2,13 +2,19 @@ from aioresponses import aioresponses
 from django.test import TestCase
 
 from news.etl.extract_data import IproxFetcher
-from news.tests.mock_data import highlighted, item_article, liveblogs
+from news.tests.mock_data import all_news, highlighted, item_article, liveblogs
 
 
 class ExtractDataTest(TestCase):
     def setUp(self):
         self.fetch_url = "https://api.example.com/fetch"
         self.detail_url = "https://api.example.com/detail"
+
+    def test_invalid_initialization(self):
+        with self.assertRaises(ValueError):
+            IproxFetcher(
+                iprox_fetch_url="", iprox_detail_url=self.detail_url, sources=[]
+            )
 
     def test_fetch_all_items(self):
         sources = [
@@ -31,6 +37,32 @@ class ExtractDataTest(TestCase):
             self.assertIn(1321235, items)
             self.assertEqual(items[123124]["type"], "highlight")
             self.assertEqual(items[1321235]["type"], "liveblog")
+
+    def test_fetch_all_items_duplicate_ids(self):
+        sources = [
+            {"index": "all_news", "type": "article", "district": None},
+            {"index": "liveblogs", "type": "liveblog", "district": None},
+        ]
+        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
+
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{self.fetch_url}/all_news?page=0",
+                payload=all_news.MOCK_RESPONSE,
+            )
+            mocked.get(
+                f"{self.fetch_url}/liveblogs?page=0", payload=liveblogs.MOCK_RESPONSE
+            )
+            items = fetcher.fetch_all_items()
+            self.assertIsInstance(items, dict)
+            self.assertIn(1541234, items)
+            self.assertIn(1321235, items)
+            self.assertEqual(items[1541234]["type"], "article")
+
+            # important: the type of the items that are retrieved from the "liveblogs" source should be preserved,
+            # even if there are duplicates in the "all_news" source, as this is used to determine how to store the item in the database
+            self.assertEqual(items[1321235]["type"], "liveblog")
+            self.assertEqual(items[1234123]["type"], "liveblog")
 
     def test_fetch_items_details(self):
         sources = [{"index": "highlighted", "type": "highlight", "district": None}]

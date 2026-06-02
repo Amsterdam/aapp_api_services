@@ -27,7 +27,8 @@ def transform(extracted_data: list[dict]) -> list[dict]:
         # Validate required fields
         if not validate_article(article):
             logger.warning(
-                f"Skipping article with id {article_id} due to validation failure."
+                "Skipping article due to validation failure.",
+                extra={"article_id": article_id},
             )
             continue
 
