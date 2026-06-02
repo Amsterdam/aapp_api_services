@@ -91,9 +91,11 @@ class LogoutNotificationView(generics.GenericAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.logout_notification_service.send(
-            device_ids=serializer.validated_data["device_ids"]
-        )
+
+        if len(serializer.validated_data["device_ids"]) > 0:
+            self.logout_notification_service.send(
+                device_ids=serializer.validated_data["device_ids"]
+            )
 
         response_serializer = DeviceResponseSerializer(data={"status": "OK"})
         response_serializer.is_valid(raise_exception=True)

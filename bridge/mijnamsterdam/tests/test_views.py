@@ -114,15 +114,16 @@ class TestLogoutNotificationView(ResponsesActivatedAPITestCase):
         scheduled_notification = ScheduledNotification.objects.first()
         self.assertEqual(scheduled_notification.devices.count(), 2)
 
-    def test_post_invalid_payload(self):
+    def test_post_empty_device_ids(self):
         response = self.client.post(
             self.url,
             data={"device_ids": []},
             format="json",
             headers=self.api_headers,
         )
-
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "OK"})
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
 
     def test_post_unauthorized(self):
         response = self.client.post(

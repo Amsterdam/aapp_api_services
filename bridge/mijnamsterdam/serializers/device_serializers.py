@@ -7,11 +7,8 @@ class DeviceResponseSerializer(serializers.Serializer):
 
 
 class LogoutNotificationRequestSerializer(serializers.Serializer):
-    device_ids = serializers.ListField(
-        child=serializers.CharField(),
-        allow_empty=False,
-    )
+    device_ids = serializers.ListField(child=serializers.CharField())
 
     def validate_device_ids(self, value: list[str]) -> list[str]:
-        # Keep order while removing duplicates to prevent duplicate fan-out.
+        # Keep order while removing duplicates.
         return list(dict.fromkeys(value))

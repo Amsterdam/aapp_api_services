@@ -12,5 +12,5 @@ urlpatterns = [
         "mijnamsterdam/api/v1/device",
         MijnAmsterdamDeviceView.as_view(),
         name="mijn-amsterdam-device",
-    )
+    ),
 ]
