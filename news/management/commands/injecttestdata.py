@@ -6,23 +6,18 @@ from django.core.management.base import BaseCommand
 from news.etl.load_data import NewsArticleLoader
 from news.etl.transform_data import transform
 from news.models import NewsArticle
-from news.tests.mock_data import item_liveblog
+from news.tests.mock_data import item_article, item_liveblog
 
 logger = logging.getLogger(__name__)
 
 FULL_DATASET = [
-    # {**item_article.MOCK_RESPONSE_123123, **{"type": "article", "district": None}},
-    # {**item_article.MOCK_RESPONSE_123124, **{"type": "article", "district": None}},
-    # {**item_article.MOCK_RESPONSE_100000, **{"type": "article", "district": None}},
+    {**item_article.MOCK_RESPONSE_123123, **{"type": "article", "district": None}},
+    {**item_article.MOCK_RESPONSE_123124, **{"type": "article", "district": None}},
+    {**item_article.MOCK_RESPONSE_100000, **{"type": "highlight", "district": None}},
     {**item_liveblog.MOCK_RESPONSE_1234123, **{"type": "liveblog", "district": None}},
     {**item_liveblog.MOCK_RESPONSE_1321235, **{"type": "liveblog", "district": None}},
     {**item_liveblog.MOCK_RESPONSE_1000001, **{"type": "liveblog", "district": None}},
 ]
-
-TYPE_MAP = {
-    # "nieuwsartikel": "highlight",
-    "livefeed": "liveblog",
-}
 
 
 class Command(BaseCommand):
