@@ -3,7 +3,7 @@ import logging
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, RequestException
 
 from core.services.image_set import ImageSetService
 from news.models import (
@@ -163,7 +163,7 @@ class NewsArticleLoader:
                 image_set_data = self.image_set_service.get_or_upload_from_url(
                     image_url
                 )
-            except HTTPError as e:
+            except (HTTPError, RequestException) as e:
                 logger.error(
                     "Error getting or uploading image",
                     extra={"image_url": image_url, "error": str(e)},
@@ -271,12 +271,12 @@ class NewsArticleLoader:
                 image_set_data = self.image_set_service.get_or_upload_from_url(
                     image_url
                 )
-            except HTTPError as e:
+            except (HTTPError, RequestException) as e:
                 logger.error(
                     "Error getting or uploading image",
                     extra={"image_url": image_url, "error": str(e)},
                 )
-                return
+                return None
             image_set_id = image_set_data["id"]
             image_sources = [
                 LiveBlogItemImage(
