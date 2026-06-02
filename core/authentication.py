@@ -60,6 +60,16 @@ class APIKeyAuthentication(AbstractAppAuthentication):
         return settings.API_KEY_HEADER
 
 
+class InternalAPIKeyAuthentication(AbstractAppAuthentication):
+    @property
+    def api_keys(self):  # pragma: no cover
+        return settings.API_KEYS_INTERNAL.split(",")
+
+    @property
+    def api_key_header(self):  # pragma: no cover
+        return settings.API_KEY_HEADER_INTERNAL
+
+
 class AuthenticationScheme(OpenApiAuthenticationExtension):
     """
     This class is specifically for drf-spectacular,
@@ -80,6 +90,12 @@ class APIKeyAuthenticationScheme(AuthenticationScheme):
     target_class = "core.authentication.APIKeyAuthentication"
     name = "APIKeyAuthentication"
     header_key = settings.API_KEY_HEADER
+
+
+class InternalAPIKeyAuthenticationScheme(AuthenticationScheme):
+    target_class = "core.authentication.InternalAPIKeyAuthentication"
+    name = "InternalAPIKeyAuthentication"
+    header_key = settings.API_KEY_HEADER_INTERNAL
 
 
 class EntraTokenMixin:

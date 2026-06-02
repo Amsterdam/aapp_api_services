@@ -7,8 +7,7 @@ from rest_framework import generics, status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 
-from core.pagination import CustomPagination
-from core.utils.openapi_utils import extend_schema_for_api_key
+from core.authentication import InternalAPIKeyAuthentication
 from core.utils.openapi_utils import extend_schema_for_api_key as extend_schema
 from modules.exceptions import ReleaseNotFoundException
 from modules.models import AppRelease, ReleaseModuleStatus
@@ -70,13 +69,11 @@ class ReleaseDetailView(generics.RetrieveAPIView):
 
 
 class AppReleaseListView(ListAPIView):
-    pagination_class = CustomPagination
     serializer_class = ReleaseListResponseSerializer
+    authentication_classes = [InternalAPIKeyAuthentication]
+    queryset = AppRelease.objects.all().order_by("-created")
 
-    def get_queryset(self):
-        return AppRelease.objects.all()
-
-    @extend_schema_for_api_key(
+    @extend_schema(
         success_response=ReleaseListResponseSerializer(many=True),
     )
     def get(self, *args, **kwargs):

@@ -160,7 +160,6 @@ class AppReleaseSerializer(serializers.ModelSerializer):
 
 
 class ReleaseListResponseSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = AppRelease
         fields = [

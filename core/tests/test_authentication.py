@@ -18,6 +18,7 @@ from core.authentication import (
     APIKeyAuthentication,
     EntraCookieTokenAuthentication,
     EntraTokenMixin,
+    InternalAPIKeyAuthentication,
     OIDCAuthenticationBackend,
 )
 from core.utils.patch_utils import (
@@ -82,6 +83,10 @@ class BasicAPITestCase(AuthenticatedAPITestCase):
         self.assertEqual(
             response.status_code, 401
         )  # The request should get an unauthorized response!
+
+
+class BasicInternalAPITestCase(AuthenticatedAPITestCase):
+    authentication_class = InternalAPIKeyAuthentication
 
 
 class ResponsesActivatedAPITestCase(BasicAPITestCase):
