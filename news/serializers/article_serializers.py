@@ -35,7 +35,7 @@ class NewsArticleImageSerializer(serializers.ModelSerializer):
 class NewsArticleLiveblogItemImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = LiveBlogItemImage
-        fields = ["url", "width", "height"]
+        fields = ["uri", "width", "height"]
 
 
 class NewsArticleLiveblogItemSerializer(serializers.ModelSerializer):
