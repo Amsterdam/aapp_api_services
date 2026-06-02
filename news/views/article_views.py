@@ -1,6 +1,6 @@
 from rest_framework.generics import ListAPIView, RetrieveAPIView
-from rest_framework.pagination import PageNumberPagination
 
+from core.pagination import CustomPagination
 from core.utils.openapi_utils import extend_schema_for_api_key
 from news.models import NewsArticle
 from news.serializers.article_serializers import (
@@ -11,10 +11,8 @@ from news.serializers.article_serializers import (
 
 
 class ArticleListView(ListAPIView):
-    class DefaultPagination(PageNumberPagination):
-        page_size = 10
-        page_size_query_param = "page_size"
-        max_page_size = 100
+    pagination_class = CustomPagination
+    serializer_class = NewsArticleListResponseSerializer
 
     def get_queryset(self):
         query_serializer = NewsArticleRequestSerializer(data=self.request.query_params)
@@ -31,9 +29,6 @@ class ArticleListView(ListAPIView):
             district = query_serializer.validated_data.get("district")
             queryset = queryset.filter(district=district)
         return queryset
-
-    pagination_class = DefaultPagination
-    serializer_class = NewsArticleListResponseSerializer
 
     @extend_schema_for_api_key(
         additional_params=[NewsArticleRequestSerializer],

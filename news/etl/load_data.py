@@ -1,14 +1,28 @@
 import logging
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from requests.exceptions import HTTPError
 
 from core.services.image_set import ImageSetService
-from news.models import LiveBlogItem, LiveBlogItemImage, NewsArticle, NewsArticleImage
-from news.services.notification import NewLiveblogNotificationService
+from news.models import (
+    LiveBlogItem,
+    LiveBlogItemImage,
+    LiveblogNotification,
+    NewsArticle,
+    NewsArticleImage,
+)
+from news.services.notification import (
+    LiveblogUpdateNotificationService,
+    NewLiveblogNotificationService,
+)
 
 logger = logging.getLogger(__name__)
+
+
+class ArticleLoaderError(Exception):
+    pass
 
 
 class NewsArticleLoader:
@@ -32,7 +46,16 @@ class NewsArticleLoader:
 
         news_articles_dict = self._get_news_articles_dict()  # {foreign_id: NewsArticle instance} for all articles in the database after upsert
 
-        self._upsert_images_and_liveblog_items(transformed_data, news_articles_dict)
+        for article in transformed_data:
+            news_article = news_articles_dict.get(str(article.get("foreign_id")))
+            try:
+                self._upsert_images_and_liveblog_items(article, news_article)
+            except ArticleLoaderError as e:
+                logger.error(
+                    "Unable to load article images or liveblog items",
+                    extra={"news_article_foreign_id": news_article.foreign_id},
+                    exc_info=e,
+                )
 
     def _get_news_article_object(self, data: dict) -> NewsArticle:
         """
@@ -57,48 +80,57 @@ class NewsArticleLoader:
         )
 
     def _upsert_news_articles(self, news_articles_list: list[NewsArticle]):
-        with transaction.atomic():
-            articles = NewsArticle.objects.bulk_create(
-                news_articles_list,
-                update_conflicts=True,
-                unique_fields=["foreign_id"],
-                update_fields=[
-                    "title",
-                    "body",
-                    "summary",
-                    "intro",
-                    "type",
-                    "district",
-                    "url",
-                    "creation_datetime",
-                    "modification_datetime",
-                    "publication_datetime",
-                    "expiration_datetime",
-                    "last_seen",
-                    "is_active_liveblog",
-                ],
-            )
-            for a in articles:
-                if (
-                    a.is_active_liveblog
-                    and a.type == "liveblog"
-                    and a.liveblog_notification_send is None
-                ):
-                    logger.info(f"New active liveblog with foreign_id {a.foreign_id}")
+        NewsArticle.objects.bulk_create(
+            news_articles_list,
+            update_conflicts=True,
+            unique_fields=["foreign_id"],
+            update_fields=[
+                "title",
+                "body",
+                "summary",
+                "intro",
+                "type",
+                "district",
+                "url",
+                "creation_datetime",
+                "modification_datetime",
+                "publication_datetime",
+                "expiration_datetime",
+                "last_seen",
+                "is_active_liveblog",
+            ],
+        )
 
+        unsend_liveblogs = NewsArticle.objects.filter(
+            type="liveblog",
+            is_active_liveblog=True,
+            liveblog_notification_send=None,
+        )
+        for liveblog in unsend_liveblogs:
+            logger.info(f"New active liveblog with foreign_id {liveblog.foreign_id}")
+
+            with transaction.atomic():
+                if settings.ENABLE_LIVEBLOG_NOTIFICATIONS:
                     notification_service = NewLiveblogNotificationService()
-                    notification_service.send(liveblog_id=a.id, liveblog_title=a.title)
+                    notification_service.send(
+                        liveblog_id=liveblog.id, liveblog_title=liveblog.title
+                    )
+                else:
+                    logger.info(
+                        "Liveblog notifications are disabled; suppressing new liveblog notification",
+                        extra={"news_article_foreign_id": liveblog.foreign_id},
+                    )
 
-                    # Make sure notifications will only be send once per liveblog
-                    a.liveblog_notification_send = timezone.now()
-                    a.save()
+                # Make sure notifications will only be send once per liveblog
+                liveblog.liveblog_notification_send = timezone.now()
+                liveblog.save(update_fields=["liveblog_notification_send"])
 
     def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()
         return {str(article.foreign_id): article for article in news_article_objects}
 
     def _upsert_images_and_liveblog_items(
-        self, transformed_data: list[dict], news_articles_dict: dict[str, NewsArticle]
+        self, article: dict, news_article: NewsArticle
     ):
         """
         Function to upsert the images (both article images and liveblog item images) and liveblog items for the transformed articles.
@@ -106,10 +138,13 @@ class NewsArticleLoader:
         We need the transformed data to still access the image urls and liveblog item data,
         and we need the news_articles_dict to associate the images and liveblog items with the correct NewsArticle instances in the database.
         """
-        for article in transformed_data:
-            news_article = news_articles_dict.get(str(article.get("foreign_id")))
+        self._upsert_article_images(article, news_article)
 
-            self._upsert_article_images(article, news_article)
+        if article.get("type") == "liveblog":
+            if not isinstance(article.get("body"), list):
+                raise ArticleLoaderError(
+                    "Something went wrong with importing the liveblog data"
+                )
 
             self._upsert_liveblog_items_and_liveblog_item_images(article, news_article)
 
@@ -142,18 +177,18 @@ class NewsArticleLoader:
                     foreign_id=image_set_data[
                         "id"
                     ],  # use the image set id as the image foreign_id for reference.
-                    url=v["image"],
+                    uri=v["image"],
                     width=v["width"],
                     height=v["height"],
                 )
                 for v in image_set_data["variants"]
             ]
-            # Gather all URLs for this article from the new image_sources
-            new_urls = {img.url for img in image_sources}
+            # Gather all URIs for this article from the new image_sources
+            new_uris = {img.uri for img in image_sources}
             # Find all existing images for this article
             existing_images = NewsArticleImage.objects.filter(article=news_article)
-            # Delete images for this article whose URL is not in the new set
-            images_to_delete = existing_images.exclude(url__in=new_urls)
+            # Delete images for this article whose URI is not in the new set
+            images_to_delete = existing_images.exclude(uri__in=new_uris)
             if images_to_delete.exists():
                 images_to_delete.delete()
 
@@ -161,33 +196,67 @@ class NewsArticleLoader:
             NewsArticleImage.objects.bulk_create(
                 image_sources,
                 update_conflicts=True,
-                unique_fields=["article", "url"],
+                unique_fields=["article", "uri"],
                 update_fields=["width", "height"],
             )
 
     def _upsert_liveblog_items_and_liveblog_item_images(
         self, article: dict, news_article: NewsArticle
     ):
+        messages = article.get("body")
+        # make sure messages are sorted by creation_datetime ascending before creating LiveBlogItems
+        messages.sort(key=lambda x: x.get("creation_datetime"))
 
-        if article.get("type") == "liveblog" and isinstance(article.get("body"), list):
-            messages = article.get("body")
-            # make sure messages are sorted by creation_datetime ascending before creating LiveBlogItems
-            messages.sort(key=lambda x: x.get("creation_datetime"))
+        for i, message in enumerate(messages):
+            liveblog_item, created = LiveBlogItem.objects.update_or_create(
+                article=news_article,
+                message_order=i,
+                defaults={
+                    "creation_datetime": message.get("creation_datetime"),
+                    "title": message.get("title"),
+                    "body": message.get("body"),
+                },
+            )
 
-            for i, message in enumerate(messages):
-                liveblog_item, _ = LiveBlogItem.objects.update_or_create(
-                    article=news_article,
-                    message_order=i,
-                    defaults={
-                        "creation_datetime": message.get("creation_datetime"),
-                        "title": message.get("title"),
-                        "body": message.get("body"),
-                    },
+            image_set_id = self._upsert_liveblog_item_images(message, liveblog_item)
+            if created:
+                self.send_liveblog_updates(
+                    image_set_id, liveblog_item, message, news_article
                 )
 
-                self._upsert_liveblog_item_images(message, liveblog_item)
+    def send_liveblog_updates(
+        self,
+        image_set_id: int | None,
+        liveblog_item,
+        message,
+        news_article: NewsArticle,
+    ):
+        if not settings.ENABLE_LIVEBLOG_NOTIFICATIONS:
+            logger.info(
+                "Liveblog notifications are disabled; suppressing liveblog update notification",
+                extra={"news_article_foreign_id": news_article.foreign_id},
+            )
+            return
 
-    def _upsert_liveblog_item_images(self, message: dict, liveblog_item: LiveBlogItem):
+        device_ids = list(
+            LiveblogNotification.objects.filter(article=news_article).values_list(
+                "device_id", flat=True
+            )
+        )
+        if device_ids:
+            update_notification_service = LiveblogUpdateNotificationService(
+                use_image_service=True
+            )
+            update_notification_service.send(
+                device_ids=device_ids,
+                update_title=message.get("title"),
+                liveblog_item_id=liveblog_item.id,
+                image_set_id=image_set_id,
+            )
+
+    def _upsert_liveblog_item_images(
+        self, message: dict, liveblog_item: LiveBlogItem
+    ) -> int | None:
         """
         Upsert liveblog item images for a given liveblog item. If the liveblog item has an image_url, we will attempt to get or upload the image using the ImageSetService.
         Then we will upsert the LiveBlogItemImage instances for the liveblog item based on the image variants returned by the ImageSetService.
@@ -208,27 +277,26 @@ class NewsArticleLoader:
                     extra={"image_url": image_url, "error": str(e)},
                 )
                 return
+            image_set_id = image_set_data["id"]
             image_sources = [
                 LiveBlogItemImage(
                     liveblog_item=liveblog_item,
-                    foreign_id=image_set_data[
-                        "id"
-                    ],  # use the image set id as the image foreign_id for reference.
-                    url=v["image"],
+                    foreign_id=image_set_id,  # use the image set id as the image foreign_id for reference.
+                    uri=v["image"],
                     width=v["width"],
                     height=v["height"],
                 )
                 for v in image_set_data["variants"]
             ]
 
-            # Gather all URLs for this liveblog item from the new image_sources
-            new_urls = {img.url for img in image_sources}
+            # Gather all URIs for this liveblog item from the new image_sources
+            new_uris = {img.uri for img in image_sources}
             # Find all existing images for this liveblog item
             existing_images = LiveBlogItemImage.objects.filter(
                 liveblog_item=liveblog_item
             )
-            # Delete images for this liveblog item whose URL is not in the new set
-            images_to_delete = existing_images.exclude(url__in=new_urls)
+            # Delete images for this liveblog item whose URI is not in the new set
+            images_to_delete = existing_images.exclude(uri__in=new_uris)
             if images_to_delete.exists():
                 images_to_delete.delete()
 
@@ -236,6 +304,8 @@ class NewsArticleLoader:
             LiveBlogItemImage.objects.bulk_create(
                 image_sources,
                 update_conflicts=True,
-                unique_fields=["liveblog_item", "url"],
+                unique_fields=["liveblog_item", "uri"],
                 update_fields=["width", "height"],
             )
+
+            return image_set_id

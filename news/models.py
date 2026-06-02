@@ -57,6 +57,7 @@ class NewsArticle(models.Model):
     expiration_datetime = models.DateTimeField(default=None, null=True)
     is_active_liveblog = models.BooleanField(default=False)
     liveblog_notification_send = models.DateTimeField(default=None, null=True)
+    liveblog_version = models.IntegerField(default=None, null=True)
 
     def __str__(self):
         return self.title
@@ -79,7 +80,7 @@ class BaseImage(models.Model):
     foreign_id = models.BigIntegerField(
         default=0
     )  # needs default value for migration, but will be set to the article's foreign_id when creating an image.
-    url = models.URLField(max_length=2048)
+    uri = models.URLField(max_length=2048)
     width = models.IntegerField()
     height = models.IntegerField()
 
@@ -93,7 +94,7 @@ class NewsArticleImage(BaseImage):
     )
 
     class Meta:
-        unique_together = ("article", "url")
+        unique_together = ("article", "uri")
 
 
 class LiveBlogItemImage(BaseImage):
@@ -102,7 +103,7 @@ class LiveBlogItemImage(BaseImage):
     )
 
     class Meta:
-        unique_together = ("liveblog_item", "url")
+        unique_together = ("liveblog_item", "uri")
 
 
 class LiveblogNotification(models.Model):
