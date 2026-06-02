@@ -2,6 +2,7 @@ import logging
 from copy import deepcopy
 
 from django.core.management.base import BaseCommand
+from django.db import connection
 
 from news.etl.load_data import NewsArticleLoader
 from news.etl.transform_data import transform
@@ -64,6 +65,8 @@ class Command(BaseCommand):
 
         transformed_data = transform(extracted_data)
 
+        self._sync_newsarticle_pk_sequence()
+
         if without_images:
             self._strip_transformed_liveblog_images(transformed_data)
 
@@ -78,6 +81,30 @@ class Command(BaseCommand):
             self.style.SUCCESS(f"Injected {len(transformed_data)} records from dataset")
         )
         logger.info("ETL process completed successfully.")
+
+    def _sync_newsarticle_pk_sequence(self):
+        """
+        Keep the PostgreSQL auto-increment sequence aligned with existing rows.
+        This prevents duplicate PK insert attempts after manual DB inserts.
+        """
+        if connection.vendor != "postgresql":
+            return
+
+        db_table = NewsArticle._meta.db_table
+        quoted_table = connection.ops.quote_name(db_table)
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"""
+                SELECT setval(
+                    pg_get_serial_sequence(%s, %s),
+                    COALESCE(MAX(id), 1),
+                    MAX(id) IS NOT NULL
+                )
+                FROM {quoted_table}
+                """,
+                [db_table, "id"],
+            )
 
     def _strip_images(self, extracted_data: list[dict]):
         for article in extracted_data:
