@@ -61,7 +61,4 @@ class TestLogoutNotificationService(ResponsesActivatedAPITestCase):
             NotificationType.MIJN_AMS_LOGOUT.value,
         )
         self.assertEqual(scheduled_notification.body, LOGOUT_NOTIFICATION_MESSAGE)
-        self.assertEqual(
-            scheduled_notification.context["url"], "https://mijn.amsterdam.nl/"
-        )
         self.assertEqual(scheduled_notification.devices.count(), 2)

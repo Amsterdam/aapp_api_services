@@ -38,8 +38,3 @@ class LogoutNotificationService(AbstractNotificationService):
             device_ids=device_ids,
         )
         self.upsert(notification_data)
-
-    def build_context(self, **kwargs) -> dict:
-        kwargs["url"] = "https://mijn.amsterdam.nl/"
-        context = super().build_context(**kwargs)
-        return context
