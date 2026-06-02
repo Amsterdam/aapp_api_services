@@ -95,8 +95,8 @@ stages:
                   - aapp/images/app-$(SERVICE_NAME)
                 version: $(version)
                 trivyImage: docker.io/aquasec/trivy:0.62.1
-                trivyDbImage: docker.io/aquasec/trivy-db:2
-                trivyJavaDbImage: docker.io/aquasec/trivy-java-db:1
+                trivyDbImage: ghcr.io/aquasecurity/trivy-db:2
+                trivyJavaDbImage: ghcr.io/aquasecurity/trivy-java-db:1
                 trivySkipFiles:
                   - '**/site-packages/PyJWT-*/METADATA'
                   - '**/site-packages/pyjwt-*/METADATA'
