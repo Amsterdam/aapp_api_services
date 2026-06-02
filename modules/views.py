@@ -4,12 +4,18 @@ from django.db.models import Prefetch
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import generics, status
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 
+from core.pagination import CustomPagination
+from core.utils.openapi_utils import extend_schema_for_api_key
 from core.utils.openapi_utils import extend_schema_for_api_key as extend_schema
 from modules.exceptions import ReleaseNotFoundException
 from modules.models import AppRelease, ReleaseModuleStatus
-from modules.serializers.release_serializers import AppReleaseSerializer
+from modules.serializers.release_serializers import (
+    AppReleaseSerializer,
+    ReleaseListResponseSerializer,
+)
 from modules.utils import VersionQueries
 
 logger = logging.getLogger(__name__)
@@ -61,3 +67,17 @@ class ReleaseDetailView(generics.RetrieveAPIView):
         release = self.get_object()
         serializer = self.get_serializer(release)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AppReleaseListView(ListAPIView):
+    pagination_class = CustomPagination
+    serializer_class = ReleaseListResponseSerializer
+
+    def get_queryset(self):
+        return AppRelease.objects.all()
+
+    @extend_schema_for_api_key(
+        success_response=ReleaseListResponseSerializer(many=True),
+    )
+    def get(self, *args, **kwargs):
+        return super().get(*args, **kwargs)
