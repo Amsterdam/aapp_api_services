@@ -4,6 +4,7 @@ import logging
 import re
 
 from bs4 import BeautifulSoup
+from django.utils import timezone
 
 from news.serializers.article_serializers import NewsArticleTransformSerializer
 
@@ -46,7 +47,7 @@ def transform(extracted_data: list[dict]) -> list[dict]:
             {
                 "foreign_id": article_id,
                 "title": decode_and_strip_outer_div(article.get("title")),
-                "body": decode_and_strip_outer_div(article.get("body"))
+                "body": parse_article_messages(article.get("body"))
                 if article.get("type") != "liveblog"
                 else parse_liveblog_messages(article.get("body")),
                 "summary": decode_and_strip_outer_div(article.get("summary")),
@@ -78,6 +79,16 @@ def decode_and_strip_outer_div(input_str: str | None) -> str:
     if match:
         return match.group(1)
     return decoded
+
+
+def parse_article_messages(input_str: str | None) -> str:
+    """
+    For non-liveblog articles, we still want to clean the body content by:
+     - decoding HTML entities and stripping outer divs.
+     - add quotes around blockquote elements.
+    """
+    decoded = decode_and_strip_outer_div(input_str)
+    return add_quotes_around_blockquotes(decoded)
 
 
 def parse_liveblog_messages(input_str: str | None) -> list[dict]:
@@ -163,23 +174,50 @@ def extract_first_image_from_elements(elements) -> tuple[str | None, str | None]
 
 
 def extract_body_from_elements(elements, title) -> str:
-    """Build the body HTML by concatenating the HTML of all elements, but skip the title element if it
-    matches the provided title."""
+    """
+    Build the body HTML by concatenating the HTML of all elements, but skip the title element if it
+    matches the provided title.
+
+    Also remove the image tags from the body, since we are storing the first image separately.
+    """
     body_html = ""
     for el in elements:
         if el.name in ["h3", "h4"] and el.get_text(strip=True) == title:
             continue
-        body_html += str(el)
+        if el.name == "img":
+            continue
+
+        # Remove nested image tags (e.g., <p><img ... /></p>) from body content.
+        el_copy = BeautifulSoup(str(el), "html.parser")
+        for img in el_copy.find_all("img"):
+            img.decompose()
+        body_html += str(el_copy)
+
+    body_html = add_quotes_around_blockquotes(body_html)
     return body_html.strip()
+
+
+def add_quotes_around_blockquotes(input_str: str) -> str:
+    """
+    Add quotes around blockquote elements in the input HTML string.
+    For example, <blockquote>Some quote</blockquote> becomes <blockquote>"Some quote"</blockquote>.
+    """
+    soup = BeautifulSoup(input_str, "html.parser")
+    for blockquote in soup.find_all("blockquote"):
+        text = blockquote.get_text()
+        blockquote.string = f'"{text}"'
+    return str(soup)
 
 
 def change_date_string_to_iso(input_str: str) -> str:
     """
-    Convert a datetime string from "DD-MM-YYYY, HH:MM" or "YYYY-MM-DD, HH:MM" format to ISO 8601 format "YYYY-MM-DDTHH:MM:SS".
+    Convert a datetime string from "DD-MM-YYYY, HH:MM" or "YYYY-MM-DD, HH:MM" format to ISO 8601
+    datetime string with timezone offset (using Django's default timezone).
+
     Example input: "12-01-2024, 14:30" or "2024-01-12, 14:30"
-    Desired output: "2024-01-12T14:30:00"
+    Desired output: "2024-01-12T14:30:00+01:00" (assuming default timezone is CET/CEST)
     """
-    # first check which format the date string is in, then parse accordingly
+    # First check which format the date string is in, then parse accordingly.
     if len(input_str.split("-")[0]) == 4:  # Format is likely "YYYY-MM-DD, HH:MM"
         datetime_format = "%Y-%m-%d, %H:%M"
     else:  # Format is likely "DD-MM-YYYY, HH:MM"
@@ -187,7 +225,8 @@ def change_date_string_to_iso(input_str: str) -> str:
 
     try:
         dt = datetime.datetime.strptime(input_str, datetime_format)
-        return dt.isoformat()
+        aware_dt = timezone.make_aware(dt, timezone.get_default_timezone())
+        return aware_dt.isoformat()
     except ValueError as e:
         logger.error(f"Error parsing datetime string '{input_str}': {e}")
     return input_str  # Return original string if parsing fails

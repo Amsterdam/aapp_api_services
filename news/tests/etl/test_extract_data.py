@@ -62,35 +62,7 @@ class ExtractDataTest(TestCase):
             # important: the type of the items that are retrieved from the "liveblogs" source should be preserved,
             # even if there are duplicates in the "all_news" source, as this is used to determine how to store the item in the database
             self.assertEqual(items[1321235]["type"], "liveblog")
-            self.assertEqual(items[1321234]["type"], "liveblog")
-
-    # TODO: make sure liveblog is always preferred over all_news, even if the liveblog is retrieved after the all_news, as this is used to determine how to store the item in the database
-    # def test_fetch_all_items_duplicate_ids_inverted(self):
-    #     sources = [
-    #         {"index": "liveblogs", "type": "liveblog", "district": None},
-    #         {"index": "all_news", "type": "article", "district": None},
-
-    #     ]
-    #     fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
-
-    #     with aioresponses() as mocked:
-    #         mocked.get(
-    #             f"{self.fetch_url}/all_news?page=0",
-    #             payload=all_news.MOCK_RESPONSE,
-    #         )
-    #         mocked.get(
-    #             f"{self.fetch_url}/liveblogs?page=0", payload=liveblogs.MOCK_RESPONSE
-    #         )
-    #         items = fetcher.fetch_all_items()
-    #         self.assertIsInstance(items, dict)
-    #         self.assertIn(1541234, items)
-    #         self.assertIn(1321235, items)
-    #         self.assertEqual(items[1541234]["type"], "article")
-
-    #         # important: the type of the items that are retrieved from the "liveblogs" source should be preserved,
-    #         # even if there are duplicates in the "all_news" source, as this is used to determine how to store the item in the database
-    #         self.assertEqual(items[1321235]["type"], "liveblog")
-    #         self.assertEqual(items[1321234]["type"], "liveblog")
+            self.assertEqual(items[1234123]["type"], "liveblog")
 
     def test_fetch_items_details(self):
         sources = [{"index": "highlighted", "type": "highlight", "district": None}]

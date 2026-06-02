@@ -212,7 +212,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
         responses.get(
             urljoin(IPROX_DETAIL_URL, "1234123/retrieve-version/123"),
             status=200,
-            json=item_liveblog.MOCK_RESPONSE,
+            json=item_liveblog.MOCK_RESPONSE_1234123,
         )
 
         call_command("checkliveblogupdate")
@@ -262,7 +262,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
         responses.get(
             urljoin(IPROX_DETAIL_URL, "1234123/retrieve-version/123"),
             status=200,
-            json=item_liveblog.MOCK_RESPONSE,
+            json=item_liveblog.MOCK_RESPONSE_1234123,
         )
 
         call_command("checkliveblogupdate")

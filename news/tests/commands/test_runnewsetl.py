@@ -6,7 +6,7 @@ from django.test import TestCase, override_settings
 
 from news.management.commands import runnewsetl
 from news.models import LiveBlogItem, LiveBlogItemImage, NewsArticle, NewsArticleImage
-from news.tests.mock_data import item_article, item_liveblog
+from news.tests.mock_data import highlighted, item_article, item_liveblog, liveblogs
 from notification.models import ScheduledNotification
 
 
@@ -42,69 +42,52 @@ class RunNewsETLTest(TestCase):
             {"index": "liveblogs", "type": "liveblog", "district": None},
         ]
 
-        highlighted_list_payload = {
-            "items": [
-                {
-                    "id": 123123,
-                    "created": item_article.MOCK_RESPONSE_123123["created"],
-                    "modified": item_article.MOCK_RESPONSE_123123["modified"],
-                    "publicationDate": item_article.MOCK_RESPONSE_123123[
-                        "publicationDate"
-                    ],
-                    "image_url": item_article.MOCK_RESPONSE_123123["image_url"],
-                    "is_active_liveblog": False,
-                }
-            ],
-            "total": 1,
-            "page": 0,
-            "per_page": 25,
-            "pages": 1,
-        }
-        liveblogs_list_payload = {
-            "items": [
-                {
-                    "id": item_liveblog.MOCK_RESPONSE["id"],
-                    "created": item_liveblog.MOCK_RESPONSE["created"],
-                    "modified": item_liveblog.MOCK_RESPONSE["modified"],
-                    "publicationDate": item_liveblog.MOCK_RESPONSE["publicationDate"],
-                    "image_url": item_liveblog.MOCK_RESPONSE["image_url"],
-                    "is_active_liveblog": True,
-                }
-            ],
-            "total": 1,
-            "page": 0,
-            "per_page": 25,
-            "pages": 1,
-        }
-
         with patch.object(runnewsetl.iprox_fetcher, "sources", mocked_sources):
             with aioresponses() as mocked:
                 mocked.get(
                     f"{runnewsetl.IPROX_ARTICLES_URL}highlighted?page=0",
-                    payload=highlighted_list_payload,
+                    payload=highlighted.MOCK_RESPONSE,
                 )
                 mocked.get(
                     f"{runnewsetl.IPROX_ARTICLES_URL}liveblogs?page=0",
-                    payload=liveblogs_list_payload,
+                    payload=liveblogs.MOCK_RESPONSE,
                 )
+                # responses for highlighted articles
                 mocked.get(
                     f"{runnewsetl.IPROX_DETAIL_URL}{item_article.MOCK_RESPONSE_123123['id']}",
                     payload=item_article.MOCK_RESPONSE_123123,
                 )
                 mocked.get(
-                    f"{runnewsetl.IPROX_DETAIL_URL}{item_liveblog.MOCK_RESPONSE['id']}",
-                    payload=item_liveblog.MOCK_RESPONSE,
+                    f"{runnewsetl.IPROX_DETAIL_URL}{item_article.MOCK_RESPONSE_123124['id']}",
+                    payload=item_article.MOCK_RESPONSE_123124,
+                )
+                mocked.get(
+                    f"{runnewsetl.IPROX_DETAIL_URL}{item_article.MOCK_RESPONSE_100000['id']}",
+                    payload=item_article.MOCK_RESPONSE_100000,
+                )
+                # responses for liveblog articles
+                mocked.get(
+                    f"{runnewsetl.IPROX_DETAIL_URL}{item_liveblog.MOCK_RESPONSE_1234123['id']}",
+                    payload=item_liveblog.MOCK_RESPONSE_1234123,
+                )
+                mocked.get(
+                    f"{runnewsetl.IPROX_DETAIL_URL}{item_liveblog.MOCK_RESPONSE_1321235['id']}",
+                    payload=item_liveblog.MOCK_RESPONSE_1321235,
+                )
+                mocked.get(
+                    f"{runnewsetl.IPROX_DETAIL_URL}{item_liveblog.MOCK_RESPONSE_1000001['id']}",
+                    payload=item_liveblog.MOCK_RESPONSE_1000001,
                 )
 
                 call_command("runnewsetl")
 
-        self.assertEqual(NewsArticle.objects.count(), 2)
+        self.assertEqual(NewsArticle.objects.count(), 6)
 
         article = NewsArticle.objects.get(
             foreign_id=item_article.MOCK_RESPONSE_123123["id"]
         )
         liveblog_article = NewsArticle.objects.get(
-            foreign_id=item_liveblog.MOCK_RESPONSE["id"]
+            foreign_id=item_liveblog.MOCK_RESPONSE_1234123["id"]
         )
 
         self.assertEqual(article.type, "highlight")
@@ -116,14 +99,16 @@ class RunNewsETLTest(TestCase):
         self.assertIn("Lorem ipsum", article.body)
 
         self.assertEqual(liveblog_article.type, "liveblog")
-        self.assertEqual(liveblog_article.url, item_liveblog.MOCK_RESPONSE["url"])
+        self.assertEqual(
+            liveblog_article.url, item_liveblog.MOCK_RESPONSE_1234123["url"]
+        )
         self.assertIsNone(liveblog_article.body)
 
         self.assertEqual(
             LiveBlogItem.objects.filter(article=liveblog_article).count(), 19
         )
-        self.assertEqual(NewsArticleImage.objects.count(), 4)
-        self.assertEqual(LiveBlogItemImage.objects.count(), 18)
+        self.assertEqual(NewsArticleImage.objects.count(), 10)
+        self.assertEqual(LiveBlogItemImage.objects.count(), 36)
 
         self.assertTrue(
             NewsArticleImage.objects.filter(
@@ -192,11 +177,13 @@ class RunNewsETLTest(TestCase):
         liveblogs_list_payload = {
             "items": [
                 {
-                    "id": item_liveblog.MOCK_RESPONSE["id"],
-                    "created": item_liveblog.MOCK_RESPONSE["created"],
-                    "modified": item_liveblog.MOCK_RESPONSE["modified"],
-                    "publicationDate": item_liveblog.MOCK_RESPONSE["publicationDate"],
-                    "image_url": item_liveblog.MOCK_RESPONSE["image_url"],
+                    "id": item_liveblog.MOCK_RESPONSE_1234123["id"],
+                    "created": item_liveblog.MOCK_RESPONSE_1234123["created"],
+                    "modified": item_liveblog.MOCK_RESPONSE_1234123["modified"],
+                    "publicationDate": item_liveblog.MOCK_RESPONSE_1234123[
+                        "publicationDate"
+                    ],
+                    "image_url": item_liveblog.MOCK_RESPONSE_1234123["image_url"],
                     "is_active_liveblog": True,
                 }
             ],
@@ -221,8 +208,8 @@ class RunNewsETLTest(TestCase):
                     payload=item_article.MOCK_RESPONSE_123123,
                 )
                 mocked.get(
-                    f"{runnewsetl.IPROX_DETAIL_URL}{item_liveblog.MOCK_RESPONSE['id']}",
-                    payload=item_liveblog.MOCK_RESPONSE,
+                    f"{runnewsetl.IPROX_DETAIL_URL}{item_liveblog.MOCK_RESPONSE_1234123['id']}",
+                    payload=item_liveblog.MOCK_RESPONSE_1234123,
                 )
 
                 call_command("runnewsetl")
