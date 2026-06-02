@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 from model_bakery import baker
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError, HTTPError
 
 from core.services.notification_service import ScheduledNotification
 from news.etl.load_data import NewsArticleLoader
@@ -73,6 +73,117 @@ class LoadDataTest(TestCase):
             NewsArticle.objects.first().title, transformed_data[0]["title"]
         )
         self.assertEqual(NewsArticleImage.objects.count(), 3)
+
+    @patch("news.etl.load_data.ImageSetService")
+    def test_load_continues_when_image_upload_fails(self, mock_image_set_service):
+        transformed_data = [
+            {
+                "foreign_id": "123123",
+                "title": "Broken image article",
+                "url": "https://example.com/test-article-1",
+                "modification_datetime": "2024-01-01T12:00:00Z",
+                "image_url": "https://example.com/image-1.jpg",
+                "type": "article",
+                "creation_datetime": "2024-01-01T12:00:00Z",
+                "publication_datetime": "2024-01-01T12:00:00Z",
+                "expiration_datetime": None,
+            },
+            {
+                "foreign_id": "123124",
+                "title": "Working image article",
+                "url": "https://example.com/test-article-2",
+                "modification_datetime": "2024-01-01T12:00:00Z",
+                "image_url": "https://example.com/image-2.jpg",
+                "type": "article",
+                "creation_datetime": "2024-01-01T12:00:00Z",
+                "publication_datetime": "2024-01-01T12:00:00Z",
+                "expiration_datetime": None,
+            },
+        ]
+        mock_image_set_service.return_value.get_or_upload_from_url.side_effect = [
+            ConnectionError("Upload timed out"),
+            {
+                "id": 12345,
+                "identifier": "xyz789abc123",
+                "description": "description of the image",
+                "variants": [
+                    {
+                        "image": "https://example.com/image.jpg",
+                        "width": 123,
+                        "height": 456,
+                    },
+                    {
+                        "image": "https://example.com/image-1.jpg",
+                        "width": 234,
+                        "height": 567,
+                    },
+                    {
+                        "image": "https://example.com/image-2.jpg",
+                        "width": 345,
+                        "height": 678,
+                    },
+                ],
+            },
+        ]
+
+        loader = NewsArticleLoader(
+            image_set_service=mock_image_set_service.return_value
+        )
+
+        loader.load(transformed_data)
+
+        self.assertEqual(NewsArticle.objects.count(), 2)
+        self.assertEqual(NewsArticleImage.objects.count(), 3)
+        self.assertTrue(NewsArticle.objects.filter(foreign_id="123124").exists())
+        self.assertTrue(
+            NewsArticleImage.objects.filter(article__foreign_id="123124").exists()
+        )
+
+    @patch("news.etl.load_data.ImageSetService")
+    def test_load_continues_when_image_upload_fails_completely(
+        self, mock_image_set_service
+    ):
+        transformed_data = [
+            {
+                "foreign_id": "123123",
+                "title": "Broken image article",
+                "url": "https://example.com/test-article-1",
+                "modification_datetime": "2024-01-01T12:00:00Z",
+                "image_url": "https://example.com/image-1.jpg",
+                "type": "article",
+                "creation_datetime": "2024-01-01T12:00:00Z",
+                "publication_datetime": "2024-01-01T12:00:00Z",
+                "expiration_datetime": None,
+            },
+            {
+                "foreign_id": "123124",
+                "title": "Working image article",
+                "url": "https://example.com/test-article-2",
+                "modification_datetime": "2024-01-01T12:00:00Z",
+                "image_url": "https://example.com/image-2.jpg",
+                "type": "article",
+                "creation_datetime": "2024-01-01T12:00:00Z",
+                "publication_datetime": "2024-01-01T12:00:00Z",
+                "expiration_datetime": None,
+            },
+        ]
+        mock_image_set_service.return_value.get_or_upload_from_url.side_effect = [
+            ConnectionError("Upload timed out"),
+            ConnectionError("Upload timed out"),
+        ]
+
+        loader = NewsArticleLoader(
+            image_set_service=mock_image_set_service.return_value
+        )
+
+        loader.load(transformed_data)
+
+        self.assertEqual(NewsArticle.objects.count(), 2)
+        self.assertEqual(NewsArticleImage.objects.count(), 0)
+        self.assertTrue(NewsArticle.objects.filter(foreign_id="123124").exists())
+        self.assertFalse(
+            NewsArticleImage.objects.filter(article__foreign_id="123124").exists()
+        )
 
     def test_get_news_article_object(self):
         article_data = {
