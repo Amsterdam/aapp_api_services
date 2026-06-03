@@ -137,8 +137,8 @@ class IproxFetcher:
         async with sem:
             try:
                 return await self._fetch(session, url)
-            except Exception:
-                logger.error(f"Failed to fetch {url}")
+            except Exception as e:
+                logger.error(f"Failed to fetch {url}", exc_info=e)
 
     @retry(
         stop=stop_after_attempt(3),
