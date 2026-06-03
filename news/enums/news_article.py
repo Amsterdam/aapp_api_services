@@ -31,13 +31,13 @@ class NewsArticleSource(ChoicesEnum):
         index="nieuws-stadsdeel-nieuw-oost", type="district", district="oost"
     )
     DISTRICT_CENTRUM = NewsArticleExtract(
-        index="nieuws-stadsdeel-centrum", type="district", district="noord"
+        index="nieuws-stadsdeel-centrum", type="district", district="centrum"
     )
     DISTRICT_NIEUW_WEST = NewsArticleExtract(
-        index="nieuws-stadgebied-nieuw-west", type="district", district="nieuw-west"
+        index="nieuws-stadsdeel-nieuw-west", type="district", district="nieuw-west"
     )
     DISTRICT_ZUIDOOST = NewsArticleExtract(
-        index="nieuws-stadgebied-zuidoost", type="district", district="zuidoost"
+        index="nieuws-stadsdeel-zuidoost", type="district", district="zuidoost"
     )
     DISTRICT_WEESP = NewsArticleExtract(
         index="nieuws-stadgebied-weesp", type="district", district="weesp"
