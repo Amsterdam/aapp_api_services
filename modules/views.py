@@ -21,7 +21,6 @@ from modules.utils import VersionQueries
 logger = logging.getLogger(__name__)
 
 
-@method_decorator(cache_page(60), name="dispatch")
 class ReleaseDetailView(generics.RetrieveAPIView):
     """
     Retrieve a specific release.
@@ -34,6 +33,7 @@ class ReleaseDetailView(generics.RetrieveAPIView):
     serializer_class = AppReleaseSerializer
     lookup_field = "version"
     lookup_url_kwarg = "version"
+    http_method_names = ["get", "patch"]
 
     def get_queryset(self):
         prefetch = Prefetch(
@@ -59,28 +59,25 @@ class ReleaseDetailView(generics.RetrieveAPIView):
             )
         return release
 
+    def get_serializer_class(self):
+        if self.request.method == "PATCH":
+            return AppReleaseUpdateRequestSerializer
+        return AppReleaseSerializer
+
+    def get_authenticators(self):
+        if self.request.method == "PATCH":
+            return [InternalAPIKeyAuthentication()]
+        return super().get_authenticators()
+
     @extend_schema(
         success_response=AppReleaseSerializer,
         exceptions=[ReleaseNotFoundException],
     )
+    @method_decorator(cache_page(60))
     def get(self, request, *args, **kwargs):
         release = self.get_object()
         serializer = self.get_serializer(release)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class ReleaseUpdateView(generics.UpdateAPIView):
-    """
-    Update the published, deprecated, and unpublished status of a release.
-    The request body should include the new values for these fields.
-    """
-
-    lookup_url_kwarg = "version"
-    serializer_class = AppReleaseUpdateRequestSerializer
-    http_method_names = ["patch"]
-
-    def get_queryset(self):
-        return AppRelease.objects.all()
 
     @extend_schema(
         request=AppReleaseUpdateRequestSerializer,
@@ -93,17 +90,13 @@ class ReleaseUpdateView(generics.UpdateAPIView):
     )
     def patch(self, request, *args, **kwargs):
         """Update the published, deprecated, and unpublished status of a release."""
-        version = self.kwargs.get(self.lookup_url_kwarg)
-        release = self.get_queryset().filter(version=version).first()
-        if release is None:
-            raise ReleaseNotFoundException(
-                f"Release version '{version}' does not exist."
-            )
-
+        release = self.get_object()
         serializer = self.get_serializer(release, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class AppReleaseListView(ListAPIView):
     serializer_class = ReleaseListResponseSerializer
     authentication_classes = [InternalAPIKeyAuthentication]

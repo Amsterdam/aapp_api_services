@@ -116,6 +116,14 @@ class TestReleaseDetailView(BasicAPITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["modules"][0]["status"], 0)
 
+    def test_get_release_without_auth_headers(self):
+        url = reverse("modules-release-detail", kwargs={"version": "2.0.0"})
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["version"], "2.0.0")
+
     def test_cache(self):
         url = reverse("modules-release-detail", kwargs={"version": "latest"})
 
@@ -132,6 +140,60 @@ class TestReleaseDetailView(BasicAPITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(cache.keys("*")), 2)
+
+
+class TestReleaseUpdateView(BasicInternalAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.release = baker.make(
+            AppRelease,
+            version="1.0.0",
+            published=None,
+            deprecated=None,
+            unpublished=None,
+            release_notes="Some notes",
+        )
+
+    def test_patch_release_dates(self):
+        url = reverse(
+            "modules-release-detail", kwargs={"version": self.release.version}
+        )
+
+        payload = {
+            "published": "2025-01-01T00:00:00Z",
+            "deprecated": "2025-02-01T00:00:00Z",
+            "unpublished": "2025-03-01T00:00:00Z",
+            "release_notes": "ignored",
+        }
+
+        response = self.client.patch(
+            url, payload, format="json", headers=self.api_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.release.refresh_from_db()
+        self.assertIsNotNone(self.release.published)
+        self.assertIsNotNone(self.release.deprecated)
+        self.assertIsNotNone(self.release.unpublished)
+        self.assertEqual(self.release.release_notes, "Some notes")
+
+    def test_patch_non_existing_release(self):
+        url = reverse("modules-release-detail", kwargs={"version": "9.9.9"})
+        response = self.client.patch(url, {}, format="json", headers=self.api_headers)
+        self.assertEqual(response.status_code, 404)
+
+    def test_patch_requires_internal_api_key(self):
+        url = reverse(
+            "modules-release-detail", kwargs={"version": self.release.version}
+        )
+
+        response = self.client.patch(
+            url,
+            {"published": "2025-01-01T00:00:00Z"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 401)
 
 
 class TestAppReleaseListView(BasicInternalAPITestCase):
