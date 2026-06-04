@@ -60,12 +60,14 @@ class ReleaseDetailView(generics.RetrieveAPIView):
         return release
 
     def get_serializer_class(self):
-        if self.request.method == "PATCH":
+        request_method = getattr(self.request, "method", None)
+        if request_method == "PATCH":
             return AppReleaseUpdateRequestSerializer
         return AppReleaseSerializer
 
     def get_authenticators(self):
-        if self.request.method == "PATCH":
+        request_method = getattr(self.request, "method", None)
+        if request_method == "PATCH":
             return [InternalAPIKeyAuthentication()]
         return super().get_authenticators()
 
