@@ -2,12 +2,11 @@
 
 These named contracts are required by the Orchestrator. Every major handoff must declare the matching `schema` value and include all required fields.
 
-## Global Required Fields
+## Git Lineage Rules
 
-- `schema`
-- `work_item_id`
-- `source_role`
-- `target_role`
+- `original_git_hash` is the repository `HEAD` captured by the Orchestrator before the first subagent for the work item starts.
+- `git_history_context` summarizes the relevant commits from `original_git_hash` to the current `HEAD`. Use that git history as the provenance record for the work item.
+- Any Developer or Tester session that changes repository content must end with a commit whose subject starts with the subagent name.
 
 ## Schema Catalog
 
@@ -31,11 +30,9 @@ Required fields:
 - `desired_outcome`
 - `constraints`
 - `acceptance_direction`
-- `priority`
 - `non_goals`
 - `open_questions`
 - `known_risks`
-- `next_validation_step`
 
 ## H2 Developer Request
 
@@ -45,9 +42,11 @@ Required fields:
 
 - `schema`: `H2 Developer Request`
 - `canonical_work_item`
+- `original_work_item`
+- `plan.md file from the Plan agent`
+- `original_git_hash`
 - `relevant_codebase_context`
 - `implementation_constraints`
-- `next_validation_step`
 
 ## H3 Developer Result
 
@@ -61,7 +60,7 @@ Required fields:
 - `validations_run`
 - `assumptions`
 - `open_risks`
-- `suggested_next_step`
+- `resulting_git_hash`
 
 ## H4 Review Request
 
@@ -71,9 +70,9 @@ Required fields:
 
 - `schema`: `H4 Review Request`
 - `original_work_item`
-- `git_status_diff`
+- `original_git_hash`
+- `git_history_context`
 - `review_focus`
-- `next_validation_step`
 
 ## H5 Review Result
 
@@ -85,7 +84,6 @@ Required fields:
 - `verdict`
 - `findings`
 - `technical_risks`
-- `test_focus`
 - `next_step`
 
 ## H6 Rework Request
@@ -96,10 +94,12 @@ Required fields:
 
 - `schema`: `H6 Rework Request`
 - `original_work_item`
+- `UPDATED plan.md file from the Plan agent`
 - `blocking_findings`
 - `required_rework`
 - `implementation_constraints`
-- `next_validation_step`
+- `original_git_hash`
+- `git_history_context`
 
 ## H7 Test Request
 
@@ -109,9 +109,9 @@ Required fields:
 
 - `schema`: `H7 Test Request`
 - `original_work_item`
-- `artifact_under_test`
+- `original_git_hash`
+- `git_history_context`
 - `test_focus`
-- `next_validation_step`
 
 ## H8 Test Result
 
@@ -124,4 +124,5 @@ Required fields:
 - `result`
 - `defects`
 - `residual_risk`
+- `resulting_git_hash`
 - `next_step`
