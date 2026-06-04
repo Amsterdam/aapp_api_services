@@ -157,3 +157,9 @@ class AppReleaseSerializer(serializers.ModelSerializer):
     def get_isSupported(self, obj: AppRelease) -> bool:
         today = timezone.now()
         return obj.unpublished is None or obj.unpublished >= today
+
+
+class AppReleaseUpdateRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppRelease
+        fields = ["published", "unpublished", "deprecated"]

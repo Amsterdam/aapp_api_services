@@ -1,7 +1,7 @@
 from django.urls import path
 
 from core.urls import get_admin_paths, get_swagger_paths
-from modules.views import ReleaseDetailView
+from modules.views import ReleaseDetailView, ReleaseUpdateView
 
 BASE_PATH = "modules/api/v1"
 BASE_PATH_ADMIN = "modules/admin"
@@ -11,6 +11,11 @@ urlpatterns = [
         BASE_PATH + "/release/<str:version>",
         ReleaseDetailView.as_view(),
         name="modules-release-detail",
+    ),
+    path(
+        BASE_PATH + "/release/<str:version>",
+        ReleaseUpdateView.as_view(),
+        name="modules-release-update",
     ),
 ]
 
