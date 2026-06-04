@@ -23,11 +23,9 @@ logger = logging.getLogger(__name__)
 
 class ReleaseDetailView(generics.RetrieveAPIView):
     """
-    Retrieve a specific release.
-
-    When retrieving a release, the response includes the details of the release, including the versions of the modules it consists of.
-    The path parameter can be a specific version in the format x.y.z or 'latest' to retrieve the latest release.
-    If the specified release does not exist, a ReleaseNotFoundException is raised.
+    View for both retrieving and updating the details of a specific app release.
+    The release is identified by its version number, which is provided as a URL parameter.
+    The view supports GET requests for retrieving release details, and PATCH requests for updating the published, deprecated, and unpublished status of the release.
     """
 
     serializer_class = AppReleaseSerializer
@@ -73,6 +71,13 @@ class ReleaseDetailView(generics.RetrieveAPIView):
 
     @extend_schema(
         success_response=AppReleaseSerializer,
+        description=(
+            """Retrieve a specific release.
+
+            When retrieving a release, the response includes the details of the release, including the versions of the modules it consists of.
+            The path parameter can be a specific version in the format x.y.z or 'latest' to retrieve the latest release.
+            If the specified release does not exist, a ReleaseNotFoundException is raised."""
+        ),
         exceptions=[ReleaseNotFoundException],
     )
     @method_decorator(cache_page(60))
@@ -106,6 +111,10 @@ class AppReleaseListView(ListAPIView):
 
     @extend_schema(
         success_response=ReleaseListResponseSerializer(many=True),
+        description=(
+            "Retrieve a list of all releases. "
+            "The response includes the version number, release notes, and published, deprecated, and unpublished status of each release."
+        ),
     )
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)
