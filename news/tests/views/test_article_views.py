@@ -1,7 +1,6 @@
 from datetime import datetime
 from unittest.mock import patch
 
-from django.test import override_settings
 from django.urls import reverse
 from model_bakery import baker
 
@@ -236,14 +235,6 @@ class TestArticleDetailView(BasicAPITestCase):
         response = self.client.get(url, headers=self.api_headers)
         self.assertEqual(response.status_code, 404)
 
-    @override_settings(
-        CACHES={
-            "default": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-                "LOCATION": "news-article-detail-cache",
-            }
-        }
-    )
     def test_article_detail_cache_varies_by_article_id(self):
         article_2_url = reverse("news-article-detail", kwargs={"id": self.article_2.id})
 
@@ -267,3 +258,18 @@ class TestArticleDetailView(BasicAPITestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.data["id"], self.article_2.id)
             self.assertEqual(get_queryset.call_count, 2)
+
+    def test_article_detail_cache_enforces_auth(self):
+        with patch.object(
+            ArticleDetailView,
+            "get_queryset",
+            autospec=True,
+            side_effect=ArticleDetailView.get_queryset,
+        ) as get_queryset:
+            response = self.client.get(self.url, headers=self.api_headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["id"], self.article_1.id)
+            self.assertEqual(get_queryset.call_count, 1)
+
+            response = self.client.get(self.url)  # No api key header!
+            self.assertEqual(response.status_code, 401)
