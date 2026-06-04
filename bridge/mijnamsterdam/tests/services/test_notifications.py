@@ -1,7 +1,11 @@
 from model_bakery import baker
 
-from bridge.mijnamsterdam.services.notifications import NotificationService
-from core.enums import Module
+from bridge.mijnamsterdam.services.notifications import (
+    LOGOUT_NOTIFICATION_MESSAGE,
+    LogoutNotificationService,
+    NotificationService,
+)
+from core.enums import Module, NotificationType
 from core.services.notification_service import NotificationData
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from notification.models import Device, NotificationLast, ScheduledNotification
@@ -41,3 +45,20 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         self.assertEqual(
             scheduled_notification.context["url"], "https://mijn.amsterdam.nl/"
         )
+
+
+class TestLogoutNotificationService(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        self.notification_service = LogoutNotificationService()
+
+    def test_send_notification(self):
+        self.notification_service.send(device_ids=["123", "456", "123"])
+
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
+        scheduled_notification = ScheduledNotification.objects.first()
+        self.assertEqual(
+            scheduled_notification.notification_type,
+            NotificationType.MIJN_AMS_LOGOUT.value,
+        )
+        self.assertEqual(scheduled_notification.body, LOGOUT_NOTIFICATION_MESSAGE)
+        self.assertEqual(scheduled_notification.devices.count(), 2)

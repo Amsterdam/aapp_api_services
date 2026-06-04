@@ -79,6 +79,12 @@ class NotificationType(ChoicesEnum):
         description="Nieuwe berichten op Mijn Amsterdam",
         visibility="visible",
     )
+    MIJN_AMS_LOGOUT = NotificationTypeClass(
+        module=Module.MIJN_AMS,
+        name="mijn-ams-logout",
+        description="Uitgelogd uit Mijn Amsterdam",
+        visibility="invisible",
+    )
     CITY_PASS_NOTIFICATION = NotificationTypeClass(
         module=Module.CITY_PASS,
         name="notification",

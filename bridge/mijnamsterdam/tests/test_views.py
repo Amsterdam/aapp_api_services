@@ -13,6 +13,7 @@ from bridge.mijnamsterdam.tests.mock_data.logout import (
     IS_DELETED_TRUE,
 )
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+from notification.models import ScheduledNotification
 
 
 class TestMijnAmsterdamDeviceView(ResponsesActivatedAPITestCase):
@@ -92,3 +93,43 @@ class TestMijnAmsterdamDeviceView(ResponsesActivatedAPITestCase):
             + settings.MIJN_AMS_API_PATHS["DEVICES"]
             + device_id
         )
+
+
+class TestLogoutNotificationView(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("mijn-amsterdam-logout-notification")
+
+    def test_success_post(self):
+        response = self.client.post(
+            self.url,
+            data={"device_ids": ["device-1", "device-2", "device-1"]},
+            format="json",
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "OK"})
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
+        scheduled_notification = ScheduledNotification.objects.first()
+        self.assertEqual(scheduled_notification.devices.count(), 2)
+
+    def test_post_empty_device_ids(self):
+        response = self.client.post(
+            self.url,
+            data={"device_ids": []},
+            format="json",
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "OK"})
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
+
+    def test_post_unauthorized(self):
+        response = self.client.post(
+            self.url,
+            data={"device_ids": ["device-1"]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 401)
