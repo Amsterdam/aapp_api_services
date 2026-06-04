@@ -4,14 +4,17 @@ from django.db.models import Prefetch
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import generics, status
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 
+from core.authentication import InternalAPIKeyAuthentication
 from core.utils.openapi_utils import extend_schema_for_api_key as extend_schema
 from modules.exceptions import ReleaseNotFoundException
 from modules.models import AppRelease, ReleaseModuleStatus
 from modules.serializers.release_serializers import (
     AppReleaseSerializer,
     AppReleaseUpdateRequestSerializer,
+    ReleaseListResponseSerializer,
 )
 from modules.utils import VersionQueries
 
@@ -101,3 +104,13 @@ class ReleaseUpdateView(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+class AppReleaseListView(ListAPIView):
+    serializer_class = ReleaseListResponseSerializer
+    authentication_classes = [InternalAPIKeyAuthentication]
+    queryset = AppRelease.objects.all().order_by("-created")
+
+    @extend_schema(
+        success_response=ReleaseListResponseSerializer(many=True),
+    )
+    def get(self, *args, **kwargs):
+        return super().get(*args, **kwargs)

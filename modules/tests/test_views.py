@@ -2,7 +2,7 @@ from django.core.cache import cache
 from django.urls import reverse
 from model_bakery import baker
 
-from core.tests.test_authentication import BasicAPITestCase
+from core.tests.test_authentication import BasicAPITestCase, BasicInternalAPITestCase
 from modules.icons import ModuleIconPath
 from modules.models import AppRelease, Module, ReleaseModuleStatus
 
@@ -132,3 +132,26 @@ class TestReleaseDetailView(BasicAPITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(cache.keys("*")), 2)
+
+
+class TestAppReleaseListView(BasicInternalAPITestCase):
+    def setUp(self):
+        super().setUp()
+
+        self.release_1 = baker.make(
+            AppRelease,
+            version="1.0.0",
+        )
+        self.release_2 = baker.make(
+            AppRelease,
+            version="2.0.0",
+        )
+
+    def test_get_releases(self):
+        url = reverse("modules-release-list")
+
+        response = self.client.get(url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]["version"], "2.0.0")
+        self.assertEqual(response.data[1]["version"], "1.0.0")
