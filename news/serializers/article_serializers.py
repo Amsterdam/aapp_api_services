@@ -57,6 +57,8 @@ class NewsArticleListResponseSerializer(serializers.ModelSerializer):
             "images",
             "publication_datetime",
             "modification_datetime",
+            "type",
+            "is_active_liveblog",
         ]
 
 
