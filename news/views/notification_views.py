@@ -39,7 +39,10 @@ class NotificationView(DeviceIdMixin, generics.GenericAPIView):
     )
     def post(self, request, *args, **kwargs):
         article_id = kwargs.get("article_id")
-        liveblog = NewsArticle.objects.filter(id=article_id, type="liveblog").first()
+        liveblog = NewsArticle.visible_objects.filter(
+            id=article_id,
+            type="liveblog",
+        ).first()
         if not liveblog:
             raise ValidationError("Article id does not belong to a liveblog")
 

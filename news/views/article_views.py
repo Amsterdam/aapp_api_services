@@ -20,7 +20,7 @@ class ArticleListView(ListAPIView):
 
         article_type = query_serializer.validated_data["type"]
         queryset = (
-            NewsArticle.objects.filter(type=article_type)
+            NewsArticle.visible_objects.filter(type=article_type)
             .prefetch_related("images")
             .order_by("-publication_datetime")
         )
@@ -40,7 +40,9 @@ class ArticleListView(ListAPIView):
 
 class ArticleDetailView(RetrieveAPIView):
     def get_queryset(self):
-        return NewsArticle.objects.prefetch_related("images", "liveblog_items__images")
+        return NewsArticle.visible_objects.prefetch_related(
+            "images", "liveblog_items__images"
+        )
 
     serializer_class = NewsArticleDetailResponseSerializer
     lookup_field = "id"
