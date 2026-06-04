@@ -33,7 +33,9 @@ class TestTermsView(BoatChargingTestCase):
             tmp_terms_dir = Path(tmp_dir)
             (tmp_terms_dir / "1.html").write_text("<p>v1 terms</p>", encoding="utf-8")
             (tmp_terms_dir / "2.html").write_text("<p>v2 terms</p>", encoding="utf-8")
-            (tmp_terms_dir / "abc.html").write_text("<p>ignore me</p>", encoding="utf-8")
+            (tmp_terms_dir / "abc.html").write_text(
+                "<p>ignore me</p>", encoding="utf-8"
+            )
             (tmp_terms_dir / "3.txt").write_text("ignore me", encoding="utf-8")
 
             with patch.object(TermsView, "terms_dir", tmp_terms_dir):
@@ -46,7 +48,9 @@ class TestTermsView(BoatChargingTestCase):
     def test_returns_not_found_when_no_valid_terms_file_exists(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_terms_dir = Path(tmp_dir)
-            (tmp_terms_dir / "invalid.html").write_text("<p>invalid</p>", encoding="utf-8")
+            (tmp_terms_dir / "invalid.html").write_text(
+                "<p>invalid</p>", encoding="utf-8"
+            )
 
             with patch.object(TermsView, "terms_dir", tmp_terms_dir):
                 response = self.client.get(self.url, headers=self.api_headers)
