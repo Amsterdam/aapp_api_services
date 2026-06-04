@@ -110,7 +110,7 @@ class InternalAPIKeyAuthenticationScheme(AuthenticationScheme):
     header_key = settings.API_KEY_HEADER_INTERNAL
 
 
-class MijnAmsterdamOutboundKeyKeyAuthenticationScheme(AuthenticationScheme):
+class MijnAmsterdamOutboundKeyAuthenticationScheme(AuthenticationScheme):
     target_class = "core.authentication.MijnAmsterdamOutboundKeyAuthentication"
     name = "MijnAmsterdamOutboundKeyAuthentication"
     header_key = settings.SESSION_CREDENTIALS_KEY_HEADER

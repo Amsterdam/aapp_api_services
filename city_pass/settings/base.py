@@ -13,7 +13,6 @@ ROOT_URLCONF = "city_pass.urls"
 
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
     "core.authentication.APIKeyAuthentication",
-    "core.authentication.MijnAmsterdamOutboundKeyAuthentication",
 ]
 
 SPECTACULAR_SETTINGS["TITLE"] = "City Pass API"
