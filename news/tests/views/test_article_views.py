@@ -1,10 +1,13 @@
 from datetime import datetime
+from unittest.mock import patch
 
+from django.test import override_settings
 from django.urls import reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import BasicAPITestCase
 from news.models import NewsArticle, NewsArticleImage
+from news.views.article_views import ArticleDetailView, ArticleListView
 
 
 class TestArticleListView(BasicAPITestCase):
@@ -124,6 +127,80 @@ class TestArticleListView(BasicAPITestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_article_list_cache_varies_by_request_params(self):
+        with patch.object(
+            ArticleListView,
+            "get_queryset",
+            autospec=True,
+            side_effect=ArticleListView.get_queryset,
+        ) as get_queryset:
+            response = self.client.get(
+                self.url,
+                data={"type": "article", "page": 1, "page_size": 1},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["result"][0]["id"], self.article_2.id)
+            self.assertEqual(get_queryset.call_count, 1)
+
+            response = self.client.get(
+                self.url,
+                data={"type": "article", "page": 1, "page_size": 1},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["result"][0]["id"], self.article_2.id)
+            self.assertEqual(get_queryset.call_count, 1)
+
+            response = self.client.get(
+                self.url,
+                data={"type": "article", "page": 2, "page_size": 1},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["result"][0]["id"], self.article_1.id)
+            self.assertEqual(get_queryset.call_count, 2)
+
+            response = self.client.get(
+                self.url,
+                data={"type": "article", "page": 1, "page_size": 2},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data["result"]), 2)
+            self.assertEqual(get_queryset.call_count, 3)
+
+            response = self.client.get(
+                self.url,
+                data={"type": "highlight", "page": 1, "page_size": 1},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["result"][0]["id"], self.article_3.id)
+            self.assertEqual(get_queryset.call_count, 4)
+
+            response = self.client.get(
+                self.url,
+                data={"type": "highlight", "page": 1, "page_size": 1},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(get_queryset.call_count, 4)
+
+            response = self.client.get(
+                self.url,
+                data={
+                    "type": "district",
+                    "district": "noord",
+                    "page": 1,
+                    "page_size": 1,
+                },
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["result"][0]["id"], self.article_4.id)
+            self.assertEqual(get_queryset.call_count, 5)
+
 
 class TestArticleDetailView(BasicAPITestCase):
     def setUp(self):
@@ -158,3 +235,35 @@ class TestArticleDetailView(BasicAPITestCase):
         url = reverse("news-article-detail", kwargs={"id": 999})
         response = self.client.get(url, headers=self.api_headers)
         self.assertEqual(response.status_code, 404)
+
+    @override_settings(
+        CACHES={
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "LOCATION": "news-article-detail-cache",
+            }
+        }
+    )
+    def test_article_detail_cache_varies_by_article_id(self):
+        article_2_url = reverse("news-article-detail", kwargs={"id": self.article_2.id})
+
+        with patch.object(
+            ArticleDetailView,
+            "get_queryset",
+            autospec=True,
+            side_effect=ArticleDetailView.get_queryset,
+        ) as get_queryset:
+            response = self.client.get(self.url, headers=self.api_headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["id"], self.article_1.id)
+            self.assertEqual(get_queryset.call_count, 1)
+
+            response = self.client.get(self.url, headers=self.api_headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["id"], self.article_1.id)
+            self.assertEqual(get_queryset.call_count, 1)
+
+            response = self.client.get(article_2_url, headers=self.api_headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["id"], self.article_2.id)
+            self.assertEqual(get_queryset.call_count, 2)

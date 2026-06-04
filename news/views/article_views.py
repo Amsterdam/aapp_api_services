@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
 from core.pagination import CustomPagination
@@ -9,7 +11,11 @@ from news.serializers.article_serializers import (
     NewsArticleRequestSerializer,
 )
 
+ARTICLE_LIST_CACHE_TTL_SECONDS = 60 * 5
+ARTICLE_DETAIL_CACHE_TTL_SECONDS = 60
 
+
+@method_decorator(cache_page(ARTICLE_LIST_CACHE_TTL_SECONDS), name="get")
 class ArticleListView(ListAPIView):
     pagination_class = CustomPagination
     serializer_class = NewsArticleListResponseSerializer
@@ -38,6 +44,7 @@ class ArticleListView(ListAPIView):
         return super().get(*args, **kwargs)
 
 
+@method_decorator(cache_page(ARTICLE_DETAIL_CACHE_TTL_SECONDS), name="get")
 class ArticleDetailView(RetrieveAPIView):
     def get_queryset(self):
         return NewsArticle.objects.prefetch_related("images", "liveblog_items__images")
