@@ -8,7 +8,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 
 from core.authentication import InternalAPIKeyAuthentication
-from core.utils.openapi_utils import extend_schema_for_api_key as extend_schema
+from core.utils.openapi_utils import custom_extend_schema, extend_schema_for_api_key
 from modules.exceptions import ReleaseNotFoundException
 from modules.models import AppRelease, ReleaseModuleStatus
 from modules.serializers.release_serializers import (
@@ -21,7 +21,7 @@ from modules.utils import VersionQueries
 logger = logging.getLogger(__name__)
 
 
-class ReleaseDetailView(generics.RetrieveAPIView):
+class ReleaseDetailView(generics.RetrieveUpdateAPIView):
     """
     View for both retrieving and updating the details of a specific app release.
     The release is identified by its version number, which is provided as a URL parameter.
@@ -69,16 +69,15 @@ class ReleaseDetailView(generics.RetrieveAPIView):
             return [InternalAPIKeyAuthentication()]
         return super().get_authenticators()
 
-    @extend_schema(
+    @custom_extend_schema(
         success_response=AppReleaseSerializer,
         description=(
-            """Retrieve a specific release.
-
-            When retrieving a release, the response includes the details of the release, including the versions of the modules it consists of.
-            The path parameter can be a specific version in the format x.y.z or 'latest' to retrieve the latest release.
-            If the specified release does not exist, a ReleaseNotFoundException is raised."""
+            "Retrieve a specific release."
+            "When retrieving a release, the response includes the details of the release, including the versions of the modules it consists of."
+            "The path parameter can be a specific version in the format x.y.z or 'latest' to retrieve the latest release."
+            "If the specified release does not exist, a ReleaseNotFoundException is raised."
         ),
-        exceptions=[ReleaseNotFoundException],
+        default_exceptions=[ReleaseNotFoundException],
     )
     @method_decorator(cache_page(60))
     def get(self, request, *args, **kwargs):
@@ -86,7 +85,7 @@ class ReleaseDetailView(generics.RetrieveAPIView):
         serializer = self.get_serializer(release)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(
+    @extend_schema_for_api_key(
         request=AppReleaseUpdateRequestSerializer,
         description=(
             "Update the published, deprecated, and unpublished status of a release. "
@@ -109,7 +108,7 @@ class AppReleaseListView(ListAPIView):
     authentication_classes = [InternalAPIKeyAuthentication]
     queryset = AppRelease.objects.all().order_by("-created")
 
-    @extend_schema(
+    @extend_schema_for_api_key(
         success_response=ReleaseListResponseSerializer(many=True),
         description=(
             "Retrieve a list of all releases. "
