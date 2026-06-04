@@ -165,6 +165,10 @@ class AppReleaseUpdateRequestSerializer(serializers.ModelSerializer):
         fields = ["published", "unpublished", "deprecated"]
 
 
+class AppReleaseUpdateResponseSerializer(serializers.Serializer):
+    status = serializers.CharField()
+
+
 class ReleaseListResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppRelease

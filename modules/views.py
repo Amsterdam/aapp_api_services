@@ -14,6 +14,7 @@ from modules.models import AppRelease, ReleaseModuleStatus
 from modules.serializers.release_serializers import (
     AppReleaseSerializer,
     AppReleaseUpdateRequestSerializer,
+    AppReleaseUpdateResponseSerializer,
     ReleaseListResponseSerializer,
 )
 from modules.utils import VersionQueries
@@ -25,7 +26,7 @@ class ReleaseDetailView(generics.RetrieveUpdateAPIView):
     """
     View for both retrieving and updating the details of a specific app release.
     The release is identified by its version number, which is provided as a URL parameter.
-    The view supports GET requests for retrieving release details, and PATCH requests for updating the published, deprecated, and unpublished status of the release.
+    The view supports GET requests for retrieving release details, and PATCH requests for updating the published, deprecated, and unpublished dates of the release.
     """
 
     serializer_class = AppReleaseSerializer
@@ -72,9 +73,9 @@ class ReleaseDetailView(generics.RetrieveUpdateAPIView):
     @custom_extend_schema(
         success_response=AppReleaseSerializer,
         description=(
-            "Retrieve a specific release."
-            "When retrieving a release, the response includes the details of the release, including the versions of the modules it consists of."
-            "The path parameter can be a specific version in the format x.y.z or 'latest' to retrieve the latest release."
+            "Retrieve a specific release. "
+            "When retrieving a release, the response includes the details of the release, including the versions of the modules it consists of. "
+            "The path parameter can be a specific version in the format x.y.z or 'latest' to retrieve the latest release. "
             "If the specified release does not exist, a ReleaseNotFoundException is raised."
         ),
         default_exceptions=[ReleaseNotFoundException],
@@ -87,20 +88,21 @@ class ReleaseDetailView(generics.RetrieveUpdateAPIView):
 
     @extend_schema_for_api_key(
         request=AppReleaseUpdateRequestSerializer,
+        success_response=AppReleaseUpdateResponseSerializer,
         description=(
-            "Update the published, deprecated, and unpublished status of a release. "
+            "Update the published, deprecated, and unpublished dates of a release. "
             "The request body should include the new values for these fields. "
             "Only these fields will be updated; other fields will be ignored."
         ),
         exceptions=[ReleaseNotFoundException],
     )
     def patch(self, request, *args, **kwargs):
-        """Update the published, deprecated, and unpublished status of a release."""
+        """Update the published, deprecated, and unpublished dates of a release."""
         release = self.get_object()
         serializer = self.get_serializer(release, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(data={"status": "OK"}, status=status.HTTP_200_OK)
 
 
 class AppReleaseListView(ListAPIView):
@@ -112,7 +114,7 @@ class AppReleaseListView(ListAPIView):
         success_response=ReleaseListResponseSerializer(many=True),
         description=(
             "Retrieve a list of all releases. "
-            "The response includes the version number, release notes, and published, deprecated, and unpublished status of each release."
+            "The response includes the version number, published, deprecated, and unpublished dates of each release."
         ),
     )
     def get(self, *args, **kwargs):
