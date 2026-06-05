@@ -32,6 +32,12 @@ class TestArticleListView(BasicAPITestCase):
             type="district",
             district="noord",
         )
+        self.article_5 = baker.make(
+            NewsArticle,
+            publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
+            type="liveblog",
+            is_active_liveblog=True,
+        )
         self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
         self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
 
@@ -45,6 +51,8 @@ class TestArticleListView(BasicAPITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response_result), 2)
         self.assertEqual(response.data["page"]["totalElements"], 2)
+        self.assertEqual(response.data["result"][0]["is_active_liveblog"], False)
+        self.assertEqual(response.data["result"][0]["type"], "article")
 
         article_1_response = [
             article for article in response_result if article["id"] == self.article_1.id
@@ -84,7 +92,9 @@ class TestArticleListView(BasicAPITestCase):
             self.url, data={"type": "liveblog"}, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["page"]["totalElements"], 0)
+        self.assertEqual(response.data["page"]["totalElements"], 1)
+        self.assertEqual(response.data["result"][0]["is_active_liveblog"], True)
+        self.assertEqual(response.data["result"][0]["type"], "liveblog")
 
     def test_foobar_list(self):
         response = self.client.get(
