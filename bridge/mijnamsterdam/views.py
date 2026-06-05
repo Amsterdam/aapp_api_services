@@ -12,6 +12,7 @@ from bridge.mijnamsterdam.serializers.logout_serializers import (
     LogoutNotificationResponseSerializer,
 )
 from bridge.mijnamsterdam.services.notifications import LogoutNotificationService
+from core.authentication import MijnAmsterdamOutboundKeyAuthentication
 from core.enums import Module
 from core.services.notification_last import NotificationLastService
 from core.utils.openapi_utils import extend_schema_for_api_key
@@ -86,6 +87,7 @@ class MijnAmsterdamDeviceView(DeviceIdMixin, generics.GenericAPIView):
 
 @extend_schema_for_api_key(success_response=LogoutNotificationResponseSerializer)
 class LogoutNotificationView(generics.GenericAPIView):
+    authentication_classes = [MijnAmsterdamOutboundKeyAuthentication]
     serializer_class = LogoutNotificationRequestSerializer
     logout_notification_service = LogoutNotificationService()
 

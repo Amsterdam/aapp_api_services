@@ -9,7 +9,7 @@ INSTALLED_APPS += [
 ROOT_URLCONF = "bridge.urls"
 
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
-    "core.authentication.APIKeyAuthentication",
+    "core.authentication.APIKeyAuthentication"
 ]
 
 SPECTACULAR_SETTINGS["TITLE"] = "Bridge API"
