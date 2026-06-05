@@ -74,7 +74,7 @@ class TestArticleListView(BasicAPITestCase):
             if article["id"] == self.overlap_article.id
         ][0]
         self.assertTrue(overlap_response["is_active_liveblog"])
-        self.assertEqual(overlap_response["type"], "district")
+        self.assertTrue(overlap_response["is_liveblog"])
 
         article_1_response = [
             article for article in response_result if article["id"] == self.article_1.id
