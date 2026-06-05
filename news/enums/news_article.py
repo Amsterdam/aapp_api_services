@@ -7,12 +7,8 @@ class NewsArticleSource(ChoicesEnum):
     Each source is associated with a NewsArticleExtract instance,
     which contains the index, type, and district information for that source.
 
-    !! IMPORTANT: the order matters! The types of the sources are used to determine
-    how to store the article in the database, where the type is overwritten by the
-    type of the source if there are duplicates. For example, if an article is retrieved
-    from both the "all_news" and "liveblogs" sources, it should be stored as a "liveblog"
-    in the database, because the "liveblogs" source has a higher priority than the "all_news"
-    source. !!
+    !! IMPORTANT: overlap is preserved via source flags, but the order still matters
+    for the legacy `type` field, which keeps overwrite behavior for backward compatibility. !!
     """
 
     ALL_NEWS = NewsArticleExtract(index="all_news", type="article", district=None)

@@ -36,7 +36,9 @@ class ExtractDataTest(TestCase):
             self.assertIn(123124, items)
             self.assertIn(1321235, items)
             self.assertEqual(items[123124]["type"], "highlight")
+            self.assertTrue(items[123124]["is_highlight"])
             self.assertEqual(items[1321235]["type"], "liveblog")
+            self.assertTrue(items[1321235]["is_liveblog"])
 
     def test_fetch_all_items_duplicate_ids(self):
         sources = [
@@ -58,11 +60,15 @@ class ExtractDataTest(TestCase):
             self.assertIn(1541234, items)
             self.assertIn(1321235, items)
             self.assertEqual(items[1541234]["type"], "article")
+            self.assertTrue(items[1541234]["in_all_news"])
 
             # important: the type of the items that are retrieved from the "liveblogs" source should be preserved,
             # even if there are duplicates in the "all_news" source, as this is used to determine how to store the item in the database
             self.assertEqual(items[1321235]["type"], "liveblog")
             self.assertEqual(items[1234123]["type"], "liveblog")
+            self.assertTrue(items[1321235]["in_all_news"])
+            self.assertTrue(items[1321235]["is_liveblog"])
+            self.assertTrue(items[1234123]["is_liveblog"])
 
     def test_fetch_items_details(self):
         sources = [{"index": "highlighted", "type": "highlight", "district": None}]
@@ -123,7 +129,15 @@ class ExtractDataTest(TestCase):
         It is key that the type of the basic info is preserved, as this is used to store in the database.
         """
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=[])
-        basic_info = {"id": 123123, "type": "highlight", "district": None}
+        basic_info = {
+            "id": 123123,
+            "type": "highlight",
+            "district": None,
+            "in_all_news": True,
+            "is_highlight": True,
+            "is_liveblog": False,
+            "is_district": False,
+        }
         detailed_info = {
             "id": 123123,
             "title": "Test Article",
@@ -134,5 +148,8 @@ class ExtractDataTest(TestCase):
         self.assertEqual(combined["id"], 123123)
         self.assertEqual(combined["type"], "highlight")
         self.assertEqual(combined["district"], None)
+        self.assertTrue(combined["in_all_news"])
+        self.assertTrue(combined["is_highlight"])
+        self.assertFalse(combined["is_liveblog"])
         self.assertEqual(combined["title"], "Test Article")
         self.assertEqual(combined["body"], "Lorem ipsum")

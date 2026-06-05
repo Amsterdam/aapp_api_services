@@ -8,6 +8,14 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 logger = logging.getLogger(__name__)
 
 
+SOURCE_FLAGS_BY_TYPE = {
+    "article": "in_all_news",
+    "highlight": "is_highlight",
+    "liveblog": "is_liveblog",
+    "district": "is_district",
+}
+
+
 class FetchError(Exception):
     pass
 
@@ -93,13 +101,37 @@ class IproxFetcher:
                 items = result.get("items", [])
 
                 for item in items:
-                    item["type"] = source_type
-                    item["district"] = source_district
-                    if item["id"] in all_items and source is not None:
+                    item_id = item["id"]
+                    source_flag = SOURCE_FLAGS_BY_TYPE.get(source_type)
+
+                    if item_id in all_items:
+                        existing_item = all_items[item_id]
                         logger.warning(
-                            f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
+                            f"Duplicate item ID {item_id} found. Old type: {existing_item['type']}, new type: {source['type']}. Preserving overlap flags and overwriting legacy type."
                         )
-                    all_items[item["id"]] = item
+
+                        # Preserve legacy overwrite behavior for the type field while
+                        # accumulating source overlap in dedicated flags.
+                        existing_item["type"] = source_type
+                        if source_district is not None:
+                            existing_item["district"] = source_district
+                        if source_flag:
+                            existing_item[source_flag] = True
+                        continue
+
+                    new_item = {
+                        **item,
+                        "type": source_type,
+                        "district": source_district,
+                        "in_all_news": False,
+                        "is_highlight": False,
+                        "is_liveblog": False,
+                        "is_district": False,
+                    }
+                    if source_flag:
+                        new_item[source_flag] = True
+
+                    all_items[item_id] = new_item
 
                 pages = result.get("pages", 1)
                 if page >= pages - 1:
@@ -161,7 +193,14 @@ class IproxFetcher:
         self,
         detailed_info: dict,
         basic_info: dict,
-        preserve_basic_info_keys: tuple = ("type", "district"),
+        preserve_basic_info_keys: tuple = (
+            "type",
+            "district",
+            "in_all_news",
+            "is_highlight",
+            "is_liveblog",
+            "is_district",
+        ),
     ) -> dict:
         """Combine detailed and basic information into a single dictionary."""
         combined_info = {

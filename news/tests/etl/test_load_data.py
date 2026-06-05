@@ -207,6 +207,30 @@ class LoadDataTest(TestCase):
         self.assertEqual(
             news_article.modification_datetime, article_data["modification_datetime"]
         )
+        self.assertTrue(news_article.in_all_news)
+        self.assertFalse(news_article.is_liveblog)
+
+    def test_get_news_article_object_with_explicit_flags(self):
+        article_data = {
+            "foreign_id": "123123",
+            "title": "A title",
+            "body": "A body",
+            "type": "district",
+            "in_all_news": True,
+            "is_highlight": True,
+            "is_liveblog": True,
+            "is_district": True,
+            "district": "noord",
+            "url": "https://example.com/article/123123",
+            "publication_datetime": "2024-01-01T12:00:00Z",
+        }
+        news_article = self.loader._get_news_article_object(article_data)
+
+        self.assertTrue(news_article.in_all_news)
+        self.assertTrue(news_article.is_highlight)
+        self.assertTrue(news_article.is_liveblog)
+        self.assertTrue(news_article.is_district)
+        self.assertIsNone(news_article.body)
 
     def test_upsert_news_articles(self):
         article = NewsArticle(

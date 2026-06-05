@@ -39,6 +39,10 @@ class NewsArticle(models.Model):
     intro = models.TextField(blank=True, null=True, default=None)
     body = models.TextField(blank=True, null=True, default=None)
     type = models.CharField(max_length=30, choices=ARTICLE_TYPE_CHOICES)
+    in_all_news = models.BooleanField(default=False)
+    is_highlight = models.BooleanField(default=False)
+    is_liveblog = models.BooleanField(default=False)
+    is_district = models.BooleanField(default=False)
     district = models.CharField(
         max_length=30,
         choices=DISTRICT_TYPE_CHOICES,

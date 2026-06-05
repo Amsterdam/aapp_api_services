@@ -44,7 +44,7 @@ class TransformDataTest(TestCase):
         extracted_data = [
             {
                 **item_liveblog.MOCK_RESPONSE_1234123,
-                **{"type": "liveblog", "district": None},
+                **{"type": "liveblog", "district": None, "is_liveblog": True},
             }
         ]
         transformed = transform(extracted_data)
@@ -59,6 +59,26 @@ class TransformDataTest(TestCase):
         self.assertEqual(len(article["body"]), 19)
         self.assertEqual(article["body"][0]["title"], "Title")
         self.assertEqual(article["body"][1]["title"], "Another title")
+
+    def test_transform_liveblog_when_legacy_type_differs(self):
+        extracted_data = [
+            {
+                **item_liveblog.MOCK_RESPONSE_1234123,
+                **{
+                    "type": "district",
+                    "district": "noord",
+                    "is_liveblog": True,
+                    "is_district": True,
+                },
+            }
+        ]
+
+        transformed = transform(extracted_data)
+        self.assertEqual(len(transformed), 1)
+        article = transformed[0]
+        self.assertIsInstance(article["body"], list)
+        self.assertTrue(article["is_liveblog"])
+        self.assertTrue(article["is_district"])
 
     def test_transform_deduplication(self):
         extracted_data = [

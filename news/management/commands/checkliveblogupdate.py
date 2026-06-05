@@ -40,7 +40,7 @@ class Command(BaseCommand):
 
         # Step 1: Check if there are any active liveblogs in the database.
         active_liveblogs = NewsArticle.objects.filter(
-            type="liveblog",
+            is_liveblog=True,
             is_active_liveblog=True,
         ).values_list("foreign_id", "liveblog_version")
 
@@ -115,7 +115,14 @@ class Command(BaseCommand):
 
             # Step 4: Transform the data to match the format of our database models.
             transformed_data = transform(
-                [{**response.json(), "type": "liveblog", "district": None}]
+                [
+                    {
+                        **response.json(),
+                        "type": "liveblog",
+                        "district": None,
+                        "is_liveblog": True,
+                    }
+                ]
             )
 
             if not transformed_data:
