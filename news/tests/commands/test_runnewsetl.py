@@ -3,6 +3,7 @@ from unittest.mock import patch
 from aioresponses import aioresponses
 from django.core.management import call_command
 from django.test import TestCase, override_settings
+from model_bakery import baker
 
 from news.management.commands import runnewsetl
 from news.models import LiveBlogItem, LiveBlogItemImage, NewsArticle, NewsArticleImage
@@ -218,3 +219,31 @@ class RunNewsETLTest(TestCase):
         self.assertEqual(active_liveblogs.count(), 1)
         self.assertIsNotNone(active_liveblogs.first().liveblog_notification_send)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
+
+    def test_run_news_etl_change_type_existing_item(self):
+        """Test that when an existing item changes type, the old record is updated to get a new type.
+        This could happen if an article is first a highlight but then not anymore (just an article)
+        """
+
+        baker.make(NewsArticle, foreign_id=123123, type="highlight")
+
+        self.assertEqual(NewsArticle.objects.count(), 1)
+        self.assertEqual(NewsArticle.objects.first().type, "highlight")
+
+        # Simulate the article changing type in the Iprox API
+        with patch.object(runnewsetl.iprox_fetcher, "sources", []):
+            with aioresponses() as mocked:
+                mocked.get(
+                    f"{runnewsetl.IPROX_DETAIL_URL}123123",
+                    payload={
+                        "id": 123123,
+                        "title": "Test Article",
+                        "body": "Lorem ipsum",
+                        "type": "article",
+                    },
+                )
+
+                call_command("runnewsetl")
+
+        self.assertEqual(NewsArticle.objects.count(), 1)
+        self.assertEqual(NewsArticle.objects.first().type, "article")
