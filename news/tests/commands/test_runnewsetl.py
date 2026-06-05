@@ -231,16 +231,37 @@ class RunNewsETLTest(TestCase):
         self.assertEqual(NewsArticle.objects.first().type, "highlight")
 
         # Simulate the article changing type in the Iprox API
-        with patch.object(runnewsetl.iprox_fetcher, "sources", []):
+        mocked_sources = [{"index": "all_news", "type": "article", "district": None}]
+        with patch.object(runnewsetl.iprox_fetcher, "sources", mocked_sources):
             with aioresponses() as mocked:
                 mocked.get(
-                    f"{runnewsetl.IPROX_DETAIL_URL}123123",
+                    f"{runnewsetl.IPROX_ARTICLES_URL}all_news?page=0",
                     payload={
-                        "id": 123123,
-                        "title": "Test Article",
-                        "body": "Lorem ipsum",
-                        "type": "article",
+                        "items": [
+                            {
+                                "id": 123123,
+                                "created": item_article.MOCK_RESPONSE_123123["created"],
+                                "modified": item_article.MOCK_RESPONSE_123123[
+                                    "modified"
+                                ],
+                                "publicationDate": item_article.MOCK_RESPONSE_123123[
+                                    "publicationDate"
+                                ],
+                                "image_url": item_article.MOCK_RESPONSE_123123[
+                                    "image_url"
+                                ],
+                                "is_active_liveblog": False,
+                            }
+                        ],
+                        "total": 1,
+                        "page": 0,
+                        "per_page": 25,
+                        "pages": 1,
                     },
+                )
+                mocked.get(
+                    f"{runnewsetl.IPROX_DETAIL_URL}123123",
+                    payload=item_article.MOCK_RESPONSE_123123,
                 )
 
                 call_command("runnewsetl")
