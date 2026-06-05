@@ -288,6 +288,105 @@ class RunNewsETLTest(TestCase):
         self.assertIsNotNone(active_liveblogs.first().liveblog_notification_send)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
 
+    @patch(
+        "news.management.commands.runnewsetl.data_loader.image_set_service.get_or_upload_from_url"
+    )
+    def test_run_news_etl_two_boolean_columns_set_to_true(
+        self, mock_get_or_upload_from_url
+    ):
+        mock_get_or_upload_from_url.return_value = {
+            "id": 12345,
+            "identifier": "xyz789abc123",
+            "description": "description of the image",
+            "variants": [
+                {
+                    "image": "https://example.com/image.jpg",
+                    "width": 123,
+                    "height": 456,
+                },
+                {
+                    "image": "https://example.com/image-1.jpg",
+                    "width": 234,
+                    "height": 567,
+                },
+            ],
+        }
+
+        mocked_sources = [
+            {
+                "index": "all_news",
+                "type": "article",
+                "boolean_column": "in_all_news",
+                "district": None,
+            },
+            {
+                "index": "highlighted",
+                "type": "highlight",
+                "boolean_column": "is_highlight",
+                "district": None,
+            },
+        ]
+
+        all_news_list_payload = {
+            "items": [
+                {
+                    "id": 123123,
+                    "created": item_article.MOCK_RESPONSE_123123["created"],
+                    "modified": item_article.MOCK_RESPONSE_123123["modified"],
+                    "publicationDate": item_article.MOCK_RESPONSE_123123[
+                        "publicationDate"
+                    ],
+                    "image_url": item_article.MOCK_RESPONSE_123123["image_url"],
+                    "is_active_liveblog": False,
+                }
+            ],
+            "total": 1,
+            "page": 0,
+            "per_page": 25,
+            "pages": 1,
+        }
+
+        highlighted_list_payload = {
+            "items": [
+                {
+                    "id": 123123,
+                    "created": item_article.MOCK_RESPONSE_123123["created"],
+                    "modified": item_article.MOCK_RESPONSE_123123["modified"],
+                    "publicationDate": item_article.MOCK_RESPONSE_123123[
+                        "publicationDate"
+                    ],
+                    "image_url": item_article.MOCK_RESPONSE_123123["image_url"],
+                    "is_active_liveblog": False,
+                }
+            ],
+            "total": 1,
+            "page": 0,
+            "per_page": 25,
+            "pages": 1,
+        }
+
+        with patch.object(runnewsetl.iprox_fetcher, "sources", mocked_sources):
+            with aioresponses() as mocked:
+                mocked.get(
+                    f"{runnewsetl.IPROX_ARTICLES_URL}all_news?page=0",
+                    payload=all_news_list_payload,
+                )
+                mocked.get(
+                    f"{runnewsetl.IPROX_ARTICLES_URL}highlighted?page=0",
+                    payload=highlighted_list_payload,
+                )
+                mocked.get(
+                    f"{runnewsetl.IPROX_DETAIL_URL}{item_article.MOCK_RESPONSE_123123['id']}",
+                    payload=item_article.MOCK_RESPONSE_123123,
+                )
+
+                call_command("runnewsetl")
+
+        self.assertEqual(NewsArticle.objects.count(), 1)
+        article = NewsArticle.objects.first()
+        self.assertTrue(article.in_all_news)
+        self.assertTrue(article.is_highlight)
+
     def test_run_news_etl_change_type_existing_item(self):
         """Test that when an existing item changes type, the old record is updated to get a new type.
         This could happen if an article is first a highlight but then not anymore (just an article)
