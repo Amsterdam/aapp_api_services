@@ -59,7 +59,7 @@ def transform(extracted_data: list[dict]) -> list[dict]:
                 "type": article.get("type"),
                 "in_all_news": article.get("in_all_news", False),
                 "is_highlight": article.get("is_highlight", False),
-                "is_liveblog": article.get("is_liveblog", False),
+                "is_liveblog": is_liveblog,
                 "is_district": article.get("is_district", False),
                 "district": article.get("district"),
                 "url": url,
