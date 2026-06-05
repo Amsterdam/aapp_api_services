@@ -1,11 +1,12 @@
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from model_bakery import baker
 from requests.exceptions import ConnectionError, HTTPError
 
 from core.services.notification_service import ScheduledNotification
-from news.etl.load_data import NewsArticleLoader
+from news.etl.load_data import NewsArticleLoader, garbage_collect_unseen_articles
 from news.models import (
     LiveBlogItem,
     LiveBlogItemImage,
@@ -72,6 +73,7 @@ class LoadDataTest(TestCase):
         self.assertEqual(
             NewsArticle.objects.first().title, transformed_data[0]["title"]
         )
+        self.assertFalse(NewsArticle.objects.first().deleted)
         self.assertEqual(NewsArticleImage.objects.count(), 3)
 
     @patch("news.etl.load_data.ImageSetService")
@@ -252,6 +254,67 @@ class LoadDataTest(TestCase):
         self.loader._upsert_news_articles([article])
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(NewsArticle.objects.first().title, article.title)
+        self.assertFalse(NewsArticle.objects.first().deleted)
+
+    def test_upsert_news_articles_reactivates_deleted_article(self):
+        existing_article = baker.make(
+            NewsArticle,
+            foreign_id=123123,
+            deleted=True,
+            type="article",
+            url="https://example.com/article/123123",
+            title="Old title",
+            modification_datetime="2024-01-01T12:00:00Z",
+            publication_datetime="2024-01-01T12:00:00Z",
+        )
+        old_last_seen = timezone.now() - timezone.timedelta(hours=3)
+        NewsArticle.objects.filter(id=existing_article.id).update(
+            last_seen=old_last_seen
+        )
+
+        updated_article = self.loader._get_news_article_object(
+            {
+                "foreign_id": "123123",
+                "title": "New title",
+                "body": "A body",
+                "summary": "A summary",
+                "intro": "An intro",
+                "type": "article",
+                "district": None,
+                "url": "https://example.com/article/123123",
+                "creation_datetime": "2024-01-01T12:00:00Z",
+                "modification_datetime": "2024-01-01T13:00:00Z",
+                "publication_datetime": "2024-01-01T13:00:00Z",
+                "expiration_datetime": None,
+            }
+        )
+
+        self.loader._upsert_news_articles([updated_article])
+
+        existing_article.refresh_from_db()
+        self.assertFalse(existing_article.deleted)
+        self.assertEqual(existing_article.title, "New title")
+        self.assertGreater(existing_article.last_seen, old_last_seen)
+
+    def test_garbage_collect_unseen_articles_marks_only_stale_articles(self):
+        stale_article = baker.make(NewsArticle, deleted=False, type="article")
+        recent_article = baker.make(NewsArticle, deleted=False, type="article")
+
+        NewsArticle.objects.filter(id=stale_article.id).update(
+            last_seen=timezone.now() - timezone.timedelta(hours=3)
+        )
+        NewsArticle.objects.filter(id=recent_article.id).update(
+            last_seen=timezone.now() - timezone.timedelta(minutes=30)
+        )
+
+        deleted_count = garbage_collect_unseen_articles(threshold_seconds=7200)
+
+        stale_article.refresh_from_db()
+        recent_article.refresh_from_db()
+
+        self.assertEqual(deleted_count, 1)
+        self.assertTrue(stale_article.deleted)
+        self.assertFalse(recent_article.deleted)
 
     def test_get_news_articles_dict(self):
         article = baker.make(

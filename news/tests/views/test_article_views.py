@@ -118,6 +118,21 @@ class TestArticleListView(BasicAPITestCase):
         self.assertEqual(response.data["result"][0]["is_active_liveblog"], True)
         self.assertEqual(response.data["result"][0]["id"], self.overlap_article.id)
 
+    def test_article_list_excludes_deleted_articles(self):
+        baker.make(
+            NewsArticle,
+            type="article",
+            deleted=True,
+            publication_datetime=datetime(2024, 10, 13, 14, 45, 15).isoformat(),
+        )
+
+        response = self.client.get(
+            self.url, data={"type": "article"}, headers=self.api_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["page"]["totalElements"], 3)
+
     def test_foobar_list(self):
         response = self.client.get(
             self.url, data={"type": "foobar"}, headers=self.api_headers
@@ -160,14 +175,12 @@ class TestArticleListView(BasicAPITestCase):
 class TestArticleDetailView(BasicAPITestCase):
     def setUp(self):
         super().setUp()
-        article_id = 123
-        self.url = reverse("news-article-detail", kwargs={"id": article_id})
         self.article_1 = baker.make(
             NewsArticle,
-            id=article_id,
             type="article",
             publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
         )
+        self.url = reverse("news-article-detail", kwargs={"id": self.article_1.id})
         self.article_2 = baker.make(
             NewsArticle,
             type="article",
@@ -185,8 +198,17 @@ class TestArticleDetailView(BasicAPITestCase):
             response.data["publication_datetime"], "2024-10-11T12:30:10+02:00"
         )
         self.assertEqual(len(response.data["images"]), 2)
+        self.assertNotIn("deleted", response.data)
 
     def test_article_id_not_found(self):
         url = reverse("news-article-detail", kwargs={"id": 999})
         response = self.client.get(url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 404)
+
+    def test_deleted_article_detail_not_found(self):
+        deleted_article = baker.make(NewsArticle, deleted=True, type="article")
+
+        url = reverse("news-article-detail", kwargs={"id": deleted_article.id})
+        response = self.client.get(url, headers=self.api_headers)
+
         self.assertEqual(response.status_code, 404)

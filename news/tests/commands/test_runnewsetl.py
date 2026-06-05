@@ -3,6 +3,7 @@ from unittest.mock import patch
 from aioresponses import aioresponses
 from django.core.management import call_command
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from model_bakery import baker
 
 from news.management.commands import runnewsetl
@@ -13,6 +14,34 @@ from notification.models import ScheduledNotification
 
 class RunNewsETLTest(TestCase):
     databases = ["default", "notification"]
+
+    def _mock_single_highlight_pipeline(self, mocked):
+        highlighted_list_payload = {
+            "items": [
+                {
+                    "id": item_article.MOCK_RESPONSE_123123["id"],
+                    "created": item_article.MOCK_RESPONSE_123123["created"],
+                    "modified": item_article.MOCK_RESPONSE_123123["modified"],
+                    "publicationDate": item_article.MOCK_RESPONSE_123123[
+                        "publicationDate"
+                    ],
+                    "image_url": item_article.MOCK_RESPONSE_123123["image_url"],
+                    "is_active_liveblog": False,
+                }
+            ],
+            "total": 1,
+            "page": 0,
+            "per_page": 25,
+            "pages": 1,
+        }
+        mocked.get(
+            f"{runnewsetl.IPROX_ARTICLES_URL}highlighted?page=0",
+            payload=highlighted_list_payload,
+        )
+        mocked.get(
+            f"{runnewsetl.IPROX_DETAIL_URL}{item_article.MOCK_RESPONSE_123123['id']}",
+            payload=item_article.MOCK_RESPONSE_123123,
+        )
 
     @patch(
         "news.management.commands.runnewsetl.data_loader.image_set_service.get_or_upload_from_url"
@@ -287,6 +316,114 @@ class RunNewsETLTest(TestCase):
         self.assertEqual(active_liveblogs.count(), 1)
         self.assertIsNotNone(active_liveblogs.first().liveblog_notification_send)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
+
+    @override_settings(
+        DELETE_UNSEEN_ARTICLES=True,
+        DELETE_UNSEEN_ARTICLES_AFTER_SECONDS=7200,
+        ENABLE_LIVEBLOG_NOTIFICATIONS=False,
+    )
+    @patch("news.management.commands.runnewsetl.logger.info")
+    @patch(
+        "news.management.commands.runnewsetl.data_loader.image_set_service.get_or_upload_from_url"
+    )
+    def test_run_news_etl_marks_stale_articles_deleted_when_enabled(
+        self, mock_get_or_upload_from_url, mock_logger_info
+    ):
+        mock_get_or_upload_from_url.return_value = {
+            "id": 12345,
+            "identifier": "xyz789abc123",
+            "description": "description of the image",
+            "variants": [
+                {
+                    "image": "https://example.com/image.jpg",
+                    "width": 123,
+                    "height": 456,
+                }
+            ],
+        }
+        stale_article = baker.make(
+            NewsArticle,
+            foreign_id=999999,
+            deleted=False,
+            type="article",
+        )
+        NewsArticle.objects.filter(id=stale_article.id).update(
+            last_seen=timezone.now() - timezone.timedelta(hours=3)
+        )
+
+        mocked_sources = [
+            {
+                "index": "highlighted",
+                "type": "highlight",
+                "boolean_column": "is_highlight",
+                "district": None,
+            }
+        ]
+        with patch.object(runnewsetl.iprox_fetcher, "sources", mocked_sources):
+            with aioresponses() as mocked:
+                self._mock_single_highlight_pipeline(mocked)
+                call_command("runnewsetl")
+
+        stale_article.refresh_from_db()
+        fetched_article = NewsArticle.objects.get(
+            foreign_id=item_article.MOCK_RESPONSE_123123["id"]
+        )
+
+        self.assertTrue(stale_article.deleted)
+        self.assertFalse(fetched_article.deleted)
+        mock_logger_info.assert_any_call(
+            "News garbage collector completed.",
+            extra={"deleted_count": 1},
+        )
+
+    @override_settings(
+        DELETE_UNSEEN_ARTICLES=False,
+        DELETE_UNSEEN_ARTICLES_AFTER_SECONDS=7200,
+        ENABLE_LIVEBLOG_NOTIFICATIONS=False,
+    )
+    @patch(
+        "news.management.commands.runnewsetl.data_loader.image_set_service.get_or_upload_from_url"
+    )
+    def test_run_news_etl_skips_garbage_collection_when_disabled(
+        self, mock_get_or_upload_from_url
+    ):
+        mock_get_or_upload_from_url.return_value = {
+            "id": 12345,
+            "identifier": "xyz789abc123",
+            "description": "description of the image",
+            "variants": [
+                {
+                    "image": "https://example.com/image.jpg",
+                    "width": 123,
+                    "height": 456,
+                }
+            ],
+        }
+        stale_article = baker.make(
+            NewsArticle,
+            foreign_id=999999,
+            deleted=False,
+            type="article",
+        )
+        NewsArticle.objects.filter(id=stale_article.id).update(
+            last_seen=timezone.now() - timezone.timedelta(hours=3)
+        )
+
+        mocked_sources = [
+            {
+                "index": "highlighted",
+                "type": "highlight",
+                "boolean_column": "is_highlight",
+                "district": None,
+            }
+        ]
+        with patch.object(runnewsetl.iprox_fetcher, "sources", mocked_sources):
+            with aioresponses() as mocked:
+                self._mock_single_highlight_pipeline(mocked)
+                call_command("runnewsetl")
+
+        stale_article.refresh_from_db()
+        self.assertFalse(stale_article.deleted)
 
     @patch(
         "news.management.commands.runnewsetl.data_loader.image_set_service.get_or_upload_from_url"

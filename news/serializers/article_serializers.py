@@ -68,7 +68,27 @@ class NewsArticleDetailResponseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NewsArticle
-        fields = "__all__"
+        fields = [
+            "id",
+            "foreign_id",
+            "last_seen",
+            "title",
+            "summary",
+            "intro",
+            "body",
+            "type",
+            "district",
+            "url",
+            "creation_datetime",
+            "modification_datetime",
+            "publication_datetime",
+            "expiration_datetime",
+            "is_active_liveblog",
+            "liveblog_notification_send",
+            "liveblog_version",
+            "images",
+            "liveblog_items",
+        ]
 
 
 class NewsArticleTransformSerializer(serializers.Serializer):

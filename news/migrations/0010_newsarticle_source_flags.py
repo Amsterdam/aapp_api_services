@@ -14,7 +14,7 @@ def backfill_source_flags(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("news", "0008_rename_url_liveblogitemimage_uri_and_more"),
+        ("news", "0009_newsarticle_deleted"),
     ]
 
     operations = [

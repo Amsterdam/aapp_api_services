@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 
 from news.enums.news_article import NewsArticleSource
 from news.etl.extract_data import IproxFetcher
-from news.etl.load_data import NewsArticleLoader
+from news.etl.load_data import NewsArticleLoader, garbage_collect_unseen_articles
 from news.etl.transform_data import transform
 
 logger = logging.getLogger(__name__)
@@ -39,11 +39,21 @@ class Command(BaseCommand):
             return
 
         transformed_data = transform(extracted_data)
-
-        logger.info(
-            f"Now we continue with the load steps for {len(transformed_data)} news articles."
-        )
+        if not transformed_data:
+            logger.info("No valid transformed articles found. Ending ETL process.")
+            return
 
         data_loader.load(transformed_data)
+
+        if settings.DELETE_UNSEEN_ARTICLES:
+            deleted_count = garbage_collect_unseen_articles(
+                threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS
+            )
+            logger.info(
+                "News garbage collector completed.",
+                extra={"deleted_count": deleted_count},
+            )
+        else:
+            logger.info("News garbage collector skipped because it is disabled.")
 
         logger.info("ETL process completed successfully.")

@@ -54,6 +54,16 @@ class TestNotificationView(BasicAPITestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    def test_post_notification_deleted_liveblog(self):
+        baker.make(NewsArticle, id=1, type="liveblog", deleted=True)
+        response = self.client.post(
+            self.url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(LiveblogNotification.objects.count(), 0)
+
     def test_post_notification_already_exists(self):
         article = baker.make(NewsArticle, id=1, type="liveblog", is_liveblog=True)
         baker.make(LiveblogNotification, device_id=self.device_id, article=article)

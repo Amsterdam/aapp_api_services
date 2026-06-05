@@ -21,8 +21,21 @@ DISTRICT_TYPE_CHOICES = [
 ]
 
 
+class NewsArticleQuerySet(models.QuerySet):
+    def visible(self):
+        return self.filter(deleted=False)
+
+
+class VisibleNewsArticleManager(models.Manager):
+    def get_queryset(self):
+        return NewsArticleQuerySet(self.model, using=self._db).visible()
+
+
 class NewsArticle(models.Model):
     """News Article db model"""
+
+    objects = models.Manager()
+    visible_objects = VisibleNewsArticleManager()
 
     class Meta:
         constraints = [
@@ -34,6 +47,7 @@ class NewsArticle(models.Model):
 
     foreign_id = models.BigIntegerField(unique=True)
     last_seen = models.DateTimeField(auto_now=True)
+    deleted = models.BooleanField(default=False, db_index=True)
     title = models.CharField(max_length=1000)
     summary = models.TextField(blank=True, null=True, default=None)
     intro = models.TextField(blank=True, null=True, default=None)

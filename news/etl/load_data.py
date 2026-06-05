@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 
 from django.conf import settings
 from django.db import transaction
@@ -39,6 +40,10 @@ class NewsArticleLoader:
         Load transformed news articles into the database.
         This method handles upserting articles based on their unique foreign_id.
         """
+        logger.info(
+            "Load news data into database.",
+            extra={"article_count": len(transformed_data)},
+        )
         news_articles_list = [
             self._get_news_article_object(data) for data in transformed_data
         ]
@@ -66,6 +71,7 @@ class NewsArticleLoader:
 
         return NewsArticle(
             foreign_id=data.get("foreign_id"),
+            deleted=False,
             title=data.get("title"),
             body=data.get("body") if not is_liveblog else None,
             summary=data.get("summary"),
@@ -91,6 +97,7 @@ class NewsArticleLoader:
             update_conflicts=True,
             unique_fields=["foreign_id"],
             update_fields=[
+                "deleted",
                 "title",
                 "body",
                 "summary",
@@ -319,3 +326,11 @@ class NewsArticleLoader:
             )
 
             return image_set_id
+
+
+def garbage_collect_unseen_articles(*, threshold_seconds: int) -> int:
+    stale_before = timezone.now() - timedelta(seconds=threshold_seconds)
+    return NewsArticle.objects.filter(
+        deleted=False,
+        last_seen__lt=stale_before,
+    ).update(deleted=True)

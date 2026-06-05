@@ -42,6 +42,7 @@ class Command(BaseCommand):
         active_liveblogs = NewsArticle.objects.filter(
             is_liveblog=True,
             is_active_liveblog=True,
+            deleted=False,
         ).values_list("foreign_id", "liveblog_version")
 
         if not active_liveblogs:
