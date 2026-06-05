@@ -300,7 +300,7 @@ class RunNewsETLTest(TestCase):
         self.assertFalse(fetched_article.deleted)
         mock_logger_info.assert_any_call(
             "News garbage collector completed.",
-            extra={"deleted_count": 1, "threshold_seconds": 7200},
+            extra={"deleted_count": 1},
         )
 
     @override_settings(

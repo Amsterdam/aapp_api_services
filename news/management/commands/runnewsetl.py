@@ -40,14 +40,8 @@ class Command(BaseCommand):
 
         transformed_data = transform(extracted_data)
         if not transformed_data:
-            logger.info(
-                "No valid transformed articles found. Ending ETL process."
-            )
+            logger.info("No valid transformed articles found. Ending ETL process.")
             return
-
-        logger.info(
-            f"Now we continue with the load steps for {len(transformed_data)} news articles."
-        )
 
         data_loader.load(transformed_data)
 
@@ -57,9 +51,7 @@ class Command(BaseCommand):
             )
             logger.info(
                 "News garbage collector completed.",
-                extra={
-                    "deleted_count": deleted_count
-                },
+                extra={"deleted_count": deleted_count},
             )
         else:
             logger.info("News garbage collector skipped because it is disabled.")

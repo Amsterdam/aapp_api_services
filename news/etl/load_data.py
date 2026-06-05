@@ -22,14 +22,6 @@ from news.services.notification import (
 logger = logging.getLogger(__name__)
 
 
-def garbage_collect_unseen_articles(*, threshold_seconds: int) -> int:
-    stale_before = timezone.now() - timedelta(seconds=threshold_seconds)
-    return NewsArticle.objects.filter(
-        deleted=False,
-        last_seen__lt=stale_before,
-    ).update(deleted=True)
-
-
 class ArticleLoaderError(Exception):
     pass
 
@@ -48,6 +40,10 @@ class NewsArticleLoader:
         Load transformed news articles into the database.
         This method handles upserting articles based on their unique foreign_id.
         """
+        logger.info(
+            "Load news data into database.",
+            extra={"article_count": len(transformed_data)},
+        )
         news_articles_list = [
             self._get_news_article_object(data) for data in transformed_data
         ]
@@ -320,3 +316,11 @@ class NewsArticleLoader:
             )
 
             return image_set_id
+
+
+def garbage_collect_unseen_articles(*, threshold_seconds: int) -> int:
+    stale_before = timezone.now() - timedelta(seconds=threshold_seconds)
+    return NewsArticle.objects.filter(
+        deleted=False,
+        last_seen__lt=stale_before,
+    ).update(deleted=True)
