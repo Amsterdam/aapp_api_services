@@ -39,8 +39,18 @@ class RunNewsETLTest(TestCase):
         }
 
         mocked_sources = [
-            {"index": "highlighted", "type": "highlight", "district": None},
-            {"index": "liveblogs", "type": "liveblog", "district": None},
+            {
+                "index": "highlighted",
+                "type": "highlight",
+                "boolean_column": "is_highlight",
+                "district": None,
+            },
+            {
+                "index": "liveblogs",
+                "type": "liveblog",
+                "boolean_column": "is_liveblog",
+                "district": None,
+            },
         ]
 
         with patch.object(runnewsetl.iprox_fetcher, "sources", mocked_sources):
@@ -127,6 +137,54 @@ class RunNewsETLTest(TestCase):
         active_liveblog = NewsArticle.objects.filter(is_active_liveblog=True).first()
         self.assertIsNotNone(active_liveblog.liveblog_notification_send)
 
+    def test_run_news_etl_no_extracted_data(self):
+        """Test that the ETL process runs without errors when the Iprox API returns no articles."""
+
+        mocked_sources = [
+            {
+                "index": "highlighted",
+                "type": "highlight",
+                "boolean_column": "is_highlight",
+                "district": None,
+            },
+            {
+                "index": "liveblogs",
+                "type": "liveblog",
+                "boolean_column": "is_liveblog",
+                "district": None,
+            },
+        ]
+
+        with patch.object(runnewsetl.iprox_fetcher, "sources", mocked_sources):
+            with aioresponses() as mocked:
+                mocked.get(
+                    f"{runnewsetl.IPROX_ARTICLES_URL}highlighted?page=0",
+                    payload={
+                        "items": [],
+                        "total": 0,
+                        "page": 0,
+                        "per_page": 25,
+                        "pages": 1,
+                    },
+                )
+                mocked.get(
+                    f"{runnewsetl.IPROX_ARTICLES_URL}liveblogs?page=0",
+                    payload={
+                        "items": [],
+                        "total": 0,
+                        "page": 0,
+                        "per_page": 25,
+                        "pages": 1,
+                    },
+                )
+
+                call_command("runnewsetl")
+
+        self.assertEqual(NewsArticle.objects.count(), 0)
+        self.assertEqual(LiveBlogItem.objects.count(), 0)
+        self.assertEqual(NewsArticleImage.objects.count(), 0)
+        self.assertEqual(LiveBlogItemImage.objects.count(), 0)
+
     @override_settings(ENABLE_LIVEBLOG_NOTIFICATIONS=False)
     @patch(
         "news.management.commands.runnewsetl.data_loader.image_set_service.get_or_upload_from_url"
@@ -153,8 +211,18 @@ class RunNewsETLTest(TestCase):
         }
 
         mocked_sources = [
-            {"index": "highlighted", "type": "highlight", "district": None},
-            {"index": "liveblogs", "type": "liveblog", "district": None},
+            {
+                "index": "highlighted",
+                "type": "highlight",
+                "boolean_column": "is_highlight",
+                "district": None,
+            },
+            {
+                "index": "liveblogs",
+                "type": "liveblog",
+                "boolean_column": "is_liveblog",
+                "district": None,
+            },
         ]
 
         highlighted_list_payload = {
@@ -225,13 +293,32 @@ class RunNewsETLTest(TestCase):
         This could happen if an article is first a highlight but then not anymore (just an article)
         """
 
-        baker.make(NewsArticle, foreign_id=123123, type="highlight")
+        baker.make(
+            NewsArticle,
+            foreign_id=123123,
+            type="highlight",
+            is_highlight=True,
+            in_all_news=True,
+        )
 
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(NewsArticle.objects.first().type, "highlight")
 
         # Simulate the article changing type in the Iprox API
-        mocked_sources = [{"index": "all_news", "type": "article", "district": None}]
+        mocked_sources = [
+            {
+                "index": "all_news",
+                "type": "article",
+                "boolean_column": "in_all_news",
+                "district": None,
+            },
+            {
+                "index": "highlighted",
+                "type": "highlight",
+                "boolean_column": "is_highlight",
+                "district": None,
+            },
+        ]
         with patch.object(runnewsetl.iprox_fetcher, "sources", mocked_sources):
             with aioresponses() as mocked:
                 mocked.get(
@@ -260,11 +347,44 @@ class RunNewsETLTest(TestCase):
                     },
                 )
                 mocked.get(
+                    f"{runnewsetl.IPROX_ARTICLES_URL}highlighted?page=0",
+                    payload={
+                        "items": [
+                            {
+                                "id": 100000,
+                                "created": item_article.MOCK_RESPONSE_100000["created"],
+                                "modified": item_article.MOCK_RESPONSE_100000[
+                                    "modified"
+                                ],
+                                "publicationDate": item_article.MOCK_RESPONSE_100000[
+                                    "publicationDate"
+                                ],
+                                "image_url": item_article.MOCK_RESPONSE_100000[
+                                    "image_url"
+                                ],
+                                "is_active_liveblog": False,
+                            }
+                        ],
+                        "total": 1,
+                        "page": 0,
+                        "per_page": 25,
+                        "pages": 1,
+                    },
+                )
+                mocked.get(
                     f"{runnewsetl.IPROX_DETAIL_URL}123123",
                     payload=item_article.MOCK_RESPONSE_123123,
+                )
+                mocked.get(
+                    f"{runnewsetl.IPROX_DETAIL_URL}100000",
+                    payload=item_article.MOCK_RESPONSE_100000,
                 )
 
                 call_command("runnewsetl")
 
-        self.assertEqual(NewsArticle.objects.count(), 1)
+        self.assertEqual(
+            NewsArticle.objects.count(), 2
+        )  # 123123 should be updated to article, and 100000 should be created
         self.assertEqual(NewsArticle.objects.first().type, "article")
+        self.assertTrue(NewsArticle.objects.first().in_all_news)
+        self.assertFalse(NewsArticle.objects.first().is_highlight)

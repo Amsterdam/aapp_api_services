@@ -30,11 +30,9 @@ class ArticleListView(ListAPIView):
         elif article_type == "liveblog":
             queryset = queryset.filter(is_liveblog=True)
         elif article_type == "district":
-            queryset = queryset.filter(is_district=True)
-
-        if article_type == "district":
             district = query_serializer.validated_data.get("district")
-            queryset = queryset.filter(district=district)
+            queryset = queryset.filter(is_district=True, district=district)
+
         return queryset
 
     @extend_schema_for_api_key(

@@ -8,14 +8,6 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 logger = logging.getLogger(__name__)
 
 
-SOURCE_FLAGS_BY_TYPE = {
-    "article": "in_all_news",
-    "highlight": "is_highlight",
-    "liveblog": "is_liveblog",
-    "district": "is_district",
-}
-
-
 class FetchError(Exception):
     pass
 
@@ -44,8 +36,25 @@ class IproxFetcher:
         self.iprox_fetch_url = iprox_fetch_url
         self.iprox_detail_url = iprox_detail_url
         self.sources = sources
+        self._validate_sources()
         self.max_concurrent_requests = max_concurrent_requests
         self.timeout = aiohttp.ClientTimeout(total=timeout_total)
+
+    def _validate_sources(self):
+        """Validate the sources configuration."""
+        if not isinstance(self.sources, list):
+            raise ValueError("Sources must be a list")
+        for source in self.sources:
+            if not isinstance(source, dict):
+                raise ValueError("Each source must be a dictionary")
+            if (
+                "index" not in source
+                or "type" not in source
+                or "boolean_column" not in source
+            ):
+                raise ValueError(
+                    "Each source must have 'index', 'type', and 'boolean_column' keys"
+                )
 
     def extract(self) -> list[dict]:
         """
@@ -84,6 +93,7 @@ class IproxFetcher:
 
         for source in self.sources:
             source_type = source.get("type")
+            source_flag = source.get("boolean_column")
             source_district = source.get("district")
             logger.info(f"Collecting list of items for source {source}")
             source_url = urljoin(
@@ -102,7 +112,6 @@ class IproxFetcher:
 
                 for item in items:
                     item_id = item["id"]
-                    source_flag = SOURCE_FLAGS_BY_TYPE.get(source_type)
 
                     if item_id in all_items:
                         existing_item = all_items[item_id]

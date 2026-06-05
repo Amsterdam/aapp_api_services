@@ -230,6 +230,7 @@ class LoadDataTest(TestCase):
         self.assertTrue(news_article.is_highlight)
         self.assertTrue(news_article.is_liveblog)
         self.assertTrue(news_article.is_district)
+        # body is None because the article is a liveblog, and liveblogs have liveblog items instead of a body
         self.assertIsNone(news_article.body)
 
     def test_upsert_news_articles(self):

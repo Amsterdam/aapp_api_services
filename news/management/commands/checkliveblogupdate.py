@@ -119,8 +119,8 @@ class Command(BaseCommand):
                     {
                         **response.json(),
                         "type": "liveblog",
-                        "district": None,
                         "is_liveblog": True,
+                        "district": None,
                     }
                 ]
             )

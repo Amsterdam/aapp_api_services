@@ -16,10 +16,36 @@ class ExtractDataTest(TestCase):
                 iprox_fetch_url="", iprox_detail_url=self.detail_url, sources=[]
             )
 
+    def test_invalid_sources_configuration(self):
+        with self.assertRaises(ValueError):
+            IproxFetcher(
+                iprox_fetch_url=self.fetch_url,
+                iprox_detail_url=self.detail_url,
+                sources="not a list",
+            )
+        with self.assertRaises(ValueError):
+            IproxFetcher(
+                iprox_fetch_url=self.fetch_url,
+                iprox_detail_url=self.detail_url,
+                sources=[
+                    {"index": "highlighted", "type": "highlight"}
+                ],  # missing boolean_column
+            )
+
     def test_fetch_all_items(self):
         sources = [
-            {"index": "highlighted", "type": "highlight", "district": None},
-            {"index": "liveblogs", "type": "liveblog", "district": None},
+            {
+                "index": "highlighted",
+                "type": "highlight",
+                "boolean_column": "is_highlight",
+                "district": None,
+            },
+            {
+                "index": "liveblogs",
+                "type": "liveblog",
+                "boolean_column": "is_liveblog",
+                "district": None,
+            },
         ]
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
 
@@ -42,8 +68,18 @@ class ExtractDataTest(TestCase):
 
     def test_fetch_all_items_duplicate_ids(self):
         sources = [
-            {"index": "all_news", "type": "article", "district": None},
-            {"index": "liveblogs", "type": "liveblog", "district": None},
+            {
+                "index": "all_news",
+                "type": "article",
+                "boolean_column": "in_all_news",
+                "district": None,
+            },
+            {
+                "index": "liveblogs",
+                "type": "liveblog",
+                "boolean_column": "is_liveblog",
+                "district": None,
+            },
         ]
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
 
@@ -71,7 +107,14 @@ class ExtractDataTest(TestCase):
             self.assertTrue(items[1234123]["is_liveblog"])
 
     def test_fetch_items_details(self):
-        sources = [{"index": "highlighted", "type": "highlight", "district": None}]
+        sources = [
+            {
+                "index": "highlighted",
+                "type": "highlight",
+                "boolean_column": "is_highlight",
+                "district": None,
+            }
+        ]
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
         # Prepare items dict
         items = {
@@ -102,7 +145,12 @@ class ExtractDataTest(TestCase):
     def test_extract(self):
         """Test the full extract process, including fetching all items and their details"""
         sources = [
-            {"index": "highlighted", "type": "highlight", "district": None},
+            {
+                "index": "highlighted",
+                "type": "highlight",
+                "boolean_column": "is_highlight",
+                "district": None,
+            },
         ]
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
 
