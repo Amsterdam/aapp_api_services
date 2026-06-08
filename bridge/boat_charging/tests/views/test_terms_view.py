@@ -45,6 +45,38 @@ class TestTermsView(BoatChargingTestCase):
         self.assertEqual(response.data["version"], 2)
         self.assertEqual(response.data["content"], "<p>v2 terms</p>")
 
+    def test_returns_cached_terms_after_first_call(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_terms_dir = Path(tmp_dir)
+            (tmp_terms_dir / "1.html").write_text("<p>v1 terms</p>", encoding="utf-8")
+
+            with (
+                patch.object(TermsView, "terms_dir", tmp_terms_dir),
+                patch.object(
+                    TermsView,
+                    "get_latest_terms_content",
+                    autospec=True,
+                    side_effect=TermsView.get_latest_terms_content,
+                ) as get_latest_terms_content,
+            ):
+                first_response = self.client.get(self.url, headers=self.api_headers)
+
+                self.assertEqual(first_response.status_code, 200)
+                self.assertEqual(first_response.data["version"], 1)
+                self.assertEqual(first_response.data["content"], "<p>v1 terms</p>")
+                self.assertEqual(get_latest_terms_content.call_count, 1)
+
+                (tmp_terms_dir / "2.html").write_text(
+                    "<p>v2 terms</p>", encoding="utf-8"
+                )
+
+                second_response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(second_response.data["version"], 1)
+        self.assertEqual(second_response.data["content"], "<p>v1 terms</p>")
+        self.assertEqual(get_latest_terms_content.call_count, 1)
+
     def test_returns_not_found_when_no_valid_terms_file_exists(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_terms_dir = Path(tmp_dir)
