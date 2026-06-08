@@ -41,7 +41,7 @@ class NewsArticle(models.Model):
         constraints = [
             models.CheckConstraint(
                 name="district_article_requires_district",
-                condition=(~Q(type="district") | Q(district__isnull=False)),
+                condition=(~Q(is_district=True) | Q(district__isnull=False)),
             ),
         ]
 
@@ -52,7 +52,6 @@ class NewsArticle(models.Model):
     summary = models.TextField(blank=True, null=True, default=None)
     intro = models.TextField(blank=True, null=True, default=None)
     body = models.TextField(blank=True, null=True, default=None)
-    type = models.CharField(max_length=30, choices=ARTICLE_TYPE_CHOICES)
     in_all_news = models.BooleanField(default=False)
     is_highlight = models.BooleanField(default=False)
     is_liveblog = models.BooleanField(default=False)

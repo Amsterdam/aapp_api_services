@@ -47,13 +47,9 @@ class IproxFetcher:
         for source in self.sources:
             if not isinstance(source, dict):
                 raise ValueError("Each source must be a dictionary")
-            if (
-                "index" not in source
-                or "type" not in source
-                or "boolean_column" not in source
-            ):
+            if "index" not in source or "boolean_column" not in source:
                 raise ValueError(
-                    "Each source must have 'index', 'type', and 'boolean_column' keys"
+                    "Each source must have 'index' and 'boolean_column' keys"
                 )
 
     def extract(self) -> list[dict]:
@@ -92,7 +88,6 @@ class IproxFetcher:
         all_items = {}
 
         for source in self.sources:
-            source_type = source.get("type")
             source_flag = source.get("boolean_column")
             source_district = source.get("district")
             logger.info(f"Collecting list of items for source {source}")
@@ -116,12 +111,12 @@ class IproxFetcher:
                     if item_id in all_items:
                         existing_item = all_items[item_id]
                         logger.warning(
-                            f"Duplicate item ID {item_id} found. Old type: {existing_item['type']}, new type: {source['type']}. Preserving overlap flags and overwriting legacy type."
+                            "Duplicate item ID found. Preserving overlap flags.",
+                            extra={"item_id": item_id},
                         )
 
                         # Preserve legacy overwrite behavior for the type field while
                         # accumulating source overlap in dedicated flags.
-                        existing_item["type"] = source_type
                         if source_district is not None:
                             existing_item["district"] = source_district
                         if source_flag:
@@ -130,7 +125,6 @@ class IproxFetcher:
 
                     new_item = {
                         **item,
-                        "type": source_type,
                         "district": source_district,
                         "in_all_news": False,
                         "is_highlight": False,
@@ -203,7 +197,6 @@ class IproxFetcher:
         detailed_info: dict,
         basic_info: dict,
         preserve_basic_info_keys: tuple = (
-            "type",
             "district",
             "in_all_news",
             "is_highlight",

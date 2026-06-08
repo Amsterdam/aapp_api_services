@@ -12,62 +12,53 @@ class NewsArticleSource(ChoicesEnum):
     """
 
     ALL_NEWS = NewsArticleExtract(
-        index="all_news", type="article", boolean_column="in_all_news", district=None
+        index="all_news", boolean_column="in_all_news", district=None
     )
     HIGHLIGHT = NewsArticleExtract(
         index="highlighted",
-        type="highlight",
         boolean_column="is_highlight",
         district=None,
     )
     LIVEBLOG = NewsArticleExtract(
-        index="liveblogs", type="liveblog", boolean_column="is_liveblog", district=None
+        index="liveblogs", boolean_column="is_liveblog", district=None
     )
     DISTRICT_NOORD = NewsArticleExtract(
         index="nieuws-stadsdeel-noord",
-        type="district",
         boolean_column="is_district",
         district="noord",
     )
     DISTRICT_WEST = NewsArticleExtract(
         index="nieuws-stadsdeel-west",
-        type="district",
         boolean_column="is_district",
         district="west",
     )
     DISTRICT_ZUID = NewsArticleExtract(
         index="nieuws-stadsdeel-zuid",
-        type="district",
         boolean_column="is_district",
         district="zuid",
     )
     DISTRICT_OOST = NewsArticleExtract(
         index="nieuws-stadsdeel-nieuw-oost",
-        type="district",
         boolean_column="is_district",
         district="oost",
     )
     DISTRICT_CENTRUM = NewsArticleExtract(
         index="nieuws-stadsdeel-centrum",
-        type="district",
         boolean_column="is_district",
         district="centrum",
     )
     DISTRICT_NIEUW_WEST = NewsArticleExtract(
         index="nieuws-stadsdeel-nieuw-west",
-        type="district",
         boolean_column="is_district",
         district="nieuw-west",
     )
     DISTRICT_ZUIDOOST = NewsArticleExtract(
         index="nieuws-stadsdeel-zuidoost",
-        type="district",
         boolean_column="is_district",
         district="zuidoost",
     )
     DISTRICT_WEESP = NewsArticleExtract(
         index="nieuws-stadgebied-weesp",
-        type="district",
         boolean_column="is_district",
         district="weesp",
     )

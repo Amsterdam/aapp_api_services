@@ -7,7 +7,7 @@ from news.models import NewsArticle, NewsArticleImage
 
 class NewsArticleImageModelTest(TestCase):
     def setUp(self):
-        self.article = baker.make(NewsArticle, type="article")
+        self.article = baker.make(NewsArticle, in_all_news=True)
 
     def test_multiple_images_can_be_added(self):
         img1 = baker.make(NewsArticleImage, article=self.article)
@@ -30,9 +30,9 @@ class NewsArticleImageModelTest(TestCase):
         self.assertIn(img2, images)
 
     def test_district_article_should_contain_district(self):
-        article = baker.make(NewsArticle, type="district", district="noord")
+        article = baker.make(NewsArticle, is_district=True, district="noord")
         self.assertEqual(article.district, "noord")
 
     def test_district_article_without_district_should_fail(self):
         with self.assertRaises(IntegrityError):
-            baker.make(NewsArticle, type="district", district=None)
+            baker.make(NewsArticle, is_district=True, district=None)

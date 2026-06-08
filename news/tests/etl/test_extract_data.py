@@ -27,22 +27,18 @@ class ExtractDataTest(TestCase):
             IproxFetcher(
                 iprox_fetch_url=self.fetch_url,
                 iprox_detail_url=self.detail_url,
-                sources=[
-                    {"index": "highlighted", "type": "highlight"}
-                ],  # missing boolean_column
+                sources=[{"index": "highlighted"}],  # missing boolean_column
             )
 
     def test_fetch_all_items(self):
         sources = [
             {
                 "index": "highlighted",
-                "type": "highlight",
                 "boolean_column": "is_highlight",
                 "district": None,
             },
             {
                 "index": "liveblogs",
-                "type": "liveblog",
                 "boolean_column": "is_liveblog",
                 "district": None,
             },
@@ -61,22 +57,18 @@ class ExtractDataTest(TestCase):
             self.assertIsInstance(items, dict)
             self.assertIn(123124, items)
             self.assertIn(1321235, items)
-            self.assertEqual(items[123124]["type"], "highlight")
             self.assertTrue(items[123124]["is_highlight"])
-            self.assertEqual(items[1321235]["type"], "liveblog")
             self.assertTrue(items[1321235]["is_liveblog"])
 
     def test_fetch_all_items_duplicate_ids(self):
         sources = [
             {
                 "index": "all_news",
-                "type": "article",
                 "boolean_column": "in_all_news",
                 "district": None,
             },
             {
                 "index": "liveblogs",
-                "type": "liveblog",
                 "boolean_column": "is_liveblog",
                 "district": None,
             },
@@ -95,13 +87,7 @@ class ExtractDataTest(TestCase):
             self.assertIsInstance(items, dict)
             self.assertIn(1541234, items)
             self.assertIn(1321235, items)
-            self.assertEqual(items[1541234]["type"], "article")
             self.assertTrue(items[1541234]["in_all_news"])
-
-            # important: the type of the items that are retrieved from the "liveblogs" source should be preserved,
-            # even if there are duplicates in the "all_news" source, as this is used to determine how to store the item in the database
-            self.assertEqual(items[1321235]["type"], "liveblog")
-            self.assertEqual(items[1234123]["type"], "liveblog")
             self.assertTrue(items[1321235]["in_all_news"])
             self.assertTrue(items[1321235]["is_liveblog"])
             self.assertTrue(items[1234123]["is_liveblog"])
@@ -110,7 +96,6 @@ class ExtractDataTest(TestCase):
         sources = [
             {
                 "index": "highlighted",
-                "type": "highlight",
                 "boolean_column": "is_highlight",
                 "district": None,
             }
@@ -118,8 +103,8 @@ class ExtractDataTest(TestCase):
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
         # Prepare items dict
         items = {
-            123123: {"id": 123123, "type": "highlight", "district": None},
-            123124: {"id": 123124, "type": "highlight", "district": None},
+            123123: {"id": 123123, "is_highlight": True, "district": None},
+            123124: {"id": 123124, "is_highlight": True, "district": None},
         }
         with aioresponses() as mocked:
             mocked.get(
@@ -134,12 +119,12 @@ class ExtractDataTest(TestCase):
             self.assertEqual(
                 result[0]["title"], item_article.MOCK_RESPONSE_123123["title"]
             )
-            self.assertEqual(result[0]["type"], "highlight")
+            self.assertTrue(result[0]["is_highlight"])
             self.assertEqual(result[0]["district"], None)
             self.assertEqual(
                 result[1]["title"], item_article.MOCK_RESPONSE_123124["title"]
             )
-            self.assertEqual(result[1]["type"], "highlight")
+            self.assertTrue(result[1]["is_highlight"])
             self.assertEqual(result[1]["district"], None)
 
     def test_extract(self):
@@ -147,7 +132,6 @@ class ExtractDataTest(TestCase):
         sources = [
             {
                 "index": "highlighted",
-                "type": "highlight",
                 "boolean_column": "is_highlight",
                 "district": None,
             },
@@ -179,7 +163,6 @@ class ExtractDataTest(TestCase):
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=[])
         basic_info = {
             "id": 123123,
-            "type": "highlight",
             "district": None,
             "in_all_news": True,
             "is_highlight": True,
@@ -189,12 +172,10 @@ class ExtractDataTest(TestCase):
         detailed_info = {
             "id": 123123,
             "title": "Test Article",
-            "type": "nieuwsartikel",
             "body": "Lorem ipsum",
         }
         combined = fetcher._combine_detailed_and_basic_info(detailed_info, basic_info)
         self.assertEqual(combined["id"], 123123)
-        self.assertEqual(combined["type"], "highlight")
         self.assertEqual(combined["district"], None)
         self.assertTrue(combined["in_all_news"])
         self.assertTrue(combined["is_highlight"])

@@ -14,39 +14,33 @@ class TestArticleListView(BasicAPITestCase):
         self.article_1 = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
-            type="article",
             in_all_news=True,
         )
         self.article_2 = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
-            type="article",
             in_all_news=True,
         )
         self.article_3 = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
-            type="highlight",
             is_highlight=True,
         )
         self.article_4 = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
-            type="district",
             is_district=True,
             district="noord",
         )
         self.article_5 = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
-            type="liveblog",
             is_liveblog=True,
             is_active_liveblog=True,
         )
         self.overlap_article = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 12, 18, 0, 0).isoformat(),
-            type="district",
             district="noord",
             in_all_news=True,
             is_highlight=True,
@@ -121,7 +115,7 @@ class TestArticleListView(BasicAPITestCase):
     def test_article_list_excludes_deleted_articles(self):
         baker.make(
             NewsArticle,
-            type="article",
+            in_all_news=True,
             deleted=True,
             publication_datetime=datetime(2024, 10, 13, 14, 45, 15).isoformat(),
         )
@@ -177,13 +171,13 @@ class TestArticleDetailView(BasicAPITestCase):
         super().setUp()
         self.article_1 = baker.make(
             NewsArticle,
-            type="article",
+            in_all_news=True,
             publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
         )
         self.url = reverse("news-article-detail", kwargs={"id": self.article_1.id})
         self.article_2 = baker.make(
             NewsArticle,
-            type="article",
+            in_all_news=True,
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
         )
         self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
@@ -206,7 +200,7 @@ class TestArticleDetailView(BasicAPITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_deleted_article_detail_not_found(self):
-        deleted_article = baker.make(NewsArticle, deleted=True, type="article")
+        deleted_article = baker.make(NewsArticle, deleted=True, in_all_news=True)
 
         url = reverse("news-article-detail", kwargs={"id": deleted_article.id})
         response = self.client.get(url, headers=self.api_headers)

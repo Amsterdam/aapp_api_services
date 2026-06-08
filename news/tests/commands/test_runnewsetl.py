@@ -70,13 +70,11 @@ class RunNewsETLTest(TestCase):
         mocked_sources = [
             {
                 "index": "highlighted",
-                "type": "highlight",
                 "boolean_column": "is_highlight",
                 "district": None,
             },
             {
                 "index": "liveblogs",
-                "type": "liveblog",
                 "boolean_column": "is_liveblog",
                 "district": None,
             },
@@ -130,7 +128,7 @@ class RunNewsETLTest(TestCase):
             foreign_id=item_liveblog.MOCK_RESPONSE_1234123["id"]
         )
 
-        self.assertEqual(article.type, "highlight")
+        self.assertTrue(article.is_highlight)
         self.assertEqual(
             article.title,
             "Award voor Amsterdam: 44% vrouwen in de top",
@@ -138,7 +136,7 @@ class RunNewsETLTest(TestCase):
         self.assertEqual(article.url, item_article.MOCK_RESPONSE_123123["url"])
         self.assertIn("Lorem ipsum", article.body)
 
-        self.assertEqual(liveblog_article.type, "liveblog")
+        self.assertTrue(liveblog_article.is_liveblog)
         self.assertEqual(
             liveblog_article.url, item_liveblog.MOCK_RESPONSE_1234123["url"]
         )
@@ -172,13 +170,11 @@ class RunNewsETLTest(TestCase):
         mocked_sources = [
             {
                 "index": "highlighted",
-                "type": "highlight",
                 "boolean_column": "is_highlight",
                 "district": None,
             },
             {
                 "index": "liveblogs",
-                "type": "liveblog",
                 "boolean_column": "is_liveblog",
                 "district": None,
             },
@@ -242,13 +238,11 @@ class RunNewsETLTest(TestCase):
         mocked_sources = [
             {
                 "index": "highlighted",
-                "type": "highlight",
                 "boolean_column": "is_highlight",
                 "district": None,
             },
             {
                 "index": "liveblogs",
-                "type": "liveblog",
                 "boolean_column": "is_liveblog",
                 "district": None,
             },
@@ -345,7 +339,7 @@ class RunNewsETLTest(TestCase):
             NewsArticle,
             foreign_id=999999,
             deleted=False,
-            type="article",
+            in_all_news=True,
         )
         NewsArticle.objects.filter(id=stale_article.id).update(
             last_seen=timezone.now() - timezone.timedelta(hours=3)
@@ -354,7 +348,6 @@ class RunNewsETLTest(TestCase):
         mocked_sources = [
             {
                 "index": "highlighted",
-                "type": "highlight",
                 "boolean_column": "is_highlight",
                 "district": None,
             }
@@ -403,7 +396,7 @@ class RunNewsETLTest(TestCase):
             NewsArticle,
             foreign_id=999999,
             deleted=False,
-            type="article",
+            in_all_news=True,
         )
         NewsArticle.objects.filter(id=stale_article.id).update(
             last_seen=timezone.now() - timezone.timedelta(hours=3)
@@ -412,7 +405,6 @@ class RunNewsETLTest(TestCase):
         mocked_sources = [
             {
                 "index": "highlighted",
-                "type": "highlight",
                 "boolean_column": "is_highlight",
                 "district": None,
             }
@@ -452,13 +444,11 @@ class RunNewsETLTest(TestCase):
         mocked_sources = [
             {
                 "index": "all_news",
-                "type": "article",
                 "boolean_column": "in_all_news",
                 "district": None,
             },
             {
                 "index": "highlighted",
-                "type": "highlight",
                 "boolean_column": "is_highlight",
                 "district": None,
             },
@@ -524,33 +514,29 @@ class RunNewsETLTest(TestCase):
         self.assertTrue(article.in_all_news)
         self.assertTrue(article.is_highlight)
 
-    def test_run_news_etl_change_type_existing_item(self):
-        """Test that when an existing item changes type, the old record is updated to get a new type.
-        This could happen if an article is first a highlight but then not anymore (just an article)
+    def test_run_news_etl_change_booleans_existing_item(self):
+        """Test that when an existing item changes source, the old record is updated to get a new boolean value.
+        This could happen if an article is first in all_news and highlighted but then not anymore (just an article)
         """
 
         baker.make(
             NewsArticle,
             foreign_id=123123,
-            type="highlight",
             is_highlight=True,
             in_all_news=True,
         )
 
         self.assertEqual(NewsArticle.objects.count(), 1)
-        self.assertEqual(NewsArticle.objects.first().type, "highlight")
 
         # Simulate the article changing type in the Iprox API
         mocked_sources = [
             {
                 "index": "all_news",
-                "type": "article",
                 "boolean_column": "in_all_news",
                 "district": None,
             },
             {
                 "index": "highlighted",
-                "type": "highlight",
                 "boolean_column": "is_highlight",
                 "district": None,
             },
@@ -621,6 +607,5 @@ class RunNewsETLTest(TestCase):
         self.assertEqual(
             NewsArticle.objects.count(), 2
         )  # 123123 should be updated to article, and 100000 should be created
-        self.assertEqual(NewsArticle.objects.first().type, "article")
         self.assertTrue(NewsArticle.objects.first().in_all_news)
         self.assertFalse(NewsArticle.objects.first().is_highlight)

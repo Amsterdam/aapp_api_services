@@ -68,27 +68,7 @@ class NewsArticleDetailResponseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NewsArticle
-        fields = [
-            "id",
-            "foreign_id",
-            "last_seen",
-            "title",
-            "summary",
-            "intro",
-            "body",
-            "type",
-            "district",
-            "url",
-            "creation_datetime",
-            "modification_datetime",
-            "publication_datetime",
-            "expiration_datetime",
-            "is_active_liveblog",
-            "liveblog_notification_send",
-            "liveblog_version",
-            "images",
-            "liveblog_items",
-        ]
+        exclude = ["deleted"]
 
 
 class NewsArticleTransformSerializer(serializers.Serializer):
@@ -103,7 +83,6 @@ class NewsArticleTransformSerializer(serializers.Serializer):
     body = serializers.CharField()
     summary = serializers.CharField(required=False, allow_blank=True)
     intro = serializers.CharField(required=False, allow_blank=True)
-    type = serializers.CharField(allow_blank=True)
     in_all_news = serializers.BooleanField(required=False)
     is_highlight = serializers.BooleanField(required=False)
     is_liveblog = serializers.BooleanField(required=False)
