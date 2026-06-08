@@ -609,3 +609,27 @@ class RunNewsETLTest(TestCase):
         )  # 123123 should be updated to article, and 100000 should be created
         self.assertTrue(NewsArticle.objects.first().in_all_news)
         self.assertFalse(NewsArticle.objects.first().is_highlight)
+
+    @override_settings(
+        DELETE_UNSEEN_ARTICLES=True,
+        DELETE_UNSEEN_ARTICLES_AFTER_SECONDS=7200,
+    )
+    def test_run_news_etl_only_deletes_unseen_articles_when_new_articles_are_created(
+        self,
+    ):
+        stale_article = baker.make(
+            NewsArticle,
+            foreign_id=999999,
+            deleted=False,
+            in_all_news=True,
+        )
+        NewsArticle.objects.filter(id=stale_article.id).update(
+            last_seen=timezone.now() - timezone.timedelta(hours=3)
+        )
+
+        with patch.object(runnewsetl.iprox_fetcher, "sources", []):
+            with aioresponses():
+                call_command("runnewsetl")
+
+        stale_article.refresh_from_db()
+        self.assertFalse(stale_article.deleted)

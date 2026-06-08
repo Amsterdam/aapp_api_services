@@ -56,7 +56,7 @@ class ArticleDetailView(RetrieveAPIView):
     def get_queryset(self):
         return NewsArticle.visible_objects.prefetch_related(
             "images", "liveblog_items__images"
-        ).filter(deleted=False)
+        )
 
     serializer_class = NewsArticleDetailResponseSerializer
     lookup_field = "id"

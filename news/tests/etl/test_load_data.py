@@ -262,6 +262,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             deleted=True,
+            in_all_news=True,
             url="https://example.com/article/123123",
             title="Old title",
             modification_datetime="2024-01-01T12:00:00Z",

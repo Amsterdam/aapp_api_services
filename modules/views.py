@@ -68,7 +68,7 @@ class ReleaseDetailView(generics.RetrieveUpdateAPIView):
         request_method = getattr(self.request, "method", None)
         if request_method == "PATCH":
             return [InternalAPIKeyAuthentication()]
-        return super().get_authenticators()
+        return []
 
     @custom_extend_schema(
         success_response=AppReleaseSerializer,

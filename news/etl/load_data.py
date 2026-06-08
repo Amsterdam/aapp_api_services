@@ -47,7 +47,7 @@ class NewsArticleLoader:
         news_articles_list = [
             self._get_news_article_object(data) for data in transformed_data
         ]
-        self._upsert_news_articles(news_articles_list)
+        created_articles = self._upsert_news_articles(news_articles_list)
 
         news_articles_dict = self._get_news_articles_dict()  # {foreign_id: NewsArticle instance} for all articles in the database after upsert
 
@@ -61,6 +61,8 @@ class NewsArticleLoader:
                     extra={"news_article_foreign_id": news_article.foreign_id},
                     exc_info=e,
                 )
+
+        return created_articles
 
     def _get_news_article_object(self, data: dict) -> NewsArticle:
         """
@@ -89,8 +91,10 @@ class NewsArticleLoader:
             is_active_liveblog=data.get("is_active_liveblog", False) or False,
         )
 
-    def _upsert_news_articles(self, news_articles_list: list[NewsArticle]):
-        NewsArticle.objects.bulk_create(
+    def _upsert_news_articles(
+        self, news_articles_list: list[NewsArticle]
+    ) -> list[NewsArticle]:
+        created_articles = NewsArticle.objects.bulk_create(
             news_articles_list,
             update_conflicts=True,
             unique_fields=["foreign_id"],
@@ -138,6 +142,8 @@ class NewsArticleLoader:
                 # Make sure notifications will only be send once per liveblog
                 liveblog.liveblog_notification_send = timezone.now()
                 liveblog.save(update_fields=["liveblog_notification_send"])
+
+        return created_articles
 
     def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()
