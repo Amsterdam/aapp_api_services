@@ -13,6 +13,7 @@ from city_pass import authentication, models
 from city_pass.exceptions import TokenExpiredException, TokenInvalidException
 from city_pass.serializers import session_serializers as serializers
 from city_pass.views.extend_schema import extend_schema_with_access_token
+from core.authentication import MijnAmsterdamOutboundKeyAuthentication
 from core.utils.openapi_utils import extend_schema_for_api_key
 from core.views.mixins import DeviceIdMixin
 
@@ -75,7 +76,7 @@ class SessionInitView(DeviceIdMixin, generics.CreateAPIView):
 
 class SessionPostCredentialView(generics.CreateAPIView):
     serializer_class = serializers.SessionCredentialInSerializer
-    authentication_classes = [authentication.SessionCredentialsKeyAuthentication]
+    authentication_classes = [MijnAmsterdamOutboundKeyAuthentication]
 
     @transaction.atomic
     @extend_schema_for_api_key(

@@ -37,7 +37,7 @@ Your job is to implement the approved work item with the least complexity that s
 
 ## Approach
 1. Read the approved work item and the relevant codebase context.
-2. Start with a failing or missing unit test that captures the intended behavior.
+2. Start with a failing or missing unit test that captures the intended behavior. You might need to spin up a database for the tests to run by using the Makefile target `SERVICE_NAME=<django-app> make migrate`
 3. Make the smallest code change that turns the test green.
 4. Refactor immediately while keeping tests green.
 5. Repeat in small iterations until the work item is satisfied.

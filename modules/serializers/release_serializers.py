@@ -159,6 +159,16 @@ class AppReleaseSerializer(serializers.ModelSerializer):
         return obj.unpublished is None or obj.unpublished >= today
 
 
+class AppReleaseUpdateRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppRelease
+        fields = ["published", "unpublished", "deprecated"]
+
+
+class AppReleaseUpdateResponseSerializer(serializers.Serializer):
+    status = serializers.CharField()
+
+
 class ReleaseListResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppRelease
