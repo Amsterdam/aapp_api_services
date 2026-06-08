@@ -19,13 +19,7 @@ STATIC_URL = "/news/static/"
 ENABLE_LIVEBLOG_NOTIFICATIONS = (
     os.getenv("ENABLE_LIVEBLOG_NOTIFICATIONS", "true").lower() == "true"
 )
-DELETE_UNSEEN_ARTICLES = (
-    os.getenv(
-        "DELETE_UNSEEN_ARTICLES",
-        "false" if ENVIRONMENT_SLUG in {"o", "t"} else "true",
-    ).lower()
-    == "true"
-)
+DELETE_UNSEEN_ARTICLES = os.getenv("DELETE_UNSEEN_ARTICLES", "false").lower() == "true"
 DELETE_UNSEEN_ARTICLES_AFTER_SECONDS = int(
     os.getenv("DELETE_UNSEEN_ARTICLES_AFTER_SECONDS", "7200")
 )

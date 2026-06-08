@@ -43,9 +43,11 @@ class Command(BaseCommand):
             logger.info("No valid transformed articles found. Ending ETL process.")
             return
 
-        data_loader.load(transformed_data)
+        created_articles = data_loader.load(transformed_data)
 
-        if settings.DELETE_UNSEEN_ARTICLES:
+        # only delete unseen articles if there were new articles created, otherwise we
+        # might end up in a situation where we delete all articles because no new articles are created
+        if created_articles and settings.DELETE_UNSEEN_ARTICLES:
             deleted_count = garbage_collect_unseen_articles(
                 threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS
             )
