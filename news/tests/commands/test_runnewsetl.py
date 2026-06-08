@@ -528,7 +528,7 @@ class RunNewsETLTest(TestCase):
 
         self.assertEqual(NewsArticle.objects.count(), 1)
 
-        # Simulate the article changing type in the Iprox API
+        # Simulate the article changing flags in the Iprox API
         mocked_sources = [
             {
                 "index": "all_news",

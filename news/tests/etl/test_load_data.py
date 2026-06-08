@@ -61,7 +61,7 @@ class LoadDataTest(TestCase):
                 "url": "https://example.com/test-article",
                 "modification_datetime": "2024-01-01T12:00:00Z",
                 "image_url": "https://example.com/image.jpg",
-                "type": "article",
+                "in_all_news": True,
                 "creation_datetime": "2024-01-01T12:00:00Z",
                 "publication_datetime": "2024-01-01T12:00:00Z",
                 "expiration_datetime": None,
@@ -85,7 +85,7 @@ class LoadDataTest(TestCase):
                 "url": "https://example.com/test-article-1",
                 "modification_datetime": "2024-01-01T12:00:00Z",
                 "image_url": "https://example.com/image-1.jpg",
-                "type": "article",
+                "in_all_news": True,
                 "creation_datetime": "2024-01-01T12:00:00Z",
                 "publication_datetime": "2024-01-01T12:00:00Z",
                 "expiration_datetime": None,
@@ -96,7 +96,7 @@ class LoadDataTest(TestCase):
                 "url": "https://example.com/test-article-2",
                 "modification_datetime": "2024-01-01T12:00:00Z",
                 "image_url": "https://example.com/image-2.jpg",
-                "type": "article",
+                "in_all_news": True,
                 "creation_datetime": "2024-01-01T12:00:00Z",
                 "publication_datetime": "2024-01-01T12:00:00Z",
                 "expiration_datetime": None,
@@ -152,7 +152,7 @@ class LoadDataTest(TestCase):
                 "url": "https://example.com/test-article-1",
                 "modification_datetime": "2024-01-01T12:00:00Z",
                 "image_url": "https://example.com/image-1.jpg",
-                "type": "article",
+                "in_all_news": True,
                 "creation_datetime": "2024-01-01T12:00:00Z",
                 "publication_datetime": "2024-01-01T12:00:00Z",
                 "expiration_datetime": None,
@@ -163,7 +163,7 @@ class LoadDataTest(TestCase):
                 "url": "https://example.com/test-article-2",
                 "modification_datetime": "2024-01-01T12:00:00Z",
                 "image_url": "https://example.com/image-2.jpg",
-                "type": "article",
+                "in_all_news": True,
                 "creation_datetime": "2024-01-01T12:00:00Z",
                 "publication_datetime": "2024-01-01T12:00:00Z",
                 "expiration_datetime": None,
@@ -279,7 +279,7 @@ class LoadDataTest(TestCase):
                 "body": "A body",
                 "summary": "A summary",
                 "intro": "An intro",
-                "type": "article",
+                "in_all_news": True,
                 "district": None,
                 "url": "https://example.com/article/123123",
                 "creation_datetime": "2024-01-01T12:00:00Z",
@@ -461,7 +461,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "A liveblog item",
@@ -505,7 +505,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "Some title",
@@ -554,7 +554,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "Updated existing item",
@@ -607,7 +607,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "Updated existing item",
@@ -663,7 +663,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "Updated existing item",
@@ -707,7 +707,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "Updated existing item",

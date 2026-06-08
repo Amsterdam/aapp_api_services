@@ -36,7 +36,7 @@ class TestNotificationView(BasicAPITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LiveblogNotification.objects.first().device_id, self.device_id)
 
-    def test_post_notification_with_liveblog_flag_and_non_liveblog_type(self):
+    def test_post_notification_with_multiple_flags(self):
         baker.make(NewsArticle, id=1, in_all_news=True, is_liveblog=True)
         response = self.client.post(
             self.url,

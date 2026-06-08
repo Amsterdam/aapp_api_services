@@ -21,7 +21,7 @@ class TransformDataTest(TestCase):
         extracted_data = [
             {
                 **item_article.MOCK_RESPONSE_123123,
-                **{"type": "article", "district": None},
+                **{"in_all_news": True, "district": None},
             }
         ]
         transformed = transform(extracted_data)
@@ -44,7 +44,7 @@ class TransformDataTest(TestCase):
         extracted_data = [
             {
                 **item_liveblog.MOCK_RESPONSE_1234123,
-                **{"type": "liveblog", "district": None, "is_liveblog": True},
+                **{"district": None, "is_liveblog": True},
             }
         ]
         transformed = transform(extracted_data)
@@ -60,12 +60,11 @@ class TransformDataTest(TestCase):
         self.assertEqual(article["body"][0]["title"], "Title")
         self.assertEqual(article["body"][1]["title"], "Another title")
 
-    def test_transform_liveblog_when_legacy_type_differs(self):
+    def test_transform_liveblog_when_legacy_indicators_differ(self):
         extracted_data = [
             {
                 **item_liveblog.MOCK_RESPONSE_1234123,
                 **{
-                    "type": "district",
                     "district": "noord",
                     "is_liveblog": True,
                     "is_district": True,
@@ -79,39 +78,6 @@ class TransformDataTest(TestCase):
         self.assertIsInstance(article["body"], list)
         self.assertTrue(article["is_liveblog"])
         self.assertTrue(article["is_district"])
-
-    def test_transform_deduplication(self):
-        extracted_data = [
-            {
-                "id": "123",
-                "title": "<div>Test Article</div>",
-                "body": "<div>This is a test article.</div>",
-                "summary": "<div>Summary</div>",
-                "type": "article",
-                "district": None,
-                "url": "https://example.com/test-article",
-                "publicationDate": "2024-01-01T12:00:00Z",
-            },
-            {
-                # Duplicate ID
-                "id": "123",
-                "title": "<div>Test Article 2</div>",
-                "body": "<div>This is another test article.</div>",
-                "summary": "<div>Summary 2</div>",
-                "type": "hightlight",
-                "district": None,
-                "url": "https://example.com/highlight-2",
-                "publicationDate": "2024-01-02T12:00:00Z",
-            },
-        ]
-        with self.assertLogs(level="WARNING") as log:
-            transformed = transform(extracted_data)
-            self.assertEqual(len(transformed), 1)
-            self.assertEqual(transformed[0]["foreign_id"], "123")
-            self.assertIn("Duplicate article ID found", log.output[0])
-            self.assertEqual(
-                transformed[0]["type"], "article"
-            )  # First article should be kept
 
     def test_transform_invalid_article(self):
         extracted_data = [
@@ -132,7 +98,7 @@ class TransformDataTest(TestCase):
             "id": "123",
             "title": "Test Article",
             "body": "This is a test article.",
-            "type": "article",
+            "in_all_news": True,
             "district": None,
             "url": "https://example.com/test-article",
             "publicationDate": "2024-01-01T12:00:00Z",

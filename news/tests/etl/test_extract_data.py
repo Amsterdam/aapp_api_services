@@ -158,7 +158,7 @@ class ExtractDataTest(TestCase):
     def test_combine_detailed_and_basic_info(self):
         """
         Test the combination of detailed and basic information into a single dictionary.
-        It is key that the type of the basic info is preserved, as this is used to store in the database.
+        It is key that the flags of the basic info are preserved, as this is used to store in the database.
         """
         fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=[])
         basic_info = {
