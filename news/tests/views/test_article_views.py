@@ -20,12 +20,12 @@ class TestArticleListView(BasicAPITestCase):
         )
         self.article_2 = baker.make(
             NewsArticle,
-            publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
+            publication_datetime=datetime(2024, 10, 12, 14, 45, 45).isoformat(),
             in_all_news=True,
         )
         self.article_3 = baker.make(
             NewsArticle,
-            publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
+            publication_datetime=datetime(2024, 10, 12, 14, 45, 30).isoformat(),
             is_highlight=True,
         )
         self.article_4 = baker.make(
@@ -42,7 +42,7 @@ class TestArticleListView(BasicAPITestCase):
         )
         self.overlap_article = baker.make(
             NewsArticle,
-            publication_datetime=datetime(2024, 10, 12, 18, 0, 0).isoformat(),
+            publication_datetime=datetime(2024, 10, 12, 12, 0, 0).isoformat(),
             district="noord",
             in_all_news=True,
             is_highlight=True,
@@ -86,7 +86,7 @@ class TestArticleListView(BasicAPITestCase):
         ][0]
         self.assertEqual(article_2_response["title"], self.article_2.title)
         self.assertEqual(
-            article_2_response["publication_datetime"], "2024-10-12T14:45:15+02:00"
+            article_2_response["publication_datetime"], "2024-10-12T14:45:45+02:00"
         )
         self.assertEqual(len(article_2_response["images"]), 0)
 
@@ -112,7 +112,7 @@ class TestArticleListView(BasicAPITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["page"]["totalElements"], 2)
         self.assertEqual(response.data["result"][0]["is_active_liveblog"], True)
-        self.assertEqual(response.data["result"][0]["id"], self.overlap_article.id)
+        self.assertEqual(response.data["result"][0]["id"], self.article_5.id)
 
     def test_article_list_excludes_deleted_articles(self):
         baker.make(
@@ -198,7 +198,7 @@ class TestArticleListView(BasicAPITestCase):
                 headers=self.api_headers,
             )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.data["result"][0]["id"], self.article_1.id)
+            self.assertEqual(response.data["result"][0]["id"], self.overlap_article.id)
             self.assertEqual(get_queryset.call_count, 2)
 
             response = self.client.get(
