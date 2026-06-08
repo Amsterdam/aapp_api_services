@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 
 from django.conf import settings
 from django.db import transaction
@@ -39,10 +40,14 @@ class NewsArticleLoader:
         Load transformed news articles into the database.
         This method handles upserting articles based on their unique foreign_id.
         """
+        logger.info(
+            "Load news data into database.",
+            extra={"article_count": len(transformed_data)},
+        )
         news_articles_list = [
             self._get_news_article_object(data) for data in transformed_data
         ]
-        self._upsert_news_articles(news_articles_list)
+        created_articles = self._upsert_news_articles(news_articles_list)
 
         news_articles_dict = self._get_news_articles_dict()  # {foreign_id: NewsArticle instance} for all articles in the database after upsert
 
@@ -57,6 +62,8 @@ class NewsArticleLoader:
                     exc_info=e,
                 )
 
+        return created_articles
+
     def _get_news_article_object(self, data: dict) -> NewsArticle:
         """
         Convert a dictionary of news article data into a NewsArticle model instance.
@@ -64,6 +71,7 @@ class NewsArticleLoader:
         """
         return NewsArticle(
             foreign_id=data.get("foreign_id"),
+            deleted=False,
             title=data.get("title"),
             body=data.get("body") if data.get("type") != "liveblog" else None,
             summary=data.get("summary"),
@@ -79,12 +87,15 @@ class NewsArticleLoader:
             is_active_liveblog=data.get("is_active_liveblog") or False,
         )
 
-    def _upsert_news_articles(self, news_articles_list: list[NewsArticle]):
-        NewsArticle.objects.bulk_create(
+    def _upsert_news_articles(
+        self, news_articles_list: list[NewsArticle]
+    ) -> list[NewsArticle]:
+        created_articles = NewsArticle.objects.bulk_create(
             news_articles_list,
             update_conflicts=True,
             unique_fields=["foreign_id"],
             update_fields=[
+                "deleted",
                 "title",
                 "body",
                 "summary",
@@ -124,6 +135,8 @@ class NewsArticleLoader:
                 # Make sure notifications will only be send once per liveblog
                 liveblog.liveblog_notification_send = timezone.now()
                 liveblog.save(update_fields=["liveblog_notification_send"])
+
+        return created_articles
 
     def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()
@@ -309,3 +322,11 @@ class NewsArticleLoader:
             )
 
             return image_set_id
+
+
+def garbage_collect_unseen_articles(*, threshold_seconds: int) -> int:
+    stale_before = timezone.now() - timedelta(seconds=threshold_seconds)
+    return NewsArticle.objects.filter(
+        deleted=False,
+        last_seen__lt=stale_before,
+    ).update(deleted=True)

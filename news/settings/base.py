@@ -19,6 +19,10 @@ STATIC_URL = "/news/static/"
 ENABLE_LIVEBLOG_NOTIFICATIONS = (
     os.getenv("ENABLE_LIVEBLOG_NOTIFICATIONS", "true").lower() == "true"
 )
+DELETE_UNSEEN_ARTICLES = os.getenv("DELETE_UNSEEN_ARTICLES", "false").lower() == "true"
+DELETE_UNSEEN_ARTICLES_AFTER_SECONDS = int(
+    os.getenv("DELETE_UNSEEN_ARTICLES_AFTER_SECONDS", "7200")
+)
 
 IPROX_SERVER = os.getenv("IPROX_SERVER", "https://www.amsterdam.nl/")
 EPOCH = "1970-01-01T00:00:00+02:00"

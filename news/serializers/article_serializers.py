@@ -68,7 +68,7 @@ class NewsArticleDetailResponseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NewsArticle
-        fields = "__all__"
+        exclude = ["deleted"]
 
 
 class NewsArticleTransformSerializer(serializers.Serializer):
