@@ -38,7 +38,7 @@ class NewsArticleSource(ChoicesEnum):
         district="zuid",
     )
     DISTRICT_OOST = NewsArticleExtract(
-        index="nieuws-stadsdeel-nieuw-oost",
+        index="nieuws-stadsdeel-oost",
         boolean_column="is_district",
         district="oost",
     )
