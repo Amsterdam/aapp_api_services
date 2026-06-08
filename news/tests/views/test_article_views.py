@@ -1,10 +1,12 @@
 from datetime import datetime
+from unittest.mock import patch
 
 from django.urls import reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import BasicAPITestCase
 from news.models import NewsArticle, NewsArticleImage
+from news.views.article_views import ArticleDetailView, ArticleListView
 
 
 class TestArticleListView(BasicAPITestCase):
@@ -32,6 +34,12 @@ class TestArticleListView(BasicAPITestCase):
             type="district",
             district="noord",
         )
+        self.article_5 = baker.make(
+            NewsArticle,
+            publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
+            type="liveblog",
+            is_active_liveblog=True,
+        )
         self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
         self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
 
@@ -45,6 +53,8 @@ class TestArticleListView(BasicAPITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response_result), 2)
         self.assertEqual(response.data["page"]["totalElements"], 2)
+        self.assertEqual(response.data["result"][0]["is_active_liveblog"], False)
+        self.assertEqual(response.data["result"][0]["type"], "article")
 
         article_1_response = [
             article for article in response_result if article["id"] == self.article_1.id
@@ -84,7 +94,9 @@ class TestArticleListView(BasicAPITestCase):
             self.url, data={"type": "liveblog"}, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["page"]["totalElements"], 0)
+        self.assertEqual(response.data["page"]["totalElements"], 1)
+        self.assertEqual(response.data["result"][0]["is_active_liveblog"], True)
+        self.assertEqual(response.data["result"][0]["type"], "liveblog")
 
     def test_article_list_excludes_deleted_articles(self):
         baker.make(
@@ -139,6 +151,80 @@ class TestArticleListView(BasicAPITestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_article_list_cache_varies_by_request_params(self):
+        with patch.object(
+            ArticleListView,
+            "get_queryset",
+            autospec=True,
+            side_effect=ArticleListView.get_queryset,
+        ) as get_queryset:
+            response = self.client.get(
+                self.url,
+                data={"type": "article", "page": 1, "page_size": 1},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["result"][0]["id"], self.article_2.id)
+            self.assertEqual(get_queryset.call_count, 1)
+
+            response = self.client.get(
+                self.url,
+                data={"type": "article", "page": 1, "page_size": 1},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["result"][0]["id"], self.article_2.id)
+            self.assertEqual(get_queryset.call_count, 1)
+
+            response = self.client.get(
+                self.url,
+                data={"type": "article", "page": 2, "page_size": 1},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["result"][0]["id"], self.article_1.id)
+            self.assertEqual(get_queryset.call_count, 2)
+
+            response = self.client.get(
+                self.url,
+                data={"type": "article", "page": 1, "page_size": 2},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data["result"]), 2)
+            self.assertEqual(get_queryset.call_count, 3)
+
+            response = self.client.get(
+                self.url,
+                data={"type": "highlight", "page": 1, "page_size": 1},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["result"][0]["id"], self.article_3.id)
+            self.assertEqual(get_queryset.call_count, 4)
+
+            response = self.client.get(
+                self.url,
+                data={"type": "highlight", "page": 1, "page_size": 1},
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(get_queryset.call_count, 4)
+
+            response = self.client.get(
+                self.url,
+                data={
+                    "type": "district",
+                    "district": "noord",
+                    "page": 1,
+                    "page_size": 1,
+                },
+                headers=self.api_headers,
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["result"][0]["id"], self.article_4.id)
+            self.assertEqual(get_queryset.call_count, 5)
+
 
 class TestArticleDetailView(BasicAPITestCase):
     def setUp(self):
@@ -182,3 +268,42 @@ class TestArticleDetailView(BasicAPITestCase):
         response = self.client.get(url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 404)
+
+    def test_article_detail_cache_varies_by_article_id(self):
+        article_2_url = reverse("news-article-detail", kwargs={"id": self.article_2.id})
+
+        with patch.object(
+            ArticleDetailView,
+            "get_queryset",
+            autospec=True,
+            side_effect=ArticleDetailView.get_queryset,
+        ) as get_queryset:
+            response = self.client.get(self.url, headers=self.api_headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["id"], self.article_1.id)
+            self.assertEqual(get_queryset.call_count, 1)
+
+            response = self.client.get(self.url, headers=self.api_headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["id"], self.article_1.id)
+            self.assertEqual(get_queryset.call_count, 1)
+
+            response = self.client.get(article_2_url, headers=self.api_headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["id"], self.article_2.id)
+            self.assertEqual(get_queryset.call_count, 2)
+
+    def test_article_detail_cache_enforces_auth(self):
+        with patch.object(
+            ArticleDetailView,
+            "get_queryset",
+            autospec=True,
+            side_effect=ArticleDetailView.get_queryset,
+        ) as get_queryset:
+            response = self.client.get(self.url, headers=self.api_headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["id"], self.article_1.id)
+            self.assertEqual(get_queryset.call_count, 1)
+
+            response = self.client.get(self.url)  # No api key header!
+            self.assertEqual(response.status_code, 401)

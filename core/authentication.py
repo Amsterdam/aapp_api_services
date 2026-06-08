@@ -61,6 +61,7 @@ class APIKeyAuthentication(AbstractAppAuthentication):
 
 
 class InternalAPIKeyAuthentication(AbstractAppAuthentication):
+    # currently only used in 'modules' service
     @property
     def api_keys(self):  # pragma: no cover
         return settings.API_KEYS_INTERNAL.split(",")
@@ -68,6 +69,17 @@ class InternalAPIKeyAuthentication(AbstractAppAuthentication):
     @property
     def api_key_header(self):  # pragma: no cover
         return settings.API_KEY_HEADER_INTERNAL
+
+
+class MijnAmsterdamOutboundKeyAuthentication(AbstractAppAuthentication):
+    # used for authenticating requests from City Pass and MijnAmsterdam logout
+    @property
+    def api_keys(self):
+        return settings.MIJN_AMS_API_KEYS_OUTBOUND.split(",")
+
+    @property
+    def api_key_header(self):
+        return settings.SESSION_CREDENTIALS_KEY_HEADER
 
 
 class AuthenticationScheme(OpenApiAuthenticationExtension):
@@ -96,6 +108,12 @@ class InternalAPIKeyAuthenticationScheme(AuthenticationScheme):
     target_class = "core.authentication.InternalAPIKeyAuthentication"
     name = "InternalAPIKeyAuthentication"
     header_key = settings.API_KEY_HEADER_INTERNAL
+
+
+class MijnAmsterdamOutboundKeyAuthenticationScheme(AuthenticationScheme):
+    target_class = "core.authentication.MijnAmsterdamOutboundKeyAuthentication"
+    name = "MijnAmsterdamOutboundKeyAuthentication"
+    header_key = settings.SESSION_CREDENTIALS_KEY_HEADER
 
 
 class EntraTokenMixin:
