@@ -115,8 +115,7 @@ class IproxFetcher:
                             extra={"item_id": item_id},
                         )
 
-                        # Preserve legacy overwrite behavior for the type field while
-                        # accumulating source overlap in dedicated flags.
+                        # Accumulate source overlap in dedicated flags.
                         if source_district is not None:
                             existing_item["district"] = source_district
                         if source_flag:

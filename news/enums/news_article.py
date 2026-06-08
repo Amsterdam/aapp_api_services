@@ -5,10 +5,7 @@ class NewsArticleSource(ChoicesEnum):
     """
     Enum class representing the different sources of news articles.
     Each source is associated with a NewsArticleExtract instance,
-    which contains the index, type, and district information for that source.
-
-    !! IMPORTANT: overlap is preserved via source flags, but the order still matters
-    for the legacy `type` field, which keeps overwrite behavior for backward compatibility. !!
+    which contains the index, boolean_column, and district information for that source.
     """
 
     ALL_NEWS = NewsArticleExtract(

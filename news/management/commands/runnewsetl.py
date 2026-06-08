@@ -58,15 +58,4 @@ class Command(BaseCommand):
         else:
             logger.info("News garbage collector skipped because it is disabled.")
 
-        if settings.DELETE_UNSEEN_ARTICLES:
-            deleted_count = garbage_collect_unseen_articles(
-                threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS
-            )
-            logger.info(
-                "News garbage collector completed.",
-                extra={"deleted_count": deleted_count},
-            )
-        else:
-            logger.info("News garbage collector skipped because it is disabled.")
-
         logger.info("ETL process completed successfully.")
