@@ -96,8 +96,12 @@ class TestMijnAmsterdamDeviceView(ResponsesActivatedAPITestCase):
 
 
 class TestLogoutNotificationView(ResponsesActivatedAPITestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
+        mijn_ams_api_keys = settings.MIJN_AMS_API_KEYS_OUTBOUND
+        self.api_headers[settings.SESSION_CREDENTIALS_KEY_HEADER] = (
+            mijn_ams_api_keys.split(",")[0]
+        )
         self.url = reverse("mijn-amsterdam-logout-notification")
 
     def test_success_post(self):
