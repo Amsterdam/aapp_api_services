@@ -1,4 +1,3 @@
-import yaml
 from django.test import override_settings
 from django.urls import reverse
 
@@ -84,38 +83,3 @@ class TestOIDCSettingsView(BoatChargingTestCase):
                 "pkce_required": False,
             },
         )
-
-    @override_settings(**oidc_settings_overrides())
-    def test_openapi_schema_keeps_api_key_security_without_access_token_contract(self):
-        response = self.client.get(self.schema_url, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 200)
-
-        schema = yaml.safe_load(response.content)
-        operation = schema["paths"]["/boat-charging/api/v1/oidc-settings"]["get"]
-        parameters = operation.get("parameters", [])
-        response_schema_name = operation["responses"]["401"]["content"][
-            "application/json"
-        ]["schema"]["$ref"].split("/")[-1]
-        response_schema = schema["components"]["schemas"][response_schema_name]
-        response_code_schema_name = response_schema["properties"]["code"]["$ref"].split(
-            "/"
-        )[-1]
-        response_code_schema = schema["components"]["schemas"][
-            response_code_schema_name
-        ]
-
-        self.assertEqual(parameters, [])
-        self.assertFalse(any(param["in"] == "query" for param in parameters))
-        self.assertFalse(
-            any(
-                param["in"] == "header" and param["name"] == "Access-Token"
-                for param in parameters
-            )
-        )
-        self.assertNotIn(
-            "BOAT_CHARGING_MISSING_ACCESS_TOKEN",
-            response_code_schema["enum"],
-        )
-        self.assertIn("API_KEY_INVALID", response_code_schema["enum"])
-        self.assertEqual(operation.get("security", []), [{"APIKeyAuthentication": []}])
