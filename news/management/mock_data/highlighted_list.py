@@ -20,7 +20,7 @@ MOCK_RESPONSE = {
             "is_active_liveblog": False,
         },
     ],
-    "total": 1,
+    "total": 2,
     "page": 0,
     "per_page": 25,
     "pages": 1,
