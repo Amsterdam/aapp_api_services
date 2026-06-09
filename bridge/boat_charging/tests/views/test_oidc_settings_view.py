@@ -26,7 +26,7 @@ class TestOIDCSettingsView(BoatChargingTestCase):
         self.schema_url = reverse("bridge-openapi-schema")
 
     @override_settings(**oidc_settings_overrides())
-    def test_public_endpoint_without_access_token_returns_oidc_settings(self):
+    def test_valid_api_key_without_access_token_returns_oidc_settings(self):
         headers = self.api_headers.copy()
         headers.pop("access_token", None)
 
@@ -45,6 +45,17 @@ class TestOIDCSettingsView(BoatChargingTestCase):
                 "pkce_required": True,
             },
         )
+
+    @override_settings(**oidc_settings_overrides())
+    def test_invalid_api_key_without_access_token_returns_401(self):
+        headers = self.api_headers.copy()
+        headers.pop("access_token", None)
+        headers[self.auth_instance.api_key_header] = "not-legit"
+
+        response = self.client.get(self.url, headers=headers)
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["code"], "API_KEY_INVALID")
 
     @override_settings(
         **oidc_settings_overrides(
@@ -75,12 +86,36 @@ class TestOIDCSettingsView(BoatChargingTestCase):
         )
 
     @override_settings(**oidc_settings_overrides())
-    def test_openapi_schema_marks_endpoint_public_without_parameters(self):
+    def test_openapi_schema_keeps_api_key_security_without_access_token_contract(self):
         response = self.client.get(self.schema_url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
 
         schema = yaml.safe_load(response.content)
         operation = schema["paths"]["/boat-charging/api/v1/oidc-settings"]["get"]
+        parameters = operation.get("parameters", [])
+        response_schema_name = operation["responses"]["401"]["content"][
+            "application/json"
+        ]["schema"]["$ref"].split("/")[-1]
+        response_schema = schema["components"]["schemas"][response_schema_name]
+        response_code_schema_name = response_schema["properties"]["code"]["$ref"].split(
+            "/"
+        )[-1]
+        response_code_schema = schema["components"]["schemas"][
+            response_code_schema_name
+        ]
 
-        self.assertEqual(operation.get("parameters", []), [])
+        self.assertEqual(parameters, [])
+        self.assertFalse(any(param["in"] == "query" for param in parameters))
+        self.assertFalse(
+            any(
+                param["in"] == "header" and param["name"] == "Access-Token"
+                for param in parameters
+            )
+        )
+        self.assertNotIn(
+            "BOAT_CHARGING_MISSING_ACCESS_TOKEN",
+            response_code_schema["enum"],
+        )
+        self.assertIn("API_KEY_INVALID", response_code_schema["enum"])
+        self.assertIn({"APIKeyAuthentication": []}, operation.get("security", []))
