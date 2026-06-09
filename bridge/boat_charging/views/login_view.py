@@ -1,6 +1,5 @@
 import httpx
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 from rest_framework.response import Response
 
 from bridge.boat_charging.serializers.login_serializers import (
@@ -47,10 +46,7 @@ class OIDCSettingsView(BaseView):
 
     def get(self, request, *args, **kwargs):
         serializer = self.response_serializer_class(data=self.get_response_data())
-        if not serializer.is_valid():
-            raise ImproperlyConfigured(
-                f"Invalid boat charging OIDC settings: {serializer.errors}"
-            )
+        serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)
 
     def get_response_data(self) -> dict[str, str | list[str] | bool | None]:
