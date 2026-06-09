@@ -306,7 +306,6 @@ def boat_charging_openapi_decorator(
     requires_device_id=False,
     paginated=False,
     exceptions=None,
-    auth=None,
 ):
     """
     Returns a decorator for DRF schema configuration
@@ -361,8 +360,4 @@ def boat_charging_openapi_decorator(
                 location="query",
             )
         )
-
-    if auth is not None:
-        kwargs["auth"] = auth
-
     return extend_schema_for_api_key(**kwargs, additional_params=additional_params)
