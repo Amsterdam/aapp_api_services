@@ -118,4 +118,4 @@ class TestOIDCSettingsView(BoatChargingTestCase):
             response_code_schema["enum"],
         )
         self.assertIn("API_KEY_INVALID", response_code_schema["enum"])
-        self.assertIn({"APIKeyAuthentication": []}, operation.get("security", []))
+        self.assertEqual(operation.get("security", []), [{"APIKeyAuthentication": []}])
