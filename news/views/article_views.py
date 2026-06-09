@@ -25,10 +25,8 @@ class ArticleListView(ListAPIView):
         query_serializer.is_valid(raise_exception=True)
 
         article_type = query_serializer.validated_data["type"]
-        queryset = (
-            NewsArticle.objects.prefetch_related("images")
-            .order_by("-publication_datetime")
-            .filter(deleted=False)
+        queryset = NewsArticle.visible_objects.prefetch_related("images").order_by(
+            "-publication_datetime"
         )
 
         if article_type == "article":
