@@ -74,7 +74,7 @@ class NewsArticleLoader:
             foreign_id=data.get("foreign_id"),
             deleted=False,
             title=data.get("title"),
-            body=data.get("body") if not data.get("is_liveblog", False) else None,
+            body=data.get("body") if not data["is_liveblog"] else None,
             summary=data.get("summary"),
             intro=data.get("intro"),
             in_all_news=data.get("in_all_news", False) or False,

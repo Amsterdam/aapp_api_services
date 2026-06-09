@@ -52,7 +52,6 @@ def transform(extracted_data: list[dict]) -> list[dict]:
                 else parse_liveblog_messages(article.get("body")),
                 "summary": decode_and_strip_outer_div(article.get("summary")),
                 "intro": decode_and_strip_outer_div(article.get("intro")),
-                "type": article.get("type"),
                 "in_all_news": article.get("in_all_news", False),
                 "is_highlight": article.get("is_highlight", False),
                 "is_liveblog": article.get("is_liveblog", False),

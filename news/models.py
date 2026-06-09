@@ -41,7 +41,10 @@ class NewsArticle(models.Model):
         constraints = [
             models.CheckConstraint(
                 name="district_article_requires_district",
-                condition=(~Q(is_district=True) | Q(district__isnull=False)),
+                condition=(
+                    Q(is_district=True, district__isnull=False)
+                    | Q(is_district=False, district__isnull=True)
+                ),
             ),
         ]
 
