@@ -3,6 +3,51 @@
 from django.db import migrations, models
 
 
+def backfill_newsarticle_flags(apps, schema_editor):
+    NewsArticle = apps.get_model("news", "NewsArticle")
+    # Reset all flags first to avoid carrying over stale/default values.
+    NewsArticle.objects.all().update(
+        in_all_news=False,
+        is_highlight=False,
+        is_liveblog=False,
+        is_district=False,
+    )
+    NewsArticle.objects.filter(type="article").update(in_all_news=True)
+    NewsArticle.objects.filter(type="highlight").update(is_highlight=True)
+    NewsArticle.objects.filter(type="liveblog").update(is_liveblog=True)
+    NewsArticle.objects.filter(type="district").update(is_district=True)
+    # The new constraint requires district to be NULL unless is_district=True.
+    NewsArticle.objects.exclude(type="district").update(district=None)
+
+
+def backfill_newsarticle_type(apps, schema_editor):
+    NewsArticle = apps.get_model("news", "NewsArticle")
+    # Reconstruct legacy type using deterministic priority:
+    # district > liveblog > highlight > article.
+    NewsArticle.objects.filter(is_district=True).update(type="district")
+    NewsArticle.objects.filter(is_district=False, is_liveblog=True).update(
+        type="liveblog"
+    )
+    NewsArticle.objects.filter(
+        is_district=False,
+        is_liveblog=False,
+        is_highlight=True,
+    ).update(type="highlight")
+    NewsArticle.objects.filter(
+        is_district=False,
+        is_liveblog=False,
+        is_highlight=False,
+        in_all_news=True,
+    ).update(type="article")
+    # Final fallback for rows without any flag set.
+    NewsArticle.objects.filter(
+        is_district=False,
+        is_liveblog=False,
+        is_highlight=False,
+        in_all_news=False,
+    ).update(type="article")
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("news", "0009_newsarticle_deleted"),
@@ -33,6 +78,7 @@ class Migration(migrations.Migration):
             name="is_liveblog",
             field=models.BooleanField(default=False),
         ),
+        migrations.RunPython(backfill_newsarticle_flags, backfill_newsarticle_type),
         migrations.AddConstraint(
             model_name="newsarticle",
             constraint=models.CheckConstraint(
