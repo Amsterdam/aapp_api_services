@@ -1,5 +1,7 @@
 import httpx
 from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework.response import Response
 
 from bridge.boat_charging.serializers.login_serializers import (
@@ -37,6 +39,7 @@ class GuestLoginView(BaseView):
         return Response(serializer.validated_data, status=200)
 
 
+@method_decorator(cache_page(60 * 60), name="get")
 @boat_charging_openapi_decorator(
     response_serializer_class=OIDCSettingsResponseSerializer,
     requires_access_token=False,
