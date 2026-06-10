@@ -259,7 +259,6 @@ class MockEntraTokenAuthentication(BaseAuthentication, EntraTokenMixin):
             "mbs-admin",
             "cbs-time-publisher",
             "city-pass-publisher",
-            "waste-publisher",
             "waste-notification-publisher",
             "waste-recycle-publisher",
             "survey-publisher",

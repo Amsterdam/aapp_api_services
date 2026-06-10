@@ -38,4 +38,8 @@ MOCK_ENTRA_AUTH = False
 ADMIN_ROLES += [
     "waste-delegated",
     "waste-publisher",
+    "waste-notification-delegated",
+    "waste-notification-publisher",
+    "waste-recycle-delegated",
+    "waste-recycle-publisher",
 ]
