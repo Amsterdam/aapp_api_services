@@ -14,7 +14,7 @@ class ChoicesEnum(Enum):
 
 class NewsArticleExtract(NamedTuple):
     index: str  # indexAlias in IPROX
-    type: str  # news article type, e.g. "article", "highlight", "liveblog", "district"
+    boolean_column: str  # the name of the boolean column to set to True for articles retrieved from this source, e.g. "is_highlight", "is_liveblog", "is_district"
     district: Optional[
         str
-    ]  # only for type "district", e.g. "noord", "west", "zuid", "oost", "centrum", "nieuw-west", "zuidoost", "weesp"
+    ]  # only for district sources (boolean_column="is_district"), e.g. "noord", "west", "zuid", "oost", "centrum", "nieuw-west", "zuidoost", "weesp"

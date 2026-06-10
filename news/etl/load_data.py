@@ -69,14 +69,18 @@ class NewsArticleLoader:
         Convert a dictionary of news article data into a NewsArticle model instance.
         Handles the mapping of fields from the transformed data to the model fields.
         """
+
         return NewsArticle(
             foreign_id=data.get("foreign_id"),
             deleted=False,
             title=data.get("title"),
-            body=data.get("body") if data.get("type") != "liveblog" else None,
+            body=data.get("body") if not data["is_liveblog"] else None,
             summary=data.get("summary"),
             intro=data.get("intro"),
-            type=data.get("type"),
+            in_all_news=data.get("in_all_news", False) or False,
+            is_highlight=data.get("is_highlight", False) or False,
+            is_liveblog=data.get("is_liveblog", False) or False,
+            is_district=data.get("is_district", False) or False,
             district=data.get("district"),
             url=data.get("url"),
             creation_datetime=data.get("creation_datetime"),
@@ -84,7 +88,7 @@ class NewsArticleLoader:
             publication_datetime=data.get("publication_datetime"),
             expiration_datetime=data.get("expiration_datetime"),
             last_seen=timezone.now(),
-            is_active_liveblog=data.get("is_active_liveblog") or False,
+            is_active_liveblog=data.get("is_active_liveblog", False) or False,
         )
 
     def _upsert_news_articles(
@@ -100,7 +104,10 @@ class NewsArticleLoader:
                 "body",
                 "summary",
                 "intro",
-                "type",
+                "in_all_news",
+                "is_highlight",
+                "is_liveblog",
+                "is_district",
                 "district",
                 "url",
                 "creation_datetime",
@@ -113,7 +120,7 @@ class NewsArticleLoader:
         )
 
         unsend_liveblogs = NewsArticle.objects.filter(
-            type="liveblog",
+            is_liveblog=True,
             is_active_liveblog=True,
             liveblog_notification_send=None,
         )
@@ -153,7 +160,7 @@ class NewsArticleLoader:
         """
         self._upsert_article_images(article, news_article)
 
-        if article.get("type") == "liveblog":
+        if article.get("is_liveblog", False):
             if not isinstance(article.get("body"), list):
                 raise ArticleLoaderError(
                     "Something went wrong with importing the liveblog data"

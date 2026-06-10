@@ -36,8 +36,21 @@ class IproxFetcher:
         self.iprox_fetch_url = iprox_fetch_url
         self.iprox_detail_url = iprox_detail_url
         self.sources = sources
+        self._validate_sources()
         self.max_concurrent_requests = max_concurrent_requests
         self.timeout = aiohttp.ClientTimeout(total=timeout_total)
+
+    def _validate_sources(self):
+        """Validate the sources configuration."""
+        if not isinstance(self.sources, list):
+            raise ValueError("Sources must be a list")
+        for source in self.sources:
+            if not isinstance(source, dict):
+                raise ValueError("Each source must be a dictionary")
+            if "index" not in source or "boolean_column" not in source:
+                raise ValueError(
+                    "Each source must have 'index' and 'boolean_column' keys"
+                )
 
     def extract(self) -> list[dict]:
         """
@@ -75,7 +88,7 @@ class IproxFetcher:
         all_items = {}
 
         for source in self.sources:
-            source_type = source.get("type")
+            source_flag = source.get("boolean_column")
             source_district = source.get("district")
             logger.info(f"Collecting list of items for source {source}")
             source_url = urljoin(
@@ -93,13 +106,34 @@ class IproxFetcher:
                 items = result.get("items", [])
 
                 for item in items:
-                    item["type"] = source_type
-                    item["district"] = source_district
-                    if item["id"] in all_items and source is not None:
+                    item_id = item["id"]
+
+                    if item_id in all_items:
+                        existing_item = all_items[item_id]
                         logger.warning(
-                            f"Duplicate item ID {item['id']} found. Old type: {all_items[item['id']]['type']}, new type: {source['type']}. Overwriting previous item."
+                            "Duplicate item ID found. Preserving overlap flags.",
+                            extra={"item_id": item_id},
                         )
-                    all_items[item["id"]] = item
+
+                        # Accumulate source overlap in dedicated flags.
+                        if source_district is not None:
+                            existing_item["district"] = source_district
+                        if source_flag:
+                            existing_item[source_flag] = True
+                        continue
+
+                    new_item = {
+                        **item,
+                        "district": source_district,
+                        "in_all_news": False,
+                        "is_highlight": False,
+                        "is_liveblog": False,
+                        "is_district": False,
+                    }
+                    if source_flag:
+                        new_item[source_flag] = True
+
+                    all_items[item_id] = new_item
 
                 pages = result.get("pages", 1)
                 if page >= pages - 1:
@@ -161,7 +195,13 @@ class IproxFetcher:
         self,
         detailed_info: dict,
         basic_info: dict,
-        preserve_basic_info_keys: tuple = ("type", "district"),
+        preserve_basic_info_keys: tuple = (
+            "district",
+            "in_all_news",
+            "is_highlight",
+            "is_liveblog",
+            "is_district",
+        ),
     ) -> dict:
         """Combine detailed and basic information into a single dictionary."""
         combined_info = {

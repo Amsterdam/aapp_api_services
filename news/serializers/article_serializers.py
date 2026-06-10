@@ -57,7 +57,7 @@ class NewsArticleListResponseSerializer(serializers.ModelSerializer):
             "images",
             "publication_datetime",
             "modification_datetime",
-            "type",
+            "is_liveblog",
             "is_active_liveblog",
         ]
 
@@ -83,7 +83,10 @@ class NewsArticleTransformSerializer(serializers.Serializer):
     body = serializers.CharField()
     summary = serializers.CharField(required=False, allow_blank=True)
     intro = serializers.CharField(required=False, allow_blank=True)
-    type = serializers.CharField(allow_blank=True)
+    in_all_news = serializers.BooleanField(required=False)
+    is_highlight = serializers.BooleanField(required=False)
+    is_liveblog = serializers.BooleanField(required=False)
+    is_district = serializers.BooleanField(required=False)
     district = serializers.CharField(allow_blank=True, allow_null=True)
     url = serializers.URLField(allow_blank=True)
     created = serializers.DateTimeField(required=False)

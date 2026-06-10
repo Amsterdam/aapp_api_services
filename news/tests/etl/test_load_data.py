@@ -61,7 +61,10 @@ class LoadDataTest(TestCase):
                 "url": "https://example.com/test-article",
                 "modification_datetime": "2024-01-01T12:00:00Z",
                 "image_url": "https://example.com/image.jpg",
-                "type": "article",
+                "in_all_news": True,
+                "is_liveblog": False,
+                "is_highlight": False,
+                "is_district": False,
                 "creation_datetime": "2024-01-01T12:00:00Z",
                 "publication_datetime": "2024-01-01T12:00:00Z",
                 "expiration_datetime": None,
@@ -85,7 +88,10 @@ class LoadDataTest(TestCase):
                 "url": "https://example.com/test-article-1",
                 "modification_datetime": "2024-01-01T12:00:00Z",
                 "image_url": "https://example.com/image-1.jpg",
-                "type": "article",
+                "in_all_news": True,
+                "is_liveblog": False,
+                "is_highlight": False,
+                "is_district": False,
                 "creation_datetime": "2024-01-01T12:00:00Z",
                 "publication_datetime": "2024-01-01T12:00:00Z",
                 "expiration_datetime": None,
@@ -96,7 +102,10 @@ class LoadDataTest(TestCase):
                 "url": "https://example.com/test-article-2",
                 "modification_datetime": "2024-01-01T12:00:00Z",
                 "image_url": "https://example.com/image-2.jpg",
-                "type": "article",
+                "in_all_news": True,
+                "is_liveblog": False,
+                "is_highlight": False,
+                "is_district": False,
                 "creation_datetime": "2024-01-01T12:00:00Z",
                 "publication_datetime": "2024-01-01T12:00:00Z",
                 "expiration_datetime": None,
@@ -152,7 +161,10 @@ class LoadDataTest(TestCase):
                 "url": "https://example.com/test-article-1",
                 "modification_datetime": "2024-01-01T12:00:00Z",
                 "image_url": "https://example.com/image-1.jpg",
-                "type": "article",
+                "in_all_news": True,
+                "is_liveblog": False,
+                "is_highlight": False,
+                "is_district": False,
                 "creation_datetime": "2024-01-01T12:00:00Z",
                 "publication_datetime": "2024-01-01T12:00:00Z",
                 "expiration_datetime": None,
@@ -163,7 +175,10 @@ class LoadDataTest(TestCase):
                 "url": "https://example.com/test-article-2",
                 "modification_datetime": "2024-01-01T12:00:00Z",
                 "image_url": "https://example.com/image-2.jpg",
-                "type": "article",
+                "in_all_news": True,
+                "is_liveblog": False,
+                "is_highlight": False,
+                "is_district": False,
                 "creation_datetime": "2024-01-01T12:00:00Z",
                 "publication_datetime": "2024-01-01T12:00:00Z",
                 "expiration_datetime": None,
@@ -194,7 +209,10 @@ class LoadDataTest(TestCase):
             "body": "A body",
             "summary": "A summary",
             "intro": "An intro",
-            "type": "article",
+            "in_all_news": True,
+            "is_highlight": False,
+            "is_liveblog": False,
+            "is_district": False,
             "district": None,
             "url": "https://example.com/article/123123",
             "creation_datetime": "2024-01-01T12:00:00Z",
@@ -209,6 +227,30 @@ class LoadDataTest(TestCase):
         self.assertEqual(
             news_article.modification_datetime, article_data["modification_datetime"]
         )
+        self.assertTrue(news_article.in_all_news)
+        self.assertFalse(news_article.is_liveblog)
+
+    def test_get_news_article_object_with_explicit_flags(self):
+        article_data = {
+            "foreign_id": "123123",
+            "title": "A title",
+            "body": "A body",
+            "in_all_news": True,
+            "is_highlight": True,
+            "is_liveblog": True,
+            "is_district": True,
+            "district": "noord",
+            "url": "https://example.com/article/123123",
+            "publication_datetime": "2024-01-01T12:00:00Z",
+        }
+        news_article = self.loader._get_news_article_object(article_data)
+
+        self.assertTrue(news_article.in_all_news)
+        self.assertTrue(news_article.is_highlight)
+        self.assertTrue(news_article.is_liveblog)
+        self.assertTrue(news_article.is_district)
+        # body is None because the article is a liveblog, and liveblogs have liveblog items instead of a body
+        self.assertIsNone(news_article.body)
 
     def test_upsert_news_articles(self):
         article = NewsArticle(
@@ -217,7 +259,10 @@ class LoadDataTest(TestCase):
             body="A body",
             summary="A summary",
             intro="An intro",
-            type="article",
+            in_all_news=True,
+            is_highlight=False,
+            is_liveblog=False,
+            is_district=False,
             district=None,
             url="https://example.com/article/123123",
             creation_datetime="2024-01-01T12:00:00Z",
@@ -236,7 +281,11 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             deleted=True,
-            type="article",
+            in_all_news=True,
+            is_highlight=False,
+            is_liveblog=False,
+            is_district=False,
+            district=None,
             url="https://example.com/article/123123",
             title="Old title",
             modification_datetime="2024-01-01T12:00:00Z",
@@ -254,7 +303,10 @@ class LoadDataTest(TestCase):
                 "body": "A body",
                 "summary": "A summary",
                 "intro": "An intro",
-                "type": "article",
+                "in_all_news": True,
+                "is_highlight": False,
+                "is_liveblog": False,
+                "is_district": False,
                 "district": None,
                 "url": "https://example.com/article/123123",
                 "creation_datetime": "2024-01-01T12:00:00Z",
@@ -272,8 +324,8 @@ class LoadDataTest(TestCase):
         self.assertGreater(existing_article.last_seen, old_last_seen)
 
     def test_garbage_collect_unseen_articles_marks_only_stale_articles(self):
-        stale_article = baker.make(NewsArticle, deleted=False, type="article")
-        recent_article = baker.make(NewsArticle, deleted=False, type="article")
+        stale_article = baker.make(NewsArticle, deleted=False, in_all_news=True)
+        recent_article = baker.make(NewsArticle, deleted=False, in_all_news=True)
 
         NewsArticle.objects.filter(id=stale_article.id).update(
             last_seen=timezone.now() - timezone.timedelta(hours=3)
@@ -296,7 +348,6 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -310,7 +361,6 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -332,7 +382,6 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -357,7 +406,6 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -387,7 +435,6 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -417,7 +464,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
+            in_all_news=True,
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
@@ -433,7 +480,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
+            in_all_news=True,
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T13:00:00Z",
         )
@@ -441,7 +488,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "A liveblog item",
@@ -469,7 +516,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
+            in_all_news=True,
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T13:00:00Z",
         )
@@ -485,7 +532,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "Some title",
@@ -516,7 +563,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
+            in_all_news=True,
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T13:00:00Z",
         )
@@ -534,7 +581,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "Updated existing item",
@@ -564,7 +611,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
+            in_all_news=True,
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T13:00:00Z",
         )
@@ -587,7 +634,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "Updated existing item",
@@ -620,7 +667,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="liveblog",
+            in_all_news=True,
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T13:00:00Z",
         )
@@ -643,7 +690,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "Updated existing item",
@@ -670,7 +717,7 @@ class LoadDataTest(TestCase):
             NewsArticle,
             foreign_id=123123,
             title="A title",
-            type="article",
+            in_all_news=True,
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T13:00:00Z",
         )
@@ -687,7 +734,7 @@ class LoadDataTest(TestCase):
             "foreign_id": "123123",
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
-            "type": "liveblog",
+            "is_liveblog": True,
             "body": [
                 {
                     "title": "Updated existing item",
@@ -709,7 +756,7 @@ class LoadDataTest(TestCase):
 
     @patch("news.etl.load_data.ImageSetService")
     def test_upsert_liveblog_item_images(self, mock_image_set_service):
-        article = baker.make(NewsArticle, type="liveblog")
+        article = baker.make(NewsArticle, in_all_news=True)
         liveblog_item = baker.make(
             LiveBlogItem,
             article=article,
@@ -730,7 +777,7 @@ class LoadDataTest(TestCase):
 
     @patch("news.etl.load_data.ImageSetService")
     def test_upsert_liveblog_item_images_http_error(self, mock_image_set_service):
-        article = baker.make(NewsArticle, type="liveblog")
+        article = baker.make(NewsArticle, is_liveblog=True)
         liveblog_item = baker.make(
             LiveBlogItem,
             article=article,
@@ -754,7 +801,7 @@ class LoadDataTest(TestCase):
 
     @patch("news.etl.load_data.ImageSetService")
     def test_upsert_liveblog_item_images_existing_remove(self, mock_image_set_service):
-        article = baker.make(NewsArticle, type="article")
+        article = baker.make(NewsArticle, in_all_news=True)
         liveblog_item = baker.make(
             LiveBlogItem,
             article=article,
@@ -785,7 +832,7 @@ class LoadDataTest(TestCase):
 
     @patch("news.etl.load_data.ImageSetService")
     def test_upsert_liveblog_item_images_existing_update(self, mock_image_set_service):
-        article = baker.make(NewsArticle, type="article")
+        article = baker.make(NewsArticle, in_all_news=True)
         liveblog_item = baker.make(
             LiveBlogItem,
             article=article,
@@ -818,7 +865,7 @@ class LoadDataTest(TestCase):
         )
 
     def test_upsert_liveblog_item_images_no_image(self):
-        article = baker.make(NewsArticle, type="article")
+        article = baker.make(NewsArticle, in_all_news=True)
         liveblog_item = baker.make(
             LiveBlogItem,
             article=article,

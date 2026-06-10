@@ -16,28 +16,38 @@ class TestArticleListView(BasicAPITestCase):
         self.article_1 = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
-            type="article",
+            in_all_news=True,
         )
         self.article_2 = baker.make(
             NewsArticle,
-            publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
-            type="article",
+            publication_datetime=datetime(2024, 10, 12, 14, 45, 45).isoformat(),
+            in_all_news=True,
         )
         self.article_3 = baker.make(
             NewsArticle,
-            publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
-            type="highlight",
+            publication_datetime=datetime(2024, 10, 12, 14, 45, 30).isoformat(),
+            is_highlight=True,
         )
         self.article_4 = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
-            type="district",
+            is_district=True,
             district="noord",
         )
         self.article_5 = baker.make(
             NewsArticle,
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
-            type="liveblog",
+            is_liveblog=True,
+            is_active_liveblog=True,
+        )
+        self.overlap_article = baker.make(
+            NewsArticle,
+            publication_datetime=datetime(2024, 10, 12, 12, 0, 0).isoformat(),
+            district="noord",
+            in_all_news=True,
+            is_highlight=True,
+            is_liveblog=True,
+            is_district=True,
             is_active_liveblog=True,
         )
         self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
@@ -51,10 +61,16 @@ class TestArticleListView(BasicAPITestCase):
         response_result = response.data["result"]
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response_result), 2)
-        self.assertEqual(response.data["page"]["totalElements"], 2)
-        self.assertEqual(response.data["result"][0]["is_active_liveblog"], False)
-        self.assertEqual(response.data["result"][0]["type"], "article")
+        self.assertEqual(len(response_result), 3)
+        self.assertEqual(response.data["page"]["totalElements"], 3)
+
+        overlap_response = [
+            article
+            for article in response_result
+            if article["id"] == self.overlap_article.id
+        ][0]
+        self.assertTrue(overlap_response["is_active_liveblog"])
+        self.assertTrue(overlap_response["is_liveblog"])
 
         article_1_response = [
             article for article in response_result if article["id"] == self.article_1.id
@@ -70,7 +86,7 @@ class TestArticleListView(BasicAPITestCase):
         ][0]
         self.assertEqual(article_2_response["title"], self.article_2.title)
         self.assertEqual(
-            article_2_response["publication_datetime"], "2024-10-12T14:45:15+02:00"
+            article_2_response["publication_datetime"], "2024-10-12T14:45:45+02:00"
         )
         self.assertEqual(len(article_2_response["images"]), 0)
 
@@ -79,7 +95,7 @@ class TestArticleListView(BasicAPITestCase):
             self.url, data={"type": "highlight"}, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["page"]["totalElements"], 1)
+        self.assertEqual(response.data["page"]["totalElements"], 2)
 
     def test_article_list_pagination(self):
         params = {"page_size": 1, "type": "article"}
@@ -87,21 +103,21 @@ class TestArticleListView(BasicAPITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["result"]), 1)
-        self.assertEqual(response.data["page"]["totalElements"], 2)
+        self.assertEqual(response.data["page"]["totalElements"], 3)
 
     def test_liveblog_list(self):
         response = self.client.get(
             self.url, data={"type": "liveblog"}, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["page"]["totalElements"], 1)
+        self.assertEqual(response.data["page"]["totalElements"], 2)
         self.assertEqual(response.data["result"][0]["is_active_liveblog"], True)
-        self.assertEqual(response.data["result"][0]["type"], "liveblog")
+        self.assertEqual(response.data["result"][0]["id"], self.article_5.id)
 
     def test_article_list_excludes_deleted_articles(self):
         baker.make(
             NewsArticle,
-            type="article",
+            in_all_news=True,
             deleted=True,
             publication_datetime=datetime(2024, 10, 13, 14, 45, 15).isoformat(),
         )
@@ -111,7 +127,7 @@ class TestArticleListView(BasicAPITestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["page"]["totalElements"], 2)
+        self.assertEqual(response.data["page"]["totalElements"], 3)
 
     def test_foobar_list(self):
         response = self.client.get(
@@ -126,7 +142,7 @@ class TestArticleListView(BasicAPITestCase):
             headers=self.api_headers,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["page"]["totalElements"], 1)
+        self.assertEqual(response.data["page"]["totalElements"], 2)
 
     def test_district_list_empty(self):
         response = self.client.get(
@@ -182,7 +198,7 @@ class TestArticleListView(BasicAPITestCase):
                 headers=self.api_headers,
             )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.data["result"][0]["id"], self.article_1.id)
+            self.assertEqual(response.data["result"][0]["id"], self.overlap_article.id)
             self.assertEqual(get_queryset.call_count, 2)
 
             response = self.client.get(
@@ -229,17 +245,15 @@ class TestArticleListView(BasicAPITestCase):
 class TestArticleDetailView(BasicAPITestCase):
     def setUp(self):
         super().setUp()
-        article_id = 123
-        self.url = reverse("news-article-detail", kwargs={"id": article_id})
         self.article_1 = baker.make(
             NewsArticle,
-            id=article_id,
-            type="article",
+            in_all_news=True,
             publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
         )
+        self.url = reverse("news-article-detail", kwargs={"id": self.article_1.id})
         self.article_2 = baker.make(
             NewsArticle,
-            type="article",
+            in_all_news=True,
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
         )
         self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
@@ -262,7 +276,7 @@ class TestArticleDetailView(BasicAPITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_deleted_article_detail_not_found(self):
-        deleted_article = baker.make(NewsArticle, deleted=True, type="article")
+        deleted_article = baker.make(NewsArticle, deleted=True, in_all_news=True)
 
         url = reverse("news-article-detail", kwargs={"id": deleted_article.id})
         response = self.client.get(url, headers=self.api_headers)

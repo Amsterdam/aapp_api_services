@@ -63,7 +63,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             NewsArticle,
             foreign_id=1234123,
             title="Test Liveblog",
-            type="liveblog",
+            is_liveblog=True,
             is_active_liveblog=False,
         )
 
@@ -78,7 +78,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             NewsArticle,
             foreign_id=1234123,
             title="Test Liveblog",
-            type="liveblog",
+            is_liveblog=True,
             is_active_liveblog=True,
         )
 
@@ -96,7 +96,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             NewsArticle,
             foreign_id=1234123,
             title="Test Liveblog",
-            type="liveblog",
+            is_liveblog=True,
             is_active_liveblog=True,
         )
 
@@ -118,7 +118,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             NewsArticle,
             foreign_id=1234123,
             title="Test Liveblog",
-            type="liveblog",
+            is_liveblog=True,
             is_active_liveblog=True,
         )
 
@@ -140,7 +140,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             NewsArticle,
             foreign_id=1234123,
             title="Test Liveblog",
-            type="liveblog",
+            is_liveblog=True,
             is_active_liveblog=True,
             liveblog_version=123,
         )
@@ -163,7 +163,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             NewsArticle,
             foreign_id=1234123,
             title="Test Liveblog",
-            type="liveblog",
+            is_liveblog=True,
             is_active_liveblog=True,
             liveblog_version=123,
         )
@@ -196,7 +196,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             NewsArticle,
             foreign_id=1234123,
             title="Test Liveblog",
-            type="liveblog",
+            is_liveblog=True,
             is_active_liveblog=True,
             liveblog_notification_send=timezone.now(),  # This is to test that no new liveblog notification is created
         )
@@ -240,7 +240,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             NewsArticle,
             foreign_id=1234123,
             title="Test Liveblog",
-            type="liveblog",
+            is_liveblog=True,
             is_active_liveblog=True,
             liveblog_notification_send=timezone.now(),
         )

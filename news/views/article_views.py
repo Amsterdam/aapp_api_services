@@ -25,15 +25,20 @@ class ArticleListView(ListAPIView):
         query_serializer.is_valid(raise_exception=True)
 
         article_type = query_serializer.validated_data["type"]
-        queryset = (
-            NewsArticle.visible_objects.filter(type=article_type)
-            .prefetch_related("images")
-            .order_by("-publication_datetime")
+        queryset = NewsArticle.visible_objects.prefetch_related("images").order_by(
+            "-publication_datetime"
         )
 
-        if article_type == "district":
+        if article_type == "article":
+            queryset = queryset.filter(in_all_news=True)
+        elif article_type == "highlight":
+            queryset = queryset.filter(is_highlight=True)
+        elif article_type == "liveblog":
+            queryset = queryset.filter(is_liveblog=True)
+        elif article_type == "district":
             district = query_serializer.validated_data.get("district")
-            queryset = queryset.filter(district=district)
+            queryset = queryset.filter(is_district=True, district=district)
+
         return queryset
 
     @extend_schema_for_api_key(
