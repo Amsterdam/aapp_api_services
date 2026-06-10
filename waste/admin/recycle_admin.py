@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.db.models import Case, F, IntegerField, Value, When
 
+from core.authentication import AuthenticationGroupModelAdmin
 from waste.models import RecycleLocationOpeningHours, RegularOpeningHours, WeekDay
 
 
@@ -28,7 +29,9 @@ class RegularOpeningHoursInline(admin.TabularInline):
         return ["day_of_week", "opens_time", "closes_time"]
 
 
-class RecycleLocationOpeningHoursAdmin(admin.ModelAdmin):
+class RecycleLocationOpeningHoursAdmin(AuthenticationGroupModelAdmin):
+    authentication_groups = ["waste-publisher", "waste-delegated"]
+
     week_days = WeekDay.names[1:] + WeekDay.names[:1]
     inlines = [RegularOpeningHoursInline]
     list_display = ["recycle_location"] + [f"get_{day.lower()}" for day in week_days]
@@ -105,7 +108,8 @@ class RecycleLocationOpeningHoursInline(admin.StackedInline):
     verbose_name_plural = "Openingstijden"
 
 
-class RecycleLocationAdmin(admin.ModelAdmin):
+class RecycleLocationAdmin(AuthenticationGroupModelAdmin):
+    authentication_groups = ["waste-publisher", "waste-delegated"]
     list_display = [
         "name",
         "city",
@@ -122,7 +126,8 @@ class RecycleLocationAdmin(admin.ModelAdmin):
     inlines = [RecycleLocationOpeningHoursInline]
 
 
-class OpeningHoursExceptionAdmin(admin.ModelAdmin):
+class OpeningHoursExceptionAdmin(AuthenticationGroupModelAdmin):
+    authentication_groups = ["waste-publisher", "waste-delegated"]
     list_display = [
         "get_description",
         "get_date",

@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import amsterdam_django_oidc
 import jwt
 from django.conf import settings
+from django.contrib.admin import ModelAdmin
 from django.contrib.auth.models import Group, User
 from django.db import transaction
 from django.http import HttpRequest
@@ -259,6 +260,7 @@ class MockEntraTokenAuthentication(BaseAuthentication, EntraTokenMixin):
             "cbs-time-publisher",
             "city-pass-publisher",
             "waste-publisher",
+            "waste-notification-publisher",
             "survey-publisher",
         ]:
             group, _ = Group.objects.get_or_create(name=f"o-{role_name}")
@@ -266,3 +268,33 @@ class MockEntraTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         user.groups.set(groups)
 
         return (user, None)
+
+
+class AuthenticationGroupModelAdmin(ModelAdmin):
+    authentication_groups = []
+    authentication_view_groups = []
+
+    def has_add_permission(self, request):
+        return user_groups_contains_group_names(
+            request.user, self.authentication_groups
+        )
+
+    def has_change_permission(self, request, obj=None):
+        return user_groups_contains_group_names(
+            request.user, self.authentication_groups
+        )
+
+    def has_delete_permission(self, request, obj=None):
+        return user_groups_contains_group_names(
+            request.user, self.authentication_groups
+        )
+
+    def has_view_permission(self, request, obj=None):
+        return user_groups_contains_group_names(
+            request.user, self.authentication_groups + self.authentication_view_groups
+        )
+
+
+def user_groups_contains_group_names(user, group_names):
+    environment_group_names = [f"{settings.ENVIRONMENT_SLUG}-{x}" for x in group_names]
+    return user.groups.filter(name__in=environment_group_names).exists()
