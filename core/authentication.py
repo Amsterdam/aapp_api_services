@@ -261,6 +261,7 @@ class MockEntraTokenAuthentication(BaseAuthentication, EntraTokenMixin):
             "city-pass-publisher",
             "waste-publisher",
             "waste-notification-publisher",
+            "waste-recycle-publisher",
             "survey-publisher",
         ]:
             group, _ = Group.objects.get_or_create(name=f"o-{role_name}")

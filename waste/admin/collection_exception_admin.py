@@ -7,6 +7,8 @@ from waste.models import WasteCollectionException
 
 class WasteCollectionExceptionAdmin(AuthenticationGroupModelAdmin):
     authentication_groups = [
+        "waste-publisher",
+        "waste-delegated",
         "waste-notification-publisher",
         "waste-notification-delegated",
     ]

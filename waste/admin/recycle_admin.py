@@ -30,7 +30,12 @@ class RegularOpeningHoursInline(admin.TabularInline):
 
 
 class RecycleLocationOpeningHoursAdmin(AuthenticationGroupModelAdmin):
-    authentication_groups = ["waste-publisher", "waste-delegated"]
+    authentication_groups = [
+        "waste-publisher",
+        "waste-delegated",
+        "waste-recycle-publisher",
+        "waste-recycle-delegated",
+    ]
 
     week_days = WeekDay.names[1:] + WeekDay.names[:1]
     inlines = [RegularOpeningHoursInline]
@@ -109,7 +114,12 @@ class RecycleLocationOpeningHoursInline(admin.StackedInline):
 
 
 class RecycleLocationAdmin(AuthenticationGroupModelAdmin):
-    authentication_groups = ["waste-publisher", "waste-delegated"]
+    authentication_groups = [
+        "waste-publisher",
+        "waste-delegated",
+        "waste-recycle-publisher",
+        "waste-recycle-delegated",
+    ]
     list_display = [
         "name",
         "city",
@@ -127,7 +137,12 @@ class RecycleLocationAdmin(AuthenticationGroupModelAdmin):
 
 
 class OpeningHoursExceptionAdmin(AuthenticationGroupModelAdmin):
-    authentication_groups = ["waste-publisher", "waste-delegated"]
+    authentication_groups = [
+        "waste-publisher",
+        "waste-delegated",
+        "waste-recycle-publisher",
+        "waste-recycle-delegated",
+    ]
     list_display = [
         "get_description",
         "get_date",
