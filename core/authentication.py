@@ -275,13 +275,19 @@ class AuthenticationGroupModelAdmin(ModelAdmin):
     authentication_view_groups: tuple[str, ...] = ()
 
     def has_add_permission(self, request):
-        return user_groups_contains_group_names(request.user, list(self.authentication_groups))
+        return user_groups_contains_group_names(
+            request.user, list(self.authentication_groups)
+        )
 
     def has_change_permission(self, request, obj=None):
-        return user_groups_contains_group_names(request.user, list(self.authentication_groups))
+        return user_groups_contains_group_names(
+            request.user, list(self.authentication_groups)
+        )
 
     def has_delete_permission(self, request, obj=None):
-        return user_groups_contains_group_names(request.user, list(self.authentication_groups))
+        return user_groups_contains_group_names(
+            request.user, list(self.authentication_groups)
+        )
 
     def has_view_permission(self, request, obj=None):
         return user_groups_contains_group_names(
