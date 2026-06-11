@@ -43,7 +43,7 @@ class Command(BaseCommand):
             is_liveblog=True,
             is_active_liveblog=True,
             deleted=False,
-        ).values_list("foreign_id", "liveblog_version")
+        )
 
         if not active_liveblogs:
             return
@@ -52,7 +52,8 @@ class Command(BaseCommand):
             f"Found {len(active_liveblogs)} active liveblogs. Checking for updates..."
         )
 
-        for foreign_id, liveblog_version in active_liveblogs:
+        for liveblog in active_liveblogs:
+            foreign_id = liveblog.foreign_id
             # Step 2: Check if there are updates for the active liveblogs by comparing the latest version from the Iprox API with the version stored in the database.
             liveblog_version_url = urljoin(
                 IPROX_DETAIL_URL, f"{foreign_id}/latest-version"
@@ -84,7 +85,11 @@ class Command(BaseCommand):
                 )
                 continue
 
-            current_version = liveblog_version if liveblog_version is not None else -1
+            current_version = (
+                liveblog.liveblog_version
+                if liveblog.liveblog_version is not None
+                else -1
+            )
 
             if latest_version <= current_version:
                 logger.info(
@@ -120,7 +125,11 @@ class Command(BaseCommand):
                     {
                         **response.json(),
                         "is_liveblog": True,
-                        "district": None,
+                        "is_active_liveblog": True,
+                        "is_highlight": liveblog.is_highlight,  # keep the highlight status of the liveblog
+                        "in_all_news": liveblog.in_all_news,  # keep the all news status of the liveblog
+                        "is_district": liveblog.is_district,  # keep the district status of the liveblog
+                        "district": liveblog.district,  # keep the district of the liveblog
                     }
                 ]
             )
