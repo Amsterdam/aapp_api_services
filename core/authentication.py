@@ -271,27 +271,22 @@ class MockEntraTokenAuthentication(BaseAuthentication, EntraTokenMixin):
 
 
 class AuthenticationGroupModelAdmin(ModelAdmin):
-    authentication_groups = []
-    authentication_view_groups = []
+    authentication_groups: tuple[str, ...] = ()
+    authentication_view_groups: tuple[str, ...] = ()
 
     def has_add_permission(self, request):
-        return user_groups_contains_group_names(
-            request.user, self.authentication_groups
-        )
+        return user_groups_contains_group_names(request.user, list(self.authentication_groups))
 
     def has_change_permission(self, request, obj=None):
-        return user_groups_contains_group_names(
-            request.user, self.authentication_groups
-        )
+        return user_groups_contains_group_names(request.user, list(self.authentication_groups))
 
     def has_delete_permission(self, request, obj=None):
-        return user_groups_contains_group_names(
-            request.user, self.authentication_groups
-        )
+        return user_groups_contains_group_names(request.user, list(self.authentication_groups))
 
     def has_view_permission(self, request, obj=None):
         return user_groups_contains_group_names(
-            request.user, self.authentication_groups + self.authentication_view_groups
+            request.user,
+            list(self.authentication_groups) + list(self.authentication_view_groups),
         )
 
 
