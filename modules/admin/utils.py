@@ -37,7 +37,7 @@ class SVGSelectWidget(Widget):
                     value=key,
                     id=f"{attrs['id']}_{idx}",
                     checked="checked" if str(value) == str(key) else "",
-                    svg=f'<svg viewBox="0 0 32 32" width="32" height="32">'
+                    svg=f'<svg viewBox="0 0 24 24" width="32" height="32">'
                     f'<path d="{svg_path}"/></svg>',
                 )
             )

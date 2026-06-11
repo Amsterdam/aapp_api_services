@@ -9,7 +9,7 @@ class ModuleAdminMixin:
         svg_path = ModuleIconPath.get(obj.icon)
         if not svg_path:
             return ""
-        svg_html = f'<svg viewBox="0 0 32 32" width="24" height="24" fill-rule="evenodd"><path d="{svg_path}"></path></svg>'
+        svg_html = f'<svg viewBox="0 0 24 24" width="24" height="24" fill-rule="evenodd"><path d="{svg_path}"></path></svg>'
         return mark_safe(svg_html)
 
     def module_status(self, obj):
