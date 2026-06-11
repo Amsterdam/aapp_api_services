@@ -11,8 +11,8 @@ from news.serializers.article_serializers import (
     NewsArticleRequestSerializer,
 )
 
-ARTICLE_LIST_CACHE_TTL_SECONDS = 60 * 5
-ARTICLE_DETAIL_CACHE_TTL_SECONDS = 60
+ARTICLE_LIST_CACHE_TTL_SECONDS = 10
+ARTICLE_DETAIL_CACHE_TTL_SECONDS = 10
 
 
 @method_decorator(cache_page(ARTICLE_LIST_CACHE_TTL_SECONDS), name="get")
