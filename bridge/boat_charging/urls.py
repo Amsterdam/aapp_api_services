@@ -16,6 +16,11 @@ urlpatterns = [
         name="boat-charging-guest-login",
     ),
     path(
+        BASE_PATH + "/oidc-settings",
+        login_view.OIDCSettingsView.as_view(),
+        name="boat-charging-oidc-settings",
+    ),
+    path(
         BASE_PATH + "/locations",
         location_view.LocationView.as_view(),
         name="boat-charging-locations",

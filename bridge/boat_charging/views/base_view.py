@@ -315,7 +315,6 @@ def boat_charging_openapi_decorator(
         "exceptions": [
             BoatChargingClientError,
             BoatChargingServerError,
-            BoatChargingMissingAccessToken,
             BoatChargingForbiddenError,
         ],
     }
@@ -361,5 +360,4 @@ def boat_charging_openapi_decorator(
                 location="query",
             )
         )
-
     return extend_schema_for_api_key(**kwargs, additional_params=additional_params)

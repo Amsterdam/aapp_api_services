@@ -88,7 +88,7 @@ Required fields:
 
 ## H6 Rework Request
 
-Use when Orchestrator routes blocking review or test findings back to Developer.
+Use when Orchestrator encounters a blocking review or failing test findings, and communicate to the Product Owner.
 
 Required fields:
 

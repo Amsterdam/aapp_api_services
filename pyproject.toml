@@ -36,7 +36,7 @@ dependencies = [
   "pillow",
   "pillow-heif",
   # construction work ETL
-  "aiohttp",
+  "aiohttp!=3.14",
   "tenacity",
   # news ETL
   "beautifulsoup4",

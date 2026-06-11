@@ -98,6 +98,7 @@ services:
     environment:
       <<: *base-app-env
       DJANGO_SETTINGS_MODULE: "${SERVICE_NAME}.settings.base"
+      API_AUTH_TOKENS: insecure1,insecure2,insecure3
     volumes:
       - ./core:/app/core
       - ./manage.py:/app/manage.py

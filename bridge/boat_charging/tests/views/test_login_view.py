@@ -3,6 +3,7 @@ from urllib.parse import parse_qs
 import httpx
 import respx
 from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 
 from bridge.boat_charging.tests.mock_data import (
@@ -37,3 +38,53 @@ class TestGuestLoginView(BoatChargingTestCase):
         body = request.content.decode()
         parsed = parse_qs(body)
         self.assertEqual(parsed["grant_type"], ["client_credentials"])
+
+
+OIDC_SETTINGS = {
+    "BOAT_CHARGING_OIDC_ISSUER": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_issuer-a",
+    "BOAT_CHARGING_OIDC_DISCOVERY_URL": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_issuer-a/.well-known/openid-configuration",
+    "BOAT_CHARGING_OIDC_CLIENT_ID": "boat-charging-client-a",
+    "BOAT_CHARGING_OIDC_REDIRECT_URI": "amsterdamapp://oauth/callback",
+    "BOAT_CHARGING_OIDC_SCOPES": ["openid", "profile", "email"],
+    "BOAT_CHARGING_OIDC_RESPONSE_TYPE": "code",
+    "BOAT_CHARGING_OIDC_PKCE_REQUIRED": True,
+}
+
+
+class TestOIDCSettingsView(BoatChargingTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("boat-charging-oidc-settings")
+        self.schema_url = reverse("bridge-openapi-schema")
+
+    @override_settings(**OIDC_SETTINGS)
+    def test_valid_api_key_without_access_token_returns_oidc_settings(self):
+        headers = self.api_headers.copy()
+        headers.pop("access_token", None)
+
+        response = self.client.get(self.url, headers=headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data,
+            {
+                "issuer": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_issuer-a",
+                "discovery_url": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_issuer-a/.well-known/openid-configuration",
+                "client_id": "boat-charging-client-a",
+                "redirect_uri": "amsterdamapp://oauth/callback",
+                "scopes": ["openid", "profile", "email"],
+                "response_type": "code",
+                "pkce_required": True,
+            },
+        )
+
+    @override_settings(**OIDC_SETTINGS)
+    def test_invalid_api_key_without_access_token_returns_401(self):
+        headers = self.api_headers.copy()
+        headers.pop("access_token", None)
+        headers[self.auth_instance.api_key_header] = "not-legit"
+
+        response = self.client.get(self.url, headers=headers)
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["code"], "API_KEY_INVALID")
