@@ -4,10 +4,17 @@ from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 
+from core.authentication import AuthenticationGroupModelAdmin
 from waste.services.notification import ManualNotificationService
 
 
-class NotificationAdmin(admin.ModelAdmin):
+class NotificationAdmin(AuthenticationGroupModelAdmin):
+    authentication_groups = (
+        "waste-publisher",
+        "waste-delegated",
+        "waste-notification-publisher",
+        "waste-notification-delegated",
+    )
     list_display = [
         "title",
         "message",
