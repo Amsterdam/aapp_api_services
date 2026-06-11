@@ -9,12 +9,12 @@ from waste.services.notification import ManualNotificationService
 
 
 class NotificationAdmin(AuthenticationGroupModelAdmin):
-    authentication_groups = [
+    authentication_groups = (
         "waste-publisher",
         "waste-delegated",
         "waste-notification-publisher",
         "waste-notification-delegated",
-    ]
+    )
     list_display = [
         "title",
         "message",

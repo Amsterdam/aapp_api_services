@@ -6,12 +6,12 @@ from waste.models import WasteCollectionException
 
 
 class WasteCollectionExceptionAdmin(AuthenticationGroupModelAdmin):
-    authentication_groups = [
+    authentication_groups = (
         "waste-publisher",
         "waste-delegated",
         "waste-notification-publisher",
         "waste-notification-delegated",
-    ]
+    )
     model = WasteCollectionException
 
     @admin.display(description="Belangrijke informatie")
