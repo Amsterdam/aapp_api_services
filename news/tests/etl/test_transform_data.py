@@ -155,9 +155,7 @@ class TransformDataTest(TestCase):
         self.assertEqual(len(messages), 2)
         self.assertEqual(messages[0]["creation_datetime"], "2024-01-01T12:00:00+01:00")
         self.assertEqual(messages[0]["title"], "First update")
-        self.assertNotIn(
-            "<img", messages[0]["body"]
-        )  # Image should be removed from body
+        self.assertIn("<img", messages[0]["body"])  # Image should be present in body
         self.assertIn("Details of the first update.", messages[0]["body"])
         self.assertEqual(messages[0]["image_url"], "https://example.com/image1.jpg")
         self.assertEqual(messages[0]["image_description"], "Image 1 description")
@@ -186,9 +184,7 @@ class TransformDataTest(TestCase):
         messages = parse_liveblog_messages(input_str)
         self.assertEqual(len(messages), 1)
 
-        self.assertNotIn(
-            "<img", messages[0]["body"]
-        )  # Image should be removed from body
+        self.assertIn("<img", messages[0]["body"])  # Image should be present in body
         self.assertIn("Eerste deel tekst.", messages[0]["body"])
         self.assertIn("Tweede deel tekst.", messages[0]["body"])
         self.assertIn("Derde deel tekst.", messages[0]["body"])

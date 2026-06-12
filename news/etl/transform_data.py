@@ -181,20 +181,13 @@ def extract_body_from_elements(elements, title) -> str:
     Build the body HTML by concatenating the HTML of all elements, but skip the title element if it
     matches the provided title.
 
-    Also remove the image tags from the body, since we are storing the first image separately.
+    Also adds quotes around blockquote elements in the body.
     """
     body_html = ""
     for el in elements:
         if el.name in ["h3", "h4"] and el.get_text(strip=True) == title:
             continue
-        if el.name == "img":
-            continue
-
-        # Remove nested image tags (e.g., <p><img ... /></p>) from body content.
-        el_copy = BeautifulSoup(str(el), "html.parser")
-        for img in el_copy.find_all("img"):
-            img.decompose()
-        body_html += str(el_copy)
+        body_html += str(el)
 
     body_html = add_quotes_around_blockquotes(body_html)
     return body_html.strip()
