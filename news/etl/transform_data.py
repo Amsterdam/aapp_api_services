@@ -113,7 +113,6 @@ def parse_liveblog_messages(input_str: str | None) -> list[dict]:
         elements = find_elements_between_datetimes(dt_tag)
 
         title = extract_title_from_elements(elements)
-        image_url, image_desc = extract_first_image_from_elements(elements)
         body = extract_body_from_elements(elements, title)
 
         messages.append(
@@ -121,8 +120,6 @@ def parse_liveblog_messages(input_str: str | None) -> list[dict]:
                 "title": title,
                 "creation_datetime": date_string,
                 "body": body,
-                "image_url": image_url,
-                "image_description": image_desc,
             }
         )
     return messages
@@ -153,27 +150,6 @@ def extract_title_from_elements(elements) -> str:
             title = el.get_text(strip=True)
             break
     return title
-
-
-def extract_first_image_from_elements(elements) -> tuple[str | None, str | None]:
-    """
-    For now we assume that each liveblog item only contains one image.
-    Find the first image in the elements and return its URL and description (alt text).
-    """
-    image_url = None
-    image_desc = None
-    for el in elements:
-        img = el.find("img") if el else None
-        if img and img.get("src"):
-            image_url = img["src"]
-            image_desc = img.get("alt", "")
-            break
-        # Also check if the element itself is an img
-        if el and el.name == "img" and el.get("src"):
-            image_url = el["src"]
-            image_desc = el.get("alt", "")
-            break
-    return image_url, image_desc
 
 
 def extract_body_from_elements(elements, title) -> str:

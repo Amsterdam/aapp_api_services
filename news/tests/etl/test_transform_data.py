@@ -6,7 +6,6 @@ from news.etl.transform_data import (
     change_date_string_to_iso,
     decode_and_strip_outer_div,
     extract_body_from_elements,
-    extract_first_image_from_elements,
     extract_title_from_elements,
     find_elements_between_datetimes,
     parse_liveblog_messages,
@@ -157,13 +156,9 @@ class TransformDataTest(TestCase):
         self.assertEqual(messages[0]["title"], "First update")
         self.assertIn("<img", messages[0]["body"])  # Image should be present in body
         self.assertIn("Details of the first update.", messages[0]["body"])
-        self.assertEqual(messages[0]["image_url"], "https://example.com/image1.jpg")
-        self.assertEqual(messages[0]["image_description"], "Image 1 description")
         self.assertEqual(messages[1]["creation_datetime"], "2024-01-01T13:00:00+01:00")
         self.assertEqual(messages[1]["title"], "Second update")
         self.assertIn("Details of the second update.", messages[1]["body"])
-        self.assertIsNone(messages[1]["image_url"])
-        self.assertIsNone(messages[1]["image_description"])
 
     def test_parse_liveblog_messages_image_nesting(self):
         input_str = """
@@ -188,8 +183,6 @@ class TransformDataTest(TestCase):
         self.assertIn("Eerste deel tekst.", messages[0]["body"])
         self.assertIn("Tweede deel tekst.", messages[0]["body"])
         self.assertIn("Derde deel tekst.", messages[0]["body"])
-        self.assertEqual(messages[0]["image_url"], "https://www.example.com/image1.jpg")
-        self.assertEqual(messages[0]["image_description"], "")
 
     def test_find_elements_between_datetimes(self):
         html = """<div>
@@ -222,22 +215,6 @@ class TransformDataTest(TestCase):
         elements = list(soup.children)
         title = extract_title_from_elements(elements)
         self.assertEqual(title, "")
-
-    def test_extract_first_image_from_elements(self):
-        html = '<p>Body</p><img src="img.jpg" alt="desc">'
-        soup = BeautifulSoup(html, "html.parser")
-        elements = list(soup.children)
-        url, desc = extract_first_image_from_elements(elements)
-        self.assertEqual(url, "img.jpg")
-        self.assertEqual(desc, "desc")
-
-    def test_extract_first_image_from_elements_no_image(self):
-        html = "<p>Body</p>"
-        soup = BeautifulSoup(html, "html.parser")
-        elements = list(soup.children)
-        url, desc = extract_first_image_from_elements(elements)
-        self.assertIsNone(url)
-        self.assertIsNone(desc)
 
     def test_extract_body_from_elements(self):
         html = "<h3>Title</h3><p>Body</p>"
