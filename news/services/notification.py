@@ -26,13 +26,13 @@ class LiveblogUpdateNotificationService(AbstractNotificationService):
         self,
         device_ids: list[str],
         update_title: str,
-        liveblog_item_id: int,
+        liveblog_id: int,
         image_set_id: int | None = None,
     ):
         notification_data = NotificationData(
             title="Liveblog update",
             message=update_title,
-            link_source_id=liveblog_item_id,
+            link_source_id=liveblog_id,
             device_ids=device_ids,
             image_set_id=image_set_id,
         )

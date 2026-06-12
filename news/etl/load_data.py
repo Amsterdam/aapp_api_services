@@ -240,14 +240,11 @@ class NewsArticleLoader:
 
             image_set_id = self._upsert_liveblog_item_images(message, liveblog_item)
             if created:
-                self.send_liveblog_updates(
-                    image_set_id, liveblog_item, message, news_article
-                )
+                self.send_liveblog_updates(image_set_id, message, news_article)
 
     def send_liveblog_updates(
         self,
         image_set_id: int | None,
-        liveblog_item,
         message,
         news_article: NewsArticle,
     ):
@@ -270,7 +267,7 @@ class NewsArticleLoader:
             update_notification_service.send(
                 device_ids=device_ids,
                 update_title=message.get("title"),
-                liveblog_item_id=liveblog_item.id,
+                liveblog_id=news_article.id,
                 image_set_id=image_set_id,
             )
 
