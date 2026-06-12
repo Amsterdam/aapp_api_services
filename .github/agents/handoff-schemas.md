@@ -126,3 +126,8 @@ Required fields:
 - `residual_risk`
 - `resulting_git_hash`
 - `next_step`
+
+Validation note:
+
+- Tester responses are valid only when `schema` is exactly `H8 Test Result`.
+- If a non-`H8` payload is returned to a test request, the Orchestrator must reject it as schema-invalid and request a corrected `H8 Test Result` before progressing.
