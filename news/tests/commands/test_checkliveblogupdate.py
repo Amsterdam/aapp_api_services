@@ -24,32 +24,6 @@ IPROX_DETAIL_URL = urljoin(IPROX_URL, "item/")
 
 
 class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
-    def _set_mock_image_set_service_side_effect(self, mock_image_set_service):
-        # In these command tests we patch the image_set_service instance directly.
-        # Return the same payload for each image URL processed.
-        mock_image_set_service.get_or_upload_from_url.return_value = {
-            "id": 12345,
-            "identifier": "xyz789abc123",
-            "description": "description of the image",
-            "variants": [
-                {
-                    "image": "https://example.com/image.jpg",
-                    "width": 123,
-                    "height": 456,
-                },
-                {
-                    "image": "https://example.com/image-1.jpg",
-                    "width": 234,
-                    "height": 567,
-                },
-                {
-                    "image": "https://example.com/image-2.jpg",
-                    "width": 345,
-                    "height": 678,
-                },
-            ],
-        }
-
     def test_run_news_etl_no_liveblogs(self):
         """Test that the command runs without errors when there are no active liveblogs in the database."""
         call_command("checkliveblogupdate")
@@ -186,11 +160,8 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
         self.assertEqual(LiveBlogItem.objects.count(), 0)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
 
-    @patch.object(checkliveblogupdate.data_loader, "image_set_service")
-    def test_run_news_etl_with_active_liveblogs(self, mock_image_set_service):
+    def test_run_news_etl_with_active_liveblogs(self):
         """Test that the command runs without errors when there are active liveblogs in the database."""
-
-        self._set_mock_image_set_service_side_effect(mock_image_set_service)
 
         baker.make(
             NewsArticle,
@@ -224,17 +195,12 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             ScheduledNotification.objects.count(), 0
         )  # There should be no notifications because the liveblog already exists in the database (so no new liveblog notification)
 
-    @patch(
-        "core.services.notification_service.ImageSetService.exists", return_value=True
-    )
-    @patch.object(checkliveblogupdate.data_loader, "image_set_service")
     def test_run_news_etl_with_active_liveblogs_and_notifications(
-        self, mock_image_set_service, _mock_image_exists
+        self,
     ):
         """
         Test that the command runs without errors when there are active liveblogs in the database and there are people that want updates about the liveblogs.
         """
-        self._set_mock_image_set_service_side_effect(mock_image_set_service)
 
         article = baker.make(
             NewsArticle,
@@ -278,7 +244,6 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             body="Update with image"
         ).first()
         self.assertIsNotNone(notification_with_image)
-        self.assertEqual(notification_with_image.image, 12345)
 
     @patch("news.management.commands.checkliveblogupdate.requests.get")
     def test_make_request_succeeds_after_retry(self, mock_get):

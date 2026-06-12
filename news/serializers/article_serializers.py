@@ -5,7 +5,6 @@ from news.models import (
     ARTICLE_TYPE_CHOICES,
     DISTRICT_TYPE_CHOICES,
     LiveBlogItem,
-    LiveBlogItemImage,
     NewsArticle,
     NewsArticleImage,
 )
@@ -32,18 +31,10 @@ class NewsArticleImageSerializer(serializers.ModelSerializer):
         fields = ["uri", "width", "height"]
 
 
-class NewsArticleLiveblogItemImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LiveBlogItemImage
-        fields = ["uri", "width", "height"]
-
-
 class NewsArticleLiveblogItemSerializer(serializers.ModelSerializer):
-    images = NewsArticleLiveblogItemImageSerializer(many=True, read_only=True)
-
     class Meta:
         model = LiveBlogItem
-        fields = ["id", "creation_datetime", "title", "body", "message_order", "images"]
+        fields = ["id", "creation_datetime", "title", "body", "message_order"]
 
 
 class NewsArticleListResponseSerializer(serializers.ModelSerializer):
