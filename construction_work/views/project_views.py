@@ -30,6 +30,7 @@ from construction_work.models.manage_models import Device, WarningMessage
 from construction_work.models.project_models import Project
 from construction_work.serializers.article_serializers import ArticleSerializer
 from construction_work.serializers.project_serializers import (
+    DeleteDeviceDataResponseSerializer,
     FollowProjectPostDeleteSerializer,
     ProjectExtendedSerializer,
     ProjectExtendedWithFollowersSerializer,
@@ -452,6 +453,52 @@ class FollowProjectView(DeviceIdMixin, generics.GenericAPIView):
         device.save()
 
         return Response(data="Subscription removed", status=status.HTTP_200_OK)
+
+
+class DeleteDeviceDataView(DeviceIdMixin, generics.GenericAPIView):
+    """
+    API view to remove all construction-work data linked to a device.
+    """
+
+    @extend_schema_for_device_id(
+        success_response=DeleteDeviceDataResponseSerializer,
+        exceptions=[MissingDeviceIdHeader],
+        examples=[
+            OpenApiExample(
+                "Device data deleted",
+                value={
+                    "status": "deleted",
+                    "message": "Device linked construction-work data removed.",
+                },
+            ),
+            OpenApiExample(
+                "Device already absent",
+                value={
+                    "status": "already_absent",
+                    "message": "No device linked construction-work data found.",
+                },
+            ),
+        ],
+    )
+    def delete(self, request, *args, **kwargs):
+        deleted_count, _ = Device.objects.filter(device_id=self.device_id).delete()
+
+        if deleted_count:
+            return Response(
+                data={
+                    "status": "deleted",
+                    "message": "Device linked construction-work data removed.",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            data={
+                "status": "already_absent",
+                "message": "No device linked construction-work data found.",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class ArticleDetailView(generics.RetrieveAPIView):

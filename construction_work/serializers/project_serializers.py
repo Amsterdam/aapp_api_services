@@ -339,3 +339,8 @@ class ArticleMinimalSerializer(ArticleSerializer):
 
 class FollowProjectPostDeleteSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+
+
+class DeleteDeviceDataResponseSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["deleted", "already_absent"])
+    message = serializers.CharField()

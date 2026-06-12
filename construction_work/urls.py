@@ -30,6 +30,11 @@ _urlpatterns = [
         project_views.FollowProjectView.as_view(),
         name="follow-project",
     ),
+    path(
+        "projects/device-data",
+        project_views.DeleteDeviceDataView.as_view(),
+        name="delete-device-data",
+    ),
     # news (articles & warnings)
     path(
         "articles",
