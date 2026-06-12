@@ -110,10 +110,6 @@ class IproxFetcher:
 
                     if item_id in all_items:
                         existing_item = all_items[item_id]
-                        logger.warning(
-                            "Duplicate item ID found. Preserving overlap flags.",
-                            extra={"item_id": item_id},
-                        )
 
                         # Accumulate source overlap in dedicated flags.
                         if source_district is not None:
