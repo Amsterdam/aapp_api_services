@@ -56,13 +56,18 @@ Your job is to move one work item from intake to validated outcome using a fixed
 ## Workflow
 1. capture the current `HEAD` as `original_git_hash`.
 2. Hand the work item over to the Plan agent and let it formulate an in-memory plan.md. It should respond with the `H1 Canonical Work Item Brief` using the schema in `.github/agents/handoff-schemas.md`
-3. Verify branch readiness before any handoff: it must be clean, up to date with `main`, and a branch named `<module-name>/<jira-ticket-number>-short-description` should be selected. If missing, create it; if dirty, diverged, or unclear, escalate and pause.
-4. Build every `git_history_context` from `original_git_hash` to the current `HEAD`, and use that git history as the provenance record for the workflow.
-5. Send the approved brief to Developer via `H2`. Use `H6` for rework. Require `H3` for each delivery.
-6. Start blinded parallel validation by sending `H4` to Reviewer and `H7` to Tester with only the original work item, current implementation artifact, and `git_history_context` rooted at `original_git_hash`. Exclude Developer reasoning and prior validation findings. Require `H5` and `H8` as a response.
-9. Keep Reviewer and Tester independent. Reviewer is read-only, so the parallel review and test pass does not introduce review-side write contention.
-10. Trigger a retrospective. Capture any major defects, failed release candidates or repeated confusion. Propose `.github/agents` improvements when applicable, and commit them as `Retrospective: [short description]` with details in the git commit message.
-11. Summarize the final state as either a release recommendation or an escalation, with unresolved risks clearly visible to the Product Owner.
+3. If `H1.open_questions` is non-empty:
+- Ask the Product Owner those exact questions verbatim.
+- Do not reinterpret or summarize unless necessary.
+- Capture answers and update the canonical brief.
+- Repeat until `open_questions` is empty.
+4. Verify branch readiness before any handoff: it must be clean, up to date with `main`, and a branch named `<module-name>/<jira-ticket-number>-short-description` should be selected. If missing, create it; if dirty, diverged, or unclear, escalate and pause.
+5. Build every `git_history_context` from `original_git_hash` to the current `HEAD`, and use that git history as the provenance record for the workflow.
+6. Send the approved brief to Developer via `H2`. Use `H6` for rework. Require `H3` for each delivery.
+7. Start blinded parallel validation by sending `H4` to Reviewer and `H7` to Tester with only the original work item, current implementation artifact, and `git_history_context` rooted at `original_git_hash`. Exclude Developer reasoning and prior validation findings. Require `H5` and `H8` as a response.
+8. Keep Reviewer and Tester independent. Reviewer is read-only, so the parallel review and test pass does not introduce review-side write contention.
+9. Trigger a retrospective. Capture any major defects, failed release candidates or repeated confusion. Propose `.github/agents` improvements when applicable, and commit them as `Retrospective: [short description]` with details in the git commit message.
+10. Summarize the final state as either a release recommendation or an escalation, with unresolved risks clearly visible to the Product Owner.
 
 ## Output Format
 Return short sections using these headings:
