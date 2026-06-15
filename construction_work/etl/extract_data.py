@@ -3,6 +3,7 @@ See README.md for more info regarding the IPROX API
 """
 
 import asyncio
+import uuid
 from datetime import datetime
 from logging import getLogger
 from urllib.parse import urljoin
@@ -47,11 +48,26 @@ def get_iprox_items_data(url, item_ids):
     return upsert_item_data
 
 
+# async def async_fetch(urls, max_concurrent_requests=20):
+#     """Fetch all URLs with limited concurrency. 20 seems to be the sweet spot."""
+#     sem = asyncio.Semaphore(max_concurrent_requests)
+
+#     async with aiohttp.ClientSession() as session:
+#         tasks = [fetch_with_sem(sem, session, url) for url in urls]
+#         return await asyncio.gather(*tasks)
+
+
 async def async_fetch(urls, max_concurrent_requests=20):
     """Fetch all URLs with limited concurrency. 20 seems to be the sweet spot."""
     sem = asyncio.Semaphore(max_concurrent_requests)
-
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(
+        headers={
+            "User-Agent": "PostmanRuntime/7.51.0",
+            "Postman-Token": str(uuid.uuid4()),
+            "Accept": "*/*",
+            "Connection": "keep-alive",
+        }
+    ) as session:
         tasks = [fetch_with_sem(sem, session, url) for url in urls]
         return await asyncio.gather(*tasks)
 

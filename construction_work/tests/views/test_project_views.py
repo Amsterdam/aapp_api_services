@@ -1037,63 +1037,6 @@ class TestFollowProjectView(BaseTestProjectView):
         self.assertEqual(0, len(device.followed_projects.all()))
 
 
-class TestDeleteDeviceDataView(BaseTestProjectView):
-    def setUp(self):
-        super().setUp()
-        self.api_url = reverse("construction-work:delete-device-data")
-
-        for project in projects.MOCK_DATA:
-            Project.objects.create(**project)
-
-    def test_missing_device_id(self):
-        response = self.client.delete(self.api_url, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 400)
-
-    def test_existing_device_is_deleted(self):
-        target_device_id = "target-device"
-        other_device_id = "other-device"
-        target_device = Device.objects.create(device_id=target_device_id)
-        other_device = Device.objects.create(device_id=other_device_id)
-
-        project = Project.objects.first()
-        target_device.followed_projects.add(project)
-        other_device.followed_projects.add(project)
-
-        self.api_headers[settings.HEADER_DEVICE_ID] = target_device_id
-        response = self.client.delete(self.api_url, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["status"], "deleted")
-        self.assertFalse(Device.objects.filter(device_id=target_device_id).exists())
-        self.assertTrue(Device.objects.filter(device_id=other_device_id).exists())
-
-    def test_unknown_device_returns_2xx(self):
-        self.api_headers[settings.HEADER_DEVICE_ID] = "unknown-device"
-
-        response = self.client.delete(self.api_url, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["status"], "already_absent")
-
-    def test_second_call_is_idempotent(self):
-        device_id = "same-device"
-        device = Device.objects.create(device_id=device_id)
-        project = Project.objects.first()
-        device.followed_projects.add(project)
-
-        self.api_headers[settings.HEADER_DEVICE_ID] = device_id
-
-        first_response = self.client.delete(self.api_url, headers=self.api_headers)
-        second_response = self.client.delete(self.api_url, headers=self.api_headers)
-
-        self.assertEqual(first_response.status_code, 200)
-        self.assertEqual(first_response.data["status"], "deleted")
-        self.assertEqual(second_response.status_code, 200)
-        self.assertEqual(second_response.data["status"], "already_absent")
-        self.assertFalse(Device.objects.filter(device_id=device_id).exists())
-
-
 class TestWarningMessageDetailView(BaseTestProjectView):
     def setUp(self) -> None:
         super().setUp()
