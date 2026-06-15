@@ -9,7 +9,6 @@ from core.services.notification_service import ScheduledNotification
 from news.etl.load_data import NewsArticleLoader, garbage_collect_unseen_articles
 from news.models import (
     LiveBlogItem,
-    LiveBlogItemImage,
     LiveblogNotification,
     NewsArticle,
     NewsArticleImage,
@@ -502,9 +501,7 @@ class LoadDataTest(TestCase):
                 },
             ],
         }
-        self.loader._upsert_liveblog_items_and_liveblog_item_images(
-            liveblog_article_data, article
-        )
+        self.loader._upsert_liveblog_items(liveblog_article_data, article)
         self.assertEqual(LiveBlogItem.objects.count(), 2)
         self.assertEqual(
             LiveBlogItem.objects.first().title,
@@ -546,9 +543,7 @@ class LoadDataTest(TestCase):
                 },
             ],
         }
-        self.loader._upsert_liveblog_items_and_liveblog_item_images(
-            liveblog_article_data, article
-        )
+        self.loader._upsert_liveblog_items(liveblog_article_data, article)
 
         # number of liveblog items should still be 2 (the existing one should be updated, not duplicated, and the new one should be created)
         self.assertEqual(LiveBlogItem.objects.count(), 2)
@@ -596,9 +591,7 @@ class LoadDataTest(TestCase):
             ],
         }
 
-        loader._upsert_liveblog_items_and_liveblog_item_images(
-            liveblog_article_data, article
-        )
+        loader._upsert_liveblog_items(liveblog_article_data, article)
 
         notifications = ScheduledNotification.objects.all()
 
@@ -649,9 +642,7 @@ class LoadDataTest(TestCase):
             ],
         }
 
-        loader._upsert_liveblog_items_and_liveblog_item_images(
-            liveblog_article_data, article
-        )
+        loader._upsert_liveblog_items(liveblog_article_data, article)
 
         notifications = ScheduledNotification.objects.all()
 
@@ -705,9 +696,7 @@ class LoadDataTest(TestCase):
             ],
         }
 
-        loader._upsert_liveblog_items_and_liveblog_item_images(
-            liveblog_article_data, article
-        )
+        loader._upsert_liveblog_items(liveblog_article_data, article)
 
         self.assertEqual(LiveBlogItem.objects.count(), 2)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
@@ -744,136 +733,10 @@ class LoadDataTest(TestCase):
             ],
         }
 
-        loader._upsert_liveblog_items_and_liveblog_item_images(
-            liveblog_article_data, article
-        )
+        loader._upsert_liveblog_items(liveblog_article_data, article)
 
         notifications = ScheduledNotification.objects.all()
 
         self.assertEqual(
             notifications.count(), 0
         )  # no notifications are added for updated liveblog items
-
-    @patch("news.etl.load_data.ImageSetService")
-    def test_upsert_liveblog_item_images(self, mock_image_set_service):
-        article = baker.make(NewsArticle, in_all_news=True)
-        liveblog_item = baker.make(
-            LiveBlogItem,
-            article=article,
-            title="A title",
-            body="Some body",
-            creation_datetime="2024-01-01T12:00:00Z",
-        )
-        message = {
-            "image_url": "https://example.com/source-image.jpg",
-        }
-        loader = self._set_mock_image_set_service_side_effect(mock_image_set_service)
-
-        loader._upsert_liveblog_item_images(message, liveblog_item)
-        self.assertEqual(LiveBlogItemImage.objects.count(), 3)
-        self.assertEqual(
-            LiveBlogItemImage.objects.first().uri, "https://example.com/image.jpg"
-        )
-
-    @patch("news.etl.load_data.ImageSetService")
-    def test_upsert_liveblog_item_images_http_error(self, mock_image_set_service):
-        article = baker.make(NewsArticle, is_liveblog=True)
-        liveblog_item = baker.make(
-            LiveBlogItem,
-            article=article,
-            title="A title",
-            body="Some body",
-            creation_datetime="2024-01-01T12:00:00Z",
-        )
-        message = {
-            "image_url": "https://example.com/image.jpg",
-        }
-
-        mock_image_set_service.return_value.get_or_upload_from_url.side_effect = (
-            HTTPError("Failed to fetch or upload image")
-        )
-
-        loader = NewsArticleLoader(
-            image_set_service=mock_image_set_service.return_value
-        )
-        loader._upsert_liveblog_item_images(message, liveblog_item)
-        self.assertEqual(LiveBlogItemImage.objects.count(), 0)
-
-    @patch("news.etl.load_data.ImageSetService")
-    def test_upsert_liveblog_item_images_existing_remove(self, mock_image_set_service):
-        article = baker.make(NewsArticle, in_all_news=True)
-        liveblog_item = baker.make(
-            LiveBlogItem,
-            article=article,
-            title="A title",
-            body="Some body",
-            creation_datetime="2024-01-01T12:00:00Z",
-        )
-        liveblog_item_image = baker.make(
-            LiveBlogItemImage,
-            liveblog_item=liveblog_item,
-            uri="https://example.com/other-image.jpg",
-            width=123,
-            height=456,
-        )
-        message = {
-            "image_url": "https://example.com/source-image.jpg",
-        }
-        loader = self._set_mock_image_set_service_side_effect(mock_image_set_service)
-
-        loader._upsert_liveblog_item_images(message, liveblog_item)
-        self.assertEqual(LiveBlogItemImage.objects.count(), 3)
-        self.assertEqual(
-            LiveBlogItemImage.objects.first().uri, "https://example.com/image.jpg"
-        )
-        self.assertFalse(
-            LiveBlogItemImage.objects.filter(id=liveblog_item_image.id).exists()
-        )
-
-    @patch("news.etl.load_data.ImageSetService")
-    def test_upsert_liveblog_item_images_existing_update(self, mock_image_set_service):
-        article = baker.make(NewsArticle, in_all_news=True)
-        liveblog_item = baker.make(
-            LiveBlogItem,
-            article=article,
-            title="A title",
-            body="Some body",
-            creation_datetime="2024-01-01T12:00:00Z",
-        )
-        liveblog_item_image = baker.make(
-            LiveBlogItemImage,
-            liveblog_item=liveblog_item,
-            uri="https://example.com/image.jpg",
-            width=10000,
-            height=10000,
-        )
-        message = {
-            "image_url": "https://example.com/source-image.jpg",
-        }
-        loader = self._set_mock_image_set_service_side_effect(mock_image_set_service)
-
-        loader._upsert_liveblog_item_images(message, liveblog_item)
-        self.assertEqual(LiveBlogItemImage.objects.count(), 3)
-        self.assertEqual(
-            LiveBlogItemImage.objects.first().uri, "https://example.com/image.jpg"
-        )
-        self.assertTrue(
-            LiveBlogItemImage.objects.filter(id=liveblog_item_image.id).exists()
-        )
-        self.assertEqual(
-            LiveBlogItemImage.objects.get(id=liveblog_item_image.id).width, 123
-        )
-
-    def test_upsert_liveblog_item_images_no_image(self):
-        article = baker.make(NewsArticle, in_all_news=True)
-        liveblog_item = baker.make(
-            LiveBlogItem,
-            article=article,
-            title="A title",
-            body="Some body",
-            creation_datetime="2024-01-01T12:00:00Z",
-        )
-        message = {}
-
-        self.loader._upsert_liveblog_item_images(message, liveblog_item)
-        self.assertEqual(LiveBlogItemImage.objects.count(), 0)
