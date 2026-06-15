@@ -5,7 +5,7 @@ from django.urls import reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import BasicAPITestCase
-from news.models import NewsArticle, NewsArticleImage
+from news.models import LiveBlogItem, NewsArticle, NewsArticleImage
 from news.views.article_views import ArticleDetailView, ArticleListView
 
 
@@ -250,14 +250,26 @@ class TestArticleDetailView(BasicAPITestCase):
             in_all_news=True,
             publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
         )
+        self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
+        self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
+
         self.url = reverse("news-article-detail", kwargs={"id": self.article_1.id})
+
         self.article_2 = baker.make(
             NewsArticle,
             in_all_news=True,
             publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
         )
-        self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
-        self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
+
+        self.liveblog_1 = baker.make(
+            NewsArticle,
+            is_liveblog=True,
+            is_active_liveblog=True,
+            publication_datetime=datetime(2024, 10, 12, 14, 45, 15).isoformat(),
+        )
+        self.liveblog_1_item_1 = baker.make(
+            LiveBlogItem, article=self.liveblog_1, title="Liveblog item 1"
+        )
 
     def test_article_detail(self):
         response = self.client.get(self.url, headers=self.api_headers)
@@ -321,3 +333,13 @@ class TestArticleDetailView(BasicAPITestCase):
 
             response = self.client.get(self.url)  # No api key header!
             self.assertEqual(response.status_code, 401)
+
+    def test_liveblog_detail(self):
+        liveblog_url = reverse("news-article-detail", kwargs={"id": self.liveblog_1.id})
+        response = self.client.get(liveblog_url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["id"], self.liveblog_1.id)
+        self.assertTrue(response.data["is_liveblog"])
+        self.assertTrue(response.data["is_active_liveblog"])
+        self.assertEqual(len(response.data["liveblog_items"]), 1)
