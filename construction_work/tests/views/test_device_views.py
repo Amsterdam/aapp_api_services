@@ -1,5 +1,3 @@
-import pathlib
-
 from django.conf import settings
 from django.urls import reverse
 from model_bakery import baker
@@ -9,8 +7,6 @@ from construction_work.models.manage_models import (
 )
 from construction_work.models.project_models import Project
 from core.tests.test_authentication import BasicAPITestCase
-
-ROOT_DIR = pathlib.Path(__file__).resolve().parents[3]
 
 
 class TestDeleteDeviceDataView(BasicAPITestCase):
