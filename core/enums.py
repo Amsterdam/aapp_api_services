@@ -65,7 +65,7 @@ class NotificationType(ChoicesEnum):
         module=Module.WASTE,
         name="date-reminder",
         description="Herinnering buitenzetten container",
-        visibility="visible",
+        visibility="deeplink",
     )
     WASTE_MANUAL_NOTIFICATION = NotificationTypeClass(
         module=Module.WASTE,
