@@ -117,15 +117,6 @@ class NewsArticleImage(BaseImage):
         unique_together = ("article", "uri")
 
 
-class LiveBlogItemImage(BaseImage):
-    liveblog_item = models.ForeignKey(
-        LiveBlogItem, on_delete=models.CASCADE, related_name="images"
-    )
-
-    class Meta:
-        unique_together = ("liveblog_item", "uri")
-
-
 class LiveblogNotification(models.Model):
     class Meta:
         unique_together = ("article", "device_id")

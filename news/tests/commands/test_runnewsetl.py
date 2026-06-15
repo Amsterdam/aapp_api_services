@@ -7,7 +7,7 @@ from django.utils import timezone
 from model_bakery import baker
 
 from news.management.commands import runnewsetl
-from news.models import LiveBlogItem, LiveBlogItemImage, NewsArticle, NewsArticleImage
+from news.models import LiveBlogItem, NewsArticle, NewsArticleImage
 from news.tests.mock_data import highlighted, item_article, item_liveblog, liveblogs
 from notification.models import ScheduledNotification
 
@@ -146,15 +146,9 @@ class RunNewsETLTest(TestCase):
             LiveBlogItem.objects.filter(article=liveblog_article).count(), 19
         )
         self.assertEqual(NewsArticleImage.objects.count(), 10)
-        self.assertEqual(LiveBlogItemImage.objects.count(), 36)
 
         self.assertTrue(
             NewsArticleImage.objects.filter(
-                uri="https://example.com/image.jpg"
-            ).exists()
-        )
-        self.assertTrue(
-            LiveBlogItemImage.objects.filter(
                 uri="https://example.com/image.jpg"
             ).exists()
         )
@@ -208,7 +202,6 @@ class RunNewsETLTest(TestCase):
         self.assertEqual(NewsArticle.objects.count(), 0)
         self.assertEqual(LiveBlogItem.objects.count(), 0)
         self.assertEqual(NewsArticleImage.objects.count(), 0)
-        self.assertEqual(LiveBlogItemImage.objects.count(), 0)
 
     @override_settings(ENABLE_LIVEBLOG_NOTIFICATIONS=False)
     @patch(
