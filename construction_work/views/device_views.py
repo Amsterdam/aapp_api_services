@@ -13,7 +13,7 @@ from core.utils.openapi_utils import (
 from core.views.mixins import DeviceIdMixin
 
 
-class DeleteDeviceDataView(DeviceIdMixin, generics.DestroyAPIView):
+class DeleteDeviceDataView(DeviceIdMixin, generics.GenericAPIView):
     """
     API view to remove all construction-work data linked to a device.
     """
@@ -47,7 +47,7 @@ class DeleteDeviceDataView(DeviceIdMixin, generics.DestroyAPIView):
                     "status": "deleted",
                     "message": "Device linked construction-work data removed.",
                 },
-                status=status.HTTP_200_OK,
+                status=status.HTTP_204_NO_CONTENT,
             )
 
         return Response(
@@ -55,5 +55,5 @@ class DeleteDeviceDataView(DeviceIdMixin, generics.DestroyAPIView):
                 "status": "already_absent",
                 "message": "No device linked construction-work data found.",
             },
-            status=status.HTTP_200_OK,
+            status=status.HTTP_204_NO_CONTENT,
         )

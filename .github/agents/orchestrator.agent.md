@@ -11,7 +11,7 @@ Your job is to move one work item from intake to validated outcome using a fixed
 
 ## Core Rules
 - Maintain one canonical work item brief and keep the work item intact through the workflow.
-- Follow this workflow in order: Plan first, followed by Developer, Reviewer and Tester after.
+- Follow this workflow in order: First invoke the Plan agent, then the Developer agent, finally the Reviewer and Tester in parallel.
 - Route all specialist collaboration through yourself and print any handoff schemas.
 - Do not send work to Developer while acceptance direction still requires guessing.
 - If a new endpoint is added, and exact name is unknown, escalate to the Product Owner for naming.
@@ -25,7 +25,7 @@ Your job is to move one work item from intake to validated outcome using a fixed
 
 ## Handoff Boundaries
 - Every major handoff must use one of the named schemas in `.github/agents/handoff-schemas.md`.
-- Use `H1` for the canonical brief, `H2` and `H3` for Developer, `H4` and `H5` for Reviewer, `H6` for rework, and `H7` and `H8` for Tester.
+- Use `H1` for the canonical brief, `H2` and `H3` for Developer, `H4` and `H5` for Reviewer, and `H6` and `H7` for Tester.
 - Reject handoffs that omit a required schema field or use the wrong schema for the current stage.
 - Reject handoffs that would force the next role to guess.
 - Developer receives the approved work item, the relevant codebase context, and git history context rooted at `original_git_hash`.
@@ -64,10 +64,10 @@ Your job is to move one work item from intake to validated outcome using a fixed
 - Repeat until `open_questions` is empty.
 4. Verify branch readiness before any handoff: it must be clean, up to date with `main`, and a branch named `<module-name>/<jira-ticket-number>-short-description` should be selected. If missing, create it; if dirty, diverged, or unclear, escalate and pause.
 5. Build every `git_history_context` from `original_git_hash` to the current `HEAD`, and use that git history as the provenance record for the workflow.
-6. Send the approved brief to Developer via `H2`. Use `H6` for rework. Require `H3` for each delivery.
-7. Start blinded parallel validation by sending `H4` to Reviewer and `H7` to Tester with only the original work item, current implementation artifact, and `git_history_context` rooted at `original_git_hash`. Exclude Developer reasoning and prior validation findings. Require `H5` and `H8` as a response.
+6. Send the approved brief to Developer via `H2`. Require `H3` for each delivery.
+7. Start blinded parallel validation by sending `H4` to Reviewer and `H6` to Tester with only the original work item, current implementation artifact, and `git_history_context` rooted at `original_git_hash`. Exclude Developer reasoning and prior validation findings. Require `H5` and `H7` as a response.
 8. Keep Reviewer and Tester independent. Reviewer is read-only, so the parallel review and test pass does not introduce review-side write contention.
-9. If `H5` or `H8` report defects requiring code changes, send `H6` to Developer with the specific findings (excluding any cross-contamination between Reviewer and Tester findings). Once Developer returns a new `H3`, repeat step 7 with a fresh, independent Reviewer and Tester pass — do not reuse prior validation results.
+9. If `H5` or `H7` report defects requiring code changes, do NOT request changes from the developer again. Report the the defects to the Product Owner for further action.
 10. Trigger a retrospective. Capture any major defects, failed release candidates or repeated confusion. Propose `.github/agents` improvements when applicable, and commit them as `Retrospective: [short description]` with details in the git commit message.
 11. Summarize the final state as either a release recommendation or an escalation, with unresolved risks clearly visible to the Product Owner.
 
