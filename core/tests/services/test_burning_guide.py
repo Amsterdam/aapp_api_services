@@ -6,7 +6,7 @@ from model_bakery import baker
 
 from core.services.burning_guide_device import BurningGuideDeviceService
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import BurningGuideDevice
+from notification.models import BurningGuideDevice, Device
 
 
 class TestBurningGuideDeviceService(ResponsesActivatedAPITestCase):
@@ -14,7 +14,14 @@ class TestBurningGuideDeviceService(ResponsesActivatedAPITestCase):
         super().setUp()
         self.service = BurningGuideDeviceService()
 
+    def _create_device(self, external_id):
+        return baker.make(
+            Device, external_id=external_id, os="ios", firebase_token=None
+        )
+
     def test_get_device_ids(self):
+        self._create_device("device_1")
+        self._create_device("device_2")
         device_1 = baker.make(BurningGuideDevice, device_id="device_1")
         device_2 = baker.make(BurningGuideDevice, device_id="device_2")
 
@@ -23,6 +30,8 @@ class TestBurningGuideDeviceService(ResponsesActivatedAPITestCase):
         self.assertIn(device_2.device_id, result)
 
     def test_bulk_create_burning_guide_devices(self):
+        self._create_device("device_3")
+        self._create_device("device_4")
         burning_guide_device_1 = self.service.define_burning_guide_device_instance(
             device_id="device_3",
             postal_code="123",
@@ -47,6 +56,8 @@ class TestBurningGuideDeviceService(ResponsesActivatedAPITestCase):
 
     @freezegun.freeze_time("2026-06-15 09:59:30")
     def test_get_outdated_burning_guide_devices(self):
+        self._create_device("outdated_device")
+        self._create_device("up_to_date_device")
         outdated_device = baker.make(
             BurningGuideDevice,
             device_id="outdated_device",
@@ -71,6 +82,7 @@ class TestBurningGuideDeviceService(ResponsesActivatedAPITestCase):
 
     @freezegun.freeze_time("2026-06-15 09:59:30")
     def test_get_outdated_no_postal_code_burning_guide_devices(self):
+        self._create_device("outdated_device")
         outdated_device = baker.make(
             BurningGuideDevice,
             device_id="outdated_device",
@@ -86,6 +98,7 @@ class TestBurningGuideDeviceService(ResponsesActivatedAPITestCase):
         self.assertNotIn(outdated_device, result)
 
     def test_update_burning_guide_device(self):
+        self._create_device("device_to_update")
         device = baker.make(
             BurningGuideDevice,
             device_id="device_to_update",

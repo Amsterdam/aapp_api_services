@@ -1,4 +1,5 @@
 import datetime
+from unittest.mock import patch
 
 import freezegun
 from django.conf import settings
@@ -254,6 +255,39 @@ class TestDeviceDeleteView(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["status"], "success")
         self.assertEqual(response.json()["deleted"], False)
+
+    def test_delete_device_removes_orphan_scheduled_notification_record(self):
+        device = baker.make(
+            Device,
+            external_id=self.device_id,
+            firebase_token="delete-me-token",
+            os="ios",
+        )
+        scheduled_notification = baker.make(
+            ScheduledNotification,
+            module_slug="waste",
+            notification_type="waste:reminder",
+        )
+        scheduled_notification.devices.add(device)
+
+        response = self.client.delete(self.url, headers=self.headers_with_device_id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            ScheduledNotification.objects.filter(id=scheduled_notification.id).exists()
+        )
+
+    @patch("notification.views.device_views.Device.objects.filter")
+    def test_delete_device_returns_explicit_fail_contract(self, mock_device_filter):
+        mock_device_filter.side_effect = Exception("forced delete failure")
+
+        response = self.client.delete(self.url, headers=self.headers_with_device_id)
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.json()["status"], "error")
+        self.assertEqual(response.json()["error_key"], "device_delete_failed")
+        self.assertEqual(response.json()["message"], "Failed to delete device")
+        self.assertFalse(response.json()["deleted"])
 
 
 class TestNotificationPushDisabledView(AuthenticatedAPITestCase):

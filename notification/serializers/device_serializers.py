@@ -21,6 +21,7 @@ class DeviceRegisterResponseSerializer(serializers.ModelSerializer):
 
 class DeviceDeleteResponseSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=["success", "error"])
+    error_key = serializers.CharField(required=False)
     message = serializers.CharField()
     deleted = serializers.BooleanField()
 

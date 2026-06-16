@@ -1,3 +1,5 @@
+from django.db import transaction
+from django.db.models import Count
 from drf_spectacular.utils import OpenApiExample
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -11,6 +13,7 @@ from notification.models import (
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
+    ScheduledNotification,
     WasteDevice,
 )
 from notification.serializers.device_serializers import (
@@ -81,13 +84,29 @@ class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
     @extend_schema_for_device_id(success_response=DeviceDeleteResponseSerializer)
     def delete(self, request, *args, **kwargs):
         try:
-            deleted_count, _ = Device.objects.filter(
-                external_id=self.device_id
-            ).delete()
+            with transaction.atomic():
+                orphan_scheduled_notification_ids = list(
+                    ScheduledNotification.objects.filter(
+                        devices__external_id=self.device_id
+                    )
+                    .annotate(device_count=Count("devices"))
+                    .filter(device_count=1)
+                    .values_list("id", flat=True)
+                )
+
+                deleted_count, _ = Device.objects.filter(
+                    external_id=self.device_id
+                ).delete()
+
+                if orphan_scheduled_notification_ids:
+                    ScheduledNotification.objects.filter(
+                        id__in=orphan_scheduled_notification_ids
+                    ).delete()
         except Exception:
             return Response(
                 {
                     "status": "error",
+                    "error_key": "device_delete_failed",
                     "message": "Failed to delete device",
                     "deleted": False,
                 },
