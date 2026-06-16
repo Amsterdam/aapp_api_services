@@ -18,8 +18,11 @@ from core.tests.test_authentication import (
 from notification.models import (
     BurningGuideDevice,
     Device,
+    Notification,
+    NotificationLast,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
+    ScheduledNotification,
     WasteDevice,
 )
 
@@ -131,6 +134,126 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         data = {"firebase_token": "0", "os": "ios"}
         response = self.client.post(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TestDeviceDeleteView(AuthenticatedAPITestCase):
+    authentication_class = APIKeyAuthentication
+
+    def setUp(self):
+        super().setUp()
+        self.device_id = "test-device-delete"
+        self.url = reverse("notification-delete-device")
+        self.headers_with_device_id = {
+            settings.HEADER_DEVICE_ID: self.device_id,
+            **self.api_headers,
+        }
+
+    def test_delete_device_and_related_data_success(self):
+        device = baker.make(
+            Device,
+            external_id=self.device_id,
+            firebase_token="delete-me-token",
+            os="ios",
+        )
+        baker.make(
+            Notification,
+            device=device,
+            module_slug="waste",
+            notification_type="waste:reminder",
+        )
+        scheduled_notification = baker.make(
+            ScheduledNotification,
+            module_slug="waste",
+            notification_type="waste:reminder",
+        )
+        scheduled_notification.devices.add(device)
+        baker.make(
+            NotificationPushTypeDisabled,
+            device=device,
+            notification_type="waste:reminder",
+        )
+        baker.make(
+            NotificationPushModuleDisabled,
+            device=device,
+            module_slug="waste",
+        )
+        baker.make(
+            NotificationLast,
+            device=device,
+            module_slug="waste",
+            notification_scope="waste:reminder",
+        )
+        baker.make(
+            WasteDevice,
+            device_id=self.device_id,
+            bag_nummeraanduiding_id="bag-123",
+        )
+        baker.make(
+            BurningGuideDevice,
+            device_id=self.device_id,
+            postal_code="1091",
+        )
+
+        response = self.client.delete(self.url, headers=self.headers_with_device_id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["status"], "success")
+        self.assertEqual(response.json()["deleted"], True)
+        self.assertFalse(Device.objects.filter(external_id=self.device_id).exists())
+        self.assertFalse(
+            Notification.objects.filter(device_external_id=self.device_id).exists()
+        )
+        self.assertFalse(
+            ScheduledNotification.objects.filter(
+                devices__external_id=self.device_id
+            ).exists()
+        )
+        self.assertFalse(
+            NotificationPushTypeDisabled.objects.filter(
+                device__external_id=self.device_id
+            ).exists()
+        )
+        self.assertFalse(
+            NotificationPushModuleDisabled.objects.filter(
+                device__external_id=self.device_id
+            ).exists()
+        )
+        self.assertFalse(
+            NotificationLast.objects.filter(device__external_id=self.device_id).exists()
+        )
+        self.assertFalse(WasteDevice.objects.filter(device_id=self.device_id).exists())
+        self.assertFalse(
+            BurningGuideDevice.objects.filter(device_id=self.device_id).exists()
+        )
+
+    def test_delete_device_is_idempotent(self):
+        baker.make(
+            Device,
+            external_id=self.device_id,
+            firebase_token="delete-me-token",
+            os="ios",
+        )
+
+        first_response = self.client.delete(
+            self.url, headers=self.headers_with_device_id
+        )
+        second_response = self.client.delete(
+            self.url, headers=self.headers_with_device_id
+        )
+
+        self.assertEqual(first_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(first_response.json()["status"], "success")
+        self.assertEqual(first_response.json()["deleted"], True)
+        self.assertEqual(second_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_response.json()["status"], "success")
+        self.assertEqual(second_response.json()["deleted"], False)
+
+    def test_delete_unknown_device_is_not_blocking(self):
+        response = self.client.delete(self.url, headers=self.headers_with_device_id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["status"], "success")
+        self.assertEqual(response.json()["deleted"], False)
 
 
 class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
@@ -476,6 +599,7 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         self.url = reverse("waste-guide-notification")
         self.device_id = "test-device-id"
         self.api_headers["DeviceId"] = self.device_id
+        baker.make(Device, external_id=self.device_id)
 
     def test_success(self):
         payload = {
@@ -588,6 +712,7 @@ class TestBurningGuideDeviceView(ResponsesActivatedAPITestCase):
         self.url = reverse("burning-guide-notification")
         self.device_id = "test-device-id"
         self.api_headers["DeviceId"] = self.device_id
+        baker.make(Device, external_id=self.device_id)
 
     def test_success(self):
         payload = {

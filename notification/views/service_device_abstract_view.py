@@ -24,12 +24,12 @@ class ServiceDeviceView(DeviceIdMixin, generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         instance = self._get_instance()
         if instance is None:
+            self.get_or_create_device(self.device_id)
             serializer = self.get_serializer(
                 data=request.data, context={"device_id": self.device_id}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            self.get_or_create_device(self.device_id)
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
         serializer = self.get_serializer(instance, data=request.data)

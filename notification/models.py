@@ -194,7 +194,14 @@ class WasteDevice(models.Model):
     but to determine if the scheduled notification should be sent (again).
     """
 
-    device_id = models.CharField(max_length=255, primary_key=True)
+    device = models.OneToOneField(
+        Device,
+        to_field="external_id",
+        db_column="device_id",
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="waste_device",
+    )
     bag_nummeraanduiding_id = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True)
@@ -206,7 +213,14 @@ class BurningGuideDevice(models.Model):
     for which address (postal_code).
     """
 
-    device_id = models.CharField(max_length=255, primary_key=True)
+    device = models.OneToOneField(
+        Device,
+        to_field="external_id",
+        db_column="device_id",
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="burning_guide_device",
+    )
     postal_code = models.CharField(max_length=4, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     send_at = models.DateTimeField(null=True)

@@ -15,6 +15,7 @@ from notification.models import (
 )
 from notification.serializers.device_serializers import (
     BurningGuideDeviceRequestSerializer,
+    DeviceDeleteResponseSerializer,
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
     WasteDeviceRequestSerializer,
@@ -72,6 +73,41 @@ class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
         device.save()
 
         return Response("Registration removed", status=status.HTTP_200_OK)
+
+
+class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
+    """Permanently delete a device and all related notification records."""
+
+    @extend_schema_for_device_id(success_response=DeviceDeleteResponseSerializer)
+    def delete(self, request, *args, **kwargs):
+        try:
+            deleted_count, _ = Device.objects.filter(
+                external_id=self.device_id
+            ).delete()
+        except Exception:
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Failed to delete device",
+                    "deleted": False,
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        was_deleted = deleted_count > 0
+        message = (
+            "Device and related notification data deleted"
+            if was_deleted
+            else "Device was already deleted or unknown"
+        )
+        return Response(
+            {
+                "status": "success",
+                "message": message,
+                "deleted": was_deleted,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class NotificationPushTypeDisabledView(DeviceIdMixin, generics.GenericAPIView):

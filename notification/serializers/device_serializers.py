@@ -19,6 +19,12 @@ class DeviceRegisterResponseSerializer(serializers.ModelSerializer):
         }
 
 
+class DeviceDeleteResponseSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["success", "error"])
+    message = serializers.CharField()
+    deleted = serializers.BooleanField()
+
+
 class WasteDeviceRequestSerializer(serializers.ModelSerializer):
     bag_nummeraanduiding_id = serializers.CharField(
         required=True,
