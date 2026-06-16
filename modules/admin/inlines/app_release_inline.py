@@ -30,12 +30,14 @@ class ReleaseModuleStatusForm(forms.ModelForm):
             parent_module = self.instance.module_version.module
             qs = ModuleVersion.objects.filter(module=parent_module)
             self.fields["module_version"].queryset = qs
+        elif parent_release is None:
+            qs = ModuleVersion.objects.all()
         else:
-            modules_not_in_release = Module.objects.exclude(
+            used_modules = Module.objects.exclude(
                 moduleversion__apprelease=parent_release
             )
-            qs = ModuleVersion.objects.filter(module__in=modules_not_in_release)
-            self.fields["module_version"].queryset = qs
+            qs = ModuleVersion.objects.filter(module__in=used_modules)
+        self.fields["module_version"].queryset = qs.distinct()
 
 
 class ReleaseModuleStatusInline(SortableTabularInline, ModuleAdminMixin):
