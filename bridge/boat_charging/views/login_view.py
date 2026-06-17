@@ -54,11 +54,7 @@ class OIDCSettingsView(BaseView):
 
     def get_response_data(self) -> dict[str, str | list[str] | bool | None]:
         return {
-            "issuer": settings.BOAT_CHARGING_OIDC_ISSUER,
-            "discovery_url": settings.BOAT_CHARGING_OIDC_DISCOVERY_URL,
-            "client_id": settings.BOAT_CHARGING_OIDC_CLIENT_ID,
-            "redirect_uri": settings.BOAT_CHARGING_OIDC_REDIRECT_URI,
-            "scopes": settings.BOAT_CHARGING_OIDC_SCOPES,
-            "response_type": settings.BOAT_CHARGING_OIDC_RESPONSE_TYPE,
+            "cognito_user_pool_id": settings.NRG_USER_POOL,
+            "cognito_user_pool_client_id": settings.NRG_CLIENT_ID,
             "pkce_required": settings.BOAT_CHARGING_OIDC_PKCE_REQUIRED,
         }
