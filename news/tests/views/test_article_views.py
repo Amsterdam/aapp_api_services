@@ -5,7 +5,7 @@ from django.urls import reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import BasicAPITestCase
-from news.models import LiveBlogItem, NewsArticle, NewsArticleImage
+from news.models.article_models import LiveBlogItem, NewsArticle, NewsArticleImage
 from news.views.article_views import ArticleDetailView, ArticleListView
 
 

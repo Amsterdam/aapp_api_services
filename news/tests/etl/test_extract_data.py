@@ -1,7 +1,7 @@
 from aioresponses import aioresponses
 from django.test import TestCase
 
-from news.etl.extract_data import IproxFetcher
+from news.etl.extract_data import IproxNewsFetcher
 from news.tests.mock_data import all_news, highlighted, item_article, liveblogs
 
 
@@ -12,19 +12,19 @@ class ExtractDataTest(TestCase):
 
     def test_invalid_initialization(self):
         with self.assertRaises(ValueError):
-            IproxFetcher(
+            IproxNewsFetcher(
                 iprox_fetch_url="", iprox_detail_url=self.detail_url, sources=[]
             )
 
     def test_invalid_sources_configuration(self):
         with self.assertRaises(ValueError):
-            IproxFetcher(
+            IproxNewsFetcher(
                 iprox_fetch_url=self.fetch_url,
                 iprox_detail_url=self.detail_url,
                 sources="not a list",
             )
         with self.assertRaises(ValueError):
-            IproxFetcher(
+            IproxNewsFetcher(
                 iprox_fetch_url=self.fetch_url,
                 iprox_detail_url=self.detail_url,
                 sources=[{"index": "highlighted"}],  # missing boolean_column
@@ -43,7 +43,7 @@ class ExtractDataTest(TestCase):
                 "district": None,
             },
         ]
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
+        fetcher = IproxNewsFetcher(self.fetch_url, self.detail_url, sources=sources)
 
         with aioresponses() as mocked:
             mocked.get(
@@ -73,7 +73,7 @@ class ExtractDataTest(TestCase):
                 "district": None,
             },
         ]
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
+        fetcher = IproxNewsFetcher(self.fetch_url, self.detail_url, sources=sources)
 
         with aioresponses() as mocked:
             mocked.get(
@@ -100,7 +100,7 @@ class ExtractDataTest(TestCase):
                 "district": None,
             }
         ]
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
+        fetcher = IproxNewsFetcher(self.fetch_url, self.detail_url, sources=sources)
         # Prepare items dict
         items = {
             123123: {"id": 123123, "is_highlight": True, "district": None},
@@ -136,7 +136,7 @@ class ExtractDataTest(TestCase):
                 "district": None,
             },
         ]
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
+        fetcher = IproxNewsFetcher(self.fetch_url, self.detail_url, sources=sources)
 
         with aioresponses() as mocked:
             # Mock fetching all items
@@ -160,7 +160,7 @@ class ExtractDataTest(TestCase):
         Test the combination of detailed and basic information into a single dictionary.
         It is key that the flags of the basic info are preserved, as this is used to store in the database.
         """
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=[])
+        fetcher = IproxNewsFetcher(self.fetch_url, self.detail_url, sources=[])
         basic_info = {
             "id": 123123,
             "district": None,

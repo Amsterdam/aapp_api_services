@@ -5,9 +5,9 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from news.enums.news_article import NewsArticleSource
-from news.etl.extract_data import IproxFetcher
-from news.etl.load_data import NewsArticleLoader, garbage_collect_unseen_articles
-from news.etl.transform_data import transform
+from news.etl.extract_data import IproxNewsFetcher
+from news.etl.load_articles import NewsArticleLoader, garbage_collect_unseen_articles
+from news.etl.transform_articles import transform_articles
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +16,10 @@ IPROX_ARTICLES_URL = urljoin(IPROX_URL, "list/amsterdam/")
 IPROX_DETAIL_URL = urljoin(IPROX_URL, "item/")
 NEWS_ARTICLE_TYPES = NewsArticleSource.choices_as_list()
 
-iprox_fetcher = IproxFetcher(
+iprox_fetcher = IproxNewsFetcher(
     iprox_fetch_url=IPROX_ARTICLES_URL,
     iprox_detail_url=IPROX_DETAIL_URL,
     sources=NEWS_ARTICLE_TYPES,
-    max_concurrent_requests=20,
 )
 
 data_loader = NewsArticleLoader()
@@ -38,7 +37,7 @@ class Command(BaseCommand):
             logger.info("No articles found. Ending ETL process.")
             return
 
-        transformed_data = transform(extracted_data)
+        transformed_data = transform_articles(extracted_data)
         if not transformed_data:
             logger.info("No valid transformed articles found. Ending ETL process.")
             return

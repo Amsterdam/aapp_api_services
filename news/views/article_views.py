@@ -4,7 +4,7 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 
 from core.pagination import CustomPagination
 from core.utils.openapi_utils import extend_schema_for_api_key
-from news.models import NewsArticle
+from news.models.article_models import NewsArticle
 from news.serializers.article_serializers import (
     NewsArticleDetailResponseSerializer,
     NewsArticleListResponseSerializer,

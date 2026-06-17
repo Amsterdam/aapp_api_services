@@ -2,7 +2,7 @@ import logging
 
 from rest_framework import serializers
 
-from news.models import LiveblogNotification
+from news.models.article_models import LiveblogNotification
 
 logger = logging.getLogger(__name__)
 

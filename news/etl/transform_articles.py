@@ -11,7 +11,7 @@ from news.serializers.article_serializers import NewsArticleTransformSerializer
 logger = logging.getLogger(__name__)
 
 
-def transform(extracted_data: list[dict]) -> list[dict]:
+def transform_articles(extracted_data: list[dict]) -> list[dict]:
     """
     Transform the extracted news articles data into a list of transformed articles (dicts).
     - Cleans 'body' and text fields
@@ -56,6 +56,7 @@ def transform(extracted_data: list[dict]) -> list[dict]:
                 "is_highlight": article.get("is_highlight", False),
                 "is_liveblog": article.get("is_liveblog", False),
                 "is_district": article.get("is_district", False),
+                "is_construction_work": article.get("is_construction_work", False),
                 "district": article.get("district"),
                 "url": url,
                 "creation_datetime": article.get("created"),

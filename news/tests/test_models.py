@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from model_bakery import baker
 
-from news.models import NewsArticle, NewsArticleImage
+from news.models.article_models import NewsArticle, NewsArticleImage
 
 
 class NewsArticleImageModelTest(TestCase):

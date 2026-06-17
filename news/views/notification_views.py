@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
-from news.models import LiveblogNotification, NewsArticle
+from news.models.article_models import LiveblogNotification, NewsArticle
 from news.serializers.notification_serializers import NotificationResponseSerializer
 
 logger = logging.getLogger(__name__)

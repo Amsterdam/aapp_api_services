@@ -139,6 +139,10 @@ news_run_etl: check-service
 	# Load mock data for the survey service
 	$(manage) runnewsetl
 
+news_run_construction_work_etl: check-service
+	# Load mock data for the survey service
+	$(manage) runconstructionworketl
+
 spectacular: check-service
     # Generate OpenAPI schema
 	$(manage) spectacular --file /app/${SERVICE_NAME}/openapi-schema.yaml

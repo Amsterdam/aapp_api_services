@@ -6,8 +6,8 @@ from model_bakery import baker
 from requests.exceptions import ConnectionError, HTTPError
 
 from core.services.notification_service import ScheduledNotification
-from news.etl.load_data import NewsArticleLoader, garbage_collect_unseen_articles
-from news.models import (
+from news.etl.load_articles import NewsArticleLoader, garbage_collect_unseen_articles
+from news.models.article_models import (
     LiveBlogItem,
     LiveblogNotification,
     NewsArticle,

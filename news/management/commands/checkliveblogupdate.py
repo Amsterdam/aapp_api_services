@@ -6,9 +6,9 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-from news.etl.load_data import NewsArticleLoader
-from news.etl.transform_data import transform
-from news.models import NewsArticle
+from news.etl.load_articles import NewsArticleLoader
+from news.etl.transform_articles import transform_articles
+from news.models.article_models import NewsArticle
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +120,7 @@ class Command(BaseCommand):
                 continue
 
             # Step 4: Transform the data to match the format of our database models.
-            transformed_data = transform(
+            transformed_data = transform_articles(
                 [
                     {
                         **response.json(),

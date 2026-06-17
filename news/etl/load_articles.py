@@ -4,14 +4,11 @@ from datetime import timedelta
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from requests.exceptions import HTTPError, RequestException
 
-from core.services.image_set import ImageSetService
-from news.models import (
+from news.models.article_models import (
     LiveBlogItem,
     LiveblogNotification,
     NewsArticle,
-    NewsArticleImage,
 )
 from news.services.notification import (
     LiveblogUpdateNotificationService,
@@ -30,9 +27,6 @@ class NewsArticleLoader:
     Loader class for ingesting news articles and liveblogs into the database.
     Handles upserts, image processing, and liveblog item management.
     """
-
-    def __init__(self, image_set_service=None):
-        self.image_set_service = image_set_service or ImageSetService()
 
     def load(self, transformed_data: list[dict]):
         """
@@ -166,58 +160,6 @@ class NewsArticleLoader:
                 )
 
             self._upsert_liveblog_items(article, news_article)
-
-    def _upsert_article_images(self, article: dict, news_article: NewsArticle):
-        """
-        Upsert article images for a given article. If the article has an image_url, we will attempt to get or upload the image using the ImageSetService.
-        Then we will upsert the NewsArticleImage instances for the article based on the image variants returned by the ImageSetService.
-        The logic is as follows:
-        - If an image with the same url already exists for the article, update its width and height
-        - If there is an image for an article, but the url is different than the existing one, delete the old image and create a new one
-        - If there is no image for an article, create a new one
-        """
-        image_url = article.get("image_url")
-        if image_url:
-            try:
-                image_set_data = self.image_set_service.get_or_upload_from_url(
-                    image_url
-                )
-            except (HTTPError, RequestException) as e:
-                logger.error(
-                    "Error getting or uploading image",
-                    extra={"image_url": image_url, "error": str(e)},
-                )
-                return
-
-            # upsert article images
-            image_sources = [
-                NewsArticleImage(
-                    article=news_article,
-                    foreign_id=image_set_data[
-                        "id"
-                    ],  # use the image set id as the image foreign_id for reference.
-                    uri=v["image"],
-                    width=v["width"],
-                    height=v["height"],
-                )
-                for v in image_set_data["variants"]
-            ]
-            # Gather all URIs for this article from the new image_sources
-            new_uris = {img.uri for img in image_sources}
-            # Find all existing images for this article
-            existing_images = NewsArticleImage.objects.filter(article=news_article)
-            # Delete images for this article whose URI is not in the new set
-            images_to_delete = existing_images.exclude(uri__in=new_uris)
-            if images_to_delete.exists():
-                images_to_delete.delete()
-
-            # Upsert new images (create or update width/height)
-            NewsArticleImage.objects.bulk_create(
-                image_sources,
-                update_conflicts=True,
-                unique_fields=["article", "uri"],
-                update_fields=["width", "height"],
-            )
 
     def _upsert_liveblog_items(self, article: dict, news_article: NewsArticle):
         messages = article.get("body")

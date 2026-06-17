@@ -2,7 +2,7 @@ from django.urls import reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import BasicAPITestCase
-from news.models import LiveblogNotification, NewsArticle
+from news.models.article_models import LiveblogNotification, NewsArticle
 
 
 class TestNotificationView(BasicAPITestCase):

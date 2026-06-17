@@ -59,6 +59,7 @@ class NewsArticle(models.Model):
     is_highlight = models.BooleanField(default=False)
     is_liveblog = models.BooleanField(default=False)
     is_district = models.BooleanField(default=False)
+    is_construction_work = models.BooleanField(default=False)
     district = models.CharField(
         max_length=30,
         choices=DISTRICT_TYPE_CHOICES,
@@ -109,12 +110,12 @@ class BaseImage(models.Model):
 
 
 class NewsArticleImage(BaseImage):
-    article = models.ForeignKey(
+    parent = models.ForeignKey(
         NewsArticle, on_delete=models.CASCADE, related_name="images"
     )
 
     class Meta:
-        unique_together = ("article", "uri")
+        unique_together = ("parent", "uri")
 
 
 class LiveblogNotification(models.Model):
