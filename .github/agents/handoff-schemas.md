@@ -16,7 +16,7 @@ These named contracts are required by the Orchestrator. Every major handoff must
 - `H4 Review Request`: Orchestrator to Reviewer blinded review handoff.
 - `H5 Review Result`: Reviewer back to Orchestrator review result.
 - `H6 Test Request`: Orchestrator to Tester blinded validation handoff.
-- `H8 Test Result`: Tester back to Orchestrator test result.
+- `H7 Test Result`: Tester back to Orchestrator test result.
 
 ## H1 Canonical Work Item Brief
 

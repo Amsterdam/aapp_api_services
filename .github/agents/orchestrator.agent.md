@@ -67,7 +67,7 @@ Your job is to move one work item from intake to validated outcome using a fixed
 6. Send the approved brief to Developer via `H2`. Require `H3` for each delivery.
 7. Start blinded parallel validation by sending `H4` to Reviewer and `H6` to Tester with only the original work item, current implementation artifact, and `git_history_context` rooted at `original_git_hash`. Exclude Developer reasoning and prior validation findings. Require `H5` and `H7` as a response.
 8. Keep Reviewer and Tester independent. Reviewer is read-only, so the parallel review and test pass does not introduce review-side write contention.
-9. If `H5` or `H7` report defects requiring code changes, do NOT request changes from the developer again. Report the the defects to the Product Owner for further action.
+9. If `H5` or `H7` report defects requiring code changes, do NOT request changes from the developer again. Report the defects to the Product Owner for further action.
 10. Trigger a retrospective. Capture any major defects, failed release candidates or repeated confusion. Propose `.github/agents` improvements when applicable, and commit them as `Retrospective: [short description]` with details in the git commit message.
 11. Summarize the final state as either a release recommendation or an escalation, with unresolved risks clearly visible to the Product Owner.
 
