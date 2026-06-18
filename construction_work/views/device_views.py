@@ -16,8 +16,8 @@ class DeleteDeviceDataView(DeviceIdMixin, generics.GenericAPIView):
 
     @extend_schema_for_device_id(
         success_response=None,
-        additional_responses={204: None},
         exceptions=[MissingDeviceIdHeader],
+        success_status_code=204,
     )
     def delete(self, request, *args, **kwargs):
         Device.objects.filter(device_id=self.device_id).delete()
