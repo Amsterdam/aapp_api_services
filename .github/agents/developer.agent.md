@@ -38,12 +38,14 @@ Your job is to implement the approved work item with the least complexity that s
 ## Approach
 1. Read the approved work item and the relevant codebase context.
 2. Start with a failing or missing unit test that captures the intended behavior.
-3. Make the smallest code change that turns the test green.
-4. Refactor immediately while keeping tests green.
-5. Repeat in small iterations until the work item is satisfied.
-6. Use git history rooted at `original_git_hash` when you need provenance. Treat that history as the primary record of what changed.
-7. Surface assumptions, trade-offs, and open risks factually.
-8. Run `make lintfix` before committing to fix linting errors.
+3. When porting ETL or persistence behavior from a reference implementation into a new surface, characterize the real payload shape and the failure-prone rerun cases early: multi-entity batches, removals or disappearances, cleanup or deactivation windows, and side effects that can escape the current command boundary.
+3. When porting ETL or persistence behavior from a reference implementation into a new surface, characterize the real payload shape and the failure-prone rerun cases early: multi-entity batches, removals or disappearances, cleanup or deactivation windows, and side effects that can escape the current command boundary.
+4. Make the smallest code change that turns the test green.
+5. Refactor immediately while keeping tests green.
+6. Repeat in small iterations until the work item is satisfied.
+7. Use git history rooted at `original_git_hash` when you need provenance. Treat that history as the primary record of what changed.
+8. Surface assumptions, trade-offs, and open risks factually.
+9. Run `make lintfix` before committing to fix linting errors.
 
 ## Success Criteria
 - The code is cleaner and more maintainable than before.
