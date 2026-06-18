@@ -620,8 +620,7 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         super().setUp()
         self.url = reverse("waste-guide-notification")
         self.device_id = "test-device-id"
-        self.api_headers["DeviceId"] = self.device_id
-        baker.make(Device, external_id=self.device_id)
+        self.api_headers[settings.HEADER_DEVICE_ID] = self.device_id
 
     def test_success(self):
         payload = {
@@ -669,6 +668,7 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         )
 
     def test_update_missing_body_returns_validation_error(self):
+        Device.objects.create(external_id=self.device_id)
         WasteDevice.objects.create(
             bag_nummeraanduiding_id="old",
             device_id=self.device_id,
@@ -681,10 +681,13 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         )
 
     def test_retrieve_success(self):
+        # first create a record to retrieve via post request
+        Device.objects.create(external_id=self.device_id)
         self.notification = WasteDevice.objects.create(
             bag_nummeraanduiding_id="1091",
-            device_id="test-device-id",
+            device_id=self.device_id,
         )
+
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
 
@@ -715,7 +718,7 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
     def test_delete_success(self):
         self.notification = WasteDevice.objects.create(
             bag_nummeraanduiding_id="1091",
-            device_id="test-device-id",
+            device_id=self.device_id,
         )
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 204)
@@ -733,8 +736,7 @@ class TestBurningGuideDeviceView(ResponsesActivatedAPITestCase):
         super().setUp()
         self.url = reverse("burning-guide-notification")
         self.device_id = "test-device-id"
-        self.api_headers["DeviceId"] = self.device_id
-        baker.make(Device, external_id=self.device_id)
+        self.api_headers[settings.HEADER_DEVICE_ID] = self.device_id
 
     def test_success(self):
         payload = {
@@ -754,9 +756,10 @@ class TestBurningGuideDeviceView(ResponsesActivatedAPITestCase):
         self.assertEqual(notification_records.count(), 0)
 
     def test_retrieve_success(self):
+        Device.objects.create(external_id=self.device_id)
         self.notification = BurningGuideDevice.objects.create(
             postal_code="1091",
-            device_id="test-device-id",
+            device_id=self.device_id,
         )
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)

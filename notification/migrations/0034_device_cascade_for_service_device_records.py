@@ -14,7 +14,10 @@ def create_missing_device_rows(apps, schema_editor):
     missing_external_ids = referenced_external_ids - existing_external_ids
     if missing_external_ids:
         Device.objects.bulk_create(
-            [Device(external_id=external_id) for external_id in missing_external_ids],
+            [
+                Device(external_id=external_id, os="unknown")
+                for external_id in missing_external_ids
+            ],
             ignore_conflicts=True,
         )
 

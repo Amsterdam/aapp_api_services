@@ -18,6 +18,7 @@ from notification.models import (
 )
 from notification.serializers.device_serializers import (
     BurningGuideDeviceRequestSerializer,
+    DeviceDeleteErrorResponseSerializer,
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
     WasteDeviceRequestSerializer,
@@ -83,30 +84,24 @@ class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
     @extend_schema_for_device_id(
         success_response=None,
         success_status_code=204,
-        additional_responses={
-            500: {
-                "status": "error",
-                "message": "Failed to delete device",
-            }
-        },
+        additional_responses={500: DeviceDeleteErrorResponseSerializer},
     )
     def delete(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
-                orphan_scheduled_notification_ids = list(
+                sheduled_notification_ids = list(
                     ScheduledNotification.objects.filter(
                         devices__external_id=self.device_id
-                    )
-                    .annotate(device_count=Count("devices"))
-                    .filter(device_count=1)
-                    .values_list("id", flat=True)
+                    ).values_list("id", flat=True)
                 )
 
                 Device.objects.filter(external_id=self.device_id).delete()
 
-                if orphan_scheduled_notification_ids:
+                if sheduled_notification_ids:
                     ScheduledNotification.objects.filter(
-                        id__in=orphan_scheduled_notification_ids
+                        id__in=sheduled_notification_ids
+                    ).annotate(device_count=Count("devices")).filter(
+                        device_count=0
                     ).delete()
         except Exception:
             return Response(
