@@ -2,12 +2,16 @@ class ETLStageAborted(Exception):
     pass
 
 
-def _has_created_records(created_records) -> bool:
-    created_count = getattr(created_records, "created_count", None)
+def _is_cleanup_eligible(load_outcome) -> bool:
+    cleanup_eligible = getattr(load_outcome, "cleanup_eligible", None)
+    if cleanup_eligible is not None:
+        return cleanup_eligible
+
+    created_count = getattr(load_outcome, "created_count", None)
     if created_count is not None:
         return created_count > 0
 
-    return bool(created_records)
+    return bool(load_outcome)
 
 
 def run_stage(
@@ -35,19 +39,25 @@ def run_stage(
 
 def maybe_garbage_collect(
     *,
-    created_records,
+    load_outcome,
     garbage_collect,
     enabled: bool,
     threshold_seconds: int,
     logger,
 ):
-    if _has_created_records(created_records) and enabled:
-        deleted_count = garbage_collect(threshold_seconds=threshold_seconds)
-        logger.info(
-            "News garbage collector completed.",
-            extra={"deleted_count": deleted_count},
-        )
-        return deleted_count
+    if not enabled:
+        logger.info("News garbage collector skipped because it is disabled.")
+        return 0
 
-    logger.info("News garbage collector skipped because it is disabled.")
-    return 0
+    if not _is_cleanup_eligible(load_outcome):
+        logger.info(
+            "News garbage collector skipped because the load outcome is not cleanup eligible."
+        )
+        return 0
+
+    deleted_count = garbage_collect(threshold_seconds=threshold_seconds)
+    logger.info(
+        "News garbage collector completed.",
+        extra={"deleted_count": deleted_count},
+    )
+    return deleted_count

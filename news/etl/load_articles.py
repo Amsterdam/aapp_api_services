@@ -29,6 +29,7 @@ class ArticleLoaderError(Exception):
 @dataclass(frozen=True)
 class ArticleLoadResult:
     created_count: int
+    cleanup_eligible: bool
 
 
 class NewsArticleLoader:
@@ -44,6 +45,7 @@ class NewsArticleLoader:
         new_liveblog_notification_service: NewLiveblogNotificationService | None = None,
         liveblog_update_notification_service: LiveblogUpdateNotificationService
         | None = None,
+        enable_new_liveblog_notifications: bool = True,
     ):
         self.image_set_service = (
             image_set_service if image_set_service is not None else ImageSetService()
@@ -58,6 +60,7 @@ class NewsArticleLoader:
             if liveblog_update_notification_service is not None
             else LiveblogUpdateNotificationService()
         )
+        self.enable_new_liveblog_notifications = enable_new_liveblog_notifications
 
     def load(self, transformed_data: list[dict]):
         """
@@ -70,10 +73,13 @@ class NewsArticleLoader:
         )
         incoming_foreign_ids = self._get_incoming_foreign_ids(transformed_data)
         existing_foreign_ids = self._get_existing_foreign_ids(incoming_foreign_ids)
+        loaded_liveblog_foreign_ids = self._get_loaded_liveblog_foreign_ids(
+            transformed_data
+        )
         news_articles_list = [
             self._get_news_article_object(data) for data in transformed_data
         ]
-        self._upsert_news_articles(news_articles_list)
+        self._upsert_news_articles(news_articles_list, loaded_liveblog_foreign_ids)
 
         news_articles_dict = self._get_news_articles_dict()  # {foreign_id: NewsArticle instance} for all articles in the database after upsert
 
@@ -89,7 +95,8 @@ class NewsArticleLoader:
                 )
 
         return ArticleLoadResult(
-            created_count=len(incoming_foreign_ids - existing_foreign_ids)
+            created_count=len(incoming_foreign_ids - existing_foreign_ids),
+            cleanup_eligible=bool(transformed_data),
         )
 
     def _get_incoming_foreign_ids(self, transformed_data: list[dict]) -> set[int]:
@@ -108,6 +115,16 @@ class NewsArticleLoader:
                 "foreign_id", flat=True
             )
         )
+
+    def _get_loaded_liveblog_foreign_ids(
+        self, transformed_data: list[dict]
+    ) -> set[int]:
+        return {
+            int(article_data["foreign_id"])
+            for article_data in transformed_data
+            if article_data.get("is_liveblog")
+            and article_data.get("foreign_id") is not None
+        }
 
     def _get_news_article_object(self, data: dict) -> NewsArticle:
         """
@@ -137,7 +154,11 @@ class NewsArticleLoader:
             is_active_liveblog=data.get("is_active_liveblog", False) or False,
         )
 
-    def _upsert_news_articles(self, news_articles_list: list[NewsArticle]) -> None:
+    def _upsert_news_articles(
+        self,
+        news_articles_list: list[NewsArticle],
+        loaded_liveblog_foreign_ids: set[int] | None = None,
+    ) -> None:
         NewsArticle.objects.bulk_create(
             news_articles_list,
             update_conflicts=True,
@@ -164,7 +185,20 @@ class NewsArticleLoader:
             ],
         )
 
+        self._mark_new_liveblogs_as_notified(loaded_liveblog_foreign_ids or set())
+
+    def _mark_new_liveblogs_as_notified(
+        self,
+        loaded_liveblog_foreign_ids: set[int],
+    ) -> None:
+        if (
+            not self.enable_new_liveblog_notifications
+            or not loaded_liveblog_foreign_ids
+        ):
+            return
+
         unsend_liveblogs = NewsArticle.objects.filter(
+            foreign_id__in=loaded_liveblog_foreign_ids,
             is_liveblog=True,
             is_active_liveblog=True,
             liveblog_notification_send=None,

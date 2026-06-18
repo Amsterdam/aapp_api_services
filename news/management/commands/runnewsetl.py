@@ -49,7 +49,7 @@ class Command(BaseCommand):
             return
 
         maybe_garbage_collect(
-            created_records=article_load_result,
+            load_outcome=article_load_result,
             garbage_collect=garbage_collect_unseen_articles,
             enabled=settings.DELETE_UNSEEN_ARTICLES,
             threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS,

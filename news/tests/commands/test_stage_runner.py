@@ -72,7 +72,7 @@ class MaybeGarbageCollectTest(SimpleTestCase):
         logger = Mock()
 
         deleted_count = maybe_garbage_collect(
-            created_records=4,
+            load_outcome=4,
             garbage_collect=garbage_collect,
             enabled=True,
             threshold_seconds=7200,
@@ -86,12 +86,12 @@ class MaybeGarbageCollectTest(SimpleTestCase):
             extra={"deleted_count": 2},
         )
 
-    def test_maybe_garbage_collect_runs_when_outcome_reports_new_records(self):
+    def test_maybe_garbage_collect_runs_when_outcome_is_cleanup_eligible(self):
         garbage_collect = Mock(return_value=2)
         logger = Mock()
 
         deleted_count = maybe_garbage_collect(
-            created_records=SimpleNamespace(created_count=1),
+            load_outcome=SimpleNamespace(created_count=0, cleanup_eligible=True),
             garbage_collect=garbage_collect,
             enabled=True,
             threshold_seconds=7200,
@@ -110,7 +110,7 @@ class MaybeGarbageCollectTest(SimpleTestCase):
         logger = Mock()
 
         deleted_count = maybe_garbage_collect(
-            created_records=0,
+            load_outcome=0,
             garbage_collect=garbage_collect,
             enabled=True,
             threshold_seconds=7200,
@@ -120,15 +120,15 @@ class MaybeGarbageCollectTest(SimpleTestCase):
         self.assertEqual(deleted_count, 0)
         garbage_collect.assert_not_called()
         logger.info.assert_called_once_with(
-            "News garbage collector skipped because it is disabled."
+            "News garbage collector skipped because the load outcome is not cleanup eligible."
         )
 
-    def test_maybe_garbage_collect_skips_when_outcome_reports_only_updates(self):
+    def test_maybe_garbage_collect_skips_when_outcome_is_not_cleanup_eligible(self):
         garbage_collect = Mock()
         logger = Mock()
 
         deleted_count = maybe_garbage_collect(
-            created_records=SimpleNamespace(created_count=0),
+            load_outcome=SimpleNamespace(created_count=0, cleanup_eligible=False),
             garbage_collect=garbage_collect,
             enabled=True,
             threshold_seconds=7200,
@@ -138,7 +138,7 @@ class MaybeGarbageCollectTest(SimpleTestCase):
         self.assertEqual(deleted_count, 0)
         garbage_collect.assert_not_called()
         logger.info.assert_called_once_with(
-            "News garbage collector skipped because it is disabled."
+            "News garbage collector skipped because the load outcome is not cleanup eligible."
         )
 
     def test_maybe_garbage_collect_skips_when_disabled(self):
@@ -146,7 +146,7 @@ class MaybeGarbageCollectTest(SimpleTestCase):
         logger = Mock()
 
         deleted_count = maybe_garbage_collect(
-            created_records=4,
+            load_outcome=4,
             garbage_collect=garbage_collect,
             enabled=False,
             threshold_seconds=7200,

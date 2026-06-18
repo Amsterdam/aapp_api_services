@@ -22,7 +22,7 @@ IPROX_PROJECTS_URL = urljoin(IPROX_URL, "projects/")
 
 iprox_fetcher = IproxConstructionWorkFetcher()
 project_data_loader = load_projects
-article_data_loader = NewsArticleLoader()
+article_data_loader = NewsArticleLoader(enable_new_liveblog_notifications=False)
 
 
 class ConstructionWorkETLError(Exception):
@@ -56,7 +56,7 @@ class Command(BaseCommand):
             return
 
         maybe_garbage_collect(
-            created_records=article_load_result,
+            load_outcome=article_load_result,
             garbage_collect=garbage_collect_unseen_articles,
             enabled=settings.DELETE_UNSEEN_ARTICLES,
             threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS,

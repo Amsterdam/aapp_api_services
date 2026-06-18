@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.test import TestCase, override_settings
 from django.utils import timezone
@@ -79,7 +79,7 @@ class LoadDataTest(TestCase):
         self.assertFalse(NewsArticle.objects.first().deleted)
         self.assertEqual(NewsArticleImage.objects.count(), 3)
 
-    def test_load_returns_zero_created_count_for_update_only_rerun(self):
+    def test_load_returns_cleanup_eligible_for_update_only_rerun(self):
         baker.make(
             NewsArticle,
             foreign_id=123123,
@@ -113,10 +113,59 @@ class LoadDataTest(TestCase):
         )
 
         self.assertEqual(load_result.created_count, 0)
+        self.assertTrue(load_result.cleanup_eligible)
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(
             NewsArticle.objects.get(foreign_id=123123).title, "Updated title"
         )
+
+    def test_load_construction_work_articles_do_not_mark_or_notify_unrelated_liveblogs(
+        self,
+    ):
+        active_liveblog = baker.make(
+            NewsArticle,
+            foreign_id=987654,
+            title="Unrelated liveblog",
+            url="https://example.com/liveblogs/987654",
+            is_liveblog=True,
+            is_active_liveblog=True,
+            liveblog_notification_send=None,
+        )
+        notification_service = Mock()
+        loader = NewsArticleLoader(
+            new_liveblog_notification_service=notification_service,
+            enable_new_liveblog_notifications=False,
+        )
+
+        load_result = loader.load(
+            [
+                {
+                    "foreign_id": "123123",
+                    "title": "Construction update",
+                    "body": "Updated body",
+                    "summary": "Updated summary",
+                    "intro": "Updated intro",
+                    "in_all_news": False,
+                    "is_liveblog": False,
+                    "is_highlight": False,
+                    "is_district": False,
+                    "is_construction_work": True,
+                    "district": None,
+                    "url": "https://example.com/test-article",
+                    "creation_datetime": "2024-01-01T12:00:00Z",
+                    "modification_datetime": "2024-01-01T13:00:00Z",
+                    "publication_datetime": "2024-01-01T13:00:00Z",
+                    "expiration_datetime": None,
+                    "image_url": "",
+                }
+            ]
+        )
+
+        active_liveblog.refresh_from_db()
+
+        self.assertTrue(load_result.cleanup_eligible)
+        self.assertIsNone(active_liveblog.liveblog_notification_send)
+        notification_service.send.assert_not_called()
 
     @patch("core.services.image_set.ImageSetService")
     def test_load_continues_when_image_upload_fails(self, mock_image_set_service):

@@ -312,6 +312,13 @@ class RunConstructionWorkETLTest(TestCase):
         "news.management.commands.runconstructionworketl.transform_articles",
         return_value=[],
     )
+    @override_settings(
+        DELETE_UNSEEN_ARTICLES=True,
+        DELETE_UNSEEN_ARTICLES_AFTER_SECONDS=7200,
+    )
+    @patch(
+        "news.management.commands.runconstructionworketl.garbage_collect_unseen_articles"
+    )
     @patch("news.management.commands.runconstructionworketl.logger.info")
     @patch("news.management.commands.runconstructionworketl.logger.error")
     @patch("news.management.commands.runconstructionworketl.iprox_fetcher.extract")
@@ -320,6 +327,7 @@ class RunConstructionWorkETLTest(TestCase):
         mock_extract,
         mock_logger_error,
         mock_logger_info,
+        mock_garbage_collect,
         mock_transform_articles,
     ):
         extracted_articles = self._articles_payload()
@@ -339,10 +347,35 @@ class RunConstructionWorkETLTest(TestCase):
             str(mock_logger_error.call_args.kwargs["exc_info"]),
             "No valid transformed articles found. Ending ETL process.",
         )
+        mock_garbage_collect.assert_not_called()
         self.assertNotIn(
             call("ETL process completed successfully."),
             mock_logger_info.call_args_list,
         )
+
+    @patch.object(
+        runconstructionworketl.article_data_loader.new_liveblog_notification_service,
+        "send",
+    )
+    def test_run_construction_work_etl_does_not_touch_unrelated_active_liveblogs(
+        self,
+        mock_send,
+    ):
+        active_liveblog = baker.make(
+            NewsArticle,
+            foreign_id=7997,
+            title="Unrelated active liveblog",
+            url="https://example.com/liveblogs/7997",
+            is_liveblog=True,
+            is_active_liveblog=True,
+            liveblog_notification_send=None,
+        )
+
+        self._run_etl()
+
+        active_liveblog.refresh_from_db()
+        self.assertIsNone(active_liveblog.liveblog_notification_send)
+        mock_send.assert_not_called()
 
     def test_run_construction_work_etl_refreshes_project_timeline_metadata_on_rerun(
         self,
@@ -405,7 +438,7 @@ class RunConstructionWorkETLTest(TestCase):
         DELETE_UNSEEN_ARTICLES=True,
         DELETE_UNSEEN_ARTICLES_AFTER_SECONDS=7200,
     )
-    def test_run_construction_work_etl_skips_article_garbage_collection_for_update_only_rerun(
+    def test_run_construction_work_etl_garbage_collects_after_update_only_rerun(
         self,
     ):
         self._run_etl()
@@ -423,7 +456,7 @@ class RunConstructionWorkETLTest(TestCase):
         self._run_etl()
 
         stale_article.refresh_from_db()
-        self.assertFalse(stale_article.deleted)
+        self.assertTrue(stale_article.deleted)
 
     @override_settings(
         DELETE_UNSEEN_ARTICLES=True,
