@@ -2,6 +2,7 @@ from unittest.mock import call, patch
 
 from django.core.management import call_command
 from django.test import TestCase
+from django.utils import timezone
 
 from news.management.commands import runconstructionworketl
 from news.models.article_models import NewsArticle
@@ -60,9 +61,9 @@ class RunConstructionWorkETLTest(TestCase):
             payload["images"] = [self._project_image()]
         return [payload]
 
-    def _image_set_payload(self):
+    def _image_set_payload(self, image_set_id=12345):
         return {
-            "id": 12345,
+            "id": image_set_id,
             "identifier": "project-image-set",
             "variants": [
                 {
@@ -77,6 +78,33 @@ class RunConstructionWorkETLTest(TestCase):
                 },
             ],
         }
+
+    def _run_etl(
+        self,
+        *,
+        projects_payload=None,
+        articles_payload=None,
+        image_set_payload=None,
+    ):
+        with (
+            patch(
+                "news.etl.load_projects.IMAGE_SERVICE.get_or_upload_from_url"
+            ) as mock_get_or_upload_from_url,
+            patch(
+                "news.management.commands.runconstructionworketl.iprox_fetcher.extract"
+            ) as mock_extract,
+        ):
+            mock_get_or_upload_from_url.return_value = (
+                image_set_payload or self._image_set_payload()
+            )
+            mock_extract.side_effect = [
+                projects_payload or self._projects_payload(),
+                articles_payload or self._articles_payload(),
+            ]
+
+            call_command("runconstructionworketl")
+
+        return mock_extract, mock_get_or_upload_from_url
 
     def _assert_project_images(self):
         project = Project.objects.get(foreign_id=7001)
@@ -191,4 +219,78 @@ class RunConstructionWorkETLTest(TestCase):
         self.assertNotIn(
             call("ETL process completed successfully."),
             mock_logger_info.call_args_list,
+        )
+
+    def test_run_construction_work_etl_refreshes_project_timeline_metadata_on_rerun(
+        self,
+    ):
+        self._run_etl()
+
+        updated_projects = self._projects_payload()
+        updated_projects[0]["timeline"] = {
+            "title": "Updated timeline",
+            "intro": "Updated intro",
+            "items": [],
+        }
+
+        self._run_etl(projects_payload=updated_projects)
+
+        project = Project.objects.get(foreign_id=7001)
+        self.assertEqual(project.timeline_title, "Updated timeline")
+        self.assertEqual(project.timeline_intro, "Updated intro")
+
+    def test_run_construction_work_etl_deactivates_unseen_visible_projects_only(self):
+        Project.objects.create(
+            foreign_id=7998,
+            title="Existing visible project",
+            url="https://example.com/projects/7998",
+            active=True,
+            hidden=False,
+            last_seen=timezone.now(),
+        )
+        Project.objects.create(
+            foreign_id=7999,
+            title="Existing hidden project",
+            url="https://example.com/projects/7999",
+            active=True,
+            hidden=True,
+            last_seen=timezone.now(),
+        )
+
+        self._run_etl()
+
+        visible_project = Project.objects.get(foreign_id=7998)
+        hidden_project = Project.objects.get(foreign_id=7999)
+        self.assertFalse(visible_project.active)
+        self.assertTrue(hidden_project.active)
+
+    def test_run_construction_work_etl_deletes_stale_inactive_visible_projects(self):
+        Project.objects.create(
+            foreign_id=7998,
+            title="Stale project",
+            url="https://example.com/projects/7998",
+            active=False,
+            hidden=False,
+            last_seen=timezone.now() - timezone.timedelta(days=6),
+        )
+
+        self._run_etl()
+
+        self.assertFalse(Project.objects.filter(foreign_id=7998).exists())
+
+    def test_run_construction_work_etl_refreshes_image_set_foreign_id_for_reused_variants(
+        self,
+    ):
+        self._run_etl(image_set_payload=self._image_set_payload(image_set_id=12345))
+
+        self._run_etl(image_set_payload=self._image_set_payload(image_set_id=54321))
+
+        project = Project.objects.get(foreign_id=7001)
+        self.assertEqual(
+            list(
+                ProjectImage.objects.filter(parent=project)
+                .values_list("foreign_id", flat=True)
+                .distinct()
+            ),
+            [54321],
         )

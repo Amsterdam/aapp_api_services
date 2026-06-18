@@ -20,9 +20,14 @@ from news.models.project_models import (
 
 logger = getLogger(__name__)
 IMAGE_SERVICE = ImageSetService()
+STALE_PROJECT_DAYS = 5
 
 
 def projects(project_data):
+    if not project_data:
+        return
+
+    seen_project_ids = [data.get("id") for data in project_data]
     projects_list = [get_project_object(data) for data in project_data]
     Project.objects.bulk_create(
         projects_list,
@@ -40,6 +45,8 @@ def projects(project_data):
             "expiration_date",
             "last_seen",
             "active",
+            "timeline_title",
+            "timeline_intro",
         ],
     )
 
@@ -85,6 +92,9 @@ def projects(project_data):
         ProjectSection.objects.bulk_create(sections)
         ProjectSectionUrl.objects.bulk_create(section_urls)
 
+    _deactivate_unseen_projects(seen_project_ids)
+    _cleanup_inactive_projects()
+
 
 def get_project_object(data):
     timeline_data = data.get("timeline") or {}
@@ -111,6 +121,21 @@ def get_project_object(data):
         active=sections_filled,
     )
     return project
+
+
+def _deactivate_unseen_projects(seen_project_ids):
+    Project.objects.exclude(foreign_id__in=seen_project_ids).filter(
+        hidden=False
+    ).update(active=False)
+
+
+def _cleanup_inactive_projects():
+    stale_before = timezone.now() - timezone.timedelta(days=STALE_PROJECT_DAYS)
+    Project.objects.filter(
+        last_seen__lt=stale_before,
+        active=False,
+        hidden=False,
+    ).delete()
 
 
 def check_sections_filled(data):
@@ -225,7 +250,7 @@ def upsert_images(project_data: dict, project: Project):
         image_sources,
         update_conflicts=True,
         unique_fields=["parent", "uri"],
-        update_fields=["width", "height"],
+        update_fields=["foreign_id", "width", "height"],
     )
     return image_sources
 
