@@ -20,8 +20,8 @@ http:
       {
         "stationId": "VCPS-7BMY2",
         "socketNumber": "17",
-        "name": "Jeroen test",
-        "email": "j.beekman@amsterdam.nl",
+        "name": "Test User",
+        "email": "user@example.com",
         "returnUrl": "https://yourdomain.com/app/sessions"
       }
   auth: inherit
