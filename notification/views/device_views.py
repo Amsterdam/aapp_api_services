@@ -82,6 +82,7 @@ class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
 
     @extend_schema_for_device_id(
         success_response=None,
+        success_status_code=204,
         additional_responses={
             500: {
                 "status": "error",
