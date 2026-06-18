@@ -8,7 +8,8 @@ from django.db import transaction
 from django.utils import timezone
 from requests import HTTPError, RequestException
 
-from construction_work.models.project_models import (
+from core.services.image_set import ImageSetService
+from news.models.project_models import (
     Project,
     ProjectContact,
     ProjectImage,
@@ -16,7 +17,6 @@ from construction_work.models.project_models import (
     ProjectSectionUrl,
     ProjectTimelineItem,
 )
-from core.services.image_set import ImageSetService
 
 logger = getLogger(__name__)
 IMAGE_SERVICE = ImageSetService()
@@ -55,7 +55,7 @@ def projects(project_data):
         project = projects_dict.get(data.get("id"))
 
         contacts += get_contacts(data, project)
-        upsert_images(data, image_class=ProjectImage)
+        upsert_images(data, project)
 
         timelines += get_timeline(data, project)
 
@@ -172,7 +172,7 @@ def get_sections(data, project):
     return sections, section_urls
 
 
-def upsert_images(item: dict, image_class):
+def upsert_images(project_data: dict, project: Project):
     """
     Upsert article images for a given article. If the article has an image_url, we will attempt to get or upload the image using the ImageSetService.
     Then we will upsert the NewsArticleImage instances for the article based on the image variants returned by the ImageSetService.
@@ -181,7 +181,7 @@ def upsert_images(item: dict, image_class):
     - If there is an image for an article, but the url is different than the existing one, delete the old image and create a new one
     - If there is no image for an article, create a new one
     """
-    image_url = item.get("image_url")
+    image_url = project_data.get("image_url")
     if image_url:
         try:
             image_set_data = IMAGE_SERVICE.get_or_upload_from_url(image_url)
@@ -194,8 +194,8 @@ def upsert_images(item: dict, image_class):
 
         # upsert article images
         image_sources = [
-            image_class(
-                parent=item,
+            ProjectImage(
+                parent=project,
                 foreign_id=image_set_data[
                     "id"
                 ],  # use the image set id as the image foreign_id for reference.
@@ -208,14 +208,14 @@ def upsert_images(item: dict, image_class):
         # Gather all URIs for this article from the new image_sources
         new_uris = {img.uri for img in image_sources}
         # Find all existing images for this article
-        existing_images = image_class.objects.filter(parent=item)
+        existing_images = ProjectImage.objects.filter(parent=project)
         # Delete images for this article whose URI is not in the new set
         images_to_delete = existing_images.exclude(uri__in=new_uris)
         if images_to_delete.exists():
             images_to_delete.delete()
 
         # Upsert new images (create or update width/height)
-        image_class.objects.bulk_create(
+        ProjectImage.objects.bulk_create(
             image_sources,
             update_conflicts=True,
             unique_fields=["parent", "uri"],

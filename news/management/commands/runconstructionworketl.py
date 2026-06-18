@@ -6,7 +6,13 @@ from django.core.management.base import BaseCommand
 
 from news.etl.extract_data import IproxConstructionWorkFetcher
 from news.etl.load_articles import NewsArticleLoader, garbage_collect_unseen_articles
+from news.etl.load_projects import projects as load_projects
 from news.etl.transform_articles import transform_articles
+from news.management.commands._stage_runner import (
+    ETLStageAborted,
+    maybe_garbage_collect,
+    run_stage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +21,7 @@ IPROX_ARTICLES_URL = urljoin(IPROX_URL, "articles/")
 IPROX_PROJECTS_URL = urljoin(IPROX_URL, "projects/")
 
 iprox_fetcher = IproxConstructionWorkFetcher()
+project_data_loader = load_projects
 article_data_loader = NewsArticleLoader()
 
 
@@ -29,42 +36,37 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         try:
-            self.projects_etl_run()
-            self.articles_etl_run()
-        except ConstructionWorkETLError as e:
-            logger.error(
-                "Construction work ETL process terminated prematurely", exc_info=e
+            run_stage(
+                extract=self._extract_projects,
+                extract_empty_message="No projects found. Ending ETL process.",
+                load=project_data_loader,
             )
+            created_articles = run_stage(
+                extract=self._extract_articles,
+                extract_empty_message="No articles found. Ending ETL process.",
+                transform=transform_articles,
+                transform_empty_message="No valid transformed articles found. Ending ETL process.",
+                load=article_data_loader.load,
+            )
+        except ETLStageAborted as error:
+            logger.error(
+                "Construction work ETL process terminated prematurely",
+                exc_info=ConstructionWorkETLError(str(error)),
+            )
+            return
+
+        maybe_garbage_collect(
+            created_records=created_articles,
+            garbage_collect=garbage_collect_unseen_articles,
+            enabled=settings.DELETE_UNSEEN_ARTICLES,
+            threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS,
+            logger=logger,
+        )
 
         logger.info("ETL process completed successfully.")
 
-    def projects_etl_run(self):
-        projects_data = iprox_fetcher.extract(IPROX_PROJECTS_URL)
-        if not projects_data:
-            raise ConstructionWorkETLError("No projects found. Ending ETL process.")
+    def _extract_projects(self):
+        return iprox_fetcher.extract(IPROX_PROJECTS_URL)
 
-    def articles_etl_run(self):
-        articles_data = iprox_fetcher.extract(IPROX_ARTICLES_URL)
-        if not articles_data:
-            raise ConstructionWorkETLError("No articles found. Ending ETL process.")
-
-        transformed_articles_data = transform_articles(articles_data)
-        if not transformed_articles_data:
-            raise ConstructionWorkETLError(
-                "No valid transformed articles found. Ending ETL process."
-            )
-
-        created_articles = article_data_loader.load(transformed_articles_data)
-
-        # only delete unseen articles if there were new articles created, otherwise we
-        # might end up in a situation where we delete all articles because no new articles are created
-        if created_articles and settings.DELETE_UNSEEN_ARTICLES:
-            deleted_count = garbage_collect_unseen_articles(
-                threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS
-            )
-            logger.info(
-                "News garbage collector completed.",
-                extra={"deleted_count": deleted_count},
-            )
-        else:
-            logger.info("News garbage collector skipped because it is disabled.")
+    def _extract_articles(self):
+        return iprox_fetcher.extract(IPROX_ARTICLES_URL)

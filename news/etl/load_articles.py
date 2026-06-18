@@ -4,11 +4,14 @@ from datetime import timedelta
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from requests import HTTPError, RequestException
 
+from core.services.image_set import ImageSetService
 from news.models.article_models import (
     LiveBlogItem,
     LiveblogNotification,
     NewsArticle,
+    NewsArticleImage,
 )
 from news.services.notification import (
     LiveblogUpdateNotificationService,
@@ -27,6 +30,28 @@ class NewsArticleLoader:
     Loader class for ingesting news articles and liveblogs into the database.
     Handles upserts, image processing, and liveblog item management.
     """
+
+    def __init__(
+        self,
+        *,
+        image_set_service: ImageSetService | None = None,
+        new_liveblog_notification_service: NewLiveblogNotificationService | None = None,
+        liveblog_update_notification_service: LiveblogUpdateNotificationService
+        | None = None,
+    ):
+        self.image_set_service = (
+            image_set_service if image_set_service is not None else ImageSetService()
+        )
+        self.new_liveblog_notification_service = (
+            new_liveblog_notification_service
+            if new_liveblog_notification_service is not None
+            else NewLiveblogNotificationService()
+        )
+        self.liveblog_update_notification_service = (
+            liveblog_update_notification_service
+            if liveblog_update_notification_service is not None
+            else LiveblogUpdateNotificationService()
+        )
 
     def load(self, transformed_data: list[dict]):
         """
@@ -67,13 +92,14 @@ class NewsArticleLoader:
             foreign_id=data.get("foreign_id"),
             deleted=False,
             title=data.get("title"),
-            body=data.get("body") if not data["is_liveblog"] else None,
+            body=data.get("body") if not data.get("is_liveblog", False) else None,
             summary=data.get("summary"),
             intro=data.get("intro"),
             in_all_news=data.get("in_all_news", False) or False,
             is_highlight=data.get("is_highlight", False) or False,
             is_liveblog=data.get("is_liveblog", False) or False,
             is_district=data.get("is_district", False) or False,
+            is_construction_work=data.get("is_construction_work", False) or False,
             district=data.get("district"),
             url=data.get("url"),
             creation_datetime=data.get("creation_datetime"),
@@ -101,6 +127,7 @@ class NewsArticleLoader:
                 "is_highlight",
                 "is_liveblog",
                 "is_district",
+                "is_construction_work",
                 "district",
                 "url",
                 "creation_datetime",
@@ -122,8 +149,7 @@ class NewsArticleLoader:
 
             with transaction.atomic():
                 if settings.ENABLE_LIVEBLOG_NOTIFICATIONS:
-                    notification_service = NewLiveblogNotificationService()
-                    notification_service.send(
+                    self.new_liveblog_notification_service.send(
                         liveblog_id=liveblog.id, liveblog_title=liveblog.title
                     )
                 else:
@@ -141,6 +167,77 @@ class NewsArticleLoader:
     def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()
         return {str(article.foreign_id): article for article in news_article_objects}
+
+    def _upsert_article_images(self, article: dict, news_article: NewsArticle):
+        image_set_data = self._get_image_set_data(article)
+        if not image_set_data:
+            return []
+
+        image_sources = self._build_article_images(news_article, image_set_data)
+        self._delete_removed_article_images(news_article, image_sources)
+        self._upsert_article_image_sources(image_sources)
+        return image_sources
+
+    def _get_image_set_data(self, article: dict) -> dict | None:
+        image_url = article.get("image_url")
+        if not image_url:
+            return None
+
+        try:
+            return self.image_set_service.get_or_upload_from_url(image_url)
+        except (HTTPError, RequestException) as error:
+            logger.error(
+                "Error getting or uploading image",
+                extra={
+                    "image_url": image_url,
+                    "news_article_foreign_id": article.get("foreign_id"),
+                },
+                exc_info=error,
+            )
+            return None
+
+    def _build_article_images(
+        self,
+        news_article: NewsArticle,
+        image_set_data: dict,
+    ) -> list[NewsArticleImage]:
+        return [
+            NewsArticleImage(
+                parent=news_article,
+                foreign_id=image_set_data["id"],
+                uri=variant["image"],
+                width=variant["width"],
+                height=variant["height"],
+            )
+            for variant in image_set_data.get("variants", [])
+        ]
+
+    def _delete_removed_article_images(
+        self,
+        news_article: NewsArticle,
+        image_sources: list[NewsArticleImage],
+    ):
+        new_uris = {image.uri for image in image_sources}
+        images_to_delete = NewsArticleImage.objects.filter(parent=news_article)
+        if new_uris:
+            images_to_delete = images_to_delete.exclude(uri__in=new_uris)
+
+        if images_to_delete.exists():
+            images_to_delete.delete()
+
+    def _upsert_article_image_sources(
+        self,
+        image_sources: list[NewsArticleImage],
+    ):
+        if not image_sources:
+            return
+
+        NewsArticleImage.objects.bulk_create(
+            image_sources,
+            update_conflicts=True,
+            unique_fields=["parent", "uri"],
+            update_fields=["foreign_id", "width", "height"],
+        )
 
     def _upsert_images_and_liveblog_items(
         self, article: dict, news_article: NewsArticle
@@ -198,8 +295,7 @@ class NewsArticleLoader:
             )
         )
         if device_ids:
-            update_notification_service = LiveblogUpdateNotificationService()
-            update_notification_service.send(
+            self.liveblog_update_notification_service.send(
                 device_ids=device_ids,
                 update_title=message.get("title"),
                 liveblog_id=news_article.id,

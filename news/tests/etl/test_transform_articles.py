@@ -78,6 +78,22 @@ class TransformDataTest(TestCase):
         self.assertTrue(article["is_liveblog"])
         self.assertTrue(article["is_district"])
 
+    def test_transform_preserves_construction_work_marker(self):
+        extracted_data = [
+            {
+                **item_article.MOCK_RESPONSE_123123,
+                **{
+                    "district": None,
+                    "is_construction_work": True,
+                },
+            }
+        ]
+
+        transformed = transform_articles(extracted_data)
+
+        self.assertEqual(len(transformed), 1)
+        self.assertTrue(transformed[0]["is_construction_work"])
+
     def test_transform_invalid_article(self):
         extracted_data = [
             {

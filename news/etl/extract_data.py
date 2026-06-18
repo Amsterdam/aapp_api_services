@@ -9,6 +9,32 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 logger = logging.getLogger(__name__)
 
 
+def _source_defaults(*, district=None, is_construction_work=False) -> dict:
+    return {
+        "district": district,
+        "in_all_news": False,
+        "is_highlight": False,
+        "is_liveblog": False,
+        "is_district": False,
+        "is_construction_work": is_construction_work,
+    }
+
+
+def _build_detail_urls(base_url: str, item_ids: list[Any]) -> list[str]:
+    return [urljoin(base_url.rstrip("/") + "/", str(item_id)) for item_id in item_ids]
+
+
+def _collect_fetched_items(raw_data, *, map_item=None) -> list[dict]:
+    item_data = []
+    for item in raw_data:
+        if not item:
+            continue
+
+        item_data.append(map_item(item) if map_item is not None else item)
+
+    return item_data
+
+
 class FetchError(Exception):
     pass
 
@@ -77,21 +103,26 @@ class IproxConstructionWorkFetcher(IproxFetcher):
 
     def get_item_data(self, url, item_ids):
         """Get all data for each item by ID."""
-        urls = [urljoin(url, str(item)) for item in item_ids]
+        urls = _build_detail_urls(url, item_ids)
         logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
         raw_data = asyncio.run(self._async_fetch(urls))
 
-        item_data = []
-        for item in raw_data:
-            if not item:
-                continue
-            item["is_construction_work"] = True
-            item_data.append(item)
+        item_data = _collect_fetched_items(
+            raw_data,
+            map_item=self._mark_as_construction_work,
+        )
 
         logger.info(
             f"Finished async fetch. Successfully collected {len(item_data)} items"
         )
         return item_data
+
+    def _mark_as_construction_work(self, item: dict) -> dict:
+        return {
+            **_source_defaults(is_construction_work=True),
+            **item,
+            "is_construction_work": True,
+        }
 
 
 class IproxNewsFetcher(IproxFetcher):
@@ -209,12 +240,8 @@ class IproxNewsFetcher(IproxFetcher):
                     continue
 
                 new_item = {
+                    **_source_defaults(district=source_district),
                     **item,
-                    "district": source_district,
-                    "in_all_news": False,
-                    "is_highlight": False,
-                    "is_liveblog": False,
-                    "is_district": False,
                 }
                 if source_flag:
                     new_item[source_flag] = True
@@ -227,10 +254,7 @@ class IproxNewsFetcher(IproxFetcher):
             page += 1
 
     def fetch_items_details(self, items: dict) -> list[dict]:
-        urls = [
-            urljoin(self.iprox_detail_url.rstrip("/") + "/", str(item_id))
-            for item_id in items.keys()
-        ]
+        urls = _build_detail_urls(self.iprox_detail_url, list(items.keys()))
         logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
         item_details = asyncio.run(self._async_fetch(urls))
 
@@ -254,6 +278,7 @@ class IproxNewsFetcher(IproxFetcher):
             "is_highlight",
             "is_liveblog",
             "is_district",
+            "is_construction_work",
         ),
     ) -> dict:
         """Combine detailed and basic information into a single dictionary."""

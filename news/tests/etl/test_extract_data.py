@@ -1,7 +1,12 @@
+from unittest.mock import AsyncMock, Mock, patch
+
 from aioresponses import aioresponses
 from django.test import TestCase
 
-from news.etl.extract_data import IproxNewsFetcher
+from news.etl.extract_data import IproxConstructionWorkFetcher, IproxNewsFetcher
+from news.etl.load_articles import NewsArticleLoader
+from news.etl.transform_articles import transform_articles
+from news.models.article_models import NewsArticle
 from news.tests.mock_data import all_news, highlighted, item_article, liveblogs
 
 
@@ -182,3 +187,31 @@ class ExtractDataTest(TestCase):
         self.assertFalse(combined["is_liveblog"])
         self.assertEqual(combined["title"], "Test Article")
         self.assertEqual(combined["body"], "Lorem ipsum")
+
+    @patch(
+        "news.etl.extract_data.IproxConstructionWorkFetcher._async_fetch",
+        new_callable=AsyncMock,
+    )
+    def test_construction_work_marker_survives_extract_transform_and_load(
+        self, mock_async_fetch
+    ):
+        detail_payload = {
+            **item_article.MOCK_RESPONSE_123123,
+            "image_url": "",
+        }
+        mock_async_fetch.side_effect = [
+            [[{"id": detail_payload["id"]}]],
+            [[detail_payload][0]],
+        ]
+
+        fetcher = IproxConstructionWorkFetcher()
+        extracted_data = fetcher.extract(
+            "https://api.example.com/construction-work/articles/"
+        )
+        transformed_data = transform_articles(extracted_data)
+
+        loader = NewsArticleLoader(image_set_service=Mock())
+        loader.load(transformed_data)
+
+        article = NewsArticle.objects.get(foreign_id=detail_payload["id"])
+        self.assertTrue(article.is_construction_work)

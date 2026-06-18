@@ -51,7 +51,7 @@ class LoadDataTest(TestCase):
         )
         return loader
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_load(self, mock_image_set_service):
         transformed_data = [
             {
@@ -78,7 +78,7 @@ class LoadDataTest(TestCase):
         self.assertFalse(NewsArticle.objects.first().deleted)
         self.assertEqual(NewsArticleImage.objects.count(), 3)
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_load_continues_when_image_upload_fails(self, mock_image_set_service):
         transformed_data = [
             {
@@ -146,10 +146,10 @@ class LoadDataTest(TestCase):
         self.assertEqual(NewsArticleImage.objects.count(), 3)
         self.assertTrue(NewsArticle.objects.filter(foreign_id="123124").exists())
         self.assertTrue(
-            NewsArticleImage.objects.filter(article__foreign_id="123124").exists()
+            NewsArticleImage.objects.filter(parent__foreign_id="123124").exists()
         )
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_load_continues_when_image_upload_fails_completely(
         self, mock_image_set_service
     ):
@@ -198,7 +198,7 @@ class LoadDataTest(TestCase):
         self.assertEqual(NewsArticleImage.objects.count(), 0)
         self.assertTrue(NewsArticle.objects.filter(foreign_id="123124").exists())
         self.assertFalse(
-            NewsArticleImage.objects.filter(article__foreign_id="123124").exists()
+            NewsArticleImage.objects.filter(parent__foreign_id="123124").exists()
         )
 
     def test_get_news_article_object(self):
@@ -354,7 +354,7 @@ class LoadDataTest(TestCase):
         self.assertIn(str(article.foreign_id), articles_dict)
         self.assertEqual(articles_dict[str(article.foreign_id)].title, article.title)
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_upsert_article_images(self, mock_image_set_service):
         article = baker.make(
             NewsArticle,
@@ -375,7 +375,7 @@ class LoadDataTest(TestCase):
             NewsArticleImage.objects.first().uri, "https://example.com/image.jpg"
         )
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_upsert_article_images_http_error(self, mock_image_set_service):
         article = baker.make(
             NewsArticle,
@@ -399,7 +399,7 @@ class LoadDataTest(TestCase):
         loader._upsert_article_images(article_data, article)
         self.assertEqual(NewsArticleImage.objects.count(), 0)
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_upsert_article_images_existing_remove(self, mock_image_set_service):
         article = baker.make(
             NewsArticle,
@@ -410,7 +410,7 @@ class LoadDataTest(TestCase):
         )
         article_image = baker.make(
             NewsArticleImage,
-            article=article,
+            parent=article,
             uri="https://example.com/other-image.jpg",
             width=123,
             height=456,
@@ -428,7 +428,7 @@ class LoadDataTest(TestCase):
         )
         self.assertFalse(NewsArticleImage.objects.filter(id=article_image.id).exists())
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_upsert_article_images_existing_update(self, mock_image_set_service):
         article = baker.make(
             NewsArticle,
@@ -439,7 +439,7 @@ class LoadDataTest(TestCase):
         )
         article_image = baker.make(
             NewsArticleImage,
-            article=article,
+            parent=article,
             uri="https://example.com/image.jpg",
             width=10000,
             height=10000,

@@ -8,6 +8,11 @@ from news.enums.news_article import NewsArticleSource
 from news.etl.extract_data import IproxNewsFetcher
 from news.etl.load_articles import NewsArticleLoader, garbage_collect_unseen_articles
 from news.etl.transform_articles import transform_articles
+from news.management.commands._stage_runner import (
+    ETLStageAborted,
+    maybe_garbage_collect,
+    run_stage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,30 +36,24 @@ class Command(BaseCommand):
     help = "Upsert news articles"
 
     def handle(self, *args, **kwargs):
-
-        extracted_data = iprox_fetcher.extract()
-        if not extracted_data:
-            logger.info("No articles found. Ending ETL process.")
+        try:
+            created_articles = run_stage(
+                extract=iprox_fetcher.extract,
+                extract_empty_message="No articles found. Ending ETL process.",
+                transform=transform_articles,
+                transform_empty_message="No valid transformed articles found. Ending ETL process.",
+                load=data_loader.load,
+            )
+        except ETLStageAborted as error:
+            logger.info(str(error))
             return
 
-        transformed_data = transform_articles(extracted_data)
-        if not transformed_data:
-            logger.info("No valid transformed articles found. Ending ETL process.")
-            return
-
-        created_articles = data_loader.load(transformed_data)
-
-        # only delete unseen articles if there were new articles created, otherwise we
-        # might end up in a situation where we delete all articles because no new articles are created
-        if created_articles and settings.DELETE_UNSEEN_ARTICLES:
-            deleted_count = garbage_collect_unseen_articles(
-                threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS
-            )
-            logger.info(
-                "News garbage collector completed.",
-                extra={"deleted_count": deleted_count},
-            )
-        else:
-            logger.info("News garbage collector skipped because it is disabled.")
+        maybe_garbage_collect(
+            created_records=created_articles,
+            garbage_collect=garbage_collect_unseen_articles,
+            enabled=settings.DELETE_UNSEEN_ARTICLES,
+            threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS,
+            logger=logger,
+        )
 
         logger.info("ETL process completed successfully.")
