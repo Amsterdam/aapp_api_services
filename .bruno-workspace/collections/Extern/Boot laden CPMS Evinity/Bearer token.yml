@@ -15,8 +15,8 @@ http:
         value: infuse/admin
   auth:
     type: basic
-    username: 5fsu59hrc8n6v8jr1p6vpb8jec
-    password: shvh4jrskauevlo80vho49o19cpk3dvin52jhoqu9m6711a91sk
+    username:
+    password:
 
 settings:
   encodeUrl: true
