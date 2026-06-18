@@ -2,7 +2,6 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from construction_work.models.manage_models import Device
-from core.exceptions import MissingDeviceIdHeader
 from core.utils.openapi_utils import (
     extend_schema_for_device_id,
 )
@@ -16,7 +15,6 @@ class DeleteDeviceDataView(DeviceIdMixin, generics.GenericAPIView):
 
     @extend_schema_for_device_id(
         success_response=None,
-        exceptions=[MissingDeviceIdHeader],
         success_status_code=204,
     )
     def delete(self, request, *args, **kwargs):
