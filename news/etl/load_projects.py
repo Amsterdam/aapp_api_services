@@ -174,51 +174,96 @@ def get_sections(data, project):
 
 def upsert_images(project_data: dict, project: Project):
     """
-    Upsert article images for a given article. If the article has an image_url, we will attempt to get or upload the image using the ImageSetService.
-    Then we will upsert the NewsArticleImage instances for the article based on the image variants returned by the ImageSetService.
+    Upsert project images for a given project.
+
+    The project payload can expose its image either through a single `image`
+    object or the first entry in an `images` collection. When present, we use
+    the largest available source URI for upload and then upsert the persisted
+    image variants returned by the ImageSetService.
+
     The logic is as follows:
-    - If an image with the same url already exists for the article, update its width and height
-    - If there is an image for an article, but the url is different than the existing one, delete the old image and create a new one
-    - If there is no image for an article, create a new one
+    - If an image with the same url already exists for the project, update its width and height
+    - If there is an image for a project, but the url is different than the existing one, delete the old image and create a new one
+    - If there is no image for a project, create a new one
     """
-    image_url = project_data.get("image_url")
-    if image_url:
-        try:
-            image_set_data = IMAGE_SERVICE.get_or_upload_from_url(image_url)
-        except (HTTPError, RequestException) as e:
-            logger.error(
-                "Error getting or uploading image",
-                extra={"image_url": image_url, "error": str(e)},
-            )
-            return
+    image_url = get_project_image_url(project_data)
+    if not image_url:
+        return None
 
-        # upsert article images
-        image_sources = [
-            ProjectImage(
-                parent=project,
-                foreign_id=image_set_data[
-                    "id"
-                ],  # use the image set id as the image foreign_id for reference.
-                uri=v["image"],
-                width=v["width"],
-                height=v["height"],
-            )
-            for v in image_set_data["variants"]
-        ]
-        # Gather all URIs for this article from the new image_sources
-        new_uris = {img.uri for img in image_sources}
-        # Find all existing images for this article
-        existing_images = ProjectImage.objects.filter(parent=project)
-        # Delete images for this article whose URI is not in the new set
-        images_to_delete = existing_images.exclude(uri__in=new_uris)
-        if images_to_delete.exists():
-            images_to_delete.delete()
-
-        # Upsert new images (create or update width/height)
-        ProjectImage.objects.bulk_create(
-            image_sources,
-            update_conflicts=True,
-            unique_fields=["parent", "uri"],
-            update_fields=["width", "height"],
+    try:
+        image_set_data = IMAGE_SERVICE.get_or_upload_from_url(image_url)
+    except (HTTPError, RequestException) as error:
+        logger.error(
+            "Error getting or uploading image",
+            extra={
+                "image_url": image_url,
+                "project_foreign_id": project_data.get("id"),
+            },
+            exc_info=error,
         )
-        return image_sources
+        return None
+
+    image_sources = [
+        ProjectImage(
+            parent=project,
+            foreign_id=image_set_data[
+                "id"
+            ],  # use the image set id as the image foreign_id for reference.
+            uri=variant["image"],
+            width=variant["width"],
+            height=variant["height"],
+        )
+        for variant in image_set_data.get("variants", [])
+    ]
+    new_uris = {image.uri for image in image_sources}
+    existing_images = ProjectImage.objects.filter(parent=project)
+    images_to_delete = existing_images.exclude(uri__in=new_uris)
+    if images_to_delete.exists():
+        images_to_delete.delete()
+
+    ProjectImage.objects.bulk_create(
+        image_sources,
+        update_conflicts=True,
+        unique_fields=["parent", "uri"],
+        update_fields=["width", "height"],
+    )
+    return image_sources
+
+
+def get_project_image_url(project_data: dict) -> str | None:
+    image_data = project_data.get("image")
+    if not image_data:
+        images = project_data.get("images") or []
+        image_data = images[0] if images else None
+
+    if not image_data:
+        return None
+
+    return get_biggest_source_uri(image_data)
+
+
+def get_biggest_source_uri(image_data: dict) -> str | None:
+    image_sources = image_data.get("sources") or []
+    if not image_sources:
+        return None
+
+    parsed_sources = []
+    for source in image_sources:
+        try:
+            width = int(source["width"])
+            height = int(source["height"])
+        except (KeyError, TypeError, ValueError) as error:
+            logger.error(
+                "Invalid image source width/height data",
+                extra={"sources": image_sources, "error": str(error)},
+            )
+            return None
+
+        uri = source.get("uri")
+        if not uri:
+            logger.error("Missing image source uri", extra={"sources": image_sources})
+            return None
+
+        parsed_sources.append((width * height, uri))
+
+    return max(parsed_sources, key=lambda source: source[0])[1]

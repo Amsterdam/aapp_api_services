@@ -5,39 +5,96 @@ from django.test import TestCase
 
 from news.management.commands import runconstructionworketl
 from news.models.article_models import NewsArticle
-from news.models.project_models import Project
+from news.models.project_models import Project, ProjectImage
 
 
 class RunConstructionWorkETLTest(TestCase):
-    def _projects_payload(self):
-        return [
-            {
-                "id": 7001,
-                "title": "Bridge maintenance",
-                "subtitle": "Keep traffic moving",
-                "url": "https://example.com/projects/7001",
-                "created": "2024-01-01T12:00:00Z",
-                "modified": "2024-01-02T12:00:00Z",
-                "expirationDate": None,
-                "timeline": {"title": "Timeline", "intro": "Intro", "items": []},
-                "coordinates": {"lat": 52.37, "lon": 4.89},
-                "sections": {
-                    "where": [
-                        {
-                            "title": "Where",
-                            "body": "In Centrum",
-                            "links": [],
-                        }
-                    ],
-                    "what": [],
-                    "when": [],
-                    "work": [],
-                    "contact": [],
+    def _project_image(self):
+        return {
+            "id": 9001,
+            "aspectRatio": "4:3",
+            "alternativeText": "Bridge maintenance overview",
+            "sources": [
+                {
+                    "uri": "https://example.com/project-small.jpg",
+                    "width": "640",
+                    "height": "480",
                 },
-                "contacts": [],
-                "image_url": "",
-            }
-        ]
+                {
+                    "uri": "https://example.com/project-large.jpg",
+                    "width": "1200",
+                    "height": "900",
+                },
+            ],
+        }
+
+    def _projects_payload(self, image_wrapper="image"):
+        payload = {
+            "id": 7001,
+            "title": "Bridge maintenance",
+            "subtitle": "Keep traffic moving",
+            "url": "https://example.com/projects/7001",
+            "created": "2024-01-01T12:00:00Z",
+            "modified": "2024-01-02T12:00:00Z",
+            "expirationDate": None,
+            "timeline": {"title": "Timeline", "intro": "Intro", "items": []},
+            "coordinates": {"lat": 52.37, "lon": 4.89},
+            "sections": {
+                "where": [
+                    {
+                        "title": "Where",
+                        "body": "In Centrum",
+                        "links": [],
+                    }
+                ],
+                "what": [],
+                "when": [],
+                "work": [],
+                "contact": [],
+            },
+            "contacts": [],
+        }
+        if image_wrapper == "image":
+            payload["image"] = self._project_image()
+        else:
+            payload["images"] = [self._project_image()]
+        return [payload]
+
+    def _image_set_payload(self):
+        return {
+            "id": 12345,
+            "identifier": "project-image-set",
+            "variants": [
+                {
+                    "image": "https://images.example.com/project-large.jpg",
+                    "width": 1200,
+                    "height": 900,
+                },
+                {
+                    "image": "https://images.example.com/project-large@2x.jpg",
+                    "width": 2400,
+                    "height": 1800,
+                },
+            ],
+        }
+
+    def _assert_project_images(self):
+        project = Project.objects.get(foreign_id=7001)
+        self.assertEqual(ProjectImage.objects.filter(parent=project).count(), 2)
+        self.assertEqual(
+            list(
+                ProjectImage.objects.filter(parent=project)
+                .order_by("uri")
+                .values_list("uri", flat=True)
+            ),
+            [
+                "https://images.example.com/project-large.jpg",
+                "https://images.example.com/project-large@2x.jpg",
+            ],
+        )
+        self.assertTrue(
+            ProjectImage.objects.filter(parent=project, foreign_id=12345).exists()
+        )
 
     def _articles_payload(self):
         return [
@@ -57,17 +114,40 @@ class RunConstructionWorkETLTest(TestCase):
             }
         ]
 
+    @patch("news.etl.load_projects.IMAGE_SERVICE.get_or_upload_from_url")
     @patch("news.management.commands.runconstructionworketl.iprox_fetcher.extract")
     def test_run_construction_work_etl_persists_projects_and_articles(
-        self, mock_extract
+        self, mock_extract, mock_get_or_upload_from_url
     ):
+        mock_get_or_upload_from_url.return_value = self._image_set_payload()
         mock_extract.side_effect = [self._projects_payload(), self._articles_payload()]
 
         call_command("runconstructionworketl")
 
-        self.assertTrue(Project.objects.filter(foreign_id=7001).exists())
+        self._assert_project_images()
         article = NewsArticle.objects.get(foreign_id=8001)
         self.assertTrue(article.is_construction_work)
+        mock_get_or_upload_from_url.assert_called_once_with(
+            "https://example.com/project-large.jpg"
+        )
+
+    @patch("news.etl.load_projects.IMAGE_SERVICE.get_or_upload_from_url")
+    @patch("news.management.commands.runconstructionworketl.iprox_fetcher.extract")
+    def test_run_construction_work_etl_persists_project_images_from_images_wrapper(
+        self, mock_extract, mock_get_or_upload_from_url
+    ):
+        mock_get_or_upload_from_url.return_value = self._image_set_payload()
+        mock_extract.side_effect = [
+            self._projects_payload(image_wrapper="images"),
+            self._articles_payload(),
+        ]
+
+        call_command("runconstructionworketl")
+
+        self._assert_project_images()
+        mock_get_or_upload_from_url.assert_called_once_with(
+            "https://example.com/project-large.jpg"
+        )
 
     @patch("news.management.commands.runconstructionworketl.logger.info")
     @patch("news.management.commands.runconstructionworketl.logger.error")
