@@ -26,6 +26,11 @@ urlpatterns = [
         notification_views.NotificationView.as_view(),
         name="news-notification",
     ),
+    path(
+        BASE_PATH + "/device/",
+        notification_views.DeviceDataDeleteView.as_view(),
+        name="news-device-delete",
+    ),
 ]
 
 urlpatterns += get_swagger_paths(BASE_PATH)

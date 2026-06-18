@@ -1,6 +1,8 @@
 from django.urls import reverse
 from model_bakery import baker
+from rest_framework import status
 
+from core.exceptions import MissingDeviceIdHeader
 from core.tests.test_authentication import BasicAPITestCase
 from news.models import LiveblogNotification, NewsArticle
 
@@ -88,3 +90,57 @@ class TestNotificationView(BasicAPITestCase):
         response = self.client.delete(self.url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 204)
+
+
+class TestDeviceDataDeleteView(BasicAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("news-device-delete")
+        self.device_id = "foobar"
+        self.api_headers["DeviceId"] = self.device_id
+
+    def test_delete_device_data(self):
+        article_1 = baker.make(NewsArticle)
+        article_2 = baker.make(NewsArticle)
+        baker.make(LiveblogNotification, device_id=self.device_id, article=article_1)
+        baker.make(LiveblogNotification, device_id=self.device_id, article=article_2)
+        baker.make(LiveblogNotification, device_id="another-device", article=article_1)
+
+        response = self.client.delete(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(
+            LiveblogNotification.objects.filter(device_id=self.device_id).count(),
+            0,
+        )
+        self.assertEqual(LiveblogNotification.objects.count(), 1)
+
+    def test_delete_device_data_unknown_device(self):
+        response = self.client.delete(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_delete_device_data_idempotent(self):
+        article = baker.make(NewsArticle)
+        baker.make(LiveblogNotification, device_id=self.device_id, article=article)
+
+        first_response = self.client.delete(self.url, headers=self.api_headers)
+        second_response = self.client.delete(self.url, headers=self.api_headers)
+
+        self.assertEqual(first_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(second_response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_delete_device_data_missing_device_id(self):
+        headers = {
+            key: value for key, value in self.api_headers.items() if key != "DeviceId"
+        }
+
+        response = self.client.delete(self.url, headers=headers)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["detail"], MissingDeviceIdHeader.default_detail)
+
+    def test_delete_device_data_missing_api_key(self):
+        response = self.client.delete(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -63,3 +63,15 @@ class NotificationView(DeviceIdMixin, generics.GenericAPIView):
             article_id=article_id,
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DeviceDataDeleteView(DeviceIdMixin, generics.GenericAPIView):
+    http_method_names = ["delete"]
+
+    @extend_schema_for_device_id(
+        success_response=None,
+        additional_responses={204: None},
+    )
+    def delete(self, request, *args, **kwargs):
+        LiveblogNotification.objects.filter(device_id=self.device_id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
