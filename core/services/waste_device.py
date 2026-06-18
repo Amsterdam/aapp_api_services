@@ -3,7 +3,7 @@ from datetime import date, datetime, time
 from django.db.models import Q
 from django.utils import timezone
 
-from notification.models import WasteDevice
+from notification.models import Device, WasteDevice
 
 
 class WasteDeviceService:
@@ -12,6 +12,22 @@ class WasteDeviceService:
 
     def bulk_create_waste_devices(self, waste_devices: list[WasteDevice]):
         WasteDevice.objects.bulk_create(waste_devices)
+
+    def ensure_devices_exist(self, device_ids: list[str]) -> None:
+        existing_external_ids = set(
+            Device.objects.filter(external_id__in=device_ids).values_list(
+                "external_id", flat=True
+            )
+        )
+        missing_external_ids = set(device_ids) - existing_external_ids
+        if missing_external_ids:
+            Device.objects.bulk_create(
+                [
+                    Device(external_id=external_id, os="unknown")
+                    for external_id in missing_external_ids
+                ],
+                ignore_conflicts=True,
+            )
 
     def define_waste_device_instance(
         self, device_id: str, bag_nummeraanduiding_id: str, updated_at: datetime
