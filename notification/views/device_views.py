@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
-from core.exceptions import InputDataException, MissingDeviceIdHeader
+from core.exceptions import InputDataException
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 from notification.models import (
@@ -18,7 +18,6 @@ from notification.models import (
 )
 from notification.serializers.device_serializers import (
     BurningGuideDeviceRequestSerializer,
-    DeviceDeleteResponseSerializer,
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
     WasteDeviceRequestSerializer,
@@ -82,11 +81,13 @@ class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
     """Permanently delete a device and all related notification records."""
 
     @extend_schema_for_device_id(
+        success_response=None,
         additional_responses={
-            204: DeviceDeleteResponseSerializer,
-            500: DeviceDeleteResponseSerializer,
+            500: {
+                "status": "error",
+                "message": "Failed to delete device",
+            }
         },
-        exceptions=[MissingDeviceIdHeader],
     )
     def delete(self, request, *args, **kwargs):
         try:
@@ -100,9 +101,7 @@ class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
                     .values_list("id", flat=True)
                 )
 
-                deleted_count, _ = Device.objects.filter(
-                    external_id=self.device_id
-                ).delete()
+                Device.objects.filter(external_id=self.device_id).delete()
 
                 if orphan_scheduled_notification_ids:
                     ScheduledNotification.objects.filter(
@@ -117,22 +116,7 @@ class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        if deleted_count > 0:
-            return Response(
-                data={
-                    "status": "deleted",
-                    "message": "Device data linked to notifications removed.",
-                },
-                status=status.HTTP_204_NO_CONTENT,
-            )
-
-        return Response(
-            data={
-                "status": "already_absent",
-                "message": "No device data linked to notifications found.",
-            },
-            status=status.HTTP_204_NO_CONTENT,
-        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class NotificationPushTypeDisabledView(DeviceIdMixin, generics.GenericAPIView):

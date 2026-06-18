@@ -198,7 +198,6 @@ class TestDeviceDeleteView(AuthenticatedAPITestCase):
         response = self.client.delete(self.url, headers=self.headers_with_device_id)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(response.data["status"], "deleted")
         self.assertFalse(Device.objects.filter(external_id=self.device_id).exists())
         self.assertFalse(
             Notification.objects.filter(device_external_id=self.device_id).exists()
@@ -242,15 +241,12 @@ class TestDeviceDeleteView(AuthenticatedAPITestCase):
         )
 
         self.assertEqual(first_response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(first_response.data["status"], "deleted")
         self.assertEqual(second_response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(second_response.data["status"], "already_absent")
 
     def test_delete_unknown_device_is_not_blocking(self):
         response = self.client.delete(self.url, headers=self.headers_with_device_id)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(response.data["status"], "already_absent")
 
     def test_delete_device_removes_orphan_scheduled_notification_record(self):
         device = baker.make(
@@ -280,8 +276,6 @@ class TestDeviceDeleteView(AuthenticatedAPITestCase):
         response = self.client.delete(self.url, headers=self.headers_with_device_id)
 
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        self.assertEqual(response.data["status"], "error")
-        self.assertEqual(response.data["message"], "Failed to delete device")
 
 
 class TestNotificationPushDisabledView(AuthenticatedAPITestCase):

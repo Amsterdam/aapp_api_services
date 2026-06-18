@@ -11,7 +11,7 @@ BASE_PATH = "notification/api/v1"
 
 urlpatterns = [
     path(
-        BASE_PATH + "/device/",
+        BASE_PATH + "/device",
         device_views.DeviceDeleteView.as_view(),
         name="notification-delete-device",
     ),
