@@ -8,16 +8,10 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/city-pass/api/v1/session/logout"
-  headers:
-    - name: Access-Token
-      value: ""
-      description: Access token for authentication
-    - name: Access-Token
-      value: "{{apiKey}}"
   auth:
     type: apikey
     key: Access-Token
-    value: "{{apiKey}}"
+    value: "{{accessToken}}"
     placement: header
 
 settings:
