@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
-from core.exceptions import InputDataException
+from core.exceptions import InputDataException, MissingDeviceIdHeader
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 from notification.models import (
@@ -81,7 +81,33 @@ class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
 class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
     """Permanently delete a device and all related notification records."""
 
-    @extend_schema_for_device_id(success_response=DeviceDeleteResponseSerializer)
+    @extend_schema_for_device_id(
+        success_response=DeviceDeleteResponseSerializer,
+        exceptions=[MissingDeviceIdHeader],
+        examples=[
+            OpenApiExample(
+                "Device data deleted",
+                value={
+                    "status": "deleted",
+                    "message": "Device data linked to notifications removed.",
+                },
+            ),
+            OpenApiExample(
+                "Device already absent",
+                value={
+                    "status": "already_absent",
+                    "message": "No device data linked to notifications found.",
+                },
+            ),
+            OpenApiExample(
+                "Failed to delete device",
+                value={
+                    "status": "error",
+                    "message": "Failed to delete device",
+                },
+            ),
+        ],
+    )
     def delete(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
@@ -104,28 +130,28 @@ class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
                     ).delete()
         except Exception:
             return Response(
-                {
+                data={
                     "status": "error",
-                    "error_key": "device_delete_failed",
                     "message": "Failed to delete device",
-                    "deleted": False,
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        was_deleted = deleted_count > 0
-        message = (
-            "Device and related notification data deleted"
-            if was_deleted
-            else "Device was already deleted or unknown"
-        )
+        if deleted_count > 0:
+            return Response(
+                data={
+                    "status": "deleted",
+                    "message": "Device data linked to notifications removed.",
+                },
+                status=status.HTTP_204_NO_CONTENT,
+            )
+
         return Response(
-            {
-                "status": "success",
-                "message": message,
-                "deleted": was_deleted,
+            data={
+                "status": "already_absent",
+                "message": "No device data linked to notifications found.",
             },
-            status=status.HTTP_200_OK,
+            status=status.HTTP_204_NO_CONTENT,
         )
 
 
