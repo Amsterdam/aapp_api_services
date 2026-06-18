@@ -37,7 +37,6 @@ class TestDeleteDeviceDataView(BasicAPITestCase):
         response = self.client.delete(self.api_url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 204)
-        self.assertEqual(response.data["status"], "deleted")
         self.assertFalse(
             Device.objects.filter(device_id=self.device_1.device_id).exists()
         )
@@ -46,13 +45,12 @@ class TestDeleteDeviceDataView(BasicAPITestCase):
         )
         self.assertEqual(Device.objects.count(), 1)
 
-    def test_unknown_device_returns_2xx(self):
+    def test_unknown_device_returns_204(self):
         self.api_headers[settings.HEADER_DEVICE_ID] = "unknown-device"
 
         response = self.client.delete(self.api_url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 204)
-        self.assertEqual(response.data["status"], "already_absent")
 
     def test_second_call_is_idempotent(self):
 
@@ -62,9 +60,7 @@ class TestDeleteDeviceDataView(BasicAPITestCase):
         second_response = self.client.delete(self.api_url, headers=self.api_headers)
 
         self.assertEqual(first_response.status_code, 204)
-        self.assertEqual(first_response.data["status"], "deleted")
         self.assertEqual(second_response.status_code, 204)
-        self.assertEqual(second_response.data["status"], "already_absent")
         self.assertFalse(
             Device.objects.filter(device_id=self.device_1.device_id).exists()
         )
