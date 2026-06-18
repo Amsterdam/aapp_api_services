@@ -82,31 +82,11 @@ class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
     """Permanently delete a device and all related notification records."""
 
     @extend_schema_for_device_id(
-        success_response=DeviceDeleteResponseSerializer,
+        additional_responses={
+            204: DeviceDeleteResponseSerializer,
+            500: DeviceDeleteResponseSerializer,
+        },
         exceptions=[MissingDeviceIdHeader],
-        examples=[
-            OpenApiExample(
-                "Device data deleted",
-                value={
-                    "status": "deleted",
-                    "message": "Device data linked to notifications removed.",
-                },
-            ),
-            OpenApiExample(
-                "Device already absent",
-                value={
-                    "status": "already_absent",
-                    "message": "No device data linked to notifications found.",
-                },
-            ),
-            OpenApiExample(
-                "Failed to delete device",
-                value={
-                    "status": "error",
-                    "message": "Failed to delete device",
-                },
-            ),
-        ],
     )
     def delete(self, request, *args, **kwargs):
         try:
