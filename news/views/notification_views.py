@@ -70,7 +70,7 @@ class DeviceDataDeleteView(DeviceIdMixin, generics.GenericAPIView):
 
     @extend_schema_for_device_id(
         success_response=None,
-        additional_responses={204: None},
+        success_status_code=204,
         description="Deletes all records for followed liveblogs for the device id provided in the request header.",
     )
     def delete(self, request, *args, **kwargs):
