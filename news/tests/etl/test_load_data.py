@@ -473,6 +473,13 @@ class LoadDataTest(TestCase):
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
+        article_image = baker.make(
+            NewsArticleImage,
+            parent=article,
+            uri="https://example.com/existing-image.jpg",
+            width=111,
+            height=222,
+        )
         article_data = {
             "foreign_id": "123123",
             "image_url": "https://example.com/image.jpg",
@@ -486,7 +493,8 @@ class LoadDataTest(TestCase):
             image_set_service=mock_image_set_service.return_value
         )
         loader._upsert_article_images(article_data, article)
-        self.assertEqual(NewsArticleImage.objects.count(), 0)
+        self.assertEqual(NewsArticleImage.objects.count(), 1)
+        self.assertTrue(NewsArticleImage.objects.filter(id=article_image.id).exists())
 
     @patch("core.services.image_set.ImageSetService")
     def test_upsert_article_images_existing_remove(self, mock_image_set_service):
@@ -547,7 +555,7 @@ class LoadDataTest(TestCase):
         self.assertTrue(NewsArticleImage.objects.filter(id=article_image.id).exists())
         self.assertEqual(NewsArticleImage.objects.get(id=article_image.id).width, 123)
 
-    def test_upsert_article_images_no_image(self):
+    def test_upsert_article_images_no_image_removes_existing_images(self):
         article = baker.make(
             NewsArticle,
             foreign_id=123123,
@@ -556,12 +564,20 @@ class LoadDataTest(TestCase):
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
+        article_image = baker.make(
+            NewsArticleImage,
+            parent=article,
+            uri="https://example.com/existing-image.jpg",
+            width=111,
+            height=222,
+        )
         article_data = {
             "foreign_id": "123123",
         }
 
         self.loader._upsert_article_images(article_data, article)
         self.assertEqual(NewsArticleImage.objects.count(), 0)
+        self.assertFalse(NewsArticleImage.objects.filter(id=article_image.id).exists())
 
     def test_upsert_liveblog_items_new(self):
         article = baker.make(

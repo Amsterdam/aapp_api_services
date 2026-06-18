@@ -226,6 +226,10 @@ class NewsArticleLoader:
         return {str(article.foreign_id): article for article in news_article_objects}
 
     def _upsert_article_images(self, article: dict, news_article: NewsArticle):
+        if not article.get("image_url"):
+            self._delete_removed_article_images(news_article, [])
+            return []
+
         image_set_data = self._get_image_set_data(article)
         if not image_set_data:
             return []
@@ -237,8 +241,6 @@ class NewsArticleLoader:
 
     def _get_image_set_data(self, article: dict) -> dict | None:
         image_url = article.get("image_url")
-        if not image_url:
-            return None
 
         try:
             return self.image_set_service.get_or_upload_from_url(image_url)

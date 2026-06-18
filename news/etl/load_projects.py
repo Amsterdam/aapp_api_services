@@ -53,12 +53,7 @@ def projects(project_data):
     project_objects = Project.objects.filter(foreign_id__in=seen_project_ids)
     projects_dict = {project.foreign_id: project for project in project_objects}
     seen_project_primary_keys = [project.id for project in project_objects]
-    contacts, timelines, sections, section_urls = (
-        [],
-        [],
-        [],
-        [],
-    )
+    contacts, timelines, sections = [], [], []
     for data in project_data:
         project = projects_dict.get(data.get("id"))
         if project is None:
@@ -69,9 +64,7 @@ def projects(project_data):
 
         timelines += get_timeline(data, project)
 
-        new_sections, new_section_urls = get_sections(data, project)
-        sections += new_sections
-        section_urls += new_section_urls
+    sections += get_sections(data, project)
 
     with transaction.atomic():
         ProjectContact.objects.filter(project_id__in=seen_project_primary_keys).delete()
@@ -94,7 +87,12 @@ def projects(project_data):
 
     with transaction.atomic():
         ProjectSection.objects.filter(project_id__in=seen_project_primary_keys).delete()
-        ProjectSection.objects.bulk_create(sections)
+        section_urls = []
+        for section, links in sections:
+            section.save()
+            section_urls += [
+                ProjectSectionUrl(section=section, **link) for link in links
+            ]
         ProjectSectionUrl.objects.bulk_create(section_urls)
 
     _deactivate_unseen_projects(seen_project_ids)
@@ -183,9 +181,9 @@ def get_timeline_items(timeline_data, project=None, parent=None):
 
 
 def get_sections(data, project):
-    sections, section_urls = [], []
+    sections = []
     if not data.get("sections"):
-        return sections, section_urls
+        return sections
     for section_type, value in data.get("sections").items():
         for item in value:
             section = ProjectSection(
@@ -195,11 +193,8 @@ def get_sections(data, project):
             )
             if title := item.get("title"):
                 section.title = title
-            sections.append(section)
-            section_urls += [
-                ProjectSectionUrl(section=section, **v) for v in item.get("links")
-            ]
-    return sections, section_urls
+            sections.append((section, item.get("links") or []))
+    return sections
 
 
 def upsert_images(project_data: dict, project: Project):

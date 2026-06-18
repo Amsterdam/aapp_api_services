@@ -53,7 +53,8 @@ class RunConstructionWorkETLTest(TestCase):
             ],
         }
 
-    def _projects_payload(self, image_wrapper="image"):
+    def _projects_payload(self, image_wrapper="image", section_links=None):
+        section_links = section_links or []
         payload = {
             "id": 7001,
             "title": "Bridge maintenance",
@@ -69,7 +70,7 @@ class RunConstructionWorkETLTest(TestCase):
                     {
                         "title": "Where",
                         "body": "In Centrum",
-                        "links": [],
+                        "links": section_links,
                     }
                 ],
                 "what": [],
@@ -262,6 +263,30 @@ class RunConstructionWorkETLTest(TestCase):
         self._assert_project_images()
         mock_get_or_upload_from_url.assert_called_once_with(
             "https://example.com/project-large.jpg"
+        )
+
+    def test_run_construction_work_etl_persists_project_section_links(self):
+        projects_payload = self._projects_payload(
+            section_links=[
+                {
+                    "label": "Resident updates",
+                    "url": "https://example.com/projects/7001/updates",
+                }
+            ]
+        )
+
+        self._run_etl(projects_payload=projects_payload)
+
+        project = Project.objects.get(foreign_id=7001)
+        section = ProjectSection.objects.get(project=project, type="where")
+        self.assertEqual(
+            list(section.links.values_list("label", "url")),
+            [
+                (
+                    "Resident updates",
+                    "https://example.com/projects/7001/updates",
+                )
+            ],
         )
 
     @patch("news.management.commands.runconstructionworketl.logger.info")
