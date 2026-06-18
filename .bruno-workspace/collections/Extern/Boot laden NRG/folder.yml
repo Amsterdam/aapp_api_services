@@ -8,5 +8,5 @@ request:
     type: bearer
     token: "{{nrg-token}}"
   variables:
-    - name: token
-      value: ""
+    - name: NRG_base_url
+      value: https://amsboatapp-tst.nrganext.nl/api
