@@ -28,7 +28,7 @@ urlpatterns = [
     ),
     path(
         BASE_PATH + "/device",
-        notification_views.DeviceDataDeleteView.as_view(),
+        notification_views.DeleteDeviceDataView.as_view(),
         name="news-device-delete",
     ),
 ]

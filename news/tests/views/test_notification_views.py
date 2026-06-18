@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.urls import reverse
 from model_bakery import baker
 from rest_framework import status
@@ -92,12 +93,12 @@ class TestNotificationView(BasicAPITestCase):
         self.assertEqual(response.status_code, 204)
 
 
-class TestDeviceDataDeleteView(BasicAPITestCase):
+class TestDeleteDeviceDataView(BasicAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("news-device-delete")
         self.device_id = "foobar"
-        self.api_headers["DeviceId"] = self.device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = self.device_id
 
     def test_delete_device_data(self):
         article_1 = baker.make(NewsArticle)
@@ -132,7 +133,9 @@ class TestDeviceDataDeleteView(BasicAPITestCase):
 
     def test_delete_device_data_missing_device_id(self):
         headers = {
-            key: value for key, value in self.api_headers.items() if key != "DeviceId"
+            key: value
+            for key, value in self.api_headers.items()
+            if key != settings.HEADER_DEVICE_ID
         }
 
         response = self.client.delete(self.url, headers=headers)

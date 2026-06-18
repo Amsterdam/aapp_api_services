@@ -65,7 +65,7 @@ class NotificationView(DeviceIdMixin, generics.GenericAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class DeviceDataDeleteView(DeviceIdMixin, generics.GenericAPIView):
+class DeleteDeviceDataView(DeviceIdMixin, generics.GenericAPIView):
     http_method_names = ["delete"]
 
     @extend_schema_for_device_id(
