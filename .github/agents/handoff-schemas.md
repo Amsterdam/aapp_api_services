@@ -15,9 +15,8 @@ These named contracts are required by the Orchestrator. Every major handoff must
 - `H3 Developer Result`: Developer back to Orchestrator implementation result.
 - `H4 Review Request`: Orchestrator to Reviewer blinded review handoff.
 - `H5 Review Result`: Reviewer back to Orchestrator review result.
-- `H6 Rework Request`: Orchestrator to Developer rework handoff after review or testing.
-- `H7 Test Request`: Orchestrator to Tester blinded validation handoff.
-- `H8 Test Result`: Tester back to Orchestrator test result.
+- `H6 Test Request`: Orchestrator to Tester blinded validation handoff.
+- `H7 Test Result`: Tester back to Orchestrator test result.
 
 ## H1 Canonical Work Item Brief
 
@@ -86,43 +85,34 @@ Required fields:
 - `technical_risks`
 - `next_step`
 
-## H6 Rework Request
 
-Use when Orchestrator encounters a blocking review or failing test findings, and communicate to the Product Owner.
-
-Required fields:
-
-- `schema`: `H6 Rework Request`
-- `original_work_item`
-- `UPDATED plan.md file from the Plan agent`
-- `blocking_findings`
-- `required_rework`
-- `implementation_constraints`
-- `original_git_hash`
-- `git_history_context`
-
-## H7 Test Request
+## H6 Test Request
 
 Use for the blinded validation handoff from Orchestrator to Tester.
 
 Required fields:
 
-- `schema`: `H7 Test Request`
+- `schema`: `H6 Test Request`
 - `original_work_item`
 - `original_git_hash`
 - `git_history_context`
 - `test_focus`
 
-## H8 Test Result
+## H7 Test Result
 
 Use for the Tester handoff back to Orchestrator.
 
 Required fields:
 
-- `schema`: `H8 Test Result`
+- `schema`: `H7 Test Result`
 - `coverage_exercised`
 - `result`
 - `defects`
 - `residual_risk`
 - `resulting_git_hash`
 - `next_step`
+
+Validation note:
+
+- Tester responses are valid only when `schema` is exactly `H7 Test Result`.
+- If a non-`H7` payload is returned to a test request, the Orchestrator must reject it as schema-invalid and request a corrected `H7 Test Result` before progressing.

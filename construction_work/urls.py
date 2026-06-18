@@ -1,6 +1,11 @@
 from django.urls import include, path
 
-from construction_work.views import article_view, manage_views, project_views
+from construction_work.views import (
+    article_view,
+    device_views,
+    manage_views,
+    project_views,
+)
 from core.urls import get_swagger_paths
 
 BASE_PATH = "construction-work/api/v1"
@@ -90,6 +95,12 @@ _urlpatterns = [
         name="manage-warning-read-update-delete",
     ),
     path("warning-image", manage_views.ImageUploadView.as_view(), name="image-upload"),
+    # delete device data
+    path(
+        "device",
+        device_views.DeleteDeviceDataView.as_view(),
+        name="delete-device-data",
+    ),
 ]
 
 urlpatterns = [
