@@ -21,6 +21,9 @@ class Command(BaseCommand):
 
     def handle(self, *args: Any, **options: Any) -> None:
         old_records = BurningGuideNotification.objects.all()
+        burning_guide_device_service.ensure_devices_exist(
+            set([record.device_id for record in old_records])
+        )
 
         # Fetch all existing device_ids
         existing_device_ids = set(burning_guide_device_service.get_device_ids())

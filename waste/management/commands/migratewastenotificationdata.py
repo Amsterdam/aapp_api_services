@@ -22,7 +22,7 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:
         old_records = NotificationSchedule.objects.all()
         waste_device_service.ensure_devices_exist(
-            [record.device_id for record in old_records]
+            set([record.device_id for record in old_records])
         )
 
         # Fetch all existing device_ids

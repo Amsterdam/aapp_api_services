@@ -20,6 +20,7 @@ class WasteDeviceService:
             )
         )
         missing_external_ids = set(device_ids) - existing_external_ids
+
         if missing_external_ids:
             Device.objects.bulk_create(
                 [

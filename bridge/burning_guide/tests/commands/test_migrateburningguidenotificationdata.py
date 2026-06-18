@@ -5,17 +5,13 @@ from django.test import TestCase
 from model_bakery import baker
 
 from bridge.models import BurningGuideNotification
-from notification.models import BurningGuideDevice, Device
+from notification.models import BurningGuideDevice
 
 
 class BurningGuideMigrationTest(TestCase):
     databases = {"default", "notification"}
 
-    def _create_device(self, device_id: str) -> None:
-        baker.make(Device, external_id=device_id, os="ios", firebase_token=None)
-
     def test_migrate_burning_guide_notification_data(self):
-        self._create_device("device_1")
         schedule_1 = baker.make(
             BurningGuideNotification,
             postal_code="1023",
@@ -37,7 +33,6 @@ class BurningGuideMigrationTest(TestCase):
         self.assertEqual(burning_guide_notification.send_at, schedule_1.send_at)
 
     def test_migrate_burning_guide_notification_data_with_record_already_existing(self):
-        self._create_device("device_1")
         already_existing = baker.make(
             BurningGuideDevice,
             device_id="device_1",
