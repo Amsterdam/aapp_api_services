@@ -308,6 +308,42 @@ class RunConstructionWorkETLTest(TestCase):
             mock_logger_info.call_args_list,
         )
 
+    @patch(
+        "news.management.commands.runconstructionworketl.transform_articles",
+        return_value=[],
+    )
+    @patch("news.management.commands.runconstructionworketl.logger.info")
+    @patch("news.management.commands.runconstructionworketl.logger.error")
+    @patch("news.management.commands.runconstructionworketl.iprox_fetcher.extract")
+    def test_run_construction_work_etl_logs_handled_transform_abort_without_success(
+        self,
+        mock_extract,
+        mock_logger_error,
+        mock_logger_info,
+        mock_transform_articles,
+    ):
+        extracted_articles = self._articles_payload()
+        mock_extract.side_effect = [self._projects_payload(), extracted_articles]
+
+        call_command("runconstructionworketl")
+
+        self.assertTrue(Project.objects.filter(foreign_id=7001).exists())
+        self.assertEqual(NewsArticle.objects.count(), 0)
+        mock_transform_articles.assert_called_once_with(extracted_articles)
+        mock_logger_error.assert_called_once()
+        self.assertIsInstance(
+            mock_logger_error.call_args.kwargs["exc_info"],
+            runconstructionworketl.ConstructionWorkETLError,
+        )
+        self.assertEqual(
+            str(mock_logger_error.call_args.kwargs["exc_info"]),
+            "No valid transformed articles found. Ending ETL process.",
+        )
+        self.assertNotIn(
+            call("ETL process completed successfully."),
+            mock_logger_info.call_args_list,
+        )
+
     def test_run_construction_work_etl_refreshes_project_timeline_metadata_on_rerun(
         self,
     ):
