@@ -70,13 +70,53 @@ class LoadDataTest(TestCase):
             }
         ]
         loader = self._set_mock_image_set_service_side_effect(mock_image_set_service)
-        loader.load(transformed_data)
+        load_result = loader.load(transformed_data)
+        self.assertEqual(load_result.created_count, 1)
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(
             NewsArticle.objects.first().title, transformed_data[0]["title"]
         )
         self.assertFalse(NewsArticle.objects.first().deleted)
         self.assertEqual(NewsArticleImage.objects.count(), 3)
+
+    def test_load_returns_zero_created_count_for_update_only_rerun(self):
+        baker.make(
+            NewsArticle,
+            foreign_id=123123,
+            deleted=False,
+            title="Old title",
+            url="https://example.com/test-article",
+            publication_datetime="2024-01-01T12:00:00Z",
+        )
+
+        load_result = self.loader.load(
+            [
+                {
+                    "foreign_id": "123123",
+                    "title": "Updated title",
+                    "body": "Updated body",
+                    "summary": "Updated summary",
+                    "intro": "Updated intro",
+                    "in_all_news": True,
+                    "is_liveblog": False,
+                    "is_highlight": False,
+                    "is_district": False,
+                    "district": None,
+                    "url": "https://example.com/test-article",
+                    "creation_datetime": "2024-01-01T12:00:00Z",
+                    "modification_datetime": "2024-01-01T13:00:00Z",
+                    "publication_datetime": "2024-01-01T13:00:00Z",
+                    "expiration_datetime": None,
+                    "image_url": "",
+                }
+            ]
+        )
+
+        self.assertEqual(load_result.created_count, 0)
+        self.assertEqual(NewsArticle.objects.count(), 1)
+        self.assertEqual(
+            NewsArticle.objects.get(foreign_id=123123).title, "Updated title"
+        )
 
     @patch("core.services.image_set.ImageSetService")
     def test_load_continues_when_image_upload_fails(self, mock_image_set_service):

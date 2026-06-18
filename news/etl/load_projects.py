@@ -50,8 +50,9 @@ def projects(project_data):
         ],
     )
 
-    project_objects = Project.objects.all()
+    project_objects = Project.objects.filter(foreign_id__in=seen_project_ids)
     projects_dict = {project.foreign_id: project for project in project_objects}
+    seen_project_primary_keys = [project.id for project in project_objects]
     contacts, timelines, sections, section_urls = (
         [],
         [],
@@ -60,6 +61,8 @@ def projects(project_data):
     )
     for data in project_data:
         project = projects_dict.get(data.get("id"))
+        if project is None:
+            continue
 
         contacts += get_contacts(data, project)
         upsert_images(data, project)
@@ -71,11 +74,13 @@ def projects(project_data):
         section_urls += new_section_urls
 
     with transaction.atomic():
-        ProjectContact.objects.all().delete()
+        ProjectContact.objects.filter(project_id__in=seen_project_primary_keys).delete()
         ProjectContact.objects.bulk_create(contacts)
 
     with transaction.atomic():
-        ProjectTimelineItem.objects.all().delete()
+        ProjectTimelineItem.objects.filter(
+            project_id__in=seen_project_primary_keys
+        ).delete()
         parent_ids = {}
         for tl in timelines:
             parent_ids[tl.id] = tl.parent_id
@@ -88,7 +93,7 @@ def projects(project_data):
         ProjectTimelineItem.objects.bulk_update(timelines, ["parent_id"])
 
     with transaction.atomic():
-        ProjectSection.objects.all().delete()
+        ProjectSection.objects.filter(project_id__in=seen_project_primary_keys).delete()
         ProjectSection.objects.bulk_create(sections)
         ProjectSectionUrl.objects.bulk_create(section_urls)
 
@@ -213,7 +218,8 @@ def upsert_images(project_data: dict, project: Project):
     """
     image_url = get_project_image_url(project_data)
     if not image_url:
-        return None
+        ProjectImage.objects.filter(parent=project).delete()
+        return []
 
     try:
         image_set_data = IMAGE_SERVICE.get_or_upload_from_url(image_url)

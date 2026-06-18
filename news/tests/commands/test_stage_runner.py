@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 from django.test import SimpleTestCase
@@ -85,12 +86,49 @@ class MaybeGarbageCollectTest(SimpleTestCase):
             extra={"deleted_count": 2},
         )
 
+    def test_maybe_garbage_collect_runs_when_outcome_reports_new_records(self):
+        garbage_collect = Mock(return_value=2)
+        logger = Mock()
+
+        deleted_count = maybe_garbage_collect(
+            created_records=SimpleNamespace(created_count=1),
+            garbage_collect=garbage_collect,
+            enabled=True,
+            threshold_seconds=7200,
+            logger=logger,
+        )
+
+        self.assertEqual(deleted_count, 2)
+        garbage_collect.assert_called_once_with(threshold_seconds=7200)
+        logger.info.assert_called_once_with(
+            "News garbage collector completed.",
+            extra={"deleted_count": 2},
+        )
+
     def test_maybe_garbage_collect_skips_without_created_records(self):
         garbage_collect = Mock()
         logger = Mock()
 
         deleted_count = maybe_garbage_collect(
             created_records=0,
+            garbage_collect=garbage_collect,
+            enabled=True,
+            threshold_seconds=7200,
+            logger=logger,
+        )
+
+        self.assertEqual(deleted_count, 0)
+        garbage_collect.assert_not_called()
+        logger.info.assert_called_once_with(
+            "News garbage collector skipped because it is disabled."
+        )
+
+    def test_maybe_garbage_collect_skips_when_outcome_reports_only_updates(self):
+        garbage_collect = Mock()
+        logger = Mock()
+
+        deleted_count = maybe_garbage_collect(
+            created_records=SimpleNamespace(created_count=0),
             garbage_collect=garbage_collect,
             enabled=True,
             threshold_seconds=7200,

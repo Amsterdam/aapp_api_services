@@ -41,7 +41,7 @@ class Command(BaseCommand):
                 extract_empty_message="No projects found. Ending ETL process.",
                 load=project_data_loader,
             )
-            created_articles = run_stage(
+            article_load_result = run_stage(
                 extract=self._extract_articles,
                 extract_empty_message="No articles found. Ending ETL process.",
                 transform=transform_articles,
@@ -56,7 +56,7 @@ class Command(BaseCommand):
             return
 
         maybe_garbage_collect(
-            created_records=created_articles,
+            created_records=article_load_result,
             garbage_collect=garbage_collect_unseen_articles,
             enabled=settings.DELETE_UNSEEN_ARTICLES,
             threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS,

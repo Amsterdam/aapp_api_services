@@ -2,6 +2,14 @@ class ETLStageAborted(Exception):
     pass
 
 
+def _has_created_records(created_records) -> bool:
+    created_count = getattr(created_records, "created_count", None)
+    if created_count is not None:
+        return created_count > 0
+
+    return bool(created_records)
+
+
 def run_stage(
     *,
     extract,
@@ -33,7 +41,7 @@ def maybe_garbage_collect(
     threshold_seconds: int,
     logger,
 ):
-    if created_records and enabled:
+    if _has_created_records(created_records) and enabled:
         deleted_count = garbage_collect(threshold_seconds=threshold_seconds)
         logger.info(
             "News garbage collector completed.",

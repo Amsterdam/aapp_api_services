@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from datetime import timedelta
 
 from django.conf import settings
@@ -23,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 class ArticleLoaderError(Exception):
     pass
+
+
+@dataclass(frozen=True)
+class ArticleLoadResult:
+    created_count: int
 
 
 class NewsArticleLoader:
@@ -62,10 +68,12 @@ class NewsArticleLoader:
             "Load news data into database.",
             extra={"article_count": len(transformed_data)},
         )
+        incoming_foreign_ids = self._get_incoming_foreign_ids(transformed_data)
+        existing_foreign_ids = self._get_existing_foreign_ids(incoming_foreign_ids)
         news_articles_list = [
             self._get_news_article_object(data) for data in transformed_data
         ]
-        created_articles = self._upsert_news_articles(news_articles_list)
+        self._upsert_news_articles(news_articles_list)
 
         news_articles_dict = self._get_news_articles_dict()  # {foreign_id: NewsArticle instance} for all articles in the database after upsert
 
@@ -80,7 +88,26 @@ class NewsArticleLoader:
                     exc_info=e,
                 )
 
-        return created_articles
+        return ArticleLoadResult(
+            created_count=len(incoming_foreign_ids - existing_foreign_ids)
+        )
+
+    def _get_incoming_foreign_ids(self, transformed_data: list[dict]) -> set[int]:
+        return {
+            int(article_data["foreign_id"])
+            for article_data in transformed_data
+            if article_data.get("foreign_id") is not None
+        }
+
+    def _get_existing_foreign_ids(self, incoming_foreign_ids: set[int]) -> set[int]:
+        if not incoming_foreign_ids:
+            return set()
+
+        return set(
+            NewsArticle.objects.filter(foreign_id__in=incoming_foreign_ids).values_list(
+                "foreign_id", flat=True
+            )
+        )
 
     def _get_news_article_object(self, data: dict) -> NewsArticle:
         """
@@ -110,10 +137,8 @@ class NewsArticleLoader:
             is_active_liveblog=data.get("is_active_liveblog", False) or False,
         )
 
-    def _upsert_news_articles(
-        self, news_articles_list: list[NewsArticle]
-    ) -> list[NewsArticle]:
-        created_articles = NewsArticle.objects.bulk_create(
+    def _upsert_news_articles(self, news_articles_list: list[NewsArticle]) -> None:
+        NewsArticle.objects.bulk_create(
             news_articles_list,
             update_conflicts=True,
             unique_fields=["foreign_id"],
@@ -161,8 +186,6 @@ class NewsArticleLoader:
                 # Make sure notifications will only be send once per liveblog
                 liveblog.liveblog_notification_send = timezone.now()
                 liveblog.save(update_fields=["liveblog_notification_send"])
-
-        return created_articles
 
     def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()

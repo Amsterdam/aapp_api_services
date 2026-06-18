@@ -1,15 +1,39 @@
 from unittest.mock import call, patch
 
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
+from model_bakery import baker
 
 from news.management.commands import runconstructionworketl
 from news.models.article_models import NewsArticle
-from news.models.project_models import Project, ProjectImage
+from news.models.project_models import (
+    Project,
+    ProjectContact,
+    ProjectImage,
+    ProjectSection,
+    ProjectSectionUrl,
+    ProjectTimelineItem,
+)
 
 
 class RunConstructionWorkETLTest(TestCase):
+    def _article_payload(self, article_id):
+        return {
+            "id": article_id,
+            "title": f"<div>Construction update {article_id}</div>",
+            "body": "<div><p>Road closed.</p></div>",
+            "summary": "<div><p>Summary.</p></div>",
+            "intro": "<div><p>Intro.</p></div>",
+            "district": None,
+            "url": f"https://example.com/news/{article_id}",
+            "created": "2024-01-01T12:00:00Z",
+            "modified": "2024-01-01T13:00:00Z",
+            "publicationDate": "2024-01-01T13:00:00Z",
+            "image_url": "",
+            "is_construction_work": True,
+        }
+
     def _project_image(self):
         return {
             "id": 9001,
@@ -124,23 +148,86 @@ class RunConstructionWorkETLTest(TestCase):
             ProjectImage.objects.filter(parent=project, foreign_id=12345).exists()
         )
 
-    def _articles_payload(self):
-        return [
-            {
-                "id": 8001,
-                "title": "<div>Construction update</div>",
-                "body": "<div><p>Road closed.</p></div>",
-                "summary": "<div><p>Summary.</p></div>",
-                "intro": "<div><p>Intro.</p></div>",
-                "district": None,
-                "url": "https://example.com/news/8001",
-                "created": "2024-01-01T12:00:00Z",
-                "modified": "2024-01-01T13:00:00Z",
-                "publicationDate": "2024-01-01T13:00:00Z",
-                "image_url": "",
-                "is_construction_work": True,
-            }
-        ]
+    def _articles_payload(self, article_ids=None):
+        article_ids = article_ids or [8001]
+        return [self._article_payload(article_id) for article_id in article_ids]
+
+    def _create_project_with_children(
+        self,
+        *,
+        foreign_id,
+        active,
+        hidden,
+        last_seen,
+    ):
+        project = Project.objects.create(
+            foreign_id=foreign_id,
+            title=f"Project {foreign_id}",
+            url=f"https://example.com/projects/{foreign_id}",
+            active=active,
+            hidden=hidden,
+            last_seen=last_seen,
+        )
+        contact = ProjectContact.objects.create(
+            id=float(foreign_id),
+            project=project,
+            name="Resident contact",
+        )
+        section = ProjectSection.objects.create(
+            project=project,
+            title="Where",
+            body="Centrum",
+            type="where",
+        )
+        section_url = ProjectSectionUrl.objects.create(
+            section=section,
+            url="https://example.com/section-link",
+            label="Section link",
+        )
+        timeline_item = ProjectTimelineItem.objects.create(
+            project=project,
+            title="Phase 1",
+        )
+        timeline_child = ProjectTimelineItem.objects.create(
+            parent=timeline_item,
+            title="Sub phase",
+        )
+        return {
+            "project": project,
+            "contact": contact,
+            "section": section,
+            "section_url": section_url,
+            "timeline_item": timeline_item,
+            "timeline_child": timeline_child,
+        }
+
+    def _assert_project_children_exist(self, seeded_project, *, exists):
+        self.assertEqual(
+            ProjectContact.objects.filter(id=seeded_project["contact"].id).exists(),
+            exists,
+        )
+        self.assertEqual(
+            ProjectSection.objects.filter(id=seeded_project["section"].id).exists(),
+            exists,
+        )
+        self.assertEqual(
+            ProjectSectionUrl.objects.filter(
+                id=seeded_project["section_url"].id
+            ).exists(),
+            exists,
+        )
+        self.assertEqual(
+            ProjectTimelineItem.objects.filter(
+                id=seeded_project["timeline_item"].id
+            ).exists(),
+            exists,
+        )
+        self.assertEqual(
+            ProjectTimelineItem.objects.filter(
+                id=seeded_project["timeline_child"].id
+            ).exists(),
+            exists,
+        )
 
     @patch("news.etl.load_projects.IMAGE_SERVICE.get_or_upload_from_url")
     @patch("news.management.commands.runconstructionworketl.iprox_fetcher.extract")
@@ -277,6 +364,101 @@ class RunConstructionWorkETLTest(TestCase):
         self._run_etl()
 
         self.assertFalse(Project.objects.filter(foreign_id=7998).exists())
+
+    @override_settings(
+        DELETE_UNSEEN_ARTICLES=True,
+        DELETE_UNSEEN_ARTICLES_AFTER_SECONDS=7200,
+    )
+    def test_run_construction_work_etl_skips_article_garbage_collection_for_update_only_rerun(
+        self,
+    ):
+        self._run_etl()
+
+        stale_article = baker.make(
+            NewsArticle,
+            foreign_id=999999,
+            deleted=False,
+            in_all_news=True,
+        )
+        NewsArticle.objects.filter(id=stale_article.id).update(
+            last_seen=timezone.now() - timezone.timedelta(hours=3)
+        )
+
+        self._run_etl()
+
+        stale_article.refresh_from_db()
+        self.assertFalse(stale_article.deleted)
+
+    @override_settings(
+        DELETE_UNSEEN_ARTICLES=True,
+        DELETE_UNSEEN_ARTICLES_AFTER_SECONDS=7200,
+    )
+    def test_run_construction_work_etl_garbage_collects_after_new_article_creation(
+        self,
+    ):
+        self._run_etl()
+
+        stale_article = baker.make(
+            NewsArticle,
+            foreign_id=999999,
+            deleted=False,
+            in_all_news=True,
+        )
+        NewsArticle.objects.filter(id=stale_article.id).update(
+            last_seen=timezone.now() - timezone.timedelta(hours=3)
+        )
+
+        self._run_etl(articles_payload=self._articles_payload(article_ids=[8001, 8002]))
+
+        stale_article.refresh_from_db()
+        self.assertTrue(stale_article.deleted)
+
+    def test_run_construction_work_etl_preserves_unseen_project_children_during_grace_period(
+        self,
+    ):
+        unseen_project = self._create_project_with_children(
+            foreign_id=7998,
+            active=True,
+            hidden=False,
+            last_seen=timezone.now(),
+        )
+
+        self._run_etl()
+
+        unseen_project["project"].refresh_from_db()
+        self.assertFalse(unseen_project["project"].active)
+        self._assert_project_children_exist(unseen_project, exists=True)
+
+    def test_run_construction_work_etl_deletes_stale_project_children_with_project(
+        self,
+    ):
+        stale_project = self._create_project_with_children(
+            foreign_id=7998,
+            active=False,
+            hidden=False,
+            last_seen=timezone.now() - timezone.timedelta(days=6),
+        )
+
+        self._run_etl()
+
+        self.assertFalse(Project.objects.filter(foreign_id=7998).exists())
+        self._assert_project_children_exist(stale_project, exists=False)
+
+    def test_run_construction_work_etl_removes_project_images_when_image_disappears(
+        self,
+    ):
+        self._run_etl()
+
+        projects_payload = self._projects_payload()
+        projects_payload[0].pop("image")
+
+        _, mock_get_or_upload_from_url = self._run_etl(
+            projects_payload=projects_payload,
+        )
+
+        project = Project.objects.get(foreign_id=7001)
+        self.assertEqual(ProjectImage.objects.filter(parent=project).count(), 0)
+        mock_get_or_upload_from_url.assert_not_called()
 
     def test_run_construction_work_etl_refreshes_image_set_foreign_id_for_reused_variants(
         self,
