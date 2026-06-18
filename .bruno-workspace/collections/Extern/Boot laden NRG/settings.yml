@@ -1,0 +1,28 @@
+info:
+  name: settings
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: "{{NRG_base_url}}/app-settings"
+  headers:
+    - name: User-Agent
+      value: Mozilla/5.0
+    - name: Accept
+      value: application/json, text/plain, */*
+    - name: Authorization
+      value: "{{token}}"
+      disabled: true
+  auth: inherit
+
+runtime:
+  variables:
+    - name: token
+      value: Bearer eyJraWQiOiJjaUYzUUJ1NDVxVnZsUE5IdXU0d1JaSEtyb21WV2IrWjBTZjVqajJjUGI0PSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJhMjI1ZTRjNC1jMGUxLTcwZTAtOTE4MS0wMTk1NDEyNWJjNmEiLCJpc3MiOiJodHRwczovL2NvZ25pdG8taWRwLmV1LXdlc3QtMS5hbWF6b25hd3MuY29tL2V1LXdlc3QtMV9KRkpNVDFSMmoiLCJjbGllbnRfaWQiOiIyZG9iZmdqaG9vNHBkZHAzZnJobDM1OTFvIiwib3JpZ2luX2p0aSI6IjdiNDE4Y2FhLTdmZGEtNDQxZi05NWVjLWVjM2YzOGM0NDE5MCIsImV2ZW50X2lkIjoiNGY0MWY1MWItMGM0Yi00N2QwLWJjNjYtYWJmNTZkNmViZGE3IiwidG9rZW5fdXNlIjoiYWNjZXNzIiwic2NvcGUiOiJhd3MuY29nbml0by5zaWduaW4udXNlci5hZG1pbiIsImF1dGhfdGltZSI6MTc4MTc2OTYyMiwiZXhwIjoxNzgxNzczMjIyLCJpYXQiOjE3ODE3Njk2MjIsImp0aSI6ImZiNjBiYzQ3LTAxNGMtNDM4OC1hOTFmLTQzZGE1YmJjMmNiNiIsInVzZXJuYW1lIjoiYTIyNWU0YzQtYzBlMS03MGUwLTkxODEtMDE5NTQxMjViYzZhIn0.I0Pop5zjYqEuTCYPLHuJs0GEnTQhfojI7d_GcWmtwbDnrdrI-rX0IRREntbzL9WhGwZ1-h2ChvHdZx5Xre-n84Z_iBinrQJv2XtyczGIdbjMSusiZZJ5NQiQ7rGRzHLLcKU6vhMLg6y_HT0pzVDJ9M9-NIB2z3RBmPY9V_Vi7-pqw4T8svEsPHQZUjbbr6W9_rdo3HfKR8kSFvCbSNiA1silDaiWmYEIKV1Ec_ZwDKpyBgGqrqCVaAvaP9sTvCM5B5C1kcDluCkmz9kiWWuxOvOIx-RWe56LH7o1lH01YcrcnzthIy5oydSI1puMmPQMzzJPbz01uYGLCr0tT1U7-g
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

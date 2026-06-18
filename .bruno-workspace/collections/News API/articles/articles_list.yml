@@ -1,0 +1,548 @@
+info:
+  name: articles_list
+  type: http
+  seq: 1
+  tags:
+    - articles
+
+http:
+  method: GET
+  url: "{{baseUrl}}/news/api/v1/articles"
+  headers:
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  params:
+    - name: district
+      value: noord
+      type: query
+      description: |-
+        * `noord` - Noord
+        * `west` - West
+        * `zuid` - Zuid
+        * `oost` - Oost
+        * `centrum` - Centrum
+        * `nieuw-west` - Nieuw-West
+        * `zuidoost` - Zuidoost
+        * `weesp` - Weesp
+      disabled: true
+    - name: district
+      value: west
+      type: query
+      description: |-
+        * `noord` - Noord
+        * `west` - West
+        * `zuid` - Zuid
+        * `oost` - Oost
+        * `centrum` - Centrum
+        * `nieuw-west` - Nieuw-West
+        * `zuidoost` - Zuidoost
+        * `weesp` - Weesp
+      disabled: true
+    - name: district
+      value: zuid
+      type: query
+      description: |-
+        * `noord` - Noord
+        * `west` - West
+        * `zuid` - Zuid
+        * `oost` - Oost
+        * `centrum` - Centrum
+        * `nieuw-west` - Nieuw-West
+        * `zuidoost` - Zuidoost
+        * `weesp` - Weesp
+      disabled: true
+    - name: district
+      value: oost
+      type: query
+      description: |-
+        * `noord` - Noord
+        * `west` - West
+        * `zuid` - Zuid
+        * `oost` - Oost
+        * `centrum` - Centrum
+        * `nieuw-west` - Nieuw-West
+        * `zuidoost` - Zuidoost
+        * `weesp` - Weesp
+      disabled: true
+    - name: district
+      value: centrum
+      type: query
+      description: |-
+        * `noord` - Noord
+        * `west` - West
+        * `zuid` - Zuid
+        * `oost` - Oost
+        * `centrum` - Centrum
+        * `nieuw-west` - Nieuw-West
+        * `zuidoost` - Zuidoost
+        * `weesp` - Weesp
+      disabled: true
+    - name: district
+      value: nieuw-west
+      type: query
+      description: |-
+        * `noord` - Noord
+        * `west` - West
+        * `zuid` - Zuid
+        * `oost` - Oost
+        * `centrum` - Centrum
+        * `nieuw-west` - Nieuw-West
+        * `zuidoost` - Zuidoost
+        * `weesp` - Weesp
+      disabled: true
+    - name: district
+      value: zuidoost
+      type: query
+      description: |-
+        * `noord` - Noord
+        * `west` - West
+        * `zuid` - Zuid
+        * `oost` - Oost
+        * `centrum` - Centrum
+        * `nieuw-west` - Nieuw-West
+        * `zuidoost` - Zuidoost
+        * `weesp` - Weesp
+      disabled: true
+    - name: district
+      value: weesp
+      type: query
+      description: |-
+        * `noord` - Noord
+        * `west` - West
+        * `zuid` - Zuid
+        * `oost` - Oost
+        * `centrum` - Centrum
+        * `nieuw-west` - Nieuw-West
+        * `zuidoost` - Zuidoost
+        * `weesp` - Weesp
+      disabled: true
+    - name: page
+      value: ""
+      type: query
+      description: A page number within the paginated result set.
+      disabled: true
+    - name: page_size
+      value: ""
+      type: query
+      description: Number of results to return per page.
+      disabled: true
+    - name: type
+      value: article
+      type: query
+      description: |-
+        * `article` - Article
+        * `highlight` - Highlight
+        * `liveblog` - Liveblog
+        * `district` - District
+    - name: type
+      value: highlight
+      type: query
+      description: |-
+        * `article` - Article
+        * `highlight` - Highlight
+        * `liveblog` - Liveblog
+        * `district` - District
+      disabled: true
+    - name: type
+      value: liveblog
+      type: query
+      description: |-
+        * `article` - Article
+        * `highlight` - Highlight
+        * `liveblog` - Liveblog
+        * `district` - District
+      disabled: true
+    - name: type
+      value: district
+      type: query
+      description: |-
+        * `article` - Article
+        * `highlight` - Highlight
+        * `liveblog` - Liveblog
+        * `district` - District
+      disabled: true
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/news/api/v1/articles"
+      method: GET
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: district
+          value: noord
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: west
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: zuid
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: oost
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: centrum
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: nieuw-west
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: zuidoost
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: weesp
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: page
+          value: ""
+          type: query
+          description: A page number within the paginated result set.
+          disabled: true
+        - name: page_size
+          value: ""
+          type: query
+          description: Number of results to return per page.
+          disabled: true
+        - name: type
+          value: article
+          type: query
+          description: |-
+            * `article` - Article
+            * `highlight` - Highlight
+            * `liveblog` - Liveblog
+            * `district` - District
+        - name: type
+          value: highlight
+          type: query
+          description: |-
+            * `article` - Article
+            * `highlight` - Highlight
+            * `liveblog` - Liveblog
+            * `district` - District
+          disabled: true
+        - name: type
+          value: liveblog
+          type: query
+          description: |-
+            * `article` - Article
+            * `highlight` - Highlight
+            * `liveblog` - Liveblog
+            * `district` - District
+          disabled: true
+        - name: type
+          value: district
+          type: query
+          description: |-
+            * `article` - Article
+            * `highlight` - Highlight
+            * `liveblog` - Liveblog
+            * `district` - District
+          disabled: true
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "result": [
+              {
+                "id": 0,
+                "title": "",
+                "images": [
+                  {
+                    "uri": "",
+                    "width": 0,
+                    "height": 0
+                  }
+                ],
+                "publication_datetime": "",
+                "modification_datetime": "",
+                "is_liveblog": false,
+                "is_active_liveblog": false
+              }
+            ],
+            "page": {
+              "number": 2,
+              "size": 10,
+              "totalElements": 33,
+              "totalPages": 4
+            },
+            "_links": {
+              "self": {
+                "href": "http://api.example.com/projects?page=2&page_size=10"
+              },
+              "next": {
+                "href": "http://api.example.com/projects?page=3&page_size=10"
+              },
+              "previous": {
+                "href": "http://api.example.com/projects?page=1&page_size=10"
+              }
+            }
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/news/api/v1/articles"
+      method: GET
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: district
+          value: noord
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: west
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: zuid
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: oost
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: centrum
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: nieuw-west
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: zuidoost
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: district
+          value: weesp
+          type: query
+          description: |-
+            * `noord` - Noord
+            * `west` - West
+            * `zuid` - Zuid
+            * `oost` - Oost
+            * `centrum` - Centrum
+            * `nieuw-west` - Nieuw-West
+            * `zuidoost` - Zuidoost
+            * `weesp` - Weesp
+          disabled: true
+        - name: page
+          value: ""
+          type: query
+          description: A page number within the paginated result set.
+          disabled: true
+        - name: page_size
+          value: ""
+          type: query
+          description: Number of results to return per page.
+          disabled: true
+        - name: type
+          value: article
+          type: query
+          description: |-
+            * `article` - Article
+            * `highlight` - Highlight
+            * `liveblog` - Liveblog
+            * `district` - District
+        - name: type
+          value: highlight
+          type: query
+          description: |-
+            * `article` - Article
+            * `highlight` - Highlight
+            * `liveblog` - Liveblog
+            * `district` - District
+          disabled: true
+        - name: type
+          value: liveblog
+          type: query
+          description: |-
+            * `article` - Article
+            * `highlight` - Highlight
+            * `liveblog` - Liveblog
+            * `district` - District
+          disabled: true
+        - name: type
+          value: district
+          type: query
+          description: |-
+            * `article` - Article
+            * `highlight` - Highlight
+            * `liveblog` - Liveblog
+            * `district` - District
+          disabled: true
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }

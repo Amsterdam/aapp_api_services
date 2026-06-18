@@ -1,0 +1,6 @@
+name: P
+variables:
+  - secret: true
+    name: apiKey
+  - name: baseUrl
+    value: https://app.amsterdam.nl

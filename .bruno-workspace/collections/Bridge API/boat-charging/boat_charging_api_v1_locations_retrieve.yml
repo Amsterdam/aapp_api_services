@@ -1,0 +1,190 @@
+info:
+  name: boat_charging_api_v1_locations_retrieve
+  type: http
+  seq: 2
+  tags:
+    - boat-charging
+
+http:
+  method: GET
+  url: "{{baseUrl}}/boat-charging/api/v1/locations/:location_id"
+  headers:
+    - name: Access-Token
+      value: "{{access-token}}"
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  params:
+    - name: location_id
+      value: a1025467f62a49f5898260b5709c4d4c
+      type: path
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/boat-charging/api/v1/locations/:location_id"
+      method: GET
+      headers:
+        - name: Access-Token
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: location_id
+          value: ""
+          type: path
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "id": "",
+            "name": "",
+            "address": {
+              "city": "",
+              "street": "",
+              "coordinates": {
+                "lat": 0,
+                "lon": 0
+              },
+              "cityDistrict": "",
+              "bagId": "",
+              "number": "",
+              "additionLetter": "",
+              "additionNumber": "",
+              "postcode": ""
+            },
+            "opening_times": {
+              "regular_hours": [],
+              "twentyfourseven": false,
+              "exceptional_openings": [],
+              "exceptional_closings": []
+            },
+            "total_sockets": 0,
+            "tariff": {
+              "id": "",
+              "energy_price_per_kwh": 0,
+              "charging_time_price_per_hour": 0,
+              "parking_time_price_per_hour": 0,
+              "flat_fee_price": 0
+            },
+            "charging_stations": [
+              {
+                "id": "",
+                "status": "OPERATIVE",
+                "location_id": "",
+                "evses": [
+                  {
+                    "id": "",
+                    "display_name": "",
+                    "ocpp_evse_id": 0,
+                    "evse_id": "",
+                    "status": "OPERATIVE",
+                    "connectors": [
+                      {
+                        "connector_id": 0,
+                        "max_amp": 0,
+                        "voltage": 0,
+                        "status": "OPERATIVE"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/boat-charging/api/v1/locations/:location_id"
+      method: GET
+      headers:
+        - name: Access-Token
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: location_id
+          value: ""
+          type: path
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "BOAT_CHARGING_CLIENT_ERROR",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/boat-charging/api/v1/locations/:location_id"
+      method: GET
+      headers:
+        - name: Access-Token
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: location_id
+          value: ""
+          type: path
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "BOAT_CHARGING_MISSING_ACCESS_TOKEN",
+            "detail": ""
+          }
+  - name: 500 Response
+    request:
+      url: "{{baseUrl}}/boat-charging/api/v1/locations/:location_id"
+      method: GET
+      headers:
+        - name: Access-Token
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: location_id
+          value: ""
+          type: path
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "BOAT_CHARGING_SERVER_ERROR",
+            "detail": ""
+          }
+
+docs: This generic API view supports async pagination.

@@ -1,0 +1,148 @@
+info:
+  name: guide_notification_partial_update
+  type: http
+  seq: 4
+  tags:
+    - guide
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/waste/api/v1/guide/notification"
+  headers:
+    - name: DeviceId
+      value: ""
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "bag_nummeraanduiding_id": ""
+      }
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/waste/api/v1/guide/notification"
+      method: PATCH
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "bag_nummeraanduiding_id": ""
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "device_id": "",
+            "bag_nummeraanduiding_id": "",
+            "created_at": "",
+            "updated_at": ""
+          }
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/waste/api/v1/guide/notification"
+      method: PATCH
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "bag_nummeraanduiding_id": ""
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "MISSING_DEVICE_ID",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/waste/api/v1/guide/notification"
+      method: PATCH
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "bag_nummeraanduiding_id": ""
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }
+  - name: 404 Response
+    request:
+      url: "{{baseUrl}}/waste/api/v1/guide/notification"
+      method: PATCH
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "bag_nummeraanduiding_id": ""
+          }
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "not_found",
+            "detail": ""
+          }

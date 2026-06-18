@@ -1,0 +1,297 @@
+info:
+  name: parking_api_v1_transactions_retrieve
+  type: http
+  seq: 29
+  tags:
+    - parking
+
+http:
+  method: GET
+  url: "{{baseUrl}}/parking/api/v1/transactions"
+  headers:
+    - name: SSP-Access-Token
+      value: ""
+      description: SSP Access Token
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  params:
+    - name: filter_status
+      value: COMPLETED
+      type: query
+    - name: page
+      value: "1"
+      type: query
+    - name: page_size
+      value: "10"
+      type: query
+    - name: sort
+      value: paid_at:desc
+      type: query
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/transactions"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: filter_status
+          value: COMPLETED
+          type: query
+        - name: page
+          value: "1"
+          type: query
+        - name: page_size
+          value: "10"
+          type: query
+        - name: sort
+          value: paid_at:desc
+          type: query
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "result": [
+              {
+                "order_type": "",
+                "permit_name": "",
+                "start_date_time": "",
+                "end_date_time": "",
+                "report_code": "",
+                "is_visitor": false,
+                "parking_time": 0,
+                "vehicle_id": "",
+                "visitor_name": "",
+                "amount": {
+                  "value": 0,
+                  "currency": ""
+                },
+                "is_cancelled": false,
+                "is_stopped_early": false,
+                "time_balance_applicable": false,
+                "money_balance_applicable": false,
+                "no_endtime": false,
+                "created_date_time": "",
+                "updated_date_time": "",
+                "days": [
+                  {
+                    "day_of_week": "Maandag",
+                    "start_time": "",
+                    "end_time": ""
+                  }
+                ],
+                "is_paid": false
+              }
+            ],
+            "page": {
+              "number": 0,
+              "size": 0,
+              "totalElements": 0,
+              "totalPages": 0
+            },
+            "_links": ""
+          }
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/transactions"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: filter_status
+          value: COMPLETED
+          type: query
+        - name: page
+          value: "1"
+          type: query
+        - name: page_size
+          value: "10"
+          type: query
+        - name: sort
+          value: paid_at:desc
+          type: query
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_CALL_ERROR",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/transactions"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: filter_status
+          value: COMPLETED
+          type: query
+        - name: page
+          value: "1"
+          type: query
+        - name: page_size
+          value: "10"
+          type: query
+        - name: sort
+          value: paid_at:desc
+          type: query
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_MISSING_SSL_API_KEY",
+            "detail": ""
+          }
+  - name: 403 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/transactions"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: filter_status
+          value: COMPLETED
+          type: query
+        - name: page
+          value: "1"
+          type: query
+        - name: page_size
+          value: "10"
+          type: query
+        - name: sort
+          value: paid_at:desc
+          type: query
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_FORBIDDEN",
+            "detail": ""
+          }
+  - name: 422 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/transactions"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: filter_status
+          value: COMPLETED
+          type: query
+        - name: page
+          value: "1"
+          type: query
+        - name: page_size
+          value: "10"
+          type: query
+        - name: sort
+          value: paid_at:desc
+          type: query
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_PERMIT_NOT_FOUND",
+            "detail": ""
+          }
+  - name: 500 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/transactions"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: filter_status
+          value: COMPLETED
+          type: query
+        - name: page
+          value: "1"
+          type: query
+        - name: page_size
+          value: "10"
+          type: query
+        - name: sort
+          value: paid_at:desc
+          type: query
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_SOURCE_RESPONSE_ERROR",
+            "detail": ""
+          }
+
+docs: Get transactions from SSP API

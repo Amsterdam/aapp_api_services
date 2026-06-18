@@ -1,0 +1,81 @@
+info:
+  name: session_init_create
+  type: http
+  seq: 2
+  tags:
+    - session
+
+http:
+  method: POST
+  url: "{{baseUrl}}/city-pass/api/v1/session/init"
+  headers:
+    - name: DeviceId
+      value: ""
+      disabled: true
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/city-pass/api/v1/session/init"
+      method: POST
+      headers:
+        - name: DeviceId
+          value: ""
+          disabled: true
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "access_token": "",
+            "access_token_expiration": "",
+            "refresh_token": "",
+            "refresh_token_expiration": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/city-pass/api/v1/session/init"
+      method: POST
+      headers:
+        - name: DeviceId
+          value: ""
+          disabled: true
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }
+
+docs: |-
+  Initialize a new session and return access and refresh token pair.
+  The device_id is optional and used to send notifications to the user.

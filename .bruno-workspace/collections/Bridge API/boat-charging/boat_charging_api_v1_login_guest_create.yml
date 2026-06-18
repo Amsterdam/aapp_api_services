@@ -1,0 +1,47 @@
+info:
+  name: boat_charging_api_v1_login_guest_create
+  type: http
+  seq: 3
+  tags:
+    - boat-charging
+
+http:
+  method: POST
+  url: "{{baseUrl}}/boat-charging/api/v1/login/guest"
+  headers:
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+runtime:
+  scripts:
+    - type: after-response
+      code: bru.setEnvVar('access-token', res.getBody().access_token)
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: No response body
+    request:
+      url: "{{baseUrl}}/boat-charging/api/v1/login/guest"
+      method: POST
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      body:
+        type: text
+        data: ""
+
+docs: This generic API view supports async pagination.

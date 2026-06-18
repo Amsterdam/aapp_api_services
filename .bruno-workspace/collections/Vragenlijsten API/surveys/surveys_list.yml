@@ -1,0 +1,71 @@
+info:
+  name: surveys_list
+  type: http
+  seq: 1
+  tags:
+    - surveys
+
+http:
+  method: GET
+  url: "{{baseUrl}}/survey/api/v1/surveys"
+  headers:
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/survey/api/v1/surveys"
+      method: GET
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          [
+            {
+              "latest_version": "",
+              "title": "",
+              "description": "",
+              "unique_code": "",
+              "team": "aapp"
+            }
+          ]
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/survey/api/v1/surveys"
+      method: GET
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }
