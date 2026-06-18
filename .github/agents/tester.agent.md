@@ -23,11 +23,11 @@ Validate behavior independently of the original work item and the resulting code
 - Every Django app is run as a separate service with its own Docker build on production. Because of this, every app has its own settings files. In order to run locally, you need to set the `DJANGO_SETTINGS_MODULE` environment variable to the settings file for the app you want to run. For example, if you want to run the `users` app, you would set `DJANGO_SETTINGS_MODULE=users.settings`. The Makefile supports this with the `SERVICE_NAME` variable. For example, you can run `SERVICE_NAME=users make run` to run the users service locally.
 
 ## Inputs
-- Request from the Orchestrator. Format specified in `.github/agents/handoff-schemas.md` -> H7 Test Request
+- Request from the Orchestrator. Format specified in `.github/agents/handoff-schemas.md` -> H6 Test Request
 - git history context rooted at `original_git_hash`.
 
 ## Outputs
-- Response to the orchestrator. Format specified in `.github/agents/handoff-schemas.md` -> H8 Test Result
+- Response to the orchestrator. Format specified in `.github/agents/handoff-schemas.md` -> H7 Test Result
 - All code changes must be committed with a message that starts with "Tester: " followed by a concise description of the change.
 
 ## Approach
