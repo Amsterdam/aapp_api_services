@@ -63,8 +63,7 @@ def projects(project_data):
         upsert_images(data, project)
 
         timelines += get_timeline(data, project)
-
-    sections += get_sections(data, project)
+        sections += get_sections(data, project)
 
     with transaction.atomic():
         ProjectContact.objects.filter(project_id__in=seen_project_primary_keys).delete()

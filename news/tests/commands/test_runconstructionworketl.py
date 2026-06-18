@@ -53,23 +53,44 @@ class RunConstructionWorkETLTest(TestCase):
             ],
         }
 
-    def _projects_payload(self, image_wrapper="image", section_links=None):
+    def _project_payload(
+        self,
+        *,
+        foreign_id=7001,
+        title="Bridge maintenance",
+        subtitle="Keep traffic moving",
+        url=None,
+        created="2024-01-01T12:00:00Z",
+        modified="2024-01-02T12:00:00Z",
+        timeline_title="Timeline",
+        timeline_intro="Intro",
+        coordinates=None,
+        section_title="Where",
+        section_body="In Centrum",
+        section_links=None,
+        image_wrapper="image",
+    ):
         section_links = section_links or []
+        coordinates = coordinates or {"lat": 52.37, "lon": 4.89}
         payload = {
-            "id": 7001,
-            "title": "Bridge maintenance",
-            "subtitle": "Keep traffic moving",
-            "url": "https://example.com/projects/7001",
-            "created": "2024-01-01T12:00:00Z",
-            "modified": "2024-01-02T12:00:00Z",
+            "id": foreign_id,
+            "title": title,
+            "subtitle": subtitle,
+            "url": url or f"https://example.com/projects/{foreign_id}",
+            "created": created,
+            "modified": modified,
             "expirationDate": None,
-            "timeline": {"title": "Timeline", "intro": "Intro", "items": []},
-            "coordinates": {"lat": 52.37, "lon": 4.89},
+            "timeline": {
+                "title": timeline_title,
+                "intro": timeline_intro,
+                "items": [],
+            },
+            "coordinates": coordinates,
             "sections": {
                 "where": [
                     {
-                        "title": "Where",
-                        "body": "In Centrum",
+                        "title": section_title,
+                        "body": section_body,
                         "links": section_links,
                     }
                 ],
@@ -84,7 +105,34 @@ class RunConstructionWorkETLTest(TestCase):
             payload["image"] = self._project_image()
         else:
             payload["images"] = [self._project_image()]
-        return [payload]
+        return payload
+
+    def _projects_payload(
+        self,
+        image_wrapper="image",
+        section_links=None,
+        project_overrides=None,
+    ):
+        if project_overrides:
+            return [
+                self._project_payload(
+                    image_wrapper=image_wrapper,
+                    section_links=project.get("section_links"),
+                    **{
+                        key: value
+                        for key, value in project.items()
+                        if key != "section_links"
+                    },
+                )
+                for project in project_overrides
+            ]
+
+        return [
+            self._project_payload(
+                image_wrapper=image_wrapper,
+                section_links=section_links,
+            )
+        ]
 
     def _image_set_payload(self, image_set_id=12345):
         return {
@@ -286,6 +334,77 @@ class RunConstructionWorkETLTest(TestCase):
                     "Resident updates",
                     "https://example.com/projects/7001/updates",
                 )
+            ],
+        )
+
+    def test_run_construction_work_etl_persists_sections_and_links_for_multiple_projects(
+        self,
+    ):
+        projects_payload = self._projects_payload(
+            project_overrides=[
+                {
+                    "foreign_id": 7001,
+                    "section_body": "In Centrum",
+                    "section_links": [
+                        {
+                            "label": "Resident updates",
+                            "url": "https://example.com/projects/7001/updates",
+                        }
+                    ],
+                },
+                {
+                    "foreign_id": 7002,
+                    "title": "Canal wall repair",
+                    "subtitle": "Prepare detours",
+                    "coordinates": {"lat": 52.38, "lon": 4.90},
+                    "created": "2024-01-03T12:00:00Z",
+                    "modified": "2024-01-04T12:00:00Z",
+                    "section_body": "At the canal ring",
+                    "section_links": [
+                        {
+                            "label": "Diversion map",
+                            "url": "https://example.com/projects/7002/diversion-map",
+                        }
+                    ],
+                },
+            ]
+        )
+
+        self._run_etl(projects_payload=projects_payload)
+
+        self.assertEqual(
+            list(
+                ProjectSection.objects.order_by("project__foreign_id").values_list(
+                    "project__foreign_id",
+                    "body",
+                )
+            ),
+            [
+                (7001, "In Centrum"),
+                (7002, "At the canal ring"),
+            ],
+        )
+        self.assertEqual(
+            list(
+                ProjectSectionUrl.objects.order_by(
+                    "section__project__foreign_id"
+                ).values_list(
+                    "section__project__foreign_id",
+                    "label",
+                    "url",
+                )
+            ),
+            [
+                (
+                    7001,
+                    "Resident updates",
+                    "https://example.com/projects/7001/updates",
+                ),
+                (
+                    7002,
+                    "Diversion map",
+                    "https://example.com/projects/7002/diversion-map",
+                ),
             ],
         )
 
