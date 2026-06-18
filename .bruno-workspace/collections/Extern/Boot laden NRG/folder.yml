@@ -8,5 +8,5 @@ request:
     type: bearer
     token: "{{nrg-token}}"
   variables:
-    - name: ""
+    - name: token
       value: ""
