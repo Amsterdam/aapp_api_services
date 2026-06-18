@@ -39,7 +39,6 @@ Your job is to implement the approved work item with the least complexity that s
 1. Read the approved work item and the relevant codebase context.
 2. Start with a failing or missing unit test that captures the intended behavior.
 3. When porting ETL or persistence behavior from a reference implementation into a new surface, characterize the real payload shape and the failure-prone rerun cases early: multi-entity batches, removals or disappearances, cleanup or deactivation windows, and side effects that can escape the current command boundary.
-3. When porting ETL or persistence behavior from a reference implementation into a new surface, characterize the real payload shape and the failure-prone rerun cases early: multi-entity batches, removals or disappearances, cleanup or deactivation windows, and side effects that can escape the current command boundary.
 4. Make the smallest code change that turns the test green.
 5. Refactor immediately while keeping tests green.
 6. Repeat in small iterations until the work item is satisfied.
