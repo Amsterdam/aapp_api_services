@@ -1,0 +1,120 @@
+info:
+  name: projects_follow_destroy
+  type: http
+  seq: 3
+  tags:
+    - projects
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/construction-work/api/v1/projects/follow"
+  headers:
+    - name: DeviceId
+      value: ""
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: Example 1
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/projects/follow"
+      method: DELETE
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: Subscription removed
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/projects/follow"
+      method: DELETE
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "MISSING_DEVICE_ID",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/projects/follow"
+      method: DELETE
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }
+  - name: 404 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/projects/follow"
+      method: DELETE
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "not_found",
+            "detail": ""
+          }
+
+docs: "
+
+  \        This endpoint expects a body to be present with a project id defined as 'id'.
+
+  \        But OpenAPI and therefor DRF spectacular does not support request body for DELETE.
+
+  \        "

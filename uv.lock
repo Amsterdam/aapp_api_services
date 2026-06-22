@@ -59,7 +59,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "adrf" },
-    { name = "aiohttp", specifier = "!=3.14" },
+    { name = "aiohttp", specifier = "<3.14" },
     { name = "aioresponses" },
     { name = "amsterdam-django-oidc", specifier = ">=0.2.0" },
     { name = "azure-ad-verify-token" },

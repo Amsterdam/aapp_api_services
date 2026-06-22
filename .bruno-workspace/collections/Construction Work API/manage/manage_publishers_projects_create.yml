@@ -1,0 +1,83 @@
+info:
+  name: manage_publishers_projects_create
+  type: http
+  seq: 10
+  tags:
+    - manage
+
+http:
+  method: POST
+  url: "{{baseUrl}}/construction-work/api/v1/manage/publishers/:id/projects"
+  params:
+    - name: id
+      value: ""
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "project_id": 0
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: Example 1
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/manage/publishers/:id/projects"
+      method: POST
+      params:
+        - name: id
+          value: ""
+          type: path
+      body:
+        type: json
+        data: |-
+          {
+            "project_id": 0
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: Publisher assigned to project
+  - name: 403 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/manage/publishers/:id/projects"
+      method: POST
+      params:
+        - name: id
+          value: ""
+          type: path
+      body:
+        type: json
+        data: |-
+          {
+            "project_id": 0
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "permission_denied",
+            "detail": ""
+          }
+
+docs: Assign a project to a publisher.

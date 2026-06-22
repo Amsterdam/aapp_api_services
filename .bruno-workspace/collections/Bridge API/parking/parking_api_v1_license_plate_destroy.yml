@@ -1,0 +1,274 @@
+info:
+  name: parking_api_v1_license_plate_destroy
+  type: http
+  seq: 13
+  tags:
+    - parking
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/parking/api/v1/license-plate"
+  headers:
+    - name: SSP-Access-Token
+      value: ""
+      description: SSP Access Token
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  params:
+    - name: id
+      value: ""
+      type: query
+      description: New in V2
+    - name: report_code
+      value: ""
+      type: query
+      description: DEPRECATED
+      disabled: true
+    - name: vehicle_id
+      value: ""
+      type: query
+      description: DEPRECATED
+      disabled: true
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/license-plate"
+      method: DELETE
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: ""
+          type: query
+          description: New in V2
+        - name: report_code
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+        - name: vehicle_id
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "report_code": "",
+            "vehicle_id": ""
+          }
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/license-plate"
+      method: DELETE
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: ""
+          type: query
+          description: New in V2
+        - name: report_code
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+        - name: vehicle_id
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_CALL_ERROR",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/license-plate"
+      method: DELETE
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: ""
+          type: query
+          description: New in V2
+        - name: report_code
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+        - name: vehicle_id
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_MISSING_SSL_API_KEY",
+            "detail": ""
+          }
+  - name: 403 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/license-plate"
+      method: DELETE
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: ""
+          type: query
+          description: New in V2
+        - name: report_code
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+        - name: vehicle_id
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_FORBIDDEN",
+            "detail": ""
+          }
+  - name: 422 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/license-plate"
+      method: DELETE
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: ""
+          type: query
+          description: New in V2
+        - name: report_code
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+        - name: vehicle_id
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_PERMIT_NOT_FOUND",
+            "detail": ""
+          }
+  - name: 500 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/license-plate"
+      method: DELETE
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: ""
+          type: query
+          description: New in V2
+        - name: report_code
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+        - name: vehicle_id
+          value: ""
+          type: query
+          description: DEPRECATED
+          disabled: true
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_SOURCE_RESPONSE_ERROR",
+            "detail": ""
+          }
+
+docs: Manage license plates through SSP API (via redirect)

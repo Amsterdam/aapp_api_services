@@ -1,0 +1,27 @@
+info:
+  name: Session stop
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: "{{NRG_base_url}}/sessions/:id/stop"
+  headers:
+    - name: User-Agent
+      value: Mozilla/5.0
+    - name: Accept
+      value: application/json, text/plain, */*
+    - name: Authorization
+      value: "{{token}}"
+      disabled: true
+  params:
+    - name: id
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

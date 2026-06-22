@@ -1,0 +1,48 @@
+info:
+  name: parking_api_v1_egis_ext_proxy_destroy
+  type: http
+  seq: 7
+  tags:
+    - parking
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/parking/api/v1/egis-ext-proxy/:path"
+  headers:
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  params:
+    - name: path
+      value: ""
+      type: path
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 204 Response
+    description: No response body
+    request:
+      url: "{{baseUrl}}/parking/api/v1/egis-ext-proxy/:path"
+      method: DELETE
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: path
+          value: ""
+          type: path
+    response:
+      status: 204
+      statusText: No Content
+      body:
+        type: text
+        data: ""
