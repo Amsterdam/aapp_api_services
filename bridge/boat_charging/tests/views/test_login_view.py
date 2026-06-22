@@ -43,6 +43,8 @@ class TestGuestLoginView(BoatChargingTestCase):
 OIDC_SETTINGS = {
     "NRG_CLIENT_ID": "nrg-client-a",
     "NRG_USER_POOL": "eu-west-1_user-pool-a",
+    "BOAT_CHARGING_REDIRECT_URL": "https://test.app.amsterdam.nl",
+    "BOAT_CHARGING_SCOPES": ["openid", "profile", "email"],
     "BOAT_CHARGING_OIDC_PKCE_REQUIRED": True,
 }
 
@@ -64,8 +66,11 @@ class TestOIDCSettingsView(BoatChargingTestCase):
         self.assertEqual(
             response.data,
             {
-                "cognito_user_pool_id": "eu-west-1_user-pool-a",
-                "cognito_user_pool_client_id": "nrg-client-a",
+                "user_pool_id": "eu-west-1_user-pool-a",
+                "client_id": "nrg-client-a",
+                "issuer": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_user-pool-a",
+                "redirect_url": "https://test.app.amsterdam.nl",
+                "scopes": ["openid", "profile", "email"],
                 "pkce_required": True,
             },
         )

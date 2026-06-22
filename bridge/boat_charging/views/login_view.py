@@ -6,8 +6,6 @@ from rest_framework.response import Response
 
 from bridge.boat_charging.serializers.login_serializers import (
     GuestLoginResponseSerializer,
-)
-from bridge.boat_charging.serializers.oidc_settings_serializers import (
     OIDCSettingsResponseSerializer,
 )
 from bridge.boat_charging.views.base_view import (
@@ -54,7 +52,10 @@ class OIDCSettingsView(BaseView):
 
     def get_response_data(self) -> dict[str, str | list[str] | bool | None]:
         return {
-            "cognito_user_pool_id": settings.NRG_USER_POOL,
-            "cognito_user_pool_client_id": settings.NRG_CLIENT_ID,
+            "user_pool_id": settings.BOAT_CHARGING_USER_POOL,
+            "client_id": settings.BOAT_CHARGING_CLIENT_ID,
+            "issuer": f"https://cognito-idp.{settings.BOAT_CHARGING_REGION}.amazonaws.com/{settings.BOAT_CHARGING_USER_POOL}",
+            "redirect_url": settings.BOAT_CHARGING_REDIRECT_URL,
+            "scopes": settings.BOAT_CHARGING_SCOPES,
             "pkce_required": settings.BOAT_CHARGING_OIDC_PKCE_REQUIRED,
         }

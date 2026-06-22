@@ -72,8 +72,16 @@ BOAT_CHARGING_OAUTH_URL = os.getenv(
 )
 BOAT_CHARGING_OAUTH_ID = os.getenv("EVINITY_OAUTH_CLIENT_ID", "")
 BOAT_CHARGING_OAUTH_SECRET = os.getenv("EVINITY_OAUTH_CLIENT_SECRET", "")
-NRG_CLIENT_ID = os.getenv("NRG_CLIENT_ID")
-NRG_USER_POOL = os.getenv("NRG_USER_POOL")
+BOAT_CHARGING_CLIENT_ID = os.getenv("NRG_CLIENT_ID")
+BOAT_CHARGING_USER_POOL = os.getenv("NRG_USER_POOL")
+BOAT_CHARGING_REGION = os.getenv("NRG_REGION", "eu-west-1")
+BOAT_CHARGING_REDIRECT_URL = os.getenv(
+    "BOAT_CHARGING_REDIRECT_URL", "https://test.app.amsterdam.nl"
+)
+BOAT_CHARGING_SCOPES = eval(
+    os.getenv("BOAT_CHARGING_SCOPES", '["openid", "profile", "email"]')
+)
+assert type(BOAT_CHARGING_SCOPES) is list
 BOAT_CHARGING_OIDC_PKCE_REQUIRED = (
     os.getenv("BOAT_CHARGING_OIDC_PKCE_REQUIRED", "true").lower() == "true"
 )
