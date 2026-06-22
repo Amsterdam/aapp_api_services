@@ -41,8 +41,8 @@ class TestGuestLoginView(BoatChargingTestCase):
 
 
 OIDC_SETTINGS = {
-    "NRG_CLIENT_ID": "nrg-client-a",
-    "NRG_USER_POOL": "eu-west-1_user-pool-a",
+    "BOAT_CHARGING_CLIENT_ID": "nrg-client-a",
+    "BOAT_CHARGING_USER_POOL": "eu-west-1_user-pool-a",
     "BOAT_CHARGING_REDIRECT_URL": "https://test.app.amsterdam.nl",
     "BOAT_CHARGING_SCOPES": ["openid", "profile", "email"],
     "BOAT_CHARGING_OIDC_PKCE_REQUIRED": True,

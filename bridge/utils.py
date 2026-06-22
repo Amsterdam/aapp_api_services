@@ -1,5 +1,4 @@
 import requests
-import shapely
 from django.conf import settings
 
 from core.utils.caching_utils import cache_function
@@ -13,6 +12,8 @@ def load_postal_area_shapes():
     - for each postal code:
         - save shape to dict
     """
+    from shapely.geometry import shape
+
     url = settings.BURNING_GUIDE_AMSTERDAM_MAPS_URL
     params = {"KAARTLAAG": "PC4_BUURTEN", "THEMA": "postcode"}
     response = requests.get(url, params=params)
@@ -25,7 +26,7 @@ def load_postal_area_shapes():
     for postal_code_features in postal_codes_raw:
         # get postal code and geometry
         postal_code = postal_code_features["properties"]["Postcode4"]
-        polygon_object = shapely.geometry.shape(postal_code_features["geometry"])
+        polygon_object = shape(postal_code_features["geometry"])
 
         # add polygon_object to final dict
         final_dict[postal_code] = polygon_object
