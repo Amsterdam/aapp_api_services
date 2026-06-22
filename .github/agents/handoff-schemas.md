@@ -10,6 +10,8 @@ These named contracts are required by the Orchestrator. Every major handoff must
 
 ## Schema Catalog
 
+- `H0 Story Planning Request`: Orchestrator to Story Plan planning handoff.
+- `H0 Story Planning Result`: Story Plan back to Orchestrator planning result.
 - `H1 Canonical Work Item Brief`: Orchestrator canonical record and downstream source brief.
 - `H2 Developer Request`: Orchestrator to Developer implementation handoff.
 - `H3 Developer Result`: Developer back to Orchestrator implementation result.
@@ -17,6 +19,32 @@ These named contracts are required by the Orchestrator. Every major handoff must
 - `H5 Review Result`: Reviewer back to Orchestrator review result.
 - `H6 Test Request`: Orchestrator to Tester blinded validation handoff.
 - `H7 Test Result`: Tester back to Orchestrator test result.
+
+## H0 Story Planning Request
+
+Use for the approved planning handoff from Orchestrator to Story Plan.
+
+Required fields:
+
+- `schema`: `H0 Story Planning Request`
+- `canonical_work_item`
+- `original_story`
+- `planning_goal`
+- `planning_constraints`
+
+## H0 Story Planning Result
+
+Use for the Story Plan handoff back to Orchestrator after it has created or updated `plan.md`.
+
+Required fields:
+
+- `schema`: `H0 Story Planning Result`
+- `plan_status`
+- `plan_md_file`
+- `plan_summary`
+- `open_questions`
+- `assumptions_recorded`
+- `known_risks`
 
 ## H1 Canonical Work Item Brief
 
@@ -42,7 +70,7 @@ Required fields:
 - `schema`: `H2 Developer Request`
 - `canonical_work_item`
 - `original_work_item`
-- `plan.md file from the Plan agent`
+- `plan.md file from the Story Plan agent`
 - `original_git_hash`
 - `relevant_codebase_context`
 - `implementation_constraints`
