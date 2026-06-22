@@ -5,7 +5,7 @@ from model_bakery import baker
 
 from core.services.waste_device import WasteDeviceService
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import WasteDevice
+from notification.models import Device, WasteDevice
 
 
 class TestWasteDeviceService(ResponsesActivatedAPITestCase):
@@ -13,7 +13,14 @@ class TestWasteDeviceService(ResponsesActivatedAPITestCase):
         super().setUp()
         self.service = WasteDeviceService()
 
+    def _create_device(self, external_id):
+        return baker.make(
+            Device, external_id=external_id, os="ios", firebase_token=None
+        )
+
     def test_get_device_ids(self):
+        self._create_device("device_1")
+        self._create_device("device_2")
         device_1 = baker.make(WasteDevice, device_id="device_1")
         device_2 = baker.make(WasteDevice, device_id="device_2")
 
@@ -22,6 +29,8 @@ class TestWasteDeviceService(ResponsesActivatedAPITestCase):
         self.assertIn(device_2.device_id, result)
 
     def test_bulk_create_waste_devices(self):
+        self._create_device("device_3")
+        self._create_device("device_4")
         waste_device_1 = self.service.define_waste_device_instance(
             device_id="device_3",
             bag_nummeraanduiding_id="123",
@@ -39,6 +48,8 @@ class TestWasteDeviceService(ResponsesActivatedAPITestCase):
         self.assertTrue(WasteDevice.objects.filter(device_id="device_4").exists())
 
     def test_get_outdated_waste_devices(self):
+        self._create_device("outdated_device")
+        self._create_device("up_to_date_device")
         outdated_device = baker.make(
             WasteDevice,
             device_id="outdated_device",
@@ -60,6 +71,7 @@ class TestWasteDeviceService(ResponsesActivatedAPITestCase):
         self.assertNotIn(up_to_date_device, result)
 
     def test_get_outdated_no_id_waste_devices(self):
+        self._create_device("outdated_device")
         outdated_device = baker.make(
             WasteDevice,
             device_id="outdated_device",
@@ -74,6 +86,7 @@ class TestWasteDeviceService(ResponsesActivatedAPITestCase):
         self.assertNotIn(outdated_device, result)
 
     def test_update_waste_device(self):
+        self._create_device("device_to_update")
         device = baker.make(
             WasteDevice,
             device_id="device_to_update",

@@ -1,4 +1,5 @@
 import datetime
+from unittest.mock import patch
 
 import freezegun
 from django.conf import settings
@@ -18,8 +19,11 @@ from core.tests.test_authentication import (
 from notification.models import (
     BurningGuideDevice,
     Device,
+    Notification,
+    NotificationLast,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
+    ScheduledNotification,
     WasteDevice,
 )
 
@@ -131,6 +135,147 @@ class TestDeviceRegisterView(AuthenticatedAPITestCase):
         data = {"firebase_token": "0", "os": "ios"}
         response = self.client.post(self.url, data, headers=self.api_headers)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TestDeviceDeleteView(AuthenticatedAPITestCase):
+    authentication_class = APIKeyAuthentication
+
+    def setUp(self):
+        super().setUp()
+        self.device_id = "test-device-delete"
+        self.url = reverse("notification-delete-device")
+        self.headers_with_device_id = {
+            settings.HEADER_DEVICE_ID: self.device_id,
+            **self.api_headers,
+        }
+
+    def test_delete_device_and_related_data_success(self):
+        device = baker.make(
+            Device,
+            external_id=self.device_id,
+            firebase_token="delete-me-token",
+            os="ios",
+        )
+        baker.make(
+            Notification,
+            device=device,
+            module_slug="waste",
+            notification_type="waste:reminder",
+        )
+        scheduled_notification = baker.make(
+            ScheduledNotification,
+            module_slug="waste",
+            notification_type="waste:reminder",
+        )
+        scheduled_notification.devices.add(device)
+        baker.make(
+            NotificationPushTypeDisabled,
+            device=device,
+            notification_type="waste:reminder",
+        )
+        baker.make(
+            NotificationPushModuleDisabled,
+            device=device,
+            module_slug="waste",
+        )
+        baker.make(
+            NotificationLast,
+            device=device,
+            module_slug="waste",
+            notification_scope="waste:reminder",
+        )
+        baker.make(
+            WasteDevice,
+            device_id=self.device_id,
+            bag_nummeraanduiding_id="bag-123",
+        )
+        baker.make(
+            BurningGuideDevice,
+            device_id=self.device_id,
+            postal_code="1091",
+        )
+
+        response = self.client.delete(self.url, headers=self.headers_with_device_id)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Device.objects.filter(external_id=self.device_id).exists())
+        self.assertFalse(
+            Notification.objects.filter(device_external_id=self.device_id).exists()
+        )
+        self.assertFalse(
+            ScheduledNotification.objects.filter(
+                devices__external_id=self.device_id
+            ).exists()
+        )
+        self.assertFalse(
+            NotificationPushTypeDisabled.objects.filter(
+                device__external_id=self.device_id
+            ).exists()
+        )
+        self.assertFalse(
+            NotificationPushModuleDisabled.objects.filter(
+                device__external_id=self.device_id
+            ).exists()
+        )
+        self.assertFalse(
+            NotificationLast.objects.filter(device__external_id=self.device_id).exists()
+        )
+        self.assertFalse(WasteDevice.objects.filter(device_id=self.device_id).exists())
+        self.assertFalse(
+            BurningGuideDevice.objects.filter(device_id=self.device_id).exists()
+        )
+
+    def test_delete_device_is_idempotent(self):
+        baker.make(
+            Device,
+            external_id=self.device_id,
+            firebase_token="delete-me-token",
+            os="ios",
+        )
+
+        first_response = self.client.delete(
+            self.url, headers=self.headers_with_device_id
+        )
+        second_response = self.client.delete(
+            self.url, headers=self.headers_with_device_id
+        )
+
+        self.assertEqual(first_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(second_response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_delete_unknown_device_is_not_blocking(self):
+        response = self.client.delete(self.url, headers=self.headers_with_device_id)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_delete_device_removes_orphan_scheduled_notification_record(self):
+        device = baker.make(
+            Device,
+            external_id=self.device_id,
+            firebase_token="delete-me-token",
+            os="ios",
+        )
+        scheduled_notification = baker.make(
+            ScheduledNotification,
+            module_slug="waste",
+            notification_type="waste:reminder",
+        )
+        scheduled_notification.devices.add(device)
+
+        response = self.client.delete(self.url, headers=self.headers_with_device_id)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(
+            ScheduledNotification.objects.filter(id=scheduled_notification.id).exists()
+        )
+
+    @patch("notification.views.device_views.Device.objects.filter")
+    def test_delete_device_returns_explicit_fail_contract(self, mock_device_filter):
+        mock_device_filter.side_effect = Exception("forced delete failure")
+
+        response = self.client.delete(self.url, headers=self.headers_with_device_id)
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class TestNotificationPushDisabledView(AuthenticatedAPITestCase):
@@ -475,7 +620,7 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         super().setUp()
         self.url = reverse("waste-guide-notification")
         self.device_id = "test-device-id"
-        self.api_headers["DeviceId"] = self.device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = self.device_id
 
     def test_success(self):
         payload = {
@@ -523,6 +668,7 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         )
 
     def test_update_missing_body_returns_validation_error(self):
+        Device.objects.create(external_id=self.device_id)
         WasteDevice.objects.create(
             bag_nummeraanduiding_id="old",
             device_id=self.device_id,
@@ -535,10 +681,13 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         )
 
     def test_retrieve_success(self):
+        # first create a record to retrieve via post request
+        Device.objects.create(external_id=self.device_id)
         self.notification = WasteDevice.objects.create(
             bag_nummeraanduiding_id="1091",
-            device_id="test-device-id",
+            device_id=self.device_id,
         )
+
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
 
@@ -569,7 +718,7 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
     def test_delete_success(self):
         self.notification = WasteDevice.objects.create(
             bag_nummeraanduiding_id="1091",
-            device_id="test-device-id",
+            device_id=self.device_id,
         )
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 204)
@@ -587,7 +736,7 @@ class TestBurningGuideDeviceView(ResponsesActivatedAPITestCase):
         super().setUp()
         self.url = reverse("burning-guide-notification")
         self.device_id = "test-device-id"
-        self.api_headers["DeviceId"] = self.device_id
+        self.api_headers[settings.HEADER_DEVICE_ID] = self.device_id
 
     def test_success(self):
         payload = {
@@ -607,9 +756,10 @@ class TestBurningGuideDeviceView(ResponsesActivatedAPITestCase):
         self.assertEqual(notification_records.count(), 0)
 
     def test_retrieve_success(self):
+        Device.objects.create(external_id=self.device_id)
         self.notification = BurningGuideDevice.objects.create(
             postal_code="1091",
-            device_id="test-device-id",
+            device_id=self.device_id,
         )
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)

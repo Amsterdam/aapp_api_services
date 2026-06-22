@@ -10,7 +10,7 @@ from model_bakery import baker
 
 from bridge.management.commands.sendburningguidenotifications import Command
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import BurningGuideDevice, ScheduledNotification
+from notification.models import BurningGuideDevice, Device, ScheduledNotification
 
 tz = ZoneInfo(settings.TIME_ZONE)
 
@@ -24,6 +24,8 @@ class TestCommand(ResponsesActivatedAPITestCase):
             ("device3", "5678"),
             ("device4", None),
         ]
+        for device_id, _ in self.zipped_devices:
+            baker.make(Device, external_id=device_id, os="ios", firebase_token=None)
         self.notifications = [
             baker.make(BurningGuideDevice, postal_code=postal_code, device_id=device_id)
             for device_id, postal_code in self.zipped_devices

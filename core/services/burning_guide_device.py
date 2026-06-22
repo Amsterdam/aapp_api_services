@@ -3,7 +3,7 @@ from datetime import datetime
 from django.db.models import Q
 from django.utils import timezone
 
-from notification.models import BurningGuideDevice
+from notification.models import BurningGuideDevice, Device
 
 
 class BurningGuideDeviceService:
@@ -14,6 +14,22 @@ class BurningGuideDeviceService:
         self, burning_guide_devices: list[BurningGuideDevice]
     ) -> None:
         BurningGuideDevice.objects.bulk_create(burning_guide_devices)
+
+    def ensure_devices_exist(self, device_ids: list[str]) -> None:
+        existing_external_ids = set(
+            Device.objects.filter(external_id__in=device_ids).values_list(
+                "external_id", flat=True
+            )
+        )
+        missing_external_ids = set(device_ids) - existing_external_ids
+        if missing_external_ids:
+            Device.objects.bulk_create(
+                [
+                    Device(external_id=external_id, os="unknown")
+                    for external_id in missing_external_ids
+                ],
+                ignore_conflicts=True,
+            )
 
     def define_burning_guide_device_instance(
         self, device_id: str, postal_code: str, send_at: datetime | None

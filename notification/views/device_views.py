@@ -1,3 +1,5 @@
+from django.db import transaction
+from django.db.models import Count
 from drf_spectacular.utils import OpenApiExample
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -11,10 +13,12 @@ from notification.models import (
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
+    ScheduledNotification,
     WasteDevice,
 )
 from notification.serializers.device_serializers import (
     BurningGuideDeviceRequestSerializer,
+    DeviceDeleteErrorResponseSerializer,
     DeviceRegisterRequestSerializer,
     DeviceRegisterResponseSerializer,
     WasteDeviceRequestSerializer,
@@ -72,6 +76,43 @@ class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
         device.save()
 
         return Response("Registration removed", status=status.HTTP_200_OK)
+
+
+class DeviceDeleteView(DeviceIdMixin, generics.GenericAPIView):
+    """Permanently delete a device and all related notification records."""
+
+    @extend_schema_for_device_id(
+        success_response=None,
+        success_status_code=204,
+        additional_responses={500: DeviceDeleteErrorResponseSerializer},
+    )
+    def delete(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                sheduled_notification_ids = list(
+                    ScheduledNotification.objects.filter(
+                        devices__external_id=self.device_id
+                    ).values_list("id", flat=True)
+                )
+
+                Device.objects.filter(external_id=self.device_id).delete()
+
+                if sheduled_notification_ids:
+                    ScheduledNotification.objects.filter(
+                        id__in=sheduled_notification_ids
+                    ).annotate(device_count=Count("devices")).filter(
+                        device_count=0
+                    ).delete()
+        except Exception:
+            return Response(
+                data={
+                    "status": "error",
+                    "message": "Failed to delete device",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class NotificationPushTypeDisabledView(DeviceIdMixin, generics.GenericAPIView):

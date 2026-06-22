@@ -8,7 +8,7 @@ from freezegun import freeze_time
 from model_bakery import baker
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import WasteDevice
+from notification.models import Device, WasteDevice
 from waste.management.commands.sendwastenotifications import Command
 from waste.models import WasteCollectionException, WasteCollectionRouteName
 from waste.tests.mock_data import (
@@ -29,6 +29,15 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
     For all these frequencies we have a testcase where the notification should be send
     and a testcase where the notification should not be send.
     """
+
+    def _make_waste_device(self, device_id, bag_nummeraanduiding_id, updated_at):
+        baker.make(Device, external_id=device_id, os="ios", firebase_token=None)
+        return baker.make(
+            WasteDevice,
+            device_id=device_id,
+            bag_nummeraanduiding_id=bag_nummeraanduiding_id,
+            updated_at=updated_at,
+        )
 
     @freeze_time("2025-03-31")
     def test_should_send_notifications_run_no_exception(
@@ -70,9 +79,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         self, mock_call_notification_service
     ):
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_none.MOCK_DATA)
-        schedule = baker.make(
-            WasteDevice, bag_nummeraanduiding_id="12345", updated_at=None
-        )
+        schedule = self._make_waste_device("device-weekly-1", "12345", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
@@ -92,7 +99,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
             affected_routes=[exception_route_name_instance],
         )
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_none.MOCK_DATA)
-        baker.make(WasteDevice, bag_nummeraanduiding_id="12345", updated_at=None)
+        self._make_waste_device("device-weekly-2", "12345", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_not_called()
 
@@ -109,9 +116,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         self, mock_call_notification_service
     ):
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_four_weeks.MOCK_DATA)
-        schedule = baker.make(
-            WasteDevice, bag_nummeraanduiding_id="12345", updated_at=None
-        )
+        schedule = self._make_waste_device("device-four-week-1", "12345", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
@@ -133,9 +138,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         responses.get(
             settings.WASTE_GUIDE_URL, json=frequency_hardcoded_with_year.MOCK_DATA
         )
-        schedule = baker.make(
-            WasteDevice, bag_nummeraanduiding_id="bagId", updated_at=None
-        )
+        schedule = self._make_waste_device("device-year-1", "bagId", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
@@ -159,9 +162,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         responses.get(
             settings.WASTE_GUIDE_URL, json=frequency_hardcoded_wo_year.MOCK_DATA
         )
-        schedule = baker.make(
-            WasteDevice, bag_nummeraanduiding_id="bagId", updated_at=None
-        )
+        schedule = self._make_waste_device("device-yearless-1", "bagId", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
@@ -183,7 +184,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         self, mock_call_notification_service
     ):
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_monthly.MOCK_DATA)
-        schedule = baker.make(WasteDevice, bag_nummeraanduiding_id="x", updated_at=None)
+        schedule = self._make_waste_device("device-monthly-1", "x", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
@@ -203,7 +204,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
             affected_routes=[exception_route_name_instance],
         )
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_monthly.MOCK_DATA)
-        baker.make(WasteDevice, bag_nummeraanduiding_id="x", updated_at=None)
+        self._make_waste_device("device-monthly-2", "x", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_not_called()
 
@@ -220,9 +221,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         self, mock_call_notification_service
     ):
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly_oneven.MOCK_DATA)
-        schedule = baker.make(
-            WasteDevice, bag_nummeraanduiding_id="1234", updated_at=None
-        )
+        schedule = self._make_waste_device("device-even-1", "1234", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
@@ -242,9 +241,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
         self, mock_call_notification_service
     ):
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly_oneven.MOCK_DATA)
-        schedule = baker.make(
-            WasteDevice, bag_nummeraanduiding_id="1234", updated_at=None
-        )
+        schedule = self._make_waste_device("device-odd-1", "1234", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_called_with(
             device_ids=[schedule.device_id],
@@ -264,7 +261,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
             affected_routes=[exception_route_name_instance],
         )
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly_oneven.MOCK_DATA)
-        baker.make(WasteDevice, bag_nummeraanduiding_id="1234", updated_at=None)
+        self._make_waste_device("device-odd-2", "1234", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_not_called()
 
@@ -274,7 +271,7 @@ class SendWasteNotificationsTest(ResponsesActivatedAPITestCase):
     ):
         baker.make(WasteCollectionException, date="2026-03-09")
         responses.get(settings.WASTE_GUIDE_URL, json=frequency_weekly_oneven.MOCK_DATA)
-        baker.make(WasteDevice, bag_nummeraanduiding_id="1234", updated_at=None)
+        self._make_waste_device("device-odd-3", "1234", None)
         call_command("sendwastenotifications")
         mock_call_notification_service.assert_not_called()
 
