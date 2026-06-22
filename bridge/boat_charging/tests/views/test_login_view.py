@@ -41,12 +41,10 @@ class TestGuestLoginView(BoatChargingTestCase):
 
 
 OIDC_SETTINGS = {
-    "BOAT_CHARGING_OIDC_ISSUER": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_issuer-a",
-    "BOAT_CHARGING_OIDC_DISCOVERY_URL": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_issuer-a/.well-known/openid-configuration",
-    "BOAT_CHARGING_OIDC_CLIENT_ID": "boat-charging-client-a",
-    "BOAT_CHARGING_OIDC_REDIRECT_URI": "amsterdamapp://oauth/callback",
-    "BOAT_CHARGING_OIDC_SCOPES": ["openid", "profile", "email"],
-    "BOAT_CHARGING_OIDC_RESPONSE_TYPE": "code",
+    "BOAT_CHARGING_CLIENT_ID": "nrg-client-a",
+    "BOAT_CHARGING_USER_POOL": "eu-west-1_user-pool-a",
+    "BOAT_CHARGING_REDIRECT_URL": "https://test.app.amsterdam.nl",
+    "BOAT_CHARGING_SCOPES": ["openid", "profile", "email"],
     "BOAT_CHARGING_OIDC_PKCE_REQUIRED": True,
 }
 
@@ -68,12 +66,11 @@ class TestOIDCSettingsView(BoatChargingTestCase):
         self.assertEqual(
             response.data,
             {
-                "issuer": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_issuer-a",
-                "discovery_url": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_issuer-a/.well-known/openid-configuration",
-                "client_id": "boat-charging-client-a",
-                "redirect_uri": "amsterdamapp://oauth/callback",
+                "user_pool_id": "eu-west-1_user-pool-a",
+                "client_id": "nrg-client-a",
+                "issuer": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_user-pool-a",
+                "redirect_url": "https://test.app.amsterdam.nl",
                 "scopes": ["openid", "profile", "email"],
-                "response_type": "code",
                 "pkce_required": True,
             },
         )
