@@ -18,8 +18,8 @@ http:
     type: json
     data: |-
       {
-        "stationId": "VCPS-7BMY2",
-        "socketNumber": "17",
+        "stationId": "VCPS-IFZTY",
+        "socketNumber": "1",
         "name": "Test User",
         "email": "user@example.com",
         "returnUrl": "https://yourdomain.com/app/sessions"
