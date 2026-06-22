@@ -1,0 +1,233 @@
+info:
+  name: parking_api_v1_balance_confirm_create
+  type: http
+  seq: 3
+  tags:
+    - parking
+
+http:
+  method: POST
+  url: "{{baseUrl}}/parking/api/v1/balance-confirm"
+  headers:
+    - name: DeviceId
+      value: ""
+    - name: SSP-Access-Token
+      value: ""
+      description: SSP Access Token
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "order_id": "",
+        "status": "",
+        "signature": ""
+      }
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: No response body
+    request:
+      url: "{{baseUrl}}/parking/api/v1/balance-confirm"
+      method: POST
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "order_id": "",
+            "status": "",
+            "signature": ""
+          }
+    response:
+      status: 200
+      statusText: OK
+      body:
+        type: text
+        data: ""
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/balance-confirm"
+      method: POST
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "order_id": "",
+            "status": "",
+            "signature": ""
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_CALL_ERROR",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/balance-confirm"
+      method: POST
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "order_id": "",
+            "status": "",
+            "signature": ""
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_MISSING_SSL_API_KEY",
+            "detail": ""
+          }
+  - name: 403 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/balance-confirm"
+      method: POST
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "order_id": "",
+            "status": "",
+            "signature": ""
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_FORBIDDEN",
+            "detail": ""
+          }
+  - name: 422 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/balance-confirm"
+      method: POST
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "order_id": "",
+            "status": "",
+            "signature": ""
+          }
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_PERMIT_NOT_FOUND",
+            "detail": ""
+          }
+  - name: 500 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/balance-confirm"
+      method: POST
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: SSP-Access-Token
+          value: ""
+          description: SSP Access Token
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "order_id": "",
+            "status": "",
+            "signature": ""
+          }
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_SOURCE_RESPONSE_ERROR",
+            "detail": ""
+          }
+
+docs: Top up wallet via SSP API

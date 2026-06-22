@@ -1,0 +1,27 @@
+info:
+  name: Session start
+  type: http
+  seq: 9
+
+http:
+  method: POST
+  url: "{{NRG_base_url}}/sessions/:id/start"
+  headers:
+    - name: User-Agent
+      value: Mozilla/5.0
+    - name: Accept
+      value: application/json, text/plain, */*
+    - name: Authorization
+      value: "{{token}}"
+      disabled: true
+  params:
+    - name: id
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

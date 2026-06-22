@@ -1,0 +1,95 @@
+info:
+  name: device_disabled_push_types_list
+  type: http
+  seq: 9
+  tags:
+    - device
+
+http:
+  method: GET
+  url: "{{baseUrl}}/notification/api/v1/device/disabled_push_types"
+  headers:
+    - name: DeviceId
+      value: ""
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: Example 1
+    request:
+      url: "{{baseUrl}}/notification/api/v1/device/disabled_push_types"
+      method: GET
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          [
+            "push-type-1"
+          ]
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/notification/api/v1/device/disabled_push_types"
+      method: GET
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "MISSING_DEVICE_ID",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/notification/api/v1/device/disabled_push_types"
+      method: GET
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }
+
+docs: List all enabled push types for a device.

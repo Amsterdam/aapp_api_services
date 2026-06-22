@@ -1,0 +1,33 @@
+info:
+  name: Session post
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{NRG_base_url}}/sessions"
+  headers:
+    - name: User-Agent
+      value: Mozilla/5.0
+    - name: Accept
+      value: application/json, text/plain, */*
+    - name: Authorization
+      value: "{{token}}"
+      disabled: true
+  body:
+    type: json
+    data: |-
+      {
+        "stationId": "VCPS-7BMY2",
+        "socketNumber": "17",
+        "name": "Test User",
+        "email": "user@example.com",
+        "returnUrl": "https://yourdomain.com/app/sessions"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,25 @@
+info:
+  name: Bearer token
+  type: http
+  seq: 16
+
+http:
+  method: POST
+  url: https://evinity-infuse-staging.auth.eu-central-1.amazoncognito.com/oauth2/token
+  body:
+    type: form-urlencoded
+    data:
+      - name: grant_type
+        value: client_credentials
+      - name: scope
+        value: infuse/admin
+  auth:
+    type: basic
+    username:
+    password:
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

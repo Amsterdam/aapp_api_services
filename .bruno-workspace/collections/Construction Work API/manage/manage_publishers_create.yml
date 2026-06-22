@@ -1,0 +1,79 @@
+info:
+  name: manage_publishers_create
+  type: http
+  seq: 5
+  tags:
+    - manage
+
+http:
+  method: POST
+  url: "{{baseUrl}}/construction-work/api/v1/manage/publishers"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "",
+        "email": ""
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/manage/publishers"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "name": "",
+            "email": ""
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "id": 0,
+            "name": "",
+            "email": ""
+          }
+  - name: 403 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/manage/publishers"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "name": "",
+            "email": ""
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "permission_denied",
+            "detail": ""
+          }
+
+docs: Create a new project manager.

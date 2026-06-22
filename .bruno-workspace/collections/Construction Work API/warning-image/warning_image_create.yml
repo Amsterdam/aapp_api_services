@@ -1,0 +1,115 @@
+info:
+  name: warning_image_create
+  type: http
+  seq: 1
+  tags:
+    - warning-image
+
+http:
+  method: POST
+  url: "{{baseUrl}}/construction-work/api/v1/warning-image"
+  body:
+    type: multipart-form
+    data:
+      - name: image
+        type: file
+        value: []
+        description: Image file to upload
+      - name: description
+        type: text
+        value: ""
+        description: Optional description for the image
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: Example 1
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/warning-image"
+      method: POST
+      body:
+        type: multipart-form
+        data:
+          - name: image
+            type: file
+            value: []
+            description: Image file to upload
+          - name: description
+            type: text
+            value: ""
+            description: Optional description for the image
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "warning_image_id": 1
+          }
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/warning-image"
+      method: POST
+      body:
+        type: multipart-form
+        data:
+          - name: image
+            type: file
+            value: []
+            description: Image file to upload
+          - name: description
+            type: text
+            value: ""
+            description: Optional description for the image
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "invalid",
+            "detail": ""
+          }
+  - name: 403 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/warning-image"
+      method: POST
+      body:
+        type: multipart-form
+        data:
+          - name: image
+            type: file
+            value: []
+            description: Image file to upload
+          - name: description
+            type: text
+            value: ""
+            description: Optional description for the image
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "permission_denied",
+            "detail": ""
+          }

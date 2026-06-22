@@ -1,0 +1,45 @@
+info:
+  name: waste_guide_api_v1_search_retrieve
+  type: http
+  seq: 1
+  tags:
+    - waste-guide
+
+http:
+  method: GET
+  url: "{{baseUrl}}/waste-guide/api/v1/search"
+  params:
+    - name: bagNummeraanduidingId
+      value: ""
+      type: query
+      disabled: true
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/waste-guide/api/v1/search"
+      method: GET
+      params:
+        - name: bagNummeraanduidingId
+          value: ""
+          type: query
+          disabled: true
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "bagNummeraanduidingId": ""
+          }

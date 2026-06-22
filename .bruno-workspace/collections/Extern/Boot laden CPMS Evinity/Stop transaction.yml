@@ -1,0 +1,40 @@
+info:
+  name: Stop transaction
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{base_path}}/operator-api/charging-stations/:chargingStationId/stop-transaction"
+  params:
+    - name: includeTotal
+      value: "true"
+      type: query
+      disabled: true
+    - name: page
+      value: "0"
+      type: query
+      disabled: true
+    - name: size
+      value: "20"
+      type: query
+      disabled: true
+    - name: domainOnly
+      value: "false"
+      type: query
+      disabled: true
+    - name: chargingStationId
+      value: VCPS-7BMY3
+      type: path
+  auth: inherit
+
+runtime:
+  variables:
+    - name: base_path
+      value: https://cpms.service.staging.evinity.io/cpms/rest
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

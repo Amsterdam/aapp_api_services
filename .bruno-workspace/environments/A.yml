@@ -1,0 +1,6 @@
+name: A
+variables:
+  - secret: true
+    name: apiKey
+  - name: baseUrl
+    value: https://acc.app.amsterdam.nl

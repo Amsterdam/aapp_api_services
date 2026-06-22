@@ -1,0 +1,91 @@
+info:
+  name: session_logout_create
+  type: http
+  seq: 3
+  tags:
+    - session
+
+http:
+  method: POST
+  url: "{{baseUrl}}/city-pass/api/v1/session/logout"
+  auth:
+    type: apikey
+    key: Access-Token
+    value: "{{accessToken}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/city-pass/api/v1/session/logout"
+      method: POST
+      headers:
+        - name: Access-Token
+          value: ""
+          description: Access token for authentication
+        - name: Access-Token
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/city-pass/api/v1/session/logout"
+      method: POST
+      headers:
+        - name: Access-Token
+          value: ""
+          description: Access token for authentication
+        - name: Access-Token
+          value: "{{apiKey}}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "TOKEN_INVALID",
+            "detail": ""
+          }
+  - name: 412 Response
+    request:
+      url: "{{baseUrl}}/city-pass/api/v1/session/logout"
+      method: POST
+      headers:
+        - name: Access-Token
+          value: ""
+          description: Access token for authentication
+        - name: Access-Token
+          value: "{{apiKey}}"
+    response:
+      status: 412
+      statusText: Precondition Failed
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "TOKEN_NOT_READY",
+            "detail": ""
+          }

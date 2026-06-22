@@ -1,0 +1,96 @@
+info:
+  name: device_waste_destroy
+  type: http
+  seq: 14
+  tags:
+    - device
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/notification/api/v1/device/waste"
+  headers:
+    - name: DeviceId
+      value: ""
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/notification/api/v1/device/waste"
+      method: DELETE
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "status": "",
+            "message": ""
+          }
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/notification/api/v1/device/waste"
+      method: DELETE
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "MISSING_DEVICE_ID",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/notification/api/v1/device/waste"
+      method: DELETE
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }
+
+docs: Create/update, retrieve and delete the waste-notification schedule for a device.

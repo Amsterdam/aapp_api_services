@@ -1,0 +1,32 @@
+info:
+  name: bridge_api_v1_health_check_retrieve
+  type: http
+  seq: 1
+  tags:
+    - bridge
+
+http:
+  method: GET
+  url: "{{baseUrl}}/bridge/api/v1/health-check"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: No response body
+    request:
+      url: "{{baseUrl}}/bridge/api/v1/health-check"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      body:
+        type: text
+        data: ""
+
+docs: Health Check
