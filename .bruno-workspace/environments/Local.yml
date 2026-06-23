@@ -1,0 +1,6 @@
+name: Local
+variables:
+  - name: baseUrl
+    value: 127.0.0.1:8000
+  - name: apiKey
+    value: insecure1

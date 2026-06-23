@@ -23,13 +23,14 @@ class SessionInitView(BaseView):
     async def post(self, request, *args, **kwargs):
         request_data = SessionInitRequestSerializer(data=request.data)
         request_data.is_valid(raise_exception=True)
+        validated_data = request_data.validated_data
 
         request_transaction_payload = {
-            "stationId": request_data["station_id"],
-            "socketNumber": str(request_data["socker_number"]),
-            "name": request_data["name"],
-            "email": request_data["email"],
-            "returnUrl": request_data["return_url"],
+            "stationId": validated_data["station_id"],
+            "socketNumber": str(validated_data["socket_number"]),
+            "name": validated_data["name"],
+            "email": validated_data["email"],
+            "returnUrl": validated_data["return_url"],
         }
         endpoint = settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]
         response_json = await self.api_call(
@@ -39,7 +40,7 @@ class SessionInitView(BaseView):
         )
 
         serializer = SessionInitResponseSerializer(
-            data={"return_url": response_json["returnUrl"]}
+            data={"checkout_url": response_json["checkoutUrl"]}
         )
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)

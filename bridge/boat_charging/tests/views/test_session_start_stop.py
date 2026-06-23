@@ -28,7 +28,7 @@ class TestSessionInitView(BoatChargingTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
-        self.assertIsNotNone(response.data["return_url"])
+        self.assertIsNotNone(response.data["checkout_url"])
 
 
 class TestSessionStartView(BoatChargingTestCase):

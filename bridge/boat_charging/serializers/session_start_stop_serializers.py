@@ -10,4 +10,4 @@ class SessionInitRequestSerializer(serializers.Serializer):
 
 
 class SessionInitResponseSerializer(serializers.Serializer):
-    checkout_url = serializers.ListField(child=serializers.CharField())
+    checkout_url = serializers.URLField()
