@@ -17,7 +17,11 @@ http:
     type: json
     data: |-
       {
-        "evse_id": ""
+        "station_id": "VCPS-IFZTY",
+        "socket_number": "1",
+        "name": "Test User",
+        "email": "user@example.com",
+        "return_url": "https://yourdomain.com/app/sessions"
       }
   auth:
     type: apikey

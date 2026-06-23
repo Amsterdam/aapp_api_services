@@ -17,12 +17,6 @@ http:
     - name: session_id
       value: ""
       type: path
-  body:
-    type: json
-    data: |-
-      {
-        "evse_id": ""
-      }
   auth:
     type: apikey
     key: X-Api-Key

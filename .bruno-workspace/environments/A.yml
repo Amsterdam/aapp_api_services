@@ -4,3 +4,5 @@ variables:
     name: apiKey
   - name: baseUrl
     value: https://acc.app.amsterdam.nl
+  - secret: true
+    name: access-token

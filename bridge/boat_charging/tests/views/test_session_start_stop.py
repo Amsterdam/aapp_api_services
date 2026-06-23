@@ -30,6 +30,10 @@ class TestSessionInitView(BoatChargingTestCase):
         self.assertEqual(resp.call_count, 1)
         self.assertIsNotNone(response.data["checkout_url"])
 
+    def test_init_no_token_success(self):
+        self.api_headers.pop("access_token")
+        self.test_init_session_success()
+
 
 class TestSessionStartView(BoatChargingTestCase):
     def setUp(self):

@@ -11,11 +11,6 @@ from bridge.boat_charging.views import (
 BASE_PATH = "boat-charging/api/v1"
 urlpatterns = [
     path(
-        BASE_PATH + "/login/guest",
-        login_view.GuestLoginView.as_view(),
-        name="boat-charging-guest-login",
-    ),
-    path(
         BASE_PATH + "/oidc-settings",
         login_view.OIDCSettingsView.as_view(),
         name="boat-charging-oidc-settings",
