@@ -33,7 +33,7 @@ class LocationPropertiesSerializer(serializers.Serializer):
     name = serializers.CharField()
     address = AddressSerializer()
     opening_times = OpeningTimesSerializer()
-    # available_sockets = serializers.IntegerField()
+    available_sockets = serializers.IntegerField()
     total_sockets = serializers.IntegerField()
     status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES, required=False)
     max_kw = serializers.FloatField(required=False, allow_null=True)
