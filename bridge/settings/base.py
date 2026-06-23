@@ -87,7 +87,7 @@ BOAT_CHARGING_OIDC_PKCE_REQUIRED = (
 )
 
 BOAT_CHARGING_DOMAIN = os.getenv(
-    "BOAT_CHARGING_DOMAIN", "https://amsboatapp-tst.nrganext.nl/api"
+    "BOAT_CHARGING_DOMAIN", "https://amsboatapp-tst.nrganext.nl/api/"
 )
 BOAT_CHARGING_ENDPOINTS = {
     "LOCATIONS": urljoin(BOAT_CHARGING_DOMAIN, "locations"),
