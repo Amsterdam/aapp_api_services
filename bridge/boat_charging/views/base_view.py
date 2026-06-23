@@ -52,12 +52,11 @@ class BaseView(GenericAPIView):
             "User-Agent": "Mozilla/5.0",  # necessary to get through WAF
             # "X-Auth-Token": settings.API_KEY,
         }
-        if requires_access_token:
-            access_token = self.request.headers.get("Access-Token")
-            if access_token:
-                headers["Authorization"] = f"Bearer {access_token}"
-            else:
-                raise NotAuthenticated("No access token provided in request headers")
+        access_token = self.request.headers.get("Access-Token")
+        if access_token:
+            headers["Authorization"] = f"Bearer {access_token}"
+        elif requires_access_token:
+            raise NotAuthenticated("No access token provided in request headers")
 
         try:
             payload = await self.make_request(

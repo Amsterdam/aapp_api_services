@@ -15,7 +15,7 @@ class SessionInitView(BaseView):
     paginated = False
     serializer_class = SessionInitRequestSerializer
     response_serializer_class = SessionInitResponseSerializer
-    requires_access_token = False  # TODO: not required, but used when provided!
+    requires_access_token = False
 
     @boat_charging_openapi_decorator(
         response_serializer_class=SessionInitResponseSerializer,
@@ -48,7 +48,7 @@ class SessionInitView(BaseView):
 
 class SessionStartView(BaseView):
     paginated = False
-    requires_access_token = False  # TODO: not required, but used when provided!
+    requires_access_token = False
 
     async def post(self, request, *args, **kwargs):
         session_id = self.get_safe_path_param(kwargs["session_id"])
@@ -63,7 +63,7 @@ class SessionStartView(BaseView):
 
 class SessionStopView(BaseView):
     paginated = False
-    requires_access_token = False  # TODO: not required, but used when provided!
+    requires_access_token = False
 
     async def post(self, request, *args, **kwargs):
         session_id = self.get_safe_path_param(kwargs["session_id"])
