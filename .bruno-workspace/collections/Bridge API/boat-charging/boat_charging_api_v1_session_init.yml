@@ -1,18 +1,28 @@
 info:
-  name: boat_charging_api_v1_sessions_list
+  name: boat_charging_api_v1_session_init
   type: http
-  seq: 4
+  seq: 3
   tags:
     - boat-charging
 
 http:
-  method: GET
-  url: "{{baseUrl}}/boat-charging/api/v1/sessions"
+  method: POST
+  url: "{{baseUrl}}/boat-charging/api/v1/sessions/init"
   headers:
     - name: Access-Token
-      value: "{{access-token}}"
+      value: ""
     - name: X-Api-Key
       value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "station_id": "VCPS-IFZTY",
+        "socket_number": "1",
+        "name": "Test User",
+        "email": "user@example.com",
+        "return_url": "https://yourdomain.com/app/sessions"
+      }
   auth:
     type: apikey
     key: X-Api-Key
@@ -28,13 +38,23 @@ settings:
 examples:
   - name: 200 Response
     request:
-      url: "{{baseUrl}}/boat-charging/api/v1/sessions"
-      method: GET
+      url: "{{baseUrl}}/boat-charging/api/v1/session/:charging_station_id"
+      method: POST
       headers:
         - name: Access-Token
           value: ""
         - name: X-Api-Key
           value: "{{apiKey}}"
+      params:
+        - name: charging_station_id
+          value: ""
+          type: path
+      body:
+        type: json
+        data: |-
+          {
+            "evse_id": ""
+          }
     response:
       status: 200
       statusText: OK
@@ -44,28 +64,28 @@ examples:
       body:
         type: json
         data: |-
-          [
-            {
-              "id": "",
-              "start_date_time": "",
-              "end_date_time": "",
-              "kwh": 0,
-              "evse_uid": "",
-              "connector_id": "",
-              "total_cost": 0,
-              "currency": "USD",
-              "status": "ACTIVE"
-            }
-          ]
+          {
+            "transaction_ids": []
+          }
   - name: 400 Response
     request:
-      url: "{{baseUrl}}/boat-charging/api/v1/sessions"
-      method: GET
+      url: "{{baseUrl}}/boat-charging/api/v1/session/:charging_station_id"
+      method: POST
       headers:
         - name: Access-Token
           value: ""
         - name: X-Api-Key
           value: "{{apiKey}}"
+      params:
+        - name: charging_station_id
+          value: ""
+          type: path
+      body:
+        type: json
+        data: |-
+          {
+            "evse_id": ""
+          }
     response:
       status: 400
       statusText: Bad Request
@@ -81,13 +101,23 @@ examples:
           }
   - name: 401 Response
     request:
-      url: "{{baseUrl}}/boat-charging/api/v1/sessions"
-      method: GET
+      url: "{{baseUrl}}/boat-charging/api/v1/session/:charging_station_id"
+      method: POST
       headers:
         - name: Access-Token
           value: ""
         - name: X-Api-Key
           value: "{{apiKey}}"
+      params:
+        - name: charging_station_id
+          value: ""
+          type: path
+      body:
+        type: json
+        data: |-
+          {
+            "evse_id": ""
+          }
     response:
       status: 401
       statusText: Unauthorized
@@ -103,13 +133,23 @@ examples:
           }
   - name: 500 Response
     request:
-      url: "{{baseUrl}}/boat-charging/api/v1/sessions"
-      method: GET
+      url: "{{baseUrl}}/boat-charging/api/v1/session/:charging_station_id"
+      method: POST
       headers:
         - name: Access-Token
           value: ""
         - name: X-Api-Key
           value: "{{apiKey}}"
+      params:
+        - name: charging_station_id
+          value: ""
+          type: path
+      body:
+        type: json
+        data: |-
+          {
+            "evse_id": ""
+          }
     response:
       status: 500
       statusText: Internal Server Error

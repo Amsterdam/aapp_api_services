@@ -3,70 +3,71 @@ import respx
 from django.conf import settings
 from django.urls import reverse
 
-from bridge.boat_charging.tests.mock_data import (
-    charging_stations,
-    command_result,
-    start_transaction,
-    tokens,
-    transactions,
-)
+from bridge.boat_charging.tests.mock_data import init_session
 from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
 
 
-class TestSessionStartStopView(BoatChargingTestCase):
+class TestSessionInitView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
-        self.station_id = "foobar"
-        self.url = reverse(
-            "boat-charging-session-start-stop",
-            kwargs={"charging_station_id": self.station_id},
+        self.url = reverse("boat-charging-session-init")
+
+    def test_init_session_success(self):
+        resp = respx.post(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
+            return_value=httpx.Response(200, json=init_session.MOCK_RESPONSE)
         )
 
-    def test_start_transaction_success(self):
-        respx.get(settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]).mock(
-            return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE)
-        )
-        resp_token = respx.get(settings.BOAT_CHARGING_ENDPOINTS["TOKENS"]).mock(
-            return_value=httpx.Response(200, json=tokens.MOCK_RESPONSE)
-        )
-        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{self.station_id}/start-transaction"
-        resp_start = respx.post(endpoint).mock(
-            return_value=httpx.Response(200, json=start_transaction.MOCK_RESPONSE)
-        )
-        correlation_token = start_transaction.MOCK_RESPONSE["apiCorrelationToken"]
-        endpoint = (
-            f"{settings.BOAT_CHARGING_ENDPOINTS['COMMAND_RESULT']}/{correlation_token}"
-        )
-
-        resp_command = respx.get(endpoint).mock(
-            return_value=httpx.Response(200, json=command_result.MOCK_RESPONSE_ACCEPTED)
-        )
-        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['TRANSACTIONS']}"
-        resp_transactions = respx.get(endpoint).mock(
-            return_value=httpx.Response(200, json=transactions.MOCK_RESPONSE)
-        )
-
-        body = {"evse_id": "some_id", "token": "some_token_123"}
+        body = {
+            "station_id": "VCPS-IFZTY",
+            "socket_number": "1",
+            "name": "Test User",
+            "email": "user@example.com",
+            "return_url": "https://yourdomain.com/app/sessions",
+        }
         response = self.client.post(self.url, data=body, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(resp_token.call_count, 1)
-        self.assertEqual(resp_start.call_count, 1)
-        self.assertEqual(resp_command.call_count, 1)
-        self.assertEqual(resp_transactions.call_count, 1)
-        self.assertEqual(len(response.data["transaction_ids"]), 8)
+        self.assertEqual(resp.call_count, 1)
+        self.assertIsNotNone(response.data["checkout_url"])
 
-    def test_stop_transaction_success(self):
-        respx.get(settings.BOAT_CHARGING_ENDPOINTS["CHARGING_STATIONS"]).mock(
-            return_value=httpx.Response(200, json=charging_stations.MOCK_RESPONSE)
-        )
-        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['CHARGING_STATIONS']}/{self.station_id}/stop-transaction"
-        resp = respx.post(endpoint).mock(
-            return_value=httpx.Response(200, json=start_transaction.MOCK_RESPONSE)
+    def test_init_no_token_success(self):
+        self.api_headers.pop("access_token")
+        self.test_init_session_success()
+
+
+class TestSessionStartView(BoatChargingTestCase):
+    def setUp(self):
+        super().setUp()
+        self.session_id = "foobar"
+        self.url = reverse(
+            "boat-charging-session-start",
+            kwargs={"session_id": self.session_id},
         )
 
-        self.api_headers["transaction_id"] = "some_id_123"
-        response = self.client.delete(self.url, headers=self.api_headers)
+    def test_start_session_success(self):
+        url = f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{self.session_id}/start"
+        resp = respx.post(url).mock(return_value=httpx.Response(200, json={}))
+
+        response = self.client.post(self.url, data={}, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+
+
+class TestSessionStopView(BoatChargingTestCase):
+    def setUp(self):
+        super().setUp()
+        self.session_id = "foobar"
+        self.url = reverse(
+            "boat-charging-session-stop",
+            kwargs={"session_id": self.session_id},
+        )
+
+    def test_stop_session_success(self):
+        url = f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{self.session_id}/stop"
+        resp = respx.post(url).mock(return_value=httpx.Response(200, json={}))
+
+        response = self.client.post(self.url, data={}, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 204)
         self.assertEqual(resp.call_count, 1)

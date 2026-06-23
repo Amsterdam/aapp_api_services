@@ -1,4 +1,0 @@
-name: O
-variables:
-  - secret: true
-    name: access-token

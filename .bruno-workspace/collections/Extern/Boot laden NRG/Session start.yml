@@ -16,7 +16,7 @@ http:
       disabled: true
   params:
     - name: id
-      value: ""
+      value: dadf4fad-fa8e-4f05-ac99-9b07ae3fa75d
       type: path
   auth: inherit
 

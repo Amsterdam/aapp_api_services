@@ -87,20 +87,9 @@ BOAT_CHARGING_OIDC_PKCE_REQUIRED = (
 )
 
 BOAT_CHARGING_DOMAIN = os.getenv(
-    "BOAT_CHARGING_DOMAIN", "https://cpms.service.staging.evinity.io"
+    "BOAT_CHARGING_DOMAIN", "https://amsboatapp-tst.nrganext.nl/api/"
 )
 BOAT_CHARGING_ENDPOINTS = {
-    "LOCATIONS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/locations"),
-    "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/sessions"),
-    "TARIFFS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/tariffs"),
-    "CHARGING_STATIONS": urljoin(
-        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/charging-stations"
-    ),
-    "TRANSACTIONS": urljoin(
-        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/transactions"
-    ),
-    "TOKENS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/tokens"),
-    "COMMAND_RESULT": urljoin(
-        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/ocpp-command-results"
-    ),
+    "LOCATIONS": urljoin(BOAT_CHARGING_DOMAIN, "locations"),
+    "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "sessions"),
 }

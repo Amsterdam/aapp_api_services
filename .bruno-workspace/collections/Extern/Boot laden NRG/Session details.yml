@@ -16,7 +16,7 @@ http:
       disabled: true
   params:
     - name: id
-      value: foobar
+      value: 82621518-fc55-4213-8833-39404382f121
       type: path
   auth: inherit
 

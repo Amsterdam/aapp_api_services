@@ -1,29 +1,22 @@
 info:
-  name: boat_charging_api_v1_session_create
+  name: boat_charging_api_v1_session_stop
   type: http
-  seq: 4
+  seq: 7
   tags:
     - boat-charging
 
 http:
   method: POST
-  url: "{{baseUrl}}/boat-charging/api/v1/session/:charging_station_id"
+  url: "{{baseUrl}}/boat-charging/api/v1/sessions/:session_id/stop"
   headers:
     - name: Access-Token
       value: ""
-      description: EVinity Access Token
     - name: X-Api-Key
       value: "{{apiKey}}"
   params:
-    - name: charging_station_id
+    - name: session_id
       value: ""
       type: path
-  body:
-    type: json
-    data: |-
-      {
-        "evse_id": ""
-      }
   auth:
     type: apikey
     key: X-Api-Key
@@ -44,7 +37,6 @@ examples:
       headers:
         - name: Access-Token
           value: ""
-          description: EVinity Access Token
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -76,7 +68,6 @@ examples:
       headers:
         - name: Access-Token
           value: ""
-          description: EVinity Access Token
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -109,7 +100,6 @@ examples:
       headers:
         - name: Access-Token
           value: ""
-          description: EVinity Access Token
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -142,7 +132,6 @@ examples:
       headers:
         - name: Access-Token
           value: ""
-          description: EVinity Access Token
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:

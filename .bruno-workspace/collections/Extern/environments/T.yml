@@ -2,3 +2,5 @@ name: T
 variables:
   - name: NRG_base_url
     value: https://amsboatapp-tst.nrganext.nl/api
+  - secret: true
+    name: access-token

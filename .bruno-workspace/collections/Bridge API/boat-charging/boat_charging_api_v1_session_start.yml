@@ -1,23 +1,20 @@
 info:
-  name: boat_charging_api_v1_session_destroy
+  name: boat_charging_api_v1_session_start
   type: http
-  seq: 5
+  seq: 6
   tags:
     - boat-charging
 
 http:
-  method: DELETE
-  url: "{{baseUrl}}/boat-charging/api/v1/session/:charging_station_id"
+  method: POST
+  url: "{{baseUrl}}/boat-charging/api/v1/sessions/:session_id/start"
   headers:
     - name: Access-Token
-      value: ""
-      description: EVinity Access Token
-    - name: transaction_id
       value: ""
     - name: X-Api-Key
       value: "{{apiKey}}"
   params:
-    - name: charging_station_id
+    - name: session_id
       value: ""
       type: path
   auth:
@@ -34,15 +31,11 @@ settings:
 
 examples:
   - name: 200 Response
-    description: No response body
     request:
       url: "{{baseUrl}}/boat-charging/api/v1/session/:charging_station_id"
-      method: DELETE
+      method: POST
       headers:
         - name: Access-Token
-          value: ""
-          description: EVinity Access Token
-        - name: transaction_id
           value: ""
         - name: X-Api-Key
           value: "{{apiKey}}"
@@ -50,21 +43,30 @@ examples:
         - name: charging_station_id
           value: ""
           type: path
+      body:
+        type: json
+        data: |-
+          {
+            "evse_id": ""
+          }
     response:
       status: 200
       statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
       body:
-        type: text
-        data: ""
+        type: json
+        data: |-
+          {
+            "transaction_ids": []
+          }
   - name: 400 Response
     request:
       url: "{{baseUrl}}/boat-charging/api/v1/session/:charging_station_id"
-      method: DELETE
+      method: POST
       headers:
         - name: Access-Token
-          value: ""
-          description: EVinity Access Token
-        - name: transaction_id
           value: ""
         - name: X-Api-Key
           value: "{{apiKey}}"
@@ -72,6 +74,12 @@ examples:
         - name: charging_station_id
           value: ""
           type: path
+      body:
+        type: json
+        data: |-
+          {
+            "evse_id": ""
+          }
     response:
       status: 400
       statusText: Bad Request
@@ -88,12 +96,9 @@ examples:
   - name: 401 Response
     request:
       url: "{{baseUrl}}/boat-charging/api/v1/session/:charging_station_id"
-      method: DELETE
+      method: POST
       headers:
         - name: Access-Token
-          value: ""
-          description: EVinity Access Token
-        - name: transaction_id
           value: ""
         - name: X-Api-Key
           value: "{{apiKey}}"
@@ -101,6 +106,12 @@ examples:
         - name: charging_station_id
           value: ""
           type: path
+      body:
+        type: json
+        data: |-
+          {
+            "evse_id": ""
+          }
     response:
       status: 401
       statusText: Unauthorized
@@ -117,12 +128,9 @@ examples:
   - name: 500 Response
     request:
       url: "{{baseUrl}}/boat-charging/api/v1/session/:charging_station_id"
-      method: DELETE
+      method: POST
       headers:
         - name: Access-Token
-          value: ""
-          description: EVinity Access Token
-        - name: transaction_id
           value: ""
         - name: X-Api-Key
           value: "{{apiKey}}"
@@ -130,6 +138,12 @@ examples:
         - name: charging_station_id
           value: ""
           type: path
+      body:
+        type: json
+        data: |-
+          {
+            "evse_id": ""
+          }
     response:
       status: 500
       statusText: Internal Server Error

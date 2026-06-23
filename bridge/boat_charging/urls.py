@@ -11,11 +11,6 @@ from bridge.boat_charging.views import (
 BASE_PATH = "boat-charging/api/v1"
 urlpatterns = [
     path(
-        BASE_PATH + "/login/guest",
-        login_view.GuestLoginView.as_view(),
-        name="boat-charging-guest-login",
-    ),
-    path(
         BASE_PATH + "/oidc-settings",
         login_view.OIDCSettingsView.as_view(),
         name="boat-charging-oidc-settings",
@@ -36,14 +31,24 @@ urlpatterns = [
         name="boat-charging-sessions",
     ),
     path(
+        BASE_PATH + "/sessions/init",
+        session_start_stop.SessionInitView.as_view(),
+        name="boat-charging-session-init",
+    ),
+    path(
         BASE_PATH + "/sessions/<str:session_id>",
         session_view.SessionDetailView.as_view(),
         name="boat-charging-session-detail",
     ),
     path(
-        BASE_PATH + "/session/<str:charging_station_id>",
-        session_start_stop.SessionStartStopView.as_view(),
-        name="boat-charging-session-start-stop",
+        BASE_PATH + "/sessions/<str:session_id>/start",
+        session_start_stop.SessionStartView.as_view(),
+        name="boat-charging-session-start",
+    ),
+    path(
+        BASE_PATH + "/sessions/<str:session_id>/stop",
+        session_start_stop.SessionStopView.as_view(),
+        name="boat-charging-session-stop",
     ),
     path(
         BASE_PATH + "/terms",

@@ -1,7 +1,7 @@
 info:
   name: boat_charging_api_v1_sessions_retrieve
   type: http
-  seq: 7
+  seq: 5
   tags:
     - boat-charging
 
@@ -11,7 +11,6 @@ http:
   headers:
     - name: Access-Token
       value: ""
-      description: EVinity Access Token
     - name: X-Api-Key
       value: "{{apiKey}}"
   params:
@@ -38,7 +37,6 @@ examples:
       headers:
         - name: Access-Token
           value: ""
-          description: EVinity Access Token
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -103,7 +101,6 @@ examples:
       headers:
         - name: Access-Token
           value: ""
-          description: EVinity Access Token
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -130,7 +127,6 @@ examples:
       headers:
         - name: Access-Token
           value: ""
-          description: EVinity Access Token
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -157,7 +153,6 @@ examples:
       headers:
         - name: Access-Token
           value: ""
-          description: EVinity Access Token
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
