@@ -10,9 +10,10 @@ from contact.enums.base import ModuleSourceChoices, ServiceClass
 from contact.enums.kingsday_land import KingsdayLandProperties
 from contact.enums.kingsday_water import KingsdayWaterProperties
 from contact.enums.services import Services
+from contact.enums.swimming_spots import SwimmingSpotLayers, SwimmingSpotProperties
 from contact.enums.taps import TapFilters, TapProperties
 from contact.enums.toilets import ToiletFilters, ToiletProperties
-from contact.tests.mock_data import taps, toilets
+from contact.tests.mock_data import swimming_spots, taps, toilets
 from contact.tests.mock_data.kingsday import (
     boat_block,
     boating_ban,
@@ -139,6 +140,23 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.data["filters"], TapFilters.choices_as_list())
         self.assertEqual(
             response.data["properties_to_include"], TapProperties.choices_as_list()
+        )
+
+    def test_success_get_service_map_view_swimming_spots(self):
+        # Mock the response from the external API
+        responses.get(settings.PUBLIC_SWIMMING_SPOT_URL, json=swimming_spots.MOCK_DATA)
+
+        url = reverse("service-map", kwargs={"service_id": 5})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["layers"], SwimmingSpotLayers.choices_as_list())
+        self.assertEqual(
+            response.data["properties_to_include"],
+            SwimmingSpotProperties.choices_as_list(),
         )
 
     def test_kingsday_land_layers(self):
