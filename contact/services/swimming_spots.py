@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict
 
 from django.conf import settings
@@ -11,8 +10,6 @@ from contact.enums.swimming_spots import (
     SwimmingSpotProperties,
 )
 from contact.services.service_abstract import ServiceAbstract
-
-logger = logging.getLogger(__name__)
 
 SUBTITLE_ICON_MAPPING = {
     "Binnenzwembad": "indoor_pool",
@@ -74,7 +71,7 @@ class SwimmingSpotService(ServiceAbstract):
 
         Note: aapp_title should ALWAYS be included as a custom property, as it is used as the main title for the swimming spot in the frontend.
         """
-        # for subtitle, we want to use the "Cateorie" property, but map "Zwemplek" to "Officiële buitenzwemplek" for the subtitle, and use the icon mapping for the icon type.
+        # for subtitle, we want to use the "Categorie" property, but map "Zwemplek" to "Officiële buitenzwemplek" for the subtitle, and use the icon mapping for the icon type.
         subtitle = properties.get("Categorie", "")
         if subtitle == "Zwemplek":
             subtitle = "Officiële buitenzwemplek"
@@ -84,6 +81,6 @@ class SwimmingSpotService(ServiceAbstract):
             or "Zwemplek",
             f"{self.properties_prefix}subtitle": subtitle,
             f"{self.properties_prefix}icon_type": SUBTITLE_ICON_MAPPING.get(
-                subtitle, ""
+                subtitle, SwimmingSpotIcons.INDOOR_POOL.value.label
             ),
         }
