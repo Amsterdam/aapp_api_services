@@ -120,6 +120,12 @@ class TestLocationView(BoatChargingTestCase):
         self.assertEqual(street, "Kraanspoor ")
         self.assertEqual(number, "7L3")
 
+    def test_split_address_without_number_returns_original_address(self):
+        input_str = "NDSM-Plein"
+        street, number = self.view.split_address(input_str)
+        self.assertEqual(street, "NDSM-Plein")
+        self.assertEqual(number, "")
+
 
 class TestLocationDetailView(BoatChargingTestCase):
     def setUp(self):
@@ -128,15 +134,36 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.url = reverse(
             "boat-charging-location-detail", kwargs={"location_id": self.location_id}
         )
-
-    def test_success(self):
-        ext_endpoint = (
+        self.external_endpoint = (
             f"{settings.BOAT_CHARGING_ENDPOINTS['LOCATIONS']}/{self.location_id}"
         )
-        resp = respx.get(ext_endpoint).mock(
+
+    def test_success(self):
+
+        resp = respx.get(self.external_endpoint).mock(
             return_value=httpx.Response(200, json=location_detail.MOCK_RESPONSE)
         )
 
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
+
+    def test_forbidden_from_upstream_is_mapped_to_not_found(self):
+
+        respx.get(self.external_endpoint).mock(
+            return_value=httpx.Response(403, json={})
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_invalid_location_id_returns_400(self):
+        invalid_url = reverse(
+            "boat-charging-location-detail",
+            kwargs={"location_id": "invalid$id"},
+        )
+
+        response = self.client.get(invalid_url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 400)
