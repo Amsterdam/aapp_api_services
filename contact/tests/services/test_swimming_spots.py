@@ -32,3 +32,14 @@ class SwimmingSpotServiceTest(ResponsesActivatedAPITestCase):
             full_data["icons_to_include"], SwimmingSpotIcons.choices_as_dict()
         )
         self.assertEqual(full_data["data"]["type"], "FeatureCollection")
+
+    def test_get_custom_properties(self):
+        properties = {
+            "Naam_locatie": "Nieuwe Meer - zuidoever",
+            "Categorie": "Zwemplek",
+        }
+        custom_properties = self.service.get_custom_properties(properties)
+
+        self.assertEqual(custom_properties["aapp_title"], properties["Naam_locatie"])
+        self.assertEqual(custom_properties["aapp_subtitle"], "Officiële buitenzwemplek")
+        self.assertEqual(custom_properties["aapp_icon_type"], "outdoor_spot")
