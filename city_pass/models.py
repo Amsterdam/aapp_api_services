@@ -65,7 +65,7 @@ class SessionToken(models.Model):
         the token is invalid and will be deleted.
         """
 
-        now = django_timezone.now()
+        now = django_timezone.localtime(django_timezone.now())
         cut_off_dt_current_year = get_token_cut_off_for_datetime(now)
 
         # If token is created after cut off datetime, it's valid

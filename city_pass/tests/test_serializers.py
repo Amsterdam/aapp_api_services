@@ -32,7 +32,7 @@ class TestSessionTokensOutSerializer(TestCase):
     )
     def test_token_exp_way_before_token_cut_off(self):
         # Way before cut off datetime
-        freeze_time_at = datetime.fromisoformat("2025-01-01 12:00:00+00:00")
+        freeze_time_at = datetime.fromisoformat("2025-01-01 12:00:00+02:00")
         with freeze_time(freeze_time_at):
             access_token = AccessToken.objects.create(session=self.session)
             refresh_token = RefreshToken.objects.create(session=self.session)
@@ -59,7 +59,7 @@ class TestSessionTokensOutSerializer(TestCase):
     )
     def test_token_exp_right_after_token_cut_off(self):
         # Right after cut off datetime
-        freeze_time_at = datetime.fromisoformat("2025-01-01 10:00:01+00:00")
+        freeze_time_at = datetime.fromisoformat("2025-08-01 10:00:01+02:00")
         with freeze_time(freeze_time_at):
             access_token = AccessToken.objects.create(session=self.session)
             refresh_token = RefreshToken.objects.create(session=self.session)
@@ -84,7 +84,7 @@ class TestSessionTokensOutSerializer(TestCase):
             "REFRESH_TOKEN": ONE_HOUR_IN_SECONDS * 2,  # 2 hours
         },
     )
-    @freeze_time("2025-08-01 07:30:00+00:00")  # 30 minutes before Amsterdam cut off
+    @freeze_time("2025-08-01 09:30:00+02:00")  # 30 minutes before Amsterdam cut off
     def test_token_exp_close_to_token_cut_off(self):
         access_token = AccessToken.objects.create(session=self.session)
         refresh_token = RefreshToken.objects.create(session=self.session)
@@ -106,7 +106,7 @@ class TestSessionTokensOutSerializer(TestCase):
             "REFRESH_TOKEN": ONE_HOUR_IN_SECONDS * 2,  # 2 hours
         },
     )
-    @freeze_time("2025-08-01 08:00:00+00:00")  # Equal to Amsterdam cut off
+    @freeze_time("2025-08-01 10:00:00+02:00")  # Equal to Amsterdam cut off
     def test_token_exp_equal_to_token_cut_off(self):
         access_token = AccessToken.objects.create(session=self.session)
         refresh_token = RefreshToken.objects.create(session=self.session)

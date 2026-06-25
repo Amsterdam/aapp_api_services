@@ -14,7 +14,7 @@ def get_token_cut_off_for_year(year: int) -> datetime:
 
 
 def get_token_cut_off_for_datetime(current_datetime: datetime) -> datetime:
-    amsterdam_year = timezone.localtime(current_datetime, AMSTERDAM_TZ).year
+    amsterdam_year = timezone.localtime(current_datetime).year
     return get_token_cut_off_for_year(amsterdam_year)
 
 
@@ -26,7 +26,7 @@ def get_token_cut_off() -> datetime:
 
     See TOKEN_CUT_OFF_DATETIME in settings for more information.
     """
-    now = timezone.localtime(timezone.now(), AMSTERDAM_TZ)
+    now = timezone.localtime(timezone.now())
     token_cut_off_datetime = get_token_cut_off_for_year(now.year)
     if now > token_cut_off_datetime:
         token_cut_off_datetime = get_token_cut_off_for_year(now.year + 1)
