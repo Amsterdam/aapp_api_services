@@ -170,7 +170,7 @@ class TestPassesView(BaseCityPassTestCase):
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "ACCESS_TOKEN": 30 * 60,
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
@@ -198,7 +198,7 @@ class TestPassesView(BaseCityPassTestCase):
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "ACCESS_TOKEN": 30 * 60,
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
