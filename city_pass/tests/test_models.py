@@ -103,9 +103,7 @@ class TestTokenModels(TestCase):
             refresh_token.save()
             self.assert_token_valid(refresh_token)
 
-        before_cut_off_datetime = datetime.strptime(
-            "2024-10-01 09:59", "%Y-%m-%d %H:%M"
-        )
+        before_cut_off_datetime = datetime.fromisoformat("2024-10-01 09:59:00+02:00")
         with freeze_time(before_cut_off_datetime):
             self.assert_token_valid(access_token)
             self.assert_token_valid(refresh_token)
@@ -114,7 +112,7 @@ class TestTokenModels(TestCase):
             self.assertEqual(AccessToken.objects.count(), 1)
             self.assertEqual(RefreshToken.objects.count(), 1)
 
-        after_cut_off_datetime = datetime.strptime("2024-10-01 10:01", "%Y-%m-%d %H:%M")
+        after_cut_off_datetime = datetime.fromisoformat("2024-10-01 10:01:00+02:00")
         with freeze_time(after_cut_off_datetime):
             self.assert_token_invalid(access_token)
             self.assert_token_invalid(refresh_token)
@@ -143,7 +141,7 @@ class TestTokenModels(TestCase):
             refresh_token.save()
             self.assert_token_valid(refresh_token)
 
-        after_cut_off_datetime = datetime.strptime("2024-10-01 10:01", "%Y-%m-%d %H:%M")
+        after_cut_off_datetime = datetime.fromisoformat("2024-10-01 10:01:00+02:00")
         with freeze_time(after_cut_off_datetime):
             self.assert_token_valid(access_token)
             self.assert_token_valid(refresh_token)
@@ -159,19 +157,42 @@ class TestTokenModels(TestCase):
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
-    def test_tokens_from_before_august_first_are_invalid_after_cut_off(self):
-        creation_time_before_cut_off = datetime.strptime(
-            "2026-07-31 23:59", "%Y-%m-%d %H:%M"
+    def test_tokens_from_before_august_first_are_invalid_at_cut_off(self):
+        creation_time_before_cut_off = datetime.fromisoformat(
+            "2026-07-31 23:59:00+02:00"
         )
         with freeze_time(creation_time_before_cut_off):
             access_token = AccessToken.objects.create(session=self.session)
             refresh_token = RefreshToken.objects.create(session=self.session)
 
-        with freeze_time(datetime.strptime("2026-08-01 00:01", "%Y-%m-%d %H:%M")):
+        with freeze_time(datetime.fromisoformat("2026-08-01 00:00:00+02:00")):
             self.assert_token_invalid(access_token)
             self.assert_token_invalid(refresh_token)
             self.assertEqual(AccessToken.objects.count(), 0)
             self.assertEqual(RefreshToken.objects.count(), 0)
+
+    @override_settings(
+        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
+        TOKEN_TTLS={
+            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "REFRESH_TOKEN": 365 * 24 * 60 * 60,
+        },
+    )
+    def test_tokens_from_before_august_first_stay_valid_until_amsterdam_cut_off(self):
+        creation_time_before_cut_off = datetime.fromisoformat(
+            "2026-07-31 21:59:58+00:00"
+        )
+        with freeze_time(creation_time_before_cut_off):
+            access_token = AccessToken.objects.create(session=self.session)
+            refresh_token = RefreshToken.objects.create(session=self.session)
+
+        with freeze_time(datetime.fromisoformat("2026-07-31 21:59:59+00:00")):
+            self.assert_token_valid(access_token)
+            self.assert_token_valid(refresh_token)
+
+        with freeze_time(datetime.fromisoformat("2026-07-31 22:00:00+00:00")):
+            self.assert_token_invalid(access_token)
+            self.assert_token_invalid(refresh_token)
 
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
@@ -181,12 +202,12 @@ class TestTokenModels(TestCase):
         },
     )
     def test_tokens_created_on_august_first_cut_off_are_valid(self):
-        cut_off_time = datetime.strptime("2026-08-01 00:00", "%Y-%m-%d %H:%M")
+        cut_off_time = datetime.fromisoformat("2026-08-01 00:00:00+02:00")
         with freeze_time(cut_off_time):
             access_token = AccessToken.objects.create(session=self.session)
             refresh_token = RefreshToken.objects.create(session=self.session)
 
-        with freeze_time(datetime.strptime("2026-08-01 00:01", "%Y-%m-%d %H:%M")):
+        with freeze_time(datetime.fromisoformat("2026-08-01 00:00:01+02:00")):
             self.assert_token_valid(access_token)
             self.assert_token_valid(refresh_token)
             self.assertEqual(AccessToken.objects.count(), 1)
