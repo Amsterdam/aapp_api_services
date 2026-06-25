@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -9,6 +10,8 @@ from django.utils import timezone as django_timezone
 
 from city_pass.exceptions import TokenExpiredException
 from city_pass.utils import get_token_cut_off_for_datetime
+
+ZONE_INFO = ZoneInfo(settings.TIME_ZONE)
 
 
 class Session(models.Model):
@@ -65,7 +68,7 @@ class SessionToken(models.Model):
         the token is invalid and will be deleted.
         """
 
-        now = django_timezone.localtime(django_timezone.now())
+        now = django_timezone.localtime(django_timezone.now(), ZONE_INFO)
         cut_off_dt_current_year = get_token_cut_off_for_datetime(now)
 
         # If token is created after cut off datetime, it's valid

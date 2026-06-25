@@ -32,7 +32,7 @@ class TestSessionTokensOutSerializer(TestCase):
     )
     def test_token_exp_way_before_token_cut_off(self):
         # Way before cut off datetime
-        freeze_time_at = datetime.fromisoformat("2025-01-01 12:00:00+02:00")
+        freeze_time_at = datetime.fromisoformat("2025-01-01 12:00:00+01:00")
         with freeze_time(freeze_time_at):
             access_token = AccessToken.objects.create(session=self.session)
             refresh_token = RefreshToken.objects.create(session=self.session)
