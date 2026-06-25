@@ -352,7 +352,7 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "ACCESS_TOKEN": ONE_HOUR_IN_SECONDS,
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
@@ -376,7 +376,7 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "ACCESS_TOKEN": ONE_HOUR_IN_SECONDS,
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
@@ -404,7 +404,7 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "ACCESS_TOKEN": ONE_HOUR_IN_SECONDS,
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
@@ -587,7 +587,7 @@ class TestSessionLogoutView(BaseCityPassTestCase):
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "ACCESS_TOKEN": ONE_HOUR_IN_SECONDS,
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )

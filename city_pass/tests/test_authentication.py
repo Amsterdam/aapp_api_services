@@ -79,12 +79,12 @@ class TestAuthenicateAccessToken(TestCase):
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "ACCESS_TOKEN": 30 * 60,
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
     def test_pre_cut_off_access_token_is_accepted_just_before_amsterdam_boundary(self):
-        with freeze_time("2026-07-31 21:59:58+00:00"):
+        with freeze_time("2026-07-31 23:59:58+02:00"):
             session = Session.objects.create(encrypted_adminstration_no="foobar")
             access_token = AccessToken.objects.create(session=session)
 
@@ -92,7 +92,7 @@ class TestAuthenicateAccessToken(TestCase):
             "/some-endpoint/", headers={self.header_name: access_token.token}
         )
 
-        with freeze_time("2026-07-31 21:59:59+00:00"):
+        with freeze_time("2026-07-31 23:59:59+02:00"):
             token_authenticator = AccessTokenWithAdminNrAuthentication()
             result_session, result_token = token_authenticator.authenticate(request)
 
@@ -102,12 +102,12 @@ class TestAuthenicateAccessToken(TestCase):
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "ACCESS_TOKEN": 30 * 60,
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
     def test_pre_cut_off_access_token_is_rejected_at_amsterdam_boundary(self):
-        with freeze_time("2026-07-31 21:59:59+00:00"):
+        with freeze_time("2026-07-31 23:59:59+02:00"):
             session = Session.objects.create(encrypted_adminstration_no="foobar")
             access_token = AccessToken.objects.create(session=session)
 
@@ -115,7 +115,7 @@ class TestAuthenicateAccessToken(TestCase):
             "/some-endpoint/", headers={self.header_name: access_token.token}
         )
 
-        with freeze_time("2026-07-31 22:00:00+00:00"):
+        with freeze_time("2026-08-01 00:00:00+02:00"):
             with self.assertRaises(TokenExpiredException):
                 token_authenticator = AccessTokenWithAdminNrAuthentication()
                 token_authenticator.authenticate(request)
@@ -125,12 +125,12 @@ class TestAuthenicateAccessToken(TestCase):
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "ACCESS_TOKEN": 30 * 60,
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
     def test_post_cut_off_access_token_is_accepted_after_fresh_login(self):
-        with freeze_time("2026-07-31 22:00:00+00:00"):
+        with freeze_time("2026-08-01 00:00:00+02:00"):
             session = Session.objects.create(encrypted_adminstration_no="foobar")
             access_token = AccessToken.objects.create(session=session)
 
@@ -138,7 +138,7 @@ class TestAuthenicateAccessToken(TestCase):
             "/some-endpoint/", headers={self.header_name: access_token.token}
         )
 
-        with freeze_time("2026-07-31 22:00:01+00:00"):
+        with freeze_time("2026-08-01 00:00:01+02:00"):
             token_authenticator = AccessTokenWithAdminNrAuthentication()
             result_session, result_token = token_authenticator.authenticate(request)
 
