@@ -85,6 +85,10 @@ Required fields:
 - `technical_risks`
 - `next_step`
 
+Review evidence rule:
+
+- Findings that claim "missing coverage" must cite either a failed/absent test run or explicit repository search evidence that no equivalent test exists outside the changed diff.
+- If equivalent coverage is present elsewhere, mark as residual risk or suggestion instead of a blocking defect.
 
 ## H6 Test Request
 
