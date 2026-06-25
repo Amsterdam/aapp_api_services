@@ -40,6 +40,111 @@ class TestLocationView(BoatChargingTestCase):
             },
         )
 
+    def test_get_status_and_kw_from_sockets_occupied(self):
+        sockets = [
+            {
+                "chargingStationId": "ABC-7BMY2",
+                "evseId": "1",
+                "status": "FAULTED",
+                "available": False,
+                "maxElectricPower": 22.0,
+            },
+            {
+                "chargingStationId": "ABC-IFZTY",
+                "evseId": "1",
+                "status": "OCCUPIED",
+                "available": False,
+            },
+            {
+                "chargingStationId": "ABC-MX1VV",
+                "evseId": "1",
+                "status": "UNKNOWN",
+                "available": False,
+            },
+        ]
+        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets)
+        self.assertEqual(status, "OCCUPIED")
+        self.assertEqual(max_kw, 22.0)
+
+    def test_get_status_and_kw_from_sockets_operative(self):
+        sockets = [
+            {
+                "chargingStationId": "ABC-7BMY2",
+                "evseId": "1",
+                "status": "OPERATIVE",
+                "available": True,
+                "maxElectricPower": 19.0,
+            },
+            {
+                "chargingStationId": "ABC-IFZTY",
+                "evseId": "1",
+                "status": "OCCUPIED",
+                "available": False,
+                "maxElectricPower": 22.0,
+            },
+            {
+                "chargingStationId": "ABC-MX1VV",
+                "evseId": "1",
+                "status": "UNKNOWN",
+                "available": False,
+            },
+        ]
+        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets)
+        self.assertEqual(status, "OPERATIVE")
+        self.assertEqual(max_kw, 19.0)
+
+    def test_get_status_and_kw_from_sockets_operative_no_max_kw(self):
+        sockets = [
+            {
+                "chargingStationId": "ABC-7BMY2",
+                "evseId": "1",
+                "status": "OPERATIVE",
+                "available": True,
+            },
+            {
+                "chargingStationId": "ABC-IFZTY",
+                "evseId": "1",
+                "status": "OCCUPIED",
+                "available": False,
+                "maxElectricPower": 22.0,
+            },
+            {
+                "chargingStationId": "ABC-MX1VV",
+                "evseId": "1",
+                "status": "UNKNOWN",
+                "available": False,
+            },
+        ]
+        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets)
+        self.assertEqual(status, "OPERATIVE")
+        self.assertEqual(max_kw, 22.0)
+
+    def test_get_status_and_kw_from_sockets_inoperative(self):
+        sockets = [
+            {
+                "chargingStationId": "ABC-7BMY2",
+                "evseId": "1",
+                "status": "FAULTED",
+                "available": False,
+                "maxElectricPower": 22.0,
+            },
+            {
+                "chargingStationId": "ABC-IFZTY",
+                "evseId": "1",
+                "status": "INOPERATIVE",
+                "available": False,
+            },
+            {
+                "chargingStationId": "ABC-MX1VV",
+                "evseId": "1",
+                "status": "UNKNOWN",
+                "available": False,
+            },
+        ]
+        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets)
+        self.assertEqual(status, "INOPERATIVE")
+        self.assertEqual(max_kw, 22.0)
+
     def test_convert_regular_hours(self):
         regular_hours = [
             {"weekday": 1, "periodBegin": "08:00", "periodEnd": "18:00"},

@@ -8,6 +8,7 @@ from bridge.boat_charging.exceptions import (
     BoatChargingLocationNotFoundError,
 )
 from bridge.boat_charging.serializers.location_serializers import (
+    OPERATION_STATE_MAPPING,
     LocationDetailResponseSerializer,
     LocationListResponseSerializer,
 )
@@ -15,6 +16,7 @@ from bridge.boat_charging.views.base_view import (
     BaseView,
     boat_charging_openapi_decorator,
 )
+from bridge.utils import max_or_none
 
 
 @boat_charging_openapi_decorator(
@@ -55,7 +57,12 @@ class LocationView(BaseView):
         }
 
     def get_location_data(self, item: dict[str, any]) -> dict[str, any]:
+        """
+        Convert the location data from the API to the format expected by the frontend.
+        """
         street, number = self.split_address(item["address"])
+
+        status, max_kw = self._get_status_and_kw_from_sockets(item.get("sockets", []))
 
         return {
             "id": item["id"],
@@ -75,17 +82,11 @@ class LocationView(BaseView):
                     item["openingTimes"].get("regularHours", [])
                 ),
                 "twentyfourseven": item["openingTimes"].get("twentyfourseven", False),
-                "exceptional_openings": item["openingTimes"].get(
-                    "exceptionalOpenings", []
-                ),
-                "exceptional_closings": item["openingTimes"].get(
-                    "exceptionalClosings", []
-                ),
             },
             "available_sockets": item.get("availableSockets", 0),
             "total_sockets": item.get("totalSockets", 0),
-            "status": item.get("status", "UNKNOWN"),
-            "max_kw": item.get("max_kw"),
+            "status": status,
+            "max_kw": max_kw,
             "charging_stations_ids": item.get("chargingStationsIds", []),
             "charging_stations": [
                 self.get_charging_station_data(cs)
@@ -95,6 +96,49 @@ class LocationView(BaseView):
             if "tariff" in item
             else None,
         }
+
+    def _get_status_and_kw_from_sockets(
+        self, sockets: list[dict[str, any]]
+    ) -> tuple[str, float | None]:
+        """
+        To determine the overall status and wattage of each location based on the statuses and wattages of its sockets, the logic described below is followed.
+
+        There are three possible status values for a charging station:
+        - "OPERATIVE": at least one connector at the location is operative
+        - "OCCUPIED": all connectors at the location are occupied
+        - "INOPERATIVE": no connector is operative and at least one connector is out of order
+
+        The wattage of the location is determined by the connector with the highest wattage that is operative at the location,
+        or if no connector is operative, the connector with the highest wattage that is out of order/occupied.
+        """
+        if not sockets:
+            return "UNKNOWN", None
+
+        available = [
+            s.get("maxElectricPower") for s in sockets if s["status"] == "OPERATIVE"
+        ]
+        occupied = [
+            s.get("maxElectricPower") for s in sockets if s["status"] == "OCCUPIED"
+        ]
+        out_of_order = [
+            s.get("maxElectricPower")
+            for s in sockets
+            if s["status"] not in ("OPERATIVE", "OCCUPIED")
+        ]
+
+        if available:
+            overall_status = "OPERATIVE"
+            max_kw = max_or_none(available)
+            if max_kw is None:
+                max_kw = max_or_none(occupied + out_of_order)
+        elif occupied:
+            overall_status = "OCCUPIED"
+            max_kw = max_or_none(occupied + out_of_order)
+        else:
+            overall_status = "INOPERATIVE"
+            max_kw = max_or_none(out_of_order)
+
+        return overall_status, max_kw
 
     def _convert_regular_hours(
         self, regular_hours: list[dict[str, str | int]]
@@ -149,13 +193,15 @@ class LocationView(BaseView):
                     "display_name": f"{cs_json['id']}-{evs['id']}",
                     "ocpp_evse_id": evs["ocppEvseId"],
                     "evse_id": evs["evseId"],
-                    "status": evs["status"],
+                    "status": OPERATION_STATE_MAPPING.get(evs["status"], "UNKNOWN"),
                     "connectors": [
                         {
                             "connector_id": conn["connectorId"],
                             "max_amp": conn["maxAmp"],
                             "voltage": conn["voltage"],
-                            "status": conn["status"],
+                            "status": OPERATION_STATE_MAPPING.get(
+                                conn["status"], "UNKNOWN"
+                            ),
                         }
                         for conn in evs["connectors"]
                     ],
@@ -200,6 +246,8 @@ class LocationDetailView(LocationView):
             raise BoatChargingLocationNotFoundError()
 
         serializer_data = self.get_location_data(response_json)
+
+        print(serializer_data)
 
         serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)

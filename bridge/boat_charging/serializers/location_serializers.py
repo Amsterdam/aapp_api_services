@@ -4,6 +4,15 @@ from core.serializers.address_serializers import AddressSerializer
 
 OPERATION_STATE_CHOICES = ["OPERATIVE", "INOPERATIVE", "OFFLINE", "UNKNOWN", "OCCUPIED"]
 
+OPERATION_STATE_MAPPING = {
+    "OPERATIVE": "OPERATIVE",
+    "INOPERATIVE": "INOPERATIVE",
+    "OFFLINE": "OFFLINE",
+    "UNKNOWN": "UNKNOWN",
+    "OCCUPIED": "OCCUPIED",
+    "FAULTED": "INOPERATIVE",
+}
+
 
 class HourMinuteField(serializers.Serializer):
     hours = serializers.IntegerField()
@@ -19,8 +28,6 @@ class RegularOpeningHoursSerializer(serializers.Serializer):
 class OpeningTimesSerializer(serializers.Serializer):
     regular_hours = RegularOpeningHoursSerializer(many=True, allow_empty=True)
     twentyfourseven = serializers.BooleanField()
-    exceptional_openings = serializers.ListField(child=serializers.IntegerField())
-    exceptional_closings = serializers.ListField(child=serializers.IntegerField())
 
 
 class PointGeometrySerializer(serializers.Serializer):
