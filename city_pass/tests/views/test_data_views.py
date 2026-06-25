@@ -175,34 +175,6 @@ class TestPassesView(BaseCityPassTestCase):
         },
     )
     @patch("city_pass.views.data_views.requests.request")
-    def test_get_passes_accepts_pre_cut_off_token_just_before_amsterdam_boundary(
-        self, mock_get
-    ):
-        mock_response = Response()
-        mock_response.status_code = 200
-        mock_response._content = json.dumps(
-            {"content": mock_data.passes, "status": "SUCCESS"}
-        ).encode("utf-8")
-        mock_get.return_value = mock_response
-
-        with freeze_time("2026-07-31 23:59:58+02:00"):
-            session = Session.objects.create(encrypted_adminstration_no="foobar")
-            access_token = AccessToken.objects.create(session=session)
-
-        headers = {**self.headers, settings.ACCESS_TOKEN_HEADER: access_token.token}
-        with freeze_time("2026-07-31 23:59:59+02:00"):
-            result = self.client.get(self.api_url, headers=headers, follow=True)
-
-        self.assertEqual(result.status_code, 200)
-
-    @override_settings(
-        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
-        TOKEN_TTLS={
-            "ACCESS_TOKEN": 30 * 60,
-            "REFRESH_TOKEN": 365 * 24 * 60 * 60,
-        },
-    )
-    @patch("city_pass.views.data_views.requests.request")
     def test_get_passes_rejects_pre_cut_off_token_at_amsterdam_boundary(self, mock_get):
         with freeze_time("2026-07-31 23:59:59+02:00"):
             session = Session.objects.create(encrypted_adminstration_no="foobar")

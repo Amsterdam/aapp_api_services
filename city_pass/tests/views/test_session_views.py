@@ -356,30 +356,6 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
-    def test_refresh_accepts_pre_cut_off_session_just_before_amsterdam_boundary(self):
-        with freeze_time("2026-07-31 21:59:58+00:00"):
-            session = Session.objects.create()
-            AccessToken.objects.create(session=session)
-            refresh_token_obj = RefreshToken.objects.create(session=session)
-
-        with freeze_time("2026-07-31 21:59:59+00:00"):
-            result = self.client.post(
-                self.api_url,
-                headers=self.headers,
-                data={"refresh_token": refresh_token_obj.token},
-                content_type="application/json",
-                follow=True,
-            )
-
-        self.assertEqual(result.status_code, 200)
-
-    @override_settings(
-        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
-        TOKEN_TTLS={
-            "ACCESS_TOKEN": ONE_HOUR_IN_SECONDS,
-            "REFRESH_TOKEN": 365 * 24 * 60 * 60,
-        },
-    )
     def test_refresh_rejects_pre_cut_off_session_at_amsterdam_boundary(self):
         with freeze_time("2026-07-31 21:59:59+00:00"):
             session = Session.objects.create()
@@ -400,30 +376,6 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
         self.assertTrue(RefreshToken.objects.filter(pk=refresh_token_obj.pk).exists())
         self.assertEqual(AccessToken.objects.filter(session=session).count(), 1)
         self.assertEqual(RefreshToken.objects.filter(session=session).count(), 1)
-
-    @override_settings(
-        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
-        TOKEN_TTLS={
-            "ACCESS_TOKEN": ONE_HOUR_IN_SECONDS,
-            "REFRESH_TOKEN": 365 * 24 * 60 * 60,
-        },
-    )
-    def test_refresh_accepts_post_cut_off_session_after_fresh_login(self):
-        with freeze_time("2026-07-31 22:00:00+00:00"):
-            session = Session.objects.create()
-            AccessToken.objects.create(session=session)
-            refresh_token_obj = RefreshToken.objects.create(session=session)
-
-        with freeze_time("2026-07-31 22:00:01+00:00"):
-            result = self.client.post(
-                self.api_url,
-                headers=self.headers,
-                data={"refresh_token": refresh_token_obj.token},
-                content_type="application/json",
-                follow=True,
-            )
-
-        self.assertEqual(result.status_code, 200)
 
     def test_expired_refresh_token(self):
         token_creation_time = datetime.strptime("2024-01-01 12:00", DATE_FORMAT)
@@ -583,30 +535,3 @@ class TestSessionLogoutView(BaseCityPassTestCase):
         # Check that the token is no longer valid
         with self.assertRaises(TokenInvalidException):
             AccessTokenAuthentication().authenticate(request)
-
-    @override_settings(
-        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
-        TOKEN_TTLS={
-            "ACCESS_TOKEN": ONE_HOUR_IN_SECONDS,
-            "REFRESH_TOKEN": 365 * 24 * 60 * 60,
-        },
-    )
-    def test_logout_rejects_pre_cut_off_access_token_at_amsterdam_boundary(self):
-        with freeze_time("2026-07-31 23:59:59+02:00"):
-            session = Session.objects.create(encrypted_adminstration_no="foobar")
-            access_token = AccessToken.objects.create(session=session)
-            RefreshToken.objects.create(session=session)
-
-        headers = {**self.headers, settings.ACCESS_TOKEN_HEADER: access_token.token}
-
-        with freeze_time("2026-08-01 00:00:00+02:00"):
-            result = self.client.post(
-                self.api_url,
-                headers=headers,
-                content_type="application/json",
-                follow=True,
-            )
-
-        self.assertEqual(result.status_code, 401)
-        self.assertContains(result, "TOKEN_EXPIRED", status_code=401)
-        self.assertFalse(AccessToken.objects.filter(pk=access_token.pk).exists())

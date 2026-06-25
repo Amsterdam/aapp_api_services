@@ -84,39 +84,24 @@ class TestSessionTokensOutSerializer(TestCase):
             "REFRESH_TOKEN": ONE_HOUR_IN_SECONDS * 2,  # 2 hours
         },
     )
-    @freeze_time("2025-08-01 09:30:00+02:00")  # 30 minutes before Amsterdam cut off
-    def test_token_exp_close_to_token_cut_off(self):
-        access_token = AccessToken.objects.create(session=self.session)
-        refresh_token = RefreshToken.objects.create(session=self.session)
-        serializer_output = self.serializer_class((access_token, refresh_token))
-        token_cut_off_datetime = get_token_cut_off()
+    def test_token_exp_is_cut_off_at_and_before_boundary(self):
+        for freeze_time_at in (
+            datetime.fromisoformat("2025-08-01 09:30:00+02:00"),
+            datetime.fromisoformat("2025-08-01 10:00:00+02:00"),
+        ):
+            with freeze_time(freeze_time_at):
+                session = Session.objects.create()
+                access_token = AccessToken.objects.create(session=session)
+                refresh_token = RefreshToken.objects.create(session=session)
+                serializer_output = self.serializer_class((access_token, refresh_token))
+                token_cut_off_datetime = get_token_cut_off()
+                # Evaluate serializer fields inside frozen time to avoid lazy-evaluation drift.
+                access_token_expiration = serializer_output.data[
+                    "access_token_expiration"
+                ]
+                refresh_token_expiration = serializer_output.data[
+                    "refresh_token_expiration"
+                ]
 
-        # Expiration dates should be equal to cut off datetime
-        self.assertEqual(
-            serializer_output.data["access_token_expiration"], token_cut_off_datetime
-        )
-        self.assertEqual(
-            serializer_output.data["refresh_token_expiration"], token_cut_off_datetime
-        )
-
-    @override_settings(
-        TOKEN_CUT_OFF_DATETIME="08-01 10:00",
-        TOKEN_TTLS={
-            "ACCESS_TOKEN": ONE_HOUR_IN_SECONDS,  # 1 hour
-            "REFRESH_TOKEN": ONE_HOUR_IN_SECONDS * 2,  # 2 hours
-        },
-    )
-    @freeze_time("2025-08-01 10:00:00+02:00")  # Equal to Amsterdam cut off
-    def test_token_exp_equal_to_token_cut_off(self):
-        access_token = AccessToken.objects.create(session=self.session)
-        refresh_token = RefreshToken.objects.create(session=self.session)
-        serializer_output = self.serializer_class((access_token, refresh_token))
-        token_cut_off_datetime = get_token_cut_off()
-
-        # Expiration dates should be equal to cut off datetime
-        self.assertEqual(
-            serializer_output.data["access_token_expiration"], token_cut_off_datetime
-        )
-        self.assertEqual(
-            serializer_output.data["refresh_token_expiration"], token_cut_off_datetime
-        )
+            self.assertEqual(access_token_expiration, token_cut_off_datetime)
+            self.assertEqual(refresh_token_expiration, token_cut_off_datetime)
