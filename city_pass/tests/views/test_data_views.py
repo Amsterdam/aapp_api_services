@@ -1,11 +1,14 @@
 import json
 from unittest.mock import patch
 
+from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
+from freezegun import freeze_time
 from model_bakery import baker
 from requests import Response
 
-from city_pass.models import Budget, PassData
+from city_pass.models import AccessToken, Budget, PassData, Session
 from city_pass.tests import mock_data
 from city_pass.tests.base_test import BaseCityPassTestCase
 
@@ -163,6 +166,56 @@ class TestPassesView(BaseCityPassTestCase):
 
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(result.status_code, 200)
+
+    @override_settings(
+        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
+        TOKEN_TTLS={
+            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "REFRESH_TOKEN": 365 * 24 * 60 * 60,
+        },
+    )
+    @patch("city_pass.views.data_views.requests.request")
+    def test_get_passes_accepts_pre_cut_off_token_just_before_amsterdam_boundary(
+        self, mock_get
+    ):
+        mock_response = Response()
+        mock_response.status_code = 200
+        mock_response._content = json.dumps(
+            {"content": mock_data.passes, "status": "SUCCESS"}
+        ).encode("utf-8")
+        mock_get.return_value = mock_response
+
+        with freeze_time("2026-07-31 23:59:58+02:00"):
+            session = Session.objects.create(encrypted_adminstration_no="foobar")
+            access_token = AccessToken.objects.create(session=session)
+
+        headers = {**self.headers, settings.ACCESS_TOKEN_HEADER: access_token.token}
+        with freeze_time("2026-07-31 23:59:59+02:00"):
+            result = self.client.get(self.api_url, headers=headers, follow=True)
+
+        self.assertEqual(result.status_code, 200)
+
+    @override_settings(
+        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
+        TOKEN_TTLS={
+            "ACCESS_TOKEN": 365 * 24 * 60 * 60,
+            "REFRESH_TOKEN": 365 * 24 * 60 * 60,
+        },
+    )
+    @patch("city_pass.views.data_views.requests.request")
+    def test_get_passes_rejects_pre_cut_off_token_at_amsterdam_boundary(self, mock_get):
+        with freeze_time("2026-07-31 23:59:59+02:00"):
+            session = Session.objects.create(encrypted_adminstration_no="foobar")
+            access_token = AccessToken.objects.create(session=session)
+
+        headers = {**self.headers, settings.ACCESS_TOKEN_HEADER: access_token.token}
+        with freeze_time("2026-08-01 00:00:00+02:00"):
+            result = self.client.get(self.api_url, headers=headers, follow=True)
+
+        self.assertEqual(result.status_code, 401)
+        self.assertContains(result, "TOKEN_EXPIRED", status_code=401)
+        self.assertFalse(AccessToken.objects.filter(pk=access_token.pk).exists())
+        mock_get.assert_not_called()
 
 
 @patch("city_pass.views.data_views.requests.request")
