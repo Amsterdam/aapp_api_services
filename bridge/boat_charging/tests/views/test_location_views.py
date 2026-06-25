@@ -1,3 +1,5 @@
+import copy
+
 import httpx
 import respx
 from django.conf import settings
@@ -31,6 +33,33 @@ class TestLocationView(BoatChargingTestCase):
             {
                 "street": "Isolatorweg",
                 "number": "178",
+                "postcode": "1234 AM",
+                "city": "Amsterdam",
+                "coordinates": {
+                    "lat": 52.327549,
+                    "lon": 4.972519,
+                },
+            },
+        )
+
+    def test_address_without_number(self):
+        mock_response = copy.deepcopy(locations.MOCK_RESPONSE)
+        mock_response["content"][0]["address"] = "NDSM-Plein"
+        resp = respx.get(settings.BOAT_CHARGING_ENDPOINTS["LOCATIONS"]).mock(
+            return_value=httpx.Response(200, json=mock_response)
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+
+        # check that the address is returned in the expected format
+        self.assertEqual("address" in response.data["features"][0]["properties"], True)
+        self.assertEqual(
+            response.data["features"][0]["properties"]["address"],
+            {
+                "street": "NDSM-Plein",
                 "postcode": "1234 AM",
                 "city": "Amsterdam",
                 "coordinates": {
@@ -198,31 +227,31 @@ class TestLocationView(BoatChargingTestCase):
     def test_get_addr(self):
         input_str = "Tilanusstraat 10-2"
         street, number = self.view.split_address(input_str)
-        self.assertEqual(street, "Tilanusstraat ")
+        self.assertEqual(street, "Tilanusstraat")
         self.assertEqual(number, "10-2")
 
     def test_get_addr_2(self):
         input_str = "Amstel 1"
         street, number = self.view.split_address(input_str)
-        self.assertEqual(street, "Amstel ")
+        self.assertEqual(street, "Amstel")
         self.assertEqual(number, "1")
 
     def test_get_addr_3(self):
         input_str = "Retief Straat 15h/2"
         street, number = self.view.split_address(input_str)
-        self.assertEqual(street, "Retief Straat ")
+        self.assertEqual(street, "Retief Straat")
         self.assertEqual(number, "15h/2")
 
     def test_get_addr4(self):
         input_str = "Main Street 12 bis"
         street, number = self.view.split_address(input_str)
-        self.assertEqual(street, "Main Street ")
+        self.assertEqual(street, "Main Street")
         self.assertEqual(number, "12 bis")
 
     def test_get_addr5(self):
         input_str = "Kraanspoor 7L3"
         street, number = self.view.split_address(input_str)
-        self.assertEqual(street, "Kraanspoor ")
+        self.assertEqual(street, "Kraanspoor")
         self.assertEqual(number, "7L3")
 
     def test_split_address_without_number_returns_original_address(self):

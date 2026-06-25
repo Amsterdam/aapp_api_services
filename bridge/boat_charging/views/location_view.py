@@ -70,12 +70,14 @@ class LocationView(BaseView):
             "address": {
                 "city": item["city"],
                 "street": street,
-                "number": number if number else None,
                 "coordinates": {
                     "lat": item["coordinates"]["latitude"],
                     "lon": item["coordinates"]["longitude"],
                 },
                 "postcode": item["postalCode"],
+                **(
+                    {"number": number} if number else {}
+                ),  # number cannot be empty string, so only include if it is not empty
             },
             "opening_times": {
                 "regular_hours": self._convert_regular_hours(
@@ -224,8 +226,12 @@ class LocationView(BaseView):
         pattern = re.compile(r"^(?P<street>.*?\s)(?P<number>\d.*)$")
         m = pattern.match(addr)
         if not m:
-            return addr, ""  # fallback: no number part found
-        return m.group("street"), m.group("number")
+            return addr.strip(), ""  # fallback: no number part found
+        print(f"Matched street: {m.group('street')}, number: {m.group('number')}")
+        print(
+            f"Matched street (stripped): {m.group('street').strip()}, number (stripped): {m.group('number').strip()}"
+        )
+        return m.group("street").strip(), m.group("number").strip()
 
 
 @boat_charging_openapi_decorator(
