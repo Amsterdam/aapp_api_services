@@ -247,8 +247,6 @@ class LocationDetailView(LocationView):
 
         serializer_data = self.get_location_data(response_json)
 
-        print(serializer_data)
-
         serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=200)
