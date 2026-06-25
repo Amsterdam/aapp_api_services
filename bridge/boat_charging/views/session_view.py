@@ -35,7 +35,7 @@ class SessionView(BaseView):
     def get_session_data(self, item) -> dict:
         data = {
             "id": item["session"]["uniqueId"],
-            "start_date_time": item["startDateTime"],
+            "start_date_time": item["session"]["createdAt"],
             "kwh": item["kwh"],
             "evse_uid": item["evseUid"],
             "connector_id": item["connectorId"],
@@ -43,8 +43,8 @@ class SessionView(BaseView):
             "currency": item["currency"],
             "status": item["session"]["status"],
         }
-        if item.get("endDateTime"):
-            data["end_date_time"] = item["endDateTime"]
+        if item.get("session", {}).get("endDateTime"):
+            data["end_date_time"] = item["session"]["endDateTime"]
         return data
 
 
