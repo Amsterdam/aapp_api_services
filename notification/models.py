@@ -185,6 +185,30 @@ class NotificationLast(models.Model):
             raise ValidationError("Notification scope must start with module slug")
 
 
+class BoatChargingDevice(models.Model):
+    """
+    Record to use for boat charging notifications. For each device, we store the
+    A device can only have one active session at a time(?), so we can use the device_id as the primary key.
+
+    """
+
+    device = models.OneToOneField(
+        Device,
+        to_field="external_id",
+        db_column="device_id",
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="boat_charging_device",
+    )
+    session_id = models.CharField(max_length=255, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # store which thresholds have been triggered (in hours)
+    sent_notifications = models.JSONField(
+        default=dict
+    )  # e.g. { "16": "2026-06-26T10:00:00Z", "24": "2026-06-26T18:00:00Z" }
+
+
 class WasteDevice(models.Model):
     """
     Record to determine which device wants to receive waste notifications and

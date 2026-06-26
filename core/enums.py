@@ -17,6 +17,7 @@ class Module(ChoicesEnum):
     CITY_PASS = "city-pass"
     BURNING_GUIDE = "burning-guide"
     NEWS = "news"
+    BOAT_CHARGING = "boat-charging"
 
     @property
     def notification_description(self):
@@ -28,6 +29,7 @@ class Module(ChoicesEnum):
             Module.CITY_PASS: "Over uw saldo, regelingen en tips.",
             Module.BURNING_GUIDE: "U ontvangt meldingen als het code rood is voor 'Mijn adres'.",
             Module.NEWS: "U ontvangt meldingen als er nieuwe liveblogs zijn",
+            Module.BOAT_CHARGING: "Herinnering dat uw boot aan het opladen is.",
         }
         return descriptions[self]
 
@@ -108,6 +110,12 @@ class NotificationType(ChoicesEnum):
         name="liveblog-update",
         description="Updates op liveblogs",
         visibility="invisible",
+    )
+    BOAT_CHARGING_NOTIFICATION = NotificationTypeClass(
+        module=Module.BOAT_CHARGING,
+        name="boat-charging-reminder",
+        description="Herinnering dat uw boot aan het opladen is",
+        visibility="visible",
     )
 
     @property
