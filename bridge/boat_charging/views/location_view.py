@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 from django.conf import settings
 from rest_framework.response import Response
@@ -42,7 +43,7 @@ class LocationView(BaseView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=200)
 
-    def get_location_feature_data(self, item: dict[str, any]) -> dict[str, any]:
+    def get_location_feature_data(self, item: dict[str, Any]) -> dict[str, Any]:
         item_dict = self.get_location_data(item)
         return {
             "type": "Feature",
@@ -56,7 +57,7 @@ class LocationView(BaseView):
             },
         }
 
-    def get_location_data(self, item: dict[str, any]) -> dict[str, any]:
+    def get_location_data(self, item: dict[str, Any]) -> dict[str, Any]:
         """
         Convert the location data from the API to the format expected by the frontend.
         """
@@ -100,7 +101,7 @@ class LocationView(BaseView):
         }
 
     def _get_status_and_kw_from_sockets(
-        self, sockets: list[dict[str, any]]
+        self, sockets: list[dict[str, Any]]
     ) -> tuple[str, float | None]:
         """
         To determine the overall status and wattage of each location based on the statuses and wattages of its sockets, the logic described below is followed.
@@ -117,15 +118,20 @@ class LocationView(BaseView):
             return "UNKNOWN", None
 
         available = [
-            s.get("maxElectricPower") for s in sockets if s["status"] == "OPERATIVE"
+            s.get("maxElectricPower")
+            for s in sockets
+            if OPERATION_STATE_MAPPING.get(s["status"], "UNKNOWN") == "OPERATIVE"
         ]
         occupied = [
-            s.get("maxElectricPower") for s in sockets if s["status"] == "OCCUPIED"
+            s.get("maxElectricPower")
+            for s in sockets
+            if OPERATION_STATE_MAPPING.get(s["status"], "UNKNOWN") == "OCCUPIED"
         ]
         out_of_order = [
             s.get("maxElectricPower")
             for s in sockets
-            if s["status"] not in ("OPERATIVE", "OCCUPIED")
+            if OPERATION_STATE_MAPPING.get(s["status"], "UNKNOWN")
+            not in ("OPERATIVE", "OCCUPIED")
         ]
 
         if available:
@@ -144,7 +150,7 @@ class LocationView(BaseView):
 
     def _convert_regular_hours(
         self, regular_hours: list[dict[str, str | int]]
-    ) -> list[dict[str, any]]:
+    ) -> list[dict[str, Any]]:
         """
         The regular hour from the API are in the format:
         {
@@ -187,7 +193,7 @@ class LocationView(BaseView):
     def get_charging_station_data(self, cs_json) -> dict:
         return {
             "id": cs_json["id"],
-            "status": cs_json["status"],
+            "status": OPERATION_STATE_MAPPING.get(cs_json["status"], "UNKNOWN"),
             "location_id": cs_json["locationId"],
             "evses": [
                 {
@@ -227,10 +233,6 @@ class LocationView(BaseView):
         m = pattern.match(addr)
         if not m:
             return addr.strip(), ""  # fallback: no number part found
-        print(f"Matched street: {m.group('street')}, number: {m.group('number')}")
-        print(
-            f"Matched street (stripped): {m.group('street').strip()}, number (stripped): {m.group('number').strip()}"
-        )
         return m.group("street").strip(), m.group("number").strip()
 
 
