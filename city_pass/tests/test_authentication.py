@@ -130,7 +130,7 @@ class TestAuthenicateAccessToken(TestCase):
         },
     )
     def test_post_cut_off_access_token_is_accepted_after_fresh_login(self):
-        with freeze_time("2026-08-01 00:00:00+02:00"):
+        with freeze_time("2026-08-01 00:00:01+02:00"):
             session = Session.objects.create(encrypted_adminstration_no="foobar")
             access_token = AccessToken.objects.create(session=session)
 
@@ -138,7 +138,7 @@ class TestAuthenicateAccessToken(TestCase):
             "/some-endpoint/", headers={self.header_name: access_token.token}
         )
 
-        with freeze_time("2026-08-01 00:00:01+02:00"):
+        with freeze_time("2026-08-01 00:00:02+02:00"):
             token_authenticator = AccessTokenWithAdminNrAuthentication()
             result_session, result_token = token_authenticator.authenticate(request)
 

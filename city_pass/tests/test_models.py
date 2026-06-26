@@ -120,12 +120,12 @@ class TestTokenModels(TestCase):
         },
     )
     def test_token_created_after_cut_off(self):
-        cut_off_time = datetime.fromisoformat("2026-08-01 00:00:00+02:00")
+        cut_off_time = datetime.fromisoformat("2026-08-01 00:00:01+02:00")
         with freeze_time(cut_off_time):
             access_token = AccessToken.objects.create(session=self.session)
             refresh_token = RefreshToken.objects.create(session=self.session)
 
-        with freeze_time(datetime.fromisoformat("2026-08-01 00:00:01+02:00")):
+        with freeze_time(datetime.fromisoformat("2026-08-01 00:00:02+02:00")):
             self.assert_token_valid(access_token)
             self.assert_token_valid(refresh_token)
             self.assertEqual(AccessToken.objects.count(), 1)

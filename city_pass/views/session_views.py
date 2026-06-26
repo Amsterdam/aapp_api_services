@@ -111,7 +111,6 @@ class SessionPostCredentialView(generics.CreateAPIView):
 class SessionRefreshAccessView(generics.CreateAPIView):
     serializer_class = serializers.SessionRefreshInSerializer
 
-    @transaction.atomic
     @extend_schema_for_api_key(
         success_response=serializers.SessionTokensOutSerializer,
         exceptions=[TokenInvalidException, TokenExpiredException],
@@ -121,26 +120,35 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
 
-        # row-lock the session to prevent deadlock and race conditions
         refresh_token = (
-            models.RefreshToken.objects.select_for_update(of=("session", "self"))
-            .select_related("session")
+            models.RefreshToken.objects.select_related("session")
             .filter(token=validated_data["refresh_token"])
             .first()
         )
         if not refresh_token:
             raise TokenInvalidException("Invalid refresh token")
 
+        # Validate outside atomic so cut-off invalidation deletions are committed.
         refresh_token.is_valid()
 
-        new_access_token, new_refresh_token = self.refresh_tokens(refresh_token)
+        try:
+            new_access_token, new_refresh_token = self.refresh_tokens(
+                refresh_token.token
+            )
+        except TokenExpiredException:
+            # If revalidation failed inside the atomic block, consume the now-invalid token
+            # outside that transaction so deletion is not rolled back.
+            models.RefreshToken.objects.filter(token=refresh_token.token).delete()
+            raise
+
         serializer = serializers.SessionTokensOutSerializer(
             (new_access_token, new_refresh_token)
         )
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
+    @transaction.atomic
     def refresh_tokens(
-        self, incoming_refresh_token: models.RefreshToken
+        self, incoming_refresh_token: str
     ) -> Tuple[models.AccessToken, models.RefreshToken]:
         """Create a new access en refresh token pair.
         An incoming refresh token does not get invalidated immediatly,
@@ -152,16 +160,30 @@ class SessionRefreshAccessView(generics.CreateAPIView):
         Wrapped in an automic transaction so if something goes wrong in the database, it can be fully reverted.
 
         Args:
-            incoming_refresh_token (models.RefreshToken): token to set expiration and get related session from
+            incoming_refresh_token (str): incoming refresh token value
 
         Returns:
             Tuple[str, str]: a new token pair in string format
         """
 
+        # row-lock the session and refresh token to avoid race conditions during rotation
+        incoming_refresh_token_obj = (
+            models.RefreshToken.objects.select_for_update(of=("session", "self"))
+            .select_related("session")
+            .filter(token=incoming_refresh_token)
+            .first()
+        )
+        if not incoming_refresh_token_obj:
+            raise TokenInvalidException("Invalid refresh token")
+
+        incoming_refresh_token_obj.is_valid()
+
         # Incoming refresh token will stay valid for a little longer, so client can retry the request
-        incoming_refresh_token.expire()
-        session = incoming_refresh_token.session
-        session.refreshtoken_set.exclude(token=incoming_refresh_token.token).delete()
+        incoming_refresh_token_obj.expire()
+        session = incoming_refresh_token_obj.session
+        session.refreshtoken_set.exclude(
+            token=incoming_refresh_token_obj.token
+        ).delete()
 
         # Create a new refresh token
         new_refresh_token = models.RefreshToken.objects.create(session=session)
