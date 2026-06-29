@@ -1,19 +1,46 @@
 MOCK_RESPONSE = {
     "content": [
         {
-            "id": "2c0ccfb795d040e39136b7dd1d25f13e",
+            "id": "2c0ccabc15d040e39136b7abc125f13e",
             "name": "AmsterdamBoatTest1",
             "address": "Isolatorweg 178",
             "city": "Amsterdam",
             "postalCode": "1234 AM",
             "coordinates": {"latitude": "52.327549", "longitude": "4.972519"},
-            "openingTimes": {"twentyfourseven": True},
+            "openingTimes": {
+                "twentyfourseven": False,
+                "regularHours": [
+                    {"weekday": 1, "periodBegin": "17:41", "periodEnd": "19:41"},
+                    {"weekday": 6, "periodBegin": "13:41", "periodEnd": "17:41"},
+                ],
+            },
             "chargingStationsIds": ["VCPS-7BMY2", "VCPS-MX1VV", "VCPS-IFZTY"],
             "availableSockets": 0,
             "totalSockets": 3,
+            "sockets": [
+                {
+                    "chargingStationId": "VCPS-7BMY2",
+                    "evseId": "1",
+                    "status": "FAULTED",
+                    "available": False,
+                    "maxElectricPower": 22.0,
+                },
+                {
+                    "chargingStationId": "VCPS-IFZTY",
+                    "evseId": "1",
+                    "status": "OCCUPIED",
+                    "available": False,
+                },
+                {
+                    "chargingStationId": "VCPS-MX1VV",
+                    "evseId": "1",
+                    "status": "UNKNOWN",
+                    "available": False,
+                },
+            ],
         },
         {
-            "id": "a1025467f62a49f5898260b5709c4d4c",
+            "id": "a102abc17f62a49f5abc10b5709c4d4c",
             "name": "AmsterdamBoatTest2",
             "address": "Transformatorweg 104",
             "city": "Amsterdam",
@@ -26,13 +53,21 @@ MOCK_RESPONSE = {
             "totalSockets": 0,
         },
         {
-            "id": "a9d9b42ce3eb4d8cbf50bb6aaeaa6357",
+            "id": "a9d9b42abc1b4d8abc10bb6aaeaa6357",
             "name": "AmsterdamBoatTest3",
             "address": "Funenkade 7",
             "city": "Amsterdam",
             "postalCode": "1093 SJ",
             "coordinates": {"latitude": "52.366474", "longitude": "4.926436"},
-            "openingTimes": {"twentyfourseven": False},
+            "openingTimes": {
+                "twentyfourseven": False,
+                "regularHours": [
+                    {"weekday": 1, "periodBegin": "04:15", "periodEnd": "12:15"},
+                    {"weekday": 3, "periodBegin": "09:15", "periodEnd": "16:15"},
+                    {"weekday": 4, "periodBegin": "09:15", "periodEnd": "15:15"},
+                    {"weekday": 2, "periodBegin": "10:15", "periodEnd": "12:15"},
+                ],
+            },
             "chargingStationsIds": ["VCPS-7BMY3"],
             "tariffId": "NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY",
             "tariff": {
@@ -44,6 +79,14 @@ MOCK_RESPONSE = {
             },
             "availableSockets": 0,
             "totalSockets": 1,
+            "sockets": [
+                {
+                    "chargingStationId": "VCPS-7BMY3",
+                    "evseId": "1",
+                    "status": "OCCUPIED",
+                    "available": False,
+                }
+            ],
         },
     ],
     "empty": False,
