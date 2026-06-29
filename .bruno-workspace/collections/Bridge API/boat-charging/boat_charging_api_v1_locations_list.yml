@@ -13,11 +13,7 @@ http:
       value: "{{access-token}}"
     - name: X-Api-Key
       value: "{{apiKey}}"
-  auth:
-    type: apikey
-    key: X-Api-Key
-    value: "{{apiKey}}"
-    placement: header
+  auth: inherit
 
 settings:
   encodeUrl: true

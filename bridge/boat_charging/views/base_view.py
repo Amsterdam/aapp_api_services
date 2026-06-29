@@ -1,5 +1,6 @@
 import logging
 import re
+from typing import Any
 from urllib.parse import quote as urllib_parse_quote
 
 import httpx
@@ -126,6 +127,56 @@ class BaseView(GenericAPIView):
             raise ValidationError("Invalid session id")
         safe_param = urllib_parse_quote(param, safe="")
         return safe_param
+
+    def get_opening_times(self, item):
+        return {
+            "regular_hours": self._convert_regular_hours(
+                item["openingTimes"].get("regularHours", [])
+            ),
+            "twentyfourseven": item["openingTimes"].get("twentyfourseven", False),
+        }
+
+    def _convert_regular_hours(
+        self, regular_hours: list[dict[str, str | int]]
+    ) -> list[dict[str, Any]]:
+        """
+        The regular hour from the API are in the format:
+        {
+            "weekday": 1,
+            "periodBegin": "08:00",
+            "periodEnd": "18:00"
+        },
+        Convert this to the format expected by the frontend:
+        {
+            "dayOfWeek": 1,
+            "opening": {
+              "hours": 8,
+              "minutes": 0
+            },
+            "closing": {
+              "hours": 18,
+              "minutes": 0
+            }
+          },
+        Where also the number of the day of week is converted from 1-7 (Monday-Sunday) to 0-6 (Sunday-Saturday)
+        """
+        converted_hours = []
+        for entry in regular_hours:
+            weekday = entry["weekday"] % 7  # convert 7 to 0. Keep other days the same
+            opening_time = entry["periodBegin"]
+            closing_time = entry["periodEnd"]
+
+            opening_hours, opening_minutes = map(int, opening_time.split(":"))
+            closing_hours, closing_minutes = map(int, closing_time.split(":"))
+
+            converted_hours.append(
+                {
+                    "dayOfWeek": weekday,
+                    "opening": {"hours": opening_hours, "minutes": opening_minutes},
+                    "closing": {"hours": closing_hours, "minutes": closing_minutes},
+                }
+            )
+        return converted_hours
 
 
 def boat_charging_openapi_decorator(

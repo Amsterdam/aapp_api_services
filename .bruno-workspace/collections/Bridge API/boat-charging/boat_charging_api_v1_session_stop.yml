@@ -17,11 +17,7 @@ http:
     - name: session_id
       value: ""
       type: path
-  auth:
-    type: apikey
-    key: X-Api-Key
-    value: "{{apiKey}}"
-    placement: header
+  auth: inherit
 
 settings:
   encodeUrl: true

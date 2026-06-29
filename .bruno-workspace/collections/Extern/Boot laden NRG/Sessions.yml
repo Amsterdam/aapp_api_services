@@ -11,9 +11,6 @@ http:
       value: Mozilla/5.0
     - name: Accept
       value: application/json, text/plain, */*
-    - name: Authorization
-      value: "{{token}}"
-      disabled: true
   auth: inherit
 
 settings:

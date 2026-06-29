@@ -10,7 +10,7 @@ http:
   url: "{{baseUrl}}/boat-charging/api/v1/sessions/init"
   headers:
     - name: Access-Token
-      value: ""
+      value: "{{access-token}}"
     - name: X-Api-Key
       value: "{{apiKey}}"
   body:
@@ -23,11 +23,7 @@ http:
         "email": "user@example.com",
         "return_url": "https://yourdomain.com/app/sessions"
       }
-  auth:
-    type: apikey
-    key: X-Api-Key
-    value: "{{apiKey}}"
-    placement: header
+  auth: inherit
 
 settings:
   encodeUrl: true
