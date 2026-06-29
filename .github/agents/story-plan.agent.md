@@ -32,12 +32,12 @@ Your SOLE responsibility is planning. NEVER start implementation.
 <outputs>
 - Create or update the in-memory `plan.md` file.
 - Return `H0 Story Planning Result` with:
-	- `plan_status` set to `ready` or `needs_clarification`
-	- `plan_md_file` set to `plan.md`
-	- a concise `plan_summary`
-	- exact `open_questions` when clarification is still required
-	- `assumptions_recorded`
-	- `known_risks`
+  - `plan_status` set to `ready` or `needs_clarification`
+  - `plan_md_file` set to `plan.md`
+  - a concise `plan_summary`
+  - exact `open_questions` when clarification is still required
+  - `assumptions_recorded`
+  - `known_risks`
 </outputs>
 
 <workflow>
