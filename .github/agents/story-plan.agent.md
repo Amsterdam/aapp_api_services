@@ -112,7 +112,7 @@ Keep iterating until explicit approval or handoff (or, in unattended mode, until
 ```
 
 Rules:
-- NO code blocks - describe changes, link to files and specific symbols/functions.
+- In `plan.md`, do not include fenced code blocks (triple backticks); describe changes and reference files and specific symbols/functions instead.
 - NO blocking questions at the end - return unresolved items in `open_questions`, or record assumptions in unattended mode.
 - Every "Relevant files" entry must name a real, existing path (or explicitly mark it as a new file to create).
 - The plan MUST be concrete enough for the Developer to implement without guessing.
