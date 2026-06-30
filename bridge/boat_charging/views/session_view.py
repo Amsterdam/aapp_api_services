@@ -58,8 +58,8 @@ class SessionView(BaseView):
 
     def get_location_data(self, location: dict[str | Any, Any]):
         street, number = self.split_address(location.get("address", ""))
-        lat = location.get("coordinates").get("latitude")
-        lon = location.get("coordinates").get("longitude")
+        lat = location.get("coordinates", {}).get("latitude")
+        lon = location.get("coordinates", {}).get("longitude")
         return {
             "id": location.get("id"),
             "name": location.get("name"),

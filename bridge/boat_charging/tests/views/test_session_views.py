@@ -8,7 +8,7 @@ from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
 from bridge.boat_charging.views.session_view import SessionView
 
 
-class TestLocationView(BoatChargingTestCase):
+class TestSessionView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("boat-charging-sessions")
@@ -25,7 +25,7 @@ class TestLocationView(BoatChargingTestCase):
         self.assertEqual(resp.call_count, 1)
 
 
-class TestLocationDetailView(BoatChargingTestCase):
+class TestSessionDetailView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
         self.session_id = "foobar"
@@ -45,7 +45,7 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
 
-    def test_invalid_location_id_returns_400(self):
+    def test_invalid_session_id_returns_400(self):
         invalid_url = reverse(
             "boat-charging-session-detail",
             kwargs={"session_id": "invalid$id"},

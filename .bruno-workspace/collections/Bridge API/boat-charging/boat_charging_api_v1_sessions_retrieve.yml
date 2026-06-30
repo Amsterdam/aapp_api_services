@@ -22,7 +22,7 @@ http:
 runtime:
   variables:
     - name: access-token
-      value: eyJraWQiOiJjaUYzUUJ1NDVxVnZsUE5IdXU0d1JaSEtyb21WV2IrWjBTZjVqajJjUGI0PSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJhMjI1ZTRjNC1jMGUxLTcwZTAtOTE4MS0wMTk1NDEyNWJjNmEiLCJpc3MiOiJodHRwczovL2NvZ25pdG8taWRwLmV1LXdlc3QtMS5hbWF6b25hd3MuY29tL2V1LXdlc3QtMV9KRkpNVDFSMmoiLCJjbGllbnRfaWQiOiIyZG9iZmdqaG9vNHBkZHAzZnJobDM1OTFvIiwib3JpZ2luX2p0aSI6IjgzZTU2NDJkLThlZDEtNDYyMC05NTA4LWZiZmI2MGNkNmZmZCIsImV2ZW50X2lkIjoiZDYxYTY4OWItZGM5Ni00NmI5LWJmODMtYWIxYmZjMDNiZjFlIiwidG9rZW5fdXNlIjoiYWNjZXNzIiwic2NvcGUiOiJhd3MuY29nbml0by5zaWduaW4udXNlci5hZG1pbiIsImF1dGhfdGltZSI6MTc4MjcyODk0MSwiZXhwIjoxNzgyNzQ3NjI3LCJpYXQiOjE3ODI3NDQwMjcsImp0aSI6IjU1OTYxMjY1LWQ3MWUtNGRiNS1iYTBmLTM0NDdmNTUzNWRlNCIsInVzZXJuYW1lIjoiYTIyNWU0YzQtYzBlMS03MGUwLTkxODEtMDE5NTQxMjViYzZhIn0.hHiponC71ZclO0WQt0zQD5Iv5avPaZhkNQAKbpQAwavjkDupB3nN1dQllfRMwgPoefwJt-gJogtxnjTpM7nk8Lnrh0divXnzsprmbtLzvPEEYoVfrsi_RpAzZ8Kg46yiV6DvwwzvcpOQzBClFMXoWrpxnyxJk0A5e2NwKDe1Bc-oJMNaT1lGRFHTw4VmAbkE6bn268t7YnI5HT6rgx5sKc_2uuFb4GMyhmSgIRu7DfSz10_MrqbdWgPBq56GzOtujnrRupioDxfK2R8BAd0mmqBQdToDtfRHHb4YyI2joSXyccfjQnXfIKpvMmnQnJKJOUVaYG8RXS_sH_36ldK9SA
+      value: "{{access-token}}"
 
 settings:
   encodeUrl: true
@@ -37,7 +37,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -101,7 +101,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -127,7 +127,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -153,7 +153,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:

@@ -10,7 +10,7 @@ http:
   url: "{{baseUrl}}/boat-charging/api/v1/sessions/:session_id/stop"
   headers:
     - name: Access-Token
-      value: ""
+      value: "{{access-token}}"
     - name: X-Api-Key
       value: "{{apiKey}}"
   params:
@@ -32,7 +32,7 @@ examples:
       method: POST
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -63,7 +63,7 @@ examples:
       method: POST
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -95,7 +95,7 @@ examples:
       method: POST
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -127,7 +127,7 @@ examples:
       method: POST
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:

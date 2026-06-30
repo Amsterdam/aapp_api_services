@@ -28,7 +28,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
     response:
@@ -73,7 +73,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
     response:
@@ -95,7 +95,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
     response:
@@ -117,7 +117,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
     response:
