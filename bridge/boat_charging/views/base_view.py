@@ -129,11 +129,12 @@ class BaseView(GenericAPIView):
         return safe_param
 
     def get_opening_times(self, item):
+        opening_times = item.get("openingTimes") or {}
         return {
             "regular_hours": self._convert_regular_hours(
-                item["openingTimes"].get("regularHours", [])
+                opening_times.get("regularHours", [])
             ),
-            "twentyfourseven": item["openingTimes"].get("twentyfourseven", False),
+            "twentyfourseven": opening_times.get("twentyfourseven", False),
         }
 
     def _convert_regular_hours(
