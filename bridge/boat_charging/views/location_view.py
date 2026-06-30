@@ -1,4 +1,3 @@
-import re
 from typing import Any
 
 from django.conf import settings
@@ -179,14 +178,6 @@ class LocationView(BaseView):
             "parking_time_price_per_hour": tariff_json["parkingTimePricePerHour"],
             "flat_fee_price": tariff_json["flatFeePrice"],
         }
-
-    @staticmethod
-    def split_address(addr):
-        pattern = re.compile(r"^(?P<street>.*?\s)(?P<number>\d.*)$")
-        m = pattern.match(addr)
-        if not m:
-            return addr.strip(), ""  # fallback: no number part found
-        return m.group("street").strip(), m.group("number").strip()
 
 
 @boat_charging_openapi_decorator(

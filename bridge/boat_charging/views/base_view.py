@@ -178,6 +178,14 @@ class BaseView(GenericAPIView):
             )
         return converted_hours
 
+    @staticmethod
+    def split_address(addr):
+        pattern = re.compile(r"^(?P<street>.*?\s)(?P<number>\d.*)$")
+        m = pattern.match(addr)
+        if not m:
+            return addr.strip(), ""  # fallback: no number part found
+        return m.group("street").strip(), m.group("number").strip()
+
 
 def boat_charging_openapi_decorator(
     response_serializer_class,

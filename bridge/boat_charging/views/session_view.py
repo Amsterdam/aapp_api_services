@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 from django.conf import settings
 from rest_framework.response import Response
@@ -52,15 +53,29 @@ class SessionView(BaseView):
             "currency": "EUR",
         }
         if location := item.get("location", {}):
-            session_data["location"] = {
-                "id": location.get("id"),
-                "name": location.get("name"),
-                "address": location.get("address"),
-                "opening_times": self.get_opening_times(location),
-                "available_sockets": location.get("availableSockets"),
-                "total_sockets": location.get("totalSockets"),
-            }
+            session_data["location"] = self.get_location_data(location)
         return session_data
+
+    def get_location_data(self, location: dict[str | Any, Any]):
+        street, number = self.split_address(location.get("address", ""))
+        lat = location.get("coordinates").get("latitude")
+        lon = location.get("coordinates").get("longitude")
+        return {
+            "id": location.get("id"),
+            "name": location.get("name"),
+            "address": {
+                "street": street,
+                "number": number,
+                "city": location.get("city"),
+                "coordinates": {
+                    "lat": lat,
+                    "lon": lon,
+                },
+            },
+            "opening_times": self.get_opening_times(location),
+            "available_sockets": location.get("availableSockets"),
+            "total_sockets": location.get("totalSockets"),
+        }
 
 
 @boat_charging_openapi_decorator(response_serializer_class=SessionResponseSerializer)

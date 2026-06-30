@@ -26,6 +26,6 @@ class SessionResponseSerializer(serializers.Serializer):
     kwh = serializers.FloatField(allow_null=True)
     status = serializers.ChoiceField(choices=["ACTIVE", "COMPLETED"], allow_null=True)
     total_cost = serializers.FloatField(help_text="Excl VAT", allow_null=True)
-    currency = serializers.ChoiceField(choices=["USD", "EUR"])
+    currency = serializers.ChoiceField(choices=["EUR"])
     # Location data
     location = LocationPropertiesSerializer(required=False)
