@@ -3,7 +3,7 @@ from unittest.mock import patch
 from django.test import TestCase
 from model_bakery import baker
 
-from notification.models import Device, Notification
+from notification.models.notification_models import Device, Notification
 from notification.services.push import PushService
 from notification.utils.patch_utils import apply_init_firebase_patches
 

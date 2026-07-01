@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from model_bakery import baker
 
-from notification.models import (
+from notification.models.notification_models import (
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,

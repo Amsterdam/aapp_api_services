@@ -13,7 +13,7 @@ from bridge.mijnamsterdam.tests.mock_data.logout import (
     IS_DELETED_TRUE,
 )
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import ScheduledNotification
+from notification.models.notification_models import ScheduledNotification
 
 
 class TestMijnAmsterdamDeviceView(ResponsesActivatedAPITestCase):

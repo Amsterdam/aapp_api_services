@@ -11,7 +11,7 @@ from core.utils.openapi_utils import (
     extend_schema_for_device_id,
 )
 from core.views.mixins import DeviceIdMixin
-from notification.models import Notification
+from notification.models.notification_models import Notification
 from notification.serializers.notification_serializers import (
     ModuleNotificationTypeSerializer,
     NotificationResultSerializer,

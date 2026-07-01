@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from core.tests.test_authentication import BasicAPITestCase
-from notification.models import Device, Notification
+from notification.models.notification_models import Device, Notification
 
 
 class BaseNotificationViewTestCase(BasicAPITestCase):

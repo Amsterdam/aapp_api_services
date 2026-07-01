@@ -10,7 +10,7 @@ from core.services.notification_service import (
     NotificationServiceError,
 )
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import (
+from notification.models.notification_models import (
     Device,
     Notification,
     NotificationLast,

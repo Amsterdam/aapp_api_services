@@ -6,7 +6,7 @@ from freezegun import freeze_time
 from model_bakery import baker
 
 from notification.management.commands.updatenotificationpartitions import DAYS_TO_KEEP
-from notification.models import Notification
+from notification.models.notification_models import Notification
 
 
 class UpdatePartitionsTest(TransactionTestCase):

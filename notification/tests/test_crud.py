@@ -6,7 +6,7 @@ from firebase_admin import messaging
 from model_bakery import baker
 
 from notification.crud import NotificationCRUD
-from notification.models import (
+from notification.models.notification_models import (
     Device,
     Notification,
     NotificationPushModuleDisabled,
