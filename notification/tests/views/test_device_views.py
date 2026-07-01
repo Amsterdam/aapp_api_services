@@ -24,8 +24,8 @@ from notification.models.notification_models import (
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
     ScheduledNotification,
-    WasteDevice,
 )
+from notification.models.waste_guide_models import WasteDevice
 
 
 @freezegun.freeze_time("2026-02-25T12:00:00Z")
