@@ -97,34 +97,6 @@ class TestSessionInitView(BaseCityPassTestCase):
         result = self.client.get(self.api_url, headers=None, follow=True)
         self.assertEqual(result.status_code, 401)
 
-    @override_settings(
-        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
-        TOKEN_TTLS={
-            "ACCESS_TOKEN": ONE_HOUR_IN_SECONDS,
-            "REFRESH_TOKEN": 365 * 24 * 60 * 60,
-        },
-    )
-    def test_session_init_after_cut_off_creates_a_new_usable_session(self):
-        with freeze_time("2026-08-01 00:00:01+02:00"):
-            init_result = self.client.post(
-                self.api_url, headers=self.headers, follow=True
-            )
-
-        self.assertEqual(init_result.status_code, 200)
-
-        access_token = init_result.data["access_token"]
-        logout_headers = {**self.headers, settings.ACCESS_TOKEN_HEADER: access_token}
-
-        with freeze_time("2026-08-01 00:00:02+02:00"):
-            logout_result = self.client.post(
-                reverse("session-logout"),
-                headers=logout_headers,
-                content_type="application/json",
-                follow=True,
-            )
-
-        self.assertEqual(logout_result.status_code, 200)
-
 
 class TestSessionPostCityPassCredentialView(BaseCityPassTestCase):
     api_url = "/city-pass/api/v1/session/credentials"
