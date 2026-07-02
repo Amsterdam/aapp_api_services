@@ -179,8 +179,7 @@ class AddressSearchAbstractView(GenericAPIView):
         # change naming of fields
         data["city"] = data["woonplaatsnaam"]
         data["street"] = data["straatnaam"]
-        data["lat"] = coordinates[0]
-        data["lon"] = coordinates[1]
+        data["coordinates"] = {"lat": coordinates[0], "lon": coordinates[1]}
         data["number"] = data.get("huisnummer", "")
         data["additionLetter"] = data.get("huisletter", "")
         data["additionNumber"] = data.get("huisnummertoevoeging", "")

@@ -10,18 +10,14 @@ http:
   url: "{{baseUrl}}/boat-charging/api/v1/sessions/:session_id/start"
   headers:
     - name: Access-Token
-      value: ""
+      value: "{{access-token}}"
     - name: X-Api-Key
       value: "{{apiKey}}"
   params:
     - name: session_id
       value: ""
       type: path
-  auth:
-    type: apikey
-    key: X-Api-Key
-    value: "{{apiKey}}"
-    placement: header
+  auth: inherit
 
 settings:
   encodeUrl: true
@@ -36,7 +32,7 @@ examples:
       method: POST
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -67,7 +63,7 @@ examples:
       method: POST
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -99,7 +95,7 @@ examples:
       method: POST
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -131,7 +127,7 @@ examples:
       method: POST
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:

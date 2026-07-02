@@ -43,8 +43,10 @@ class RecycleLocationsView(generics.ListAPIView):
 
     @staticmethod
     def _rename_fields_for_serializer(data):
-        data["lat"] = data["latitude"]
-        data["lon"] = data["longitude"]
+        data["coordinates"] = {
+            "lat": data["latitude"],
+            "lon": data["longitude"],
+        }
         data["cityDistrict"] = data["city_district"]
         data["additionLetter"] = data["addition_letter"]
         data["additionNumber"] = data["addition_number"]

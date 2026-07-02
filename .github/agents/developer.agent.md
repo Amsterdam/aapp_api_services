@@ -27,7 +27,7 @@ Your job is to implement the approved work item with the least complexity that s
 
 ## Inputs
 - Request from the Orchestrator. Format specified in `.github/agents/handoff-schemas.md` -> H2 Developer Request
-- A plan.md file from the Plan agent
+- A plan.md file from the Story Plan agent
 - git history context rooted at `original_git_hash`.
 
 ## Outputs

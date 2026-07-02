@@ -13,11 +13,12 @@ http:
       value: "{{access-token}}"
     - name: X-Api-Key
       value: "{{apiKey}}"
-  auth:
-    type: apikey
-    key: X-Api-Key
-    value: "{{apiKey}}"
-    placement: header
+  auth: inherit
+
+runtime:
+  variables:
+    - name: access-token
+      value: "{{access-token}}"
 
 settings:
   encodeUrl: true
@@ -32,7 +33,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
     response:
@@ -63,7 +64,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
     response:
@@ -85,7 +86,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
     response:
@@ -107,7 +108,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
     response:
