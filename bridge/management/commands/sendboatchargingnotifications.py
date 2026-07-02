@@ -47,10 +47,11 @@ class Command(BaseCommand):
 
     def _process_session_data_for_completed_notifications(self, session_data: dict):
         session = session_data.get("session", {})
-
         session_id = session.get("uniqueId")
         status = session.get("status")
 
+        # Only process completed sessions (status 4)
+        # TODO: once other statuses are supported, this will need to be updated
         if status != 4:
             return
 
@@ -62,8 +63,10 @@ class Command(BaseCommand):
 
         if boat_charging_session is None:
             logger.warning(
-                "Completed session %s not found in local store; skipping notification.",
-                session_id,
+                "Completed session not found in database; skipping notification.",
+                extra={
+                    "session_id": session_id,
+                },
             )
             return
 

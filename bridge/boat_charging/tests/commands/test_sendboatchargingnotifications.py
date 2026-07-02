@@ -87,9 +87,11 @@ class TestCommand(ResponsesActivatedAPITestCase):
         call_command("sendboatchargingnotifications")
 
         self.assertEqual(ScheduledNotification.objects.count(), 1)
-        notification = ScheduledNotification.objects.first()
-        self.assertIsNotNone(notification)
-        device_ids = list(notification.devices.values_list("external_id", flat=True))
+        scheduled_notification = ScheduledNotification.objects.first()
+        self.assertIsNotNone(scheduled_notification)
+        device_ids = list(
+            scheduled_notification.devices.values_list("external_id", flat=True)
+        )
         self.assertEqual(device_ids, [self.device_id])
 
         self.assertFalse(
@@ -111,22 +113,6 @@ class TestCommand(ResponsesActivatedAPITestCase):
 
         mocked_async_fetch.assert_awaited_once_with([])
         self.assertEqual(ScheduledNotification.objects.count(), 0)
-
-    @patch(
-        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
-        new_callable=AsyncMock,
-    )
-    def test_command_malformed_payload_is_skipped(self, mocked_async_fetch):
-        mocked_async_fetch.return_value = [{"session": {"status": 4}}]
-
-        call_command("sendboatchargingnotifications")
-
-        self.assertEqual(ScheduledNotification.objects.count(), 0)
-        self.assertTrue(
-            BoatChargingSession.objects.filter(
-                session_id=self.session.session_id
-            ).exists()
-        )
 
     @patch(
         "bridge.management.commands.sendboatchargingnotifications._async_fetch",

@@ -29,7 +29,7 @@ class Module(ChoicesEnum):
             Module.CITY_PASS: "Over uw saldo, regelingen en tips.",
             Module.BURNING_GUIDE: "U ontvangt meldingen als het code rood is voor 'Mijn adres'.",
             Module.NEWS: "U ontvangt meldingen als er nieuwe liveblogs zijn",
-            Module.BOAT_CHARGING: "Herinnering dat uw boot aan het opladen is.",
+            Module.BOAT_CHARGING: "Meldingen over het laden van uw boot.",
         }
         return descriptions[self]
 
@@ -114,7 +114,7 @@ class NotificationType(ChoicesEnum):
     BOAT_CHARGING_NOTIFICATION = NotificationTypeClass(
         module=Module.BOAT_CHARGING,
         name="boat-charging-reminder",
-        description="Herinnering dat uw boot aan het opladen is",
+        description="Meldingen over het laden van uw boot",
         visibility="visible",
     )
 
