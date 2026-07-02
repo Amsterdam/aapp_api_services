@@ -24,3 +24,6 @@ class BoatChargingSessionService:
             device__external_id=device_id,
             session_id=session_id,
         ).delete()
+
+    def get_all_boat_charging_sessions(self):
+        return BoatChargingSession.objects.all()

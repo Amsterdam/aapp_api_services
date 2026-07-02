@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from bridge.boat_charging.services.notifications import NotificationService
-from core.services.boat_charging_device import BoatChargingDeviceService
+from core.services.boat_charging_sessions import BoatChargingSessionService
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +17,12 @@ class Command(BaseCommand):
     def __init__(self):
         super().__init__()
         self.notification_service = NotificationService()
-        self.boat_charging_device_service = BoatChargingDeviceService()
+        self.boat_charging_session_service = BoatChargingSessionService()
 
     def handle(self, *args, **options):
         now = timezone.now()
 
-        devices = self.boat_charging_device_service.get_all_boat_charging_devices()
+        devices = self.boat_charging_session_service.get_all_boat_charging_sessions()
 
         for device in devices:
             print(now, device)
