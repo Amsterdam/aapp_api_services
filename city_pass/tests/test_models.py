@@ -91,7 +91,6 @@ class TestTokenModels(TestCase):
         },
     )
     def test_token_created_before_cut_off(self):
-
         # far before cut off date, tokens are valid
         with freeze_time("2026-01-01 23:59:50+01:00"):
             access_token = AccessToken(session=self.session)
@@ -119,6 +118,25 @@ class TestTokenModels(TestCase):
             # Check that tokens are deleted from the database
             self.assertEqual(AccessToken.objects.count(), 0)
             self.assertEqual(RefreshToken.objects.count(), 0)
+
+    @override_settings(
+        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
+        TOKEN_TTLS={
+            "ACCESS_TOKEN": 30 * 60,
+            "REFRESH_TOKEN": 365 * 24 * 60 * 60,
+        },
+    )
+    def test_token_created_at_cut_off_is_invalid(self):
+        """
+        Token created at cut off datetime is instantly invalidated.
+        """
+        cut_off_time = datetime.fromisoformat("2026-08-01 00:00:00+02:00")
+
+        with freeze_time(cut_off_time):
+            access_token = AccessToken.objects.create(session=self.session)
+            refresh_token = RefreshToken.objects.create(session=self.session)
+            self.assert_token_invalid(access_token)
+            self.assert_token_invalid(refresh_token)
 
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",
