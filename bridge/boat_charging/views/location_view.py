@@ -1,4 +1,3 @@
-import re
 from typing import Any
 
 from django.conf import settings
@@ -80,12 +79,7 @@ class LocationView(BaseView):
                     {"number": number} if number else {}
                 ),  # number cannot be empty string, so only include if it is not empty
             },
-            "opening_times": {
-                "regular_hours": self._convert_regular_hours(
-                    item["openingTimes"].get("regularHours", [])
-                ),
-                "twentyfourseven": item["openingTimes"].get("twentyfourseven", False),
-            },
+            "opening_times": self.get_opening_times(item),
             "available_sockets": item.get("availableSockets", 0),
             "total_sockets": item.get("totalSockets", 0),
             "status": status,
@@ -148,48 +142,6 @@ class LocationView(BaseView):
 
         return overall_status, max_kw
 
-    def _convert_regular_hours(
-        self, regular_hours: list[dict[str, str | int]]
-    ) -> list[dict[str, Any]]:
-        """
-        The regular hour from the API are in the format:
-        {
-            "weekday": 1,
-            "periodBegin": "08:00",
-            "periodEnd": "18:00"
-        },
-        Convert this to the format expected by the frontend:
-        {
-            "dayOfWeek": 1,
-            "opening": {
-              "hours": 8,
-              "minutes": 0
-            },
-            "closing": {
-              "hours": 18,
-              "minutes": 0
-            }
-          },
-        Where also the number of the day of week is converted from 1-7 (Monday-Sunday) to 0-6 (Sunday-Saturday)
-        """
-        converted_hours = []
-        for entry in regular_hours:
-            weekday = entry["weekday"] % 7  # convert 7 to 0. Keep other days the same
-            opening_time = entry["periodBegin"]
-            closing_time = entry["periodEnd"]
-
-            opening_hours, opening_minutes = map(int, opening_time.split(":"))
-            closing_hours, closing_minutes = map(int, closing_time.split(":"))
-
-            converted_hours.append(
-                {
-                    "dayOfWeek": weekday,
-                    "opening": {"hours": opening_hours, "minutes": opening_minutes},
-                    "closing": {"hours": closing_hours, "minutes": closing_minutes},
-                }
-            )
-        return converted_hours
-
     def get_charging_station_data(self, cs_json) -> dict:
         return {
             "id": cs_json["id"],
@@ -226,14 +178,6 @@ class LocationView(BaseView):
             "parking_time_price_per_hour": tariff_json["parkingTimePricePerHour"],
             "flat_fee_price": tariff_json["flatFeePrice"],
         }
-
-    @staticmethod
-    def split_address(addr):
-        pattern = re.compile(r"^(?P<street>.*?\s)(?P<number>\d.*)$")
-        m = pattern.match(addr)
-        if not m:
-            return addr.strip(), ""  # fallback: no number part found
-        return m.group("street").strip(), m.group("number").strip()
 
 
 @boat_charging_openapi_decorator(

@@ -17,11 +17,7 @@ http:
     - name: location_id
       value: a1025467f62a49f5898260b5709c4d4c
       type: path
-  auth:
-    type: apikey
-    key: X-Api-Key
-    value: "{{apiKey}}"
-    placement: header
+  auth: inherit
 
 settings:
   encodeUrl: true
@@ -36,7 +32,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -114,7 +110,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -140,7 +136,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
@@ -166,7 +162,7 @@ examples:
       method: GET
       headers:
         - name: Access-Token
-          value: ""
+          value: "{{access-token}}"
         - name: X-Api-Key
           value: "{{apiKey}}"
       params:
