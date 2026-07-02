@@ -1,12 +1,17 @@
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import ForeignKey
+from django.utils import timezone as django_timezone
 
 from city_pass.exceptions import TokenExpiredException
+from city_pass.utils import get_token_cut_off_for_datetime
+
+ZONE_INFO = ZoneInfo(settings.TIME_ZONE)
 
 
 class Session(models.Model):
@@ -63,13 +68,8 @@ class SessionToken(models.Model):
         the token is invalid and will be deleted.
         """
 
-        now = datetime.now(timezone.utc)
-        cut_off_datetime = settings.TOKEN_CUT_OFF_DATETIME
-        current_year = now.year
-
-        cut_off_dt_current_year = datetime.strptime(
-            f"{current_year}-{cut_off_datetime} +0000", "%Y-%m-%d %H:%M %z"
-        )
+        now = django_timezone.localtime(django_timezone.now(), ZONE_INFO)
+        cut_off_dt_current_year = get_token_cut_off_for_datetime(now)
 
         # If token is created after cut off datetime, it's valid
         if self.created_at > cut_off_dt_current_year:
@@ -98,7 +98,7 @@ class AccessToken(SessionToken):
             bool: if token is still valid
         """
         super().is_valid()
-        now = datetime.now(timezone.utc)
+        now = django_timezone.localtime(django_timezone.now(), ZONE_INFO)
 
         ttl_seconds = settings.TOKEN_TTLS["ACCESS_TOKEN"]
         expiry_time = self.created_at + timedelta(seconds=ttl_seconds)
@@ -120,7 +120,7 @@ class RefreshToken(SessionToken):
             bool: if token is still valid
         """
         super().is_valid()
-        now = datetime.now(timezone.utc)
+        now = django_timezone.localtime(django_timezone.now(), ZONE_INFO)
         if self.expires_at and now >= self.expires_at:
             raise TokenExpiredException("Token specific expiration date has passed")
 
@@ -135,9 +135,9 @@ class RefreshToken(SessionToken):
         """Set forces expiration date, outside of standard TTL"""
         if self.expires_at:
             return
-        self.expires_at = datetime.now(timezone.utc) + timedelta(
-            seconds=settings.REFRESH_TOKEN_EXPIRATION_TIME
-        )
+        self.expires_at = django_timezone.localtime(
+            django_timezone.now(), ZONE_INFO
+        ) + timedelta(seconds=settings.REFRESH_TOKEN_EXPIRATION_TIME)
         self.save()
 
 
