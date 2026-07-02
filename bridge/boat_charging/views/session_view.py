@@ -1,4 +1,3 @@
-import re
 from typing import Any
 
 from django.conf import settings
@@ -11,8 +10,6 @@ from bridge.boat_charging.views.base_view import (
     BaseView,
     boat_charging_openapi_decorator,
 )
-
-SESSION_ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 @boat_charging_openapi_decorator(
