@@ -4,9 +4,9 @@ from copy import deepcopy
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-from news.etl.load_data import NewsArticleLoader
-from news.etl.transform_data import transform
-from news.models import NewsArticle
+from news.etl.load_articles import NewsArticleLoader
+from news.etl.transform_articles import transform_articles
+from news.models.article_models import NewsArticle
 from news.tests.mock_data import item_article, item_liveblog
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class Command(BaseCommand):
             for article in extracted_data:
                 article["is_active_liveblog"] = False
 
-        transformed_data = transform(extracted_data)
+        transformed_data = transform_articles(extracted_data)
 
         self._sync_newsarticle_pk_sequence()
 

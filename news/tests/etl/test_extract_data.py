@@ -1,7 +1,12 @@
+from unittest.mock import AsyncMock, Mock, patch
+
 from aioresponses import aioresponses
 from django.test import TestCase
 
-from news.etl.extract_data import IproxFetcher
+from news.etl.extract_data import IproxConstructionWorkFetcher, IproxNewsFetcher
+from news.etl.load_articles import NewsArticleLoader
+from news.etl.transform_articles import transform_articles
+from news.models.article_models import NewsArticle
 from news.tests.mock_data import all_news, highlighted, item_article, liveblogs
 
 
@@ -12,19 +17,19 @@ class ExtractDataTest(TestCase):
 
     def test_invalid_initialization(self):
         with self.assertRaises(ValueError):
-            IproxFetcher(
+            IproxNewsFetcher(
                 iprox_fetch_url="", iprox_detail_url=self.detail_url, sources=[]
             )
 
     def test_invalid_sources_configuration(self):
         with self.assertRaises(ValueError):
-            IproxFetcher(
+            IproxNewsFetcher(
                 iprox_fetch_url=self.fetch_url,
                 iprox_detail_url=self.detail_url,
                 sources="not a list",
             )
         with self.assertRaises(ValueError):
-            IproxFetcher(
+            IproxNewsFetcher(
                 iprox_fetch_url=self.fetch_url,
                 iprox_detail_url=self.detail_url,
                 sources=[{"index": "highlighted"}],  # missing boolean_column
@@ -43,7 +48,7 @@ class ExtractDataTest(TestCase):
                 "district": None,
             },
         ]
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
+        fetcher = IproxNewsFetcher(self.fetch_url, self.detail_url, sources=sources)
 
         with aioresponses() as mocked:
             mocked.get(
@@ -73,7 +78,7 @@ class ExtractDataTest(TestCase):
                 "district": None,
             },
         ]
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
+        fetcher = IproxNewsFetcher(self.fetch_url, self.detail_url, sources=sources)
 
         with aioresponses() as mocked:
             mocked.get(
@@ -100,7 +105,7 @@ class ExtractDataTest(TestCase):
                 "district": None,
             }
         ]
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
+        fetcher = IproxNewsFetcher(self.fetch_url, self.detail_url, sources=sources)
         # Prepare items dict
         items = {
             123123: {"id": 123123, "is_highlight": True, "district": None},
@@ -136,7 +141,7 @@ class ExtractDataTest(TestCase):
                 "district": None,
             },
         ]
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=sources)
+        fetcher = IproxNewsFetcher(self.fetch_url, self.detail_url, sources=sources)
 
         with aioresponses() as mocked:
             # Mock fetching all items
@@ -160,7 +165,7 @@ class ExtractDataTest(TestCase):
         Test the combination of detailed and basic information into a single dictionary.
         It is key that the flags of the basic info are preserved, as this is used to store in the database.
         """
-        fetcher = IproxFetcher(self.fetch_url, self.detail_url, sources=[])
+        fetcher = IproxNewsFetcher(self.fetch_url, self.detail_url, sources=[])
         basic_info = {
             "id": 123123,
             "district": None,
@@ -182,3 +187,31 @@ class ExtractDataTest(TestCase):
         self.assertFalse(combined["is_liveblog"])
         self.assertEqual(combined["title"], "Test Article")
         self.assertEqual(combined["body"], "Lorem ipsum")
+
+    @patch(
+        "news.etl.extract_data.IproxConstructionWorkFetcher._async_fetch",
+        new_callable=AsyncMock,
+    )
+    def test_construction_work_marker_survives_extract_transform_and_load(
+        self, mock_async_fetch
+    ):
+        detail_payload = {
+            **item_article.MOCK_RESPONSE_123123,
+            "image_url": "",
+        }
+        mock_async_fetch.side_effect = [
+            [[{"id": detail_payload["id"]}]],
+            [[detail_payload][0]],
+        ]
+
+        fetcher = IproxConstructionWorkFetcher()
+        extracted_data = fetcher.extract(
+            "https://api.example.com/construction-work/articles/"
+        )
+        transformed_data = transform_articles(extracted_data)
+
+        loader = NewsArticleLoader(image_set_service=Mock())
+        loader.load(transformed_data)
+
+        article = NewsArticle.objects.get(foreign_id=detail_payload["id"])
+        self.assertTrue(article.is_construction_work)

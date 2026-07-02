@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.utils.openapi_utils import extend_schema_for_api_key
-from news.models import DISTRICT_TYPE_CHOICES
+from news.models.article_models import DISTRICT_TYPE_CHOICES
 from news.serializers.districts_serializers import DistrictListResponseSerializer
 
 logger = logging.getLogger(__name__)

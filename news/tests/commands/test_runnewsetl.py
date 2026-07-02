@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from aioresponses import aioresponses
 from django.core.management import call_command
@@ -7,7 +7,7 @@ from django.utils import timezone
 from model_bakery import baker
 
 from news.management.commands import runnewsetl
-from news.models import LiveBlogItem, NewsArticle, NewsArticleImage
+from news.models.article_models import LiveBlogItem, NewsArticle, NewsArticleImage
 from news.tests.mock_data import highlighted, item_article, item_liveblog, liveblogs
 from notification.models import ScheduledNotification
 
@@ -202,6 +202,38 @@ class RunNewsETLTest(TestCase):
         self.assertEqual(NewsArticle.objects.count(), 0)
         self.assertEqual(LiveBlogItem.objects.count(), 0)
         self.assertEqual(NewsArticleImage.objects.count(), 0)
+
+    @patch("news.management.commands.runnewsetl.logger.info")
+    @override_settings(
+        DELETE_UNSEEN_ARTICLES=True,
+        DELETE_UNSEEN_ARTICLES_AFTER_SECONDS=7200,
+    )
+    @patch("news.management.commands.runnewsetl.garbage_collect_unseen_articles")
+    @patch("news.management.commands.runnewsetl.transform_articles", return_value=[])
+    @patch.object(runnewsetl.iprox_fetcher, "extract")
+    def test_run_news_etl_does_not_log_success_after_transform_stage_aborts(
+        self,
+        mock_extract,
+        mock_transform_articles,
+        mock_garbage_collect,
+        mock_logger_info,
+    ):
+        extracted_articles = [{"id": 123123}]
+        mock_extract.return_value = extracted_articles
+
+        call_command("runnewsetl")
+
+        mock_extract.assert_called_once_with()
+        mock_transform_articles.assert_called_once_with(extracted_articles)
+        mock_garbage_collect.assert_not_called()
+        mock_logger_info.assert_any_call(
+            "No valid transformed articles found. Ending ETL process."
+        )
+        self.assertNotIn(
+            call("ETL process completed successfully."),
+            mock_logger_info.call_args_list,
+        )
+        self.assertEqual(NewsArticle.objects.count(), 0)
 
     @override_settings(ENABLE_LIVEBLOG_NOTIFICATIONS=False)
     @patch(
@@ -607,7 +639,7 @@ class RunNewsETLTest(TestCase):
         DELETE_UNSEEN_ARTICLES=True,
         DELETE_UNSEEN_ARTICLES_AFTER_SECONDS=7200,
     )
-    def test_run_news_etl_only_deletes_unseen_articles_when_new_articles_are_created(
+    def test_run_news_etl_skips_garbage_collection_when_extract_stage_aborts(
         self,
     ):
         stale_article = baker.make(
@@ -626,3 +658,62 @@ class RunNewsETLTest(TestCase):
 
         stale_article.refresh_from_db()
         self.assertFalse(stale_article.deleted)
+
+    @override_settings(
+        DELETE_UNSEEN_ARTICLES=True,
+        DELETE_UNSEEN_ARTICLES_AFTER_SECONDS=7200,
+        ENABLE_LIVEBLOG_NOTIFICATIONS=False,
+    )
+    @patch(
+        "news.management.commands.runnewsetl.data_loader.image_set_service.get_or_upload_from_url"
+    )
+    def test_run_news_etl_garbage_collects_after_update_only_rerun(
+        self,
+        mock_get_or_upload_from_url,
+    ):
+        mock_get_or_upload_from_url.return_value = {
+            "id": 12345,
+            "identifier": "xyz789abc123",
+            "description": "description of the image",
+            "variants": [
+                {
+                    "image": "https://example.com/image.jpg",
+                    "width": 123,
+                    "height": 456,
+                }
+            ],
+        }
+        baker.make(
+            NewsArticle,
+            foreign_id=item_article.MOCK_RESPONSE_123123["id"],
+            deleted=False,
+            in_all_news=True,
+            title="Existing article",
+            url=item_article.MOCK_RESPONSE_123123["url"],
+            publication_datetime=item_article.MOCK_RESPONSE_123123["publicationDate"],
+        )
+        stale_article = baker.make(
+            NewsArticle,
+            foreign_id=999999,
+            deleted=False,
+            in_all_news=True,
+        )
+        NewsArticle.objects.filter(id=stale_article.id).update(
+            last_seen=timezone.now() - timezone.timedelta(hours=3)
+        )
+
+        mocked_sources = [
+            {
+                "index": "highlighted",
+                "boolean_column": "is_highlight",
+                "district": None,
+            }
+        ]
+        with patch.object(runnewsetl.iprox_fetcher, "sources", mocked_sources):
+            with aioresponses() as mocked:
+                self._mock_single_highlight_pipeline(mocked)
+                call_command("runnewsetl")
+
+        stale_article.refresh_from_db()
+
+        self.assertTrue(stale_article.deleted)

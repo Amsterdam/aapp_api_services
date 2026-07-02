@@ -1,7 +1,7 @@
 from django.urls import reverse
 
 from core.tests.test_authentication import BasicAPITestCase
-from news.models import NewsArticle
+from news.models.article_models import NewsArticle
 
 
 class TestDistrictListView(BasicAPITestCase):

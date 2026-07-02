@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 from django.test import TestCase
 
-from news.etl.transform_data import (
+from news.etl.transform_articles import (
     add_quotes_around_blockquotes,
     change_date_string_to_iso,
     decode_and_strip_outer_div,
@@ -9,7 +9,7 @@ from news.etl.transform_data import (
     extract_title_from_elements,
     find_elements_between_datetimes,
     parse_liveblog_messages,
-    transform,
+    transform_articles,
     validate_article,
 )
 from news.tests.mock_data import item_article, item_liveblog
@@ -23,7 +23,7 @@ class TransformDataTest(TestCase):
                 **{"in_all_news": True, "district": None},
             }
         ]
-        transformed = transform(extracted_data)
+        transformed = transform_articles(extracted_data)
         self.assertEqual(len(transformed), 1)
         article = transformed[0]
         self.assertEqual(article["foreign_id"], 123123)
@@ -46,7 +46,7 @@ class TransformDataTest(TestCase):
                 **{"district": None, "is_liveblog": True},
             }
         ]
-        transformed = transform(extracted_data)
+        transformed = transform_articles(extracted_data)
         self.assertEqual(len(transformed), 1)
         article = transformed[0]
         self.assertEqual(article["foreign_id"], 1234123)
@@ -71,12 +71,28 @@ class TransformDataTest(TestCase):
             }
         ]
 
-        transformed = transform(extracted_data)
+        transformed = transform_articles(extracted_data)
         self.assertEqual(len(transformed), 1)
         article = transformed[0]
         self.assertIsInstance(article["body"], list)
         self.assertTrue(article["is_liveblog"])
         self.assertTrue(article["is_district"])
+
+    def test_transform_preserves_construction_work_marker(self):
+        extracted_data = [
+            {
+                **item_article.MOCK_RESPONSE_123123,
+                **{
+                    "district": None,
+                    "is_construction_work": True,
+                },
+            }
+        ]
+
+        transformed = transform_articles(extracted_data)
+
+        self.assertEqual(len(transformed), 1)
+        self.assertTrue(transformed[0]["is_construction_work"])
 
     def test_transform_invalid_article(self):
         extracted_data = [
@@ -88,7 +104,7 @@ class TransformDataTest(TestCase):
             }
         ]
         with self.assertLogs(level="WARNING") as log:
-            transformed = transform(extracted_data)
+            transformed = transform_articles(extracted_data)
             self.assertEqual(len(transformed), 0)
             self.assertIn("Skipping article due to validation failure.", log.output[0])
 

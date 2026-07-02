@@ -5,7 +5,7 @@ from django.urls import reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import BasicAPITestCase
-from news.models import LiveBlogItem, NewsArticle, NewsArticleImage
+from news.models.article_models import LiveBlogItem, NewsArticle, NewsArticleImage
 from news.views.article_views import ArticleDetailView, ArticleListView
 
 
@@ -50,8 +50,8 @@ class TestArticleListView(BasicAPITestCase):
             is_district=True,
             is_active_liveblog=True,
         )
-        self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
-        self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
+        self.article_1_image_1 = baker.make(NewsArticleImage, parent=self.article_1)
+        self.article_1_image_2 = baker.make(NewsArticleImage, parent=self.article_1)
 
     def test_article_list(self):
         response = self.client.get(
@@ -250,8 +250,8 @@ class TestArticleDetailView(BasicAPITestCase):
             in_all_news=True,
             publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
         )
-        self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
-        self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
+        self.article_1_image_1 = baker.make(NewsArticleImage, parent=self.article_1)
+        self.article_1_image_2 = baker.make(NewsArticleImage, parent=self.article_1)
 
         self.url = reverse("news-article-detail", kwargs={"id": self.article_1.id})
 

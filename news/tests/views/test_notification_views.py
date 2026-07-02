@@ -5,7 +5,7 @@ from rest_framework import status
 
 from core.exceptions import MissingDeviceIdHeader
 from core.tests.test_authentication import BasicAPITestCase
-from news.models import LiveblogNotification, NewsArticle
+from news.models.article_models import LiveblogNotification, NewsArticle
 
 
 class TestNotificationView(BasicAPITestCase):

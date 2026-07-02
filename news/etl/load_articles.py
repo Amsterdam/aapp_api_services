@@ -1,13 +1,14 @@
 import logging
+from dataclasses import dataclass
 from datetime import timedelta
 
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from requests.exceptions import HTTPError, RequestException
+from requests import HTTPError, RequestException
 
 from core.services.image_set import ImageSetService
-from news.models import (
+from news.models.article_models import (
     LiveBlogItem,
     LiveblogNotification,
     NewsArticle,
@@ -25,14 +26,41 @@ class ArticleLoaderError(Exception):
     pass
 
 
+@dataclass(frozen=True)
+class ArticleLoadResult:
+    created_count: int
+    cleanup_eligible: bool
+
+
 class NewsArticleLoader:
     """
     Loader class for ingesting news articles and liveblogs into the database.
     Handles upserts, image processing, and liveblog item management.
     """
 
-    def __init__(self, image_set_service=None):
-        self.image_set_service = image_set_service or ImageSetService()
+    def __init__(
+        self,
+        *,
+        image_set_service: ImageSetService | None = None,
+        new_liveblog_notification_service: NewLiveblogNotificationService | None = None,
+        liveblog_update_notification_service: LiveblogUpdateNotificationService
+        | None = None,
+        enable_new_liveblog_notifications: bool = True,
+    ):
+        self.image_set_service = (
+            image_set_service if image_set_service is not None else ImageSetService()
+        )
+        self.new_liveblog_notification_service = (
+            new_liveblog_notification_service
+            if new_liveblog_notification_service is not None
+            else NewLiveblogNotificationService()
+        )
+        self.liveblog_update_notification_service = (
+            liveblog_update_notification_service
+            if liveblog_update_notification_service is not None
+            else LiveblogUpdateNotificationService()
+        )
+        self.enable_new_liveblog_notifications = enable_new_liveblog_notifications
 
     def load(self, transformed_data: list[dict]):
         """
@@ -43,10 +71,15 @@ class NewsArticleLoader:
             "Load news data into database.",
             extra={"article_count": len(transformed_data)},
         )
+        incoming_foreign_ids = self._get_incoming_foreign_ids(transformed_data)
+        existing_foreign_ids = self._get_existing_foreign_ids(incoming_foreign_ids)
+        loaded_liveblog_foreign_ids = self._get_loaded_liveblog_foreign_ids(
+            transformed_data
+        )
         news_articles_list = [
             self._get_news_article_object(data) for data in transformed_data
         ]
-        created_articles = self._upsert_news_articles(news_articles_list)
+        self._upsert_news_articles(news_articles_list, loaded_liveblog_foreign_ids)
 
         news_articles_dict = self._get_news_articles_dict()  # {foreign_id: NewsArticle instance} for all articles in the database after upsert
 
@@ -61,7 +94,37 @@ class NewsArticleLoader:
                     exc_info=e,
                 )
 
-        return created_articles
+        return ArticleLoadResult(
+            created_count=len(incoming_foreign_ids - existing_foreign_ids),
+            cleanup_eligible=bool(transformed_data),
+        )
+
+    def _get_incoming_foreign_ids(self, transformed_data: list[dict]) -> set[int]:
+        return {
+            int(article_data["foreign_id"])
+            for article_data in transformed_data
+            if article_data.get("foreign_id") is not None
+        }
+
+    def _get_existing_foreign_ids(self, incoming_foreign_ids: set[int]) -> set[int]:
+        if not incoming_foreign_ids:
+            return set()
+
+        return set(
+            NewsArticle.objects.filter(foreign_id__in=incoming_foreign_ids).values_list(
+                "foreign_id", flat=True
+            )
+        )
+
+    def _get_loaded_liveblog_foreign_ids(
+        self, transformed_data: list[dict]
+    ) -> set[int]:
+        return {
+            int(article_data["foreign_id"])
+            for article_data in transformed_data
+            if article_data.get("is_liveblog")
+            and article_data.get("foreign_id") is not None
+        }
 
     def _get_news_article_object(self, data: dict) -> NewsArticle:
         """
@@ -73,13 +136,14 @@ class NewsArticleLoader:
             foreign_id=data.get("foreign_id"),
             deleted=False,
             title=data.get("title"),
-            body=data.get("body") if not data["is_liveblog"] else None,
+            body=data.get("body") if not data.get("is_liveblog", False) else None,
             summary=data.get("summary"),
             intro=data.get("intro"),
             in_all_news=data.get("in_all_news", False) or False,
             is_highlight=data.get("is_highlight", False) or False,
             is_liveblog=data.get("is_liveblog", False) or False,
             is_district=data.get("is_district", False) or False,
+            is_construction_work=data.get("is_construction_work", False) or False,
             district=data.get("district"),
             url=data.get("url"),
             creation_datetime=data.get("creation_datetime"),
@@ -91,9 +155,11 @@ class NewsArticleLoader:
         )
 
     def _upsert_news_articles(
-        self, news_articles_list: list[NewsArticle]
-    ) -> list[NewsArticle]:
-        created_articles = NewsArticle.objects.bulk_create(
+        self,
+        news_articles_list: list[NewsArticle],
+        loaded_liveblog_foreign_ids: set[int] | None = None,
+    ) -> None:
+        NewsArticle.objects.bulk_create(
             news_articles_list,
             update_conflicts=True,
             unique_fields=["foreign_id"],
@@ -107,6 +173,7 @@ class NewsArticleLoader:
                 "is_highlight",
                 "is_liveblog",
                 "is_district",
+                "is_construction_work",
                 "district",
                 "url",
                 "creation_datetime",
@@ -118,7 +185,20 @@ class NewsArticleLoader:
             ],
         )
 
+        self._mark_new_liveblogs_as_notified(loaded_liveblog_foreign_ids or set())
+
+    def _mark_new_liveblogs_as_notified(
+        self,
+        loaded_liveblog_foreign_ids: set[int],
+    ) -> None:
+        if (
+            not self.enable_new_liveblog_notifications
+            or not loaded_liveblog_foreign_ids
+        ):
+            return
+
         unsend_liveblogs = NewsArticle.objects.filter(
+            foreign_id__in=loaded_liveblog_foreign_ids,
             is_liveblog=True,
             is_active_liveblog=True,
             liveblog_notification_send=None,
@@ -128,8 +208,7 @@ class NewsArticleLoader:
 
             with transaction.atomic():
                 if settings.ENABLE_LIVEBLOG_NOTIFICATIONS:
-                    notification_service = NewLiveblogNotificationService()
-                    notification_service.send(
+                    self.new_liveblog_notification_service.send(
                         liveblog_id=liveblog.id, liveblog_title=liveblog.title
                     )
                 else:
@@ -142,11 +221,82 @@ class NewsArticleLoader:
                 liveblog.liveblog_notification_send = timezone.now()
                 liveblog.save(update_fields=["liveblog_notification_send"])
 
-        return created_articles
-
     def _get_news_articles_dict(self) -> dict[str, NewsArticle]:
         news_article_objects = NewsArticle.objects.all()
         return {str(article.foreign_id): article for article in news_article_objects}
+
+    def _upsert_article_images(self, article: dict, news_article: NewsArticle):
+        if not article.get("image_url"):
+            self._delete_removed_article_images(news_article, [])
+            return []
+
+        image_set_data = self._get_image_set_data(article)
+        if not image_set_data:
+            return []
+
+        image_sources = self._build_article_images(news_article, image_set_data)
+        self._delete_removed_article_images(news_article, image_sources)
+        self._upsert_article_image_sources(image_sources)
+        return image_sources
+
+    def _get_image_set_data(self, article: dict) -> dict | None:
+        image_url = article.get("image_url")
+
+        try:
+            return self.image_set_service.get_or_upload_from_url(image_url)
+        except (HTTPError, RequestException) as error:
+            logger.error(
+                "Error getting or uploading image",
+                extra={
+                    "image_url": image_url,
+                    "news_article_foreign_id": article.get("foreign_id"),
+                },
+                exc_info=error,
+            )
+            return None
+
+    def _build_article_images(
+        self,
+        news_article: NewsArticle,
+        image_set_data: dict,
+    ) -> list[NewsArticleImage]:
+        return [
+            NewsArticleImage(
+                parent=news_article,
+                foreign_id=image_set_data["id"],
+                uri=variant["image"],
+                width=variant["width"],
+                height=variant["height"],
+            )
+            for variant in image_set_data.get("variants", [])
+        ]
+
+    def _delete_removed_article_images(
+        self,
+        news_article: NewsArticle,
+        image_sources: list[NewsArticleImage],
+    ):
+        new_uris = {image.uri for image in image_sources}
+        images_to_delete = NewsArticleImage.objects.filter(parent=news_article)
+        if new_uris:
+            images_to_delete = images_to_delete.exclude(uri__in=new_uris)
+
+        if images_to_delete.exists():
+            images_to_delete.delete()
+
+    def _upsert_article_image_sources(
+        self,
+        image_sources: list[NewsArticleImage],
+    ):
+        if not image_sources:
+            return
+
+        NewsArticleImage.objects.bulk_create(
+            image_sources,
+            update_conflicts=True,
+            unique_fields=["parent", "uri"],
+            update_fields=["foreign_id", "width", "height"],
+        )
 
     def _upsert_images_and_liveblog_items(
         self, article: dict, news_article: NewsArticle
@@ -166,58 +316,6 @@ class NewsArticleLoader:
                 )
 
             self._upsert_liveblog_items(article, news_article)
-
-    def _upsert_article_images(self, article: dict, news_article: NewsArticle):
-        """
-        Upsert article images for a given article. If the article has an image_url, we will attempt to get or upload the image using the ImageSetService.
-        Then we will upsert the NewsArticleImage instances for the article based on the image variants returned by the ImageSetService.
-        The logic is as follows:
-        - If an image with the same url already exists for the article, update its width and height
-        - If there is an image for an article, but the url is different than the existing one, delete the old image and create a new one
-        - If there is no image for an article, create a new one
-        """
-        image_url = article.get("image_url")
-        if image_url:
-            try:
-                image_set_data = self.image_set_service.get_or_upload_from_url(
-                    image_url
-                )
-            except (HTTPError, RequestException) as e:
-                logger.error(
-                    "Error getting or uploading image",
-                    extra={"image_url": image_url, "error": str(e)},
-                )
-                return
-
-            # upsert article images
-            image_sources = [
-                NewsArticleImage(
-                    article=news_article,
-                    foreign_id=image_set_data[
-                        "id"
-                    ],  # use the image set id as the image foreign_id for reference.
-                    uri=v["image"],
-                    width=v["width"],
-                    height=v["height"],
-                )
-                for v in image_set_data["variants"]
-            ]
-            # Gather all URIs for this article from the new image_sources
-            new_uris = {img.uri for img in image_sources}
-            # Find all existing images for this article
-            existing_images = NewsArticleImage.objects.filter(article=news_article)
-            # Delete images for this article whose URI is not in the new set
-            images_to_delete = existing_images.exclude(uri__in=new_uris)
-            if images_to_delete.exists():
-                images_to_delete.delete()
-
-            # Upsert new images (create or update width/height)
-            NewsArticleImage.objects.bulk_create(
-                image_sources,
-                update_conflicts=True,
-                unique_fields=["article", "uri"],
-                update_fields=["width", "height"],
-            )
 
     def _upsert_liveblog_items(self, article: dict, news_article: NewsArticle):
         messages = article.get("body")
@@ -256,8 +354,7 @@ class NewsArticleLoader:
             )
         )
         if device_ids:
-            update_notification_service = LiveblogUpdateNotificationService()
-            update_notification_service.send(
+            self.liveblog_update_notification_service.send(
                 device_ids=device_ids,
                 update_title=message.get("title"),
                 liveblog_id=news_article.id,

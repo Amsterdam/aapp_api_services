@@ -10,8 +10,17 @@ from news.serializers.article_serializers import NewsArticleTransformSerializer
 
 logger = logging.getLogger(__name__)
 
+ARTICLE_SOURCE_DEFAULTS = {
+    "district": None,
+    "in_all_news": False,
+    "is_highlight": False,
+    "is_liveblog": False,
+    "is_district": False,
+    "is_construction_work": False,
+}
 
-def transform(extracted_data: list[dict]) -> list[dict]:
+
+def transform_articles(extracted_data: list[dict]) -> list[dict]:
     """
     Transform the extracted news articles data into a list of transformed articles (dicts).
     - Cleans 'body' and text fields
@@ -21,11 +30,11 @@ def transform(extracted_data: list[dict]) -> list[dict]:
     seen_ids = set()
     transformed = []
     for article in extracted_data:
-        article_id = article.get("id")
-        url = article.get("url")
+        normalized_article = normalize_article(article)
+        article_id = normalized_article.get("id")
 
         # Validate required fields
-        if not validate_article(article):
+        if not validate_article(normalized_article):
             logger.warning(
                 "Skipping article due to validation failure.",
                 extra={"article_id": article_id},
@@ -42,31 +51,37 @@ def transform(extracted_data: list[dict]) -> list[dict]:
 
         seen_ids.add(article_id)
 
-        # Clean and transform fields
-        transformed.append(
-            {
-                "foreign_id": article_id,
-                "title": decode_and_strip_outer_div(article.get("title")),
-                "body": parse_article_messages(article.get("body"))
-                if not article.get("is_liveblog", False)
-                else parse_liveblog_messages(article.get("body")),
-                "summary": decode_and_strip_outer_div(article.get("summary")),
-                "intro": decode_and_strip_outer_div(article.get("intro")),
-                "in_all_news": article.get("in_all_news", False),
-                "is_highlight": article.get("is_highlight", False),
-                "is_liveblog": article.get("is_liveblog", False),
-                "is_district": article.get("is_district", False),
-                "district": article.get("district"),
-                "url": url,
-                "creation_datetime": article.get("created"),
-                "modification_datetime": article.get("modified"),
-                "publication_datetime": article.get("publicationDate"),
-                "expiration_datetime": article.get("expirationDate"),
-                "image_url": article.get("image_url"),
-                "is_active_liveblog": article.get("is_active_liveblog", False),
-            }
-        )
+        transformed.append(map_article_fields(normalized_article))
     return transformed
+
+
+def normalize_article(article: dict) -> dict:
+    return {**ARTICLE_SOURCE_DEFAULTS, **article}
+
+
+def map_article_fields(article: dict) -> dict:
+    return {
+        "foreign_id": article.get("id"),
+        "title": decode_and_strip_outer_div(article.get("title")),
+        "body": parse_article_messages(article.get("body"))
+        if not article.get("is_liveblog", False)
+        else parse_liveblog_messages(article.get("body")),
+        "summary": decode_and_strip_outer_div(article.get("summary")),
+        "intro": decode_and_strip_outer_div(article.get("intro")),
+        "in_all_news": article.get("in_all_news", False),
+        "is_highlight": article.get("is_highlight", False),
+        "is_liveblog": article.get("is_liveblog", False),
+        "is_district": article.get("is_district", False),
+        "is_construction_work": article.get("is_construction_work", False),
+        "district": article.get("district"),
+        "url": article.get("url"),
+        "creation_datetime": article.get("created"),
+        "modification_datetime": article.get("modified"),
+        "publication_datetime": article.get("publicationDate"),
+        "expiration_datetime": article.get("expirationDate"),
+        "image_url": article.get("image_url"),
+        "is_active_liveblog": article.get("is_active_liveblog", False),
+    }
 
 
 def validate_article(article: dict) -> bool:

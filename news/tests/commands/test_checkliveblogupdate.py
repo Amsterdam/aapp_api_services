@@ -12,7 +12,7 @@ from requests import Response
 from core.services.notification_service import ScheduledNotification
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from news.management.commands import checkliveblogupdate
-from news.models import (
+from news.models.article_models import (
     LiveBlogItem,
     LiveblogNotification,
     NewsArticle,

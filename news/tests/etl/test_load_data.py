@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.test import TestCase, override_settings
 from django.utils import timezone
@@ -6,8 +6,8 @@ from model_bakery import baker
 from requests.exceptions import ConnectionError, HTTPError
 
 from core.services.notification_service import ScheduledNotification
-from news.etl.load_data import NewsArticleLoader, garbage_collect_unseen_articles
-from news.models import (
+from news.etl.load_articles import NewsArticleLoader, garbage_collect_unseen_articles
+from news.models.article_models import (
     LiveBlogItem,
     LiveblogNotification,
     NewsArticle,
@@ -51,7 +51,7 @@ class LoadDataTest(TestCase):
         )
         return loader
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_load(self, mock_image_set_service):
         transformed_data = [
             {
@@ -70,7 +70,8 @@ class LoadDataTest(TestCase):
             }
         ]
         loader = self._set_mock_image_set_service_side_effect(mock_image_set_service)
-        loader.load(transformed_data)
+        load_result = loader.load(transformed_data)
+        self.assertEqual(load_result.created_count, 1)
         self.assertEqual(NewsArticle.objects.count(), 1)
         self.assertEqual(
             NewsArticle.objects.first().title, transformed_data[0]["title"]
@@ -78,7 +79,95 @@ class LoadDataTest(TestCase):
         self.assertFalse(NewsArticle.objects.first().deleted)
         self.assertEqual(NewsArticleImage.objects.count(), 3)
 
-    @patch("news.etl.load_data.ImageSetService")
+    def test_load_returns_cleanup_eligible_for_update_only_rerun(self):
+        baker.make(
+            NewsArticle,
+            foreign_id=123123,
+            deleted=False,
+            title="Old title",
+            url="https://example.com/test-article",
+            publication_datetime="2024-01-01T12:00:00Z",
+        )
+
+        load_result = self.loader.load(
+            [
+                {
+                    "foreign_id": "123123",
+                    "title": "Updated title",
+                    "body": "Updated body",
+                    "summary": "Updated summary",
+                    "intro": "Updated intro",
+                    "in_all_news": True,
+                    "is_liveblog": False,
+                    "is_highlight": False,
+                    "is_district": False,
+                    "district": None,
+                    "url": "https://example.com/test-article",
+                    "creation_datetime": "2024-01-01T12:00:00Z",
+                    "modification_datetime": "2024-01-01T13:00:00Z",
+                    "publication_datetime": "2024-01-01T13:00:00Z",
+                    "expiration_datetime": None,
+                    "image_url": "",
+                }
+            ]
+        )
+
+        self.assertEqual(load_result.created_count, 0)
+        self.assertTrue(load_result.cleanup_eligible)
+        self.assertEqual(NewsArticle.objects.count(), 1)
+        self.assertEqual(
+            NewsArticle.objects.get(foreign_id=123123).title, "Updated title"
+        )
+
+    def test_load_construction_work_articles_do_not_mark_or_notify_unrelated_liveblogs(
+        self,
+    ):
+        active_liveblog = baker.make(
+            NewsArticle,
+            foreign_id=987654,
+            title="Unrelated liveblog",
+            url="https://example.com/liveblogs/987654",
+            is_liveblog=True,
+            is_active_liveblog=True,
+            liveblog_notification_send=None,
+        )
+        notification_service = Mock()
+        loader = NewsArticleLoader(
+            new_liveblog_notification_service=notification_service,
+            enable_new_liveblog_notifications=False,
+        )
+
+        load_result = loader.load(
+            [
+                {
+                    "foreign_id": "123123",
+                    "title": "Construction update",
+                    "body": "Updated body",
+                    "summary": "Updated summary",
+                    "intro": "Updated intro",
+                    "in_all_news": False,
+                    "is_liveblog": False,
+                    "is_highlight": False,
+                    "is_district": False,
+                    "is_construction_work": True,
+                    "district": None,
+                    "url": "https://example.com/test-article",
+                    "creation_datetime": "2024-01-01T12:00:00Z",
+                    "modification_datetime": "2024-01-01T13:00:00Z",
+                    "publication_datetime": "2024-01-01T13:00:00Z",
+                    "expiration_datetime": None,
+                    "image_url": "",
+                }
+            ]
+        )
+
+        active_liveblog.refresh_from_db()
+
+        self.assertTrue(load_result.cleanup_eligible)
+        self.assertIsNone(active_liveblog.liveblog_notification_send)
+        notification_service.send.assert_not_called()
+
+    @patch("core.services.image_set.ImageSetService")
     def test_load_continues_when_image_upload_fails(self, mock_image_set_service):
         transformed_data = [
             {
@@ -146,10 +235,10 @@ class LoadDataTest(TestCase):
         self.assertEqual(NewsArticleImage.objects.count(), 3)
         self.assertTrue(NewsArticle.objects.filter(foreign_id="123124").exists())
         self.assertTrue(
-            NewsArticleImage.objects.filter(article__foreign_id="123124").exists()
+            NewsArticleImage.objects.filter(parent__foreign_id="123124").exists()
         )
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_load_continues_when_image_upload_fails_completely(
         self, mock_image_set_service
     ):
@@ -198,7 +287,7 @@ class LoadDataTest(TestCase):
         self.assertEqual(NewsArticleImage.objects.count(), 0)
         self.assertTrue(NewsArticle.objects.filter(foreign_id="123124").exists())
         self.assertFalse(
-            NewsArticleImage.objects.filter(article__foreign_id="123124").exists()
+            NewsArticleImage.objects.filter(parent__foreign_id="123124").exists()
         )
 
     def test_get_news_article_object(self):
@@ -354,7 +443,7 @@ class LoadDataTest(TestCase):
         self.assertIn(str(article.foreign_id), articles_dict)
         self.assertEqual(articles_dict[str(article.foreign_id)].title, article.title)
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_upsert_article_images(self, mock_image_set_service):
         article = baker.make(
             NewsArticle,
@@ -375,7 +464,7 @@ class LoadDataTest(TestCase):
             NewsArticleImage.objects.first().uri, "https://example.com/image.jpg"
         )
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_upsert_article_images_http_error(self, mock_image_set_service):
         article = baker.make(
             NewsArticle,
@@ -383,6 +472,13 @@ class LoadDataTest(TestCase):
             title="A title",
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
+        )
+        article_image = baker.make(
+            NewsArticleImage,
+            parent=article,
+            uri="https://example.com/existing-image.jpg",
+            width=111,
+            height=222,
         )
         article_data = {
             "foreign_id": "123123",
@@ -397,9 +493,10 @@ class LoadDataTest(TestCase):
             image_set_service=mock_image_set_service.return_value
         )
         loader._upsert_article_images(article_data, article)
-        self.assertEqual(NewsArticleImage.objects.count(), 0)
+        self.assertEqual(NewsArticleImage.objects.count(), 1)
+        self.assertTrue(NewsArticleImage.objects.filter(id=article_image.id).exists())
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_upsert_article_images_existing_remove(self, mock_image_set_service):
         article = baker.make(
             NewsArticle,
@@ -410,7 +507,7 @@ class LoadDataTest(TestCase):
         )
         article_image = baker.make(
             NewsArticleImage,
-            article=article,
+            parent=article,
             uri="https://example.com/other-image.jpg",
             width=123,
             height=456,
@@ -428,7 +525,7 @@ class LoadDataTest(TestCase):
         )
         self.assertFalse(NewsArticleImage.objects.filter(id=article_image.id).exists())
 
-    @patch("news.etl.load_data.ImageSetService")
+    @patch("core.services.image_set.ImageSetService")
     def test_upsert_article_images_existing_update(self, mock_image_set_service):
         article = baker.make(
             NewsArticle,
@@ -439,7 +536,7 @@ class LoadDataTest(TestCase):
         )
         article_image = baker.make(
             NewsArticleImage,
-            article=article,
+            parent=article,
             uri="https://example.com/image.jpg",
             width=10000,
             height=10000,
@@ -458,7 +555,7 @@ class LoadDataTest(TestCase):
         self.assertTrue(NewsArticleImage.objects.filter(id=article_image.id).exists())
         self.assertEqual(NewsArticleImage.objects.get(id=article_image.id).width, 123)
 
-    def test_upsert_article_images_no_image(self):
+    def test_upsert_article_images_no_image_removes_existing_images(self):
         article = baker.make(
             NewsArticle,
             foreign_id=123123,
@@ -467,12 +564,20 @@ class LoadDataTest(TestCase):
             url="https://example.com/article/123123",
             modification_datetime="2024-01-01T12:00:00Z",
         )
+        article_image = baker.make(
+            NewsArticleImage,
+            parent=article,
+            uri="https://example.com/existing-image.jpg",
+            width=111,
+            height=222,
+        )
         article_data = {
             "foreign_id": "123123",
         }
 
         self.loader._upsert_article_images(article_data, article)
         self.assertEqual(NewsArticleImage.objects.count(), 0)
+        self.assertFalse(NewsArticleImage.objects.filter(id=article_image.id).exists())
 
     def test_upsert_liveblog_items_new(self):
         article = baker.make(

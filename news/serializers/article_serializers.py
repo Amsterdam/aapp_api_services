@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.fields import ChoiceField
 
-from news.models import (
+from news.models.article_models import (
     ARTICLE_TYPE_CHOICES,
     DISTRICT_TYPE_CHOICES,
     LiveBlogItem,
