@@ -5,7 +5,7 @@ from django.test import TestCase
 from model_bakery import baker
 
 from bridge.models import BurningGuideNotification
-from notification.models import BurningGuideDevice
+from notification.models.burning_guide_models import BurningGuideDevice
 
 
 class BurningGuideMigrationTest(TestCase):

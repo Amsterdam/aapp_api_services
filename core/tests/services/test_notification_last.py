@@ -5,7 +5,7 @@ from model_bakery import baker
 
 from core.services.notification_last import NotificationLastService
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import Device, NotificationLast
+from notification.models.notification_models import Device, NotificationLast
 
 
 class TestNotificationLastService(ResponsesActivatedAPITestCase):

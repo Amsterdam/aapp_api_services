@@ -12,7 +12,11 @@ from bridge.mijnamsterdam.serializers.general_serializers import (
 from bridge.mijnamsterdam.tests.mock_data import get_notifications as mock_data
 from core.enums import Module
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import Device, NotificationLast, ScheduledNotification
+from notification.models.notification_models import (
+    Device,
+    NotificationLast,
+    ScheduledNotification,
+)
 
 
 class TestMijnAmsterdamNotificationProcessor(ResponsesActivatedAPITestCase):

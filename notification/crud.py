@@ -5,7 +5,7 @@ from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Val
 from django.utils import timezone
 
 from core.enums import NotificationType
-from notification.models import (
+from notification.models.notification_models import (
     Device,
     Notification,
     NotificationPushModuleDisabled,

@@ -6,7 +6,8 @@ from model_bakery import baker
 
 from core.services.burning_guide_device import BurningGuideDeviceService
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import BurningGuideDevice, Device
+from notification.models.burning_guide_models import BurningGuideDevice
+from notification.models.notification_models import Device
 
 
 class TestBurningGuideDeviceService(ResponsesActivatedAPITestCase):

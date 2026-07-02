@@ -8,7 +8,8 @@ from freezegun import freeze_time
 from model_bakery import baker
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import Device, WasteDevice
+from notification.models.notification_models import Device
+from notification.models.waste_guide_models import WasteDevice
 from waste.management.commands.sendwastenotifications import Command
 from waste.models import WasteCollectionException, WasteCollectionRouteName
 from waste.tests.mock_data import (

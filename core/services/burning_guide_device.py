@@ -3,7 +3,8 @@ from datetime import datetime
 from django.db.models import Q
 from django.utils import timezone
 
-from notification.models import BurningGuideDevice, Device
+from notification.models.burning_guide_models import BurningGuideDevice
+from notification.models.notification_models import Device
 
 
 class BurningGuideDeviceService:
