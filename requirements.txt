@@ -3,7 +3,7 @@
 #    uv export --format requirements-txt --no-hashes --no-annotate
 adrf==0.1.12
 aiohappyeyeballs==2.6.2
-aiohttp==3.13.5
+aiohttp==3.14.1
 aioresponses==0.7.8
 aiosignal==1.4.0
 amsterdam-django-oidc==0.2.4
