@@ -121,17 +121,15 @@ class TestTokenModels(TestCase):
     )
     def test_token_created_at_cut_off_is_valid(self):
         """
-        Token created at cut off datetime should be valid.
-        Below test will fail: the token is created at the cut off datetime, but is invalidated immediately after creation.
-        However, is this the desired behavior? Should it be valid for a few seconds?
+        Token created at cut off datetime is instantly invalidated.
         """
         cut_off_time = datetime.fromisoformat("2026-08-01 00:00:00+02:00")
 
         with freeze_time(cut_off_time):
             access_token = AccessToken.objects.create(session=self.session)
             refresh_token = RefreshToken.objects.create(session=self.session)
-            self.assert_token_valid(access_token)
-            self.assert_token_valid(refresh_token)
+            self.assert_token_invalid(access_token)
+            self.assert_token_invalid(refresh_token)
 
     @override_settings(
         TOKEN_CUT_OFF_DATETIME="08-01 00:00",

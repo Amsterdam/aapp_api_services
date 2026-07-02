@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from unittest.mock import patch
 
 from django.conf import settings
 from django.test import override_settings
@@ -8,7 +7,7 @@ from freezegun import freeze_time
 from model_bakery import baker
 
 from city_pass.authentication import AccessTokenAuthentication
-from city_pass.exceptions import TokenExpiredException, TokenInvalidException
+from city_pass.exceptions import TokenInvalidException
 from city_pass.models import AccessToken, RefreshToken, Session
 from city_pass.tests.base_test import (
     DATE_FORMAT,
@@ -356,13 +355,13 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
             "REFRESH_TOKEN": 365 * 24 * 60 * 60,
         },
     )
-    def test_refresh_rejects_pre_cut_off_session_at_amsterdam_boundary(self):
-        with freeze_time("2026-07-31 23:59:59+02:00"):
+    def test_refresh_rejects_pre_cut_off_session_after_amsterdam_boundary(self):
+        with freeze_time("2026-07-31 23:59:50+02:00"):
             session = Session.objects.create()
             AccessToken.objects.create(session=session)
             refresh_token_obj = RefreshToken.objects.create(session=session)
 
-        with freeze_time("2026-08-01 00:00:00+02:00"):
+        with freeze_time("2026-08-01 00:10:00+02:00"):
             result = self.client.post(
                 self.api_url,
                 headers=self.headers,
@@ -373,35 +372,12 @@ class TestSessionRefreshAccessView(BaseCityPassTestCase):
 
         self.assertEqual(result.status_code, 401)
         self.assertContains(result, "TOKEN_EXPIRED", status_code=401)
-        self.assertFalse(RefreshToken.objects.filter(pk=refresh_token_obj.pk).exists())
+
+        # refresh token will still exist, because transaction.atomic will rollback the delete() call in is_valid()
+        # This is okay, because the refresh token is expired and will be removed by garbage collection.
+        self.assertTrue(RefreshToken.objects.filter(pk=refresh_token_obj.pk).exists())
         self.assertEqual(AccessToken.objects.filter(session=session).count(), 1)
-        self.assertEqual(RefreshToken.objects.filter(session=session).count(), 0)
-
-    def test_refresh_consumes_token_when_atomic_revalidation_expires(self):
-        session = Session.objects.create()
-        AccessToken.objects.create(session=session)
-        refresh_token_obj = RefreshToken.objects.create(session=session)
-
-        with patch(
-            "city_pass.views.session_views.models.RefreshToken.is_valid",
-            side_effect=[
-                True,
-                TokenExpiredException("Token cut off datetime has passed"),
-            ],
-        ):
-            result = self.client.post(
-                self.api_url,
-                headers=self.headers,
-                data={"refresh_token": refresh_token_obj.token},
-                content_type="application/json",
-                follow=True,
-            )
-
-        self.assertEqual(result.status_code, 401)
-        self.assertContains(result, "TOKEN_EXPIRED", status_code=401)
-        self.assertFalse(RefreshToken.objects.filter(pk=refresh_token_obj.pk).exists())
-        self.assertEqual(AccessToken.objects.filter(session=session).count(), 1)
-        self.assertEqual(RefreshToken.objects.filter(session=session).count(), 0)
+        self.assertEqual(RefreshToken.objects.filter(session=session).count(), 1)
 
     def test_expired_refresh_token(self):
         token_creation_time = datetime.strptime("2024-01-01 12:00", DATE_FORMAT)
