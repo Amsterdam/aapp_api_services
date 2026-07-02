@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from notification.models import (
+from notification.models.notification_models import (
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
 )

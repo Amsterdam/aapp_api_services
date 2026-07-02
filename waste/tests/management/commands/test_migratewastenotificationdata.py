@@ -4,7 +4,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from model_bakery import baker
 
-from notification.models import WasteDevice
+from notification.models.waste_guide_models import WasteDevice
 from waste.models import NotificationSchedule
 
 

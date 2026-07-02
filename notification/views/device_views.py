@@ -8,14 +8,14 @@ from rest_framework.response import Response
 from core.exceptions import InputDataException
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
-from notification.models import (
-    BurningGuideDevice,
+from notification.models.burning_guide_models import BurningGuideDevice
+from notification.models.notification_models import (
     Device,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
     ScheduledNotification,
-    WasteDevice,
 )
+from notification.models.waste_guide_models import WasteDevice
 from notification.serializers.device_serializers import (
     BurningGuideDeviceRequestSerializer,
     DeviceDeleteErrorResponseSerializer,

@@ -2,7 +2,9 @@ from django.urls import reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import BurningGuideDevice, Device, WasteDevice
+from notification.models.burning_guide_models import BurningGuideDevice
+from notification.models.notification_models import Device
+from notification.models.waste_guide_models import WasteDevice
 
 
 class TestAddressView(ResponsesActivatedAPITestCase):

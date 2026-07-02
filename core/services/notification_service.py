@@ -7,7 +7,7 @@ from django.utils import timezone
 from more_itertools import chunked
 
 from core.services.image_set import ImageSetService
-from notification.models import (
+from notification.models.notification_models import (
     Device,
     Notification,
     ScheduledNotification,

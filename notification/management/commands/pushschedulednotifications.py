@@ -7,7 +7,7 @@ from django.db import OperationalError, transaction
 from django.utils import timezone
 
 from notification.crud import NotificationCRUD
-from notification.models import Notification, ScheduledNotification
+from notification.models.notification_models import Notification, ScheduledNotification
 
 logger = logging.getLogger(__name__)
 BATCH_SIZE = 1  # Don't batch and let the multiple worker pods handle parallelism

@@ -12,7 +12,7 @@ from construction_work.models.manage_models import (
 from construction_work.services.notification import WarningNotificationService
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from core.utils.image_utils import get_example_image_file
-from notification.models import ScheduledNotification
+from notification.models.notification_models import ScheduledNotification
 
 
 @override_settings(

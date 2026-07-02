@@ -16,16 +16,16 @@ from core.tests.test_authentication import (
     AuthenticatedAPITestCase,
     ResponsesActivatedAPITestCase,
 )
-from notification.models import (
-    BurningGuideDevice,
+from notification.models.burning_guide_models import BurningGuideDevice
+from notification.models.notification_models import (
     Device,
     Notification,
     NotificationLast,
     NotificationPushModuleDisabled,
     NotificationPushTypeDisabled,
     ScheduledNotification,
-    WasteDevice,
 )
+from notification.models.waste_guide_models import WasteDevice
 
 
 @freezegun.freeze_time("2026-02-25T12:00:00Z")

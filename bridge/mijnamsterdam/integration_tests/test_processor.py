@@ -13,7 +13,7 @@ from model_bakery import baker
 from bridge.mijnamsterdam.processor import MijnAmsterdamNotificationProcessor
 from core.enums import Module
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import (
+from notification.models.notification_models import (
     Device,
     Notification,
     NotificationLast,

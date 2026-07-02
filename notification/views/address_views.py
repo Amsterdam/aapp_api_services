@@ -3,7 +3,8 @@ from rest_framework.response import Response
 
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
-from notification.models import BurningGuideDevice, WasteDevice
+from notification.models.burning_guide_models import BurningGuideDevice
+from notification.models.waste_guide_models import WasteDevice
 from notification.serializers.address_serializers import (
     AddressRequestSerializer,
 )

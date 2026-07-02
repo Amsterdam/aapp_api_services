@@ -10,7 +10,8 @@ from model_bakery import baker
 
 from bridge.management.commands.sendburningguidenotifications import Command
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import BurningGuideDevice, Device, ScheduledNotification
+from notification.models.burning_guide_models import BurningGuideDevice
+from notification.models.notification_models import Device, ScheduledNotification
 
 tz = ZoneInfo(settings.TIME_ZONE)
 

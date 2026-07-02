@@ -9,7 +9,7 @@ from model_bakery import baker
 from news.management.commands import runnewsetl
 from news.models import LiveBlogItem, NewsArticle, NewsArticleImage
 from news.tests.mock_data import highlighted, item_article, item_liveblog, liveblogs
-from notification.models import ScheduledNotification
+from notification.models.notification_models import ScheduledNotification
 
 
 class RunNewsETLTest(TestCase):
