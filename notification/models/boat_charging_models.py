@@ -5,8 +5,8 @@ from notification.models.notification_models import Device
 
 class BoatChargingSession(models.Model):
     """
-    Record to determine which device wants to receive burning guide notifications and
-    for which address (postal_code).
+    Represents a boat-charging session associated with a device so we can track when
+    boat-charging related notifications have been (or should be) sent for that session.
     """
 
     device = models.ForeignKey(
