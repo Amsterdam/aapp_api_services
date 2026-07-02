@@ -94,13 +94,3 @@ BOAT_CHARGING_ENDPOINTS = {
     "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "sessions"),
     "SETTINGS": urljoin(BOAT_CHARGING_DOMAIN, "app-settings"),
 }
-
-# notification settings
-BOAT_CHARGING_NOTIFICATION_SETTINGS = {
-    "thresholds": os.getenv(
-        "BOAT_CHARGING_NOTIFICATION_THRESHOLDS", "16H,20H,24H"
-    ).split(","),
-    "repeat_every": os.getenv(
-        "BOAT_CHARGING_NOTIFICATION_REPEAT_EVERY", "1H"
-    ),  # after last threshold
-}

@@ -25,5 +25,10 @@ class BoatChargingSessionService:
             session_id=session_id,
         ).delete()
 
-    def get_all_boat_charging_sessions(self):
-        return BoatChargingSession.objects.all()
+    def get_boat_charging_session_by_session_id(
+        self, session_id: str
+    ) -> BoatChargingSession:
+        return BoatChargingSession.objects.filter(session_id=session_id).first()
+
+    def get_all_boat_charging_session_ids(self) -> list[str]:
+        return list(BoatChargingSession.objects.values_list("session_id", flat=True))

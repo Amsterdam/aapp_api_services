@@ -1,18 +1,14 @@
-from datetime import datetime
+from unittest.mock import AsyncMock, patch
 from zoneinfo import ZoneInfo
 
-import freezegun
 from django.conf import settings
 from django.core.management import call_command
-from django.test import override_settings
 from model_bakery import baker
 
+from bridge.boat_charging.tests.mock_data import session_detail
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import (
-    BoatChargingDevice,
-    Device,
-    ScheduledNotification,
-)
+from notification.models.boat_charging_models import BoatChargingSession
+from notification.models.notification_models import ScheduledNotification
 
 tz = ZoneInfo(settings.TIME_ZONE)
 
@@ -20,150 +16,130 @@ tz = ZoneInfo(settings.TIME_ZONE)
 class TestCommand(ResponsesActivatedAPITestCase):
     def setUp(self):
         self.device_id = "device1"
-        self.device = baker.make(
-            Device, external_id=self.device_id, os="ios", firebase_token=None
+        self.session_id = "ad976dab-73db-4f67-b5f5-77542bf3e088"
+        self.session = baker.make(
+            BoatChargingSession,
+            session_id=self.session_id,
+            device__external_id=self.device_id,
         )
 
-        with freezegun.freeze_time(datetime(2026, 6, 2, 7, 15, 0, tzinfo=tz)):
-            self.notification = baker.make(
-                BoatChargingDevice,
-                session_id="some_session_id",
-                device_id=self.device_id,
-            )
-
-    @override_settings(
-        BOAT_CHARGING_NOTIFICATION_SETTINGS={
-            "thresholds": "1H,2H",
-            "repeat_every": "1H",
-        }
+    @patch(
+        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        new_callable=AsyncMock,
     )
-    @freezegun.freeze_time(
-        datetime(2026, 6, 2, 8, 30, 0, tzinfo=tz)
-    )  # 1 hour and 15 minutes later
-    def test_command_threshold_passed(self):
+    def test_command_completed_session_sends_notification_and_deletes_session(
+        self, mocked_async_fetch
+    ):
+        mocked_async_fetch.return_value = [session_detail.MOCK_RESPONSE_COMPLETED]
+
         call_command("sendboatchargingnotifications")
 
-        self.assertEqual(
-            ScheduledNotification.objects.count(), 1
-        )  # Threshold passed, so one notification should be sent
-
-        self.notification.refresh_from_db()
-        self.assertEqual(set(self.notification.sent_notifications.keys()), {"1"})
-
-    @override_settings(
-        BOAT_CHARGING_NOTIFICATION_SETTINGS={
-            "thresholds": "1H,2H",
-            "repeat_every": "1H",
-        }
-    )
-    @freezegun.freeze_time(
-        datetime(2026, 6, 2, 7, 45, 0, tzinfo=tz)
-    )  # 30 minutes later
-    def test_command_before_threshold_does_not_send(self):
-        call_command("sendboatchargingnotifications")
-
-        self.assertEqual(ScheduledNotification.objects.count(), 0)
-
-        self.notification.refresh_from_db()
-        self.assertEqual(self.notification.sent_notifications, {})
-
-    @override_settings(
-        BOAT_CHARGING_NOTIFICATION_SETTINGS={
-            "thresholds": "1H,2H",
-            "repeat_every": "1H",
-        }
-    )
-    @freezegun.freeze_time(
-        datetime(2026, 6, 2, 9, 30, 0, tzinfo=tz)
-    )  # 2 hours and 15 minutes later
-    def test_command_sends_all_passed_base_thresholds(self):
-        call_command("sendboatchargingnotifications")
-
-        notifications = ScheduledNotification.objects.all()
-        self.assertEqual(notifications.count(), 2)
-        self.assertTrue(all(n.title == "Boot laden herinnering" for n in notifications))
-
-        self.notification.refresh_from_db()
-        self.assertEqual(set(self.notification.sent_notifications.keys()), {"1", "2"})
-
-    @override_settings(
-        BOAT_CHARGING_NOTIFICATION_SETTINGS={
-            "thresholds": "1H,2H",
-            "repeat_every": "1H",
-        }
-    )
-    @freezegun.freeze_time(
-        datetime(2026, 6, 2, 11, 30, 0, tzinfo=tz)
-    )  # 4 hours and 15 minutes later
-    def test_command_sends_repeat_notifications_after_last_threshold(self):
-        call_command("sendboatchargingnotifications")
-
-        self.assertEqual(ScheduledNotification.objects.count(), 4)
-        self.assertEqual(
-            ScheduledNotification.objects.filter(
-                title="Boot laden herinnering"
-            ).count(),
-            2,
+        expected_url = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{self.session_id}"
         )
-        self.assertEqual(
-            ScheduledNotification.objects.filter(
-                title="Haal je boot van de laadpaal"
-            ).count(),
-            2,
-        )
-
-        self.notification.refresh_from_db()
-        self.assertEqual(
-            set(self.notification.sent_notifications.keys()), {"1", "2", "3", "4"}
-        )
-
-    @override_settings(
-        BOAT_CHARGING_NOTIFICATION_SETTINGS={
-            "thresholds": "1H,2H",
-            "repeat_every": "1H",
-        }
-    )
-    @freezegun.freeze_time(
-        datetime(2026, 6, 2, 10, 30, 0, tzinfo=tz)
-    )  # 3 hours and 15 minutes later
-    def test_command_does_not_resend_existing_thresholds(self):
-        self.notification.sent_notifications = {
-            "1": "2026-06-02T08:15:00+00:00",
-            "2": "2026-06-02T09:15:00+00:00",
-        }
-        self.notification.save(update_fields=["sent_notifications"])
-
-        call_command("sendboatchargingnotifications")
+        mocked_async_fetch.assert_awaited_once_with([expected_url])
 
         self.assertEqual(ScheduledNotification.objects.count(), 1)
-        scheduled = ScheduledNotification.objects.get()
-        self.assertEqual(scheduled.title, "Haal je boot van de laadpaal")
-
-        # Running twice should remain idempotent for already-sent thresholds.
-        call_command("sendboatchargingnotifications")
-        self.assertEqual(ScheduledNotification.objects.count(), 1)
-
-        self.notification.refresh_from_db()
+        notification = ScheduledNotification.objects.first()
+        self.assertIsNotNone(notification)
+        self.assertEqual(notification.title, "Laden gestopt")
         self.assertEqual(
-            set(self.notification.sent_notifications.keys()), {"1", "2", "3"}
+            notification.body,
+            "Het laden is gestopt. Bekijk uw laadsessie",
         )
+        device_ids = list(notification.devices.values_list("external_id", flat=True))
+        self.assertEqual(device_ids, [self.device_id])
+        self.assertEqual(BoatChargingSession.objects.count(), 0)
 
-    @override_settings(
-        BOAT_CHARGING_NOTIFICATION_SETTINGS={
-            "thresholds": "1H,2H",
-            "repeat_every": "1H",
-        }
+    @patch(
+        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        new_callable=AsyncMock,
     )
-    @freezegun.freeze_time(
-        datetime(2026, 6, 2, 9, 30, 0, tzinfo=tz)
-    )  # 2 hours and 15 minutes later
-    def test_command_skips_device_without_session(self):
-        self.notification.session_id = None
-        self.notification.save(update_fields=["session_id"])
+    def test_command_non_completed_session_does_not_send_or_delete(
+        self, mocked_async_fetch
+    ):
+        mocked_async_fetch.return_value = [session_detail.MOCK_RESPONSE_CHARGING]
 
         call_command("sendboatchargingnotifications")
 
         self.assertEqual(ScheduledNotification.objects.count(), 0)
+        self.assertEqual(BoatChargingSession.objects.count(), 1)
 
-        self.notification.refresh_from_db()
-        self.assertEqual(self.notification.sent_notifications, {})
+    @patch(
+        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        new_callable=AsyncMock,
+    )
+    def test_command_mixed_statuses_only_completed_are_notified_and_deleted(
+        self, mocked_async_fetch
+    ):
+        second_device_id = "device2"
+        baker.make(
+            BoatChargingSession,
+            session_id="second_session_id",
+            device__external_id=second_device_id,
+        )
+
+        mocked_async_fetch.return_value = [
+            session_detail.MOCK_RESPONSE_COMPLETED,
+            session_detail.MOCK_RESPONSE_CHARGING,
+        ]
+
+        call_command("sendboatchargingnotifications")
+
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
+        notification = ScheduledNotification.objects.first()
+        self.assertIsNotNone(notification)
+        device_ids = list(notification.devices.values_list("external_id", flat=True))
+        self.assertEqual(device_ids, [self.device_id])
+
+        self.assertFalse(
+            BoatChargingSession.objects.filter(session_id=self.session_id).exists()
+        )
+        self.assertTrue(
+            BoatChargingSession.objects.filter(session_id="second_session_id").exists()
+        )
+
+    @patch(
+        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        new_callable=AsyncMock,
+    )
+    def test_command_no_sessions_in_db(self, mocked_async_fetch):
+        BoatChargingSession.objects.all().delete()
+        mocked_async_fetch.return_value = []
+
+        call_command("sendboatchargingnotifications")
+
+        mocked_async_fetch.assert_awaited_once_with([])
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
+
+    @patch(
+        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        new_callable=AsyncMock,
+    )
+    def test_command_malformed_payload_is_skipped(self, mocked_async_fetch):
+        mocked_async_fetch.return_value = [{"session": {"status": 4}}]
+
+        call_command("sendboatchargingnotifications")
+
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
+        self.assertTrue(
+            BoatChargingSession.objects.filter(
+                session_id=self.session.session_id
+            ).exists()
+        )
+
+    @patch(
+        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        new_callable=AsyncMock,
+    )
+    def test_command_fetch_failure_is_handled(self, mocked_async_fetch):
+        mocked_async_fetch.side_effect = Exception("upstream error")
+
+        call_command("sendboatchargingnotifications")
+
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
+        self.assertTrue(
+            BoatChargingSession.objects.filter(
+                session_id=self.session.session_id
+            ).exists()
+        )
