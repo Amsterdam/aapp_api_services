@@ -21,6 +21,26 @@ class Command(BaseCommand):
         super().__init__()
         self.notification_service = NotificationService()
         self.boat_charging_session_service = BoatChargingSessionService()
+        self.notification_settings = [
+            {
+                "column_name": "first_send_at",
+                "hours": 16,
+                "title": "Herinnering",
+                "message": "Uw boot is nog aan het laden.",
+            },
+            {
+                "column_name": "second_send_at",
+                "hours": 20,
+                "title": "Maximale laadtijd",
+                "message": "Uw boot mag maximaal 24 uur laden. Daarna betaalt u €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u vor het hele uur",
+            },
+            {
+                "column_name": "last_send_at",
+                "hours": 24,
+                "title": "Kosten na 24 uur",
+                "message": "Uw boot ligt langer dan 24 uur bij het laadpunt. U betaalt nu €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u vor het hele uur",
+            },
+        ]
 
     def handle(self, *args, **options):
         session_ids = (
@@ -36,9 +56,17 @@ class Command(BaseCommand):
             session = session_data.get("session", {})
             session_id = session.get("uniqueId")
             status = session.get("status")
+            cpms_session = session.get("cpmsSession", {})
 
-            if status == 4:  # Completed session
+            if (
+                status == 4
+            ):  # Completed session (change this later if the status codes change)
                 self._process_session_data_for_completed_notifications(session_id)
+
+            if status == 3:  # Charging session
+                self._process_session_data_for_charging_notifications(
+                    session_id, cpms_session
+                )
 
     def _build_session_urls(self, session_ids: list[str]) -> list[str]:
         base_url = settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]
@@ -97,3 +125,28 @@ class Command(BaseCommand):
                     "session_id": session_id,
                 },
             )
+
+    def _process_session_data_for_charging_notifications(
+        self, session_id: str, cpms_session: dict
+    ):
+        boat_charging_session = (
+            self.boat_charging_session_service.get_boat_charging_session_by_session_id(
+                session_id
+            )
+        )
+
+        if boat_charging_session is None:
+            logger.warning(
+                "Charging session not found in database; skipping notification.",
+                extra={
+                    "session_id": session_id,
+                },
+            )
+            return
+
+        if cpms_session.get("endDateTime"):
+            return
+
+        start_time = cpms_session.get("startDateTime")
+        if not start_time:
+            return

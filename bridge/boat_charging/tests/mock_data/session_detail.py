@@ -3,11 +3,17 @@ MOCK_RESPONSE_CHARGING = {
         "uniqueId": "ad976dab-73db-4f67-b5f5-77542bf3e088",
         "stationId": "VCPS-IFZTY",
         "socketNumber": "1",
-        "status": 2,
+        "status": 3,
         "finalAmount": 0.0,
         "desiredAmount": 45.0,
         "createdAt": "2026-06-29T10:30:04.1035904",
         "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
+    },
+    "cpmsSession": {
+        "startDateTime": "2026-06-29T10:30:00Z",
+        "kwh": 12.5,
+        "status": "ACTIVE",
+        "totalCost": {"exclVat": 6.25},
     },
     "location": {
         "id": "2c0ccfb795d040e39136b7dd1d25f13e",
