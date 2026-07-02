@@ -11,10 +11,16 @@ class BoatChargingSessionService:
         ).save()
 
     def _get_device(self, device_id) -> Device:
-        device = Device.objects.filter(external_id=device_id)
-        if not device.exists():
+        device = Device.objects.filter(external_id=device_id).first()
+        if device is None:
             device = Device.objects.create(
                 external_id=device_id,
                 os="unknown",
             )
         return device
+
+    def delete_boat_charging_session(self, device_id, session_id):
+        BoatChargingSession.objects.get(
+            device__external_id=device_id,
+            session_id=session_id,
+        ).delete()
