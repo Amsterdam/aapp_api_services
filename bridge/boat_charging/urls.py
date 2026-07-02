@@ -5,6 +5,7 @@ from bridge.boat_charging.views import (
     login_view,
     session_start_stop,
     session_view,
+    settings_view,
     terms_view,
 )
 
@@ -54,5 +55,10 @@ urlpatterns = [
         BASE_PATH + "/terms",
         terms_view.TermsView.as_view(),
         name="boat-charging-terms",
+    ),
+    path(
+        BASE_PATH + "/settings",
+        settings_view.SettingsView.as_view(),
+        name="boat-charging-settings",
     ),
 ]
