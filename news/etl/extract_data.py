@@ -2,8 +2,7 @@ import asyncio
 import logging
 from urllib.parse import urljoin
 
-import aiohttp
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from core.utils.async_utils import async_fetch
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ class IproxFetcher:
         self.sources = sources
         self._validate_sources()
         self.max_concurrent_requests = max_concurrent_requests
-        self.timeout = aiohttp.ClientTimeout(total=timeout_total)
+        self.timeout_total = timeout_total
 
     def _validate_sources(self):
         """Validate the sources configuration."""
@@ -98,9 +97,15 @@ class IproxFetcher:
             page = 0
             while True:
                 paginated_url = f"{source_url}?page={page}"
-                result = asyncio.run(self._async_fetch([paginated_url]))[0]
+                result = asyncio.run(
+                    async_fetch(
+                        [paginated_url],
+                        max_concurrent_requests=self.max_concurrent_requests,
+                        timeout_total=self.timeout_total,
+                    )
+                )[0]
                 if not result:
-                    # no need to log an error here, because a error is already logged in the _fetch method.
+                    # no need to log an error here, because a error is already logged in the async_fetch method.
                     # We just break the loop and continue with the next source.
                     break
                 items = result.get("items", [])
@@ -143,7 +148,13 @@ class IproxFetcher:
             for item_id in items.keys()
         ]
         logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
-        item_details = asyncio.run(self._async_fetch(urls))
+        item_details = asyncio.run(
+            async_fetch(
+                urls,
+                max_concurrent_requests=self.max_concurrent_requests,
+                timeout_total=self.timeout_total,
+            )
+        )
 
         item_result = []
         for item in item_details:
@@ -154,38 +165,6 @@ class IproxFetcher:
                 item_result.append(merged_item)
 
         return item_result
-
-    async def _async_fetch(self, urls):
-        """Fetch all URLs with limited concurrency and timeouts."""
-        sem = asyncio.Semaphore(self.max_concurrent_requests)
-        async with aiohttp.ClientSession(timeout=self.timeout) as session:
-            tasks = [self._fetch_with_sem(sem, session, url) for url in urls]
-            return await asyncio.gather(*tasks)
-
-    async def _fetch_with_sem(self, sem, session, url):
-        """Fetch a URL, respecting the semaphore limit."""
-        async with sem:
-            try:
-                return await self._fetch(session, url)
-            except Exception as e:
-                logger.error(f"Failed to fetch {url}", exc_info=e)
-
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_fixed(2),
-        retry=retry_if_exception_type(FetchError),
-    )
-    async def _fetch(self, session, url):
-        """Fetch a URL, with retries on failure."""
-        try:
-            async with session.get(url) as response:
-                if response.status != 200:
-                    raise FetchError(
-                        f"Failed to fetch {url}, status code: {response.status}"
-                    )
-                return await response.json()
-        except aiohttp.ClientError as e:
-            raise FetchError(f"Failed to fetch {url}: {str(e)}") from e
 
     def _combine_detailed_and_basic_info(
         self,

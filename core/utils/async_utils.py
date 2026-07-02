@@ -12,13 +12,16 @@ class FetchError(Exception):
     pass
 
 
-async def _async_fetch(
-    urls: List[str], max_concurrent_requests: int = 20, timeout_total: float = 30.0
+async def async_fetch(
+    urls: List[str],
+    max_concurrent_requests: int = 20,
+    timeout_total: float = 30.0,
+    headers: dict = None,
 ):
     """Fetch all URLs with limited concurrency and timeouts."""
     sem = asyncio.Semaphore(max_concurrent_requests)
     timeout = aiohttp.ClientTimeout(total=timeout_total)
-    async with aiohttp.ClientSession(timeout=timeout) as session:
+    async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
         tasks = [_fetch_with_sem(sem, session, url) for url in urls]
         return await asyncio.gather(*tasks)
 

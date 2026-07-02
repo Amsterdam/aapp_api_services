@@ -1,5 +1,4 @@
 from unittest.mock import AsyncMock, patch
-from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.management import call_command
@@ -9,8 +8,6 @@ from bridge.boat_charging.tests.mock_data import session_detail
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from notification.models.boat_charging_models import BoatChargingSession
 from notification.models.notification_models import ScheduledNotification
-
-tz = ZoneInfo(settings.TIME_ZONE)
 
 
 class TestCommand(ResponsesActivatedAPITestCase):
@@ -24,7 +21,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         )
 
     @patch(
-        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        "bridge.management.commands.sendboatchargingnotifications.async_fetch",
         new_callable=AsyncMock,
     )
     def test_command_completed_session_sends_notification_and_deletes_session(
@@ -37,7 +34,10 @@ class TestCommand(ResponsesActivatedAPITestCase):
         expected_url = (
             f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{self.session_id}"
         )
-        mocked_async_fetch.assert_awaited_once_with([expected_url])
+        mocked_async_fetch.assert_awaited_once_with(
+            [expected_url],
+            headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
+        )
 
         self.assertEqual(ScheduledNotification.objects.count(), 1)
         notification = ScheduledNotification.objects.first()
@@ -52,7 +52,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         self.assertEqual(BoatChargingSession.objects.count(), 0)
 
     @patch(
-        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        "bridge.management.commands.sendboatchargingnotifications.async_fetch",
         new_callable=AsyncMock,
     )
     def test_command_non_completed_session_does_not_send_or_delete(
@@ -66,7 +66,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         self.assertEqual(BoatChargingSession.objects.count(), 1)
 
     @patch(
-        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        "bridge.management.commands.sendboatchargingnotifications.async_fetch",
         new_callable=AsyncMock,
     )
     def test_command_mixed_statuses_only_completed_are_notified_and_deleted(
@@ -102,7 +102,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         )
 
     @patch(
-        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        "bridge.management.commands.sendboatchargingnotifications.async_fetch",
         new_callable=AsyncMock,
     )
     def test_command_no_sessions_in_db(self, mocked_async_fetch):
@@ -111,11 +111,14 @@ class TestCommand(ResponsesActivatedAPITestCase):
 
         call_command("sendboatchargingnotifications")
 
-        mocked_async_fetch.assert_awaited_once_with([])
+        mocked_async_fetch.assert_awaited_once_with(
+            [],
+            headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
+        )
         self.assertEqual(ScheduledNotification.objects.count(), 0)
 
     @patch(
-        "bridge.management.commands.sendboatchargingnotifications._async_fetch",
+        "bridge.management.commands.sendboatchargingnotifications.async_fetch",
         new_callable=AsyncMock,
     )
     def test_command_fetch_failure_is_handled(self, mocked_async_fetch):

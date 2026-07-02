@@ -27,7 +27,7 @@ class BoatChargingSessionService:
 
     def get_boat_charging_session_by_session_id(
         self, session_id: str
-    ) -> BoatChargingSession:
+    ) -> BoatChargingSession | None:
         return BoatChargingSession.objects.filter(session_id=session_id).first()
 
     def get_all_boat_charging_session_ids(self) -> list[str]:

@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from bridge.boat_charging.services.notifications import NotificationService
 from core.services.boat_charging_sessions import BoatChargingSessionService
 from core.services.notification_service import NotificationData
-from core.utils.async_utils import _async_fetch
+from core.utils.async_utils import async_fetch
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,15 @@ class Command(BaseCommand):
         sessions_data = self._fetch_sessions_data(session_urls)
 
         for session_data in sessions_data:
-            self._process_session_data_for_completed_notifications(session_data)
+            if not session_data:
+                continue
+
+            session = session_data.get("session", {})
+            session_id = session.get("uniqueId")
+            status = session.get("status")
+
+            if status == 4:  # Completed session
+                self._process_session_data_for_completed_notifications(session_id)
 
     def _build_session_urls(self, session_ids: list[str]) -> list[str]:
         base_url = settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]
@@ -38,23 +46,22 @@ class Command(BaseCommand):
 
     def _fetch_sessions_data(self, session_urls: list[str]) -> list[dict]:
         try:
-            fetched = asyncio.run(_async_fetch(session_urls))
+            fetched = asyncio.run(
+                async_fetch(
+                    session_urls,
+                    headers={
+                        "Content-Type": "application/json",
+                        "User-Agent": "Mozilla/5.0",  # necessary to get through WAF
+                    },
+                )
+            )
         except Exception:
             logger.exception("Boat charging session fetch failed.")
             return []
 
         return fetched
 
-    def _process_session_data_for_completed_notifications(self, session_data: dict):
-        session = session_data.get("session", {})
-        session_id = session.get("uniqueId")
-        status = session.get("status")
-
-        # Only process completed sessions (status 4)
-        # TODO: once other statuses are supported, this will need to be updated
-        if status != 4:
-            return
-
+    def _process_session_data_for_completed_notifications(self, session_id: str):
         boat_charging_session = (
             self.boat_charging_session_service.get_boat_charging_session_by_session_id(
                 session_id
@@ -84,7 +91,7 @@ class Command(BaseCommand):
                 session_id=session_id,
             )
         except Exception:
-            logger.error(
+            logger.exception(
                 "Failed processing completed boat charging session.",
                 extra={
                     "session_id": session_id,
