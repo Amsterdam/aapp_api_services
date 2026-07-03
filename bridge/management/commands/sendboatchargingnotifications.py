@@ -33,13 +33,13 @@ class Command(BaseCommand):
                 "column_name": "second_send_at",
                 "hours": 20,
                 "title": "Maximale laadtijd",
-                "message": "Uw boot mag maximaal 24 uur laden. Daarna betaalt u €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u vor het hele uur",
+                "message": "Uw boot mag maximaal 24 uur laden. Daarna betaalt u €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u voor het hele uur",
             },
             {
                 "column_name": "last_send_at",
                 "hours": 24,
                 "title": "Kosten na 24 uur",
-                "message": "Uw boot ligt langer dan 24 uur bij het laadpunt. U betaalt nu €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u vor het hele uur",
+                "message": "Uw boot ligt langer dan 24 uur bij het laadpunt. U betaalt nu €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u voor het hele uur",
             },
         ]
 
@@ -130,7 +130,6 @@ class Command(BaseCommand):
     def _process_session_data_for_charging_notifications(
         self, session_id: str, cpms_session: dict
     ):
-        print(f"Processing session {session_id} with cpms_session: {cpms_session}")
         boat_charging_session = (
             self.boat_charging_session_service.get_boat_charging_session_by_session_id(
                 session_id
@@ -155,7 +154,6 @@ class Command(BaseCommand):
 
         start_time = timezone.datetime.fromisoformat(start_time_str)
         hours_since_start = (timezone.now() - start_time).total_seconds() // 3600
-        print(f"Hours since start: {hours_since_start}")
 
         for notification_setting in self.notification_settings:
             if hours_since_start >= notification_setting["hours"] and not getattr(
@@ -199,7 +197,7 @@ class Command(BaseCommand):
                 try:
                     notification_data = NotificationData(
                         title="Kosten na 24 uur",
-                        message="Uw boot ligt langer dan 24 uur bij het laadpunt. U betaalt nu €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u vor het hele uur",
+                        message="Uw boot ligt langer dan 24 uur bij het laadpunt. U betaalt nu €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u voor het hele uur",
                         device_ids=[device_id],
                     )
                     self.notification_service.send(notification_data)
