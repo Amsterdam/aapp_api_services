@@ -1,8 +1,9 @@
 import logging
 import re
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from django.conf import settings
+from django.core.validators import URLValidator
 
 from contact.enums.base import ChoicesEnum, ListPropertyClass
 from contact.services.service_abstract import ServiceAbstract
@@ -207,3 +208,32 @@ class KingsdayAbstractService(ServiceAbstract):
             "city": properties.get("city", "Amsterdam"),
             "coordinates": {"lat": lat, "lon": lon},
         }
+
+    def _get_website(self, properties: dict[str, Any]) -> Any | None:
+        website = properties.get("website")
+        website_clean = website.replace("\\/", "/") if website else None
+
+        # check if the website is a valid URL
+        if website_clean:
+            validator = URLValidator()
+            try:
+                validator(website_clean)
+            except Exception:
+                website_clean = None
+        return website_clean
+
+    def _create_table(self, meta: List[Dict[str, str]]) -> List[Dict[str, str]] | None:
+        """
+        Converts the 'meta' field from the original data into a structured format.
+        """
+        if not meta:
+            return None
+
+        table = []
+        for item in meta:
+            key = item.get("title")
+            value = item.get("value")
+            if key and value:
+                table.append({"key": key, "value": value})
+
+        return table

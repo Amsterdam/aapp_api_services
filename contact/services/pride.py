@@ -1,49 +1,29 @@
 from typing import Any, Dict
 
-from django.conf import settings
-
-from contact.enums.kingsday_land import (
+from contact.enums.pride import (
     LIST_PROPERTY,
-    KingsdayLandData,
-    KingsdayLandFilters,
-    KingsdayLandIcons,
-    KingsdayLandLayers,
-    KingsdayLandProperties,
-    KingsdayLandSilentProperties,
+    PrideData,
+    PrideFilters,
+    PrideIcons,
+    PrideLayers,
+    PrideProperties,
+    PrideSilentProperties,
 )
 from contact.services.kingsday_abstract import KingsdayAbstractService
 from contact.services.taps import (
     tap_geometry_from_properties,
-    tap_is_in_amsterdam_municipality,
     tap_title_from_properties,
 )
 
 
-class KingsdayLandService(KingsdayAbstractService):
-    data_enum = KingsdayLandData
-    filters_enum = KingsdayLandFilters
-    layers_enum = KingsdayLandLayers
-    properties_enum = KingsdayLandProperties
-    silent_properties_enum = KingsdayLandSilentProperties
-    icons_enum = KingsdayLandIcons
+class PrideService(KingsdayAbstractService):
+    data_enum = PrideData
+    filters_enum = PrideFilters
+    layers_enum = PrideLayers
+    properties_enum = PrideProperties
+    silent_properties_enum = PrideSilentProperties
+    icons_enum = PrideIcons
     list_property = LIST_PROPERTY
-
-    def _layer_url(self, *, base_url: str, layer: Dict[str, Any]) -> str:
-        if layer.get("label") == "Drinkwater":
-            return settings.TAP_URL
-        return super()._layer_url(base_url=base_url, layer=layer)
-
-    def _preprocess_layer_features(
-        self, *, features: list[Dict[str, Any]], layer: Dict[str, Any]
-    ) -> list[Dict[str, Any]]:
-        if layer.get("label") != "Drinkwater":
-            return features
-
-        return [
-            tap
-            for tap in features
-            if tap_is_in_amsterdam_municipality(tap.get("properties", {}) or {})
-        ]
 
     def _preprocess_feature(
         self, *, feature: Dict[str, Any], layer: Dict[str, Any]
@@ -86,6 +66,14 @@ class KingsdayLandService(KingsdayAbstractService):
 
         prefix = self.properties_prefix
 
+        if layer_type == "Canal parade" and geom.get("type") == "LineString":
+            # for canal parade we want to add stroke and stroke-width properties
+            stroke = "#009DE6"
+            stroke_width = 5
+        else:
+            stroke = None
+            stroke_width = None
+
         if layer_type == "Omleiding" and geom.get("type") in [
             "Polygon",
             "MultiPolygon",
@@ -101,11 +89,9 @@ class KingsdayLandService(KingsdayAbstractService):
             stroke = None
             stroke_width = None
 
-        if layer_type == "Drinkwater":
-            title = tap_title_from_properties(properties)
-            address = None  # for taps we don't want to show the address, as it is often not accurate and clutters the info box
-        else:
-            title = properties.get("title", "")
+        title = properties.get("title", "")
+        address = None
+        if properties.get("street"):
             address = self._get_address_from_properties(properties, geom)
 
         return {
@@ -116,7 +102,7 @@ class KingsdayLandService(KingsdayAbstractService):
             or None,
             f"{prefix}website": self._get_website(properties),
             f"{prefix}address": address,
-            f"{prefix}toilet_table": self._create_table(properties.get("meta", [])),
+            f"{prefix}table": self._create_table(properties.get("meta", [])),
             "fill": fill,
             "fill-opacity": fill_opacity,
             "stroke": stroke,
