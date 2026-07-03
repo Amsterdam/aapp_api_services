@@ -9,14 +9,10 @@ from contact.enums.pride import (
     PrideProperties,
     PrideSilentProperties,
 )
-from contact.services.kingsday_abstract import KingsdayAbstractService
-from contact.services.taps import (
-    tap_geometry_from_properties,
-    tap_title_from_properties,
-)
+from contact.services.event_abstract import EventAbstractService
 
 
-class PrideService(KingsdayAbstractService):
+class PrideService(EventAbstractService):
     data_enum = PrideData
     filters_enum = PrideFilters
     layers_enum = PrideLayers
@@ -29,24 +25,17 @@ class PrideService(KingsdayAbstractService):
         self, *, feature: Dict[str, Any], layer: Dict[str, Any]
     ) -> None:
 
-        if layer.get("label") != "Drinkwater":
-            # if geometry is a multipoint, convert it to a point with the coordinates of the first point, as the frontend expects a point geometry for taps
-            geom = feature.get("geometry", {}) or {}
-            if (
-                geom.get("type") == "MultiPoint"
-                and isinstance(geom.get("coordinates"), list)
-                and len(geom["coordinates"]) > 0
-            ):
-                feature["geometry"] = {
-                    "type": "Point",
-                    "coordinates": geom["coordinates"][0],
-                }
-            return
-
-        properties = feature.get("properties", {}) or {}
-        properties["title"] = tap_title_from_properties(properties)
-        feature["properties"] = properties
-        feature["geometry"] = tap_geometry_from_properties(properties)
+        # if geometry is a multipoint, convert it to a point with the coordinates of the first point, as the frontend expects a point geometry for taps
+        geom = feature.get("geometry", {}) or {}
+        if (
+            geom.get("type") == "MultiPoint"
+            and isinstance(geom.get("coordinates"), list)
+            and len(geom["coordinates"]) > 0
+        ):
+            feature["geometry"] = {
+                "type": "Point",
+                "coordinates": geom["coordinates"][0],
+            }
 
     def get_custom_properties(
         self,

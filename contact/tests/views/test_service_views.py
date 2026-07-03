@@ -9,6 +9,7 @@ from rest_framework import status
 from contact.enums.base import ModuleSourceChoices, ServiceClass
 from contact.enums.kingsday_land import KingsdayLandProperties
 from contact.enums.kingsday_water import KingsdayWaterProperties
+from contact.enums.pride import PrideProperties
 from contact.enums.services import Services
 from contact.enums.swimming_spots import SwimmingSpotLayers, SwimmingSpotProperties
 from contact.enums.taps import TapFilters, TapProperties
@@ -20,13 +21,29 @@ from contact.tests.mock_data.kingsday import (
     closed_parking_lot,
     detour,
     direction,
-    events,
     first_aid,
     kid_flea_market,
     park_and_ride,
     recycle_boat,
     recycle_drop_off,
-    toilet,
+)
+from contact.tests.mock_data.kingsday import (
+    events as kingsday_events,
+)
+from contact.tests.mock_data.kingsday import (
+    toilet as kingsday_toilet,
+)
+from contact.tests.mock_data.pride import (
+    canal_parade,
+    closure,
+    pride_walk,
+    water_obstruction,
+)
+from contact.tests.mock_data.pride import (
+    events as pride_events,
+)
+from contact.tests.mock_data.pride import (
+    toilets as pride_toilet,
 )
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
@@ -166,8 +183,8 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "code": 1,
                 "icon_label": "event",
                 "url": f"{settings.KINGSDAY_URL}1.json",
-                "mock": events.MOCK_DATA,
-                "expected_features": len(events.MOCK_DATA["features"]),
+                "mock": kingsday_events.MOCK_DATA,
+                "expected_features": len(kingsday_events.MOCK_DATA["features"]),
             },
             {
                 "label": "EHBO-post",
@@ -190,8 +207,8 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "code": 4,
                 "icon_label": "toilet",
                 "url": f"{settings.KINGSDAY_URL}4.json",
-                "mock": toilet.MOCK_DATA,
-                "expected_features": len(toilet.MOCK_DATA["features"]),
+                "mock": kingsday_toilet.MOCK_DATA,
+                "expected_features": len(kingsday_toilet.MOCK_DATA["features"]),
             },
             {
                 "label": "Omleiding",
@@ -411,7 +428,9 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
             "contact.services.kingsday_land.KingsdayLandData.choices_as_list",
             return_value=[{"label": "Toilet", "code": 4, "icon_label": "toilet"}],
         ):
-            responses.get(f"{settings.KINGSDAY_URL}4.json", json=toilet.MOCK_DATA)
+            responses.get(
+                f"{settings.KINGSDAY_URL}4.json", json=kingsday_toilet.MOCK_DATA
+            )
             response = self.client.get(
                 reverse("service-map", kwargs={"service_id": 3}),
                 headers=self.api_headers,
@@ -430,6 +449,89 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 {"key": "Zit-toilet", "value": "1"},
             ],
         )
+
+    def test_pride_layers(self):
+        cases = [
+            {
+                "label": "Canal parade",
+                "code": 1,
+                "icon_label": "first_aid",
+                "url": f"{settings.KINGSDAY_URL}1.json",
+                "mock": canal_parade.MOCK_DATA,
+                "expected_features": len(canal_parade.MOCK_DATA["features"]),
+            },
+            {
+                "label": "Evenement",
+                "code": 2,
+                "icon_label": "event",
+                "url": f"{settings.KINGSDAY_URL}2.json",
+                "mock": pride_events.MOCK_DATA,
+                "expected_features": len(pride_events.MOCK_DATA["features"]),
+            },
+            {
+                "label": "Pride walk",
+                "code": 3,
+                "icon_label": "first_aid",
+                "url": f"{settings.KINGSDAY_URL}3.json",
+                "mock": pride_walk.MOCK_DATA,
+                "expected_features": len(pride_walk.MOCK_DATA["features"]),
+            },
+            {
+                "label": "Toilet",
+                "code": 4,
+                "icon_label": "toilet",
+                "url": f"{settings.KINGSDAY_URL}4.json",
+                "mock": pride_toilet.MOCK_DATA,
+                "expected_features": len(pride_toilet.MOCK_DATA["features"]),
+            },
+            {
+                "label": "Afsluiting",
+                "code": 5,
+                "icon_label": "closure",
+                "url": f"{settings.KINGSDAY_URL}5.json",
+                "mock": closure.MOCK_DATA,
+                "expected_features": len(closure.MOCK_DATA["features"]),
+            },
+            {
+                "label": "Waterstremming",
+                "code": 6,
+                "icon_label": "water_stremming",
+                "url": f"{settings.KINGSDAY_URL}6.json",
+                "mock": water_obstruction.MOCK_DATA,
+                "expected_features": len(water_obstruction.MOCK_DATA["features"]),
+            },
+        ]
+
+        for case in cases:
+            with self.subTest(layer=case["label"]):
+                with patch(
+                    "contact.services.pride.PrideData.choices_as_list",
+                    return_value=[
+                        {
+                            "label": case["label"],
+                            "code": case["code"],
+                            "icon_label": case["icon_label"],
+                        }
+                    ],
+                ):
+                    responses.get(case["url"], json=case["mock"])
+
+                    response = self.client.get(
+                        reverse("service-map", kwargs={"service_id": 6}),
+                        headers=self.api_headers,
+                    )
+
+                payload = response.json()
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+                self.assertEqual(
+                    payload["properties_to_include"],
+                    PrideProperties.choices_as_list(),
+                )
+                self.assertEqual(
+                    len(payload["data"]["features"]),
+                    case["expected_features"],
+                )
 
     def test_service_without_dataservice_returns_404(self):
         with patch(

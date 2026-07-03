@@ -11,10 +11,10 @@ from contact.services.service_abstract import ServiceAbstract
 logger = logging.getLogger(__name__)
 
 
-class KingsdayAbstractService(ServiceAbstract):
-    """Shared Kingsday geojson-to-map-service implementation.
+class EventAbstractService(ServiceAbstract):
+    """Shared geojson-to-map-service implementation.
 
-    Concrete subclasses only need to provide the Kingsday-specific enums:
+    Concrete subclasses only need to provide the event-specific enums:
     - data_enum: provides the data layers to fetch
     - filters_enum, layers_enum, properties_enum, icons_enum, list_property
 

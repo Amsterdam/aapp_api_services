@@ -11,7 +11,7 @@ from contact.enums.kingsday_land import (
     KingsdayLandProperties,
     KingsdayLandSilentProperties,
 )
-from contact.services.kingsday_abstract import KingsdayAbstractService
+from contact.services.event_abstract import EventAbstractService
 from contact.services.taps import (
     tap_geometry_from_properties,
     tap_is_in_amsterdam_municipality,
@@ -19,7 +19,7 @@ from contact.services.taps import (
 )
 
 
-class KingsdayLandService(KingsdayAbstractService):
+class KingsdayLandService(EventAbstractService):
     data_enum = KingsdayLandData
     filters_enum = KingsdayLandFilters
     layers_enum = KingsdayLandLayers
