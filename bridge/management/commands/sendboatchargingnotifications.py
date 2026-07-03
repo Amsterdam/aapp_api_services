@@ -3,6 +3,7 @@ import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from bridge.boat_charging.services.notifications import NotificationService
 from core.services.boat_charging_sessions import BoatChargingSessionService
@@ -56,17 +57,17 @@ class Command(BaseCommand):
             session = session_data.get("session", {})
             session_id = session.get("uniqueId")
             status = session.get("status")
-            cpms_session = session.get("cpmsSession", {})
-
-            if (
-                status == 4
-            ):  # Completed session (change this later if the status codes change)
-                self._process_session_data_for_completed_notifications(session_id)
+            cpms_session = session_data.get("cpmsSession", {})
 
             if status == 3:  # Charging session
                 self._process_session_data_for_charging_notifications(
                     session_id, cpms_session
                 )
+
+            elif (
+                status == 4
+            ):  # Completed session (change this later if the status codes change)
+                self._process_session_data_for_completed_notifications(session_id)
 
     def _build_session_urls(self, session_ids: list[str]) -> list[str]:
         base_url = settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]
@@ -129,6 +130,7 @@ class Command(BaseCommand):
     def _process_session_data_for_charging_notifications(
         self, session_id: str, cpms_session: dict
     ):
+        print(f"Processing session {session_id} with cpms_session: {cpms_session}")
         boat_charging_session = (
             self.boat_charging_session_service.get_boat_charging_session_by_session_id(
                 session_id
@@ -147,6 +149,70 @@ class Command(BaseCommand):
         if cpms_session.get("endDateTime"):
             return
 
-        start_time = cpms_session.get("startDateTime")
-        if not start_time:
+        start_time_str = cpms_session.get("startDateTime")
+        if not start_time_str:
             return
+
+        start_time = timezone.datetime.fromisoformat(start_time_str)
+        hours_since_start = (timezone.now() - start_time).total_seconds() // 3600
+        print(f"Hours since start: {hours_since_start}")
+
+        for notification_setting in self.notification_settings:
+            if hours_since_start >= notification_setting["hours"] and not getattr(
+                boat_charging_session, notification_setting["column_name"]
+            ):
+                device_id = boat_charging_session.device.external_id
+                try:
+                    notification_data = NotificationData(
+                        title=notification_setting["title"],
+                        message=notification_setting["message"],
+                        device_ids=[device_id],
+                    )
+                    self.notification_service.send(notification_data)
+
+                    self.boat_charging_session_service.update_boat_charging_session(
+                        device_id=device_id,
+                        session_id=session_id,
+                        update_dict={
+                            notification_setting["column_name"]: timezone.now()
+                        },
+                    )
+                except Exception:
+                    logger.exception(
+                        "Failed processing charging boat charging session.",
+                        extra={
+                            "session_id": session_id,
+                            "notification_setting": notification_setting,
+                        },
+                    )
+
+        # after 24 hours, we send a new notification every hour, so we need to update the last_send_at column to the current time
+        if hours_since_start >= 24:
+            last_send_at = boat_charging_session.last_send_at
+            if last_send_at is None:
+                return
+            hours_since_last_send = (
+                timezone.now() - boat_charging_session.last_send_at
+            ).total_seconds() // 3600
+            if hours_since_last_send >= 1:
+                device_id = boat_charging_session.device.external_id
+                try:
+                    notification_data = NotificationData(
+                        title="Kosten na 24 uur",
+                        message="Uw boot ligt langer dan 24 uur bij het laadpunt. U betaalt nu €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u vor het hele uur",
+                        device_ids=[device_id],
+                    )
+                    self.notification_service.send(notification_data)
+
+                    self.boat_charging_session_service.update_boat_charging_session(
+                        device_id=device_id,
+                        session_id=session_id,
+                        update_dict={"last_send_at": timezone.now()},
+                    )
+                except Exception:
+                    logger.exception(
+                        "Failed processing charging boat charging session.",
+                        extra={
+                            "session_id": session_id,
+                        },
+                    )

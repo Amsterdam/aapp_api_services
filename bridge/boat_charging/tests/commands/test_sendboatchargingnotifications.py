@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, patch
 
+import freezegun
 from django.conf import settings
 from django.core.management import call_command
 from model_bakery import baker
@@ -55,15 +56,26 @@ class TestCommand(ResponsesActivatedAPITestCase):
         "bridge.management.commands.sendboatchargingnotifications.async_fetch",
         new_callable=AsyncMock,
     )
-    def test_command_non_completed_session_does_not_send_or_delete(
-        self, mocked_async_fetch
-    ):
+    @freezegun.freeze_time("2026-06-30 06:00:00")
+    def test_command_charging_session_first_reminder_sent(self, mocked_async_fetch):
+
         mocked_async_fetch.return_value = [session_detail.MOCK_RESPONSE_CHARGING]
 
         call_command("sendboatchargingnotifications")
 
-        self.assertEqual(ScheduledNotification.objects.count(), 0)
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
+        self.assertEqual(ScheduledNotification.objects.first().title, "Herinnering")
         self.assertEqual(BoatChargingSession.objects.count(), 1)
+        self.assertIsNotNone(
+            BoatChargingSession.objects.filter(session_id=self.session_id)
+            .first()
+            .first_send_at
+        )
+        self.assertIsNone(
+            BoatChargingSession.objects.filter(session_id=self.session_id)
+            .first()
+            .second_send_at
+        )
 
     @patch(
         "bridge.management.commands.sendboatchargingnotifications.async_fetch",

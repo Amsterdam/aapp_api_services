@@ -19,6 +19,14 @@ class BoatChargingSessionService:
             )
         return device
 
+    def update_boat_charging_session(
+        self, device_id: str, session_id: str, update_dict: dict
+    ) -> None:
+        BoatChargingSession.objects.filter(
+            device__external_id=device_id,
+            session_id=session_id,
+        ).update(**update_dict)  # Update the specified column of the existing session
+
     def delete_boat_charging_session(self, device_id, session_id):
         BoatChargingSession.objects.get(
             device__external_id=device_id,
