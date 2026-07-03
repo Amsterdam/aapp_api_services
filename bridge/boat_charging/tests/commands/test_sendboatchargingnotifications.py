@@ -135,6 +135,31 @@ class TestCommand(ResponsesActivatedAPITestCase):
         "bridge.management.commands.sendboatchargingnotifications.async_fetch",
         new_callable=AsyncMock,
     )
+    @freezegun.freeze_time("2026-06-30 17:00:00")
+    def test_command_charging_session_notifications_send_after_command_failure(
+        self, mocked_async_fetch
+    ):
+        """
+        If somehow the command has failed to send notifications for quite some time,
+        we dont want to send all notifications at once, but only the last one.
+        """
+
+        mocked_async_fetch.return_value = [session_detail.MOCK_RESPONSE_CHARGING]
+
+        call_command("sendboatchargingnotifications")
+
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
+        notification = ScheduledNotification.objects.first()
+        self.assertIsNotNone(notification)
+        self.assertEqual(notification.title, "Kosten na 24 uur")
+
+        updated_session = BoatChargingSession.objects.get(session_id=self.session_id)
+        self.assertIsNotNone(updated_session.last_send_at)
+
+    @patch(
+        "bridge.management.commands.sendboatchargingnotifications.async_fetch",
+        new_callable=AsyncMock,
+    )
     def test_command_charging_session_with_end_datetime_skips_notification(
         self, mocked_async_fetch
     ):

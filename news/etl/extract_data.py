@@ -105,7 +105,7 @@ class IproxFetcher:
                     )
                 )[0]
                 if not result:
-                    # no need to log an error here, because a error is already logged in the async_fetch method.
+                    # no need to log an error here, because an error is already logged in the async_fetch method.
                     # We just break the loop and continue with the next source.
                     break
                 items = result.get("items", [])

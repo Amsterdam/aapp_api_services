@@ -152,37 +152,39 @@ class Command(BaseCommand):
         if not start_time_str:
             return
 
-        start_time = timezone.datetime.fromisoformat(start_time_str)
+        start_time = timezone.datetime.fromisoformat(
+            start_time_str.replace("Z", "+00:00")
+        )
         hours_since_start = (timezone.now() - start_time).total_seconds() // 3600
 
-        for notification_setting in self.notification_settings:
-            if hours_since_start >= notification_setting["hours"] and not getattr(
-                boat_charging_session, notification_setting["column_name"]
-            ):
-                device_id = boat_charging_session.device.external_id
-                try:
-                    notification_data = NotificationData(
-                        title=notification_setting["title"],
-                        message=notification_setting["message"],
-                        device_ids=[device_id],
-                    )
-                    self.notification_service.send(notification_data)
+        notification_to_send = self._determine_notification_to_send(
+            hours_since_start=hours_since_start,
+            boat_charging_session=boat_charging_session,
+        )
 
-                    self.boat_charging_session_service.update_boat_charging_session(
-                        device_id=device_id,
-                        session_id=session_id,
-                        update_dict={
-                            notification_setting["column_name"]: timezone.now()
-                        },
-                    )
-                except Exception:
-                    logger.exception(
-                        "Failed processing charging boat charging session.",
-                        extra={
-                            "session_id": session_id,
-                            "notification_setting": notification_setting,
-                        },
-                    )
+        if notification_to_send:
+            device_id = boat_charging_session.device.external_id
+            try:
+                notification_data = NotificationData(
+                    title=notification_to_send["title"],
+                    message=notification_to_send["message"],
+                    device_ids=[device_id],
+                )
+                self.notification_service.send(notification_data)
+
+                self.boat_charging_session_service.update_boat_charging_session(
+                    device_id=device_id,
+                    session_id=session_id,
+                    update_dict={notification_to_send["column_name"]: timezone.now()},
+                )
+            except Exception:
+                logger.exception(
+                    "Failed processing charging boat charging session.",
+                    extra={
+                        "session_id": session_id,
+                        "notification_setting": notification_to_send,
+                    },
+                )
 
         # after 24 hours, we send a new notification every hour, so we need to update the last_send_at column to the current time
         if hours_since_start >= 24:
@@ -196,8 +198,8 @@ class Command(BaseCommand):
                 device_id = boat_charging_session.device.external_id
                 try:
                     notification_data = NotificationData(
-                        title="Kosten na 24 uur",
-                        message="Uw boot ligt langer dan 24 uur bij het laadpunt. U betaalt nu €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u voor het hele uur",
+                        title=self.notification_settings[-1]["title"],
+                        message=self.notification_settings[-1]["message"],
                         device_ids=[device_id],
                     )
                     self.notification_service.send(notification_data)
@@ -214,3 +216,22 @@ class Command(BaseCommand):
                             "session_id": session_id,
                         },
                     )
+
+    def _determine_notification_to_send(
+        self, hours_since_start: int, boat_charging_session
+    ) -> dict | None:
+        due_notification_settings = [
+            notification_setting
+            for notification_setting in self.notification_settings
+            if hours_since_start >= notification_setting["hours"]
+            and not getattr(boat_charging_session, notification_setting["column_name"])
+        ]
+
+        # If multiple reminder windows were missed, only send the latest one.
+        notification_to_send = max(
+            due_notification_settings,
+            key=lambda setting: setting["hours"],
+            default=None,
+        )
+
+        return notification_to_send
