@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime
 from typing import Any, Dict
@@ -12,6 +13,8 @@ from contact.enums.pride_map import (
     PrideMapSilentProperties,
 )
 from contact.services.event_abstract import EventAbstractService
+
+logger = logging.getLogger(__name__)
 
 
 class PrideMapService(EventAbstractService):
@@ -93,10 +96,10 @@ class PrideMapService(EventAbstractService):
         self, properties: Dict[str, Any]
     ) -> dict[str, str | None]:
         """
-        Returns the start and end date for a given data point, based on the original properties.
+        Returns parsed start/end date and time values for a given data point.
 
-        The start and end date are returned as strings in the format 'YYYY-MM-DDTHH:MM:SSZ'.
-        If the start or end date is not available, None is returned for that value.
+        Dates are returned as 'YYYY-MM-DD' and times as 'HH:MM:SS' (timezone stripped when present).
+        Missing values are returned as None.
         """
 
         date_time_properties = {
@@ -139,16 +142,17 @@ class PrideMapService(EventAbstractService):
                 # check if time in format HH:MM-HH:MM, if so, add it to the start and end date
                 if "-" in meta.get("value", ""):
                     splitted_time = meta.get("value").split("-")
-                    if len(splitted_time) > 2:
-                        print(meta.get("value").split("-"))
+                    if len(splitted_time) != 2:
+                        logger.warning(
+                            f"Unexpected time format: {meta.get('value')}. Expected format is HH:MM-HH:MM. Skipping time parsing."
+                        )
                         continue
-                    start_time, end_time = meta.get("value").split("-")
-                    date_time_properties["start_time"] = start_time.replace(
-                        ".", ":"
-                    ).strip()
-                    date_time_properties["end_time"] = end_time.replace(
-                        ".", ":"
-                    ).strip()
+                    date_time_properties["start_time"] = (
+                        splitted_time[0].replace(".", ":").strip()
+                    )
+                    date_time_properties["end_time"] = (
+                        splitted_time[1].replace(".", ":").strip()
+                    )
                 else:
                     continue
 
@@ -182,5 +186,5 @@ class PrideMapService(EventAbstractService):
                 date_obj = datetime.strptime(date_string, "%d-%b-%Y")
                 return date_obj.strftime("%Y-%m-%d")
             except ValueError:
-                print(f"Could not convert date string: {date_string}")
+                logger.warning(f"Could not convert date string: {date_string}")
                 return None

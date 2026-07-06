@@ -40,9 +40,6 @@ from contact.tests.mock_data.pride import (
     water_obstruction,
 )
 from contact.tests.mock_data.pride import (
-    events as pride_events,
-)
-from contact.tests.mock_data.pride import (
     toilets as pride_toilet,
 )
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
@@ -456,23 +453,23 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
             {
                 "label": "Canal parade",
                 "code": 1,
-                "icon_label": "first_aid",
+                "icon_label": "canal_parade",
                 "url": f"{settings.MAP_LAYERS_URL}1.json",
                 "mock": canal_parade.MOCK_DATA,
                 "expected_features": len(canal_parade.MOCK_DATA["features"]),
             },
-            {
-                "label": "Evenement",
-                "code": 2,
-                "icon_label": "event",
-                "url": f"{settings.MAP_LAYERS_URL}2.json",
-                "mock": pride_events.MOCK_DATA,
-                "expected_features": len(pride_events.MOCK_DATA["features"]),
-            },
+            # {
+            #     "label": "Evenement",
+            #     "code": 2,
+            #     "icon_label": "event",
+            #     "url": f"{settings.MAP_LAYERS_URL}2.json",
+            #     "mock": pride_events.MOCK_DATA,
+            #     "expected_features": len(pride_events.MOCK_DATA["features"]),
+            # },
             {
                 "label": "Pride walk",
                 "code": 3,
-                "icon_label": "first_aid",
+                "icon_label": "pride_walk",
                 "url": f"{settings.MAP_LAYERS_URL}3.json",
                 "mock": pride_walk.MOCK_DATA,
                 "expected_features": len(pride_walk.MOCK_DATA["features"]),
@@ -496,7 +493,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
             {
                 "label": "Waterstremming",
                 "code": 6,
-                "icon_label": "water_stremming",
+                "icon_label": "water_obstruction",
                 "url": f"{settings.MAP_LAYERS_URL}6.json",
                 "mock": water_obstruction.MOCK_DATA,
                 "expected_features": len(water_obstruction.MOCK_DATA["features"]),
