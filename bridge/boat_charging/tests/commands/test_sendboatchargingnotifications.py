@@ -60,7 +60,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         "bridge.management.commands.sendboatchargingnotifications.async_fetch",
         new_callable=AsyncMock,
     )
-    @freezegun.freeze_time("2026-06-30 06:00:00")
+    @freezegun.freeze_time("2026-06-30 02:45:00")
     def test_command_charging_session_first_reminder_sent(self, mocked_async_fetch):
 
         mocked_async_fetch.return_value = [session_detail.MOCK_RESPONSE_CHARGING]
@@ -155,6 +155,29 @@ class TestCommand(ResponsesActivatedAPITestCase):
 
         updated_session = BoatChargingSession.objects.get(session_id=self.session_id)
         self.assertIsNotNone(updated_session.last_send_at)
+
+    @patch(
+        "bridge.management.commands.sendboatchargingnotifications.async_fetch",
+        new_callable=AsyncMock,
+    )
+    @freezegun.freeze_time("2026-06-30 17:00:00")
+    def test_command_charging_session_notifications_send_after_restart_command_failure(
+        self, mocked_async_fetch
+    ):
+        """
+        This test case is similar to test_command_charging_session_notifications_send_after_command_failure,
+        but it simulates a scenario where the command has failed to send notifications for quite some time, and then the command is restarted (like previous test case).
+
+        We want to ensure that no "previous" notifications are sent after the restart. So if last_send_at is set (at 24 hours),
+        we should not send notifications that should have been sent at 16 or 20 hours. These will never be sent.
+        """
+        self.session.last_send_at = datetime.fromisoformat("2026-06-30T16:30:00+00:00")
+        self.session.save(update_fields=["last_send_at"])
+        mocked_async_fetch.return_value = [session_detail.MOCK_RESPONSE_CHARGING]
+
+        call_command("sendboatchargingnotifications")
+
+        self.assertEqual(ScheduledNotification.objects.count(), 0)
 
     @patch(
         "bridge.management.commands.sendboatchargingnotifications.async_fetch",

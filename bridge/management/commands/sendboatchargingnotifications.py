@@ -190,10 +190,11 @@ class Command(BaseCommand):
         if hours_since_start >= 24:
             last_send_at = boat_charging_session.last_send_at
             if last_send_at is None:
-                return
-            hours_since_last_send = (
-                timezone.now() - boat_charging_session.last_send_at
-            ).total_seconds() // 3600
+                hours_since_last_send = 1
+            else:
+                hours_since_last_send = (
+                    timezone.now() - boat_charging_session.last_send_at
+                ).total_seconds() // 3600
             if hours_since_last_send >= 1:
                 device_id = boat_charging_session.device.external_id
                 try:
@@ -220,18 +221,20 @@ class Command(BaseCommand):
     def _determine_notification_to_send(
         self, hours_since_start: int, boat_charging_session
     ) -> dict | None:
+        """
+        Function to determine which notification to send based on the hours since the charging session started and the notification settings.
+
+        """
         due_notification_settings = [
             notification_setting
             for notification_setting in self.notification_settings
-            if hours_since_start >= notification_setting["hours"]
+            if hours_since_start == notification_setting["hours"]
             and not getattr(boat_charging_session, notification_setting["column_name"])
         ]
 
-        # If multiple reminder windows were missed, only send the latest one.
-        notification_to_send = max(
-            due_notification_settings,
-            key=lambda setting: setting["hours"],
-            default=None,
-        )
-
-        return notification_to_send
+        if len(due_notification_settings) == 0:
+            return None
+        else:
+            return due_notification_settings[
+                0
+            ]  # Return the first due notification setting
