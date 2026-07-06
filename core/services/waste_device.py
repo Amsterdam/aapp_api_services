@@ -3,7 +3,8 @@ from datetime import date, datetime, time
 from django.db.models import Q
 from django.utils import timezone
 
-from notification.models import Device, WasteDevice
+from notification.models.notification_models import Device
+from notification.models.waste_guide_models import WasteDevice
 
 
 class WasteDeviceService:

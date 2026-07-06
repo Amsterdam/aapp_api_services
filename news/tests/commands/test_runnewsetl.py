@@ -6,10 +6,13 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 from model_bakery import baker
 
+from core.testing_aioresponses import patch_client_response_init
 from news.management.commands import runnewsetl
 from news.models import LiveBlogItem, NewsArticle, NewsArticleImage
 from news.tests.mock_data import highlighted, item_article, item_liveblog, liveblogs
-from notification.models import ScheduledNotification
+from notification.models.notification_models import ScheduledNotification
+
+patch_client_response_init()
 
 
 class RunNewsETLTest(TestCase):

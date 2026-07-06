@@ -9,7 +9,7 @@ from model_bakery import baker
 from modules.admin.notification_admin import NotificationAdmin
 from modules.models import Notification
 from modules.services.notification import NotificationService
-from notification.models import ScheduledNotification
+from notification.models.notification_models import ScheduledNotification
 
 
 class TestNotificationAdmin(TestCase):

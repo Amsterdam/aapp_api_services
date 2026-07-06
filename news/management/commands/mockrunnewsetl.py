@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
+from core.testing_aioresponses import patch_client_response_init
 from news.management.commands import runnewsetl
 from news.management.mock_data import (
     highlighted_item,
@@ -16,6 +17,7 @@ from news.management.mock_data import (
 )
 
 logger = logging.getLogger(__name__)
+patch_client_response_init()
 
 
 class Command(BaseCommand):

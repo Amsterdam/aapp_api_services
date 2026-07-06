@@ -2,7 +2,8 @@ import freezegun
 from django.contrib.auth.models import User
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import Device, ScheduledNotification, WasteDevice
+from notification.models.notification_models import Device, ScheduledNotification
+from notification.models.waste_guide_models import WasteDevice
 from waste.models import ManualNotification
 from waste.services.notification import ManualNotificationService, NotificationService
 

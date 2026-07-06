@@ -8,7 +8,11 @@ from bridge.mijnamsterdam.services.notifications import (
 from core.enums import Module, NotificationType
 from core.services.notification_service import NotificationData
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import Device, NotificationLast, ScheduledNotification
+from notification.models.notification_models import (
+    Device,
+    NotificationLast,
+    ScheduledNotification,
+)
 
 
 class TestNotificationService(ResponsesActivatedAPITestCase):

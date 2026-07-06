@@ -30,6 +30,8 @@ class CityOfficesView(generics.RetrieveAPIView):
             item_dict["street"] = item.street_name
             item_dict["number"] = item.street_number
             item_dict["postcode"] = item.postal_code
+            lat, lon = item_dict["lat"], item_dict["lon"]
+            item_dict["coordinates"] = {"lat": lat, "lon": lon}
             result.append(item_dict)
         output_data = {"status": True, "result": result}
         return output_data

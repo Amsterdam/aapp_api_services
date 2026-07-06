@@ -5,7 +5,7 @@ from django.conf import settings
 from firebase_admin import messaging
 
 from core.services.image_set import ImageSetService
-from notification.models import Notification
+from notification.models.notification_models import Notification
 
 logger = logging.getLogger(__name__)
 thread_pool = ThreadPoolExecutor(max_workers=settings.MAX_FIREBASE_WORKERS)
