@@ -29,7 +29,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         "bridge.management.commands.sendboatchargingnotifications.async_fetch",
         new_callable=AsyncMock,
     )
-    def test_command_completed_session_sends_notification_and_deletes_session(
+    def test_command_completed_session_sends_notification_and_marks_session_as_deleted(
         self, mocked_async_fetch
     ):
         mocked_async_fetch.return_value = [session_detail.MOCK_RESPONSE_COMPLETED]
@@ -54,7 +54,11 @@ class TestCommand(ResponsesActivatedAPITestCase):
         )
         device_ids = list(notification.devices.values_list("external_id", flat=True))
         self.assertEqual(device_ids, [self.device_id])
-        self.assertEqual(BoatChargingSession.objects.count(), 0)
+        self.assertTrue(
+            BoatChargingSession.objects.filter(session_id=self.session_id)
+            .first()
+            .deleted
+        )
 
     @patch(
         "bridge.management.commands.sendboatchargingnotifications.async_fetch",
@@ -221,7 +225,7 @@ class TestCommand(ResponsesActivatedAPITestCase):
         "bridge.management.commands.sendboatchargingnotifications.async_fetch",
         new_callable=AsyncMock,
     )
-    def test_command_mixed_statuses_only_completed_are_notified_and_deleted(
+    def test_command_mixed_statuses_only_completed_are_notified_and_marked_as_deleted(
         self, mocked_async_fetch
     ):
         second_device_id = "device2"
@@ -246,11 +250,15 @@ class TestCommand(ResponsesActivatedAPITestCase):
         )
         self.assertEqual(device_ids, [self.device_id])
 
-        self.assertFalse(
-            BoatChargingSession.objects.filter(session_id=self.session_id).exists()
-        )
         self.assertTrue(
-            BoatChargingSession.objects.filter(session_id="second_session_id").exists()
+            BoatChargingSession.objects.filter(session_id=self.session_id)
+            .first()
+            .deleted
+        )
+        self.assertFalse(
+            BoatChargingSession.objects.filter(session_id="second_session_id")
+            .first()
+            .deleted
         )
 
     @patch(

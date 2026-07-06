@@ -33,13 +33,13 @@ class Command(BaseCommand):
                 "column_name": "second_send_at",
                 "hours": 20,
                 "title": "Maximale laadtijd",
-                "message": "Uw boot mag maximaal 24 uur laden. Daarna betaalt u €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u voor het hele uur",
+                "message": "Uw boot mag maximaal 24 uur laden. Daarna betaalt u €2,00 per uur.",
             },
             {
                 "column_name": "last_send_at",
                 "hours": 24,
                 "title": "Kosten na 24 uur",
-                "message": "Uw boot ligt langer dan 24 uur bij het laadpunt. U betaalt nu €2,00 per uur. Ook als u maar een deel van een uur gebruikt, betaalt u voor het hele uur",
+                "message": "Uw boot ligt langer dan 24 uur bij het laadpunt. U betaalt nu €2,00 per uur.",
             },
         ]
 
@@ -48,10 +48,16 @@ class Command(BaseCommand):
             self.boat_charging_session_service.get_all_boat_charging_session_ids()
         )
         session_urls = self._build_session_urls(session_ids)
-        sessions_data = self._fetch_sessions_data(session_urls)
+        all_sessions_data = self._fetch_sessions_data(session_urls)
 
-        for session_data in sessions_data:
+        for i, session_data in enumerate(all_sessions_data):
             if not session_data:
+                logger.error(
+                    "Failed to fetch session data; skipping notification.",
+                    extra={
+                        "session_id": session_ids[i],
+                    },
+                )
                 continue
 
             session = session_data.get("session", {})
@@ -99,7 +105,7 @@ class Command(BaseCommand):
 
         if boat_charging_session is None:
             logger.warning(
-                "Completed session not found in database; skipping notification.",
+                "Completed session not found in database, or marked as deleted; skipping notification.",
                 extra={
                     "session_id": session_id,
                 },
@@ -115,7 +121,7 @@ class Command(BaseCommand):
             )
             self.notification_service.send(notification_data)
 
-            self.boat_charging_session_service.delete_boat_charging_session(
+            self.boat_charging_session_service.mark_boat_charging_session_as_deleted(
                 device_id=device_id,
                 session_id=session_id,
             )
@@ -138,7 +144,7 @@ class Command(BaseCommand):
 
         if boat_charging_session is None:
             logger.warning(
-                "Charging session not found in database; skipping notification.",
+                "Charging session not found in database, or marked as deleted; skipping notification.",
                 extra={
                     "session_id": session_id,
                 },
