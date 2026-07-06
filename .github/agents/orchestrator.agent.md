@@ -60,7 +60,7 @@ Your job is to move one work item from intake to validated outcome using a fixed
 - If `H1.open_questions` is non-empty:
   - Ask the Product Owner those exact questions verbatim.
   - Do not reinterpret or summarize unless necessary.
-  - Re-run Story Plan with the updated brief until `H0.open_questions` is empty and `H0.plan_status` is `ready`.
+  - Re-run Story Plan with the updated brief until `H1.open_questions` is empty and `H1.plan_status` is `ready`.
 - Verify branch readiness before any implementation handoff: it must be clean, up to date with `main`, and a branch named `<module-name>/<jira-ticket-number>-short-description` should be selected. If missing, create it; if dirty, diverged, or unclear, escalate and pause.
 - Build every `git_history_context` from `original_git_hash` to the current `HEAD`, and use that git history as the provenance record for the workflow.
 - Send the approved brief and the Story Plan `plan.md` to Developer via `H2`. Require `H3` for each delivery.
