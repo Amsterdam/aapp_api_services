@@ -2,7 +2,6 @@ import inspect
 
 from aiohttp.abc import AbstractStreamWriter
 from aiohttp.client_reqrep import ClientResponse
-from aioresponses import aioresponses as _aioresponses
 
 
 class _CompatStreamWriter(AbstractStreamWriter):
@@ -38,10 +37,3 @@ def patch_client_response_init() -> None:
         return original_init(self, method, url, **kwargs)
 
     ClientResponse.__init__ = _compat_init
-
-
-patch_client_response_init()
-
-aioresponses = _aioresponses
-
-__all__ = ["aioresponses", "patch_client_response_init"]

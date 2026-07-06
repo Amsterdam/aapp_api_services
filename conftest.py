@@ -1,4 +1,0 @@
-from core.testing_aioresponses import patch_client_response_init
-
-
-patch_client_response_init()
