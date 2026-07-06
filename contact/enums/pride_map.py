@@ -9,11 +9,11 @@ from contact.enums.base import (
 from contact.icons import IconPath
 
 
-class PrideData(ChoicesEnum):
+class PrideMapData(ChoicesEnum):
     CANAL_PARADE = DataLayer(
         label="Canal parade", code=44334, icon_label="canal_parade"
     )
-    EVENTS = DataLayer(label="Evenement", code=44337, icon_label="event")
+    # EVENTS = DataLayer(label="Evenement", code=44337, icon_label="event") # maybe later added again
     PRIDE_WALK = DataLayer(label="Pride walk", code=44331, icon_label="pride_walk")
     TOILET = DataLayer(label="Toilet", code=44319, icon_label="toilet")
     CLOSURE = DataLayer(label="Afsluiting", code=44322, icon_label="closure")
@@ -22,23 +22,23 @@ class PrideData(ChoicesEnum):
     )
 
 
-class PrideFilters(ChoicesEnum):
+class PrideMapFilters(ChoicesEnum):
     pass
 
 
-class PrideLayers(ChoicesEnum):
+class PrideMapLayers(ChoicesEnum):
     CANAL_PARADE = LayerClass(
         label="Canal parade",
         filter_key="aapp_subtitle",
         filter_value="Canal parade",
         icon_label="canal_parade",
     )
-    EVENT = LayerClass(
-        label="Evenement",
-        filter_key="aapp_subtitle",
-        filter_value="Evenement",
-        icon_label="event",
-    )
+    # EVENT = LayerClass(
+    #     label="Evenement",
+    #     filter_key="aapp_subtitle",
+    #     filter_value="Evenement",
+    #     icon_label="event",
+    # )
     PRIDE_WALK = LayerClass(
         label="Pride walk",
         filter_key="aapp_subtitle",
@@ -65,7 +65,7 @@ class PrideLayers(ChoicesEnum):
     )
 
 
-class PrideProperties(ChoicesEnum):
+class PrideMapProperties(ChoicesEnum):
     ADDRESS = PropertiesClass(
         label="Adres",
         property_key="aapp_address",
@@ -86,19 +86,7 @@ class PrideProperties(ChoicesEnum):
     )
 
 
-class PrideSilentProperties(ChoicesEnum):
-    FILL = PropertiesClass(
-        label=None,
-        property_key="fill",
-        property_type="string",
-        icon=None,
-    )
-    FILL_OPACITY = PropertiesClass(
-        label=None,
-        property_key="fill-opacity",
-        property_type="float",
-        icon=None,
-    )
+class PrideMapSilentProperties(ChoicesEnum):
     STROKE = PropertiesClass(
         label=None,
         property_key="stroke",
@@ -137,19 +125,19 @@ class PrideSilentProperties(ChoicesEnum):
     )
 
 
-class PrideIcons(ChoicesEnum):
+class PrideMapIcons(ChoicesEnum):
     CANAL_PARADE = IconClass(
         label="canal_parade",
         path=IconPath["info"],
         circle_color="#009DE6",
         path_color="#181818",
     )
-    EVENT = IconClass(
-        label="event",
-        path=IconPath["kingsday-event"],
-        circle_color="#FF9100",
-        path_color="#181818",
-    )
+    # EVENT = IconClass(
+    #     label="event",
+    #     path=IconPath["pride-event"],
+    #     circle_color="#FF9100",
+    #     path_color="#181818",
+    # )
     PRIDE_WALK = IconClass(
         label="pride_walk",
         path=IconPath["info"],
@@ -158,7 +146,7 @@ class PrideIcons(ChoicesEnum):
     )
     TOILET = IconClass(
         label="toilet",
-        path=IconPath["kingsday-toilet"],
+        path=IconPath["pride-toilet"],
         circle_color="#FFE600",
         path_color="#181818",
     )

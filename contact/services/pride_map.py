@@ -2,25 +2,25 @@ import re
 from datetime import datetime
 from typing import Any, Dict
 
-from contact.enums.pride import (
+from contact.enums.pride_map import (
     LIST_PROPERTY,
-    PrideData,
-    PrideFilters,
-    PrideIcons,
-    PrideLayers,
-    PrideProperties,
-    PrideSilentProperties,
+    PrideMapData,
+    PrideMapFilters,
+    PrideMapIcons,
+    PrideMapLayers,
+    PrideMapProperties,
+    PrideMapSilentProperties,
 )
 from contact.services.event_abstract import EventAbstractService
 
 
-class PrideService(EventAbstractService):
-    data_enum = PrideData
-    filters_enum = PrideFilters
-    layers_enum = PrideLayers
-    properties_enum = PrideProperties
-    silent_properties_enum = PrideSilentProperties
-    icons_enum = PrideIcons
+class PrideMapService(EventAbstractService):
+    data_enum = PrideMapData
+    filters_enum = PrideMapFilters
+    layers_enum = PrideMapLayers
+    properties_enum = PrideMapProperties
+    silent_properties_enum = PrideMapSilentProperties
+    icons_enum = PrideMapIcons
     list_property = LIST_PROPERTY
 
     def _preprocess_feature(
@@ -65,21 +65,6 @@ class PrideService(EventAbstractService):
             stroke = None
             stroke_width = None
 
-        if layer_type == "Omleiding" and geom.get("type") in [
-            "Polygon",
-            "MultiPolygon",
-        ]:
-            # for detour we want to add fill and opacity properties
-            fill = "#EC0000"
-            fill_opacity = 0.2
-            stroke = "#EC0000"
-            stroke_width = 2
-        else:
-            fill = None
-            fill_opacity = None
-            stroke = None
-            stroke_width = None
-
         title = properties.get("title", "")
         address = None
         if properties.get("street"):
@@ -100,8 +85,6 @@ class PrideService(EventAbstractService):
             f"{prefix}end_date": date_properties.get("end_date"),
             f"{prefix}start_time": date_properties.get("start_time"),
             f"{prefix}end_time": date_properties.get("end_time"),
-            "fill": fill,
-            "fill-opacity": fill_opacity,
             "stroke": stroke,
             "stroke-width": stroke_width,
         }
