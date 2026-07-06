@@ -13,6 +13,8 @@ http:
       value: "{{access-token}}"
     - name: X-Api-Key
       value: "{{apiKey}}"
+    - name: DeviceId
+      value: bruno-user
   params:
     - name: session_id
       value: ""

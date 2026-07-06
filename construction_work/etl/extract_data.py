@@ -7,15 +7,11 @@ from datetime import datetime
 from logging import getLogger
 from urllib.parse import urljoin
 
-import aiohttp
 from django.conf import settings
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+
+from core.utils.async_utils import async_fetch
 
 logger = getLogger(__name__)
-
-
-class FetchError(Exception):
-    pass
 
 
 def get_all_iprox_items(iprox_url):
@@ -45,39 +41,3 @@ def get_iprox_items_data(url, item_ids):
         f"Finished async fetch. Successfully collected {len(upsert_item_data)} items"
     )
     return upsert_item_data
-
-
-async def async_fetch(urls, max_concurrent_requests=20):
-    """Fetch all URLs with limited concurrency. 20 seems to be the sweet spot."""
-    sem = asyncio.Semaphore(max_concurrent_requests)
-
-    async with aiohttp.ClientSession() as session:
-        tasks = [fetch_with_sem(sem, session, url) for url in urls]
-        return await asyncio.gather(*tasks)
-
-
-async def fetch_with_sem(sem, session, url):
-    """Fetch a URL, respecting the semaphore limit."""
-    async with sem:
-        try:
-            return await fetch(session, url)
-        except Exception:
-            logger.error(f"Failed to fetch {url}")
-
-
-@retry(
-    stop=stop_after_attempt(3),  # Retry up to 3 times
-    wait=wait_fixed(2),  # Wait 2 seconds between retries
-    retry=retry_if_exception_type(FetchError),  # Retry only on custom exceptions
-)
-async def fetch(session, url):
-    """Fetch a single URL with a retry mechanism."""
-    try:
-        async with session.get(url) as response:
-            if response.status != 200:
-                raise FetchError(
-                    f"Failed to fetch {url}, status code: {response.status}"
-                )
-            return await response.json()
-    except aiohttp.ClientError as e:
-        raise FetchError(f"Failed to fetch {url}: {str(e)}") from e

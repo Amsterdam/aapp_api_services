@@ -32,6 +32,7 @@ Your job is to move one work item from intake to validated outcome using a fixed
 - Reviewer receives only the original work item and git history context rooted at `original_git_hash`.
 - Tester receives only the original work item, the resulting code or executable artifact, and git history context rooted at `original_git_hash`.
 - Reject responses that do not match the receiving agent's required output template.
+- If a response-template failure exposes a gap in `.github/agents`, `.github/agents/handoff-schemas.md`, or related workflow definitions, record that gap explicitly and carry it into retrospective output.
 - Never pass Developer reasoning, or previous validation findings into blinded review or testing before the first independent pass is complete.
 - Gate progression strictly: validate template compliance before sending work to subsequent agents. Reject non-compliant handoffs.
 
@@ -55,11 +56,11 @@ Your job is to move one work item from intake to validated outcome using a fixed
 
 ## Workflow
 - capture the current `HEAD` as `original_git_hash`.
-- Send `H0 Story Planning Request` to the Story Plan agent. Require `H1 Story Planning Result` in response and require it to create or update the in-memory `plan.md`. As part of this, Story Plan must identify whether the work item is likely to require any new public endpoints, routes, or interfaces; if so and the exact name is not specified, Story Plan must include this in `H0.open_questions`.
-- If `H0.open_questions` is non-empty:
+- Send `H0 Story Planning Request` to the Story Plan agent. Require `H1 Story Planning Result` in response and require it to create or update the in-memory `plan.md`. As part of this, Story Plan must identify whether the work item is likely to require any new public endpoints, routes, or interfaces; if so and the exact name is not specified, Story Plan must include this in `H1.open_questions`.
+- If `H1.open_questions` is non-empty:
   - Ask the Product Owner those exact questions verbatim.
   - Do not reinterpret or summarize unless necessary.
-  - Re-run Story Plan with the updated brief until `H0.open_questions` is empty and `H0.plan_status` is `ready`.
+  - Re-run Story Plan with the updated brief until `H1.open_questions` is empty and `H1.plan_status` is `ready`.
 - Verify branch readiness before any implementation handoff: it must be clean, up to date with `main`, and a branch named `<module-name>/<jira-ticket-number>-short-description` should be selected. If missing, create it; if dirty, diverged, or unclear, escalate and pause.
 - Build every `git_history_context` from `original_git_hash` to the current `HEAD`, and use that git history as the provenance record for the workflow.
 - Send the approved brief and the Story Plan `plan.md` to Developer via `H2`. Require `H3` for each delivery.
