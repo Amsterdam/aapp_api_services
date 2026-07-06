@@ -13,9 +13,11 @@ http:
       value: "{{access-token}}"
     - name: X-Api-Key
       value: "{{apiKey}}"
+    - name: DeviceId
+      value: bruno-user
   params:
     - name: session_id
-      value: ""
+      value: f6895bda-6fe2-4a2f-972d-1623fbf4595e
       type: path
   auth: inherit
 
