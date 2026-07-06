@@ -94,16 +94,11 @@ class SessionStopView(DeviceIdMixin, BaseView):
         )
         service = BoatChargingSessionService()
         try:
-            await sync_to_async(service.delete_boat_charging_session)(
+            await sync_to_async(service.mark_boat_charging_session_as_deleted)(
                 device_id=self.device_id,
                 session_id=session_id,
             )
         except Exception:
-            logger.exception(
-                "Failed to remove BoatChargingSession record",
-                extra={
-                    "device_id": self.device_id,
-                    "session_id": session_id,
-                },
-            )
+            # logging already handled in service
+            pass
         return Response(status=204)
