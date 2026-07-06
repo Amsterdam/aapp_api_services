@@ -21,3 +21,4 @@ class BoatChargingSession(models.Model):
     second_send_at = models.DateTimeField(null=True)
     last_send_at = models.DateTimeField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    deleted = models.BooleanField(default=False)

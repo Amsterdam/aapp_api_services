@@ -38,7 +38,7 @@ class TestSessionDetailView(BoatChargingTestCase):
 
     def test_success(self):
         resp = respx.get(self.external_endpoint).mock(
-            return_value=httpx.Response(200, json=session_detail.MOCK_RESPONSE)
+            return_value=httpx.Response(200, json=session_detail.MOCK_RESPONSE_CHARGING)
         )
 
         response = self.client.get(self.url, headers=self.api_headers)

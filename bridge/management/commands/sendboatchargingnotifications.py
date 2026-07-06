@@ -1,12 +1,14 @@
+import asyncio
 import logging
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from bridge.boat_charging.services.notifications import NotificationService
-from bridge.boat_charging.utils import get_thresholds
-from core.services.boat_charging_device import BoatChargingDeviceService
+from core.services.boat_charging_sessions import BoatChargingSessionService
 from core.services.notification_service import NotificationData
+from core.utils.async_utils import async_fetch
 
 logger = logging.getLogger(__name__)
 
@@ -19,71 +21,226 @@ class Command(BaseCommand):
     def __init__(self):
         super().__init__()
         self.notification_service = NotificationService()
-        self.boat_charging_device_service = BoatChargingDeviceService()
+        self.boat_charging_session_service = BoatChargingSessionService()
+        self.notification_settings = [
+            {
+                "column_name": "first_send_at",
+                "hours": 16,
+                "title": "Herinnering",
+                "message": "Uw boot is nog aan het laden.",
+            },
+            {
+                "column_name": "second_send_at",
+                "hours": 20,
+                "title": "Maximale laadtijd",
+                "message": "Uw boot mag maximaal 24 uur laden. Daarna betaalt u €2,00 per uur.",
+            },
+            {
+                "column_name": "last_send_at",
+                "hours": 24,
+                "title": "Kosten na 24 uur",
+                "message": "Uw boot ligt langer dan 24 uur bij het laadpunt. U betaalt nu €2,00 per uur.",
+            },
+        ]
 
     def handle(self, *args, **options):
-        now = timezone.now()
+        session_ids = (
+            self.boat_charging_session_service.get_all_boat_charging_session_ids()
+        )
+        session_urls = self._build_session_urls(session_ids)
+        all_sessions_data = self._fetch_sessions_data(session_urls)
 
-        base_thresholds, repeat_delta = get_thresholds()
-
-        devices = self.boat_charging_device_service.get_all_boat_charging_devices()
-
-        for device in devices:
-            if not device.session_id:
+        for i, session_data in enumerate(all_sessions_data):
+            if not session_data:
+                logger.error(
+                    "Failed to fetch session data; skipping notification.",
+                    extra={
+                        "session_id": session_ids[i],
+                    },
+                )
                 continue
 
-            # Check if session is still active
-            # TODO: Handle inactieve sessions (e.g., if the session has ended, we maybe want to send a notification and delete record from database)
+            session = session_data.get("session", {})
+            session_id = session.get("uniqueId")
+            status = session.get("status")
+            cpms_session = session_data.get("cpmsSession", {})
 
-            duration = now - device.created_at
+            if status == 3:  # Charging session
+                self._process_session_data_for_charging_notifications(
+                    session_id, cpms_session
+                )
 
-            # Ensure dict (avoid None issues)
-            sent = device.sent_notifications or {}
+            elif (
+                status == 4
+            ):  # Completed session (change this later if the status codes change)
+                self._process_session_data_for_completed_notifications(session_id)
 
-            updated = False  # track if we need to save
+    def _build_session_urls(self, session_ids: list[str]) -> list[str]:
+        base_url = settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]
+        return [f"{base_url}/{session_id}" for session_id in session_ids]
 
-            # Handle base thresholds
-            for threshold in base_thresholds:
-                hours = int(threshold.total_seconds() // 3600)
-                key = str(hours)
+    def _fetch_sessions_data(self, session_urls: list[str]) -> list[dict]:
+        try:
+            fetched = asyncio.run(
+                async_fetch(
+                    session_urls,
+                    headers={
+                        "Content-Type": "application/json",
+                        "User-Agent": "Mozilla/5.0",  # necessary to get through WAF
+                    },
+                )
+            )
+        except Exception:
+            logger.exception("Boat charging session fetch failed.")
+            return []
 
-                if duration >= threshold and key not in sent:
+        return fetched
+
+    def _process_session_data_for_completed_notifications(self, session_id: str):
+        boat_charging_session = (
+            self.boat_charging_session_service.get_boat_charging_session_by_session_id(
+                session_id
+            )
+        )
+
+        if boat_charging_session is None:
+            logger.warning(
+                "Completed session not found in database, or marked as deleted; skipping notification.",
+                extra={
+                    "session_id": session_id,
+                },
+            )
+            return
+
+        device_id = boat_charging_session.device.external_id
+        try:
+            notification_data = NotificationData(
+                title="Laden gestopt",
+                message="Het laden is gestopt. Bekijk uw laadsessie",
+                device_ids=[device_id],
+            )
+            self.notification_service.send(notification_data)
+
+            self.boat_charging_session_service.mark_boat_charging_session_as_deleted(
+                device_id=device_id,
+                session_id=session_id,
+            )
+        except Exception:
+            logger.exception(
+                "Failed processing completed boat charging session.",
+                extra={
+                    "session_id": session_id,
+                },
+            )
+
+    def _process_session_data_for_charging_notifications(
+        self, session_id: str, cpms_session: dict
+    ):
+        boat_charging_session = (
+            self.boat_charging_session_service.get_boat_charging_session_by_session_id(
+                session_id
+            )
+        )
+
+        if boat_charging_session is None:
+            logger.warning(
+                "Charging session not found in database, or marked as deleted; skipping notification.",
+                extra={
+                    "session_id": session_id,
+                },
+            )
+            return
+
+        if cpms_session.get("endDateTime"):
+            return
+
+        start_time_str = cpms_session.get("startDateTime")
+        if not start_time_str:
+            return
+
+        start_time = timezone.datetime.fromisoformat(
+            start_time_str.replace("Z", "+00:00")
+        )
+        hours_since_start = (timezone.now() - start_time).total_seconds() // 3600
+
+        notification_to_send = self._determine_notification_to_send(
+            hours_since_start=hours_since_start,
+            boat_charging_session=boat_charging_session,
+        )
+
+        if notification_to_send:
+            device_id = boat_charging_session.device.external_id
+            try:
+                notification_data = NotificationData(
+                    title=notification_to_send["title"],
+                    message=notification_to_send["message"],
+                    device_ids=[device_id],
+                )
+                self.notification_service.send(notification_data)
+
+                self.boat_charging_session_service.update_boat_charging_session(
+                    device_id=device_id,
+                    session_id=session_id,
+                    update_dict={notification_to_send["column_name"]: timezone.now()},
+                )
+            except Exception:
+                logger.exception(
+                    "Failed processing charging boat charging session.",
+                    extra={
+                        "session_id": session_id,
+                        "notification_setting": notification_to_send,
+                    },
+                )
+
+        # after 24 hours, we send a new notification every hour, so we need to update the last_send_at column to the current time
+        if hours_since_start >= 24:
+            last_send_at = boat_charging_session.last_send_at
+            if last_send_at is None:
+                hours_since_last_send = 1
+            else:
+                hours_since_last_send = (
+                    timezone.now() - boat_charging_session.last_send_at
+                ).total_seconds() // 3600
+            if hours_since_last_send >= 1:
+                device_id = boat_charging_session.device.external_id
+                try:
                     notification_data = NotificationData(
-                        link_source_id="",
-                        title="Boot laden herinnering",
-                        message=".",
-                        device_ids=[device.device_id],
+                        title=self.notification_settings[-1]["title"],
+                        message=self.notification_settings[-1]["message"],
+                        device_ids=[device_id],
                     )
                     self.notification_service.send(notification_data)
 
-                    sent[key] = now.isoformat()
-                    updated = True
+                    self.boat_charging_session_service.update_boat_charging_session(
+                        device_id=device_id,
+                        session_id=session_id,
+                        update_dict={"last_send_at": timezone.now()},
+                    )
+                except Exception:
+                    logger.exception(
+                        "Failed processing charging boat charging session.",
+                        extra={
+                            "session_id": session_id,
+                        },
+                    )
 
-            # Handle repeating notifications after last threshold
-            last_threshold = base_thresholds[-1]
+    def _determine_notification_to_send(
+        self, hours_since_start: int, boat_charging_session
+    ) -> dict | None:
+        """
+        Function to determine which notification to send based on the hours since the charging session started and the notification settings.
 
-            if duration >= last_threshold:
-                extra_time = duration - last_threshold
-                repeat_count = int(extra_time // repeat_delta)
+        """
+        due_notification_settings = [
+            notification_setting
+            for notification_setting in self.notification_settings
+            if hours_since_start == notification_setting["hours"]
+            and not getattr(boat_charging_session, notification_setting["column_name"])
+        ]
 
-                for i in range(1, repeat_count + 1):
-                    total_duration = last_threshold + i * repeat_delta
-                    hours = int(total_duration.total_seconds() // 3600)
-                    key = str(hours)
-
-                    if key not in sent:
-                        notification_data = NotificationData(
-                            link_source_id="",
-                            title="Haal je boot van de laadpaal",
-                            message="Je betaald nu een kleeftarief voor het laden van je boot. Haal je boot van de laadpaal.",
-                            device_ids=[device.device_id],
-                        )
-                        self.notification_service.send(notification_data)
-
-                        sent[key] = now.isoformat()
-                        updated = True
-
-            # 4. Save only if something changed
-            if updated:
-                device.sent_notifications = sent
-                device.save(update_fields=["sent_notifications"])
+        if len(due_notification_settings) == 0:
+            return None
+        else:
+            return due_notification_settings[
+                0
+            ]  # Return the first due notification setting
