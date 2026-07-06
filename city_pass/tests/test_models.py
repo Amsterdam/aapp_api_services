@@ -46,7 +46,7 @@ class TestTokenModels(TestCase):
         }
     )
     def assert_is_valid_function(self, token_type):
-        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
+        token_creation_time = datetime.strptime("2024-01-01 12:00", DATE_FORMAT)
         with freeze_time(token_creation_time):
             token = token_type(session=self.session)
             token.save()
@@ -72,7 +72,7 @@ class TestTokenModels(TestCase):
 
     @override_settings(REFRESH_TOKEN_EXPIRATION_TIME=ONE_HOUR_IN_SECONDS)
     def test_refresh_token_is_expired(self):
-        token_creation_time = datetime.strptime("2024-01-01 12:00", "%Y-%m-%d %H:%M")
+        token_creation_time = datetime.strptime("2024-01-01 12:00", DATE_FORMAT)
         with freeze_time(token_creation_time):
             refresh_token = RefreshToken(session=self.session)
             refresh_token.save()
@@ -84,17 +84,15 @@ class TestTokenModels(TestCase):
             self.assert_token_invalid(refresh_token)
 
     @override_settings(
-        TOKEN_CUT_OFF_DATETIME="10-1 10:00",
+        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 4 * 365 * 24 * 60 * 60,  # 4 years in seconds
-            "REFRESH_TOKEN": 4 * 365 * 24 * 60 * 60,  # 4 years in seconds,
+            "ACCESS_TOKEN": 365 * 24 * 60 * 60,  # 1 year in seconds
+            "REFRESH_TOKEN": 365 * 24 * 60 * 60,  # 1 year in seconds,
         },
     )
     def test_token_created_before_cut_off(self):
-        creation_time_before_cut_off = datetime.strptime(
-            "2022-01-01 12:00", "%Y-%m-%d %H:%M"
-        )
-        with freeze_time(creation_time_before_cut_off):
+        # far before cut off date, tokens are valid
+        with freeze_time("2026-01-01 23:59:50+01:00"):
             access_token = AccessToken(session=self.session)
             access_token.save()
             self.assert_token_valid(access_token)
@@ -103,10 +101,8 @@ class TestTokenModels(TestCase):
             refresh_token.save()
             self.assert_token_valid(refresh_token)
 
-        before_cut_off_datetime = datetime.strptime(
-            "2024-10-01 09:59", "%Y-%m-%d %H:%M"
-        )
-        with freeze_time(before_cut_off_datetime):
+        # just before cut off date, tokens are still valid
+        with freeze_time("2026-07-31 23:59:50+02:00"):
             self.assert_token_valid(access_token)
             self.assert_token_valid(refresh_token)
 
@@ -114,8 +110,8 @@ class TestTokenModels(TestCase):
             self.assertEqual(AccessToken.objects.count(), 1)
             self.assertEqual(RefreshToken.objects.count(), 1)
 
-        after_cut_off_datetime = datetime.strptime("2024-10-01 10:01", "%Y-%m-%d %H:%M")
-        with freeze_time(after_cut_off_datetime):
+        # just after cut off date, tokens are invalid
+        with freeze_time("2026-08-01 00:01:00+02:00"):
             self.assert_token_invalid(access_token)
             self.assert_token_invalid(refresh_token)
 
@@ -124,17 +120,33 @@ class TestTokenModels(TestCase):
             self.assertEqual(RefreshToken.objects.count(), 0)
 
     @override_settings(
-        TOKEN_CUT_OFF_DATETIME="10-1 10:00",
+        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
         TOKEN_TTLS={
-            "ACCESS_TOKEN": 4 * 365 * 24 * 60 * 60,  # 4 years in seconds
-            "REFRESH_TOKEN": 4 * 365 * 24 * 60 * 60,  # 4 years in seconds,
+            "ACCESS_TOKEN": 30 * 60,
+            "REFRESH_TOKEN": 365 * 24 * 60 * 60,
+        },
+    )
+    def test_token_created_at_cut_off_is_invalid(self):
+        """
+        Token created at cut off datetime is instantly invalidated.
+        """
+        cut_off_time = datetime.fromisoformat("2026-08-01 00:00:00+02:00")
+
+        with freeze_time(cut_off_time):
+            access_token = AccessToken.objects.create(session=self.session)
+            refresh_token = RefreshToken.objects.create(session=self.session)
+            self.assert_token_invalid(access_token)
+            self.assert_token_invalid(refresh_token)
+
+    @override_settings(
+        TOKEN_CUT_OFF_DATETIME="08-01 00:00",
+        TOKEN_TTLS={
+            "ACCESS_TOKEN": 365 * 24 * 60 * 60,  # 1 year in seconds
+            "REFRESH_TOKEN": 365 * 24 * 60 * 60,  # 1 year in seconds,
         },
     )
     def test_token_created_after_cut_off(self):
-        creation_time_after_cut_off = datetime.strptime(
-            "2024-10-01 10:01", "%Y-%m-%d %H:%M"
-        )
-        with freeze_time(creation_time_after_cut_off):
+        with freeze_time("2026-08-01 00:01:00+02:00"):
             access_token = AccessToken(session=self.session)
             access_token.save()
             self.assert_token_valid(access_token)
@@ -143,8 +155,7 @@ class TestTokenModels(TestCase):
             refresh_token.save()
             self.assert_token_valid(refresh_token)
 
-        after_cut_off_datetime = datetime.strptime("2024-10-01 10:01", "%Y-%m-%d %H:%M")
-        with freeze_time(after_cut_off_datetime):
+        with freeze_time("2026-08-01 00:01:00+02:00"):
             self.assert_token_valid(access_token)
             self.assert_token_valid(refresh_token)
 
