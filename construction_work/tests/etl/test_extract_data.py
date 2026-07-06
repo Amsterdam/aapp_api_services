@@ -2,7 +2,6 @@ from datetime import datetime
 
 import aiohttp
 import pytest
-from aioresponses import aioresponses
 from django.conf import settings
 from tenacity import RetryError
 
@@ -11,6 +10,7 @@ from construction_work.etl.extract_data import (
     get_all_iprox_items,
     get_iprox_items_data,
 )
+from core.testing_aioresponses import aioresponses
 
 
 def test_get_all_iprox_items_success():

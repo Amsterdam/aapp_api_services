@@ -1,11 +1,11 @@
 from unittest.mock import patch
 
-from aioresponses import aioresponses
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from model_bakery import baker
 
+from core.testing_aioresponses import aioresponses
 from news.management.commands import runnewsetl
 from news.models import LiveBlogItem, NewsArticle, NewsArticleImage
 from news.tests.mock_data import highlighted, item_article, item_liveblog, liveblogs

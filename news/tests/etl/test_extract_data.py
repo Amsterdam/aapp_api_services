@@ -1,6 +1,6 @@
-from aioresponses import aioresponses
 from django.test import TestCase
 
+from core.testing_aioresponses import aioresponses
 from news.etl.extract_data import IproxFetcher
 from news.tests.mock_data import all_news, highlighted, item_article, liveblogs
 
