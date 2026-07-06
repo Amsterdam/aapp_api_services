@@ -86,7 +86,11 @@ class TestSessionStopView(BoatChargingTestCase):
 
         self.assertEqual(response.status_code, 204)
         self.assertEqual(resp.call_count, 1)
-        self.assertEqual(BoatChargingSession.objects.count(), 0)
+        self.assertTrue(
+            BoatChargingSession.objects.filter(session_id=self.session_id)
+            .first()
+            .deleted
+        )
 
     def test_missing_device_id(self):
         self.api_headers.pop("DeviceId")
