@@ -3,7 +3,10 @@ from unittest.mock import patch
 import pytest
 from aioresponses import aioresponses
 
+from core.testing_aioresponses import patch_client_response_init
 from core.utils.async_utils import async_fetch
+
+patch_client_response_init()
 
 
 @pytest.mark.asyncio
