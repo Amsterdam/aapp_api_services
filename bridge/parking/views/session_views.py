@@ -300,11 +300,10 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
                 end_datetime=end_datetime,
                 report_code=session_data["report_code"],
             )
+            parking_sessions_started_counter.add(1)
         else:
             notification_status = NotificationStatus.NO_ACTION
-        return self._make_response(
-            response_data, notification_status, request_type="start"
-        )
+        return self._make_response(response_data, notification_status)
 
     @check_user_role(allowed_roles=[Role.USER.value, Role.VISITOR.value])
     @ssp_openapi_decorator(
@@ -319,9 +318,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
 
         end_datetime = session_data["end_date_time"]
         ps_right_id = session_data["ps_right_id"]
-        return await self.update_session_end_time(
-            end_datetime, ps_right_id, request_type="patch"
-        )
+        return await self.update_session_end_time(end_datetime, ps_right_id)
 
     @check_user_role(allowed_roles=[Role.USER.value, Role.VISITOR.value])
     @ssp_openapi_decorator(
@@ -336,13 +333,9 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         ps_right_id = request_serializer.validated_data["ps_right_id"]
 
         end_datetime = datetime.now(dt_timezone.utc)
-        return await self.update_session_end_time(
-            end_datetime, ps_right_id, request_type="delete"
-        )
+        return await self.update_session_end_time(end_datetime, ps_right_id)
 
-    async def update_session_end_time(
-        self, end_datetime, ps_right_id, request_type="delete"
-    ):
+    async def update_session_end_time(self, end_datetime, ps_right_id):
         url_template = SSPEndpointExternal.PARKING_SESSION_EDIT.value
         url = URITemplate(url_template).expand(session_id=ps_right_id)
         payload = {
@@ -359,9 +352,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         notification_status = await sync_to_async(self._process_notification)(
             ps_right_id=ps_right_id, end_datetime=end_datetime
         )
-        return self._make_response(
-            response_data, notification_status, request_type=request_type
-        )
+        return self._make_response(response_data, notification_status)
 
     @staticmethod
     def get_utc_datetime(dt_local: datetime) -> datetime:
@@ -374,7 +365,6 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         self,
         response_data,
         notification_status: NotificationStatus = NotificationStatus.CANCELLED,
-        request_type: str = "delete",
     ):
         serializer = ParkingOrderResponseSerializer(
             data={
@@ -386,8 +376,6 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
             }
         )
         serializer.is_valid(raise_exception=True)
-        if request_type == "start":
-            parking_sessions_started_counter.add(1)
 
         return Response(
             data=serializer.validated_data,
