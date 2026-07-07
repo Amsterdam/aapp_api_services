@@ -2,6 +2,7 @@ from contact.enums.base import ChoicesEnum, ModuleSourceChoices, ServiceClass
 from contact.icons import IconPath
 from contact.services.kingsday_land import KingsdayLandService
 from contact.services.kingsday_water import KingsdayWaterService
+from contact.services.pride_map import PrideMapService
 from contact.services.swimming_spots import SwimmingSpotService
 from contact.services.taps import TapService
 from contact.services.toilets import ToiletService
@@ -42,6 +43,13 @@ class Services(ChoicesEnum):
         icon=IconPath.get("swimming-spots"),
         dataservice=SwimmingSpotService,
         input_module=ModuleSourceChoices.HANDIG_IN_DE_STAD.value,
+    )
+    PRIDE_MAP = ServiceClass(
+        id=6,
+        title="Pride",
+        icon=IconPath.get("pride-map"),
+        dataservice=PrideMapService,
+        input_module=ModuleSourceChoices.PRIDE.value,
     )
 
     @classmethod
