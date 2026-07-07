@@ -65,9 +65,9 @@ class PrideEventsView(APIView):
                 "street": props.get("street", "onbekend"),
                 "city": props["city"],
                 "coordinates": {
-                    "lat": coordinates[0],
+                    "lat": coordinates[1],
                     "lon": coordinates[0],
-                },
+                }
             },
             "website": props.get("website"),
             "type": event_type,
