@@ -15,7 +15,6 @@ from bridge.parking.serializers.permit_serializer import (
     PaymentZoneSerializer,
     PermitGeoJSONSerializer,
     PermitItemSerializer,
-    PermitsRequestSerializer,
 )
 from bridge.parking.services.ssp import SSPEndpoint, SSPEndpointExternal
 from bridge.parking.views.base_ssp_view import BaseSSPView, ssp_openapi_decorator
@@ -28,7 +27,6 @@ class ParkingPermitsView(BaseSSPView):
     Get permits from SSP API
     """
 
-    serializer_class = PermitsRequestSerializer
     response_serializer_class = PermitItemSerializer
     ssp_endpoint = SSPEndpoint.PERMITS.value
     weekdays = [
@@ -44,7 +42,7 @@ class ParkingPermitsView(BaseSSPView):
 
     @check_user_role(allowed_roles=[Role.USER.value, Role.VISITOR.value])
     @ssp_openapi_decorator(
-        serializer_as_params=PermitsRequestSerializer,
+        serializer_as_params=None,
         response_serializer_class=PermitItemSerializer(many=True),
         exceptions=[SSPPermitNotFoundError],
     )
@@ -119,37 +117,12 @@ class ParkingPermitsView(BaseSSPView):
                 "permit_zone": {
                     "permit_zone_id": permit["details"]["permit"]["zone"],
                     "name": permit["details"]["permit"]["zone"],
-                    "description": None
-                    if is_visitor
-                    else permit.get("permit_description"),
                 }
                 if permit["details"]["permit"]["zone"]
                 else None,
-                "payment_zones": [
-                    {
-                        "id": zone.get("zone_id"),
-                        "description": zone.get("zone_description"),
-                        "city": "Amsterdam",  # DEPRECATED
-                        "days": [
-                            {
-                                "day_of_week": self.weekdays[n],  # Guesswork!
-                                "start_time": f"{day[0].get('startTime')[:2]}:{day[0].get('startTime')[2:]}",
-                                # Take first time frame only??
-                                "end_time": f"{day[0].get('endTime')[:2]}:{day[0].get('endTime')[2:]}",
-                                # Take first time frame only??
-                            }
-                            for n, day in enumerate(zone["time_frame_data"])
-                        ],
-                    }
-                    for zone in permit.get("payment_zones", [])
-                ],
                 "visitor_account": visitor_json,
                 "parking_rate": {
                     "value": (permit["details"]["permit"]["cost"] or 0) / 100,
-                    "currency": "EUR",  # DEPRECATED
-                },
-                "parking_rate_original": {
-                    "value": None,  # DEPRECATED
                     "currency": "EUR",  # DEPRECATED
                 },
                 "time_balance_applicable": permit["details"]["config"][
