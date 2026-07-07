@@ -9,23 +9,6 @@ class PrideMapServiceTest(SimpleTestCase):
     def setUp(self):
         self.service = PrideMapService()
 
-    def test_preprocess_feature_multipoint_to_point(self):
-        feature = {
-            "geometry": {
-                "type": "MultiPoint",
-                "coordinates": [[4.89, 52.37], [4.9, 52.38]],
-            },
-            "properties": {"id": "x"},
-        }
-
-        self.service._preprocess_feature(
-            feature=feature,
-            layer={"label": "Evenement"},
-        )
-
-        self.assertEqual(feature["geometry"]["type"], "Point")
-        self.assertEqual(feature["geometry"]["coordinates"], [4.89, 52.37])
-
     def test_preprocess_feature_keeps_geometry(self):
         feature = {
             "geometry": {"type": "Point", "coordinates": [4.89, 52.37]},
@@ -108,37 +91,35 @@ class PrideMapServiceTest(SimpleTestCase):
             custom["aapp_date_and_time"],
             "za 1 aug 2026, 06:00 tot 23:30",
         )
-        self.assertEqual(custom["aapp_start_date"], "2026-08-01")
-        self.assertEqual(custom["aapp_end_date"], "2026-08-01")
-        self.assertEqual(custom["aapp_start_time"], "06:00:00")
-        self.assertEqual(custom["aapp_end_time"], "23:30:00")
 
     def test_get_date_and_time_for_toilets_handles_date_range_and_end_only_time(self):
-        date_and_time = self.service._get_date_and_time_for_toilets(
-            {
+        date_and_time = self.service._get_date_and_time(
+            properties={
                 "date_start": "2026-08-01",
                 "date_end": "2026-08-02T23:30:00+02:00",
-            }
+            },
+            layer_type="Toilet",
         )
 
         self.assertEqual(date_and_time, "za 1 aug 2026 - zo 2 aug 2026, tot 23:30")
 
     def test_get_date_and_time_for_toilets_handles_start_only_time(self):
-        date_and_time = self.service._get_date_and_time_for_toilets(
-            {
+        date_and_time = self.service._get_date_and_time(
+            properties={
                 "date_start": "2026-08-01T06:00:00+02:00",
                 "date_end": "2026-08-01",
-            }
+            },
+            layer_type="Toilet",
         )
-
         self.assertEqual(date_and_time, "za 1 aug 2026, vanaf 06:00")
 
     def test_get_date_and_time_for_toilets_handles_no_times(self):
-        date_and_time = self.service._get_date_and_time_for_toilets(
-            {
+        date_and_time = self.service._get_date_and_time(
+            properties={
                 "date_start": "2026-08-01",
                 "date_end": "2026-08-02",
-            }
+            },
+            layer_type="Toilet",
         )
 
         self.assertEqual(date_and_time, "za 1 aug 2026 - zo 2 aug 2026")
@@ -214,57 +195,50 @@ class PrideMapServiceTest(SimpleTestCase):
                 "datetime"
             ).datetime.strptime(*args, **kwargs)
 
-            date_properties = self.service._get_start_end_date_and_time(
-                {
+            date_and_time = self.service._get_date_and_time(
+                properties={
                     "meta": [
                         {"key": "startdatum", "value": "8-jul"},
                         {"key": "datum-eind-tm", "value": "2026-07-09 extra"},
                         {"key": "tijd", "value": "06.00 - 23.30"},
                     ]
-                }
+                },
+                layer_type="Evenement",
             )
 
         self.assertEqual(
-            date_properties,
-            {
-                "start_date": "2026-07-08",
-                "end_date": "2026-07-09",
-                "start_time": "06:00",
-                "end_time": "23:30",
-            },
+            date_and_time,
+            "wo 8 jul 2026 - do 9 jul 2026, 06:00 tot 23:30",
         )
 
     def test_get_start_end_date_and_time_skips_unexpected_meta_time_format(self):
         with patch("contact.services.pride_map.logger.warning") as warning:
-            date_properties = self.service._get_start_end_date_and_time(
-                {
+            date_and_time = self.service._get_date_and_time(
+                properties={
                     "meta": [
                         {"key": "datum-start", "value": "2026-07-08"},
                         {"key": "einddatum", "value": "2026-07-09"},
                         {"key": "tijd", "value": "06:00-23:30-extra"},
                     ]
-                }
+                },
+                layer_type="Evenement",
             )
 
-        self.assertEqual(date_properties["start_date"], "2026-07-08")
-        self.assertEqual(date_properties["end_date"], "2026-07-09")
-        self.assertEqual(date_properties["start_time"], None)
-        self.assertEqual(date_properties["end_time"], None)
+        self.assertEqual(date_and_time, "wo 8 jul 2026 - do 9 jul 2026")
         warning.assert_called_once()
 
     def test_get_start_end_date_and_time_skips_meta_time_without_range(self):
-        date_properties = self.service._get_start_end_date_and_time(
-            {
+        date_and_time = self.service._get_date_and_time(
+            properties={
                 "meta": [
                     {"key": "startdatum", "value": "2026-07-08"},
                     {"key": "tijd", "value": "06:00"},
                 ]
-            }
+            },
+            layer_type="Evenement",
         )
 
-        self.assertEqual(date_properties["start_date"], "2026-07-08")
-        self.assertEqual(date_properties["start_time"], None)
-        self.assertEqual(date_properties["end_time"], None)
+        self.assertEqual(date_and_time, "wo 8 jul 2026")
 
     def test_convert_date_string_to_iso_format_returns_iso_or_none(self):
         self.assertEqual(

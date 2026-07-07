@@ -105,30 +105,6 @@ class PrideMapSilentProperties(ChoicesEnum):
         property_type="integer",
         icon=None,
     )
-    START_DATE = PropertiesClass(
-        label=None,
-        property_key="aapp_start_date",
-        property_type="string",
-        icon=None,
-    )
-    END_DATE = PropertiesClass(
-        label=None,
-        property_key="aapp_end_date",
-        property_type="string",
-        icon=None,
-    )
-    START_TIME = PropertiesClass(
-        label=None,
-        property_key="aapp_start_time",
-        property_type="string",
-        icon=None,
-    )
-    END_TIME = PropertiesClass(
-        label=None,
-        property_key="aapp_end_time",
-        property_type="string",
-        icon=None,
-    )
 
 
 class PrideMapIcons(ChoicesEnum):
