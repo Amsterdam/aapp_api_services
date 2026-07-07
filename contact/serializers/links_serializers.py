@@ -38,3 +38,5 @@ class LinksOutSerializer(serializers.Serializer):
     sailingAndMooring = serializers.URLField()
     waste = serializers.URLField()
     waste_extra_info = serializers.URLField()
+    worldPrideEvents = serializers.URLField()
+    worldPridePracticalInfo = serializers.URLField()
