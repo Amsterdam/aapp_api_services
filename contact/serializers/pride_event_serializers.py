@@ -13,3 +13,8 @@ class PrideEventResponseSerializer(serializers.Serializer):
     date_start = serializers.DateField(allow_null=True)
     date_end = serializers.DateField(allow_null=True)
     time = serializers.CharField(allow_null=True)
+
+
+class PrideDateEventResponseSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    events = PrideEventResponseSerializer(many=True)
