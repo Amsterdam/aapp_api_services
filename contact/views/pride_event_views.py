@@ -18,7 +18,7 @@ class PrideEventsView(APIView):
         success_response=PrideEventResponseSerializer(many=True),
     )
     def get(self, request):
-        response = requests.get(settings.PRIDE_EVENT_URL)
+        response = requests.get(settings.PRIDE_EVENT_URL, timeout=5)
         response.raise_for_status()
         data = response.json()
         formatted_data = [self._format_data(feature) for feature in data["features"]]
