@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime
 
@@ -8,8 +9,10 @@ from django.views.decorators.cache import cache_page
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from contact.serializers.prive_event_serializers import PrideEventResponseSerializer
+from contact.serializers.pride_event_serializers import PrideEventResponseSerializer
 from core.utils.openapi_utils import extend_schema_for_api_key
+
+logger = logging.getLogger(__name__)
 
 
 @method_decorator(cache_page(60 * 10), name="dispatch")  # Cache 10 mins
@@ -104,4 +107,4 @@ class PrideEventsView(APIView):
                 date_obj = datetime.strptime(date_string, "%d-%b-%Y")
                 return date_obj.strftime("%Y-%m-%d")
             except ValueError:
-                print(f"Could not convert date string: {date_string}")
+                logger.warning(f"Could not convert date string: {date_string}")
