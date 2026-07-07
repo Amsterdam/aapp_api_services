@@ -66,6 +66,12 @@ class PrideMapLayers(ChoicesEnum):
 
 
 class PrideMapProperties(ChoicesEnum):
+    WHEN = PropertiesClass(
+        label="Wanneer",
+        property_key="aapp_date_and_time",
+        property_type="string",
+        icon=IconPath["clock"],
+    )
     ADDRESS = PropertiesClass(
         label="Adres",
         property_key="aapp_address",

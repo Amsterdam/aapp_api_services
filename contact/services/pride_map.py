@@ -1,7 +1,9 @@
 import logging
 import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict
+
+from babel.dates import format_date, get_month_names
 
 from contact.enums.pride_map import (
     LIST_PROPERTY,
@@ -25,6 +27,18 @@ class PrideMapService(EventAbstractService):
     silent_properties_enum = PrideMapSilentProperties
     icons_enum = PrideMapIcons
     list_property = LIST_PROPERTY
+
+    @staticmethod
+    def _get_month_number_from_name(month_name: str) -> int | None:
+        normalized_month = month_name.strip().lower().rstrip(".")
+
+        month_names = get_month_names(width="abbreviated", locale="nl_NL")
+        for month_number, localized_month_name in month_names.items():
+            if not localized_month_name:
+                continue
+            if localized_month_name.strip().lower().rstrip(".") == normalized_month:
+                return month_number
+        return None
 
     def _preprocess_feature(
         self, *, feature: Dict[str, Any], layer: Dict[str, Any]
@@ -75,12 +89,16 @@ class PrideMapService(EventAbstractService):
 
         date_properties = self._get_start_end_date_and_time(properties)
 
+        if layer_type == "Toilet":
+            date_and_time = self._get_date_and_time_for_toilets(properties)
+        else:
+            date_and_time = self.get_date_and_time_from_description(properties)
+
         return {
             f"{prefix}title": title,
             f"{prefix}subtitle": layer_type,
             f"{prefix}icon_type": icon_name,
-            f"{prefix}description": self._clean_html(properties.get("description"))
-            or None,
+            f"{prefix}date_and_time": date_and_time,
             f"{prefix}website": self._get_website(properties),
             f"{prefix}address": address,
             f"{prefix}table": self._create_table(properties.get("meta", [])),
@@ -91,6 +109,73 @@ class PrideMapService(EventAbstractService):
             "stroke": stroke,
             "stroke-width": stroke_width,
         }
+
+    def _get_date_and_time_for_toilets(self, properties: Dict[str, Any]) -> str | None:
+        """
+        Returns date and time for toilets based on the properties.
+
+        """
+
+        start_date_time = properties.get("date_start").split("T")
+        start_time = (
+            start_date_time[1].split("+")[0] if len(start_date_time) > 1 else None
+        )
+        start_date = start_date_time[0]
+
+        end_date_time = properties.get("date_end").split("T")
+        end_time = end_date_time[1].split("+")[0] if len(end_date_time) > 1 else None
+        end_date = end_date_time[0]
+
+        # format start and end date strings as Dutch localized dates, e.g. "za 1 aug 2026"
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+        start_date_str = format_date(
+            start_date_obj.date(), "EEE d MMM y", locale="nl_NL"
+        )
+
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+        end_date_str = format_date(end_date_obj.date(), "EEE d MMM y", locale="nl_NL")
+
+        if start_date_str == end_date_str:
+            date_str = start_date_str
+        else:
+            date_str = f"{start_date_str} - {end_date_str}"
+
+        # convert start and end time strings to different formats, for example 06:00:00 to 06:00
+        start_time_str = start_time[:-3] if start_time else None
+        end_time_str = end_time[:-3] if end_time else None
+
+        if start_time_str and end_time_str:
+            time_str = f"{start_time_str} tot {end_time_str}"
+        elif start_time_str:
+            time_str = f"vanaf {start_time_str}"
+        elif end_time_str:
+            time_str = f"tot {end_time_str}"
+        else:
+            time_str = None
+
+        date_and_time = f"{date_str}"
+        if time_str:
+            date_and_time += f", {time_str}"
+
+        return date_and_time
+
+    def get_date_and_time_from_description(
+        self, properties: Dict[str, Any]
+    ) -> str | None:
+        """
+        Returns date and time for a given data point based on the properties.
+
+        Example: description: "<p>za 1 aug 2026, 11:00 tot 15:00</p>" -> returns "za 1 aug 2026, 11:00 tot 15:00"
+        """
+
+        # check if description contains a date
+        if properties.get("description"):
+            description = self._clean_html(properties.get("description"))
+            if re.search(r"\d{1,2} [a-zA-Z.]{3,}", description):
+                return description
+
+        else:
+            return None
 
     def _get_start_end_date_and_time(
         self, properties: Dict[str, Any]
@@ -178,13 +263,27 @@ class PrideMapService(EventAbstractService):
 
         # check if the string contains a date in the format 'DD-MMM', if so, convert it to 'YYYY-MM-DD' using the current year
         # for example, 8-jul -> 2026-07-08
-        match = re.search(r"\d{1,2}-[a-zA-Z]{3}", date_string)
+        match = re.search(r"\d{1,2}-[a-zA-Z.]{3,}", date_string)
         if match:
-            date_string = match.group(0)
-            date_string += f"-{datetime.now().year}"
+            short_date = match.group(0)
+            day_str, month_name = short_date.split("-", maxsplit=1)
+            month_number = self._get_month_number_from_name(month_name)
+
+            if not month_number:
+                logger.warning(
+                    f"Could not convert date string: {short_date}-{datetime.now().year}"
+                )
+                return None
+
             try:
-                date_obj = datetime.strptime(date_string, "%d-%b-%Y")
+                date_obj = date(
+                    year=datetime.now().year,
+                    month=month_number,
+                    day=int(day_str),
+                )
                 return date_obj.strftime("%Y-%m-%d")
             except ValueError:
-                logger.warning(f"Could not convert date string: {date_string}")
+                logger.warning(
+                    f"Could not convert date string: {short_date}-{datetime.now().year}"
+                )
                 return None
