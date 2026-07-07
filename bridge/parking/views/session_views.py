@@ -293,6 +293,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         response_data = response_data["data"]
         ps_right_id = response_data.get("id")
         response_data["ps_right_id"] = ps_right_id
+        parking_sessions_started_counter.add(1)
         if not kwargs["is_visitor"]:
             # ps_right_id is required for reminders, but visitors only get a ps_right_id after the confirmation call
             notification_status = await sync_to_async(self._process_notification)(
@@ -300,7 +301,6 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
                 end_datetime=end_datetime,
                 report_code=session_data["report_code"],
             )
-            parking_sessions_started_counter.add(1)
         else:
             notification_status = NotificationStatus.NO_ACTION
         return self._make_response(response_data, notification_status)
