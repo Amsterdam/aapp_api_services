@@ -1,11 +1,11 @@
 from django.test import SimpleTestCase
 
-from contact.services.pride import PrideService
+from contact.services.pride_map import PrideMapService
 
 
-class PrideServiceTest(SimpleTestCase):
+class PrideMapServiceTest(SimpleTestCase):
     def setUp(self):
-        self.service = PrideService()
+        self.service = PrideMapService()
 
     def test_preprocess_feature_multipoint_to_point(self):
         feature = {
@@ -65,26 +65,9 @@ class PrideServiceTest(SimpleTestCase):
         self.assertEqual(custom["aapp_address"]["coordinates"]["lat"], 52.3)
         self.assertEqual(custom["aapp_address"]["coordinates"]["lon"], 4.9)
         self.assertEqual(custom["aapp_table"], [{"key": "Type", "value": "Muziek"}])
-        self.assertEqual(custom["fill"], None)
         self.assertEqual(custom["stroke"], None)
 
-    def test_get_custom_properties_omleiding_polygon_adds_geojson_style(self):
-        custom = self.service.get_custom_properties(
-            properties={"title": "Detour"},
-            geom={
-                "type": "Polygon",
-                "coordinates": [[[4.9, 52.3], [4.91, 52.31], [4.9, 52.3]]],
-            },
-            layer_type="Omleiding",
-            icon_name="closure",
-        )
-
-        self.assertEqual(custom["fill"], "#EC0000")
-        self.assertEqual(custom["fill-opacity"], 0.2)
-        self.assertEqual(custom["stroke"], "#EC0000")
-        self.assertEqual(custom["stroke-width"], 2)
-
-    def test_get_custom_properties_canal_parade_linestring_current_behavior(self):
+    def test_get_custom_properties_canal_parade_linestring_stroke(self):
         custom = self.service.get_custom_properties(
             properties={"title": "Parade"},
             geom={"type": "LineString", "coordinates": [[4.9, 52.3], [4.91, 52.31]]},
@@ -92,10 +75,8 @@ class PrideServiceTest(SimpleTestCase):
             icon_name="canal_parade",
         )
 
-        self.assertEqual(custom["fill"], None)
-        self.assertEqual(custom["fill-opacity"], None)
-        self.assertEqual(custom["stroke"], None)
-        self.assertEqual(custom["stroke-width"], None)
+        self.assertEqual(custom["stroke"], "#009DE6")
+        self.assertEqual(custom["stroke-width"], 5)
 
     def test_get_custom_properties_without_street_has_no_address(self):
         custom = self.service.get_custom_properties(

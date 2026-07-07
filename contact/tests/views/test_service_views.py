@@ -9,7 +9,7 @@ from rest_framework import status
 from contact.enums.base import ModuleSourceChoices, ServiceClass
 from contact.enums.kingsday_land import KingsdayLandProperties
 from contact.enums.kingsday_water import KingsdayWaterProperties
-from contact.enums.pride import PrideProperties
+from contact.enums.pride_map import PrideMapProperties
 from contact.enums.services import Services
 from contact.enums.swimming_spots import SwimmingSpotLayers, SwimmingSpotProperties
 from contact.enums.taps import TapFilters, TapProperties
@@ -38,9 +38,6 @@ from contact.tests.mock_data.pride import (
     closure,
     pride_walk,
     water_obstruction,
-)
-from contact.tests.mock_data.pride import (
-    events as pride_events,
 )
 from contact.tests.mock_data.pride import (
     toilets as pride_toilet,
@@ -182,7 +179,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "label": "Evenement",
                 "code": 1,
                 "icon_label": "event",
-                "url": f"{settings.KINGSDAY_URL}1.json",
+                "url": f"{settings.MAP_LAYERS_URL}1.json",
                 "mock": kingsday_events.MOCK_DATA,
                 "expected_features": len(kingsday_events.MOCK_DATA["features"]),
             },
@@ -190,7 +187,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "label": "EHBO-post",
                 "code": 2,
                 "icon_label": "first_aid",
-                "url": f"{settings.KINGSDAY_URL}2.json",
+                "url": f"{settings.MAP_LAYERS_URL}2.json",
                 "mock": first_aid.MOCK_DATA,
                 "expected_features": len(first_aid.MOCK_DATA["features"]),
             },
@@ -198,7 +195,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "label": "Inleverpunt overgebleven spullen",
                 "code": 3,
                 "icon_label": "recycle_drop_off",
-                "url": f"{settings.KINGSDAY_URL}3.json",
+                "url": f"{settings.MAP_LAYERS_URL}3.json",
                 "mock": recycle_drop_off.MOCK_DATA,
                 "expected_features": len(recycle_drop_off.MOCK_DATA["features"]),
             },
@@ -206,7 +203,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "label": "Toilet",
                 "code": 4,
                 "icon_label": "toilet",
-                "url": f"{settings.KINGSDAY_URL}4.json",
+                "url": f"{settings.MAP_LAYERS_URL}4.json",
                 "mock": kingsday_toilet.MOCK_DATA,
                 "expected_features": len(kingsday_toilet.MOCK_DATA["features"]),
             },
@@ -214,7 +211,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "label": "Omleiding",
                 "code": 5,
                 "icon_label": "detour",
-                "url": f"{settings.KINGSDAY_URL}5.json",
+                "url": f"{settings.MAP_LAYERS_URL}5.json",
                 "mock": detour.MOCK_DATA,
                 "expected_features": len(detour.MOCK_DATA["features"]),
             },
@@ -222,7 +219,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "label": "Afgesloten parkeergarage",
                 "code": 6,
                 "icon_label": "closed_parking_lot",
-                "url": f"{settings.KINGSDAY_URL}6.json",
+                "url": f"{settings.MAP_LAYERS_URL}6.json",
                 "mock": closed_parking_lot.MOCK_DATA,
                 "expected_features": len(closed_parking_lot.MOCK_DATA["features"]),
             },
@@ -238,7 +235,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "label": "P+R",
                 "code": 7,
                 "icon_label": "park_and_ride",
-                "url": f"{settings.KINGSDAY_URL}7.json",
+                "url": f"{settings.MAP_LAYERS_URL}7.json",
                 "mock": park_and_ride.MOCK_DATA,
                 "expected_features": len(park_and_ride.MOCK_DATA["features"]),
             },
@@ -246,7 +243,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "label": "Kindervrijmarkt",
                 "code": 8,
                 "icon_label": "kid_flea_market",
-                "url": f"{settings.KINGSDAY_URL}8.json",
+                "url": f"{settings.MAP_LAYERS_URL}8.json",
                 "mock": kid_flea_market.MOCK_DATA,
                 "expected_features": len(kid_flea_market.MOCK_DATA["features"]),
             },
@@ -324,7 +321,8 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                     ],
                 ):
                     responses.get(
-                        f"{settings.KINGSDAY_URL}{case['code']}.json", json=case["mock"]
+                        f"{settings.MAP_LAYERS_URL}{case['code']}.json",
+                        json=case["mock"],
                     )
 
                     response = self.client.get(
@@ -401,7 +399,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
             "contact.services.kingsday_land.KingsdayLandData.choices_as_list",
             return_value=[{"label": "Omleiding", "code": 5, "icon_label": "detour"}],
         ):
-            responses.get(f"{settings.KINGSDAY_URL}5.json", json=detour.MOCK_DATA)
+            responses.get(f"{settings.MAP_LAYERS_URL}5.json", json=detour.MOCK_DATA)
             response = self.client.get(
                 reverse("service-map", kwargs={"service_id": 3}),
                 headers=self.api_headers,
@@ -429,7 +427,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
             return_value=[{"label": "Toilet", "code": 4, "icon_label": "toilet"}],
         ):
             responses.get(
-                f"{settings.KINGSDAY_URL}4.json", json=kingsday_toilet.MOCK_DATA
+                f"{settings.MAP_LAYERS_URL}4.json", json=kingsday_toilet.MOCK_DATA
             )
             response = self.client.get(
                 reverse("service-map", kwargs={"service_id": 3}),
@@ -455,24 +453,24 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
             {
                 "label": "Canal parade",
                 "code": 1,
-                "icon_label": "first_aid",
-                "url": f"{settings.KINGSDAY_URL}1.json",
+                "icon_label": "canal_parade",
+                "url": f"{settings.MAP_LAYERS_URL}1.json",
                 "mock": canal_parade.MOCK_DATA,
                 "expected_features": len(canal_parade.MOCK_DATA["features"]),
             },
-            {
-                "label": "Evenement",
-                "code": 2,
-                "icon_label": "event",
-                "url": f"{settings.KINGSDAY_URL}2.json",
-                "mock": pride_events.MOCK_DATA,
-                "expected_features": len(pride_events.MOCK_DATA["features"]),
-            },
+            # {
+            #     "label": "Evenement",
+            #     "code": 2,
+            #     "icon_label": "event",
+            #     "url": f"{settings.MAP_LAYERS_URL}2.json",
+            #     "mock": pride_events.MOCK_DATA,
+            #     "expected_features": len(pride_events.MOCK_DATA["features"]),
+            # },
             {
                 "label": "Pride walk",
                 "code": 3,
-                "icon_label": "first_aid",
-                "url": f"{settings.KINGSDAY_URL}3.json",
+                "icon_label": "pride_walk",
+                "url": f"{settings.MAP_LAYERS_URL}3.json",
                 "mock": pride_walk.MOCK_DATA,
                 "expected_features": len(pride_walk.MOCK_DATA["features"]),
             },
@@ -480,7 +478,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "label": "Toilet",
                 "code": 4,
                 "icon_label": "toilet",
-                "url": f"{settings.KINGSDAY_URL}4.json",
+                "url": f"{settings.MAP_LAYERS_URL}4.json",
                 "mock": pride_toilet.MOCK_DATA,
                 "expected_features": len(pride_toilet.MOCK_DATA["features"]),
             },
@@ -488,15 +486,15 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "label": "Afsluiting",
                 "code": 5,
                 "icon_label": "closure",
-                "url": f"{settings.KINGSDAY_URL}5.json",
+                "url": f"{settings.MAP_LAYERS_URL}5.json",
                 "mock": closure.MOCK_DATA,
                 "expected_features": len(closure.MOCK_DATA["features"]),
             },
             {
                 "label": "Waterstremming",
                 "code": 6,
-                "icon_label": "water_stremming",
-                "url": f"{settings.KINGSDAY_URL}6.json",
+                "icon_label": "water_obstruction",
+                "url": f"{settings.MAP_LAYERS_URL}6.json",
                 "mock": water_obstruction.MOCK_DATA,
                 "expected_features": len(water_obstruction.MOCK_DATA["features"]),
             },
@@ -505,7 +503,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         for case in cases:
             with self.subTest(layer=case["label"]):
                 with patch(
-                    "contact.services.pride.PrideData.choices_as_list",
+                    "contact.services.pride_map.PrideMapData.choices_as_list",
                     return_value=[
                         {
                             "label": case["label"],
@@ -526,7 +524,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
 
                 self.assertEqual(
                     payload["properties_to_include"],
-                    PrideProperties.choices_as_list(),
+                    PrideMapProperties.choices_as_list(),
                 )
                 self.assertEqual(
                     len(payload["data"]["features"]),

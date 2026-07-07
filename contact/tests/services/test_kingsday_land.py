@@ -45,16 +45,16 @@ class KingsdayLandServiceTest(ResponsesActivatedAPITestCase):
         self.service.data_layers = [
             {"label": "Evenement", "code": 1, "icon_label": "event"}
         ]
-        url = f"{settings.KINGSDAY_URL}1.json"
+        url = f"{settings.MAP_LAYERS_URL}1.json"
 
         responses.get(url, json=events.MOCK_DATA)
         self.service.get_full_data()
 
-        self.assertEqual(self.service.data_url, settings.KINGSDAY_URL)
+        self.assertEqual(self.service.data_url, settings.MAP_LAYERS_URL)
 
         # second call should still use the base url
         self.service.get_full_data()
-        self.assertEqual(self.service.data_url, settings.KINGSDAY_URL)
+        self.assertEqual(self.service.data_url, settings.MAP_LAYERS_URL)
 
     def test_get_custom_properties(self):
         mock_item = events.MOCK_DATA["features"][0]

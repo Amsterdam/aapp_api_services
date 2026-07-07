@@ -22,7 +22,7 @@ class EventAbstractService(ServiceAbstract):
     per request) so repeated `get_full_data()` calls remain correct.
     """
 
-    data_url = settings.KINGSDAY_URL
+    data_url = settings.MAP_LAYERS_URL
 
     data_enum: type[ChoicesEnum] | None = None
     filters_enum: type[ChoicesEnum] | None = None

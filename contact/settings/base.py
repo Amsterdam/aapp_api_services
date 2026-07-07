@@ -57,6 +57,6 @@ PUBLIC_SWIMMING_SPOT_URL = os.getenv(
     "https://maps.amsterdam.nl/open_geodata/geojson_lnglat.php?KAARTLAAG=ZWEMWATER&THEMA=zwemwater",
 )
 
-KINGSDAY_URL = os.getenv("KINGSDAY_URL", "https://kaart.amsterdam.nl/api/layers/")
+MAP_LAYERS_URL = os.getenv("MAP_LAYERS_URL", "https://kaart.amsterdam.nl/api/layers/")
 
 PRIDE_EVENT_URL = "https://kaart.amsterdam.nl/api/layers/44337.json"
