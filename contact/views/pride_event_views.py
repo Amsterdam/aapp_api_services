@@ -33,14 +33,12 @@ class PrideEventsView(APIView):
         # Sort and filter data
         sorted_data = sorted(
             validated_data,
-            key=lambda x: (
-                x["datum_start"] or datetime(year=3000, month=1, day=1).date()
-            ),
+            key=lambda x: x["date_start"] or datetime(year=3000, month=1, day=1).date(),
         )
         filtered_data = [
             d
             for d in sorted_data
-            if d["datum_end"]
+            if d["date_end"]
             or datetime(year=3000, month=1, day=1).date() > datetime.today().date()
         ]
         return Response(filtered_data)
@@ -49,16 +47,16 @@ class PrideEventsView(APIView):
         coordinates = feature["geometry"]["coordinates"]
         props = feature["properties"]
 
-        event_type, datum_start, datum_eind, tijd = None, None, None, None
+        event_type, date_start, date_end, time = None, None, None, None
         for meta in props["meta"]:
             if meta["key"] == "type":
                 event_type = meta["value"]
             elif meta["key"] == "datum-start":
-                datum_start = meta["value"]
+                date_start = meta["value"]
             elif meta["key"] == "datum-eind":
-                datum_eind = meta["value"]
+                date_end = meta["value"]
             elif meta["key"] == "tijd":
-                tijd = meta["value"]
+                time = meta["value"]
 
         return {
             "id": props["id"],
@@ -74,9 +72,9 @@ class PrideEventsView(APIView):
             },
             "website": props.get("website"),
             "type": event_type,
-            "datum_start": self._convert_date_string_to_iso_format(datum_start),
-            "datum_end": self._convert_date_string_to_iso_format(datum_eind),
-            "tijd": tijd,
+            "date_start": self._convert_date_string_to_iso_format(date_start),
+            "date_end": self._convert_date_string_to_iso_format(date_end),
+            "time": time,
         }
 
     def _convert_date_string_to_iso_format(self, date_string: str | None) -> str | None:
