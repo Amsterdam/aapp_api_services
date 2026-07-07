@@ -74,7 +74,7 @@ class PrideMapServiceTest(SimpleTestCase):
         self.assertEqual(custom["aapp_address"], None)
         self.assertEqual(custom["aapp_table"], None)
 
-    def test_get_custom_properties_toilet_uses_generated_description(self):
+    def test_get_custom_properties_toilet_uses_date_and_time(self):
         custom = self.service.get_custom_properties(
             properties={
                 "title": "Toilet West",

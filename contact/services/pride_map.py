@@ -15,6 +15,7 @@ from contact.enums.pride_map import (
     PrideMapSilentProperties,
 )
 from contact.services.event_abstract import EventAbstractService
+from core.utils.caching_utils import cache_function
 
 logger = logging.getLogger(__name__)
 
@@ -233,7 +234,7 @@ class PrideMapService(EventAbstractService):
         if match:
             short_date = match.group(0)
             day_str, month_name = short_date.split("-", maxsplit=1)
-            month_number = self._get_month_number_from_name(month_name)
+            month_number = _get_month_number_from_name(month_name)
             current_year = datetime.now().year
 
             if not month_number:
@@ -324,14 +325,15 @@ class PrideMapService(EventAbstractService):
         end_time = split_time[1].replace(".", ":").strip()
         return start_time, end_time
 
-    @staticmethod
-    def _get_month_number_from_name(month_name: str) -> int | None:
-        normalized_month = month_name.strip().lower().rstrip(".")
 
-        month_names = get_month_names(width="abbreviated", locale="nl_NL")
-        for month_number, localized_month_name in month_names.items():
-            if not localized_month_name:
-                continue
-            if localized_month_name.strip().lower().rstrip(".") == normalized_month:
-                return month_number
-        return None
+@cache_function(timeout=60 * 60 * 24)  # Cache for 24 hours
+def _get_month_number_from_name(month_name: str) -> int | None:
+    normalized_month = month_name.strip().lower().rstrip(".")
+
+    month_names = get_month_names(width="abbreviated", locale="nl_NL")
+    for month_number, localized_month_name in month_names.items():
+        if not localized_month_name:
+            continue
+        if localized_month_name.strip().lower().rstrip(".") == normalized_month:
+            return month_number
+    return None
