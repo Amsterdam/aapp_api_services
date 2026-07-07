@@ -58,3 +58,5 @@ PUBLIC_SWIMMING_SPOT_URL = os.getenv(
 )
 
 MAP_LAYERS_URL = os.getenv("MAP_LAYERS_URL", "https://kaart.amsterdam.nl/api/layers/")
+
+PRIDE_EVENT_URL = "https://kaart.amsterdam.nl/api/layers/44337.json"
