@@ -197,6 +197,19 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
             resp_count=1,
         )
 
+    def test_metric_incremented_on_start(self):
+        with patch(
+            "bridge.parking.views.session_views.parking_sessions_started_counter.add"
+        ) as mock_counter_add:
+            self.start_session(
+                payload=self.start_payload,
+                api_headers=self.api_headers,
+                status_code=200,
+                resp_count=1,
+            )
+
+        mock_counter_add.assert_called_once_with(1)
+
     def test_successful_start_parking_machine(self):
         payload = self.start_payload.copy()
         payload["parking_session"]["parking_machine"] = "12345"
@@ -208,9 +221,18 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
     def test_fail_start_both_zone_and_machine(self):
         payload = self.start_payload.copy()
         payload["parking_session"]["parking_machine"] = "12345"
-        self.start_session(
-            payload=payload, api_headers=self.api_headers, status_code=400, resp_count=0
-        )
+
+        with patch(
+            "bridge.parking.views.session_views.parking_sessions_started_counter.add"
+        ) as mock_counter_add:
+            self.start_session(
+                payload=payload,
+                api_headers=self.api_headers,
+                status_code=400,
+                resp_count=0,
+            )
+
+        mock_counter_add.assert_not_called()
 
     def test_successful_start_visitor(self):
         api_headers = self.api_headers.copy()
@@ -293,14 +315,19 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
             return_value=httpx.Response(200, json=self.patch_response)
         )
 
-        response = self.client.patch(
-            self.url,
-            data={"parking_session": self.patch_payload},
-            format="json",
-            headers=self.api_headers,
-        )
+        with patch(
+            "bridge.parking.views.session_views.parking_sessions_started_counter.add"
+        ) as mock_counter_add:
+            response = self.client.patch(
+                self.url,
+                data={"parking_session": self.patch_payload},
+                format="json",
+                headers=self.api_headers,
+            )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
+        mock_counter_add.assert_not_called()
 
     def test_successful_delete(self):
         url_template = SSPEndpointExternal.PARKING_SESSION_EDIT.value
@@ -309,11 +336,16 @@ class TestParkingSessionStartUpdateDeleteView(BaseSSPTestCase):
             return_value=httpx.Response(200, json=self.patch_response)
         )
 
-        response = self.client.delete(
-            self.url, query_params=self.patch_payload, headers=self.api_headers
-        )
+        with patch(
+            "bridge.parking.views.session_views.parking_sessions_started_counter.add"
+        ) as mock_counter_add:
+            response = self.client.delete(
+                self.url, query_params=self.patch_payload, headers=self.api_headers
+            )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
+        mock_counter_add.assert_not_called()
 
 
 class TestParkingSessionReceiptView(BaseSSPTestCase):
