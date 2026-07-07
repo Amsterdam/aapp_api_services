@@ -70,7 +70,7 @@ class PrideEventsView(APIView):
                 "coordinates": {
                     "lat": coordinates[1],
                     "lon": coordinates[0],
-                }
+                },
             },
             "website": props.get("website"),
             "type": event_type,
