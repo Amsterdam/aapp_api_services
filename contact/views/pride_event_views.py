@@ -52,6 +52,8 @@ class PrideEventsView(APIView, PrideMapService):
         for meta in props["meta"]:
             if meta["key"] == "type":
                 event_type = meta["value"]
+                if event_type == "BOTENPARADE":
+                    event_type = "Canal Parade"
             elif meta["key"] == "tijd":
                 time = meta["value"]
 
