@@ -154,7 +154,7 @@ class PrideMapIcons(ChoicesEnum):
     PRIDE_MARCH = IconClass(
         label="pride_march",
         path=IconPath["pride-march"],
-        circle_color="#EC0000",
+        circle_color="#A00078",
         path_color="#FFFFFF",
     )
     TOILET = IconClass(
