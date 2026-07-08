@@ -65,7 +65,7 @@ class PrideMapService(EventAbstractService):
             stroke = "#009DE6"
             stroke_width = 5
         elif layer_type == "Pride walk" and geom.get("type") == "LineString":
-            # for canal parade we want to add stroke and stroke-width properties
+            # for pride walk we want to add stroke and stroke-width properties
             stroke = "#A00078"
             stroke_width = 5
         else:
