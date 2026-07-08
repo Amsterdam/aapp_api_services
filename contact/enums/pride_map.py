@@ -15,6 +15,7 @@ class PrideMapData(ChoicesEnum):
     )
     # EVENTS = DataLayer(label="Evenement", code=44337, icon_label="event") # maybe later added again
     PRIDE_WALK = DataLayer(label="Pride walk", code=44331, icon_label="pride_walk")
+    PRIDE_MARCH = DataLayer(label="Pride march", code=44340, icon_label="pride_march")
     TOILET = DataLayer(label="Toilet", code=44319, icon_label="toilet")
     CLOSURE = DataLayer(label="Afsluiting", code=44322, icon_label="closure")
     WATER_OBSTRUCTION = DataLayer(
@@ -44,6 +45,12 @@ class PrideMapLayers(ChoicesEnum):
         filter_key="aapp_subtitle",
         filter_value="Pride walk",
         icon_label="pride_walk",
+    )
+    PRIDE_MARCH = LayerClass(
+        label="Pride march",
+        filter_key="aapp_subtitle",
+        filter_value="Pride march",
+        icon_label="pride_march",
     )
     TOILET = LayerClass(
         label="Toilet",
@@ -141,6 +148,12 @@ class PrideMapIcons(ChoicesEnum):
     PRIDE_WALK = IconClass(
         label="pride_walk",
         path=IconPath["pride-walk"],
+        circle_color="#EC0000",
+        path_color="#FFFFFF",
+    )
+    PRIDE_MARCH = IconClass(
+        label="pride_march",
+        path=IconPath["pride-march"],
         circle_color="#EC0000",
         path_color="#FFFFFF",
     )
