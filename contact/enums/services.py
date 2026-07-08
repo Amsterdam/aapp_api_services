@@ -46,7 +46,7 @@ class Services(ChoicesEnum):
     )
     PRIDE_MAP = ServiceClass(
         id=6,
-        title="Pride",
+        title="Kaart",
         icon=IconPath.get("pride-map"),
         dataservice=PrideMapService,
         input_module=ModuleSourceChoices.PRIDE.value,
