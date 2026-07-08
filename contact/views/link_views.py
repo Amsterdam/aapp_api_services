@@ -49,7 +49,7 @@ class LinksView(generics.RetrieveAPIView):
         "waste": "https://www.amsterdam.nl/afval/",
         "waste_extra_info": "https://www.milieucentraal.nl/",
         "worldPrideEvents": "https://www.iamsterdam.com/uit/agenda?worldpride-amsterdam-2026=pride",
-        "worldPridePracticalInfo": "https://www.amsterdam.nl/nieuws/evenementen-herdenkingen/amsterdam-pride-2026/"
+        "worldPridePracticalInfo": "https://www.amsterdam.nl/nieuws/evenementen-herdenkingen/amsterdam-pride-2026/",
     }
 
     def get(self, request, *args, **kwargs):
