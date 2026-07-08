@@ -136,8 +136,8 @@ class PrideMapIcons(ChoicesEnum):
     CANAL_PARADE = IconClass(
         label="canal_parade",
         path=IconPath["pride-canal-parade"],
-        circle_color="#009DE6",
-        path_color="#181818",
+        circle_color="#E50082",
+        path_color="#FFFFFF",
     )
     # EVENT = IconClass(
     #     label="event",
@@ -148,7 +148,7 @@ class PrideMapIcons(ChoicesEnum):
     PRIDE_WALK = IconClass(
         label="pride_walk",
         path=IconPath["pride-walk"],
-        circle_color="#EC0000",
+        circle_color="#A00078",
         path_color="#FFFFFF",
     )
     PRIDE_MARCH = IconClass(
@@ -160,19 +160,19 @@ class PrideMapIcons(ChoicesEnum):
     TOILET = IconClass(
         label="toilet",
         path=IconPath["pride-toilet"],
-        circle_color="#FFE600",
-        path_color="#181818",
+        circle_color="#00A03C",
+        path_color="#FFFFFF",
     )
     CLOSURE = IconClass(
         label="closure",
         path=IconPath["circle"],
-        circle_color="#A00078",
-        path_color="#FFFFFF",
+        circle_color="#FFE600",
+        path_color="#181818",
     )
     WATER_OBSTRUCTION = IconClass(
         label="water_obstruction",
         path=IconPath["circle"],
-        circle_color="#E50082",
+        circle_color="#FF9100",
         path_color="#FFFFFF",
     )
 
