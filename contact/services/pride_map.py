@@ -186,30 +186,50 @@ class PrideMapService(EventAbstractService):
         Example: meta: [{"key": "startdatum", "value": "2026-08-01"}, {"key": "einddatum", "value": "2026-08-02"}, {"key": "tijd", "value": "11:00-15:00"}] -> returns "za 1 aug 2026 - zo 2 aug 2026, 11:00 tot 15:00"
         """
 
-        start_date = None
-        end_date = None
-        start_time = None
-        end_time = None
+        date_time_properties = self._get_start_end_date_and_time_properties_from_meta(
+            properties=properties
+        )
+
+        start_date_str = self._format_dutch_date(date_time_properties["start_date"])
+        end_date_str = self._format_dutch_date(date_time_properties["end_date"])
+
+        return (
+            start_date_str,
+            end_date_str,
+            date_time_properties["start_time"],
+            date_time_properties["end_time"],
+        )
+
+    def _get_start_end_date_and_time_properties_from_meta(
+        self, properties: Dict[str, Any]
+    ) -> tuple[str | None, str | None, str | None, str | None]:
+
+        date_time_properties = {
+            "start_date": None,
+            "end_date": None,
+            "start_time": None,
+            "end_time": None,
+        }
 
         for meta in properties.get("meta", []):
             if meta.get("key") in ["startdatum", "datum-start"]:
-                start_date = self._convert_date_string_to_iso_format(meta.get("value"))
+                date_time_properties["start_date"] = (
+                    self._convert_date_string_to_iso_format(meta.get("value"))
+                )
             elif meta.get("key") in ["einddatum", "datum-eind", "datum-eind-tm"]:
-                end_date = self._convert_date_string_to_iso_format(meta.get("value"))
+                date_time_properties["end_date"] = (
+                    self._convert_date_string_to_iso_format(meta.get("value"))
+                )
             elif meta.get("key") == "tijd":
                 # check if time in format HH:MM-HH:MM, if so, add it to the start and end date
                 parsed_time_range = self._parse_time_range(meta.get("value"))
                 if not parsed_time_range:
                     continue
-                start_time, end_time = parsed_time_range
+                date_time_properties["start_time"], date_time_properties["end_time"] = (
+                    parsed_time_range
+                )
 
-        if not start_date and not end_date:
-            return None
-
-        start_date_str = self._format_dutch_date(start_date)
-        end_date_str = self._format_dutch_date(end_date)
-
-        return start_date_str, end_date_str, start_time, end_time
+        return date_time_properties
 
     def _convert_date_string_to_iso_format(self, date_string: str | None) -> str | None:
         """
@@ -236,25 +256,22 @@ class PrideMapService(EventAbstractService):
             short_date = match.group(0)
             day_str, month_name = short_date.split("-", maxsplit=1)
             month_number = self._get_month_number_from_name(month_name)
-            current_year = datetime.now().year
-
             if not month_number:
-                logger.warning(
-                    f"Could not convert date string: {short_date}-{current_year}"
-                )
+                logger.warning(f"Could not convert date string: {date_string}")
                 return None
+            year = datetime.now().year
+            if int(month_number) < 6:
+                year += 1
 
             try:
                 date_obj = date(
-                    year=current_year,
+                    year=year,
                     month=month_number,
                     day=int(day_str),
                 )
                 return date_obj.strftime("%Y-%m-%d")
             except ValueError:
-                logger.warning(
-                    f"Could not convert date string: {short_date}-{current_year}"
-                )
+                logger.warning(f"Could not convert date string: {date_string}")
                 return None
 
         return None

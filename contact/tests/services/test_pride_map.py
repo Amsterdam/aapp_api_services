@@ -308,7 +308,7 @@ class PrideMapServiceTest(SimpleTestCase):
                 value = self.service._convert_date_string_to_iso_format("8-xyz")
 
         self.assertIsNone(value)
-        warning.assert_called_once_with("Could not convert date string: 8-xyz-2026")
+        warning.assert_called_once_with("Could not convert date string: 8-xyz")
 
     def test_convert_date_string_to_iso_format_returns_none_for_unknown_format(self):
         self.assertIsNone(

@@ -153,9 +153,9 @@ class PrideMapIcons(ChoicesEnum):
     )
     WATER_OBSTRUCTION = IconClass(
         label="water_obstruction",
-        path=IconPath["circle"],
+        path=IconPath["pride-water-obstruction"],
         circle_color="#FF9100",
-        path_color="#FFFFFF",
+        path_color="#181818",
     )
 
 
