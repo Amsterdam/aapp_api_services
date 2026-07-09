@@ -21,7 +21,7 @@ Your SOLE responsibility is planning. NEVER start implementation.
 - When invoked by the Orchestrator, do not question the Product Owner directly. Return exact clarification questions in your response so the Orchestrator can ask them verbatim.
 - Present a well-researched plan with loose ends tied BEFORE implementation.
 - Always reference files relative to the project root. Do not expose information about the rest of the file system.
-- Return your result using the `H0 Story Planning Result` schema from `.github/agents/handoff-schemas.md`.
+- Return your result using the `H1 Story Planning Result` schema from `.github/agents/handoff-schemas.md`.
 </rules>
 
 <inputs>
