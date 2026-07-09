@@ -11,7 +11,6 @@ class SSPEndpoint(Enum):
     LOGIN = f"{settings.SSP_BASE_URL_V2}/api/ssp/login_check"
     PERMITS = f"{settings.SSP_BASE_URL_V2}/api/v1/permit_overview/product_list"
     PERMIT = f"{settings.SSP_BASE_URL_V2}/api/v1/client_product/{{permit_id}}"
-    PAID_PARKING_ZONE = f"{settings.SSP_BASE_URL_V2}/api/v1/ssp/paid_parking_zone/list/client_product/{{permit_id}}"
 
     # Transactions
     TRANSACTIONS = f"{settings.SSP_BASE_URL_V2}/api/v1/ssp/wallet_transaction/list"  # page=1&row_per_page=10&sort=paid_at:desc&filters[status]=COMPLETED
