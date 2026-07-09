@@ -46,7 +46,9 @@ class PrideEventsView(APIView, PrideMapService):
     def _format_data(self, feature):
         coordinates = feature["geometry"]["coordinates"]
         props = feature["properties"]
-        date_time_properties = self._get_start_end_date_and_time(props)
+        date_time_properties = self._get_start_end_date_and_time_properties_from_meta(
+            props
+        )
 
         event_type, time = None, None
         for meta in props["meta"]:

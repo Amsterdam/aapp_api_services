@@ -1,7 +1,9 @@
 import logging
 import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict
+
+from babel.dates import format_date, get_month_names
 
 from contact.enums.pride_map import (
     LIST_PROPERTY,
@@ -18,6 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 class PrideMapService(EventAbstractService):
+    TOILET_LAYER = "Toilet"
+    DUTCH_DATE_FORMAT = "EEE d MMM y"
+    ISO_DATE_FORMAT = "%Y-%m-%d"
+
     data_enum = PrideMapData
     filters_enum = PrideMapFilters
     layers_enum = PrideMapLayers
@@ -25,22 +31,6 @@ class PrideMapService(EventAbstractService):
     silent_properties_enum = PrideMapSilentProperties
     icons_enum = PrideMapIcons
     list_property = LIST_PROPERTY
-
-    def _preprocess_feature(
-        self, *, feature: Dict[str, Any], layer: Dict[str, Any]
-    ) -> None:
-
-        # if geometry is a multipoint, convert it to a point with the coordinates of the first point, as the frontend expects a point geometry for taps
-        geom = feature.get("geometry", {}) or {}
-        if (
-            geom.get("type") == "MultiPoint"
-            and isinstance(geom.get("coordinates"), list)
-            and len(geom["coordinates"]) > 0
-        ):
-            feature["geometry"] = {
-                "type": "Point",
-                "coordinates": geom["coordinates"][0],
-            }
 
     def get_custom_properties(
         self,
@@ -54,12 +44,45 @@ class PrideMapService(EventAbstractService):
         based on the original properties, geometry, layer type, and icon name.
 
         All custom properties are prefixed with 'aapp_' to avoid conflicts with original properties.
-        However, the fill and fill_opacity properties for the 'Omleiding' layer are not prefixed,
+        However, the stroke and stroke-width properties are not prefixed,
         as they are used for styling the layer and the geojson standard is used.
         """
 
         prefix = self.properties_prefix
 
+        stroke, stroke_width = self._get_style_properties(
+            layer_type=layer_type, geom=geom
+        )
+        title = properties.get("title", "")
+
+        address = None
+        if properties.get("street"):
+            address = self._get_address_from_properties(properties, geom)
+
+        date_and_time = self._get_date_and_time(
+            properties=properties, layer_type=layer_type
+        )
+
+        if layer_type == "Toilet":
+            table = self._create_table(properties.get("meta", []))
+        else:
+            table = None
+
+        return {
+            f"{prefix}title": title,
+            f"{prefix}subtitle": layer_type,
+            f"{prefix}icon_type": icon_name,
+            f"{prefix}date_and_time": date_and_time,
+            f"{prefix}website": self._get_website(properties),
+            f"{prefix}address": address,
+            f"{prefix}table": table,
+            "stroke": stroke,
+            "stroke-width": stroke_width,
+        }
+
+    def _get_style_properties(
+        self, *, layer_type: str, geom: Dict[str, Any]
+    ) -> tuple[str | None, int | None]:
         if layer_type == "Canal parade" and geom.get("type") == "LineString":
             # for canal parade we want to add stroke and stroke-width properties
             stroke = "#009DE6"
@@ -76,39 +99,115 @@ class PrideMapService(EventAbstractService):
             stroke = None
             stroke_width = None
 
-        title = properties.get("title", "")
-        address = None
-        if properties.get("street"):
-            address = self._get_address_from_properties(properties, geom)
+        return stroke, stroke_width
 
-        date_properties = self._get_start_end_date_and_time(properties)
+    def _get_date_and_time(
+        self, *, properties: Dict[str, Any], layer_type: str
+    ) -> str | None:
+        # first check if date is in the description
+        date_and_time_from_description = self._get_date_and_time_from_description(
+            properties=properties
+        )
+        if date_and_time_from_description:
+            return date_and_time_from_description
 
-        return {
-            f"{prefix}title": title,
-            f"{prefix}subtitle": layer_type,
-            f"{prefix}icon_type": icon_name,
-            f"{prefix}description": self._clean_html(properties.get("description"))
-            or None,
-            f"{prefix}website": self._get_website(properties),
-            f"{prefix}address": address,
-            f"{prefix}table": self._create_table(properties.get("meta", [])),
-            f"{prefix}start_date": date_properties.get("start_date"),
-            f"{prefix}end_date": date_properties.get("end_date"),
-            f"{prefix}start_time": date_properties.get("start_time"),
-            f"{prefix}end_time": date_properties.get("end_time"),
-            "stroke": stroke,
-            "stroke-width": stroke_width,
-        }
+        start_date_str, end_date_str, start_time_str, end_time_str = (
+            self._get_date_and_time_strings(
+                properties=properties, layer_type=layer_type
+            )
+        )
 
-    def _get_start_end_date_and_time(
+        # if all fields are None, return None
+        if not any((start_date_str, end_date_str, start_time_str, end_time_str)):
+            return None
+
+        date_str = self._build_date_range(start_date_str, end_date_str)
+        time_str = self._build_time_range(start_time_str, end_time_str)
+
+        date_and_time = date_str
+        if time_str:
+            date_and_time += f", {time_str}"
+
+        return date_and_time
+
+    def _get_date_and_time_strings(
+        self, *, properties: Dict[str, Any], layer_type: str
+    ) -> tuple[str | None, str | None, str | None, str | None]:
+        """
+        Returns start and end date and time strings for a given data point based on the properties.
+        """
+
+        if layer_type == self.TOILET_LAYER:
+            return self._get_date_and_time_for_toilets(properties)
+
+        date_and_time_from_meta = self._get_date_and_time_from_meta(properties)
+        if date_and_time_from_meta:
+            return date_and_time_from_meta
+
+        return None, None, None, None
+
+    def _get_date_and_time_for_toilets(
         self, properties: Dict[str, Any]
-    ) -> dict[str, str | None]:
+    ) -> tuple[str | None, str | None, str | None, str | None]:
         """
-        Returns parsed start/end date and time values for a given data point.
+        Returns date and time for toilets based on the properties.
+        """
 
-        Dates are returned as 'YYYY-MM-DD' and times as 'HH:MM:SS' (timezone stripped when present).
-        Missing values are returned as None.
+        start_date, start_time = self._split_datetime(properties.get("date_start"))
+        end_date, end_time = self._split_datetime(properties.get("date_end"))
+
+        start_date_str = self._format_dutch_date(start_date)
+        end_date_str = self._format_dutch_date(end_date)
+        start_time_str = self._truncate_seconds(start_time)
+        end_time_str = self._truncate_seconds(end_time)
+
+        return start_date_str, end_date_str, start_time_str, end_time_str
+
+    def _get_date_and_time_from_description(
+        self, properties: Dict[str, Any]
+    ) -> str | None:
         """
+        Returns date and time for a given data point based on the properties.
+
+        Example: description: "<p>za 1 aug 2026, 11:00 tot 15:00</p>" -> returns "za 1 aug 2026, 11:00 tot 15:00"
+        """
+
+        description_html = properties.get("description")
+        if not description_html:
+            return None
+
+        description = self._clean_html(description_html)
+        if re.search(r"\d{1,2} [a-zA-Z.]{3,} \d{4}", description):
+            return description
+
+        return None
+
+    def _get_date_and_time_from_meta(
+        self, properties: Dict[str, Any]
+    ) -> tuple[str | None, str | None, str | None, str | None] | None:
+        """
+        Returns date and time for a given data point based on the meta properties.
+
+        Example: meta: [{"key": "startdatum", "value": "2026-08-01"}, {"key": "einddatum", "value": "2026-08-02"}, {"key": "tijd", "value": "11:00-15:00"}] -> returns "za 1 aug 2026 - zo 2 aug 2026, 11:00 tot 15:00"
+        """
+
+        date_time_properties = self._get_start_end_date_and_time_properties_from_meta(
+            properties=properties
+        )
+
+        start_date_str = self._format_dutch_date(date_time_properties["start_date"])
+        end_date_str = self._format_dutch_date(date_time_properties["end_date"])
+
+        return (
+            start_date_str,
+            end_date_str,
+            date_time_properties["start_time"],
+            date_time_properties["end_time"],
+        )
+
+    def _get_start_end_date_and_time_properties_from_meta(
+        self, properties: Dict[str, Any]
+    ) -> tuple[str | None, str | None, str | None, str | None]:
 
         date_time_properties = {
             "start_date": None,
@@ -117,26 +216,6 @@ class PrideMapService(EventAbstractService):
             "end_time": None,
         }
 
-        # for toilets, start and end date are stored in the properties directly, format "2026-08-01T06:00:00+02:00", so we need to split it
-        if properties.get("date_start"):
-            # split the date and time, and remove the timezone
-            start_date_time = properties.get("date_start").split("T")
-            start_time = (
-                start_date_time[1].split("+")[0] if len(start_date_time) > 1 else None
-            )
-
-            date_time_properties["start_date"] = start_date_time[0]
-            date_time_properties["start_time"] = start_time
-        if properties.get("date_end"):
-            end_date_time = properties.get("date_end").split("T")
-            end_time = (
-                end_date_time[1].split("+")[0] if len(end_date_time) > 1 else None
-            )
-            date_time_properties["end_date"] = end_date_time[0]
-            date_time_properties["end_time"] = end_time
-
-        # for other layers, the start and end date are stored in the meta property
-        # also they can be in different formats, so we need to convert them to one format (YYYY-MM-DD)
         for meta in properties.get("meta", []):
             if meta.get("key") in ["startdatum", "datum-start"]:
                 date_time_properties["start_date"] = (
@@ -146,23 +225,14 @@ class PrideMapService(EventAbstractService):
                 date_time_properties["end_date"] = (
                     self._convert_date_string_to_iso_format(meta.get("value"))
                 )
-            elif meta.get("key") in ["tijd"]:
+            elif meta.get("key") == "tijd":
                 # check if time in format HH:MM-HH:MM, if so, add it to the start and end date
-                if "-" in meta.get("value", ""):
-                    splitted_time = meta.get("value").split("-")
-                    if len(splitted_time) != 2:
-                        logger.warning(
-                            f"Unexpected time format: {meta.get('value')}. Expected format is HH:MM-HH:MM. Skipping time parsing."
-                        )
-                        continue
-                    date_time_properties["start_time"] = (
-                        splitted_time[0].replace(".", ":").strip()
-                    )
-                    date_time_properties["end_time"] = (
-                        splitted_time[1].replace(".", ":").strip()
-                    )
-                else:
+                parsed_time_range = self._parse_time_range(meta.get("value"))
+                if not parsed_time_range:
                     continue
+                date_time_properties["start_time"], date_time_properties["end_time"] = (
+                    parsed_time_range
+                )
 
         return date_time_properties
 
@@ -185,38 +255,107 @@ class PrideMapService(EventAbstractService):
             return match.group(0)
 
         # check if the string contains a date in the format 'DD-MMM', if so, convert it to 'YYYY-MM-DD' using the current year
-        # for example, 8-jul -> 2026-07-08 (rolls over to next year when the month is before the current month).
-        month_map = {
-            "jan": "01",
-            "feb": "02",
-            "mrt": "03",
-            "apr": "04",
-            "mei": "05",
-            "jun": "06",
-            "jul": "07",
-            "aug": "08",
-            "sep": "09",
-            "okt": "10",
-            "nov": "11",
-            "dec": "12",
-        }
-
-        match = re.search(r"\d{1,2}-[a-zA-Z]{3}", date_string)
+        # for example, 8-jul -> 2026-07-08
+        match = re.search(r"\d{1,2}-[a-zA-Z.]{3,}", date_string)
         if match:
-            date_string = match.group(0)
-            day, month = date_string.split("-")
-            month_nr = month_map.get(month.lower())
-            if not month_nr:
+            short_date = match.group(0)
+            day_str, month_name = short_date.split("-", maxsplit=1)
+            month_number = self._get_month_number_from_name(month_name)
+            if not month_number:
                 logger.warning(f"Could not convert date string: {date_string}")
                 return None
-
             year = datetime.now().year
-            if int(month_nr) < 6:
+            if int(month_number) < 6:
                 year += 1
-            isodate_string = f"{year}-{month_nr}-{day}"
+
             try:
-                date_obj = datetime.strptime(isodate_string, "%Y-%m-%d")
+                date_obj = date(
+                    year=year,
+                    month=month_number,
+                    day=int(day_str),
+                )
                 return date_obj.strftime("%Y-%m-%d")
             except ValueError:
                 logger.warning(f"Could not convert date string: {date_string}")
                 return None
+
+        return None
+
+    @staticmethod
+    def _build_date_range(start_date: str | None, end_date: str | None) -> str:
+        if start_date and end_date:
+            return (
+                start_date if start_date == end_date else f"{start_date} - {end_date}"
+            )
+        return start_date or end_date or ""
+
+    @staticmethod
+    def _build_time_range(start_time: str | None, end_time: str | None) -> str | None:
+        if start_time and end_time:
+            return f"{start_time} tot {end_time}"
+        if start_time:
+            return f"vanaf {start_time}"
+        if end_time:
+            return f"tot {end_time}"
+        return None
+
+    @staticmethod
+    def _split_datetime(value: str | None) -> tuple[str | None, str | None]:
+        if not value:
+            return None, None
+
+        date_time_parts = value.split("T")
+        date_part = date_time_parts[0]
+        if len(date_time_parts) == 1:
+            return date_part, None
+
+        time_part = date_time_parts[1].split("+")[0]
+        return date_part, time_part
+
+    @staticmethod
+    def _truncate_seconds(value: str | None) -> str | None:
+        # Converts values like 06:00:00 to 06:00 for display.
+        if not value:
+            return None
+
+        splitted_value = value.split(":")
+        if len(splitted_value) >= 2:
+            return ":".join(splitted_value[:2])
+        return value
+
+    def _format_dutch_date(self, iso_date: str | None) -> str | None:
+        if not iso_date:
+            return None
+
+        return format_date(
+            datetime.strptime(iso_date, self.ISO_DATE_FORMAT).date(),
+            self.DUTCH_DATE_FORMAT,
+            locale="nl_NL",
+        )
+
+    def _parse_time_range(self, value: str | None) -> tuple[str, str] | None:
+        if not value or "-" not in value:
+            return None
+
+        split_time = value.split("-")
+        if len(split_time) != 2:
+            logger.warning(
+                f"Unexpected time format: {value}. Expected format is HH:MM-HH:MM. Skipping time parsing."
+            )
+            return None
+
+        start_time = split_time[0].replace(".", ":").strip()
+        end_time = split_time[1].replace(".", ":").strip()
+        return start_time, end_time
+
+    @staticmethod
+    def _get_month_number_from_name(month_name: str) -> int | None:
+        normalized_month = month_name.strip().lower().rstrip(".")
+
+        month_names = get_month_names(width="abbreviated", locale="nl_NL")
+        for month_number, localized_month_name in month_names.items():
+            if not localized_month_name:
+                continue
+            if localized_month_name.strip().lower().rstrip(".") == normalized_month:
+                return month_number
+        return None
