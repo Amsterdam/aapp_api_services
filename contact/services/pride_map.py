@@ -185,7 +185,7 @@ class PrideMapService(EventAbstractService):
             return match.group(0)
 
         # check if the string contains a date in the format 'DD-MMM', if so, convert it to 'YYYY-MM-DD' using the current year
-        # for example, 8-jul -> 2026-07-08
+        # for example, 8-jul -> 2026-07-08 (rolls over to next year when the month is before the current month).
         month_map = {
             "jan": "01",
             "feb": "02",
@@ -206,6 +206,10 @@ class PrideMapService(EventAbstractService):
             date_string = match.group(0)
             day, month = date_string.split("-")
             month_nr = month_map.get(month.lower())
+            if not month_nr:
+                logger.warning(f"Could not convert date string: {date_string}")
+                return None
+
             year = datetime.now().year
             if int(month_nr) < 6:
                 year += 1

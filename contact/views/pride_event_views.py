@@ -58,7 +58,7 @@ class PrideEventsView(APIView, PrideMapService):
                 time = meta["value"]
 
         # Clean some data noise
-        title = props["title"].replace("(de datum op de website is ander)", "")
+        title = props["title"].replace("(de datum op de website is ander)", "").strip()
         description = props.get("description")
         if description == "???":
             description = None
