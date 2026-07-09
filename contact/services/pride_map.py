@@ -185,13 +185,37 @@ class PrideMapService(EventAbstractService):
             return match.group(0)
 
         # check if the string contains a date in the format 'DD-MMM', if so, convert it to 'YYYY-MM-DD' using the current year
-        # for example, 8-jul -> 2026-07-08
+        # for example, 8-jul -> 2026-07-08 (rolls over to next year when the month is before the current month).
+        month_map = {
+            "jan": "01",
+            "feb": "02",
+            "mrt": "03",
+            "apr": "04",
+            "mei": "05",
+            "jun": "06",
+            "jul": "07",
+            "aug": "08",
+            "sep": "09",
+            "okt": "10",
+            "nov": "11",
+            "dec": "12",
+        }
+
         match = re.search(r"\d{1,2}-[a-zA-Z]{3}", date_string)
         if match:
             date_string = match.group(0)
-            date_string += f"-{datetime.now().year}"
+            day, month = date_string.split("-")
+            month_nr = month_map.get(month.lower())
+            if not month_nr:
+                logger.warning(f"Could not convert date string: {date_string}")
+                return None
+
+            year = datetime.now().year
+            if int(month_nr) < 6:
+                year += 1
+            isodate_string = f"{year}-{month_nr}-{day}"
             try:
-                date_obj = datetime.strptime(date_string, "%d-%b-%Y")
+                date_obj = datetime.strptime(isodate_string, "%Y-%m-%d")
                 return date_obj.strftime("%Y-%m-%d")
             except ValueError:
                 logger.warning(f"Could not convert date string: {date_string}")

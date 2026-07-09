@@ -211,7 +211,7 @@ class EventAbstractService(ServiceAbstract):
 
     def _get_website(self, properties: dict[str, Any]) -> Any | None:
         website = properties.get("website")
-        website_clean = website.replace("\\/", "/") if website else None
+        website_clean = website.replace("\\/", "/").strip() or None if website else None
 
         # check if the website is a valid URL
         if website_clean:
