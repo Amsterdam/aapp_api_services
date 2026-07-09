@@ -8,10 +8,10 @@ from model_bakery import baker
 
 from city_pass.models import Budget, PassData
 from city_pass.tests import mock_data
-from city_pass.tests.base_test import ResponsesActivatedCityPassTestCase
+from city_pass.tests.base_test import BaseCityPassTestCase
 
 
-class BaseCityPassDataViewTestCase(ResponsesActivatedCityPassTestCase):
+class BaseCityPassDataViewTestCase(BaseCityPassTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.headers = {**self.headers, "Access-Token": self.session.accesstoken.token}

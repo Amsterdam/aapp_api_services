@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.test import TestCase
 from model_bakery import baker
 
 from city_pass.models import AccessToken, RefreshToken, Session
@@ -17,13 +16,7 @@ def set_up_city_pass_test_case(test_case) -> None:
     baker.make(RefreshToken, session=test_case.session)
 
 
-class BaseCityPassTestCase(TestCase):
-    def setUp(self) -> None:
-        super().setUp()
-        set_up_city_pass_test_case(self)
-
-
-class ResponsesActivatedCityPassTestCase(ResponsesActivatedAPITestCase):
+class BaseCityPassTestCase(ResponsesActivatedAPITestCase):
     def setUp(self) -> None:
         super().setUp()
         set_up_city_pass_test_case(self)
