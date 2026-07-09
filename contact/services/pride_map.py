@@ -63,6 +63,11 @@ class PrideMapService(EventAbstractService):
             properties=properties, layer_type=layer_type
         )
 
+        if layer_type == "Toilet":
+            table = self._create_table(properties.get("meta", []))
+        else:
+            table = None
+
         return {
             f"{prefix}title": title,
             f"{prefix}subtitle": layer_type,
@@ -70,7 +75,7 @@ class PrideMapService(EventAbstractService):
             f"{prefix}date_and_time": date_and_time,
             f"{prefix}website": self._get_website(properties),
             f"{prefix}address": address,
-            f"{prefix}table": self._create_table(properties.get("meta", [])),
+            f"{prefix}table": table,
             "stroke": stroke,
             "stroke-width": stroke_width,
         }

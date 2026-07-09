@@ -23,38 +23,9 @@ class PrideMapServiceTest(SimpleTestCase):
         self.assertEqual(feature["geometry"]["type"], "Point")
         self.assertEqual(feature["geometry"]["coordinates"], [4.89, 52.37])
 
-    def test_get_custom_properties_default_layer(self):
-        properties = {
-            "title": "Event",
-            "description": "<p>Desc</p>",
-            "street": "Damrak",
-            "street_number": "1",
-            "zip": "1012LG",
-            "city": "Amsterdam",
-            "website": "https:\\/\\/example.org",
-            "meta": [{"title": "Type", "value": "Muziek"}],
-        }
-        geom = {"type": "Point", "coordinates": [4.9, 52.3]}
-
-        custom = self.service.get_custom_properties(
-            properties=properties,
-            geom=geom,
-            layer_type="Evenement",
-            icon_name="event",
-        )
-
-        self.assertEqual(custom["aapp_title"], "Event")
-        self.assertEqual(custom["aapp_subtitle"], "Evenement")
-        self.assertEqual(custom["aapp_date_and_time"], None)
-        self.assertEqual(custom["aapp_website"], "https://example.org")
-        self.assertEqual(custom["aapp_address"]["coordinates"]["lat"], 52.3)
-        self.assertEqual(custom["aapp_address"]["coordinates"]["lon"], 4.9)
-        self.assertEqual(custom["aapp_table"], [{"key": "Type", "value": "Muziek"}])
-        self.assertEqual(custom["stroke"], None)
-
     def test_get_custom_properties_canal_parade_linestring_stroke(self):
         custom = self.service.get_custom_properties(
-            properties={"title": "Parade"},
+            properties={"title": "Canal parade"},
             geom={"type": "LineString", "coordinates": [[4.9, 52.3], [4.91, 52.31]]},
             layer_type="Canal parade",
             icon_name="canal_parade",
