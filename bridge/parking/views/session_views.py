@@ -40,6 +40,7 @@ from bridge.parking.views.base_ssp_view import (
     BaseSSPView,
     ssp_openapi_decorator,
 )
+from core.metrics import parking_sessions_started_counter
 
 logger = logging.getLogger(__name__)
 EXCEPTIONS = [
@@ -292,6 +293,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
         response_data = response_data["data"]
         ps_right_id = response_data.get("id")
         response_data["ps_right_id"] = ps_right_id
+        parking_sessions_started_counter.add(1)
         if not kwargs["is_visitor"]:
             # ps_right_id is required for reminders, but visitors only get a ps_right_id after the confirmation call
             notification_status = await sync_to_async(self._process_notification)(
@@ -374,6 +376,7 @@ class ParkingSessionStartUpdateDeleteView(BaseNotificationView):
             }
         )
         serializer.is_valid(raise_exception=True)
+
         return Response(
             data=serializer.validated_data,
             status=status.HTTP_200_OK,

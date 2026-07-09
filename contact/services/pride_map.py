@@ -15,13 +15,11 @@ from contact.enums.pride_map import (
     PrideMapSilentProperties,
 )
 from contact.services.event_abstract import EventAbstractService
-from core.utils.caching_utils import cache_function
 
 logger = logging.getLogger(__name__)
 
 
 class PrideMapService(EventAbstractService):
-    CANAL_PARADE_LAYER = "Canal parade"
     TOILET_LAYER = "Toilet"
     DUTCH_DATE_FORMAT = "EEE d MMM y"
     ISO_DATE_FORMAT = "%Y-%m-%d"
@@ -55,8 +53,11 @@ class PrideMapService(EventAbstractService):
         stroke, stroke_width = self._get_style_properties(
             layer_type=layer_type, geom=geom
         )
-        title = self._get_title(properties)
-        address = self._get_address(properties=properties, geom=geom)
+        title = properties.get("title", "")
+
+        address = None
+        if properties.get("street"):
+            address = self._get_address_from_properties(properties, geom)
 
         date_and_time = self._get_date_and_time(
             properties=properties, layer_type=layer_type
@@ -77,23 +78,23 @@ class PrideMapService(EventAbstractService):
     def _get_style_properties(
         self, *, layer_type: str, geom: Dict[str, Any]
     ) -> tuple[str | None, int | None]:
-        if layer_type == self.CANAL_PARADE_LAYER and geom.get("type") == "LineString":
+        if layer_type == "Canal parade" and geom.get("type") == "LineString":
             # for canal parade we want to add stroke and stroke-width properties
-            return "#009DE6", 5
+            stroke = "#009DE6"
+            stroke_width = 5
+        elif layer_type == "Pride walk" and geom.get("type") == "LineString":
+            # for pride walk we want to add stroke and stroke-width properties
+            stroke = "#A00078"
+            stroke_width = 5
+        elif layer_type == "Pride march" and geom.get("type") == "LineString":
+            # for pride march we want to add stroke and stroke-width properties
+            stroke = "#F52FD0"
+            stroke_width = 5
+        else:
+            stroke = None
+            stroke_width = None
 
-        return None, None
-
-    @staticmethod
-    def _get_title(properties: Dict[str, Any]) -> str:
-        return properties.get("title", "")
-
-    def _get_address(
-        self, *, properties: Dict[str, Any], geom: Dict[str, Any]
-    ) -> Dict[str, Any] | None:
-        if properties.get("street"):
-            return self._get_address_from_properties(properties, geom)
-
-        return None
+        return stroke, stroke_width
 
     def _get_date_and_time(
         self, *, properties: Dict[str, Any], layer_type: str
@@ -234,7 +235,7 @@ class PrideMapService(EventAbstractService):
         if match:
             short_date = match.group(0)
             day_str, month_name = short_date.split("-", maxsplit=1)
-            month_number = _get_month_number_from_name(month_name)
+            month_number = self._get_month_number_from_name(month_name)
             current_year = datetime.now().year
 
             if not month_number:
@@ -325,15 +326,14 @@ class PrideMapService(EventAbstractService):
         end_time = split_time[1].replace(".", ":").strip()
         return start_time, end_time
 
+    @staticmethod
+    def _get_month_number_from_name(month_name: str) -> int | None:
+        normalized_month = month_name.strip().lower().rstrip(".")
 
-@cache_function(timeout=60 * 60 * 24)  # Cache for 24 hours
-def _get_month_number_from_name(month_name: str) -> int | None:
-    normalized_month = month_name.strip().lower().rstrip(".")
-
-    month_names = get_month_names(width="abbreviated", locale="nl_NL")
-    for month_number, localized_month_name in month_names.items():
-        if not localized_month_name:
-            continue
-        if localized_month_name.strip().lower().rstrip(".") == normalized_month:
-            return month_number
-    return None
+        month_names = get_month_names(width="abbreviated", locale="nl_NL")
+        for month_number, localized_month_name in month_names.items():
+            if not localized_month_name:
+                continue
+            if localized_month_name.strip().lower().rstrip(".") == normalized_month:
+                return month_number
+        return None
