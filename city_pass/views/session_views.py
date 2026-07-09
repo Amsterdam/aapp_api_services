@@ -14,6 +14,7 @@ from city_pass.exceptions import TokenExpiredException, TokenInvalidException
 from city_pass.serializers import session_serializers as serializers
 from city_pass.views.extend_schema import extend_schema_with_access_token
 from core.authentication import MijnAmsterdamOutboundKeyAuthentication
+from core.utils.device_utils import create_missing_device_ids
 from core.utils.openapi_utils import extend_schema_for_api_key
 from core.views.mixins import DeviceIdMixin
 
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class SessionInitView(DeviceIdMixin, generics.CreateAPIView):
     serializer_class = serializers.SessionTokensOutSerializer
-    device_id_required = False
+    device_id_required = True
 
     @extend_schema_for_api_key(
         success_response=serializers.SessionTokensOutSerializer,
@@ -68,7 +69,10 @@ class SessionInitView(DeviceIdMixin, generics.CreateAPIView):
         return access_token, refresh_token
 
     def setup_new_session(self):
-        new_session = models.Session.objects.create(device_id=self.device_id)
+        device_id_internal = create_missing_device_ids([self.device_id])[0]
+        new_session = models.Session.objects.create(
+            device_id=self.device_id, device_id_internal=device_id_internal
+        )
         access_token = models.AccessToken.objects.create(session=new_session)
         refresh_token = models.RefreshToken.objects.create(session=new_session)
         return access_token, refresh_token

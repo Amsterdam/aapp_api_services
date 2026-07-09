@@ -26,7 +26,7 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         notification = baker.make(Notification, budgets=[])
         service = NotificationService()
 
-        device_ids = service.get_device_ids(notification)
+        device_ids = service.get_device_qs(notification)
 
         self.assertEqual(len(device_ids), 3)
         self.assertIn("device1", device_ids)
@@ -37,7 +37,7 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         notification = baker.make(Notification, budgets=[self.budget_1, self.budget_2])
         service = NotificationService()
 
-        device_ids = service.get_device_ids(notification)
+        device_ids = service.get_device_qs(notification)
 
         self.assertEqual(len(device_ids), 2)
         self.assertIn("device1", device_ids)
