@@ -120,6 +120,7 @@ class ParkingPermitsView(BaseSSPView):
                 }
                 if permit["details"]["permit"]["zone"]
                 else None,
+                "payment_zones": [],  # TODO: once 1.2.8 is deprecated, remove this field from the response
                 "visitor_account": visitor_json,
                 "parking_rate": {
                     "value": (permit["details"]["permit"]["cost"] or 0) / 100,
