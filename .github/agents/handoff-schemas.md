@@ -36,7 +36,7 @@ Use for the Story Plan handoff back to Orchestrator after it has created or upda
 
 Required fields:
 
-- `schema`: `H0 Story Planning Result`
+- `schema`: `H1 Story Planning Result`
 - `plan_status`
 - `plan_md_file`
 - `plan_summary`
