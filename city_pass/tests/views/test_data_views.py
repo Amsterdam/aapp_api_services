@@ -1,30 +1,69 @@
-import json
-from unittest.mock import patch
+from copy import deepcopy
+from urllib.parse import urljoin
 
+import responses
+from django.conf import settings
 from django.urls import reverse
 from model_bakery import baker
-from requests import Response
 
 from city_pass.models import Budget, PassData
 from city_pass.tests import mock_data
-from city_pass.tests.base_test import BaseCityPassTestCase
+from city_pass.tests.base_test import ResponsesActivatedCityPassTestCase
 
 
-class TestPassesView(BaseCityPassTestCase):
-    api_url = reverse("city-pass-data-passes")
-
+class BaseCityPassDataViewTestCase(ResponsesActivatedCityPassTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.headers = {**self.headers, "Access-Token": self.session.accesstoken.token}
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_get_passes_successful(self, mock_get):
-        mock_response = Response()
-        mock_response.status_code = 200
-        mock_response._content = json.dumps(
-            {"content": mock_data.passes, "status": "SUCCESS"}
-        ).encode("utf-8")
-        mock_get.return_value = mock_response
+    def build_source_api_url(self, path_key: str, suffix: str = "") -> str:
+        return urljoin(
+            settings.MIJN_AMS_API_DOMAIN,
+            urljoin(settings.MIJN_AMS_API_PATHS[path_key], suffix),
+        )
+
+    def add_source_api_response(
+        self,
+        method: str,
+        path_key: str,
+        *,
+        suffix: str = "",
+        status: int = 200,
+        payload: dict | None = None,
+        content=None,
+    ) -> None:
+        response_payload = payload or {"content": content, "status": "SUCCESS"}
+        responses.add(
+            method,
+            self.build_source_api_url(path_key, suffix),
+            json=response_payload,
+            status=status,
+        )
+
+
+class TestPassesView(BaseCityPassDataViewTestCase):
+    api_url = reverse("city-pass-data-passes")
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.source_api_url = self.build_source_api_url(
+            "PASSES", self.session.encrypted_adminstration_no
+        )
+
+    def add_passes_response(
+        self, *, content=mock_data.passes, status=200, payload=None
+    ):
+        self.add_source_api_response(
+            responses.GET,
+            "PASSES",
+            suffix=self.session.encrypted_adminstration_no,
+            status=status,
+            payload=payload,
+            content=content,
+        )
+
+    def test_get_passes_successful(self):
+        self.add_passes_response()
 
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(result.status_code, 200)
@@ -53,16 +92,10 @@ class TestPassesView(BaseCityPassTestCase):
         self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_4-9").exists())
         self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_0-3").exists())
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_get_passes_successful_repeated(self, mock_get):
-        mock_response = Response()
-        mock_response.status_code = 200
-        mock_response._content = json.dumps(
-            {"content": mock_data.passes, "status": "SUCCESS"}
-        ).encode("utf-8")
-        mock_get.return_value = mock_response
-
+    def test_get_passes_successful_repeated(self):
         for _i in range(3):
+            self.add_passes_response()
+
             result = self.client.get(self.api_url, headers=self.headers, follow=True)
             self.assertEqual(result.status_code, 200)
 
@@ -73,14 +106,9 @@ class TestPassesView(BaseCityPassTestCase):
         self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_0-3").exists())
 
     def assert_source_api_error_was_logged_and_500_returned(
-        self, mock_get, status_code: int, error_response: dict
+        self, status_code: int, error_response: dict
     ):
-        mock_response = Response()
-        mock_response.status_code = status_code
-
-        encoded_error_response = json.dumps(error_response).encode("utf-8")
-        mock_response._content = encoded_error_response
-        mock_get.return_value = mock_response
+        self.add_passes_response(status=status_code, payload=error_response)
 
         with self.assertLogs("city_pass.views.data_views", level="ERROR"):
             result = self.client.get(self.api_url, headers=self.headers, follow=True)
@@ -92,10 +120,8 @@ class TestPassesView(BaseCityPassTestCase):
             status_code=500,
         )
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_source_api_could_not_decrypt_admin_no(self, mock_get):
+    def test_source_api_could_not_decrypt_admin_no(self):
         self.assert_source_api_error_was_logged_and_500_returned(
-            mock_get,
             400,
             {
                 "content": "string",
@@ -105,10 +131,8 @@ class TestPassesView(BaseCityPassTestCase):
             },
         )
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_source_api_did_not_accept_api_key(self, mock_get):
+    def test_source_api_did_not_accept_api_key(self):
         self.assert_source_api_error_was_logged_and_500_returned(
-            mock_get,
             401,
             {
                 "content": "string",
@@ -118,76 +142,122 @@ class TestPassesView(BaseCityPassTestCase):
             },
         )
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_content_is_empty_list(self, mock_get):
-        mock_response = Response()
-        mock_response.status_code = 200
-
-        mock_response._content = json.dumps(
-            {"content": [], "status": "SUCCESS"}
-        ).encode("utf-8")
-        mock_get.return_value = mock_response
+    def test_content_is_empty_list(self):
+        self.add_passes_response(content=[])
 
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.data, [])
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_content_is_invalid_format(self, mock_get):
-        mock_response = Response()
-        mock_response.status_code = 200
-
-        mock_response._content = json.dumps({"status": "FOOBAR"}).encode("utf-8")
-        mock_get.return_value = mock_response
+    def test_content_is_invalid_format(self):
+        self.add_passes_response(payload={"status": "FOOBAR"})
 
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(result.status_code, 500)
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_succeeds_after_retry(self, mock_get):
-        # Simulate a 500 error on the first request
-        mock_response_1 = Response()
-        mock_response_1.status_code = 500
-        mock_response_1._content = json.dumps(
-            {"status": "ERROR", "message": "Internal Server Error"}
-        ).encode("utf-8")
-
-        # Simulate a successful response on the second request
-        mock_response_2 = Response()
-        mock_response_2.status_code = 200
-        mock_response_2._content = json.dumps(
-            {"content": mock_data.passes, "status": "SUCCESS"}
-        ).encode("utf-8")
-
-        mock_get.side_effect = [mock_response_1, mock_response_2]
+    def test_succeeds_after_retry(self):
+        responses.add(
+            responses.GET,
+            self.source_api_url,
+            json={"status": "ERROR", "message": "Internal Server Error"},
+            status=500,
+        )
+        self.add_passes_response()
 
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(result.status_code, 200)
 
+    def test_get_budget_transactions_succeeds_after_pass_refresh_with_new_pass_number(
+        self,
+    ):
+        initial_pass = mock_data.passes[0]
+        refreshed_pass = deepcopy(initial_pass)
+        refreshed_pass["passNumber"] = 6011013119999
+        refreshed_pass["passNumberComplete"] = "6064366011013119999"
+        refreshed_pass["transactionsKeyEncrypted"] = "updated-encrypted-key"
 
-@patch("city_pass.views.data_views.requests.request")
-class BaseAbstractTransactionsViews(BaseCityPassTestCase):
+        self.add_passes_response(content=[initial_pass])
+        self.add_source_api_response(
+            responses.GET,
+            "BUDGET_TRANSACTIONS",
+            suffix=initial_pass["transactionsKeyEncrypted"],
+            content=mock_data.budget_transactions,
+        )
+        self.add_passes_response(content=[refreshed_pass])
+        self.add_source_api_response(
+            responses.GET,
+            "BUDGET_TRANSACTIONS",
+            suffix=refreshed_pass["transactionsKeyEncrypted"],
+            content=mock_data.budget_transactions,
+        )
+
+        first_passes_result = self.client.get(
+            self.api_url,
+            headers=self.headers,
+            follow=True,
+        )
+        self.assertEqual(first_passes_result.status_code, 200)
+
+        first_budget_transactions_result = self.client.get(
+            reverse("city-pass-data-budget-transactions"),
+            headers=self.headers,
+            data={"passNumber": str(initial_pass["passNumber"])},
+            follow=True,
+        )
+        self.assertEqual(first_budget_transactions_result.status_code, 200)
+
+        refreshed_passes_result = self.client.get(
+            self.api_url,
+            headers=self.headers,
+            follow=True,
+        )
+        self.assertEqual(refreshed_passes_result.status_code, 200)
+
+        refreshed_budget_transactions_result = self.client.get(
+            reverse("city-pass-data-budget-transactions"),
+            headers=self.headers,
+            data={"passNumber": str(refreshed_pass["passNumber"])},
+            follow=True,
+        )
+        self.assertEqual(refreshed_budget_transactions_result.status_code, 200)
+        self.assertTrue(
+            PassData.objects.filter(
+                session=self.session,
+                pass_number=str(refreshed_pass["passNumber"]),
+                encrypted_transaction_key=refreshed_pass["transactionsKeyEncrypted"],
+            ).exists()
+        )
+
+
+class BaseTransactionsViewTestCase(BaseCityPassDataViewTestCase):
     api_url = ""
-    mock_data = []
+    source_api_content = []
+    source_api_path_key = ""
     __test__ = (
         False  # Skip this class in test discovery and only use it as a base class
     )
 
     def setUp(self) -> None:
         super().setUp()
-        self.headers = {**self.headers, "Access-Token": self.session.accesstoken.token}
         self.pass_number = "6011013116525"
         self.pass_data = baker.make(
-            PassData, session=self.session, pass_number=self.pass_number
+            PassData,
+            session=self.session,
+            pass_number=self.pass_number,
+            encrypted_transaction_key="encrypted-transaction-key",
         )
 
-    def test_get_transactions_successful(self, mock_get):
-        mock_response = Response()
-        mock_response.status_code = 200
-        mock_response._content = json.dumps(
-            {"content": self.mock_data, "status": "SUCCESS"}
-        ).encode("utf-8")
-        mock_get.return_value = mock_response
+    def add_transactions_response(self, *, content=None, payload=None):
+        self.add_source_api_response(
+            responses.GET,
+            self.source_api_path_key,
+            suffix=self.pass_data.encrypted_transaction_key,
+            payload=payload,
+            content=self.source_api_content if content is None else content,
+        )
+
+    def test_get_transactions_successful(self):
+        self.add_transactions_response()
 
         result = self.client.get(
             self.api_url,
@@ -197,11 +267,11 @@ class BaseAbstractTransactionsViews(BaseCityPassTestCase):
         )
         self.assertEqual(200, result.status_code)
 
-    def test_get_transactions_no_pass_number(self, _):
+    def test_get_transactions_no_pass_number(self):
         result = self.client.get(self.api_url, headers=self.headers, follow=True)
         self.assertEqual(400, result.status_code)
 
-    def test_get_transactions_unknown_pass_number(self, _):
+    def test_get_transactions_unknown_pass_number(self):
         result = self.client.get(
             self.api_url,
             headers=self.headers,
@@ -210,12 +280,8 @@ class BaseAbstractTransactionsViews(BaseCityPassTestCase):
         )
         self.assertEqual(500, result.status_code)
 
-    def test_content_is_invalid_format(self, mock_get):
-        mock_response = Response()
-        mock_response.status_code = 200
-
-        mock_response._content = json.dumps({"status": "FOOBAR"}).encode("utf-8")
-        mock_get.return_value = mock_response
+    def test_content_is_invalid_format(self):
+        self.add_transactions_response(payload={"status": "FOOBAR"})
 
         result = self.client.get(
             self.api_url,
@@ -226,20 +292,14 @@ class BaseAbstractTransactionsViews(BaseCityPassTestCase):
         self.assertEqual(500, result.status_code)
 
 
-class TestBudgetTransactionsViews(BaseAbstractTransactionsViews):
+class TestBudgetTransactionsViews(BaseTransactionsViewTestCase):
     api_url = reverse("city-pass-data-budget-transactions")
-    mock_data = mock_data.budget_transactions
+    source_api_content = mock_data.budget_transactions
+    source_api_path_key = "BUDGET_TRANSACTIONS"
     __test__ = True
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_content_is_empty_list(self, mock_get):
-        mock_response = Response()
-        mock_response.status_code = 200
-
-        mock_response._content = json.dumps(
-            {"content": [], "status": "SUCCESS"}
-        ).encode("utf-8")
-        mock_get.return_value = mock_response
+    def test_content_is_empty_list(self):
+        self.add_transactions_response(content=[])
 
         result = self.client.get(
             self.api_url,
@@ -251,25 +311,19 @@ class TestBudgetTransactionsViews(BaseAbstractTransactionsViews):
         self.assertEqual(result.data, [])
 
 
-class TestAanbiedingTransactionsViews(BaseAbstractTransactionsViews):
+class TestAanbiedingTransactionsViews(BaseTransactionsViewTestCase):
     api_url = reverse("city-pass-data-aanbieding-transactions")
-    mock_data = mock_data.aanbieding_transactions
+    source_api_content = mock_data.aanbieding_transactions
+    source_api_path_key = "AANBIEDING_TRANSACTIONS"
     __test__ = True
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_content_is_empty_dict(self, mock_get):
-        mock_response = Response()
-        mock_response.status_code = 200
-
+    def test_content_is_empty_dict(self):
         content = {
             "discountAmountTotal": 0,
             "discountAmountTotalFormatted": "€0,00",
             "transactions": [],
         }
-        mock_response._content = json.dumps(
-            {"content": content, "status": "SUCCESS"}
-        ).encode("utf-8")
-        mock_get.return_value = mock_response
+        self.add_transactions_response(content=content)
 
         result = self.client.get(
             self.api_url,
@@ -281,23 +335,24 @@ class TestAanbiedingTransactionsViews(BaseAbstractTransactionsViews):
         self.assertEqual(result.data, content)
 
 
-class TestPassBlockView(BaseCityPassTestCase):
+class TestPassBlockView(BaseCityPassDataViewTestCase):
     def setUp(self) -> None:
         super().setUp()
-        self.headers = {**self.headers, "Access-Token": self.session.accesstoken.token}
         self.pass_number = "6011013116525"
         self.pass_data = baker.make(
-            PassData, session=self.session, pass_number=self.pass_number
+            PassData,
+            session=self.session,
+            pass_number=self.pass_number,
+            encrypted_transaction_key="block-encrypted-transaction-key",
         )
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_block_pass_successful(self, mock_post):
-        mock_response = Response()
-        mock_response.status_code = 200
-        mock_response._content = json.dumps(
-            {"content": "foobar", "status": "SUCCESS"}
-        ).encode("utf-8")
-        mock_post.return_value = mock_response
+    def test_block_pass_successful(self):
+        self.add_source_api_response(
+            responses.POST,
+            "PASS_BLOCK",
+            suffix=self.pass_data.encrypted_transaction_key,
+            content="foobar",
+        )
 
         url = reverse("city-pass-data-pass-block", args=[self.pass_number])
         result = self.client.put(
@@ -307,15 +362,7 @@ class TestPassBlockView(BaseCityPassTestCase):
         )
         self.assertEqual(200, result.status_code)
 
-    @patch("city_pass.views.data_views.requests.request")
-    def test_block_pass_unknown_pass_number(self, mock_post):
-        mock_response = Response()
-        mock_response.status_code = 200
-        mock_response._content = json.dumps(
-            {"content": "foobar", "status": "SUCCESS"}
-        ).encode("utf-8")
-        mock_post.return_value = mock_response
-
+    def test_block_pass_unknown_pass_number(self):
         url = reverse("city-pass-data-pass-block", args=[123])
         result = self.client.put(
             url,
