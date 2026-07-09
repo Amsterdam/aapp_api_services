@@ -44,7 +44,7 @@ class PrideMapService(EventAbstractService):
         based on the original properties, geometry, layer type, and icon name.
 
         All custom properties are prefixed with 'aapp_' to avoid conflicts with original properties.
-        However, the fill and fill_opacity properties for the 'Omleiding' layer are not prefixed,
+        However, the stroke and stroke-width properties are not prefixed,
         as they are used for styling the layer and the geojson standard is used.
         """
 
@@ -172,7 +172,7 @@ class PrideMapService(EventAbstractService):
             return None
 
         description = self._clean_html(description_html)
-        if re.search(r"\d{1,2} [a-zA-Z.]{3,}", description):
+        if re.search(r"\d{1,2} [a-zA-Z.]{3,} \d{4}", description):
             return description
 
         return None

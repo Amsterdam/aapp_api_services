@@ -148,6 +148,30 @@ class PrideMapServiceTest(SimpleTestCase):
             "za 1 aug 2026, 11:00 tot 15:00",
         )
 
+    def test_get_no_date_and_time_from_description(self):
+        custom = self.service.get_custom_properties(
+            properties={
+                "id": "13073709",
+                "title": "Pride Walk",
+                "description": "<p>4 dagen feest<\/p>",
+                "meta": [
+                    {
+                        "key": "type",
+                        "title": "Type",
+                        "value": "pride-walk",
+                        "presenter": "text",
+                    }
+                ],
+            },
+            geom={"type": "LineString", "coordinates": [[4.9, 52.3], [4.91, 52.31]]},
+            layer_type="Pride walk",
+            icon_name="pride_walk",
+        )
+        self.assertEqual(
+            custom["aapp_date_and_time"],
+            None,
+        )
+
     def test_get_date_and_time_from_meta(self):
         custom = self.service.get_custom_properties(
             properties={
@@ -239,6 +263,23 @@ class PrideMapServiceTest(SimpleTestCase):
         )
 
         self.assertEqual(date_and_time, "wo 8 jul 2026")
+
+    def test_get_start_end_date_and_time_for_conflicting_properties(self):
+        date_and_time = self.service._get_date_and_time(
+            properties={
+                "date_start": "2026-08-01T06:00:00+02:00",
+                "date_end": "2026-08-01",
+                "description": "<p>za 1 aug 2026, 11:00 tot 15:00<\/p>",
+                "meta": [
+                    {"key": "startdatum", "value": "8-jul"},
+                    {"key": "datum-eind-tm", "value": "2026-07-09 extra"},
+                    {"key": "tijd", "value": "06.00 - 23.30"},
+                ],
+            },
+            layer_type="Evenement",
+        )
+
+        self.assertEqual(date_and_time, "za 1 aug 2026, 11:00 tot 15:00")
 
     def test_convert_date_string_to_iso_format_returns_iso_or_none(self):
         self.assertEqual(
