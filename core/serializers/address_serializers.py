@@ -9,7 +9,7 @@ class CoordinatesSerializer(serializers.Serializer):
 class AddressSerializer(serializers.Serializer):
     city = serializers.CharField()
     street = serializers.CharField()
-    coordinates = CoordinatesSerializer(source="*")
+    coordinates = CoordinatesSerializer()
     cityDistrict = serializers.CharField(required=False)
     bagId = serializers.CharField(required=False)
     number = serializers.CharField(required=False)

@@ -9,10 +9,10 @@ from contact.enums.kingsday_water import (
     KingsdayWaterProperties,
     KingsdayWaterSilentProperties,
 )
-from contact.services.kingsday_abstract import KingsdayAbstractService
+from contact.services.event_abstract import EventAbstractService
 
 
-class KingsdayWaterService(KingsdayAbstractService):
+class KingsdayWaterService(EventAbstractService):
     data_enum = KingsdayWaterData
     filters_enum = KingsdayWaterFilters
     layers_enum = KingsdayWaterLayers

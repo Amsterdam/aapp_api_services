@@ -1,0 +1,63 @@
+info:
+  name: address_api_v1_free_retrieve
+  type: http
+  seq: 3
+  tags:
+    - address
+
+http:
+  method: GET
+  url: "{{baseUrl}}/address/api/v1/free"
+  params:
+    - name: lat
+      value: ""
+      type: query
+      disabled: true
+    - name: lon
+      value: ""
+      type: query
+      disabled: true
+    - name: q
+      value: ""
+      type: query
+      disabled: true
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/address/api/v1/free"
+      method: GET
+      params:
+        - name: lat
+          value: ""
+          type: query
+          disabled: true
+        - name: lon
+          value: ""
+          type: query
+          disabled: true
+        - name: q
+          value: ""
+          type: query
+          disabled: true
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "q": "",
+            "lat": 0,
+            "lon": 0
+          }

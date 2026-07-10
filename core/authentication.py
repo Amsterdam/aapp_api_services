@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import amsterdam_django_oidc
 import jwt
 from django.conf import settings
+from django.contrib.admin import ModelAdmin
 from django.contrib.auth.models import Group, User
 from django.db import transaction
 from django.http import HttpRequest
@@ -60,6 +61,28 @@ class APIKeyAuthentication(AbstractAppAuthentication):
         return settings.API_KEY_HEADER
 
 
+class InternalAPIKeyAuthentication(AbstractAppAuthentication):
+    # currently only used in 'modules' service
+    @property
+    def api_keys(self):  # pragma: no cover
+        return settings.API_KEYS_INTERNAL.split(",")
+
+    @property
+    def api_key_header(self):  # pragma: no cover
+        return settings.API_KEY_HEADER_INTERNAL
+
+
+class MijnAmsterdamOutboundKeyAuthentication(AbstractAppAuthentication):
+    # used for authenticating requests from City Pass and MijnAmsterdam logout
+    @property
+    def api_keys(self):
+        return settings.MIJN_AMS_API_KEYS_OUTBOUND.split(",")
+
+    @property
+    def api_key_header(self):
+        return settings.SESSION_CREDENTIALS_KEY_HEADER
+
+
 class AuthenticationScheme(OpenApiAuthenticationExtension):
     """
     This class is specifically for drf-spectacular,
@@ -80,6 +103,18 @@ class APIKeyAuthenticationScheme(AuthenticationScheme):
     target_class = "core.authentication.APIKeyAuthentication"
     name = "APIKeyAuthentication"
     header_key = settings.API_KEY_HEADER
+
+
+class InternalAPIKeyAuthenticationScheme(AuthenticationScheme):
+    target_class = "core.authentication.InternalAPIKeyAuthentication"
+    name = "InternalAPIKeyAuthentication"
+    header_key = settings.API_KEY_HEADER_INTERNAL
+
+
+class MijnAmsterdamOutboundKeyAuthenticationScheme(AuthenticationScheme):
+    target_class = "core.authentication.MijnAmsterdamOutboundKeyAuthentication"
+    name = "MijnAmsterdamOutboundKeyAuthentication"
+    header_key = settings.SESSION_CREDENTIALS_KEY_HEADER
 
 
 class EntraTokenMixin:
@@ -224,7 +259,8 @@ class MockEntraTokenAuthentication(BaseAuthentication, EntraTokenMixin):
             "mbs-admin",
             "cbs-time-publisher",
             "city-pass-publisher",
-            "waste-publisher",
+            "waste-notification-publisher",
+            "waste-recycle-publisher",
             "survey-publisher",
         ]:
             group, _ = Group.objects.get_or_create(name=f"o-{role_name}")
@@ -232,3 +268,34 @@ class MockEntraTokenAuthentication(BaseAuthentication, EntraTokenMixin):
         user.groups.set(groups)
 
         return (user, None)
+
+
+class AuthenticationGroupModelAdmin(ModelAdmin):
+    authentication_groups: tuple[str, ...] = ()
+    authentication_view_groups: tuple[str, ...] = ()
+
+    def has_add_permission(self, request):
+        return user_groups_contains_group_names(
+            request.user, list(self.authentication_groups)
+        )
+
+    def has_change_permission(self, request, obj=None):
+        return user_groups_contains_group_names(
+            request.user, list(self.authentication_groups)
+        )
+
+    def has_delete_permission(self, request, obj=None):
+        return user_groups_contains_group_names(
+            request.user, list(self.authentication_groups)
+        )
+
+    def has_view_permission(self, request, obj=None):
+        return user_groups_contains_group_names(
+            request.user,
+            list(self.authentication_groups) + list(self.authentication_view_groups),
+        )
+
+
+def user_groups_contains_group_names(user, group_names):
+    environment_group_names = [f"{settings.ENVIRONMENT_SLUG}-{x}" for x in group_names]
+    return user.groups.filter(name__in=environment_group_names).exists()

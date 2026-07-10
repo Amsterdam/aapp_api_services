@@ -1,0 +1,115 @@
+info:
+  name: service_api_v1_maps_retrieve
+  type: http
+  seq: 2
+  tags:
+    - service
+
+http:
+  method: GET
+  url: "{{baseUrl}}/service/api/v1/maps/:service_id"
+  headers:
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  params:
+    - name: service_id
+      value: ""
+      type: path
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/service/api/v1/maps/:service_id"
+      method: GET
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: service_id
+          value: ""
+          type: path
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "filters": [
+              {
+                "label": "",
+                "filter_key": "",
+                "filter_value": ""
+              }
+            ],
+            "layers": [
+              {
+                "label": "",
+                "filter_key": "",
+                "filter_value": "",
+                "icon_label": ""
+              }
+            ],
+            "properties_to_include": [
+              {
+                "label": "",
+                "property_key": "",
+                "property_type": "",
+                "icon": ""
+              }
+            ],
+            "list_property": "",
+            "icons_to_include": {},
+            "data": {
+              "type": "",
+              "features": [
+                {
+                  "id": 0,
+                  "type": "",
+                  "geometry": {
+                    "type": "",
+                    "coordinates": ""
+                  },
+                  "properties": {}
+                }
+              ]
+            }
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/service/api/v1/maps/:service_id"
+      method: GET
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: service_id
+          value: ""
+          type: path
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }

@@ -52,5 +52,11 @@ TAP_URL = os.getenv(
     "TAP_URL",
     "https://data.rivm.nl/geo/alo/wfs?request=GetFeature&service=WFS&version=1.1.0&outputFormat=json&typeName=alo:rivm_drinkwaterkranen_actueel",
 )
+PUBLIC_SWIMMING_SPOT_URL = os.getenv(
+    "PUBLIC_SWIMMING_SPOT_URL",
+    "https://maps.amsterdam.nl/open_geodata/geojson_lnglat.php?KAARTLAAG=ZWEMWATER&THEMA=zwemwater",
+)
 
-KINGSDAY_URL = os.getenv("KINGSDAY_URL", "https://kaart.amsterdam.nl/api/layers/")
+MAP_LAYERS_URL = os.getenv("MAP_LAYERS_URL", "https://kaart.amsterdam.nl/api/layers/")
+
+PRIDE_EVENT_URL = "https://kaart.amsterdam.nl/api/layers/44337.json"

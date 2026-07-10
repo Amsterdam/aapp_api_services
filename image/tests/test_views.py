@@ -108,7 +108,7 @@ class ImageSetCreateViewTests(BasicAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertContains(
             response,
-            "image set with this identifier already exists",
+            "Er bestaat al een image set met eenzelfde identifier.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 

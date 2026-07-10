@@ -1,0 +1,65 @@
+info:
+  name: manage_publishers_destroy
+  type: http
+  seq: 9
+  tags:
+    - manage
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/construction-work/api/v1/manage/publishers/:id"
+  params:
+    - name: id
+      value: ""
+      type: path
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: Example 1
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/manage/publishers/:id"
+      method: DELETE
+      params:
+        - name: id
+          value: ""
+          type: path
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: Object removed
+  - name: 403 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/manage/publishers/:id"
+      method: DELETE
+      params:
+        - name: id
+          value: ""
+          type: path
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "permission_denied",
+            "detail": ""
+          }
+
+docs: API view to retrieve, update, or delete a ProjectManager (Publisher).

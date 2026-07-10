@@ -4,23 +4,7 @@ from rest_framework.authentication import BaseAuthentication
 
 from city_pass.exceptions import TokenInvalidException, TokenNotReadyException
 from city_pass.models import AccessToken
-from core.authentication import AbstractAppAuthentication, AuthenticationScheme
-
-
-class SessionCredentialsKeyAuthentication(AbstractAppAuthentication):
-    @property
-    def api_keys(self):
-        return settings.MIJN_AMS_API_KEYS_OUTBOUND.split(",")
-
-    @property
-    def api_key_header(self):
-        return settings.SESSION_CREDENTIALS_KEY_HEADER
-
-
-class SessionCredentialsKeyAuthenticationScheme(AuthenticationScheme):
-    target_class = "city_pass.authentication.SessionCredentialsKeyAuthentication"
-    name = "SessionCredentialsKeyAuthentication"
-    header_key = settings.SESSION_CREDENTIALS_KEY_HEADER
+from core.authentication import AuthenticationScheme
 
 
 class AccessTokenAuthentication(BaseAuthentication):

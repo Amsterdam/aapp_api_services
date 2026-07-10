@@ -2,7 +2,8 @@ import freezegun
 from django.contrib.auth.models import User
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import ScheduledNotification, WasteDevice
+from notification.models.notification_models import Device, ScheduledNotification
+from notification.models.waste_guide_models import WasteDevice
 from waste.models import ManualNotification
 from waste.services.notification import ManualNotificationService, NotificationService
 
@@ -28,6 +29,7 @@ class NotificationServiceTest(ResponsesActivatedAPITestCase):
 class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
     def test_call_notification_service(self):
         for device in ["device1", "device2", "device3"]:
+            Device.objects.create(external_id=device, os="ios", firebase_token=None)
             WasteDevice.objects.create(
                 device_id=device, bag_nummeraanduiding_id="foobar"
             )

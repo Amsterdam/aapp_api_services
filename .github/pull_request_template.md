@@ -5,6 +5,7 @@
 - bridge
 - city_pass
 - construction_work
+- news
 - contact
 - core
 - image

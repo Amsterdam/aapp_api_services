@@ -30,6 +30,7 @@ class ChoicesEnum(Enum):
 class ModuleSourceChoices(Enum):
     HANDIG_IN_DE_STAD = "handig-in-de-stad"
     KONINGSDAG = "koningsdag"
+    PRIDE = "pride"
 
 
 class ServiceClass(NamedTuple):

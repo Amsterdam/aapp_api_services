@@ -2,7 +2,9 @@ from django.urls import reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import BurningGuideDevice, WasteDevice
+from notification.models.burning_guide_models import BurningGuideDevice
+from notification.models.notification_models import Device
+from notification.models.waste_guide_models import WasteDevice
 
 
 class TestAddressView(ResponsesActivatedAPITestCase):
@@ -11,6 +13,7 @@ class TestAddressView(ResponsesActivatedAPITestCase):
         self.url = reverse("notification-address")
         self.device_id = "test-device-id"
         self.api_headers["DeviceId"] = self.device_id
+        baker.make(Device, external_id=self.device_id)
 
     def test_update_no_existing_address(self):
         data = {

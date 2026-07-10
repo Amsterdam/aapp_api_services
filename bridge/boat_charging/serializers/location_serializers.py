@@ -4,21 +4,60 @@ from core.serializers.address_serializers import AddressSerializer
 
 OPERATION_STATE_CHOICES = ["OPERATIVE", "INOPERATIVE", "OFFLINE", "UNKNOWN", "OCCUPIED"]
 
+OPERATION_STATE_MAPPING = {
+    "OPERATIVE": "OPERATIVE",
+    "INOPERATIVE": "INOPERATIVE",
+    "OFFLINE": "OFFLINE",
+    "UNKNOWN": "UNKNOWN",
+    "OCCUPIED": "OCCUPIED",
+    "FAULTED": "INOPERATIVE",
+    "AVAILABLE": "OPERATIVE",
+    "CHARGING": "OCCUPIED",
+    "RESERVED": "OCCUPIED",
+}
+
+
+class HourMinuteField(serializers.Serializer):
+    hours = serializers.IntegerField()
+    minutes = serializers.IntegerField()
+
+
+class RegularOpeningHoursSerializer(serializers.Serializer):
+    dayOfWeek = serializers.IntegerField()
+    opening = HourMinuteField()
+    closing = HourMinuteField()
+
 
 class OpeningTimesSerializer(serializers.Serializer):
-    regular_hours = serializers.ListField(child=serializers.IntegerField())
+    regular_hours = RegularOpeningHoursSerializer(many=True, allow_empty=True)
     twentyfourseven = serializers.BooleanField()
-    exceptional_openings = serializers.ListField(child=serializers.IntegerField())
-    exceptional_closings = serializers.ListField(child=serializers.IntegerField())
 
 
-class LocationResponseSerializer(serializers.Serializer):
+class PointGeometrySerializer(serializers.Serializer):
+    type = serializers.CharField(default="Point", read_only=True)
+    coordinates = serializers.ListField(child=serializers.FloatField())
+
+
+class LocationPropertiesSerializer(serializers.Serializer):
     id = serializers.CharField()
     name = serializers.CharField()
     address = AddressSerializer()
     opening_times = OpeningTimesSerializer()
-    # available_sockets = serializers.IntegerField()
+    available_sockets = serializers.IntegerField()
     total_sockets = serializers.IntegerField()
+    status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES, required=False)
+    max_kw = serializers.FloatField(required=False, allow_null=True)
+
+
+class LocationListItemSerializer(serializers.Serializer):
+    type = serializers.CharField(default="Feature", read_only=True)
+    geometry = PointGeometrySerializer()
+    properties = LocationPropertiesSerializer()
+
+
+class LocationListResponseSerializer(serializers.Serializer):
+    type = serializers.CharField(default="FeatureCollection", read_only=True)
+    features = LocationListItemSerializer(many=True)
 
 
 class TariffSerializer(serializers.Serializer):
@@ -53,6 +92,6 @@ class ChargingStationSerializer(serializers.Serializer):
     evses = serializers.ListField(child=EVSESerializer())
 
 
-class LocationDetailResponseSerializer(LocationResponseSerializer):
-    tariff = TariffSerializer()
+class LocationDetailResponseSerializer(LocationPropertiesSerializer):
+    tariff = TariffSerializer(allow_null=True)
     charging_stations = serializers.ListField(child=ChargingStationSerializer())

@@ -1,7 +1,9 @@
 from rest_framework import serializers
 
 from core.serializers.mixins import PostalCodeValidationMixin
-from notification.models import BurningGuideDevice, Device, WasteDevice
+from notification.models.burning_guide_models import BurningGuideDevice
+from notification.models.notification_models import Device
+from notification.models.waste_guide_models import WasteDevice
 
 
 class DeviceRegisterRequestSerializer(serializers.Serializer):
@@ -17,6 +19,11 @@ class DeviceRegisterResponseSerializer(serializers.ModelSerializer):
             "os": {"required": True, "allow_blank": False},
             "firebase_token": {"required": True, "allow_blank": False},
         }
+
+
+class DeviceDeleteErrorResponseSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    message = serializers.CharField(required=False)
 
 
 class WasteDeviceRequestSerializer(serializers.ModelSerializer):

@@ -7,6 +7,7 @@ import requests
 from django.conf import settings
 from django.db import connections
 from django.http import HttpResponse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import extend_schema
@@ -22,7 +23,6 @@ from bridge.proxy.serializers import (
     AddressSearchByNameSerializer,
     AddressSearchRequestSerializer,
     AddressSearchResponseSerializer,
-    WasteGuideRequestSerializer,
 )
 from bridge.utils import load_postal_area_shapes
 from core.utils.openapi_utils import extend_schema_for_api_key
@@ -76,25 +76,6 @@ class EgisProxyView(GenericAPIView):
 
 class EgisProxyExternalView(EgisProxyView):
     base_url = settings.SSP_BASE_URL_EXTERNAL
-
-
-@method_decorator(cache_page(60 * 60 * 24), name="get")
-class WasteGuideView(GenericAPIView):
-    authentication_classes = []
-    serializer_class = WasteGuideRequestSerializer
-
-    @extend_schema(parameters=[WasteGuideRequestSerializer])
-    def get(self, request):
-        self.get_serializer(data=request.query_params).is_valid(raise_exception=True)
-
-        url = settings.WASTE_GUIDE_URL
-        api_key = settings.WASTE_GUIDE_API_KEY
-        response = requests.get(url, params=request.GET, headers={"X-Api-Key": api_key})
-        return HttpResponse(
-            response.content,
-            status=response.status_code,
-            content_type=response.headers.get("Content-Type"),
-        )
 
 
 @method_decorator(cache_page(60 * 5), name="get")
@@ -198,8 +179,7 @@ class AddressSearchAbstractView(GenericAPIView):
         # change naming of fields
         data["city"] = data["woonplaatsnaam"]
         data["street"] = data["straatnaam"]
-        data["lat"] = coordinates[0]
-        data["lon"] = coordinates[1]
+        data["coordinates"] = {"lat": coordinates[0], "lon": coordinates[1]}
         data["number"] = data.get("huisnummer", "")
         data["additionLetter"] = data.get("huisletter", "")
         data["additionNumber"] = data.get("huisnummertoevoeging", "")
@@ -310,3 +290,11 @@ class HealthCheckView(GenericAPIView):
                 {"status": "unready"}, status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         return Response({"status": "ok"})
+
+
+class ServerTimeView(GenericAPIView):
+    def get(self, request, *args, **kwargs) -> Response:
+        """Returns the current server time"""
+        return Response(
+            {"server_time": timezone.localtime().isoformat()}, status=status.HTTP_200_OK
+        )

@@ -4,7 +4,11 @@ from django.core.management import call_command
 from django.test import TransactionTestCase, override_settings
 from model_bakery import baker
 
-from notification.models import Device, Notification, ScheduledNotification
+from notification.models.notification_models import (
+    Device,
+    Notification,
+    ScheduledNotification,
+)
 from notification.utils.patch_utils import apply_init_firebase_patches
 
 

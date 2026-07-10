@@ -1,0 +1,8 @@
+name: T
+variables:
+  - secret: true
+    name: apiKey
+  - name: baseUrl
+    value: https://test.app.amsterdam.nl
+  - secret: true
+    name: access-token

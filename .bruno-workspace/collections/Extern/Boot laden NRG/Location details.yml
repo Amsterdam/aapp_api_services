@@ -1,0 +1,26 @@
+info:
+  name: Location details
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{NRG_base_url}}/locations/:id"
+  headers:
+    - name: User-Agent
+      value: Mozilla/5.0
+    - name: Accept
+      value: application/json, text/plain, */*
+    - name: Authorization
+      value: "{{token}}"
+      disabled: true
+  params:
+    - name: id
+      value: 2c0ccfb795d040e39136b7dd1d25f13e
+      type: path
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

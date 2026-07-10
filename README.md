@@ -91,6 +91,7 @@ The project follows a modular structure, with each module representing a distinc
 - `bridge/`: Contains core functionalities for bridging services.
 - `city_pass/`: Manages city pass-related features.
 - `construction_work/`: Handles construction work-related data and APIs.
+- `news/`: Manages news-related features and APIs.
 - `contact/`: Manages contact-related features.
 - `core/`: Includes shared utilities, settings, and middleware.
 - `deploy/`: Contains a deployment script.

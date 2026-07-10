@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from notification.models import Device, NotificationLast
+from notification.models.notification_models import Device, NotificationLast
 
 
 class NotificationLastService:

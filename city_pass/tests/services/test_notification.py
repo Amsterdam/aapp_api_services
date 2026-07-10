@@ -3,7 +3,7 @@ from model_bakery import baker
 from city_pass.models import Notification, Session
 from city_pass.services.notification import NotificationService
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import ScheduledNotification
+from notification.models.notification_models import ScheduledNotification
 
 
 class TestNotificationService(ResponsesActivatedAPITestCase):

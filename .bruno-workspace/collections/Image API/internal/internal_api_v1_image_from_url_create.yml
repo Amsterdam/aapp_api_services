@@ -1,0 +1,105 @@
+info:
+  name: internal_api_v1_image_from_url_create
+  type: http
+  seq: 4
+  tags:
+    - internal
+
+http:
+  method: POST
+  url: "{{baseUrl}}/internal/api/v1/image/from_url"
+  headers:
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "id": 0,
+        "url": "",
+        "description": ""
+      }
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/internal/api/v1/image/from_url"
+      method: POST
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "id": 0,
+            "url": "",
+            "description": ""
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "id": 0,
+            "identifier": "",
+            "description": "",
+            "variants": [
+              {
+                "image": "",
+                "width": 0,
+                "height": 0
+              }
+            ]
+          }
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/internal/api/v1/image/from_url"
+      method: POST
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "id": 0,
+            "url": "",
+            "description": ""
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "invalid",
+            "detail": ""
+          }
+
+docs: |-
+  Endpoint to create a new image set from a image URL.
+
+  The image is uploaded in three different formats to Azure Blob Storage and variants are created in the database.
+  The extra identifier is automatically generated as the SHA256 hash of the URL.
+  If the image already exists (based on the identifier), it is directly returned.

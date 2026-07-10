@@ -1,0 +1,215 @@
+info:
+  name: project_details_retrieve
+  type: http
+  seq: 1
+  tags:
+    - project
+
+http:
+  method: GET
+  url: "{{baseUrl}}/construction-work/api/v1/project/details"
+  headers:
+    - name: DeviceId
+      value: ""
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  params:
+    - name: id
+      value: ""
+      type: query
+      description: Project id
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/project/details"
+      method: GET
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: ""
+          type: query
+          description: Project id
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "id": 0,
+            "meter": 0,
+            "followed": false,
+            "recent_articles": [
+              {
+                "id": 0,
+                "meta_id": "",
+                "image": {
+                  "id": 0,
+                  "sources": [
+                    {
+                      "uri": "",
+                      "width": 0,
+                      "height": 0
+                    }
+                  ],
+                  "aspectRatio": 0,
+                  "alternativeText": "",
+                  "image_set": 0
+                },
+                "foreign_id": 0,
+                "active": false,
+                "last_seen": "",
+                "title": "",
+                "intro": "",
+                "body": "",
+                "url": "",
+                "creation_date": "",
+                "modification_date": "",
+                "publication_date": "",
+                "expiration_date": "",
+                "projects": []
+              }
+            ],
+            "image": {
+              "id": 0,
+              "sources": [
+                {
+                  "uri": "",
+                  "width": 0,
+                  "height": 0
+                }
+              ],
+              "aspectRatio": 0,
+              "alternativeText": "",
+              "image_set": 0
+            },
+            "followers": 0,
+            "foreign_id": 0,
+            "active": false,
+            "last_seen": "",
+            "title": "",
+            "subtitle": "",
+            "contacts": [
+              {
+                "id": 0,
+                "name": "",
+                "email": "",
+                "phone": "",
+                "position": "",
+                "extra": ""
+              }
+            ],
+            "url": "",
+            "timeline": "",
+            "sections": "",
+            "coordinates": "",
+            "creation_date": "",
+            "modification_date": "",
+            "publication_date": "",
+            "expiration_date": ""
+          }
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/project/details"
+      method: GET
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: ""
+          type: query
+          description: Project id
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "MISSING_DEVICE_ID",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/project/details"
+      method: GET
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: ""
+          type: query
+          description: Project id
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }
+  - name: 404 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/project/details"
+      method: GET
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: id
+          value: ""
+          type: query
+          description: Project id
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "not_found",
+            "detail": ""
+          }
+
+docs: |-
+  Mixin to pre-process the request to get the device id
+  and bind it to the view.
+  This mixin is used specifically for DRF views.

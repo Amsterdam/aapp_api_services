@@ -2,7 +2,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from core.services.image_set import ImageSetService
-from notification.models import (
+from notification.models.notification_models import (
     Notification,
     NotificationLast,
 )
@@ -99,6 +99,7 @@ class NotificationLastRequestSerializer(serializers.ModelSerializer):
 class NotificationTypeSerializer(serializers.Serializer):
     type = serializers.CharField()
     description = serializers.CharField()
+    visibility = serializers.ChoiceField(choices=["visible", "invisible", "deeplink"])
 
 
 class ModuleNotificationTypeSerializer(serializers.Serializer):

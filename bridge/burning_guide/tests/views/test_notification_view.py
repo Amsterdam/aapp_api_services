@@ -1,9 +1,11 @@
 import responses
 from django.conf import settings
 from django.urls import reverse
+from model_bakery import baker
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models import BurningGuideDevice
+from notification.models.burning_guide_models import BurningGuideDevice
+from notification.models.notification_models import Device
 
 
 class TestBurningGuideNotificationCreateView(ResponsesActivatedAPITestCase):
@@ -30,6 +32,7 @@ class TestBurningGuideNotificationCreateView(ResponsesActivatedAPITestCase):
 class TestBurningGuideNotificationDetailView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
+        baker.make(Device, external_id="test-device-id", os="ios", firebase_token=None)
         self.notification = BurningGuideDevice.objects.create(
             postal_code="1023",
             device_id="test-device-id",

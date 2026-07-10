@@ -1,0 +1,335 @@
+info:
+  name: parking_api_v1_permits_list
+  type: http
+  seq: 21
+  tags:
+    - parking
+
+http:
+  method: GET
+  url: "{{baseUrl}}/parking/api/v1/permits"
+  headers:
+    - name: SSP-Access-Token
+      value: "{{access-token}}"
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  params:
+    - name: status
+      value: INACTIVE
+      type: query
+      description: |-
+        DEPRECATED OPTION
+
+        * `INACTIVE` - INACTIVE
+        * `Inactief` - Inactief
+      disabled: true
+    - name: status
+      value: Inactief
+      type: query
+      description: |-
+        DEPRECATED OPTION
+
+        * `INACTIVE` - INACTIVE
+        * `Inactief` - Inactief
+      disabled: true
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/permits"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: status
+          value: INACTIVE
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+        - name: status
+          value: Inactief
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          [
+            {
+              "report_code": "",
+              "time_balance": 0,
+              "time_valid_until": "",
+              "parking_machine_favorite": "",
+              "permit_type": "",
+              "discount": 0,
+              "permit_zone": "",
+              "payment_zones": [
+                {
+                  "id": "",
+                  "description": "",
+                  "hourly_rate": "",
+                  "city": "",
+                  "days": [
+                    {
+                      "day_of_week": "Maandag",
+                      "start_time": "",
+                      "end_time": ""
+                    }
+                  ]
+                }
+              ],
+              "visitor_account": "",
+              "parking_rate": {
+                "value": 0,
+                "currency": ""
+              },
+              "parking_rate_original": "",
+              "time_balance_applicable": false,
+              "money_balance_applicable": false,
+              "forced_license_plate_list": false,
+              "no_endtime": false,
+              "visitor_account_allowed": false,
+              "max_sessions_allowed": 0,
+              "max_session_length_in_days": 0,
+              "permit_name": "",
+              "can_select_zone": false,
+              "started_at": "",
+              "ended_at": "",
+              "cancelled_at": ""
+            }
+          ]
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/permits"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: status
+          value: INACTIVE
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+        - name: status
+          value: Inactief
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_CALL_ERROR",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/permits"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: status
+          value: INACTIVE
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+        - name: status
+          value: Inactief
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_MISSING_SSL_API_KEY",
+            "detail": ""
+          }
+  - name: 403 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/permits"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: status
+          value: INACTIVE
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+        - name: status
+          value: Inactief
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_FORBIDDEN",
+            "detail": ""
+          }
+  - name: 422 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/permits"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: status
+          value: INACTIVE
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+        - name: status
+          value: Inactief
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_PERMIT_NOT_FOUND",
+            "detail": ""
+          }
+  - name: 500 Response
+    request:
+      url: "{{baseUrl}}/parking/api/v1/permits"
+      method: GET
+      headers:
+        - name: SSP-Access-Token
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: status
+          value: INACTIVE
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+        - name: status
+          value: Inactief
+          type: query
+          description: |-
+            DEPRECATED OPTION
+
+            * `INACTIVE` - INACTIVE
+            * `Inactief` - Inactief
+          disabled: true
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "SSP_SOURCE_RESPONSE_ERROR",
+            "detail": ""
+          }
+
+docs: Get permits from SSP API

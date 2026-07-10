@@ -13,16 +13,12 @@ ROOT_URLCONF = "city_pass.urls"
 
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
     "core.authentication.APIKeyAuthentication",
-    "city_pass.authentication.SessionCredentialsKeyAuthentication",
+    "core.authentication.MijnAmsterdamOutboundKeyAuthentication",
 ]
 
 SPECTACULAR_SETTINGS["TITLE"] = "City Pass API"
 
 # Custom settings
-
-SESSION_CREDENTIALS_KEY_HEADER = "X-Session-Credentials-Key"
-MIJN_AMS_API_KEYS_OUTBOUND = os.getenv("MIJN_AMS_AUTH_TOKENS")
-
 ACCESS_TOKEN_HEADER = "Access-Token"
 ACCESS_TOKEN_TTL = int(
     os.getenv("CITY_PASS_ACCESS_TOKEN_TTL", 30 * 60)

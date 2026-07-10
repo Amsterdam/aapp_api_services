@@ -1,5 +1,6 @@
 import logging
 import re
+from typing import Any
 from urllib.parse import quote as urllib_parse_quote
 
 import httpx
@@ -14,6 +15,7 @@ from bridge.boat_charging.client import client
 from bridge.boat_charging.exceptions import (
     BoatChargingAuthError,
     BoatChargingClientError,
+    BoatChargingForbiddenError,
     BoatChargingMissingAccessToken,
     BoatChargingServerError,
 )
@@ -29,13 +31,16 @@ class BaseView(GenericAPIView):
     requires_access_token = False
     paginated = False
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.location_status_kw_mapping = None
+
     async def api_call(
         self,
         method,
         endpoint,
         body_data=None,
         query_params=None,
-        requires_access_token=True,
         paginated=False,
     ):
         headers = {
@@ -43,12 +48,11 @@ class BaseView(GenericAPIView):
             "User-Agent": "Mozilla/5.0",  # necessary to get through WAF
             # "X-Auth-Token": settings.API_KEY,
         }
-        if requires_access_token:
-            access_token = self.request.headers.get("Access-Token")
-            if access_token:
-                headers["Authorization"] = f"Bearer {access_token}"
-            else:
-                raise NotAuthenticated("No access token provided in request headers")
+        access_token = self.request.headers.get("Access-Token")
+        if access_token:
+            headers["Authorization"] = f"Bearer {access_token}"
+        elif self.requires_access_token:
+            raise NotAuthenticated("No access token provided in request headers")
 
         try:
             payload = await self.make_request(
@@ -108,35 +112,11 @@ class BaseView(GenericAPIView):
             raise BoatChargingServerError(response.text)
         if response.status_code == 401:
             raise BoatChargingAuthError()
+        if response.status_code == 403:
+            raise BoatChargingForbiddenError()
         if response.status_code >= 400:
             raise BoatChargingClientError(response.text)
         return
-
-    def get_location_data(self, item) -> dict:
-        street, number = self.split_address(item["address"])
-
-        return {
-            "id": item["id"],
-            "name": item["name"],
-            "address": {
-                "city": item["city"],
-                "street": street,
-                "number": number if number else None,
-                "coordinates": {
-                    "lat": item["coordinates"]["latitude"],
-                    "lon": item["coordinates"]["longitude"],
-                },
-                "postcode": item["postalCode"],
-            },
-            "opening_times": {
-                "regular_hours": item["openingTimes"]["regularHours"],
-                "twentyfourseven": item["openingTimes"]["twentyfourseven"],
-                "exceptional_openings": item["openingTimes"]["exceptionalOpenings"],
-                "exceptional_closings": item["openingTimes"]["exceptionalClosings"],
-            },
-            # "available_sockets": item["chargingStationCount"],
-            "total_sockets": item["chargingStationCount"],
-        }
 
     def get_safe_path_param(self, param) -> str:
         """
@@ -148,13 +128,64 @@ class BaseView(GenericAPIView):
         safe_param = urllib_parse_quote(param, safe="")
         return safe_param
 
+    def get_opening_times(self, item):
+        opening_times = item.get("openingTimes") or {}
+        return {
+            "regular_hours": self._convert_regular_hours(
+                opening_times.get("regularHours", [])
+            ),
+            "twentyfourseven": opening_times.get("twentyfourseven", False),
+        }
+
+    def _convert_regular_hours(
+        self, regular_hours: list[dict[str, str | int]]
+    ) -> list[dict[str, Any]]:
+        """
+        The regular hour from the API are in the format:
+        {
+            "weekday": 1,
+            "periodBegin": "08:00",
+            "periodEnd": "18:00"
+        },
+        Convert this to the format expected by the frontend:
+        {
+            "dayOfWeek": 1,
+            "opening": {
+              "hours": 8,
+              "minutes": 0
+            },
+            "closing": {
+              "hours": 18,
+              "minutes": 0
+            }
+          },
+        Where also the number of the day of week is converted from 1-7 (Monday-Sunday) to 0-6 (Sunday-Saturday)
+        """
+        converted_hours = []
+        for entry in regular_hours:
+            weekday = entry["weekday"] % 7  # convert 7 to 0. Keep other days the same
+            opening_time = entry["periodBegin"]
+            closing_time = entry["periodEnd"]
+
+            opening_hours, opening_minutes = map(int, opening_time.split(":"))
+            closing_hours, closing_minutes = map(int, closing_time.split(":"))
+
+            converted_hours.append(
+                {
+                    "dayOfWeek": weekday,
+                    "opening": {"hours": opening_hours, "minutes": opening_minutes},
+                    "closing": {"hours": closing_hours, "minutes": closing_minutes},
+                }
+            )
+        return converted_hours
+
     @staticmethod
     def split_address(addr):
         pattern = re.compile(r"^(?P<street>.*?\s)(?P<number>\d.*)$")
         m = pattern.match(addr)
         if not m:
-            return addr, ""  # fallback: no number part found
-        return m.group("street"), m.group("number")
+            return addr.strip(), ""  # fallback: no number part found
+        return m.group("street").strip(), m.group("number").strip()
 
 
 def boat_charging_openapi_decorator(
@@ -173,7 +204,7 @@ def boat_charging_openapi_decorator(
         "exceptions": [
             BoatChargingClientError,
             BoatChargingServerError,
-            BoatChargingMissingAccessToken,
+            BoatChargingForbiddenError,
         ],
     }
     if exceptions:
@@ -218,5 +249,4 @@ def boat_charging_openapi_decorator(
                 location="query",
             )
         )
-
     return extend_schema_for_api_key(**kwargs, additional_params=additional_params)

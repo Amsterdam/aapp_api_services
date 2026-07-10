@@ -1,0 +1,123 @@
+info:
+  name: burning_guide_api_v1_notification_partial_update
+  type: http
+  seq: 3
+  tags:
+    - burning-guide
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/burning-guide/api/v1/notification"
+  headers:
+    - name: DeviceId
+      value: ""
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "postal_code": ""
+      }
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/burning-guide/api/v1/notification"
+      method: PATCH
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "postal_code": ""
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "status": "",
+            "message": ""
+          }
+  - name: 400 Response
+    request:
+      url: "{{baseUrl}}/burning-guide/api/v1/notification"
+      method: PATCH
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "postal_code": ""
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "MISSING_DEVICE_ID",
+            "detail": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/burning-guide/api/v1/notification"
+      method: PATCH
+      headers:
+        - name: DeviceId
+          value: ""
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      body:
+        type: json
+        data: |-
+          {
+            "postal_code": ""
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }
+
+docs: |-
+  Mixin to pre-process the request to get the device id
+  and bind it to the view.
+  This mixin is used specifically for DRF views.

@@ -1,28 +1,85 @@
 MOCK_RESPONSE = {
-    "id": "a1025467f62a49f5898260b5709c4d4c",
-    "countryCode": "NL",
-    "partyId": "SGM",
-    "publish": False,
-    "ocpiPublish": True,
-    "publishOnlyTo": [],
-    "name": "AmsterdamBoatTest2",
-    "address": "Transformatorweg 104",
+    "id": "2c0ccabc15d040e39136b7abc125f13e",
+    "name": "AmsterdamBoatTest1",
+    "address": "Isolatorweg 178",
     "city": "Amsterdam",
     "postalCode": "1234 AM",
-    "country": "NLD",
-    "coordinates": {"latitude": "52.387313", "longitude": "4.822313"},
-    "parkingType": "ALONG_MOTORWAY",
-    "timeZone": "Europe/Amsterdam",
+    "coordinates": {"latitude": "52.327549", "longitude": "4.972519"},
     "openingTimes": {
-        "regularHours": [],
-        "twentyfourseven": True,
-        "exceptionalOpenings": [],
-        "exceptionalClosings": [],
+        "twentyfourseven": False,
+        "regularHours": [
+            {"weekday": 1, "periodBegin": "17:41", "periodEnd": "19:41"},
+            {"weekday": 6, "periodBegin": "13:41", "periodEnd": "17:41"},
+        ],
     },
-    "chargingWhenClosed": False,
-    "lastUpdated": "2026-03-19T21:00:40.343213Z",
-    "chargingStationCount": 0,
-    "chargingStationsIds": ["cs_id_1", "cs_id_2"],
-    "tariffId": "NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY",
-    "facilities": [],
+    "chargingStationsIds": ["VCPS-7BMY2", "VCPS-MX1VV", "VCPS-IFZTY"],
+    "chargingStations": [
+        {
+            "id": "VCPS-7BMY2",
+            "status": "OFFLINE",
+            "locationId": "2c0ccabc15d040e39136b7abc125f13e",
+            "evses": [
+                {
+                    "id": 17,
+                    "ocppEvseId": 1,
+                    "evseId": "1",
+                    "status": "FAULTED",
+                    "connectors": [
+                        {
+                            "connectorId": 1,
+                            "maxAmp": 1,
+                            "voltage": 1,
+                            "maxElectricPower": 22000,
+                            "status": "FAULTED",
+                        }
+                    ],
+                }
+            ],
+        },
+        {
+            "id": "VCPS-IFZTY",
+            "status": "OFFLINE",
+            "locationId": "2c0ccabc15d040e39136b7abc125f13e",
+            "evses": [
+                {
+                    "id": 30,
+                    "ocppEvseId": 1,
+                    "evseId": "1",
+                    "status": "OCCUPIED",
+                    "substatus": "PREPARING",
+                    "connectors": [
+                        {
+                            "connectorId": 1,
+                            "maxAmp": 1,
+                            "voltage": 1,
+                            "status": "OCCUPIED",
+                        }
+                    ],
+                }
+            ],
+        },
+        {
+            "id": "VCPS-MX1VV",
+            "status": "OFFLINE",
+            "locationId": "2c0ccabc15d040e39136b7abc125f13e",
+            "evses": [
+                {
+                    "id": 2,
+                    "ocppEvseId": 1,
+                    "evseId": "1",
+                    "status": "UNKNOWN",
+                    "connectors": [
+                        {
+                            "connectorId": 1,
+                            "maxAmp": 32,
+                            "voltage": 400,
+                            "status": "UNKNOWN",
+                        }
+                    ],
+                }
+            ],
+        },
+    ],
+    "availableSockets": 0,
+    "totalSockets": 3,
 }

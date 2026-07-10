@@ -1,0 +1,32 @@
+opencollection: 1.0.0
+info:
+  name: "Amsterdam App Workspace"
+  type: workspace
+
+collections:
+  - name: "Extern"
+    path: "collections/Extern"
+  - name: "Bridge API"
+    path: "collections/Bridge API"
+  - name: "City Pass API"
+    path: "collections/City Pass API"
+  - name: "Construction Work API"
+    path: "collections/Construction Work API"
+  - name: "Contact API"
+    path: "collections/Contact API"
+  - name: "Image API"
+    path: "collections/Image API"
+  - name: "Modules API"
+    path: "collections/Modules API"
+  - name: "News API"
+    path: "collections/News API"
+  - name: "Notifications API"
+    path: "collections/Notifications API"
+  - name: "Waste API"
+    path: "collections/Waste API"
+  - name: "Vragenlijsten API"
+    path: "collections/Vragenlijsten API"
+
+specs:
+
+docs: ''

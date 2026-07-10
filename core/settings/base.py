@@ -237,7 +237,7 @@ ALLOW_NOTIFICATION_DB_MIGRATE = (
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "nl-NL"
 
 TIME_ZONE = "Europe/Amsterdam"
 USE_I18N = True
@@ -328,6 +328,12 @@ LOGGING = {
 
 API_KEY_HEADER = "X-Api-Key"
 API_KEYS = os.getenv("API_AUTH_TOKENS")
+
+API_KEY_HEADER_INTERNAL = "X-Api-Key-Internal"
+API_KEYS_INTERNAL = os.getenv("API_AUTH_TOKENS_INTERNAL")
+
+SESSION_CREDENTIALS_KEY_HEADER = "X-Session-Credentials-Key"
+MIJN_AMS_API_KEYS_OUTBOUND = os.getenv("MIJN_AMS_AUTH_TOKENS")
 
 HEADER_DEVICE_ID = "DeviceId"
 

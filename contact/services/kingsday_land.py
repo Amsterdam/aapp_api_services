@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from django.conf import settings
 
@@ -11,7 +11,7 @@ from contact.enums.kingsday_land import (
     KingsdayLandProperties,
     KingsdayLandSilentProperties,
 )
-from contact.services.kingsday_abstract import KingsdayAbstractService
+from contact.services.event_abstract import EventAbstractService
 from contact.services.taps import (
     tap_geometry_from_properties,
     tap_is_in_amsterdam_municipality,
@@ -19,7 +19,7 @@ from contact.services.taps import (
 )
 
 
-class KingsdayLandService(KingsdayAbstractService):
+class KingsdayLandService(EventAbstractService):
     data_enum = KingsdayLandData
     filters_enum = KingsdayLandFilters
     layers_enum = KingsdayLandLayers
@@ -116,34 +116,9 @@ class KingsdayLandService(KingsdayAbstractService):
             or None,
             f"{prefix}website": self._get_website(properties),
             f"{prefix}address": address,
-            f"{prefix}toilet_table": self._create_toilet_table(
-                properties.get("meta", [])
-            ),
+            f"{prefix}toilet_table": self._create_table(properties.get("meta", [])),
             "fill": fill,
             "fill-opacity": fill_opacity,
             "stroke": stroke,
             "stroke-width": stroke_width,
         }
-
-    def _get_website(self, properties: dict[str, Any]) -> Any | None:
-        website = properties.get("website")
-        website_clean = website.replace("\\/", "/") if website else None
-        return website_clean
-
-    def _create_toilet_table(
-        self, meta: List[Dict[str, str]]
-    ) -> List[Dict[str, str]] | None:
-        """
-        Converts the 'meta' field from the original data into a structured format for the 'aapp_toilet_table' property.
-        """
-        if not meta:
-            return None
-
-        table = []
-        for item in meta:
-            key = item.get("title")
-            value = item.get("value")
-            if key and value:
-                table.append({"key": key, "value": value})
-
-        return table

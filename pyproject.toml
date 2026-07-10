@@ -38,6 +38,8 @@ dependencies = [
   # construction work ETL
   "aiohttp",
   "tenacity",
+  # news ETL
+  "beautifulsoup4",
   # notifications
   "firebase_admin",
   # azure

@@ -9,18 +9,12 @@ INSTALLED_APPS += [
 ROOT_URLCONF = "bridge.urls"
 
 REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
-    "core.authentication.APIKeyAuthentication",
+    "core.authentication.APIKeyAuthentication"
 ]
 
 SPECTACULAR_SETTINGS["TITLE"] = "Bridge API"
 
 STATIC_URL = "/bridge/static/"
-
-# Waste guide
-WASTE_GUIDE_URL = os.getenv(
-    "WASTE_GUIDE_URL", "https://api.data.amsterdam.nl/v1/afvalwijzer/afvalwijzer/"
-)
-WASTE_GUIDE_API_KEY = os.getenv("WASTE_GUIDE_API_KEY")
 
 # Election locations
 POLLING_STATIONS_URL = os.getenv(
@@ -78,22 +72,25 @@ BOAT_CHARGING_OAUTH_URL = os.getenv(
 )
 BOAT_CHARGING_OAUTH_ID = os.getenv("EVINITY_OAUTH_CLIENT_ID", "")
 BOAT_CHARGING_OAUTH_SECRET = os.getenv("EVINITY_OAUTH_CLIENT_SECRET", "")
+BOAT_CHARGING_CLIENT_ID = os.getenv("NRG_CLIENT_ID")
+BOAT_CHARGING_USER_POOL = os.getenv("NRG_USER_POOL")
+BOAT_CHARGING_REGION = os.getenv("NRG_REGION", "eu-west-1")
+BOAT_CHARGING_REDIRECT_URL = os.getenv(
+    "BOAT_CHARGING_REDIRECT_URL", "https://test.app.amsterdam.nl"
+)
+BOAT_CHARGING_SCOPES = eval(
+    os.getenv("BOAT_CHARGING_SCOPES", '["openid", "profile", "email"]')
+)
+assert type(BOAT_CHARGING_SCOPES) is list
+BOAT_CHARGING_OIDC_PKCE_REQUIRED = (
+    os.getenv("BOAT_CHARGING_OIDC_PKCE_REQUIRED", "true").lower() == "true"
+)
 
 BOAT_CHARGING_DOMAIN = os.getenv(
-    "BOAT_CHARGING_DOMAIN", "https://cpms.service.staging.evinity.io"
+    "BOAT_CHARGING_DOMAIN", "https://amsboatapp-tst.nrganext.nl/api/"
 )
 BOAT_CHARGING_ENDPOINTS = {
-    "LOCATIONS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/locations"),
-    "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/sessions"),
-    "TARIFFS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/tariffs"),
-    "CHARGING_STATIONS": urljoin(
-        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/charging-stations"
-    ),
-    "TRANSACTIONS": urljoin(
-        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/transactions"
-    ),
-    "TOKENS": urljoin(BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/tokens"),
-    "COMMAND_RESULT": urljoin(
-        BOAT_CHARGING_DOMAIN, "/cpms/rest/operator-api/ocpp-command-results"
-    ),
+    "LOCATIONS": urljoin(BOAT_CHARGING_DOMAIN, "locations"),
+    "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "sessions"),
+    "SETTINGS": urljoin(BOAT_CHARGING_DOMAIN, "app-settings"),
 }

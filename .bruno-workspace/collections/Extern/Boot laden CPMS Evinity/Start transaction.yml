@@ -1,0 +1,49 @@
+info:
+  name: Start transaction
+  type: http
+  seq: 11
+
+http:
+  method: POST
+  url: "{{base_path}}/operator-api/charging-stations/:chargingStationId/start-transaction"
+  params:
+    - name: chargingStationId
+      value: VCPS-7BMY3
+      type: path
+    - name: includeTotal
+      value: "true"
+      type: query
+      disabled: true
+    - name: page
+      value: "0"
+      type: query
+      disabled: true
+    - name: size
+      value: "20"
+      type: query
+      disabled: true
+    - name: domainOnly
+      value: "false"
+      type: query
+      disabled: true
+  body:
+    type: json
+    data: |-
+      {
+        "evseId": 1,
+        "identifyingToken": {
+          "token": "000009A3"
+        }
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: base_path
+      value: https://cpms.service.staging.evinity.io/cpms/rest
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

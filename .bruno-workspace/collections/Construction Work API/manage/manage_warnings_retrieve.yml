@@ -1,0 +1,73 @@
+info:
+  name: manage_warnings_retrieve
+  type: http
+  seq: 12
+  tags:
+    - manage
+
+http:
+  method: GET
+  url: "{{baseUrl}}/construction-work/api/v1/manage/warnings/:id"
+  params:
+    - name: id
+      value: ""
+      type: path
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/manage/warnings/:id"
+      method: GET
+      params:
+        - name: id
+          value: ""
+          type: path
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "id": 0,
+            "projects": [],
+            "name": "",
+            "email": ""
+          }
+  - name: 403 Response
+    request:
+      url: "{{baseUrl}}/construction-work/api/v1/manage/warnings/:id"
+      method: GET
+      params:
+        - name: id
+          value: ""
+          type: path
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "permission_denied",
+            "detail": ""
+          }
+
+docs: |-
+  Auto decorate HTTP methods with extend_schema_for_entra using the serializer_class.
+  Skip if method is already decorated with this function.

@@ -1,0 +1,8 @@
+name: O
+variables:
+  - secret: true
+    name: apiKey
+  - name: baseUrl
+    value: https://ontw.app.amsterdam.nl
+  - secret: true
+    name: access-token

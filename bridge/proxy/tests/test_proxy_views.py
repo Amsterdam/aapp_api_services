@@ -1,6 +1,7 @@
 import re
 from unittest.mock import patch
 
+import freezegun
 import responses
 from django.conf import settings
 from django.urls import reverse
@@ -67,37 +68,6 @@ class TestEgisExternalProxyView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, {"key": "value"})
         self.assertEqual(rsp_post.call_count, 1)
-
-
-class TestWasteGuideView(ResponsesActivatedAPITestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("waste-guide-search")
-        self.rsp_get = responses.get(
-            re.compile(settings.WASTE_GUIDE_URL + ".*"), json=mock_data.ADDRESS_DATA
-        )
-
-    def test_waste_guide_view(self):
-        self.client.get(self.url, headers=self.api_headers)
-
-        self.assertEqual(self.rsp_get.call_count, 1)
-
-    def test_cache(self):
-        # note: we do not use the self.assert_caching helper here, because it depends on the authentication class.
-        # The waste guide view does not have authentication.
-        # First call
-        response = self.client.get(self.url, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.rsp_get.call_count, 1)
-
-        # Second call
-        response = self.client.get(self.url, headers=self.api_headers)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            self.rsp_get.call_count, 1
-        )  # Cache should be used, so call count should not increase
 
 
 class TestAddressSearchByNameView(ResponsesActivatedAPITestCase):
@@ -237,3 +207,16 @@ class TestHealthCheckView(ResponsesActivatedAPITestCase):
     def test_health_check(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
+
+
+class TestServerTimeView(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("server-time")
+
+    @freezegun.freeze_time("2026-05-10 12:00:00")
+    def test_server_time_view(self):
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        # check that the returned server time matches the frozen time in ISO format with timezone
+        self.assertEqual(response.data["server_time"], "2026-05-10T14:00:00+02:00")

@@ -1,0 +1,108 @@
+info:
+  name: surveys_latest_retrieve
+  type: http
+  seq: 2
+  tags:
+    - surveys
+
+http:
+  method: GET
+  url: "{{baseUrl}}/survey/api/v1/surveys/:unique_code/latest"
+  headers:
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  params:
+    - name: unique_code
+      value: ""
+      type: path
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/survey/api/v1/surveys/:unique_code/latest"
+      method: GET
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: unique_code
+          value: ""
+          type: path
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "questions": [
+              {
+                "id": 0,
+                "choices": [
+                  {
+                    "text": "",
+                    "label": "",
+                    "show_textfield": false
+                  }
+                ],
+                "conditions": [
+                  {
+                    "value": "",
+                    "type": "equal",
+                    "reference_question": 0
+                  }
+                ],
+                "question_text": "",
+                "description": "",
+                "question_type": "text",
+                "required": false,
+                "conditions_type": "and",
+                "default": "",
+                "orientation": "horizontal",
+                "min_characters": 0,
+                "max_characters": 0,
+                "textarea_rows": 0
+              }
+            ],
+            "version": 0,
+            "created_at": "",
+            "active_from": ""
+          }
+  - name: 401 Response
+    request:
+      url: "{{baseUrl}}/survey/api/v1/surveys/:unique_code/latest"
+      method: GET
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+      params:
+        - name: unique_code
+          value: ""
+          type: path
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": "API_KEY_INVALID",
+            "detail": ""
+          }

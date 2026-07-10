@@ -52,9 +52,6 @@ class PaymentZoneSerializer(serializers.Serializer):
 class PermitZoneSerializer(serializers.Serializer):
     permit_zone_id = serializers.CharField()
     name = serializers.CharField()
-    show_permit_zone_url = serializers.BooleanField(
-        required=False, help_text="DEPRECATED"
-    )
     description = serializers.CharField(
         required=False, allow_null=True, allow_blank=True
     )
@@ -70,29 +67,16 @@ class VisitorAccountSerializer(serializers.Serializer):
     seconds_remaining = serializers.IntegerField(required=False)
 
 
-class PermitsRequestSerializer(serializers.Serializer):
-    STATUS_CHOICES = [
-        ("ACTIVE", "Actief"),
-        ("INACTIVE", "Inactief"),
-    ]
-
-    status = serializers.ChoiceField(
-        required=False, choices=[STATUS_CHOICES], help_text="DEPRECATED OPTION"
-    )
-
-
 class PermitItemSerializer(serializers.Serializer):
     report_code = serializers.CharField()
     time_balance = serializers.IntegerField(allow_null=True)
     time_valid_until = serializers.DateTimeField(allow_null=True)
     parking_machine_favorite = serializers.CharField(allow_null=True)
     permit_type = serializers.CharField()
-    discount = serializers.FloatField(required=False, help_text="DEPRECATED")
     permit_zone = PermitZoneSerializer(allow_null=True)
     payment_zones = PaymentZoneSerializer(many=True)
     visitor_account = VisitorAccountSerializer(required=False, allow_null=True)
     parking_rate = ValueCurrencySerializer()
-    parking_rate_original = ValueCurrencySerializer(help_text="DEPRECATED")
     time_balance_applicable = serializers.BooleanField()
     money_balance_applicable = serializers.BooleanField()
     forced_license_plate_list = serializers.BooleanField()

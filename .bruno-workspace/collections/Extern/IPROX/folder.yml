@@ -1,0 +1,10 @@
+info:
+  name: IPROX
+  type: folder
+  seq: 1
+
+request:
+  auth: inherit
+  variables:
+    - name: base_url
+      value: https://www.acc.amsterdam.nl

@@ -5,7 +5,7 @@ from django.db.models import Case, Exists, IntegerField, OuterRef, QuerySet, Val
 from django.utils import timezone
 
 from core.enums import NotificationType
-from notification.models import (
+from notification.models.notification_models import (
     Device,
     Notification,
     NotificationPushModuleDisabled,
@@ -41,7 +41,8 @@ class NotificationCRUD:
         self.failed_token_count = 0
         self.notifications_with_push, self.notifications_without_push = [], []
         self.push_only_notification_types = [
-            NotificationType.PARKING_REMINDER.value
+            NotificationType.PARKING_REMINDER.value,
+            NotificationType.NEWS_LIVEBLOG_UPDATE.value,
         ]  # These notifications should have the is_visible flag set to False
         self.devices_for_push = []
         self.push_service = PushService() if push_enabled else None

@@ -1,0 +1,80 @@
+info:
+  name: contact_api_v1_links_retrieve
+  type: http
+  seq: 3
+  tags:
+    - contact
+
+http:
+  method: GET
+  url: "{{baseUrl}}/contact/api/v1/links"
+  headers:
+    - name: X-Api-Key
+      value: "{{apiKey}}"
+  auth:
+    type: apikey
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    placement: header
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    request:
+      url: "{{baseUrl}}/contact/api/v1/links"
+      method: GET
+      headers:
+        - name: X-Api-Key
+          value: "{{apiKey}}"
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "acknowledgeChild": "",
+            "birth": "",
+            "chatPrivacy": "",
+            "citypass": "",
+            "cityPassRequest": "",
+            "cityPassChildBudget": "",
+            "cityPassUsage": "",
+            "cityPassLowIncomeSupport": "",
+            "contactForm": "",
+            "contactNewsletterSignup": "",
+            "documents": "",
+            "elections": "",
+            "feedbackForm": "",
+            "immigration": "",
+            "income_help": "",
+            "kingsday": "",
+            "kingsdayEvents": "",
+            "lifelessBirth": "",
+            "makeAppointMentWeesp": "",
+            "marriage": "",
+            "marriagePermission": "",
+            "my_parking": "",
+            "my_reported_problems": "",
+            "naturalisation": "",
+            "parking": "",
+            "parking_request_license_plate_ga_bewoners": "",
+            "parking_request_license_plate_ga_bezoekers": "",
+            "parking_request_license_plate_mantelzorgers": "",
+            "passing": "",
+            "passingForFuneralDirectors": "",
+            "relocation": "",
+            "reported_problems_map": "",
+            "rivm_report": "",
+            "sailingAndMooring": "",
+            "waste": "",
+            "waste_extra_info": ""
+          }

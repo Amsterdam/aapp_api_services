@@ -1,10 +1,17 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
+from core.authentication import AuthenticationGroupModelAdmin
 from waste.models import WasteCollectionException
 
 
-class WasteCollectionExceptionAdmin(admin.ModelAdmin):
+class WasteCollectionExceptionAdmin(AuthenticationGroupModelAdmin):
+    authentication_groups = (
+        "waste-publisher",
+        "waste-delegated",
+        "waste-notification-publisher",
+        "waste-notification-delegated",
+    )
     model = WasteCollectionException
 
     @admin.display(description="Belangrijke informatie")

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path
 
 from contact.views import contact_views, link_views, service_views
+from contact.views.pride_event_views import PrideEventsView
 from core.urls import get_admin_paths, get_swagger_paths
 from core.views.admin_views import AdminLoginView
 
@@ -45,6 +46,11 @@ urlpatterns = [
         BASE_PATH_SERVICE + "/maps/<int:service_id>",
         service_views.ServiceMapView.as_view(),
         name="service-map",
+    ),
+    path(
+        BASE_PATH_SERVICE + "/pride/events",
+        PrideEventsView.as_view(),
+        name="contact-pride-events",
     ),
 ]
 

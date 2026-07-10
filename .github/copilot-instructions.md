@@ -22,6 +22,9 @@
 - **Settings Structure:** Each app has a `settings/` folder with `base.py`, `local.py`, and `otap.py`. Always import from `core.settings` as shown in the README.
 - **Adding Apps:** Use `django-admin startapp`, then add a `settings/` structure and update `INSTALLED_APPS` and `ROOT_URLCONF`.
 - **Dependencies:** Add new packages to `pyproject.toml` (not requirements.txt).
+- **Standards:**
+  - Paginated endpoints MUST use the custom pagination class in `core/pagination.py`.
+  - Address fields MUST use the `AddressSerializer` from `core/serializers/address_serializers.py`.
 - **API Docs:** Each app exposes its own API docs endpoint.
 - **External Integrations:**
   - Azure Application Insights for monitoring (see `core/` and app settings).
