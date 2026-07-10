@@ -269,6 +269,17 @@ LOGGING = {
         "console": {
             "class": "rich.logging.RichHandler",
             "formatter": "default",
+            "level": "INFO",
+            # RichHandler options:
+            "rich_tracebacks": True,
+            "show_time": True,
+            "show_level": True,
+            "show_path": False,
+            "markup": False,
+        },
+        "request_console": {
+            "class": "rich.logging.RichHandler",
+            "formatter": "default",
             "filters": ["request_sampling"],
             "level": "INFO",
             # RichHandler options:
@@ -287,6 +298,11 @@ LOGGING = {
         "django": {
             "handlers": ["console"],
             "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["request_console"],
+            "level": "INFO",
             "propagate": False,
         },
         "httpx": {

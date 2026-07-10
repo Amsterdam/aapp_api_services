@@ -16,6 +16,23 @@ class RequestLogSamplingFilter(logging.Filter):
     Sampling rate is read from the REQUEST_LOG_SAMPLE_RATE environment variable or Django settings.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._sample_rate = self._get_sample_rate()
+
+    @staticmethod
+    def _get_sample_rate() -> float:
+        try:
+            sample_rate = float(getattr(settings, "REQUEST_LOG_SAMPLE_RATE", 1.0))
+        except TypeError, ValueError:
+            return 1.0
+
+        if sample_rate < 0.0:
+            return 0.0
+        if sample_rate > 1.0:
+            return 1.0
+        return sample_rate
+
     def filter(self, record):
         status_code = getattr(record, "status_code", None)
         try:
@@ -29,7 +46,7 @@ class RequestLogSamplingFilter(logging.Filter):
             return True
 
         # Sample successful requests (status < 400)
-        return random.random() < settings.REQUEST_LOG_SAMPLE_RATE
+        return random.random() < self._sample_rate
 
 
 def setup_opentelemetry():
