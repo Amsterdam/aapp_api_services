@@ -137,14 +137,44 @@ Use for the Tester handoff back to Orchestrator.
 Required fields:
 
 - `schema`: `H7 Test Result`
-- `coverage_exercised`
-- `result`
-- `defects`
-- `residual_risk`
+- `coverage_exercised`: array of checklist categories actually exercised, each with a brief note on what was checked (see Coverage Rule below)
+- `untested_paths`: array of things considered but not verified, each with a reason (see Untested Paths Rule below)
+- `result`: one of `pass` | `fail` | `partial_confidence`
+- `defects`: array, required to be non-empty if `result` is `fail`
+- `test_quality_notes`: array, may be empty only when existing/new tests were inspected and found to assert meaningful outcomes (see Test Quality Rule below)
+- `residual_risk`: array, may be empty only for genuinely trivial changes (see Residual Risk Rule below)
 - `resulting_git_hash`
 - `next_step`
+
+Each entry in `defects` must include:
+
+- `severity`: one of `critical` | `major` | `minor`
+- `category`: one of `happy_path` | `edge_case` | `error_handling` | `regression_risk` | `concurrency_ordering` | `contract_api_surface` | `test_quality`
+- `description`: what is wrong
+- `impact`: what concretely breaks, and under what conditions
+- `evidence`: the specific test run, command output, or file/line inspected that supports the defect — not an assumption
+
+Coverage Rule:
+
+- `coverage_exercised` must explicitly address each checklist category from the Tester's approach (happy path, edge cases, error handling, regression risk, concurrency/ordering, contract/API surface, test quality) — either with what was checked, or an explicit note that the category does not apply and why.
+- A `coverage_exercised` list that only reports "ran existing test suite" without addressing the other categories is treated as incomplete, and the Orchestrator should send it back for elaboration before progressing.
+
+Untested Paths Rule:
+
+- Any edge case, category, or scenario considered but not actually verified must be listed in `untested_paths` with a brief reason (e.g. out of scope, infeasible to test locally, blocked by missing fixture). Omission is not an acceptable substitute for an explicit entry — silence about a path implies it was checked.
+
+Test Quality Rule:
+
+- `test_quality_notes` should flag shallow tests (e.g. asserting only a status code with no assertion on response content, or asserting "no exception thrown" with no behavioral check) even when those tests pass and even when `result` is `pass`.
+- An empty `test_quality_notes` array is only acceptable when the Tester actually inspected the relevant tests' assertions and found them substantive — not because no tests were reviewed.
+
+Residual Risk Rule:
+
+- `residual_risk` being empty is only acceptable for genuinely trivial changes (e.g. a one-line config value, a typo fix, a pure rename with no behavioral change). For any other change, an empty `residual_risk` array is treated as a signal the validation was incomplete, not as evidence the change is risk-free.
+- A `pass` result with an empty `residual_risk` array should prompt the Orchestrator to request confirmation that residual risk was genuinely considered before progressing.
 
 Validation note:
 
 - Tester responses are valid only when `schema` is exactly `H7 Test Result`.
 - If a non-`H7` payload is returned to a test request, the Orchestrator must reject it as schema-invalid and request a corrected `H7 Test Result` before progressing.
+- A payload missing `coverage_exercised` or `untested_paths`, or containing a `defects` array that lacks `severity`/`category`/`evidence` on any entry, must be treated as schema-invalid in the same way and sent back for correction.
