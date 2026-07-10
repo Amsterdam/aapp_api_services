@@ -90,15 +90,33 @@ Use for the Reviewer handoff back to Orchestrator.
 Required fields:
 
 - `schema`: `H5 Review Result`
-- `verdict`
-- `findings`
+- `verdict`: one of `ready_for_testing` | `blocked`
+- `blocking_findings`: array, may be empty only if `verdict` is `ready_for_testing`
+- `non_blocking_findings`: array, may be empty only for genuinely trivial changes — see Non-Blocking Findings Rule below
 - `technical_risks`
 - `next_step`
 
-Review evidence rule:
+Each entry in `blocking_findings` and `non_blocking_findings` must include:
 
-- Findings that claim "missing coverage" must cite either a failed/absent test run or explicit repository search evidence that no equivalent test exists outside the changed diff.
-- If equivalent coverage is present elsewhere, mark as residual risk or suggestion instead of a blocking defect.
+- `severity`: one of `critical` | `major` | `minor` | `nit`
+- `category`: one of `correctness` | `edge_case` | `regression_risk` | `security` | `test_coverage` | `naming_readability` | `duplication_design` | `consistency` | `documentation`
+- `location`: file and line/hunk reference, or symbol name if line numbers are unstable
+- `description`: what is wrong
+- `impact`: what concretely breaks or degrades, and under what conditions — not just "could be improved"
+- `evidence`: see Evidence Rule below
+
+Non-Blocking Findings Rule:
+
+- `non_blocking_findings` being empty is only acceptable when the diff is genuinely trivial (e.g. a one-line config value, a typo fix, a pure rename with no other changes). For any other change, an empty `non_blocking_findings` array is treated as a signal the review was incomplete, not as evidence the code was flawless. The Reviewer should have re-checked the diff before submitting such a result.
+- `non_blocking_findings` must never be used to bury something that should actually block. If in doubt about severity, escalate to `blocking_findings`.
+
+Evidence Rule (applies to all finding categories, not just test_coverage):
+
+- Every finding must be traceable to something the Reviewer actually inspected — a specific file/line, a `git log`/`git show` output, or an explicit repository search — not an assumption about how the codebase "probably" works.
+- Findings that claim "missing coverage" must cite either a failed/absent test run or explicit repository search evidence that no equivalent test exists outside the changed diff. If equivalent coverage is present elsewhere, mark as residual risk or suggestion instead of a blocking defect.
+- Findings that claim "duplication" or "inconsistency with existing patterns" must cite the specific other location(s) being duplicated or diverged from. A duplication/consistency finding without a cited counterpart is a suggestion at most, not a defect.
+- Findings that claim "regression risk" must cite the caller(s) or usage site(s) affected. A regression-risk finding without an identified affected caller must be labeled a residual risk, not a blocking defect.
+- If evidence cannot be produced for a finding, downgrade it: move it from `blocking_findings` to `non_blocking_findings`, or from a defect to a note in `technical_risks`, rather than dropping it or asserting it unsupported.
 
 ## H6 Test Request
 
