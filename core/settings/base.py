@@ -250,7 +250,11 @@ DEFAULT_CHARSET = "utf-8"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-REQUEST_LOG_SAMPLE_RATE = float(os.getenv("REQUEST_LOG_SAMPLE_RATE", 1.0))
+try:
+    REQUEST_LOG_SAMPLE_RATE = float(os.getenv("REQUEST_LOG_SAMPLE_RATE", 1.0))
+except TypeError, ValueError:
+    REQUEST_LOG_SAMPLE_RATE = 1.0
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

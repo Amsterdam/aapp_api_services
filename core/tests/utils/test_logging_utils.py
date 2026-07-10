@@ -89,6 +89,24 @@ class TestLoggingUtils(TestCase):
 
         self.assertTrue(sampling_filter.filter(record))
 
+    @override_settings(REQUEST_LOG_SAMPLE_RATE="invalid")
+    @patch("core.utils.logging_utils.random.random", return_value=0.50)
+    def test_exceptions_are_handled(self, _mock_random):
+        sampling_filter = RequestLogSamplingFilter()
+        record = logging.LogRecord(
+            name="django.server",
+            level=logging.INFO,
+            pathname=__file__,
+            lineno=0,
+            msg="request",
+            args=(),
+            exc_info=None,
+        )
+        record.status_code = 200
+
+        # fallback to default sample rate of 1.0, so the record should be logged
+        self.assertTrue(sampling_filter.filter(record))
+
     def test_sampling_filter_is_scoped_to_django_server_logger(self):
         request_logger = settings.LOGGING["loggers"]["django.server"]
 

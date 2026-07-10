@@ -22,11 +22,7 @@ class RequestLogSamplingFilter(logging.Filter):
 
     @staticmethod
     def _get_sample_rate() -> float:
-        try:
-            sample_rate = float(getattr(settings, "REQUEST_LOG_SAMPLE_RATE", 1.0))
-        except TypeError, ValueError:
-            return 1.0
-
+        sample_rate = float(getattr(settings, "REQUEST_LOG_SAMPLE_RATE", 1.0))
         if sample_rate < 0.0:
             return 0.0
         if sample_rate > 1.0:
@@ -38,7 +34,7 @@ class RequestLogSamplingFilter(logging.Filter):
         try:
             if status_code is not None:
                 status_code = int(status_code)
-        except Exception:
+        except TypeError, ValueError:
             status_code = None
 
         # Always log failed requests (status >= 400) or unknown/missing status
