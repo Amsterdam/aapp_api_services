@@ -22,7 +22,10 @@ class RequestLogSamplingFilter(logging.Filter):
 
     @staticmethod
     def _get_sample_rate() -> float:
-        sample_rate = float(getattr(settings, "REQUEST_LOG_SAMPLE_RATE", 1.0))
+        try:
+            sample_rate = float(getattr(settings, "REQUEST_LOG_SAMPLE_RATE", 1.0))
+        except TypeError, ValueError:
+            sample_rate = 1.0
         if sample_rate < 0.0:
             return 0.0
         if sample_rate > 1.0:
