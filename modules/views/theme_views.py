@@ -104,6 +104,8 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
             )
             .order_by("sort_order")
         )
+
+        # use serializer to get themes in same format as other modules, but without content
         serialized_themes = ReleaseModuleSerializer(theme_statuses, many=True).data
 
         response_data = MOCK_MAMS_RESPONSE  # Replace with actual response
@@ -115,6 +117,8 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
             if "moduleSlug" in theme
         }
 
+        # create response: only include themes that have content in the MAMS response,
+        # and only include the fields that are mapped in MAPPING
         relevant_themes = []
         for module_slug, fields in MAPPING.items():
             theme = themes_by_slug.get(module_slug)
@@ -134,7 +138,6 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
             relevant_themes.append({**theme, "content": content})
 
         response_data = {"themes": relevant_themes}
-
         return Response(response_data, status=status.HTTP_200_OK)
 
     @retry(

@@ -181,13 +181,3 @@ class ReleaseListResponseSerializer(serializers.ModelSerializer):
             "created",
             "modified",
         ]
-
-
-class MijnAmsterdamThemesSerializer(serializers.Serializer):
-    """
-    Serializer for the MijnAmsterdamThemesView.
-    """
-
-    themes = ReleaseModuleSerializer(
-        many=True, source="releasemodulestatus_set", read_only=True
-    )
