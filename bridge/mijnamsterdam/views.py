@@ -45,13 +45,13 @@ class MijnAmsterdamAccessTokenView(generics.GenericAPIView):
                 "codeVerifier": request_data["code_verifier"],
             }
             response = requests.request(
-                "POST", url, data=body, headers=headers, timeout=10
+                "POST", url, json=body, headers=headers, timeout=10
             )
             response.raise_for_status()
 
-            serializer = AccessTokenResponseSerializer(data=response.json())
+            serializer = AccessTokenResponseSerializer(data=response.json()["content"])
             serializer.is_valid(raise_exception=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.validated_data, status=status.HTTP_200_OK)
         except requests.exceptions.RequestException:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

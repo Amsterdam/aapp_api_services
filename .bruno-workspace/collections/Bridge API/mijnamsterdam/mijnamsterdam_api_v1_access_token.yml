@@ -16,11 +16,7 @@ http:
       value: "{{apiKey}}"
   body:
     type: json
-    data: |-
-      {
-        "authorization_code": "foobar",
-        "code_verifier": "pass123"
-      }
+    data: '{"authorization_code": "ca9a294f-32fa-4ed2-8824-f6477be15141", "challenge": "H-0lAr6TlNcHOZ6TPiNb5NQ4nkVq5-yXh0nKwHDNh5o", "code_verifier": "g7GwdlOwZBas_lY3ST1EtjZmVzePFDWW9-3XXB9AS48"}'
   auth:
     type: apikey
     key: X-Api-Key
