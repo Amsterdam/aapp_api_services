@@ -9,7 +9,6 @@ class AccessTokenRequestSerializer(serializers.Serializer):
 class SessionSerializer(serializers.Serializer):
     name = serializers.CharField()
     value = serializers.CharField()
-    expiry = serializers.DateTimeField()
 
 
 class AccessTokenResponseSerializer(serializers.Serializer):
