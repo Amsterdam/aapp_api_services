@@ -32,3 +32,10 @@ LANGUAGE_CODE = "nl-NL"
 
 MOCK_ENTRA_AUTH = False
 ADMIN_ROLES += ["mbs-admin"]
+
+MIJN_AMS_API_DOMAIN = os.getenv(
+    "MIJN_AMS_API_DOMAIN", "https://mams-t-appservice-bff.azurewebsites.net"
+)
+MIJN_AMS_API_PATHS = {
+    "ALL": "/private/api/v1/services/all",
+}

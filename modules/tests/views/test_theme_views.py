@@ -1,11 +1,15 @@
+import json
 from unittest.mock import patch
 
 from django.urls import reverse
 from model_bakery import baker
+from requests import Response
 
 from core.tests.test_authentication import BasicAPITestCase
 from modules.icons import ModuleIconPath
 from modules.models import AppRelease, Module, ReleaseModuleStatus
+from modules.tests.mock_data import MOCK_DATA
+from modules.views.theme_views import MijnAmsterdamThemesView
 
 
 @patch.dict(
@@ -61,6 +65,7 @@ class TestMijnAmsterdamThemesView(BasicAPITestCase):
         self.release_2 = baker.make(AppRelease, version="2.0.0")
         self.release_2_10 = baker.make(AppRelease, version="2.10.0")
         self.api_headers = {**self.api_headers, "AccessToken": "dummy-access-token"}
+        self.view = MijnAmsterdamThemesView()
 
     def test_version_latest(self):
         url = reverse("modules-themes-list", kwargs={"release_version": "latest"})
@@ -168,3 +173,24 @@ class TestMijnAmsterdamThemesView(BasicAPITestCase):
         response = self.client.get(url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 404)
+
+    @patch("modules.views.theme_views.requests.get")
+    def test_make_request_succeeds_after_retry(self, mock_get):
+        # Simulate a 500 error on the first request
+        mock_response_1 = Response()
+        mock_response_1.status_code = 500
+        mock_response_1._content = json.dumps(
+            {"status": "ERROR", "message": "Internal Server Error"}
+        ).encode("utf-8")
+
+        # Simulate a successful response on the second request
+        mock_response_2 = Response()
+        mock_response_2.status_code = 200
+        mock_response_2._content = json.dumps(
+            {"content": MOCK_DATA, "status": "SUCCESS"}
+        ).encode("utf-8")
+
+        mock_get.side_effect = [mock_response_1, mock_response_2]
+
+        resp = self.view._make_request("dummy-access-token", headers={})
+        self.assertEqual(resp.status_code, 200)
