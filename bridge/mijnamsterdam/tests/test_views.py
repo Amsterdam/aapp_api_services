@@ -26,10 +26,12 @@ class TestMijnAmsterdamAccessTokenView(ResponsesActivatedAPITestCase):
             settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_API_PATHS["ACCESS_TOKEN"]
         )
         response_json = {
-            "session": {
-                "name": "foobar",
-                "value": "supersecrettoken",
-                "expiry": "1900-01-01",
+            "content": {
+                "session": {
+                    "name": "foobar",
+                    "value": "supersecrettoken",
+                    "expiry": "1900-01-01",
+                }
             }
         }
         responses.add(responses.POST, ext_url, json=response_json, status=200)
