@@ -63,6 +63,8 @@ MIJN_AMS_API_DOMAIN = os.getenv(
 MIJN_AMS_API_PATHS = {
     "NOTIFICATIONS": "/private/api/v1/services/amsapp/notifications",
     "DEVICES": "/private/api/v1/services/amsapp/notifications/consumer/",
+    "ACCESS_TOKEN": "/private/api/v1/services/amsapp/access-token/",
+    "ALL": "/api/v1/services/all",
 }
 
 # CMPS Evinity varen API

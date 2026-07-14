@@ -6,6 +6,10 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
+from bridge.mijnamsterdam.serializers.access_token_serializers import (
+    AccessTokenRequestSerializer,
+    AccessTokenResponseSerializer,
+)
 from bridge.mijnamsterdam.serializers.device_serializers import DeviceResponseSerializer
 from bridge.mijnamsterdam.serializers.logout_serializers import (
     LogoutNotificationRequestSerializer,
@@ -17,6 +21,32 @@ from core.enums import Module
 from core.services.notification_last import NotificationLastService
 from core.utils.openapi_utils import extend_schema_for_api_key
 from core.views.mixins import DeviceIdMixin
+
+
+@extend_schema_for_api_key(success_response=AccessTokenResponseSerializer)
+class MijnAmsterdamAccessTokenView(generics.GenericAPIView):
+    serializer_class = AccessTokenResponseSerializer
+
+    def post(self, request):
+        request_serializer = AccessTokenRequestSerializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+        request_data = request_serializer.validated_data
+
+        # try:
+        url = settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_API_PATHS["ACCESS_TOKEN"]
+        headers = {
+            settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY_INBOUND,
+        }
+        response = requests.request(
+            "POST", url, data=request_data, headers=headers, timeout=10
+        )
+        response.raise_for_status()
+
+        serializer = AccessTokenResponseSerializer(data=response.json())
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        # except requests.exceptions.RequestException:
+        #     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @extend_schema_for_api_key(
