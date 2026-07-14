@@ -40,12 +40,19 @@ class MijnAmsterdamAccessTokenView(generics.GenericAPIView):
             headers = {
                 settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY_INBOUND,
             }
+            body = {
+                "authorizationCode": request_data["authorization_code"],
+                "codeVerifier": request_data["code_verifier"],
+            }
             response = requests.request(
-                "POST", url, data=request_data, headers=headers, timeout=10
+                "POST", url, data=body, headers=headers, timeout=10
             )
             response.raise_for_status()
 
-            serializer = AccessTokenResponseSerializer(data=response.json())
+            response_body = {
+                "access_token": response.json().get("accessToken"),
+            }
+            serializer = AccessTokenResponseSerializer(data=response_body)
             serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except requests.exceptions.RequestException:

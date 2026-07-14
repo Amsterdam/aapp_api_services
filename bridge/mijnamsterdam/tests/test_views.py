@@ -26,7 +26,7 @@ class TestMijnAmsterdamAccessTokenView(ResponsesActivatedAPITestCase):
             settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_API_PATHS["ACCESS_TOKEN"]
         )
         responses.add(
-            responses.POST, ext_url, json={"access_token": "access_foobar"}, status=200
+            responses.POST, ext_url, json={"accessToken": "access_foobar"}, status=200
         )
 
         body = {"authorization_code": "auth_foobar", "code_verifier": "pass123"}
