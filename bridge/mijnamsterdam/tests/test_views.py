@@ -21,7 +21,7 @@ class TestMijnAmsterdamAccessTokenView(ResponsesActivatedAPITestCase):
         super().setUp()
         self.url = reverse("mijn-amsterdam-access-token")
 
-    def test_success_get(self):
+    def test_success_post(self):
         ext_url = (
             settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_API_PATHS["ACCESS_TOKEN"]
         )

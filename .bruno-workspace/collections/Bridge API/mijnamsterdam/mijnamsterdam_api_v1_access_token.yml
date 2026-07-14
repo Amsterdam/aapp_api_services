@@ -36,7 +36,7 @@ settings:
 examples:
   - name: 200 Response
     request:
-      url: "{{baseUrl}}/mijnamsterdam/api/v1/device"
+      url: "{{baseUrl}}/mijnamsterdam/api/v1/access-token"
       method: GET
       headers:
         - name: DeviceId
@@ -53,16 +53,13 @@ examples:
         type: json
         data: |-
           {
-            "status": "OK",
-            "profile_name": ""
+            "access_token": "access_foobar"
           }
   - name: 401 Response
     request:
-      url: "{{baseUrl}}/mijnamsterdam/api/v1/device"
+      url: "{{baseUrl}}/mijnamsterdam/api/v1/access-token"
       method: GET
       headers:
-        - name: DeviceId
-          value: ""
         - name: X-Api-Key
           value: "{{apiKey}}"
     response:
@@ -78,8 +75,3 @@ examples:
             "code": "API_KEY_INVALID",
             "detail": ""
           }
-
-docs: |-
-  Mixin to pre-process the request to get the device id
-  and bind it to the view.
-  This mixin is used specifically for DRF views.

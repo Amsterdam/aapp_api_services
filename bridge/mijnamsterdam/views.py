@@ -25,12 +25,12 @@ from core.views.mixins import DeviceIdMixin
 
 @extend_schema_for_api_key(success_response=AccessTokenResponseSerializer)
 class MijnAmsterdamAccessTokenView(generics.GenericAPIView):
-    serializer_class = AccessTokenResponseSerializer
+    serializer_class = AccessTokenRequestSerializer
 
     def post(self, request):
-        request_serializer = AccessTokenRequestSerializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
-        request_data = request_serializer.validated_data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        request_data = serializer.validated_data
 
         try:
             url = (
