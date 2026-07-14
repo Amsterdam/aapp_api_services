@@ -16,6 +16,32 @@ from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from notification.models.notification_models import ScheduledNotification
 
 
+class TestMijnAmsterdamAccessTokenView(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("mijn-amsterdam-access-token")
+
+    def test_success_post(self):
+        ext_url = (
+            settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_API_PATHS["ACCESS_TOKEN"]
+        )
+        response_json = {
+            "session": {
+                "name": "foobar",
+                "value": "supersecrettoken",
+                "expiry": "1900-01-01",
+            }
+        }
+        responses.add(responses.POST, ext_url, json=response_json, status=200)
+
+        body = {"authorization_code": "auth_foobar", "code_verifier": "pass123"}
+        response = self.client.post(self.url, data=body, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("name", response.json()["session"])
+        self.assertIn("value", response.json()["session"])
+
+
 class TestMijnAmsterdamDeviceView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
