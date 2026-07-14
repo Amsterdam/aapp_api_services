@@ -49,10 +49,7 @@ class MijnAmsterdamAccessTokenView(generics.GenericAPIView):
             )
             response.raise_for_status()
 
-            response_body = {
-                "access_token": response.json().get("accessToken"),
-            }
-            serializer = AccessTokenResponseSerializer(data=response_body)
+            serializer = AccessTokenResponseSerializer(data=response.json())
             serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except requests.exceptions.RequestException:

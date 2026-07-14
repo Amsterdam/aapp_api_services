@@ -25,15 +25,21 @@ class TestMijnAmsterdamAccessTokenView(ResponsesActivatedAPITestCase):
         ext_url = (
             settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_API_PATHS["ACCESS_TOKEN"]
         )
-        responses.add(
-            responses.POST, ext_url, json={"accessToken": "access_foobar"}, status=200
-        )
+        response_json = {
+            "session": {
+                "name": "foobar",
+                "value": "supersecrettoken",
+                "expiry": "1900-01-01",
+            }
+        }
+        responses.add(responses.POST, ext_url, json=response_json, status=200)
 
         body = {"authorization_code": "auth_foobar", "code_verifier": "pass123"}
         response = self.client.post(self.url, data=body, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"access_token": "access_foobar"})
+        self.assertIn("name", response.json()["session"])
+        self.assertIn("value", response.json()["session"])
 
 
 class TestMijnAmsterdamDeviceView(ResponsesActivatedAPITestCase):

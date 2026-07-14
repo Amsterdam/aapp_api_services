@@ -6,5 +6,11 @@ class AccessTokenRequestSerializer(serializers.Serializer):
     code_verifier = serializers.CharField()
 
 
+class SessionSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    value = serializers.CharField()
+    expiry = serializers.DateTimeField()
+
+
 class AccessTokenResponseSerializer(serializers.Serializer):
-    access_token = serializers.CharField()
+    session = SessionSerializer()
