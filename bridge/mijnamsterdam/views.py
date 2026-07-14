@@ -32,21 +32,24 @@ class MijnAmsterdamAccessTokenView(generics.GenericAPIView):
         request_serializer.is_valid(raise_exception=True)
         request_data = request_serializer.validated_data
 
-        # try:
-        url = settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_API_PATHS["ACCESS_TOKEN"]
-        headers = {
-            settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY_INBOUND,
-        }
-        response = requests.request(
-            "POST", url, data=request_data, headers=headers, timeout=10
-        )
-        response.raise_for_status()
+        try:
+            url = (
+                settings.MIJN_AMS_API_DOMAIN
+                + settings.MIJN_AMS_API_PATHS["ACCESS_TOKEN"]
+            )
+            headers = {
+                settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY_INBOUND,
+            }
+            response = requests.request(
+                "POST", url, data=request_data, headers=headers, timeout=10
+            )
+            response.raise_for_status()
 
-        serializer = AccessTokenResponseSerializer(data=response.json())
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-        # except requests.exceptions.RequestException:
-        #     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            serializer = AccessTokenResponseSerializer(data=response.json())
+            serializer.is_valid(raise_exception=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except requests.exceptions.RequestException:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @extend_schema_for_api_key(
