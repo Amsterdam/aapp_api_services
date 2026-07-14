@@ -51,10 +51,10 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
     def get_object(self):
         version = self.kwargs.get(self.lookup_url_kwarg)
         if version == "latest":
-            versions = list(AppRelease.objects.values_list("version", flat=True))
-            if not versions:
+            releases = AppRelease.objects.all()
+            if not releases:
                 raise ReleaseNotFoundException
-            version = VersionQueries.get_highest_version(versions)
+            version = VersionQueries.get_highest_version([x.version for x in releases])
 
         release = self.get_queryset().filter(version=version).first()
         if release is None:
