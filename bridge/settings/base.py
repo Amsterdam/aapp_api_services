@@ -66,9 +66,6 @@ MIJN_AMS_API_PATHS = {
     "ACCESS_TOKEN": "/private/api/v1/services/amsapp/auth/token",
     "ALL": "/api/v1/services/all",
 }
-MIJN_AMS_HEADER_SESSION_ID = os.getenv(
-    "MIJN_AMS_HEADER_SESSION_ID", "X-Mams-Session-Id"
-)
 
 # CMPS Evinity varen API
 BOAT_CHARGING_OAUTH_URL = os.getenv(
