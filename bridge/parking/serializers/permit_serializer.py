@@ -74,6 +74,7 @@ class PermitItemSerializer(serializers.Serializer):
     parking_machine_favorite = serializers.CharField(allow_null=True)
     permit_type = serializers.CharField()
     permit_zone = PermitZoneSerializer(allow_null=True)
+    payment_zones = PaymentZoneSerializer(many=True)
     visitor_account = VisitorAccountSerializer(required=False, allow_null=True)
     parking_rate = ValueCurrencySerializer()
     time_balance_applicable = serializers.BooleanField()
