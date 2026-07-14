@@ -58,6 +58,7 @@ class ReleaseModuleSerializer(serializers.ModelSerializer):
             "releaseAppReason",
             "releaseFallbackUrl",
             "releaseButtonLabel",
+            "sort_order",
         ]
 
     def get_status(self, obj: ReleaseModuleStatus) -> int:

@@ -1,12 +1,10 @@
-import json
 import logging
 
-import httpx
 import requests
 from django.conf import settings
 from django.db.models import Prefetch
-from django.http import StreamingHttpResponse
-from django.views import View
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter
 from rest_framework import generics, status
 from rest_framework.response import Response
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
@@ -22,39 +20,6 @@ from modules.serializers.release_serializers import (
 from modules.utils import VersionQueries
 
 logger = logging.getLogger(__name__)
-
-
-class MijnAmsterdamThemesStreamView(View):
-    """
-    This view isnt used yet, but is intended to be used for streaming the upstream mijn amsterdam theme stream to the frontend.
-    """
-
-    async def get(self, request, *args, **kwargs):
-        self.session_id = request.headers.get(settings.MIJN_AMS_HEADER_SESSION_ID)
-        return StreamingHttpResponse(
-            self.event_generator(session_id=self.session_id),
-            content_type="application/x-ndjson",
-        )
-
-    async def event_generator(self, session_id):
-        async for raw_event in self.consume_upstream_theme_stream(session_id):
-            enriched = {**raw_event, "session_id": session_id}
-            yield json.dumps(enriched) + "\n"
-
-    async def consume_upstream_theme_stream(self, session_id):
-        url = "https://test.mijn.amsterdam.nl/api/v1/services/stream"
-        headers = {"Authorization": f"Bearer {'token-for-session-' + str(session_id)}"}
-
-        async with httpx.AsyncClient(timeout=None) as client:
-            async with client.stream("GET", url, headers=headers) as resp:
-                resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line:
-                        continue
-                    if line.startswith("data:"):
-                        payload = line[len("data:") :].strip()
-                        if payload:
-                            yield json.loads(payload)
 
 
 @extend_schema_for_api_key()
@@ -103,6 +68,22 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
             "Retrieve the themes of a specific app release. The release is identified by its version number, which is provided as a URL parameter. "
         ),
         default_exceptions=[ReleaseNotFoundException],
+        additional_params=[
+            OpenApiParameter(
+                "release_version",
+                OpenApiTypes.STR,
+                OpenApiParameter.PATH,
+                description="The version number of the app release to retrieve. Use 'latest' to get the most recent release.",
+                required=True,
+            ),
+            OpenApiParameter(
+                name="AccessToken",
+                description="Mijn Amsterdam Access Token",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                required=True,
+            ),
+        ],
     )
     def get(self, request, *args, **kwargs):
 
@@ -117,18 +98,14 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
         release = self.get_object()
         pre_serializer = self.get_serializer(release)
         themes = pre_serializer.data.get("themes", [])
-        response_data = (
-            MOCK_MAMS_RESPONSE  # Replace with actual response from the upstream service
-        )
+        response_data = MOCK_MAMS_RESPONSE  # Replace with actual response
 
         relevant_themes = []
 
         for module_slug, fields in MAPPING.items():
-            print("Theme module slug:", module_slug)
             # check if the module is in the release
             theme = [x for x in themes if x["moduleSlug"] == module_slug]
             if theme:
-                print(f"Module {module_slug} is in the release.")
                 content = {}
                 for field in fields:
                     response_content = response_data.get(field, None)
@@ -138,8 +115,6 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
                 if content:
                     # if there is content, add the module (all module version info) and the content to the relevant themes list
                     relevant_themes.append({**theme[0], "content": content})
-
-        print(f"Retrieved {len(themes)} themes for release version {release.version}")
 
         return Response({"themes": relevant_themes}, status=status.HTTP_200_OK)
 
