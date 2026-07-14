@@ -39,6 +39,7 @@ class ReleaseModuleSerializer(serializers.ModelSerializer):
     releaseFallbackUrl = serializers.CharField(source="fallback_url", read_only=True)
     releaseButtonLabel = serializers.CharField(source="button_label", read_only=True)
     status = serializers.SerializerMethodField()
+    sortOrder = serializers.IntegerField(source="sort_order", read_only=True)
 
     class Meta:
         model = ReleaseModuleStatus
@@ -58,7 +59,7 @@ class ReleaseModuleSerializer(serializers.ModelSerializer):
             "releaseAppReason",
             "releaseFallbackUrl",
             "releaseButtonLabel",
-            "sort_order",
+            "sortOrder",
         ]
 
     def get_status(self, obj: ReleaseModuleStatus) -> int:

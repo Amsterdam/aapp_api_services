@@ -15,8 +15,8 @@ from modules.views.theme_views import MijnAmsterdamThemesView
 @patch.dict(
     "modules.views.theme_views.MAPPING",
     {
-        "theme-module-1": ["AFVAL"],
-        "theme-module-2": ["AFVAL"],
+        "theme-module-1": ["MILIEUZONE"],
+        "theme-module-2": ["MILIEUZONE"],
     },
     clear=True,
 )

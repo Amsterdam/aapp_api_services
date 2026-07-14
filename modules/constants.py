@@ -7,5 +7,5 @@ MAPPING = {
         "WPI_TONK",
         "WPI_TOZO",
     ],
-    "mams-invoice": ["AFIS"],
+    "mams-invoices": ["AFIS"],
 }

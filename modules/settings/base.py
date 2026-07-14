@@ -37,5 +37,7 @@ MIJN_AMS_API_DOMAIN = os.getenv(
     "MIJN_AMS_API_DOMAIN", "https://mams-t-appservice-bff.azurewebsites.net"
 )
 MIJN_AMS_API_PATHS = {
-    "ALL": "/private/api/v1/services/all",
+    "ALL": "/private/api/v1/services/amsapp/auth/services/all",
 }
+
+MIJN_AMS_API_KEY_INBOUND = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")

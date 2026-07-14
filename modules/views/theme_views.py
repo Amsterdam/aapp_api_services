@@ -12,12 +12,11 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 from core.utils.openapi_utils import custom_extend_schema, extend_schema_for_api_key
 from modules.constants import MAPPING
 from modules.exceptions import ReleaseNotFoundException
-from modules.mock_data import MOCK_MAMS_RESPONSE
 from modules.models import AppRelease, ReleaseModuleStatus
 from modules.serializers.release_serializers import (
-    MijnAmsterdamThemesSerializer,
     ReleaseModuleSerializer,
 )
+from modules.tests.mock_data import MOCK_DATA
 from modules.utils import VersionQueries
 
 logger = logging.getLogger(__name__)
@@ -31,7 +30,6 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
     The view supports GET requests for retrieving release details.
     """
 
-    serializer_class = MijnAmsterdamThemesSerializer
     lookup_field = "version"
     lookup_url_kwarg = "release_version"
     http_method_names = ["get"]
@@ -51,10 +49,10 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
     def get_object(self):
         version = self.kwargs.get(self.lookup_url_kwarg)
         if version == "latest":
-            releases = AppRelease.objects.all()
-            if not releases:
+            versions = list(AppRelease.objects.values_list("version", flat=True))
+            if not versions:
                 raise ReleaseNotFoundException
-            version = VersionQueries.get_highest_version([x.version for x in releases])
+            version = VersionQueries.get_highest_version(versions)
 
         release = self.get_queryset().filter(version=version).first()
         if release is None:
@@ -64,7 +62,6 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
         return release
 
     @custom_extend_schema(
-        success_response=MijnAmsterdamThemesSerializer,
         description=(
             "Retrieve the themes of a specific app release. The release is identified by its version number, which is provided as a URL parameter. "
         ),
@@ -108,7 +105,7 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
         # use serializer to get themes in same format as other modules, but without content
         serialized_themes = ReleaseModuleSerializer(theme_statuses, many=True).data
 
-        response_data = MOCK_MAMS_RESPONSE  # Replace with actual response
+        response_data = MOCK_DATA  # Replace with actual response
 
         # Index themes by module slug once to avoid repeatedly scanning the full list.
         themes_by_slug = {
@@ -147,12 +144,12 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
         reraise=True,  # Reraise the RequestException after retries
     )
     def _make_request(self, access_token, headers) -> requests.Response:
-        """Make the HTTP request for toilet data with retries and a timeout."""
+        """Make the HTTP request for all mams data with retries and a timeout."""
         url = settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_API_PATHS["ALL"]
         try:
             response = requests.get(
                 url,
-                cookies={"__MA-appSession": access_token},
+                cookies={"AccessToken": access_token},
                 headers=headers,
                 timeout=10,
             )
