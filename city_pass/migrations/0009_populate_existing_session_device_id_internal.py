@@ -24,15 +24,16 @@ def update_device_id_internal(apps, schema_editor):
         batched_device_ids = {session.device_id for session in batched_sessions}
         device_id_to_internal = dict(
             Device.objects.using(NOTIFICATION_DB_ALIAS)
-            .filter(device_id__in=batched_device_ids)
-            .values_list("device_id", "pk")
+            .filter(external_id__in=batched_device_ids)
+            .values_list("external_id", "id")
         )
 
         sessions_to_update = []
         for session in batched_sessions:
             if not device_id_to_internal.get(session.device_id):
                 logger.error(
-                    "Could not find CityPass session device in Notification Device table"
+                    "Could not find CityPass session device in Notification Device table",
+                    extra={"device_id": session.device_id},
                 )
                 continue
             session.device_id_internal = device_id_to_internal[session.device_id]
