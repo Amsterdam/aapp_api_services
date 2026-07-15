@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="session",
             name="device_id_internal",
-            field=models.CharField(max_length=255, null=True, unique=True),
+            field=models.BigIntegerField(null=True, unique=True),
         ),
     ]

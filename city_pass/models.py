@@ -18,7 +18,7 @@ class Session(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     encrypted_adminstration_no = models.CharField(null=True)
     device_id = models.CharField(max_length=255, unique=True, null=True)
-    device_id_internal = models.CharField(max_length=255, unique=True, null=True)
+    device_id_internal = models.BigIntegerField(unique=True, null=True)
 
 
 class Budget(models.Model):
