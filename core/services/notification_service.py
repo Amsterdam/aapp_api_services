@@ -149,7 +149,9 @@ class AbstractNotificationService:
                 make_push=notification.make_push,
             )
             with transaction.atomic():
-                self._save_scheduled_notification(internal_device_ids, instance=instance)
+                self._save_scheduled_notification(
+                    internal_device_ids, instance=instance
+                )
             return instance
 
         # Perform UPDATE if object exists

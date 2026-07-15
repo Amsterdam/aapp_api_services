@@ -77,7 +77,7 @@ stages:
                     displayName: Helm uninstall $(service_name)
 
                 - ${{ if ne(parameters.migrationRollbackTarget, ' ') }}:
-                  - script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/$(service_name)
+                  - script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/${{ service }}
                     displayName: Rollback migration ($(service_name))
 
                 - script: make deploy/$(service_name)

@@ -20,4 +20,6 @@ def create_missing_device_ids(device_ids: list[str]) -> QuerySet:
             ignore_conflicts=True,
         )
         logger.info("Created %s missing devices.", len(missing_device_ids))
-    return Device.objects.filter(external_id__in=device_ids).values_list("id", flat=True)
+    return Device.objects.filter(external_id__in=device_ids).values_list(
+        "id", flat=True
+    )
