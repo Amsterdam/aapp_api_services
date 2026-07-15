@@ -62,6 +62,21 @@ class TestNotificationServiceUnscheduled(ResponsesActivatedAPITestCase):
             instance.scheduled_for, timezone.now() + timezone.timedelta(seconds=5)
         )
 
+    def test_upsert_defaults_with_queryset(self):
+        notification = NotificationData(
+            title="Hello",
+            message="Is it me you're looking for?",
+            link_source_id="see_it_in_your_eyes",
+            device_ids=Device.objects.values_list("id", flat=True),
+        )
+
+        self.service.upsert(notification=notification)
+
+        instance = ScheduledNotification.objects.filter(title=notification.title).get()
+        self.assertEqual(
+            instance.scheduled_for, timezone.now() + timezone.timedelta(seconds=5)
+        )
+
     def test_send_not_implemented(self):
         with self.assertRaises(NotImplementedError):
             self.service.send("anything")

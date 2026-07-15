@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase
 from model_bakery import baker
 
@@ -6,7 +7,7 @@ from notification.models.notification_models import Device
 
 
 class TestDeviceUtils(TestCase):
-    databases = ["default", "notification"]
+    databases = set(d for d in settings.DATABASES.keys())
 
     def test_create_success(self):
         create_missing_device_ids(["device_1", "device_2"])
