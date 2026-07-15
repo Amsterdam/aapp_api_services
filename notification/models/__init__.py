@@ -1,3 +1,3 @@
-from .boat_charging_models import (
-    BoatChargingSession as BoatChargingSession,
-)  # This import is required until the model is imported somewhere else
+from .boat_charging_models import BoatChargingSession as BoatChargingSession
+from .burning_guide_models import BurningGuideDevice as BurningGuideDevice
+from .waste_guide_models import WasteDevice as WasteDevice
