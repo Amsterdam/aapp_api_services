@@ -5,15 +5,12 @@ from more_itertools import chunked
 
 logger = logging.getLogger(__name__)
 BATCH_SIZE = 1000
-SESSION_DB_ALIAS = "city-pass"
 NOTIFICATION_DB_ALIAS = "notification"
 
 
 def update_device_id_internal(apps, schema_editor):
     # Prevent this operation from running when migrations are being executed
     # against another database.
-    if schema_editor.connection.alias != SESSION_DB_ALIAS:
-        return
     Session = apps.get_model("city_pass", "Session")
     Device = apps.get_model("notification", "Device")
 
