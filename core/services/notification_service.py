@@ -148,7 +148,8 @@ class AbstractNotificationService:
                 expires_at=expires_at or "3000-01-01",
                 make_push=notification.make_push,
             )
-            self._save_scheduled_notification(internal_device_ids, instance=instance)
+            with transaction.atomic():
+                self._save_scheduled_notification(internal_device_ids, instance=instance)
             return instance
 
         # Perform UPDATE if object exists
