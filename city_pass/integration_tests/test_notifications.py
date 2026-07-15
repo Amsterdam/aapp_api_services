@@ -3,15 +3,18 @@ from rest_framework.test import APITestCase
 
 from city_pass.models import Notification, Session
 from city_pass.services.notification import NotificationService
+from notification.models.notification_models import Device
 
 
 class TestNotificationService(APITestCase):
     databases = {"default", "notification"}
 
     def setUp(self):
-        session_1 = baker.make(Session, device_id="device1")
-        session_2 = baker.make(Session, device_id="device2")
-        baker.make(Session, device_id="device3")
+        for i in range(3):
+            baker.make(Device, id=i + 1)
+        session_1 = baker.make(Session, device_id_internal=1)
+        session_2 = baker.make(Session, device_id_internal=2)
+        baker.make(Session, device_id_internal=3)
 
         self.budget_1 = baker.make("Budget", code="budget1")
         self.budget_2 = baker.make("Budget", code="budget2")

@@ -9,7 +9,10 @@ ONE_HOUR_IN_SECONDS = 3600
 
 
 def set_up_city_pass_test_case(test_case) -> None:
-    test_case.headers = {settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0]}
+    test_case.headers = {
+        settings.API_KEY_HEADER: settings.API_KEYS.split(",")[0],
+        settings.HEADER_DEVICE_ID: "foobar",
+    }
 
     test_case.session = baker.make(Session, encrypted_adminstration_no="foobar")
     baker.make(AccessToken, session=test_case.session)
