@@ -49,6 +49,11 @@ class Module(models.Model):
         default="Bekijk op Amsterdam.nl",
         help_text="Label voor de knop die naar de fallback URL verwijst.",
     )
+    is_mams_theme = models.BooleanField(
+        "Mijn Amsterdam thema",
+        default=False,
+        help_text="Geeft aan of dit een thema van Mijn Amsterdam is.",
+    )
 
     def __str__(self):
         return f"{self.slug} ({self.get_status_display()})"

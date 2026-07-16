@@ -23,6 +23,7 @@ class ModuleAdmin(admin.ModelAdmin, ModuleAdminMixin):
         "app_reason",
         "fallback_url",
         "button_label",
+        "is_mams_theme",
     ]
     inlines = [ModuleVersionInline]
     actions = None

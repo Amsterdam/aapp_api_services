@@ -35,11 +35,14 @@ class ReleaseDetailView(generics.RetrieveUpdateAPIView):
     http_method_names = ["get", "patch"]
 
     def get_queryset(self):
+        # keep only non MAMS modules and order them by sort_order
         prefetch = Prefetch(
             "releasemodulestatus_set",
             queryset=ReleaseModuleStatus.objects.select_related(
                 "module_version__module"
-            ).order_by("sort_order"),
+            )
+            .filter(module_version__module__is_mams_theme=False)
+            .order_by("sort_order"),
         )
         return AppRelease.objects.prefetch_related(prefetch)
 
