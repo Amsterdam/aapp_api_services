@@ -31,6 +31,31 @@ class TestModuleModel(TestCase):
         module.save()
         self.assertEqual(module.status, Module.Status.ACTIVE)
 
+    def test_clean_active(self):
+        module = Module(
+            slug="foobar",
+            status=Module.Status.ACTIVE,
+            fallback_url="http://google.com/",
+            app_reason="because",
+            note="foobar",
+        )
+        module.save()
+        module.clean()
+
+        self.assertIsNone(module.fallback_url)
+        self.assertIsNone(module.app_reason)
+        self.assertIsNone(module.note)
+
+    def test_clean_inactive_no_reason(self):
+        module = Module(
+            slug="foobar",
+            status=Module.Status.INACTIVE,
+            app_reason=None,
+        )
+        module.save()
+        with self.assertRaises(ValidationError):
+            module.clean()
+
 
 class TestModuleVersionModel(TestCase):
     def setUp(self):

@@ -73,7 +73,7 @@ class NotificationAdmin(admin.ModelAdmin):
                 reverse("admin:city_pass_notification_changelist")
             )
 
-        device_ids = notification_service.get_device_ids(obj)
+        device_ids = notification_service.get_device_qs(obj)
         context = {
             **self.admin_site.each_context(request),
             "nr_sessions": len(device_ids),

@@ -3,16 +3,19 @@ from model_bakery import baker
 from city_pass.models import Notification, Session
 from city_pass.services.notification import NotificationService
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
-from notification.models.notification_models import ScheduledNotification
+from notification.models.notification_models import Device, ScheduledNotification
 
 
 class TestNotificationService(ResponsesActivatedAPITestCase):
     def setUp(self):
-        session_1 = baker.make(Session, device_id="device1")
-        session_2 = baker.make(Session, device_id="device2")
-        baker.make(Session, device_id="device3")
-        baker.make(Session, device_id=None)  # Session without device_id
-        baker.make(Session, device_id=None)  # Session without device_id
+        for i in range(5):
+            baker.make(Device, id=i + 1)
+
+        session_1 = baker.make(Session, device_id_internal=1)
+        session_2 = baker.make(Session, device_id_internal=2)
+        baker.make(Session, device_id_internal=3)
+        baker.make(Session, device_id_internal=4)
+        baker.make(Session, device_id_internal=5)
 
         self.budget_1 = baker.make("Budget", code="budget1")
         self.budget_2 = baker.make("Budget", code="budget2")
@@ -26,22 +29,24 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         notification = baker.make(Notification, budgets=[])
         service = NotificationService()
 
-        device_ids = service.get_device_ids(notification)
+        device_ids = list(service.get_device_qs(notification))
 
-        self.assertEqual(len(device_ids), 3)
-        self.assertIn("device1", device_ids)
-        self.assertIn("device2", device_ids)
-        self.assertIn("device3", device_ids)
+        self.assertEqual(len(device_ids), 5)
+        self.assertIn(1, device_ids)
+        self.assertIn(2, device_ids)
+        self.assertIn(3, device_ids)
+        self.assertIn(4, device_ids)
+        self.assertIn(5, device_ids)
 
     def test_set_device_ids_budgets(self):
         notification = baker.make(Notification, budgets=[self.budget_1, self.budget_2])
         service = NotificationService()
 
-        device_ids = service.get_device_ids(notification)
+        device_ids = list(service.get_device_qs(notification))
 
         self.assertEqual(len(device_ids), 2)
-        self.assertIn("device1", device_ids)
-        self.assertIn("device2", device_ids)
+        self.assertIn(1, device_ids)
+        self.assertIn(2, device_ids)
 
     def test_call_everybody(self):
         notification = baker.make(Notification, budgets=[])
@@ -50,7 +55,7 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         service.send(notification)
 
         self.assertIsNotNone(notification.send_at)
-        self.assertEqual(notification.nr_sessions, 3)
+        self.assertEqual(notification.nr_sessions, 5)
         self.assertEqual(ScheduledNotification.objects.count(), 1)
 
     def test_call_budget1(self):

@@ -1,12 +1,15 @@
 import logging
 import uuid
 from datetime import datetime
-from typing import NamedTuple
+from typing import Any, Iterable, NamedTuple
 
+from django.db import transaction
+from django.db.models import QuerySet
 from django.utils import timezone
 from more_itertools import chunked
 
 from core.services.image_set import ImageSetService
+from core.utils.device_utils import create_missing_device_ids
 from notification.models.notification_models import (
     Device,
     Notification,
@@ -14,6 +17,7 @@ from notification.models.notification_models import (
 )
 
 logger = logging.getLogger(__name__)
+BATCH_SIZE = 5000
 
 
 class NotificationServiceError(Exception):
@@ -21,10 +25,17 @@ class NotificationServiceError(Exception):
 
 
 class NotificationData(NamedTuple):
+    """`device_ids` can be one of two things:
+
+    - a list of external device ID hashes. Missing device ID records are created
+    - a queryset of internal device IDs from the `notification.Device` model,
+      for example `Device.objects.values_list("id", flat=True)`. This is processed in batches.
+    """
+
     title: str
     message: str
     link_source_id: str | None = None
-    device_ids: list[str] | None = None
+    device_ids: Iterable[str] | None = None
     image_set_id: int | None = None
     make_push: bool = True
     url: str | None = None
@@ -93,15 +104,6 @@ class AbstractNotificationService:
         if expires_at is None:
             expires_at = scheduled_for + timezone.timedelta(minutes=expiry_minutes)
 
-        if send_all_devices:
-            device_ids = list(Device.objects.values_list("id", flat=True))
-        else:
-            if notification.device_ids is None:
-                raise NotificationServiceError(
-                    "Device ids must be defined if send_all_devices is False"
-                )
-            device_ids = self.create_missing_device_ids(notification.device_ids)
-
         if expires_at and expires_at <= scheduled_for:
             raise NotificationServiceError(
                 "Expires_at must be later than scheduled_for"
@@ -120,6 +122,9 @@ class AbstractNotificationService:
                     f"Image with id {notification.image_set_id} does not exist"
                 )
 
+        internal_device_ids = self.get_internal_device_ids(
+            notification, send_all_devices
+        )
         instance = self._get_scheduled_notification_instance(identifier)
         if not instance:
             instance = ScheduledNotification(
@@ -135,7 +140,10 @@ class AbstractNotificationService:
                 expires_at=expires_at or "3000-01-01",
                 make_push=notification.make_push,
             )
-            self._save_scheduled_notification(device_ids, instance=instance)
+            with transaction.atomic():
+                self._save_scheduled_notification(
+                    internal_device_ids, instance=instance
+                )
             return instance
 
         # Perform UPDATE if object exists
@@ -148,18 +156,52 @@ class AbstractNotificationService:
             instance.image = notification.image_set_id
         if expires_at is not None:
             instance.expires_at = expires_at
-        self._save_scheduled_notification(device_ids, instance=instance)
+        with transaction.atomic():
+            self._save_scheduled_notification(internal_device_ids, instance=instance)
 
         return instance
 
+    def get_internal_device_ids(
+        self, notification: NotificationData, send_all_devices: bool
+    ) -> Any:
+        """Resolve the internal device IDs to send notifications to.
+
+        `notification.device_ids` can be one of two things:
+        - a list of external device ID hashes. Missing device ID records are created
+        - a queryset of internal device IDs from the `notification.Device` model,
+          for example `Device.objects.values_list("id", flat=True)`. This is processed in batches.
+
+        Returns:
+        - `internal_device_ids`: a list or QuerySet iterator of internal device IDs
+          from the `notification.Device` model.
+        """
+        if send_all_devices:
+            internal_device_ids = Device.objects.values_list("id", flat=True).iterator(
+                chunk_size=BATCH_SIZE
+            )
+        else:
+            if notification.device_ids is None:
+                raise NotificationServiceError(
+                    "Device ids must be defined if send_all_devices is False"
+                )
+            if isinstance(notification.device_ids, list):
+                internal_device_ids = create_missing_device_ids(notification.device_ids)
+            elif isinstance(notification.device_ids, QuerySet):
+                internal_device_ids = notification.device_ids.iterator(
+                    chunk_size=BATCH_SIZE
+                )
+            else:
+                raise NotificationServiceError("Unknown device ids type")
+        return internal_device_ids
+
     def _save_scheduled_notification(
-        self, devices: list[int], instance: ScheduledNotification
+        self, internal_device_ids: Iterable[int], instance: ScheduledNotification
     ):
         # Inserting into the Through table is much less memory-intensive than instance.devices.set(devices)
         # Note: previously added devices will not be removed on updates!
         Through = ScheduledNotification.devices.through
         instance.save()
-        for batch in chunked(devices, 5000):
+        for batch in chunked(internal_device_ids, BATCH_SIZE):
             rows = (
                 Through(
                     schedulednotification_id=instance.id,
@@ -167,7 +209,9 @@ class AbstractNotificationService:
                 )
                 for device_id in batch
             )
-            Through.objects.bulk_create(rows, batch_size=5000, ignore_conflicts=True)
+            Through.objects.bulk_create(
+                rows, batch_size=BATCH_SIZE, ignore_conflicts=True
+            )
         instance.is_ready = True
         instance.save()
 
@@ -221,20 +265,3 @@ class AbstractNotificationService:
             ScheduledNotification.objects.get(identifier=identifier).delete()
         except ScheduledNotification.DoesNotExist:
             return None
-
-    @staticmethod
-    def create_missing_device_ids(device_ids: list[str]) -> list[int]:
-        existing_devices = Device.objects.filter(
-            external_id__in=device_ids
-        ).values_list("external_id", flat=True)
-        missing_device_ids = set(device_ids) - set(existing_devices)
-        if missing_device_ids:
-            Device.objects.bulk_create(
-                Device(external_id=device_id) for device_id in missing_device_ids
-            )
-            logger.info(f"Created {len(missing_device_ids)} missing devices.")
-        return list(
-            Device.objects.filter(external_id__in=device_ids).values_list(
-                "id", flat=True
-            )
-        )
