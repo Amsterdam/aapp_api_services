@@ -83,7 +83,7 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
                 notification_type="test_type",
             )
 
-    def test_list_notifications_missing_subtype_for_construction_work(self):
+    def test_create_notification_missing_subtype_for_construction_work(self):
         device_1 = baker.make(Device, external_id=self.device_id)
         with self.assertRaises(ValidationError):
             baker.make(

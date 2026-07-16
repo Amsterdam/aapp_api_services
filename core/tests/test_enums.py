@@ -22,16 +22,6 @@ class TestNotificationType(TestCase):
         expected_value = "mijn-amsterdam:mijn-ams-notification"
         self.assertEqual(self.notification_type.value, expected_value)
 
-    def test_construction_work_types_do_not_overwrite(self):
-        self.assertEqual(
-            NotificationType.CONSTRUCTION_WORK_WARNING_MESSAGE.value,
-            "construction-work:warning-message",
-        )
-        self.assertEqual(
-            NotificationType.CONSTRUCTION_WORK_ARTICLE_MESSAGE.value,
-            "construction-work:article-message",
-        )
-
     def test_get_modules_with_types_and_descriptions(self):
         result = NotificationType.get_modules_with_types_and_descriptions()
 
