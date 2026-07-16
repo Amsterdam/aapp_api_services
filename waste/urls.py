@@ -4,10 +4,6 @@ from django.urls import path
 
 from core.urls import get_admin_paths, get_swagger_paths
 from waste.views.container_views import WasteContainerPassNumberView
-from waste.views.notification_views import (
-    WasteNotificationCreateView,
-    WasteNotificationDetailView,
-)
 from waste.views.recycle_views import RecycleLocationsView
 from waste.views.waste_views import (
     WasteGuideCalendarIcsView,
@@ -33,16 +29,6 @@ urlpatterns = [
         BASE_PATH + "/guide/<str:bag_nummeraanduiding_id>.ics",
         WasteGuideCalendarIcsView.as_view(),
         name="waste-guide-calendar-ics",
-    ),
-    path(
-        BASE_PATH + "/guide/notifications",
-        WasteNotificationCreateView.as_view(),
-        name="waste-guide-notification-create",
-    ),
-    path(
-        BASE_PATH + "/guide/notification",
-        WasteNotificationDetailView.as_view(),
-        name="waste-guide-notification-detail",
     ),
     # container-pass
     path(
