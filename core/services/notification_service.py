@@ -25,10 +25,11 @@ class NotificationServiceError(Exception):
 
 
 class NotificationData(NamedTuple):
-    """device_ids kan twee dingen zijn:
-    - lijst van external device_id hashes. Ontbrekende device_id records worden aangemaakt
-    - queryset van interne ids van devices uit het notification.Device model.
-      Device.objects.value_list("id", flat=True). Dit wordt in batches verwerkt.
+    """`device_ids` can be one of two things:
+
+    - a list of external device ID hashes. Missing device ID records are created
+    - a queryset of internal device IDs from the `notification.Device` model,
+      for example `Device.objects.values_list("id", flat=True)`. This is processed in batches.
     """
 
     title: str
@@ -163,14 +164,16 @@ class AbstractNotificationService:
     def get_internal_device_ids(
         self, notification: NotificationData, send_all_devices: bool
     ) -> Any:
-        """
-        device_ids kan twee dingen zijn:
-        - lijst van external device_id hashes. Ontbrekende device_id records worden aangemaakt
-        - queryset van interne ids van devices uit het notification.Device model.
-          Device.objects.value_list("id", flat=True). Dit wordt in batches verwerkt.
+        """Resolve the internal device IDs to send notifications to.
 
-        returns:
-        - internal_device_ids: een lijst of QuerySet iterator van interne ids van devices uit notification.Device model
+        `notification.device_ids` can be one of two things:
+        - a list of external device ID hashes. Missing device ID records are created
+        - a queryset of internal device IDs from the `notification.Device` model,
+          for example `Device.objects.values_list("id", flat=True)`. This is processed in batches.
+
+        Returns:
+        - `internal_device_ids`: a list or QuerySet iterator of internal device IDs
+          from the `notification.Device` model.
         """
         if send_all_devices:
             internal_device_ids = Device.objects.values_list("id", flat=True).iterator(
