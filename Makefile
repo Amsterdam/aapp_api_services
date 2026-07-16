@@ -145,7 +145,7 @@ spectacular: check-service
 
 makemigrations: check-service
     # Run Django migrations on database
-	$(manage) makemigrations $(SERVICE_NAME)
+	$(manage) makemigrations
 
 migrations: makemigrations lintfix
 
