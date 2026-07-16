@@ -1,4 +1,5 @@
 import logging
+import random
 
 from azure.monitor.opentelemetry import configure_azure_monitor
 from django.conf import settings
@@ -6,6 +7,47 @@ from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 
 logger = logging.getLogger(__name__)
+
+
+class RequestLogSamplingFilter(logging.Filter):
+    """
+    Logging filter that samples successful requests at a configurable rate,
+    but always logs failed requests (HTTP status >= 400) and requests with missing/unknown status.
+    Sampling rate is read from the REQUEST_LOG_SAMPLE_RATE environment variable or Django settings.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._sample_rate = self._get_sample_rate()
+
+    @staticmethod
+    def _get_sample_rate() -> float:
+        try:
+            sample_rate = float(getattr(settings, "REQUEST_LOG_SAMPLE_RATE", 1.0))
+        except TypeError, ValueError:
+            raise ValueError(
+                "REQUEST_LOG_SAMPLE_RATE must be a float between 0.0 and 1.0"
+            )
+        if sample_rate < 0.0 or sample_rate > 1.0:
+            raise ValueError(
+                "REQUEST_LOG_SAMPLE_RATE must be a float between 0.0 and 1.0"
+            )
+        return sample_rate
+
+    def filter(self, record):
+        status_code = getattr(record, "status_code", None)
+        try:
+            if status_code is not None:
+                status_code = int(status_code)
+        except TypeError, ValueError:
+            status_code = None
+
+        # Always log failed requests (status >= 400) or unknown/missing status
+        if status_code is None or status_code >= 400:
+            return True
+
+        # Sample successful requests (status < 400)
+        return random.random() < self._sample_rate
 
 
 def setup_opentelemetry():

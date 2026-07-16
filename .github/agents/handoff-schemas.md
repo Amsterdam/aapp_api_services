@@ -90,15 +90,19 @@ Use for the Reviewer handoff back to Orchestrator.
 Required fields:
 
 - `schema`: `H5 Review Result`
-- `verdict`
-- `findings`
+- `verdict`: one of `approved` | `blocked`
+- `findings`: array, may be empty only for genuinely trivial changes
 - `technical_risks`
 - `next_step`
 
-Review evidence rule:
+Each entry in `findings` must include:
 
-- Findings that claim "missing coverage" must cite either a failed/absent test run or explicit repository search evidence that no equivalent test exists outside the changed diff.
-- If equivalent coverage is present elsewhere, mark as residual risk or suggestion instead of a blocking defect.
+- `severity`: one of `critical` | `major` | `minor` | `nit`
+- `category`: one of `correctness` | `edge_case` | `regression_risk` | `security` | `test_coverage` | `naming_readability` | `duplication_design` | `consistency` | `documentation`
+- `location`: file and line/hunk reference, or symbol name if line numbers are unstable
+- `description`: what is wrong
+- `impact`: what concretely breaks or degrades, and under what conditions — not just "could be improved"
+- `evidence`: see Evidence Rule in reviewer agent definition below
 
 ## H6 Test Request
 
@@ -119,14 +123,25 @@ Use for the Tester handoff back to Orchestrator.
 Required fields:
 
 - `schema`: `H7 Test Result`
-- `coverage_exercised`
-- `result`
-- `defects`
-- `residual_risk`
+- `coverage_exercised`: array of checklist categories actually exercised, each with a brief note on what was checked (see Coverage Rule below)
+- `untested_paths`: array of things considered but not verified, each with a reason (see Untested Paths Rule below)
+- `result`: one of `pass` | `fail` | `partial_confidence`
+- `defects`: array, required to be non-empty if `result` is `fail`
+- `test_quality_notes`: array, may be empty only when existing/new tests were inspected and found to assert meaningful outcomes (see Test Quality Rule below)
+- `residual_risk`: array, may be empty only for genuinely trivial changes (see Residual Risk Rule below)
 - `resulting_git_hash`
 - `next_step`
+
+Each entry in `defects` must include:
+
+- `severity`: one of `critical` | `major` | `minor`
+- `category`: one of `happy_path` | `edge_case` | `error_handling` | `regression_risk` | `concurrency_ordering` | `contract_api_surface` | `test_quality`
+- `description`: what is wrong
+- `impact`: what concretely breaks, and under what conditions
+- `evidence`: the specific test run, command output, or file/line inspected that supports the defect — not an assumption
 
 Validation note:
 
 - Tester responses are valid only when `schema` is exactly `H7 Test Result`.
 - If a non-`H7` payload is returned to a test request, the Orchestrator must reject it as schema-invalid and request a corrected `H7 Test Result` before progressing.
+- A payload missing `coverage_exercised` or `untested_paths`, or containing a `defects` array that lacks `severity`/`category`/`evidence` on any entry, must be treated as schema-invalid in the same way and sent back for correction.
