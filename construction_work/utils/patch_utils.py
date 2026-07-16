@@ -33,7 +33,8 @@ class MockNotificationResponse:
                 "module_slug": "construction-work",
                 "context": {
                     "linkSourceid": self.warning_id,
-                    "type": "ProjectWarningCreatedByProjectManager",
+                    "type": "construction-work:article-message",
+                    "subtype": "warning",
                     "notificationId": str(uuid.uuid4()),
                 },
                 "created_at": timezone.now().isoformat(),

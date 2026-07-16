@@ -15,12 +15,20 @@ class ArticleNotificationService(AbstractNotificationService):
     notification_type = NotificationType.CONSTRUCTION_WORK_ARTICLE_MESSAGE.value
 
     def send(self, notification_data: NotificationData):
-        self.upsert(notification_data)
+        context = self.build_context(
+            module_slug=self.module_slug,
+            notification_type=self.notification_type,
+            link_source_id=notification_data.link_source_id,
+            url=notification_data.url,
+            deeplink=notification_data.deeplink,
+        )
+        context["subtype"] = "article"
+        self.upsert(notification_data, context=context)
 
 
 class WarningNotificationService(AbstractNotificationService):
     module_slug = Module.CONSTRUCTION_WORK.value
-    notification_type = NotificationType.CONSTRUCTION_WORK_WARNING_MESSAGE.value
+    notification_type = NotificationType.CONSTRUCTION_WORK_ARTICLE_MESSAGE.value
 
     def send(self, warning: WarningMessage):
         device_ids = list(
@@ -42,7 +50,14 @@ class WarningNotificationService(AbstractNotificationService):
             image_set_id=image_set_id,
         )
 
-        self.upsert(notification_data)
+        context = self.build_context(
+            module_slug=self.module_slug,
+            notification_type=self.notification_type,
+            link_source_id=notification_data.link_source_id,
+        )
+        context["subtype"] = "warning"
+
+        self.upsert(notification_data, context=context)
 
         warning.notification_sent = True
         warning.save()

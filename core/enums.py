@@ -120,10 +120,6 @@ class NotificationType(ChoicesEnum):
 
     @property
     def value(self):
-        if str(self._value_) == "construction-work:warning-message":
-            return "ProjectWarningCreatedByProjectManager"
-        elif str(self._value_) == "construction-work:article-message":
-            return "NewsUpdatedByProjectManager"
         return str(self._value_)
 
     @classmethod

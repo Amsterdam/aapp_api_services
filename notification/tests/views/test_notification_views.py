@@ -83,6 +83,20 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
                 notification_type="test_type",
             )
 
+    def test_list_notifications_missing_subtype_for_construction_work(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        with self.assertRaises(ValidationError):
+            baker.make(
+                Notification,
+                device=device_1,
+                context={
+                    "type": "construction-work:article-message",
+                    "module_slug": "construction-work",
+                    "linkSourceid": "1",
+                },
+                notification_type="construction-work:article-message",
+            )
+
     @patch("notification.serializers.notification_serializers.ImageSetService")
     def test_list_notifications_with_and_without_image(self, mock_image_set_service):
         image_id = 123
