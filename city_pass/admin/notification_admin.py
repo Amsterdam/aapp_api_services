@@ -4,6 +4,7 @@ from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
 
 from city_pass.services.notification import NotificationService
 
@@ -114,7 +115,7 @@ class NotificationAdmin(admin.ModelAdmin):
     def budgets_display(self, obj):
         budgets = list(obj.budgets.all())
         if not budgets:
-            return format_html(
+            return mark_safe(
                 "<div style='color: #999;'>Geen budget filter toegepast.</div>"
             )
 
