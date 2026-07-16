@@ -55,25 +55,6 @@ Validate behavior independently of the original work item and the resulting code
 7. Return a clear pass, fail, or partial-confidence result, with the checklist coverage and any residual risks reported regardless of the final verdict.
 8. Escalate when the work item or artifact is too weak for trustworthy validation.
 
-Coverage Rule:
-
-- `coverage_exercised` must explicitly address each checklist category from the Tester's approach (happy path, edge cases, error handling, regression risk, concurrency/ordering, contract/API surface, test quality) — either with what was checked, or an explicit note that the category does not apply and why.
-- A `coverage_exercised` list that only reports "ran existing test suite" without addressing the other categories is treated as incomplete, and the Orchestrator should send it back for elaboration before progressing.
-
-Untested Paths Rule:
-
-- Any edge case, category, or scenario considered but not actually verified must be listed in `untested_paths` with a brief reason (e.g. out of scope, infeasible to test locally, blocked by missing fixture). Omission is not an acceptable substitute for an explicit entry — silence about a path implies it was checked.
-
-Test Quality Rule:
-
-- `test_quality_notes` should flag shallow tests (e.g. asserting only a status code with no assertion on response content, or asserting "no exception thrown" with no behavioral check) even when those tests pass and even when `result` is `pass`.
-- An empty `test_quality_notes` array is only acceptable when the Tester actually inspected the relevant tests' assertions and found them substantive — not because no tests were reviewed.
-
-Residual Risk Rule:
-
-- `residual_risk` being empty is only acceptable for genuinely trivial changes (e.g. a one-line config value, a typo fix, a pure rename with no behavioral change). For any other change, an empty `residual_risk` array is treated as a signal the validation was incomplete, not as evidence the change is risk-free.
-- A `pass` result with an empty `residual_risk` array should prompt the Orchestrator to request confirmation that residual risk was genuinely considered before progressing.
-
 ## Success Criteria
 - Verification is active, not just a re-run of what the Developer already wrote.
 - The result states not only the verdict but exactly what was checked, what was skipped, and why — a reader should never have to guess at the boundaries of what was tested.
