@@ -281,18 +281,6 @@ LOGGING = {
             "show_path": False,
             "markup": False,
         },
-        "request_console": {
-            "class": "rich.logging.RichHandler",
-            "formatter": "default",
-            "filters": ["request_sampling"],
-            "level": "INFO",
-            # RichHandler options:
-            "rich_tracebacks": True,
-            "show_time": True,
-            "show_level": True,
-            "show_path": False,
-            "markup": False,
-        },
     },
     "root": {
         "handlers": ["console"],
@@ -305,9 +293,10 @@ LOGGING = {
             "propagate": False,
         },
         "django.server": {
-            "handlers": ["request_console"],
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
+            "filters": ["request_sampling"],
         },
         "httpx": {
             "handlers": ["console"],

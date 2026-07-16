@@ -26,10 +26,10 @@ class RequestLogSamplingFilter(logging.Filter):
             sample_rate = float(getattr(settings, "REQUEST_LOG_SAMPLE_RATE", 1.0))
         except TypeError, ValueError:
             sample_rate = 1.0
-        if sample_rate < 0.0:
-            return 0.0
-        if sample_rate > 1.0:
-            return 1.0
+        if sample_rate < 0.0 or sample_rate > 1.0:
+            raise ValueError(
+                "REQUEST_LOG_SAMPLE_RATE must be a float between 0.0 and 1.0"
+            )
         return sample_rate
 
     def filter(self, record):
