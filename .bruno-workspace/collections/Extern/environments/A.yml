@@ -1,0 +1,4 @@
+name: A
+variables:
+  - secret: true
+    name: MIJN_AMS_API_KEY

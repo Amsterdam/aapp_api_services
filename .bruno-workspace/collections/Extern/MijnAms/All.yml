@@ -1,0 +1,22 @@
+info:
+  name: All
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: https://mams-a-appservice-bff.azurewebsites.net/private/api/v1/services/amsapp/auth/services/all
+  headers:
+    - name: x-api-key
+      value: "{{MIJN_AMS_API_KEY}}"
+    - name: x-amsapp-session-token
+      value: foobar
+  auth:
+    type: bearer
+    token: ""
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
