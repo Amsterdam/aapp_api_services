@@ -78,7 +78,7 @@ class SessionView(BaseView):
 @boat_charging_openapi_decorator(response_serializer_class=SessionResponseSerializer)
 class SessionDetailView(SessionView):
     response_serializer_class = SessionResponseSerializer
-    requires_access_token = True
+    requires_access_token = False
 
     async def get(self, request, *args, **kwargs):
         session_id = self.get_safe_path_param(kwargs["session_id"])
