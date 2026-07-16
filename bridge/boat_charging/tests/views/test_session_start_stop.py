@@ -14,18 +14,33 @@ class TestSessionInitView(BoatChargingTestCase):
         super().setUp()
         self.url = reverse("boat-charging-session-init")
 
+    def _get_request_body(self, return_url="https://yourdomain.com/app/sessions"):
+        return {
+            "station_id": "VCPS-IFZTY",
+            "socket_number": "1",
+            "name": "Test User",
+            "email": "user@example.com",
+            "return_url": return_url,
+        }
+
     def test_init_session_success(self):
         resp = respx.post(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
             return_value=httpx.Response(200, json=init_session.MOCK_RESPONSE)
         )
 
-        body = {
-            "station_id": "VCPS-IFZTY",
-            "socket_number": "1",
-            "name": "Test User",
-            "email": "user@example.com",
-            "return_url": "https://yourdomain.com/app/sessions",
-        }
+        body = self._get_request_body()
+        response = self.client.post(self.url, data=body, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertIsNotNone(response.data["checkout_url"])
+
+    def test_init_session_accepts_deeplink_return_url(self):
+        resp = respx.post(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
+            return_value=httpx.Response(200, json=init_session.MOCK_RESPONSE)
+        )
+
+        body = self._get_request_body(return_url="amsterdam://some-module/some-action")
         response = self.client.post(self.url, data=body, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
