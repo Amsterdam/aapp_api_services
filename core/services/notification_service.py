@@ -1,7 +1,7 @@
 import logging
 import uuid
 from datetime import datetime
-from typing import Iterable, NamedTuple
+from typing import Any, Iterable, NamedTuple
 
 from django.db import transaction
 from django.db.models import QuerySet
@@ -25,6 +25,12 @@ class NotificationServiceError(Exception):
 
 
 class NotificationData(NamedTuple):
+    """device_ids kan twee dingen zijn:
+    - lijst van external device_id hashes. Ontbrekende device_id records worden aangemaakt
+    - queryset van interne ids van devices uit het notification.Device model.
+      Device.objects.value_list("id", flat=True). Dit wordt in batches verwerkt.
+    """
+
     title: str
     message: str
     link_source_id: str | None = None
@@ -97,24 +103,6 @@ class AbstractNotificationService:
         if expires_at is None:
             expires_at = scheduled_for + timezone.timedelta(minutes=expiry_minutes)
 
-        if send_all_devices:
-            internal_device_ids = Device.objects.values_list("id", flat=True).iterator(
-                chunk_size=BATCH_SIZE
-            )
-        else:
-            if notification.device_ids is None:
-                raise NotificationServiceError(
-                    "Device ids must be defined if send_all_devices is False"
-                )
-            if isinstance(notification.device_ids, list):
-                internal_device_ids = create_missing_device_ids(notification.device_ids)
-            elif isinstance(notification.device_ids, QuerySet):
-                internal_device_ids = notification.device_ids.iterator(
-                    chunk_size=BATCH_SIZE
-                )
-            else:
-                raise NotificationServiceError("Unknown device ids type")
-
         if expires_at and expires_at <= scheduled_for:
             raise NotificationServiceError(
                 "Expires_at must be later than scheduled_for"
@@ -133,6 +121,9 @@ class AbstractNotificationService:
                     f"Image with id {notification.image_set_id} does not exist"
                 )
 
+        internal_device_ids = self.get_internal_device_ids(
+            notification, send_all_devices
+        )
         instance = self._get_scheduled_notification_instance(identifier)
         if not instance:
             instance = ScheduledNotification(
@@ -168,6 +159,37 @@ class AbstractNotificationService:
             self._save_scheduled_notification(internal_device_ids, instance=instance)
 
         return instance
+
+    def get_internal_device_ids(
+        self, notification: NotificationData, send_all_devices: bool
+    ) -> Any:
+        """
+        device_ids kan twee dingen zijn:
+        - lijst van external device_id hashes. Ontbrekende device_id records worden aangemaakt
+        - queryset van interne ids van devices uit het notification.Device model.
+          Device.objects.value_list("id", flat=True). Dit wordt in batches verwerkt.
+
+        returns:
+        - internal_device_ids: een lijst of QuerySet iterator van interne ids van devices uit notification.Device model
+        """
+        if send_all_devices:
+            internal_device_ids = Device.objects.values_list("id", flat=True).iterator(
+                chunk_size=BATCH_SIZE
+            )
+        else:
+            if notification.device_ids is None:
+                raise NotificationServiceError(
+                    "Device ids must be defined if send_all_devices is False"
+                )
+            if isinstance(notification.device_ids, list):
+                internal_device_ids = create_missing_device_ids(notification.device_ids)
+            elif isinstance(notification.device_ids, QuerySet):
+                internal_device_ids = notification.device_ids.iterator(
+                    chunk_size=BATCH_SIZE
+                )
+            else:
+                raise NotificationServiceError("Unknown device ids type")
+        return internal_device_ids
 
     def _save_scheduled_notification(
         self, internal_device_ids: Iterable[int], instance: ScheduledNotification
