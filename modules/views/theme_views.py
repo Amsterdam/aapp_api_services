@@ -104,7 +104,18 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
         # use serializer to get themes in same format as other modules, but without content
         serialized_themes = ReleaseModuleSerializer(theme_statuses, many=True).data
 
-        response_data = self._make_request(access_token).json()
+        response = self._make_request(access_token)
+        try:
+            response_data = response.json()
+        except ValueError:
+            logger.info(
+                "Invalid JSON received from upstream",
+                extra={"url": str(getattr(response, "url", ""))},
+            )
+            return Response(
+                {"detail": "Invalid response received from upstream service."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         # Index themes by module slug once to avoid repeatedly scanning the full list.
         themes_by_slug = {
