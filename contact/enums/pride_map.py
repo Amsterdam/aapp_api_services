@@ -21,6 +21,8 @@ class PrideMapData(ChoicesEnum):
     WATER_OBSTRUCTION = DataLayer(
         label="Waterstremming", code=44325, icon_label="water_obstruction"
     )
+    FIRST_AID = DataLayer(label="EHBO-post", code=44343, icon_label="first_aid")
+    SAFE_SPACE = DataLayer(label="Safe space", code=44346, icon_label="safe_space")
 
 
 class PrideMapFilters(ChoicesEnum):
@@ -69,6 +71,18 @@ class PrideMapLayers(ChoicesEnum):
         filter_key="aapp_subtitle",
         filter_value="Waterstremming",
         icon_label="water_obstruction",
+    )
+    FIRST_AID = LayerClass(
+        label="EHBO-post",
+        filter_key="aapp_subtitle",
+        filter_value="EHBO-post",
+        icon_label="first_aid",
+    )
+    SAFE_SPACE = LayerClass(
+        label="Safe space",
+        filter_key="aapp_subtitle",
+        filter_value="Safe space",
+        icon_label="safe_space",
     )
 
 
@@ -156,6 +170,18 @@ class PrideMapIcons(ChoicesEnum):
         path=IconPath["pride-water-obstruction"],
         circle_color="#FF9100",
         path_color="#181818",
+    )
+    FIRST_AID = IconClass(
+        label="first_aid",
+        path=IconPath["first-aid"],
+        circle_color="#EC0000",
+        path_color="#FFFFFF",
+    )
+    SAFE_SPACE = IconClass(
+        label="safe_space",
+        path=IconPath["pride-safe-space"],
+        circle_color="#E50082",
+        path_color="#FFFFFF",
     )
 
 

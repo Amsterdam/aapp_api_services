@@ -21,7 +21,6 @@ from contact.tests.mock_data.kingsday import (
     closed_parking_lot,
     detour,
     direction,
-    first_aid,
     kid_flea_market,
     park_and_ride,
     recycle_boat,
@@ -31,13 +30,20 @@ from contact.tests.mock_data.kingsday import (
     events as kingsday_events,
 )
 from contact.tests.mock_data.kingsday import (
+    first_aid as kingsday_first_aid,
+)
+from contact.tests.mock_data.kingsday import (
     toilet as kingsday_toilet,
 )
 from contact.tests.mock_data.pride import (
     canal_parade,
     closure,
     pride_walk,
+    safe_space,
     water_obstruction,
+)
+from contact.tests.mock_data.pride import (
+    first_aid as pride_first_aid,
 )
 from contact.tests.mock_data.pride import (
     toilets as pride_toilet,
@@ -188,8 +194,8 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "code": 2,
                 "icon_label": "first_aid",
                 "url": f"{settings.MAP_LAYERS_URL}2.json",
-                "mock": first_aid.MOCK_DATA,
-                "expected_features": len(first_aid.MOCK_DATA["features"]),
+                "mock": kingsday_first_aid.MOCK_DATA,
+                "expected_features": len(kingsday_first_aid.MOCK_DATA["features"]),
             },
             {
                 "label": "Inleverpunt overgebleven spullen",
@@ -497,6 +503,22 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "url": f"{settings.MAP_LAYERS_URL}6.json",
                 "mock": water_obstruction.MOCK_DATA,
                 "expected_features": len(water_obstruction.MOCK_DATA["features"]),
+            },
+            {
+                "label": "EHBO-post",
+                "code": 7,
+                "icon_label": "first_aid",
+                "url": f"{settings.MAP_LAYERS_URL}7.json",
+                "mock": pride_first_aid.MOCK_DATA,
+                "expected_features": len(pride_first_aid.MOCK_DATA["features"]),
+            },
+            {
+                "label": "Safe space",
+                "code": 8,
+                "icon_label": "safe_space",
+                "url": f"{settings.MAP_LAYERS_URL}8.json",
+                "mock": safe_space.MOCK_DATA,
+                "expected_features": len(safe_space.MOCK_DATA["features"]),
             },
         ]
 

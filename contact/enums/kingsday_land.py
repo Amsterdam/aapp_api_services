@@ -159,7 +159,7 @@ class KingsdayLandIcons(ChoicesEnum):
     )
     FIRST_AID = IconClass(
         label="first_aid",
-        path=IconPath["kingsday-first-aid"],
+        path=IconPath["first-aid"],
         circle_color="#EC0000",
         path_color="#FFFFFF",
     )
