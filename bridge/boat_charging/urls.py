@@ -42,6 +42,11 @@ urlpatterns = [
         name="boat-charging-session-detail",
     ),
     path(
+        BASE_PATH + "/sessions/<str:session_id>/socket-status",
+        session_view.SessionSocketStatusView.as_view(),
+        name="boat-charging-session-socket-status",
+    ),
+    path(
         BASE_PATH + "/sessions/<str:session_id>/start",
         session_start_stop.SessionStartView.as_view(),
         name="boat-charging-session-start",

@@ -29,3 +29,12 @@ class SessionResponseSerializer(serializers.Serializer):
     currency = serializers.ChoiceField(choices=["EUR"])
     # Location data
     location = LocationPropertiesSerializer(required=False)
+
+
+class SessionSocketStatusResponseSerializer(serializers.Serializer):
+    status = serializers.CharField(
+        help_text="Known status values include OCCUPIED and AVAILABLE. Unknown values are forwarded unchanged."
+    )
+    substatus = serializers.CharField(
+        help_text="Known substatus values include PREPARING and CHARGING. Unknown values are forwarded unchanged."
+    )

@@ -94,5 +94,6 @@ BOAT_CHARGING_DOMAIN = os.getenv(
 BOAT_CHARGING_ENDPOINTS = {
     "LOCATIONS": urljoin(BOAT_CHARGING_DOMAIN, "locations"),
     "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "sessions"),
+    "SESSIONS_SOCKET_STATUS": urljoin(BOAT_CHARGING_DOMAIN, "sessions"),
     "SETTINGS": urljoin(BOAT_CHARGING_DOMAIN, "app-settings"),
 }
