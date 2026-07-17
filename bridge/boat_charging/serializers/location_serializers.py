@@ -1,20 +1,7 @@
 from rest_framework import serializers
 
+from bridge.boat_charging.constants import OPERATION_STATE_CHOICES
 from core.serializers.address_serializers import AddressSerializer
-
-OPERATION_STATE_CHOICES = ["OPERATIVE", "INOPERATIVE", "OFFLINE", "UNKNOWN", "OCCUPIED"]
-
-OPERATION_STATE_MAPPING = {
-    "OPERATIVE": "OPERATIVE",
-    "INOPERATIVE": "INOPERATIVE",
-    "OFFLINE": "OFFLINE",
-    "UNKNOWN": "UNKNOWN",
-    "OCCUPIED": "OCCUPIED",
-    "FAULTED": "INOPERATIVE",
-    "AVAILABLE": "OPERATIVE",
-    "CHARGING": "OCCUPIED",
-    "RESERVED": "OCCUPIED",
-}
 
 
 class HourMinuteField(serializers.Serializer):

@@ -1,5 +1,9 @@
 from rest_framework import serializers
 
+from bridge.boat_charging.constants import (
+    OCCUPIED_SUBSTATUS_CHOICES,
+    OPERATION_STATE_CHOICES,
+)
 from bridge.boat_charging.serializers.location_serializers import (
     LocationPropertiesSerializer,
 )
@@ -32,9 +36,10 @@ class SessionResponseSerializer(serializers.Serializer):
 
 
 class SessionSocketStatusResponseSerializer(serializers.Serializer):
-    status = serializers.CharField(
-        help_text="Known status values include OCCUPIED and AVAILABLE. Unknown values are forwarded unchanged."
-    )
-    substatus = serializers.CharField(
-        help_text="Known substatus values include PREPARING and CHARGING. Unknown values are forwarded unchanged."
+    status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES)
+    substatus = serializers.ChoiceField(
+        choices=OCCUPIED_SUBSTATUS_CHOICES,
+        allow_null=True,
+        required=False,
+        help_text="Substatus is only provided when status is OCCUPIED",
     )

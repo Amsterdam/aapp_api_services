@@ -88,7 +88,7 @@ class TestSessionSocketStatusView(BoatChargingTestCase):
         )
         self.assertEqual(resp.call_count, 1)
 
-    def test_unknown_statuses_are_forwarded_without_changes(self):
+    def test_unknown_statuses_are_rejected(self):
         respx.get(self.external_endpoint).mock(
             return_value=httpx.Response(
                 200,
@@ -98,8 +98,7 @@ class TestSessionSocketStatusView(BoatChargingTestCase):
 
         response = self.client.get(self.url, headers=self.api_headers)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), socket_status.MOCK_RESPONSE_UNKNOWN_STATUS)
+        self.assertEqual(response.status_code, 400)
 
     def test_invalid_session_id_returns_400(self):
         invalid_url = reverse(

@@ -3,12 +3,14 @@ from typing import Any
 from django.conf import settings
 from rest_framework.response import Response
 
+from bridge.boat_charging.constants import (
+    OPERATION_STATE_MAPPING,
+)
 from bridge.boat_charging.exceptions import (
     BoatChargingForbiddenError,
     BoatChargingLocationNotFoundError,
 )
 from bridge.boat_charging.serializers.location_serializers import (
-    OPERATION_STATE_MAPPING,
     LocationDetailResponseSerializer,
     LocationListResponseSerializer,
 )
