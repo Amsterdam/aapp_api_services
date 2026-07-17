@@ -23,7 +23,7 @@ from bridge.utils import max_or_none
 
 @boat_charging_openapi_decorator(
     response_serializer_class=LocationListResponseSerializer,
-    requires_access_token=False,
+    accepts_access_token=False,
 )
 class LocationView(BaseView):
     response_serializer_class = LocationListResponseSerializer
@@ -185,7 +185,7 @@ class LocationView(BaseView):
 @boat_charging_openapi_decorator(
     response_serializer_class=LocationDetailResponseSerializer,
     exceptions=[BoatChargingLocationNotFoundError],
-    requires_access_token=False,
+    accepts_access_token=False,
 )
 class LocationDetailView(LocationView):
     response_serializer_class = LocationDetailResponseSerializer

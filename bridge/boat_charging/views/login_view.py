@@ -15,7 +15,7 @@ from bridge.boat_charging.views.base_view import (
 @method_decorator(cache_page(60 * 60), name="get")
 @boat_charging_openapi_decorator(
     response_serializer_class=OIDCSettingsResponseSerializer,
-    requires_access_token=False,
+    accepts_access_token=False,
 )
 class OIDCSettingsView(BaseView):
     response_serializer_class = OIDCSettingsResponseSerializer

@@ -17,7 +17,9 @@ from bridge.boat_charging.views.base_view import (
 
 
 @boat_charging_openapi_decorator(
-    response_serializer_class=SessionResponseSerializer(many=True)
+    response_serializer_class=SessionResponseSerializer(many=True),
+    accepts_access_token=True,
+    requires_access_token=True,
 )
 class SessionView(BaseView):
     response_serializer_class = SessionResponseSerializer
@@ -79,7 +81,11 @@ class SessionView(BaseView):
         }
 
 
-@boat_charging_openapi_decorator(response_serializer_class=SessionResponseSerializer)
+@boat_charging_openapi_decorator(
+    response_serializer_class=SessionResponseSerializer,
+    accepts_access_token=True,
+    requires_access_token=False,
+)
 class SessionDetailView(SessionView):
     response_serializer_class = SessionResponseSerializer
     requires_access_token = False
@@ -96,11 +102,13 @@ class SessionDetailView(SessionView):
 
 
 @boat_charging_openapi_decorator(
-    response_serializer_class=SessionSocketStatusResponseSerializer
+    response_serializer_class=SessionSocketStatusResponseSerializer,
+    accepts_access_token=True,
+    requires_access_token=False,
 )
 class SessionSocketStatusView(BaseView):
     response_serializer_class = SessionSocketStatusResponseSerializer
-    requires_access_token = True
+    requires_access_token = False
 
     async def get(self, request, *args, **kwargs):
         session_id = self.get_safe_path_param(kwargs["session_id"])
