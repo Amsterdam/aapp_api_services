@@ -222,7 +222,8 @@ def boat_charging_openapi_decorator(
                 required=requires_access_token,
             )
         )
-        kwargs["exceptions"].insert(0, BoatChargingMissingAccessToken)
+        if requires_access_token:
+            kwargs["exceptions"].insert(0, BoatChargingMissingAccessToken)
     if requires_device_id:
         additional_params.append(
             OpenApiParameter(
