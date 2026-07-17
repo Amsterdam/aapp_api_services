@@ -8,4 +8,5 @@ MAPPING = {
         "WPI_TOZO",
     ],
     "mams-invoices": ["AFIS"],
+    "mams-soil": ["BODEM"],
 }
