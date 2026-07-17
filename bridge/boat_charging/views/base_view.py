@@ -191,8 +191,8 @@ class BaseView(GenericAPIView):
 def boat_charging_openapi_decorator(
     response_serializer_class,
     additional_params=None,
-    requires_access_token=True,
     accepts_access_token=True,
+    requires_access_token=True,
     requires_device_id=False,
     paginated=False,
     exceptions=None,
