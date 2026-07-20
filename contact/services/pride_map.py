@@ -68,6 +68,10 @@ class PrideMapService(EventAbstractService):
         else:
             table = None
 
+        description = None
+        if layer_type == "EHBO-post":
+            description = properties.get("description", "")
+
         return {
             f"{prefix}title": title,
             f"{prefix}subtitle": layer_type,
@@ -76,6 +80,7 @@ class PrideMapService(EventAbstractService):
             f"{prefix}website": self._get_website(properties),
             f"{prefix}address": address,
             f"{prefix}table": table,
+            f"{prefix}description": description,
             "stroke": stroke,
             "stroke-width": stroke_width,
         }

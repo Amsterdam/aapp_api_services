@@ -87,6 +87,12 @@ class PrideMapLayers(ChoicesEnum):
 
 
 class PrideMapProperties(ChoicesEnum):
+    DESCRIPTION = PropertiesClass(
+        label=None,
+        property_key="aapp_description",
+        property_type="string",
+        icon=None,
+    )
     WHEN = PropertiesClass(
         label="Wanneer",
         property_key="aapp_date_and_time",
