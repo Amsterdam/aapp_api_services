@@ -6,6 +6,7 @@ from construction_work.etl.send_notifications import send_article_notifications
 from construction_work.models.article_models import Article
 from construction_work.models.manage_models import Device
 from construction_work.models.project_models import Project
+from core.enums import NotificationType
 from core.services.notification_service import ScheduledNotification
 
 
@@ -52,3 +53,8 @@ class SendNotificationTestCase(TestCase):
         )  # one notification is added (for article 2)
         self.assertEqual(notifications[0].title, self.project1.title)
         self.assertEqual(notifications[0].body, self.article2.title)
+        self.assertEqual(
+            notifications[0].notification_type,
+            NotificationType.CONSTRUCTION_WORK_ARTICLE_MESSAGE.value,
+        )
+        self.assertEqual(notifications[0].context["subtype"], "article")

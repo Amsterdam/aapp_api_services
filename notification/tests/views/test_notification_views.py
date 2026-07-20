@@ -83,6 +83,45 @@ class NotificationListViewTests(BaseNotificationViewGetTestCase):
                 notification_type="test_type",
             )
 
+    def test_create_notification_missing_subtype_for_construction_work(self):
+        device_1 = baker.make(Device, external_id=self.device_id)
+        with self.assertRaises(ValidationError):
+            baker.make(
+                Notification,
+                device=device_1,
+                context={
+                    "type": "construction-work:article-message",
+                    "module_slug": "construction-work",
+                    "linkSourceid": "1",
+                },
+                notification_type="construction-work:article-message",
+            )
+
+    def test_list_notifications_regression_construction_work(self):
+        """
+        Test that the context type for construction work notifications is returned correctly.
+        Previously, the context type was being overwritten to "ProjectWarningCreatedByProjectManager",
+        now we return "construction-work:article-message" with a subtype. Test to make sure the old notifications are still returned correctly
+        """
+        device_1 = baker.make(Device, external_id=self.device_id)
+        baker.make(
+            Notification,
+            device=device_1,
+            context={
+                "type": "ProjectWarningCreatedByProjectManager",
+                "module_slug": "construction-work",
+                "linkSourceid": "1",
+            },
+            notification_type="ProjectWarningCreatedByProjectManager",
+        )
+
+        response = self.client.get(self.url, headers=self.headers_with_device_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data[0]["context"].get("type"),
+            "ProjectWarningCreatedByProjectManager",
+        )
+
     @patch("notification.serializers.notification_serializers.ImageSetService")
     def test_list_notifications_with_and_without_image(self, mock_image_set_service):
         image_id = 123

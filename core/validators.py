@@ -10,6 +10,7 @@ CONTEXT_SCHEMA = {
         "linkSourceid": {"type": "string"},
         "type": {"type": "string"},
         "module_slug": {"type": "string"},
+        "subtype": {"type": "string", "enum": ["article", "warning"]},
         "url": {"type": "string"},
         "deeplink": {"type": "string"},
         "reminderKey": {"type": "string"},
@@ -19,6 +20,18 @@ CONTEXT_SCHEMA = {
     "not": {
         "required": ["url", "deeplink"],
     },
+    "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "type": {"const": "construction-work:article-message"},
+                }
+            },
+            "then": {
+                "required": ["subtype"],
+            },
+        }
+    ],
 }
 
 

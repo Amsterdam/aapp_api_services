@@ -24,6 +24,9 @@ class NotificationContextSerializer(serializers.Serializer):
     linkSourceid = serializers.CharField(allow_null=True, required=False)
     type = serializers.CharField()
     module_slug = serializers.CharField()
+    subtype = serializers.ChoiceField(
+        choices=["article", "warning"], allow_null=True, required=False
+    )
     url = serializers.CharField(allow_null=True, required=False)
     deeplink = serializers.CharField(allow_null=True, required=False)
 
@@ -31,6 +34,13 @@ class NotificationContextSerializer(serializers.Serializer):
         if data.get("url") and data.get("deeplink"):
             raise serializers.ValidationError(
                 "url and deeplink cannot both be set. Please choose one or the other."
+            )
+
+        if data.get("type") == "construction-work:article-message" and not data.get(
+            "subtype"
+        ):
+            raise serializers.ValidationError(
+                "subtype is required for construction-work:article-message notifications."
             )
         return data
 

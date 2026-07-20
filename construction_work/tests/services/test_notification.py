@@ -10,6 +10,7 @@ from construction_work.models.manage_models import (
     WarningMessage,
 )
 from construction_work.services.notification import WarningNotificationService
+from core.enums import NotificationType
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from core.utils.image_utils import get_example_image_file
 from notification.models.notification_models import ScheduledNotification
@@ -28,6 +29,14 @@ class TestWarningNotificationService(ResponsesActivatedAPITestCase):
 
     def test_call_notification_service_success_no_image(self):
         self.notification_service.send(self.warning)
+        notification = ScheduledNotification.objects.first()
+
+        self.assertIsNotNone(notification)
+        self.assertEqual(
+            notification.notification_type,
+            NotificationType.CONSTRUCTION_WORK_ARTICLE_MESSAGE.value,
+        )
+        self.assertEqual(notification.context["subtype"], "warning")
         self.assertTrue(self.warning.notification_sent)
 
     def test_call_notification_service_with_image(self):
