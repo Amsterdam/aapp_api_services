@@ -18,7 +18,7 @@ TERMS_FILENAME_RE = re.compile(r"^(?P<version>\d+)\.html$")
 @method_decorator(cache_page(60 * 60), name="get")  # 1 hour caching
 @boat_charging_openapi_decorator(
     response_serializer_class=TermsResponseSerializer,
-    requires_access_token=False,
+    accepts_access_token=False,
 )
 class TermsView(BaseView):
     response_serializer_class = TermsResponseSerializer

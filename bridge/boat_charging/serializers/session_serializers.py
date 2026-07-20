@@ -1,5 +1,9 @@
 from rest_framework import serializers
 
+from bridge.boat_charging.constants import (
+    OCCUPIED_SUBSTATUS_CHOICES,
+    OPERATION_STATE_CHOICES,
+)
 from bridge.boat_charging.serializers.location_serializers import (
     LocationPropertiesSerializer,
 )
@@ -29,3 +33,13 @@ class SessionResponseSerializer(serializers.Serializer):
     currency = serializers.ChoiceField(choices=["EUR"])
     # Location data
     location = LocationPropertiesSerializer(required=False)
+
+
+class SessionSocketStatusResponseSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES)
+    substatus = serializers.ChoiceField(
+        choices=OCCUPIED_SUBSTATUS_CHOICES,
+        allow_null=True,
+        required=False,
+        help_text="Substatus is only provided when status is OCCUPIED",
+    )

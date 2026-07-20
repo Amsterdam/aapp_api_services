@@ -3,8 +3,12 @@ from typing import Any
 from django.conf import settings
 from rest_framework.response import Response
 
+from bridge.boat_charging.constants import (
+    OPERATION_STATE_MAPPING,
+)
 from bridge.boat_charging.serializers.session_serializers import (
     SessionResponseSerializer,
+    SessionSocketStatusResponseSerializer,
 )
 from bridge.boat_charging.views.base_view import (
     BaseView,
@@ -13,7 +17,9 @@ from bridge.boat_charging.views.base_view import (
 
 
 @boat_charging_openapi_decorator(
-    response_serializer_class=SessionResponseSerializer(many=True)
+    response_serializer_class=SessionResponseSerializer(many=True),
+    accepts_access_token=True,
+    requires_access_token=True,
 )
 class SessionView(BaseView):
     response_serializer_class = SessionResponseSerializer
@@ -75,7 +81,11 @@ class SessionView(BaseView):
         }
 
 
-@boat_charging_openapi_decorator(response_serializer_class=SessionResponseSerializer)
+@boat_charging_openapi_decorator(
+    response_serializer_class=SessionResponseSerializer,
+    accepts_access_token=True,
+    requires_access_token=False,
+)
 class SessionDetailView(SessionView):
     response_serializer_class = SessionResponseSerializer
     requires_access_token = False
@@ -87,5 +97,32 @@ class SessionDetailView(SessionView):
         serializer_data = self.get_session_data(response_json)
 
         serializer = self.response_serializer_class(data=serializer_data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=200)
+
+
+@boat_charging_openapi_decorator(
+    response_serializer_class=SessionSocketStatusResponseSerializer,
+    accepts_access_token=True,
+    requires_access_token=False,
+)
+class SessionSocketStatusView(BaseView):
+    response_serializer_class = SessionSocketStatusResponseSerializer
+    requires_access_token = False
+
+    async def get(self, request, *args, **kwargs):
+        session_id = self.get_safe_path_param(kwargs["session_id"])
+        endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS_SOCKET_STATUS']}/"
+            f"{session_id}/socket-status"
+        )
+        response_json = await self.api_call("get", endpoint=endpoint)
+
+        response_data = {
+            "status": OPERATION_STATE_MAPPING.get(response_json["status"], "UNKNOWN"),
+            "substatus": response_json.get("substatus"),
+        }
+
+        serializer = self.response_serializer_class(data=response_data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)

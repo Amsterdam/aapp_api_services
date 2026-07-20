@@ -191,6 +191,7 @@ class BaseView(GenericAPIView):
 def boat_charging_openapi_decorator(
     response_serializer_class,
     additional_params=None,
+    accepts_access_token=True,
     requires_access_token=True,
     requires_device_id=False,
     paginated=False,
@@ -211,17 +212,18 @@ def boat_charging_openapi_decorator(
         kwargs["exceptions"].extend(exceptions)
 
     additional_params = additional_params or []
-    if requires_access_token:
+    if accepts_access_token:
         additional_params.append(
             OpenApiParameter(
                 name="Access-Token",
                 description="EVinity Access Token",
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.HEADER,
-                required=True,
+                required=requires_access_token,
             )
         )
-        kwargs["exceptions"].insert(0, BoatChargingMissingAccessToken)
+        if requires_access_token:
+            kwargs["exceptions"].insert(0, BoatChargingMissingAccessToken)
     if requires_device_id:
         additional_params.append(
             OpenApiParameter(
