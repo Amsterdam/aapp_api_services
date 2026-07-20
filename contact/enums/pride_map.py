@@ -88,10 +88,10 @@ class PrideMapLayers(ChoicesEnum):
 
 class PrideMapProperties(ChoicesEnum):
     DESCRIPTION = PropertiesClass(
-        label=None,
+        label="Informatie",
         property_key="aapp_description",
         property_type="string",
-        icon=None,
+        icon=IconPath["info"],
     )
     WHEN = PropertiesClass(
         label="Wanneer",
