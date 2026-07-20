@@ -35,6 +35,27 @@ class ResponseLoggingAndMetricsMiddlewareTest(TestCase):
             1,
             {
                 "method": "GET",
+                "path": "unresolved",
+            },
+        )
+
+    def test_success_response_updates_metrics_counter_with_resolver_match(self):
+        with mock.patch(
+            "core.middleware.response_logging_and_metrics.successful_requests_counter"
+        ) as mock_counter:
+            response = HttpResponse("OK", status=200)
+            mw = handle_response_metrics_and_4xx_logging_middleware(
+                lambda _req: response
+            )
+            headers = {}
+            request = self.factory.get("/test-endpoint/", headers=headers)
+            request.resolver_match = mock.Mock(route="/test-endpoint/")
+            mw(request)
+
+        mock_counter.add.assert_called_once_with(
+            1,
+            {
+                "method": "GET",
                 "path": "/test-endpoint/",
             },
         )

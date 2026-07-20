@@ -13,13 +13,16 @@ def _handle_response_metrics_and_4xx_logging(request, response):
     status = getattr(response, "status_code", None)
 
     # Metrics: count successful requests
-    if status is not None and status < 400:
+    if status is not None and 200 <= status < 300:
         try:
+            resolver_match = getattr(request, "resolver_match", None)
+            route = getattr(resolver_match, "route", None) or "unresolved"
+
             successful_requests_counter.add(
                 1,
                 {
                     "method": request.method,
-                    "path": request.path,
+                    "path": route,
                 },
             )
         except Exception:
