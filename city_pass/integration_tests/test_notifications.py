@@ -1,3 +1,4 @@
+from django.utils import timezone
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
@@ -50,3 +51,14 @@ class TestNotificationService(APITestCase):
 
         self.assertIsNotNone(notification.send_at)
         self.assertEqual(notification.nr_sessions, 1)
+
+    def test_call_scheduled_notification(self):
+        scheduled_for = timezone.now() + timezone.timedelta(hours=2)
+        notification = baker.make(
+            Notification, budgets=[self.budget_2], send_at=scheduled_for
+        )
+        service = NotificationService()
+
+        service.send(notification)
+
+        self.assertEqual(notification.send_at, scheduled_for)

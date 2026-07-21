@@ -1,3 +1,4 @@
+from django.utils import timezone
 from model_bakery import baker
 
 from city_pass.models import Notification, Session
@@ -91,3 +92,20 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         self.assertIsNotNone(notification.send_at)
         self.assertEqual(notification.nr_sessions, 1)
         self.assertEqual(ScheduledNotification.objects.count(), 1)
+
+    def test_call_uses_existing_send_at_for_schedule(self):
+        scheduled_for = timezone.now() + timezone.timedelta(days=1)
+        notification = baker.make(
+            Notification, budgets=[self.budget_1], send_at=scheduled_for
+        )
+        service = NotificationService()
+
+        service.send(notification)
+
+        scheduled_notification = ScheduledNotification.objects.get()
+        self.assertEqual(
+            scheduled_notification.identifier,
+            service._create_identifier(notification.id),
+        )
+        self.assertEqual(scheduled_notification.scheduled_for, scheduled_for)
+        self.assertEqual(notification.send_at, scheduled_for)

@@ -54,13 +54,13 @@ class NotificationAdmin(admin.ModelAdmin):
                 if obj.nr_sessions:
                     self.message_user(
                         request,
-                        f"Bericht verstuurd aan {obj.nr_sessions} gebruikers",
+                        f"Bericht aangemaakt voor {obj.nr_sessions} gebruikers",
                         level=messages.INFO,
                     )
                 else:
                     self.message_user(
                         request,
-                        "Geen gebruikers gevonden om bericht aan te versturen!",
+                        "Geen gebruikers gevonden om bericht voor aan te maken!",
                         level=messages.ERROR,
                     )
             else:
@@ -106,7 +106,7 @@ class NotificationAdmin(admin.ModelAdmin):
         if obj:
             return exclude + ["budgets"]
         else:
-            return exclude + ["send_at", "created_by"]
+            return exclude + ["created_by"]
 
     @admin.display(boolean=True, description="Verstuurd?")
     def send(self, obj) -> bool:
