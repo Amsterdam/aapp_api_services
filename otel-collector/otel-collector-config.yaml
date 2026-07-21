@@ -1,0 +1,51 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+      grpc:
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 180
+    spike_limit_mib: 30
+
+  batch:
+    timeout: 1s
+    send_batch_size: 256
+    send_batch_max_size: 512
+
+  tail_sampling:
+    decision_wait: 30s   # wait for full trace
+    num_traces: 50000    # buffer size (tune based on traffic)
+
+    policies:
+      # 1. Always keep errors between 4xx and 5xx (status_code-based)
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: 
+            - ERROR
+
+      # 2. Keep slow requests (latency-based)
+      - name: slow_requests
+        type: latency
+        latency:
+          threshold_ms: 1500
+
+      # 3. Probabilistic sampling for everything else
+      - name: baseline_sampling
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 50
+
+exporters:
+  azuremonitor:
+    connection_string: "some-string" # later change this to ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, tail_sampling, batch] # order matters
+      exporters: [azuremonitor]

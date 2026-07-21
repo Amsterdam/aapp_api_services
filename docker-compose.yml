@@ -132,6 +132,14 @@ services:
       retries: 5
       timeout: 3s
 
+  otel-collector:
+    container_name: aapp-otel-collector
+    build:
+      context: ./otel-collector
+      dockerfile: Dockerfile
+    volumes:
+      - ./otel-collector/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     environment:

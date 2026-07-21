@@ -50,6 +50,8 @@ dependencies = [
   "azure-monitor-opentelemetry",
   "azure-monitor-opentelemetry-exporter",
   "opentelemetry-instrumentation-httpx",
+  "opentelemetry-instrumentation-azure-sdk",
+  "opentelemetry-exporter-otlp-proto-grpc",
   # Integration and unit testing
   "freezegun",
   "pytest-django",

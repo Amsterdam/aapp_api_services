@@ -386,6 +386,10 @@ MOCK_FIREBASE = False
 FIREBASE_CREDENTIALS = os.getenv("FIREBASE_JSON")
 NOTIFICATION_DEVICE_BATCH_SIZE = 5000
 
+OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv(
+    "OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317"
+)
+
 # temporary settings for notification service, to be removed after migration
 NOTIFICATION_API = os.getenv("NOTIFICATION_API", "http://api-notification:8000")
 NOTIFICATION_BASE_URL_EXTERNAL = urljoin(
