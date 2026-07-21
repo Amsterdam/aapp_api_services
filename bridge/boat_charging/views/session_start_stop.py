@@ -32,7 +32,7 @@ class SessionInitView(BaseView):
 
         request_transaction_payload = {
             "stationId": validated_data["station_id"],
-            "socketNumber": str(validated_data["socket_number"]),
+            "socketNumber": validated_data["socket_number"],
             "name": validated_data["name"],
             "email": validated_data["email"],
             "returnUrl": validated_data["return_url"],

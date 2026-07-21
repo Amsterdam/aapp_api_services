@@ -23,7 +23,7 @@ def validate_return_url(value):
 
 class SessionInitRequestSerializer(serializers.Serializer):
     station_id = serializers.CharField()
-    socket_number = serializers.IntegerField()
+    socket_number = serializers.CharField()
     name = serializers.CharField()
     email = serializers.EmailField()
     return_url = serializers.CharField(validators=[validate_return_url])
