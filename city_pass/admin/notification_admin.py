@@ -1,12 +1,18 @@
+from datetime import timedelta
+
 from django.contrib import admin
 from django.core.checks import messages
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 
+from city_pass.models import Notification
 from city_pass.services.notification import NotificationService
+
+DEADLINE_BUFFER_MINUTES = 15
 
 
 class NotificationAdmin(admin.ModelAdmin):
@@ -18,6 +24,7 @@ class NotificationAdmin(admin.ModelAdmin):
         "selected_budgets",
         "created_by",
         "send_at",
+        "can_change_notification",
     ]
     list_select_related = ("created_by",)
     ordering = ["-pk"]
@@ -27,6 +34,20 @@ class NotificationAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+    def delete_model(self, request, obj):
+        # delete the scheduled notification in the notification service when the
+        # notification is deleted in the admin
+        if obj and not self._notification_is_locked(obj):
+            notification_service = NotificationService()
+            notification_service.delete_notification(obj)
+            super().delete_model(request, obj)
+        else:
+            self.message_user(
+                request,
+                "Bericht is verstuurd en kan niet meer verwijderd worden.",
+                level=messages.INFO,
+            )
 
     def get_urls(self):
         urls = super().get_urls()
@@ -39,10 +60,23 @@ class NotificationAdmin(admin.ModelAdmin):
         ]
         return custom + urls
 
-    def response_add(self, request, obj, post_url_continue=None):
-        return HttpResponseRedirect(
-            reverse("admin:notification_confirm_send", args=[obj.pk])
-        )
+    def response_change(
+        self, request, obj: Notification, post_url_continue: str = None
+    ):
+        # only ask for confirmation if notification has send date
+        if obj.send_at is not None:
+            return HttpResponseRedirect(
+                reverse("admin:notification_confirm_send", args=[obj.pk])
+            )
+        return super().response_change(request, obj, post_url_continue)
+
+    def response_add(self, request, obj: Notification, post_url_continue: str = None):
+        # only ask for confirmation if notification has send date
+        if obj.send_at is not None:
+            return HttpResponseRedirect(
+                reverse("admin:notification_confirm_send", args=[obj.pk])
+            )
+        return super().response_add(request, obj, post_url_continue)
 
     def confirm_send(self, request, object_id):
         obj = self.get_object(request, object_id)
@@ -153,6 +187,20 @@ class NotificationAdmin(admin.ModelAdmin):
         context["show_save_and_continue"] = False
         context["show_save_and_add_another"] = False
         return super().render_change_form(request, context, add, change, form_url, obj)
+
+    @admin.display(boolean=True, description="Kan gewijzigd worden")
+    def can_change_notification(self, obj: Notification) -> bool:
+        return not self._notification_is_locked(obj)
+
+    @staticmethod
+    def _notification_is_locked(notification: Notification) -> bool:
+        if (
+            notification.send_at is not None
+            and notification.send_at
+            <= timezone.now() + timedelta(minutes=DEADLINE_BUFFER_MINUTES)
+        ):
+            return True
+        return False
 
     class Media:
         js = ("js/persist_scroll.js",)

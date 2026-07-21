@@ -49,7 +49,7 @@ class NotificationService(AbstractNotificationService):
             raise ValueError(
                 "Notification must be saved and have an id to create an identifier"
             )
-        return f"{self.module_slug}_app_notification_{notification_id}"
+        return f"{self.module_slug}_notification_{notification_id}"
 
     def get_device_qs(self, notification: Notification) -> QuerySet:
         budgets = list(notification.budgets.all())
