@@ -33,10 +33,10 @@ class SessionView(BaseView):
             "get",
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"],
         )
-        serializer_data = [self.get_session_data(item) for item in response_json]
-        paginated_data = self.paginate_queryset(serializer_data)
+        paginated_data = self.paginate_queryset(response_json)
+        serializer_data = [self.get_session_data(item) for item in paginated_data]
 
-        serializer = self.response_serializer_class(data=paginated_data, many=True)
+        serializer = self.response_serializer_class(data=serializer_data, many=True)
         serializer.is_valid(raise_exception=True)
         return self.get_paginated_response(serializer.validated_data)
 
