@@ -81,8 +81,9 @@ class NotificationAdmin(admin.ModelAdmin):
         else:
             notification_service = NotificationService()
             notification_service.delete_notification(obj)
+            obj.send_at = None
             obj.nr_sessions = 0
-            obj.save()
+            obj.save(update_fields=["send_at", "nr_sessions"])
         return super().response_change(request, obj)
 
     def response_add(self, request, obj: Notification, post_url_continue: str = None):
@@ -121,7 +122,8 @@ class NotificationAdmin(admin.ModelAdmin):
                 # make sure the scheduled notification is deleted if it was created before the user canceled the action
                 notification_service.delete_notification(obj)
                 obj.send_at = None
-                obj.save()
+                obj.nr_sessions = 0
+                obj.save(update_fields=["send_at", "nr_sessions"])
             return HttpResponseRedirect(
                 reverse("admin:city_pass_notification_changelist")
             )

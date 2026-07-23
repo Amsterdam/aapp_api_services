@@ -2,7 +2,6 @@ import logging
 from datetime import timedelta
 
 from django.db.models import QuerySet
-from django.utils import timezone
 
 from city_pass.models import Notification, Session
 from core.enums import Module, NotificationType
@@ -27,17 +26,17 @@ class NotificationService(AbstractNotificationService):
             device_ids=device_qs,
         )
 
-        scheduled_for = notification.send_at or timezone.now()
+        if notification.send_at is not None:
+            scheduled_notification = self.upsert(
+                notification=notification_data,
+                scheduled_for=notification.send_at,
+                expires_at=notification.send_at + timedelta(minutes=30),
+                identifier=self._create_identifier(notification.id),
+            )
 
-        scheduled_notification = self.upsert(
-            notification=notification_data,
-            scheduled_for=scheduled_for,
-            expires_at=scheduled_for + timedelta(minutes=30),
-            identifier=self._create_identifier(notification.id),
-        )
-
-        notification.send_at = scheduled_notification.scheduled_for
-        notification.nr_sessions = scheduled_notification.devices.count()
+            notification.nr_sessions = scheduled_notification.devices.count()
+        else:
+            notification.nr_sessions = 0
         notification.save()
 
     def delete_notification(self, notification: Notification):
