@@ -24,9 +24,30 @@ class TestSettingsView(BoatChargingTestCase):
             response.json(),
             {
                 "pre_authorization_amount": 45.0,
-                "session_cleanup_enabled": True,
+                "session_cleanup_enabled": False,
                 "session_expiry_hours": 24,
                 "session_expiry_warning_hours": 2,
                 "standard_fine": 1,
+            },
+        )
+
+    def test_settings_endpoint_missing_fields(self):
+        resp = respx.get(settings.BOAT_CHARGING_ENDPOINTS["SETTINGS"]).mock(
+            return_value=httpx.Response(
+                200, json=app_settings.MOCK_RESPONSE_MISSING_FIELDS
+            )
+        )
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertEqual(
+            response.json(),
+            {
+                "pre_authorization_amount": 45.0,
+                "session_cleanup_enabled": True,
+                "session_expiry_hours": 24,
+                "session_expiry_warning_hours": None,
+                "standard_fine": None,
             },
         )
