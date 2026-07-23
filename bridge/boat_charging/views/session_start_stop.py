@@ -24,6 +24,8 @@ class SessionInitView(BaseView):
 
     @boat_charging_openapi_decorator(
         response_serializer_class=SessionInitResponseSerializer,
+        accepts_access_token=True,
+        requires_access_token=False,
     )
     async def post(self, request, *args, **kwargs):
         request_data = SessionInitRequestSerializer(data=request.data)

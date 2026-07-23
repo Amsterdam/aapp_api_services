@@ -11,6 +11,7 @@ http:
   headers:
     - name: Access-Token
       value: "{{access-token}}"
+      disabled: true
     - name: X-Api-Key
       value: "{{apiKey}}"
   body:
@@ -21,7 +22,7 @@ http:
         "socket_number": "1",
         "name": "Test User",
         "email": "user@example.com",
-        "return_url": "https://yourdomain.com/app/sessions"
+        "return_url": "amsterdam://some-url"
       }
   auth: inherit
 
