@@ -9,7 +9,9 @@
   <b>Voorbeeld weergave van bericht:</b>
   <blockquote><b>{{ notification.title }}</b><br>{{ notification.message }}</blockquote>
 
-{% if budgets %}
+  <p>Het is niet meer mogelijk om deze notificatie te wijzigen na {{ notification_deadline }}.</p>
+
+  {% if budgets %}
   <b>Budgetten selectie</b>
   {{ budgets }}
   <br>

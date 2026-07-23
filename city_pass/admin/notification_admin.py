@@ -49,6 +49,16 @@ class NotificationAdmin(admin.ModelAdmin):
                 level=messages.INFO,
             )
 
+    def has_change_permission(self, request, obj=None):
+        if obj and self._notification_is_locked(obj):
+            return False
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and self._notification_is_locked(obj):
+            return False
+        return True
+
     def get_urls(self):
         urls = super().get_urls()
         custom = [
@@ -60,15 +70,20 @@ class NotificationAdmin(admin.ModelAdmin):
         ]
         return custom + urls
 
-    def response_change(
-        self, request, obj: Notification, post_url_continue: str = None
-    ):
+    def response_change(self, request, obj: Notification):
         # only ask for confirmation if notification has send date
         if obj.send_at is not None:
             return HttpResponseRedirect(
                 reverse("admin:notification_confirm_send", args=[obj.pk])
             )
-        return super().response_change(request, obj, post_url_continue)
+        # if notification has no send date, we make sure the scheduled notification is deleted
+        # if it was created before with a send date and the user changed it to no send date
+        else:
+            notification_service = NotificationService()
+            notification_service.delete_notification(obj)
+            obj.nr_sessions = 0
+            obj.save()
+        return super().response_change(request, obj)
 
     def response_add(self, request, obj: Notification, post_url_continue: str = None):
         # only ask for confirmation if notification has send date
@@ -100,10 +115,13 @@ class NotificationAdmin(admin.ModelAdmin):
             else:
                 self.message_user(
                     request,
-                    "Actie is afgebroken. Bericht is niet verstuurd.",
+                    "Actie is afgebroken. Verzenddatum is leeggemaakt.",
                     level=messages.WARNING,
                 )
-                obj.delete()
+                # make sure the scheduled notification is deleted if it was created before the user canceled the action
+                notification_service.delete_notification(obj)
+                obj.send_at = None
+                obj.save()
             return HttpResponseRedirect(
                 reverse("admin:city_pass_notification_changelist")
             )
@@ -114,21 +132,17 @@ class NotificationAdmin(admin.ModelAdmin):
             "nr_sessions": len(device_ids),
             "notification": obj,
             "budgets": self.budgets_display(obj),
+            "notification_deadline": max(
+                obj.send_at - timedelta(minutes=DEADLINE_BUFFER_MINUTES), timezone.now()
+            ),
         }
         return TemplateResponse(
             request, "admin/notification_confirm_send.html", context
         )
 
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
     def get_readonly_fields(self, request, obj=None):
         if obj:
             return [
-                "send_at",
                 "nr_sessions",
                 "created_by",
                 "budgets_display",

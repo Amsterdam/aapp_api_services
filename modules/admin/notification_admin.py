@@ -94,6 +94,13 @@ class NotificationAdmin(admin.ModelAdmin):
             return HttpResponseRedirect(
                 reverse("admin:notification_confirm_send", args=[obj.pk])
             )
+        # if notification has no send date, we make sure the scheduled notification is deleted
+        # if it was created before with a send date and the user changed it to no send date
+        else:
+            notification_service = NotificationService()
+            notification_service.delete_general_notification(obj)
+            obj.nr_sessions = 0
+            obj.save()
         return super().response_change(request, obj, post_url_continue)
 
     def response_add(self, request, obj: Notification, post_url_continue: str = None):
@@ -130,6 +137,8 @@ class NotificationAdmin(admin.ModelAdmin):
                     "Actie is afgebroken. Verzenddatum is leeggemaakt.",
                     level=messages.WARNING,
                 )
+                # make sure the scheduled notification is deleted if it was created before the user canceled the action
+                notification_service.delete_general_notification(obj)
                 obj.send_at = None
                 obj.save()
             return HttpResponseRedirect(
