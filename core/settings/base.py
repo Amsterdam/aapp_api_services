@@ -101,7 +101,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "core.middleware.set_headers.default_headers_middleware",
-    "core.middleware.log_4xx_status.log_4xx_status_middleware",
+    "core.middleware.response_logging_and_metrics.handle_response_metrics_and_4xx_logging_middleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
