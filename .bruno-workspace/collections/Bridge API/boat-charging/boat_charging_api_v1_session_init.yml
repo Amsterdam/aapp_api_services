@@ -24,6 +24,7 @@ http:
         "email": "user@example.com",
         "return_url": "amsterdam://some-url"
       }
+  auth: inherit
 
 settings:
   encodeUrl: true
