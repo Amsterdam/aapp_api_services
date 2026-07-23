@@ -56,7 +56,7 @@ class SessionView(BaseView):
             "end_date_time": cpms_session.get("endDateTime"),
             "kwh": cpms_session.get("kwh"),
             "status": cpms_session.get("status"),
-            "total_cost": cpms_session.get("totalCost", {}).get("inclVat"),
+            "total_cost": cpms_session.get("totalCost", {}).get("exclVat"),
             "currency": "EUR",
         }
         if location := item.get("location", {}):
