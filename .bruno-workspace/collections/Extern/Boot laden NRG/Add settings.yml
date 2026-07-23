@@ -1,0 +1,30 @@
+info:
+  name: Add settings
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{NRG_base_url}}/app-settings"
+  headers:
+    - name: User-Agent
+      value: Mozilla/5.0
+    - name: Accept
+      value: application/json, text/plain, */*
+    - name: Authorization
+      value: "{{token}}"
+      disabled: true
+  body:
+    type: json
+    data: |-
+      {
+        "name": "VariableName",
+        "value": 2
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

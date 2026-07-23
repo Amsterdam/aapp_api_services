@@ -6,3 +6,5 @@ variables:
     value: https://test.app.amsterdam.nl
   - secret: true
     name: access-token
+  - secret: true
+    name: nrg-token
