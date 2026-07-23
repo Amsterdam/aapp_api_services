@@ -14,16 +14,19 @@ from bridge.boat_charging.views.base_view import (
     BaseView,
     boat_charging_openapi_decorator,
 )
+from core.pagination import CustomPagination
 
 
 @boat_charging_openapi_decorator(
     response_serializer_class=SessionResponseSerializer(many=True),
     accepts_access_token=True,
     requires_access_token=True,
+    paginated=True,
 )
 class SessionView(BaseView):
     response_serializer_class = SessionResponseSerializer
     requires_access_token = True
+    pagination_class = CustomPagination
 
     async def get(self, request, *args, **kwargs):
         response_json = await self.api_call(
@@ -31,10 +34,11 @@ class SessionView(BaseView):
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"],
         )
         serializer_data = [self.get_session_data(item) for item in response_json]
+        paginated_data = self.paginate_queryset(serializer_data)
 
-        serializer = self.response_serializer_class(data=serializer_data, many=True)
+        serializer = self.response_serializer_class(data=paginated_data, many=True)
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=200)
+        return self.get_paginated_response(serializer.validated_data)
 
     def get_session_data(self, item):
         session = item["session"]

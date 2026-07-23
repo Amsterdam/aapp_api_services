@@ -27,6 +27,47 @@ class TestSessionView(BoatChargingTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
+        self.assertEqual(len(response.json()["result"]), len(sessions.MOCK_RESPONSE))
+        self.assertEqual(
+            response.json()["page"]["totalElements"], len(sessions.MOCK_RESPONSE)
+        )
+
+    def test_pagination_respects_page_and_page_size(self):
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
+            return_value=httpx.Response(200, json=sessions.MOCK_RESPONSE)
+        )
+
+        response = self.client.get(
+            self.url,
+            {"page": 2, "page_size": 1},
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(len(body["result"]), 1)
+        self.assertEqual(
+            body["result"][0]["id"],
+            sessions.MOCK_RESPONSE[1]["session"]["uniqueId"],
+        )
+        self.assertEqual(body["page"]["number"], 2)
+        self.assertEqual(body["page"]["size"], 1)
+        self.assertEqual(body["page"]["totalElements"], len(sessions.MOCK_RESPONSE))
+        self.assertEqual(body["page"]["totalPages"], len(sessions.MOCK_RESPONSE))
+        self.assertIn("self", body["_links"])
+        self.assertIn("next", body["_links"])
+        self.assertIn("previous", body["_links"])
+
+    def test_response_no_sessions(self):
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
+            return_value=httpx.Response(200, json=[])
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["result"]), 0)
+        self.assertEqual(response.json()["page"]["totalElements"], 0)
 
 
 class TestSessionDetailView(BoatChargingTestCase):
