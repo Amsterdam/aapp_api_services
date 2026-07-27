@@ -83,7 +83,7 @@ stages:
 
                       repository="aapp/images/app-${{ service }}"
 
-                      # Unlock only tags that currently have writeEnabled=false and exclude newest 3 tags
+                      # Unlock only locked tags (exclude newest 3)
                       for tag in $(az acr repository show-tags \
                         --name "$(registry)" \
                         --repository "$repository" \

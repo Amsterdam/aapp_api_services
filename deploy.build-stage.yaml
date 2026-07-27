@@ -44,32 +44,6 @@ stages:
               az acr login -n $(registry)
             displayName: ACR login
 
-          # LOCK PRODUCTION IMAGES AND UNLOCK PREVIOUS IMAGES
-          - script: |
-              set -euo pipefail
-
-              repository="aapp/images/app-$(SERVICE_NAME)"
-
-              # Unlock only tags that currently have writeEnabled=false
-              for tag in $(az acr repository show-tags \
-                --name "$(registry)" \
-                --repository "$repository" \
-                --detail \
-                --orderby time_desc \
-                --query '[?changeableAttributes.writeEnabled == `false`].name | [3:]' \
-                --output tsv)
-              do
-                image="${repository}:${tag}"
-                echo "Unlocking image: $image"
-
-                az acr repository update \
-                  --name "$(registry)" \
-                  --image "$image" \
-                  --write-enabled true \
-                  --output none
-              done
-            displayName: "Unlock previous tags"
-
           # BUILD
           - script: SERVICE_NAME=$(SERVICE_NAME) make build
             displayName: make build ($(SERVICE_NAME))
