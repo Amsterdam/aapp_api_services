@@ -117,35 +117,7 @@ stages:
                   image="${repository}:${tag}"
                   echo "Unlocking tag: $image"
 
-#                  az acr repository update \
-#                    --name "$(registry)" \
-#                    --image "$image" \
-#                    --write-enabled true \
-#                    --output none
                 done <<< "$tags"
       
               done <<< "$repositories"
             displayName: "Unlock previous tags and lock app-${{ service }}"
-
-
-#  # --------------------
-#  # BUILD
-#  # --------------------
-#  - template: deploy.build-stage.yaml
-#    parameters:
-#      services: ${{ parameters.services }}
-#      stageDisplayName: Build & push
-#
-#  # --------------------
-#  # DEV
-#  # --------------------
-#  - template: deploy.stage.yaml
-#    parameters:
-#      environment: dev
-#      devopsEnvironment: api-dev
-#      pool: ManagedDevOpsPools
-#      namespace: ns-ccc-aapp-ont-01-aapp-ontw
-#      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-ont-01-aapp-ontw
-#      services: ${{ parameters.services }}
-#      force: ${{ parameters.forceDeploy }}
-#      migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
