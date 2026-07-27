@@ -42,6 +42,7 @@ stages:
           - script: |
               az login --identity
               az acr login -n $(registry)
+            displayName: ACR login
 
           # LOCK PRODUCTION IMAGES AND UNLOCK PREVIOUS IMAGES
           - script: |

@@ -72,7 +72,7 @@ variables:
 
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
-      value: replace(variables['Self.BranchName'], '/', '-')
+      value: ${{ replace(variables['Self.BranchName'], '/', '-') }}
     ${{ else }}:
       value: ${{ parameters.versionOverride }}
 
@@ -116,6 +116,12 @@ stages:
       
                   image="${repository}:${tag}"
                   echo "Unlocking tag: $image"
+
+                  az acr repository update \
+                    --name "$(registry)" \
+                    --image "$image" \
+                    --write-enabled true \
+                    --output none
 
                 done <<< "$tags"
       
