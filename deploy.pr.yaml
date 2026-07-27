@@ -77,24 +77,75 @@ variables:
       value: ${{ parameters.versionOverride }}
 
 stages:
-  # --------------------
-  # BUILD
-  # --------------------
-  - template: deploy.build-stage.yaml
-    parameters:
-      services: ${{ parameters.services }}
-      stageDisplayName: Build & push
+  - stage: unlock_tags
+    jobs:
+      - job: unlock_tags_job
+        pool: ManagedDevOpsPools
+        steps:
+          - checkout: self
 
-  # --------------------
-  # DEV
-  # --------------------
-  - template: deploy.stage.yaml
-    parameters:
-      environment: dev
-      devopsEnvironment: api-dev
-      pool: ManagedDevOpsPools
-      namespace: ns-ccc-aapp-ont-01-aapp-ontw
-      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-ont-01-aapp-ontw
-      services: ${{ parameters.services }}
-      force: ${{ parameters.forceDeploy }}
-      migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
+          - script: |
+              az login --identity
+              az acr login -n $(registry)
+            displayName: ACR login
+
+          - script: |
+              set -euo pipefail
+      
+              repositories=$(az acr repository list \
+                --name "$(registry)" \
+                --query "[?starts_with(@, 'aapp/images/')]" \
+                --output tsv)
+      
+              while IFS= read -r repository
+              do
+                [[ -z "$repository" ]] && continue
+      
+                echo "Processing repository: $repository"
+      
+                tags=$(az acr repository show-tags \
+                  --name "$(registry)" \
+                  --repository "$repository" \
+                  --detail \
+                  --query '[?changeableAttributes.writeEnabled == `false`].name' \
+                  --output tsv)
+      
+                while IFS= read -r tag
+                do
+                  [[ -z "$tag" ]] && continue
+      
+                  image="${repository}:${tag}"
+                  echo "Unlocking tag: $image"
+
+#                  az acr repository update \
+#                    --name "$(registry)" \
+#                    --image "$image" \
+#                    --write-enabled true \
+#                    --output none
+                done <<< "$tags"
+      
+              done <<< "$repositories"
+            displayName: "Unlock previous tags and lock app-${{ service }}"
+
+
+#  # --------------------
+#  # BUILD
+#  # --------------------
+#  - template: deploy.build-stage.yaml
+#    parameters:
+#      services: ${{ parameters.services }}
+#      stageDisplayName: Build & push
+#
+#  # --------------------
+#  # DEV
+#  # --------------------
+#  - template: deploy.stage.yaml
+#    parameters:
+#      environment: dev
+#      devopsEnvironment: api-dev
+#      pool: ManagedDevOpsPools
+#      namespace: ns-ccc-aapp-ont-01-aapp-ontw
+#      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-ont-01-aapp-ontw
+#      services: ${{ parameters.services }}
+#      force: ${{ parameters.forceDeploy }}
+#      migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
