@@ -55,7 +55,10 @@ class SessionInitView(BaseView):
 
 class SessionStartView(DeviceIdMixin, BaseView):
     @boat_charging_openapi_decorator(
-        response_serializer_class=None, requires_device_id=True
+        response_serializer_class=None,
+        requires_device_id=True,
+        accepts_access_token=True,
+        requires_access_token=False,
     )
     async def post(self, request, *args, **kwargs):
         session_id = self.get_safe_path_param(kwargs["session_id"])
@@ -84,7 +87,10 @@ class SessionStartView(DeviceIdMixin, BaseView):
 
 class SessionStopView(DeviceIdMixin, BaseView):
     @boat_charging_openapi_decorator(
-        response_serializer_class=None, requires_device_id=True
+        response_serializer_class=None,
+        requires_device_id=True,
+        accepts_access_token=True,
+        requires_access_token=False,
     )
     async def post(self, request, *args, **kwargs):
         session_id = self.get_safe_path_param(kwargs["session_id"])
