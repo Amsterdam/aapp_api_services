@@ -47,7 +47,7 @@ stages:
           - script: |
               set -euo pipefail
 
-              repository="aapp/images/app-${{ service }}"
+              repository="aapp/images/app-$(SERVICE_NAME)"
 
               # Unlock only tags that currently have writeEnabled=false
               for tag in $(az acr repository show-tags \
