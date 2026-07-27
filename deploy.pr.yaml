@@ -72,7 +72,7 @@ variables:
 
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
-      value: ${{ replace(variables['Self.BranchName'], '/', '-') }}
+      value: $[ replace(variables['Self.BranchName'], '/', '-') ]
     ${{ else }}:
       value: ${{ parameters.versionOverride }}
 
@@ -107,7 +107,7 @@ stages:
                   --name "$(registry)" \
                   --repository "$repository" \
                   --detail \
-                  --query "[?changeableAttributes.writeEnabled == \`false\` && !starts_with(name, 'main-')].name" \
+                  --query '[?changeableAttributes.writeEnabled == `false`].name' \
                   --output tsv)
       
                 while IFS= read -r tag
@@ -115,13 +115,7 @@ stages:
                   [[ -z "$tag" ]] && continue
       
                   image="${repository}:${tag}"
-                  echo "Unlocking tag: $image"
-
-                  az acr repository update \
-                    --name "$(registry)" \
-                    --image "$image" \
-                    --write-enabled true \
-                    --output none
+                  echo "Found locked tag: $image"
 
                 done <<< "$tags"
       

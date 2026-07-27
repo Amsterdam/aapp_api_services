@@ -83,12 +83,13 @@ stages:
 
                       repository="aapp/images/app-${{ service }}"
 
-                      # Unlock only tags that currently have writeEnabled=false
+                      # Unlock only tags that currently have writeEnabled=false and exclude newest 3 tags
                       for tag in $(az acr repository show-tags \
                         --name "$(registry)" \
                         --repository "$repository" \
                         --detail \
-                        --query "[?changeableAttributes.writeEnabled == \`false\` && !starts_with(name, 'main-')].name" \
+                        --orderby time_desc \
+                        --query '[?changeableAttributes.writeEnabled == `false`].name | [3:]' \
                         --output tsv)
                       do
                         image="${repository}:${tag}"
