@@ -80,6 +80,12 @@ stages:
                   - script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/${{ service }}
                     displayName: Rollback migration ($(service_name))
 
+                - ${{ if eq(parameters.environment, 'prod') }}:
+                  # LOCK PRODUCED IMAGES
+                  - script: |
+                      az acr repository update --write-enabled false --name $(registry) --image aapp/images/app-${{ service }}:$(version)
+                    displayName: "Lock image: aapp/images/app-${{ service }}"
+
                 - script: make deploy/$(service_name)
                   displayName: Deploy $(service_name)
 
