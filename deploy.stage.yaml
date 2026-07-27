@@ -80,44 +80,31 @@ stages:
                   # LOCK PRODUCTION IMAGES AND UNLOCK PREVIOUS IMAGES
                   - script: |
                       set -euo pipefail
-                  
-                      repositories=$(az acr repository list \
+
+                      repository="aapp/images/app-${{ service }}"
+
+                      # Unlock only tags that currently have writeEnabled=false
+                      for tag in $(az acr repository show-tags \
                         --name "$(registry)" \
-                        --query "[?starts_with(@, 'aapp/images/')]" \
+                        --repository "$repository" \
+                        --detail \
+                        --query '[?changeableAttributes.writeEnabled == `false`].name' \
                         --output tsv)
-                  
-                      while IFS= read -r repository
                       do
-                        [[ -z "$repository" ]] && continue
-                  
-                        echo "Processing repository: $repository"
-                  
-                        tags=$(az acr repository show-tags \
+                        image="${repository}:${tag}"
+                        echo "Unlocking image: $image"
+
+                        az acr repository update \
                           --name "$(registry)" \
-                          --repository "$repository" \
-                          --detail \
-                          --query '[?changeableAttributes.writeEnabled == `false`].name' \
-                          --output tsv)
-                  
-                        while IFS= read -r tag
-                        do
-                          [[ -z "$tag" ]] && continue
-                  
-                          image="${repository}:${tag}"
-                          echo "Unlocking tag: $image"
-                  
-                          az acr repository update \
-                            --name "$(registry)" \
-                            --image "$image" \
-                            --write-enabled true \
-                            --output none
-                        done <<< "$tags"
-                  
-                      done <<< "$repositories"
-                  
-                      image="aapp/images/app-${{ service }}:$(version)"
-                      echo "Locking produced image: $image"
-                  
+                          --image "$image" \
+                          --write-enabled true \
+                          --output none
+                      done
+
+                      # Lock the newly produced image
+                      image="${repository}:$(version)"
+                      echo "Locking image: $image"
+
                       az acr repository update \
                         --name "$(registry)" \
                         --image "$image" \

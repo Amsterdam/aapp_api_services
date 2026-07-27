@@ -68,18 +68,18 @@ variables:
     value: $[ replace(replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', ''), 'refs/pull/', '') ]
 
   - name: registry
-    value: saks01weuacrpgpgo5qvmwo.azurecr.io
+    value: saks01weuacrpgpgo5qvmwo
 
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
-      value: $[ format('{0}-{1}', replace(variables['Self.BranchName'], '/', '-'), variables['Build.SourceVersion']) ]
+      value: replace(variables['Self.BranchName'], '/', '-')
     ${{ else }}:
       value: ${{ parameters.versionOverride }}
 
 stages:
-  - stage: unlock_tags
+  - stage: echo_locked_tags
     jobs:
-      - job: unlock_tags_job
+      - job: echo_locked_tags_job
         pool: ManagedDevOpsPools
         steps:
           - checkout: self
@@ -121,3 +121,25 @@ stages:
       
               done <<< "$repositories"
             displayName: "Unlock previous tags"
+
+  # --------------------
+  # BUILD
+  # --------------------
+  - template: deploy.build-stage.yaml
+    parameters:
+      services: ${{ parameters.services }}
+      stageDisplayName: Build & push
+
+#  # --------------------
+#  # DEV
+#  # --------------------
+#  - template: deploy.stage.yaml
+#    parameters:
+#      environment: dev
+#      devopsEnvironment: api-dev
+#      pool: ManagedDevOpsPools
+#      namespace: ns-ccc-aapp-ont-01-aapp-ontw
+#      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-ont-01-aapp-ontw
+#      services: ${{ parameters.services }}
+#      force: ${{ parameters.forceDeploy }}
+#      migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
