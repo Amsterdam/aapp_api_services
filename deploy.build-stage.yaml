@@ -45,13 +45,13 @@ stages:
             displayName: ACR login
 
           # BUILD
-          - script: SERVICE_NAME=${{ svc }} make build
-            displayName: make build (${{ svc }})
+          - script: SERVICE_NAME=$(SERVICE_NAME) make build
+            displayName: make build ($(SERVICE_NAME))
 
           # PUSH IMAGE
           - script: |
-              SERVICE_NAME=${{ svc }} make push || echo "Image already exists, ignoring"
-            displayName: make push (${{ svc }})
+              SERVICE_NAME=$(SERVICE_NAME) make push || echo "Image already exists, ignoring"
+            displayName: make push ($(SERVICE_NAME) )
 
           - ${{ if eq(parameters.includeQA, true) }}:
             # UNITTESTING & LINTING
