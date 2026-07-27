@@ -81,11 +81,15 @@ stages:
                     displayName: Rollback migration ($(service_name))
 
                 - ${{ if eq(parameters.environment, 'prod') }}:
+                  - script: |
+                      az login --identity
+                      az acr login -n $(registry)
+                    displayName: ACR login
+
                   # LOCK PRODUCED IMAGES
                   - script: |
                       az acr repository update --write-enabled false --name $(registry) --image aapp/images/app-${{ service }}:$(version)
                     displayName: "Lock image: aapp/images/app-${{ service }}"
-
                 - script: make deploy/$(service_name)
                   displayName: Deploy $(service_name)
 
