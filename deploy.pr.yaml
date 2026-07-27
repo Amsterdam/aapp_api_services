@@ -120,4 +120,4 @@ stages:
                 done <<< "$tags"
       
               done <<< "$repositories"
-            displayName: "Unlock previous tags and lock app-${{ service }}"
+            displayName: "Unlock previous tags"
