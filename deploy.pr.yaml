@@ -107,7 +107,7 @@ stages:
                   --name "$(registry)" \
                   --repository "$repository" \
                   --detail \
-                  --query '[?changeableAttributes.writeEnabled == `false`].name' \
+                  --query "[?changeableAttributes.writeEnabled == \`false\` && !starts_with(name, 'main-')].name" \
                   --output tsv)
       
                 while IFS= read -r tag

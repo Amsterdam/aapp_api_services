@@ -47,14 +47,14 @@ stages:
           - script: |
               set -euo pipefail
 
-              repository="aapp/images/swagger"
+              repository="aapp/images/app-${{ service }}"
 
               # Unlock only tags that currently have writeEnabled=false
               for tag in $(az acr repository show-tags \
                 --name "$(registry)" \
                 --repository "$repository" \
                 --detail \
-                --query '[?changeableAttributes.writeEnabled == `false`].name' \
+                --query "[?changeableAttributes.writeEnabled == \`false\` && !starts_with(name, 'main-')].name" \
                 --output tsv)
               do
                 image="${repository}:${tag}"
