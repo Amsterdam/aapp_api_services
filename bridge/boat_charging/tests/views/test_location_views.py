@@ -41,6 +41,9 @@ class TestLocationView(BoatChargingTestCase):
                 },
             },
         )
+        self.assertEqual(
+            response.data["features"][0]["properties"]["status"], "OCCUPIED"
+        )
 
     def test_address_without_number(self):
         mock_response = copy.deepcopy(locations.MOCK_RESPONSE)
@@ -281,6 +284,8 @@ class TestLocationDetailView(BoatChargingTestCase):
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
+
+        self.assertEqual(response.data["status"], "OCCUPIED")
 
     def test_forbidden_from_upstream_is_mapped_to_not_found(self):
 
