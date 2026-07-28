@@ -68,6 +68,9 @@ variables:
     value: $[ replace(replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', ''), 'refs/pull/', '') ]
 
   - name: registry
+    value: saks01weuacrpgpgo5qvmwo.azurecr.io
+
+  - name: registryName
     value: saks01weuacrpgpgo5qvmwo
 
   - name: version
@@ -84,6 +87,7 @@ stages:
     parameters:
       services: ${{ parameters.services }}
       stageDisplayName: Build & push
+      includeQA: false
 
   # --------------------
   # DEV
