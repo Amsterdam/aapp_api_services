@@ -86,6 +86,7 @@ class SessionView(BaseView):
             "socket_number": session.get("socketNumber"),
             "nrg_status": session.get("status"),
             "created_date_time": session.get("createdAt"),
+            "email": session.get("userEmail"),
             # CPMS, null if session hasn't started
             "start_date_time": cpms_session.get("startDateTime"),
             "end_date_time": cpms_session.get("endDateTime"),

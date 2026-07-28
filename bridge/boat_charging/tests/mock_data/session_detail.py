@@ -8,6 +8,7 @@ MOCK_RESPONSE_CHARGING = {
         "desiredAmount": 45.0,
         "createdAt": "2026-06-29T10:30:04.1035904",
         "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
+        "userEmail": "test@amsterdam.nl",
     },
     "cpmsSession": {
         "startDateTime": "2026-06-29T10:30:00Z",
@@ -44,6 +45,7 @@ MOCK_RESPONSE_COMPLETED = {
         "desiredAmount": 45.0,
         "createdAt": "2026-06-29T10:30:04.1035904",
         "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
+        "userEmail": "test@amsterdam.nl",
     },
     "location": {
         "id": "2c0ccfb795d040e39136b7dd1d25f13e",

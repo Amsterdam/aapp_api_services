@@ -16,6 +16,7 @@ MOCK_RESPONSE = [
             "finalAmount": 0.0,
             "desiredAmount": 45.0,
             "createdAt": "2026-06-29T12:09:21.5983604",
+            "userEmail": "test@amsterdam.nl",
         }
     },
     {
@@ -28,6 +29,7 @@ MOCK_RESPONSE = [
             "desiredAmount": 45.0,
             "createdAt": "2026-06-29T10:30:04.1035904",
             "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
+            "userEmail": "test@amsterdam.nl",
         },
         "cpmsSession": {
             "startDateTime": "2026-06-29T10:35:04.1035904",

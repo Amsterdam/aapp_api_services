@@ -35,6 +35,7 @@ class TestSessionView(BoatChargingTestCase):
         self.assertEqual(
             response.json()["page"]["totalElements"], len(sessions.MOCK_RESPONSE)
         )
+        self.assertEqual(response.json()["result"][0]["email"], "test@amsterdam.nl")
 
     def test_pagination_respects_page_and_page_size(self):
         respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
