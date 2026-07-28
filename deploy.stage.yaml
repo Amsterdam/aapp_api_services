@@ -75,7 +75,7 @@ stages:
                 - ${{ if eq(parameters.environment, 'prod') }}:
                   - script: |
                       az login --identity
-                      az acr login -n $(registryName)
+                      az acr login -n $(registry)
                     displayName: ACR login
                   # LOCK PRODUCTION IMAGES AND UNLOCK PREVIOUS IMAGES
                   - script: |
@@ -85,7 +85,7 @@ stages:
 
                       # Unlock only locked tags (exclude newest 3)
                       for tag in $(az acr repository show-tags \
-                        --name "$(registryName)" \
+                        --name "$(registry)" \
                         --repository "$repository" \
                         --detail \
                         --orderby time_desc \
@@ -96,7 +96,7 @@ stages:
                         echo "Unlocking image: $image"
 
                         az acr repository update \
-                          --name "$(registryName)" \
+                          --name "$(registry)" \
                           --image "$image" \
                           --write-enabled true \
                           --output none
@@ -107,7 +107,7 @@ stages:
                       echo "Locking image: $image"
 
                       az acr repository update \
-                        --name "$(registryName)" \
+                        --name "$(registry)" \
                         --image "$image" \
                         --write-enabled false \
                         --output none

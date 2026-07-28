@@ -76,9 +76,6 @@ variables:
   - name: registry
     value: saks01weuacrpgpgo5qvmwo.azurecr.io
 
-  - name: registryName
-    value: saks01weuacrpgpgo5qvmwo
-
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
       value: $[ format('{0}-{1}', replace(variables['Self.BranchName'], '/', '-'), variables['Build.SourceVersion']) ]

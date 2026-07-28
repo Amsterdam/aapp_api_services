@@ -41,7 +41,7 @@ stages:
 
           - script: |
               az login --identity
-              az acr login -n $(registryName)
+              az acr login -n $(registry)
             displayName: ACR login
 
           # BUILD
