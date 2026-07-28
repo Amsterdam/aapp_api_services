@@ -1,12 +1,16 @@
 from typing import Any
 
 from django.conf import settings
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from bridge.boat_charging.constants import (
     OPERATION_STATE_MAPPING,
 )
 from bridge.boat_charging.serializers.session_serializers import (
+    SessionListRequestSerializer,
     SessionResponseSerializer,
     SessionSocketStatusResponseSerializer,
 )
@@ -19,26 +23,64 @@ from core.pagination import CustomPagination
 
 @boat_charging_openapi_decorator(
     response_serializer_class=SessionResponseSerializer(many=True),
+    additional_params=[
+        OpenApiParameter(
+            name="status",
+            description="Filter sessions by CPMS session status. Allowed values: ACTIVE or COMPLETED.",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=False,
+        )
+    ],
     accepts_access_token=True,
     requires_access_token=True,
     paginated=True,
 )
 class SessionView(BaseView):
+    serializer_class = SessionListRequestSerializer
     response_serializer_class = SessionResponseSerializer
     requires_access_token = True
     pagination_class = CustomPagination
 
     async def get(self, request, *args, **kwargs):
+        status = self.get_status_filter(request)
         response_json = await self.api_call(
             "get",
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"],
         )
+        response_json = self.filter_sessions(response_json, status)
         paginated_data = self.paginate_queryset(response_json)
         serializer_data = [self.get_session_data(item) for item in paginated_data]
 
         serializer = self.response_serializer_class(data=serializer_data, many=True)
         serializer.is_valid(raise_exception=True)
         return self.get_paginated_response(serializer.validated_data)
+
+    def get_status_filter(self, request) -> str | None:
+        status_values = []
+        for key, values in request.GET.lists():
+            if key == "status":
+                status_values.extend(values)
+
+        if len(status_values) > 1:
+            raise ValidationError(
+                {"status": ["Multiple values are not allowed. Use separate requests."]}
+            )
+
+        serializer = self.serializer_class(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data.get("status")
+
+    @staticmethod
+    def filter_sessions(response_json: list[dict[str, Any]], status: str | None):
+        if status is None:
+            return response_json
+
+        return [
+            item
+            for item in response_json
+            if (item.get("cpmsSession") or {}).get("status") == status
+        ]
 
     def get_session_data(self, item):
         session = item["session"]

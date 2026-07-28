@@ -35,6 +35,13 @@ class SessionResponseSerializer(serializers.Serializer):
     location = LocationPropertiesSerializer(required=False)
 
 
+class SessionListRequestSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=["ACTIVE", "COMPLETED"],
+        required=False,
+    )
+
+
 class SessionSocketStatusResponseSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES)
     substatus = serializers.ChoiceField(
