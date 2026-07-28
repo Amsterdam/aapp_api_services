@@ -62,7 +62,10 @@ class SessionView(BaseView):
         return serializer.validated_data.get("status")
 
     @staticmethod
-    def filter_sessions(response_json: list[dict[str, Any]], status: str | None):
+    def filter_sessions(
+        response_json: list[dict[str, Any]],
+        status: str | None,
+    ) -> list[dict[str, Any]]:
         if status is None:
             return response_json
 
