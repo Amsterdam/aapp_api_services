@@ -62,6 +62,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPYCACHEPREFIX=/tmp/pycache \
     XDG_CACHE_HOME=/tmp/.cache \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
     PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
@@ -86,8 +87,8 @@ RUN mkdir -p "$AZURE_CONFIG_DIR" "$PYTHONPYCACHEPREFIX"
 #   Needs root to write to the home dir and uv runtime
 FROM runtime AS lint
 COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /uvx /bin/
-ENV UV_CACHE_DIR=${UV_CACHE_DIR} \
-    UV_PROJECT_ENVIRONMENT=/app/.venv
+COPY --from=builder-lint --chown=appuser:app /app/.venv /app/.venv
+ENV UV_CACHE_DIR=/tmp/.cache/uv
 USER root
 
 ### City Pass stages

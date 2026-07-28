@@ -18,7 +18,7 @@ http:
 runtime:
   variables:
     - name: access-token
-      value: "{{access-token}}"
+      value: ""
 
 settings:
   encodeUrl: true
