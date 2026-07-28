@@ -3,7 +3,6 @@ from typing import Any
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from bridge.boat_charging.constants import (
@@ -57,16 +56,6 @@ class SessionView(BaseView):
         return self.get_paginated_response(serializer.validated_data)
 
     def get_status_filter(self, request) -> str | None:
-        status_values = []
-        for key, values in request.GET.lists():
-            if key == "status":
-                status_values.extend(values)
-
-        if len(status_values) > 1:
-            raise ValidationError(
-                {"status": ["Multiple values are not allowed. Use separate requests."]}
-            )
-
         serializer = self.serializer_class(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         return serializer.validated_data.get("status")

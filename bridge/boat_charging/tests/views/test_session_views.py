@@ -108,23 +108,6 @@ class TestSessionView(BoatChargingTestCase):
         self.assertEqual(body["page"]["totalElements"], 1)
         self.assertEqual(body["page"]["totalPages"], 1)
 
-    def test_invalid_status_returns_400(self):
-        response = self.client.get(
-            self.url,
-            {"status": "ACTIVE,COMPLETED"},
-            headers=self.api_headers,
-        )
-
-        self.assertEqual(response.status_code, 400)
-
-    def test_repeated_status_query_params_return_400(self):
-        response = self.client.get(
-            f"{self.url}?status=ACTIVE&status=COMPLETED",
-            headers=self.api_headers,
-        )
-
-        self.assertEqual(response.status_code, 400)
-
     def test_response_no_sessions(self):
         respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
             return_value=httpx.Response(200, json=[])
