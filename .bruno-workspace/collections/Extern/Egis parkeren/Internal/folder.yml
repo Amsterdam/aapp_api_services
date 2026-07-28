@@ -1,0 +1,10 @@
+info:
+  name: Internal
+  type: folder
+  seq: 1
+
+request:
+  auth: inherit
+  variables:
+    - name: base_url
+      value: https://test.app.amsterdam.nl/parking/api/v1/egis-proxy

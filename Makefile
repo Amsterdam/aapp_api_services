@@ -32,7 +32,7 @@ lock-packages:
 
 pip-freeze:
     # Run pip-freeze for human readable requirements.txt
-	$(lint) uv export --format requirements-txt --no-hashes --no-annotate > requirements.txt
+	$(lint) uv export --format requirements-txt --all-extras --all-groups --no-hashes --no-annotate > requirements.txt
 	@timestamp=$$(date -u +"%Y-%m-%dT%H:%M:%SZ"); \
 	sed -i "1s/^/# Generated: $${timestamp}\n/" requirements.txt;
 

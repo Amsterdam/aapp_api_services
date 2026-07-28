@@ -12,7 +12,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPYCACHEPREFIX=/tmp/pycache \
     XDG_CACHE_HOME=/tmp/.cache \
-    UV_CACHE_DIR=${XDG_CACHE_HOME}/uv \
+    UV_CACHE_DIR=/tmp/.cache/uv \
     UV_PROJECT_ENVIRONMENT=/app/.venv
 
 WORKDIR /app
@@ -25,7 +25,7 @@ RUN apk add --no-cache --virtual .build-deps \
 # Install dependencies
 COPY pyproject.toml ./
 COPY uv.lock ./
-RUN uv sync --frozen
+RUN uv sync --frozen --no-default-groups
 
 # Copy application code
 COPY manage.py ./
@@ -37,6 +37,18 @@ COPY notification ./notification
 
 # Collect static assets
 RUN DJANGO_SETTINGS_MODULE=core.settings.base uv run python manage.py collectstatic --no-input
+
+FROM builder AS builder-lint
+RUN uv sync --frozen --no-default-groups --group lint
+
+FROM builder AS builder-bridge
+RUN uv sync --frozen --no-default-groups --extra bridge
+
+FROM builder AS builder-image
+RUN uv sync --frozen --no-default-groups --extra image
+
+FROM builder AS builder-waste
+RUN uv sync --frozen --no-default-groups --extra waste
 
 ########################
 # RUNTIME STAGE
@@ -74,7 +86,7 @@ RUN mkdir -p "$AZURE_CONFIG_DIR" "$PYTHONPYCACHEPREFIX"
 #   Needs root to write to the home dir and uv runtime
 FROM runtime AS lint
 COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /uvx /bin/
-ENV UV_CACHE_DIR=${XDG_CACHE_HOME}/uv \
+ENV UV_CACHE_DIR=${UV_CACHE_DIR} \
     UV_PROJECT_ENVIRONMENT=/app/.venv
 USER root
 
@@ -100,6 +112,7 @@ COPY news /app/news
 
 ### Bridge stages
 FROM runtime AS app-bridge
+COPY --from=builder-bridge --chown=appuser:app /app/.venv /app/.venv
 COPY bridge /app/bridge
 
 ### Notification stages
@@ -107,10 +120,12 @@ FROM runtime AS app-notification
 
 ### Image stages
 FROM runtime AS app-image
+COPY --from=builder-image --chown=appuser:app /app/.venv /app/.venv
 COPY image /app/image
 
 ### Waste stages
 FROM runtime AS app-waste
+COPY --from=builder-waste --chown=appuser:app /app/.venv /app/.venv
 COPY waste /app/waste
 
 ### Survey stages

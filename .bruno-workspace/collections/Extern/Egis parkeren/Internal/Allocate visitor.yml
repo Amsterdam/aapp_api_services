@@ -1,0 +1,22 @@
+info:
+  name: Allocate visitor
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{base_url}}/api/v1/ssp/client_product/:permit_id/time_balance/allocate"
+  params:
+    - name: permit_id
+      value: ""
+      type: path
+  body:
+    type: json
+    data: '{"amount": 2}'
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

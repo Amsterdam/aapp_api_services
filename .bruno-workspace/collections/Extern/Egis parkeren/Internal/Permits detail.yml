@@ -1,0 +1,19 @@
+info:
+  name: Permits detail
+  type: http
+  seq: 4
+
+http:
+  method: GET
+  url: "{{base_url}}/api/v1/client_product/:permit_id"
+  params:
+    - name: permit_id
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

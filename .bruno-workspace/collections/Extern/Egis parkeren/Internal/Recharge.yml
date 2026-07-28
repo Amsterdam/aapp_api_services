@@ -1,0 +1,18 @@
+info:
+  name: Recharge
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{base_url}}/api/v1/ssp/wallet_transaction/new"
+  body:
+    type: json
+    data: '{"amount": 1000, "brand": "IDEAL", "lang": "NL"}'
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

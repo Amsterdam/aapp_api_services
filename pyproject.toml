@@ -20,21 +20,10 @@ dependencies = [
   "pyproj",
   "rich",
   "more-itertools",
-  # polygon operations
-  "shapely",
-  # pdf
-  "fpdf2",
-  "babel",
-  "qrcode",
-  # waste calendar
-  "ics",
   # modules
   "djangorestframework-simplejwt",
   "django-csp",
   "django-admin-sortable2",
-  # image
-  "pillow",
-  "pillow-heif",
   # construction work ETL
   "aiohttp",
   "tenacity",
@@ -54,13 +43,32 @@ dependencies = [
   "freezegun",
   "pytest-django",
   "model-bakery",
-  "ruff",
   "aioresponses",
   "pytest-asyncio", # anyio pytest plugin?
   "coverage",
   "responses",
   "amsterdam-django-oidc>=0.2.0",
   "respx",
+]
+
+[project.optional-dependencies]
+image = [
+  "pillow",
+  "pillow-heif",
+]
+waste = [
+  "fpdf2",
+  "babel",
+  "qrcode",
+  "ics",
+]
+bridge = [
+  "shapely",
+]
+
+[dependency-groups]
+lint = [
+  "ruff",
 ]
 
 [tool.pytest.ini_options]

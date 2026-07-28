@@ -1,0 +1,15 @@
+info:
+  name: Refresh
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{base_url}}/api/refresh_token"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

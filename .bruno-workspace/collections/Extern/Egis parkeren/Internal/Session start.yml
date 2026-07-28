@@ -1,0 +1,27 @@
+info:
+  name: Session start
+  type: http
+  seq: 9
+
+http:
+  method: POST
+  url: "{{base_url}}/api/v1/ssp/parking_session/start"
+  body:
+    type: json
+    data: |-
+      {
+          "vrn": "AB124C",
+          "started_at": "2026-02-26T17:51:55+02",
+          "ended_at": "2026-02-26T18:51:55+02",
+          "client_product_id": 1004,
+          "zone_id": 100000000,
+          "machine_number": 10741,
+          "brand": "IDEAL"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
