@@ -17,7 +17,13 @@ from core.utils.validation_utils import validate_digits
 
 
 class ParkingSessionListRequestSerializer(serializers.Serializer):
-    STATUS_CHOICES = ["ACTIVE", "PLANNED", "COMPLETED", "CANCELLED"]
+    STATUS_CHOICES = [
+        "ACTIVE",
+        "PLANNED",
+        "COMPLETED",
+        "CANCELLED",
+        "ACTIVE_OR_PLANNED",
+    ]
 
     page = serializers.IntegerField(required=False, min_value=1, default=1)
     page_size = serializers.IntegerField(

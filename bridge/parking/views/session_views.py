@@ -151,6 +151,7 @@ class ParkingSessionListView(BaseSSPView):
             "COMPLETED": "COMPLETED",
             "CANCELLED": "CANCELLED",
             "PLANNED": "FUTURE",
+            "ACTIVE_OR_PLANNED": "ACTIVE,FUTURE",
         }
         return status_mapping.get(status, status)
 
