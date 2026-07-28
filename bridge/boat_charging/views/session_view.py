@@ -25,8 +25,9 @@ from core.pagination import CustomPagination
     additional_params=[
         OpenApiParameter(
             name="status",
-            description="Filter sessions by CPMS session status. Allowed values: ACTIVE or COMPLETED.",
+            description="Filter sessions by CPMS session status.",
             type=OpenApiTypes.STR,
+            enum=["ACTIVE", "COMPLETED"],
             location=OpenApiParameter.QUERY,
             required=False,
         )
