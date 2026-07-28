@@ -59,7 +59,7 @@ class LocationView(BaseView):
             },
         }
 
-    def get_location_data(self, item: dict[str, Any], sockets) -> dict[str, Any]:
+    def get_location_data(self, item: dict[str, Any], sockets: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Convert the location data from the API to the format expected by the frontend.
         """

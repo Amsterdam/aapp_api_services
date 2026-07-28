@@ -41,9 +41,8 @@ class TestLocationView(BoatChargingTestCase):
                 },
             },
         )
-        self.assertEqual(
-            response.data["features"][0]["properties"]["status"], "OCCUPIED"
-        )
+        self.assertEqual(response.data["features"][0]["properties"]["status"], "OCCUPIED")
+        self.assertEqual(response.data["features"][0]["properties"]["max_kw"], 22.0)
 
     def test_address_without_number(self):
         mock_response = copy.deepcopy(locations.MOCK_RESPONSE)
