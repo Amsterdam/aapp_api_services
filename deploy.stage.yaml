@@ -68,15 +68,16 @@ stages:
                     command: login
 
                 - script: |
+                    az login --identity
+                    az acr login -n $(registry)
+                  displayName: ACR login
+
+                - script: |
                     kubectl config set-context deploy --namespace=${{ parameters.namespace }}
                     kubectl config use-context deploy
                   displayName: Setup kubectl
 
                 - ${{ if eq(parameters.environment, 'prod') }}:
-                  - script: |
-                      az login --identity
-                      az acr login -n $(registry)
-                    displayName: ACR login
                   # LOCK PRODUCTION IMAGES AND UNLOCK PREVIOUS IMAGES
                   - script: |
                       set -euo pipefail
