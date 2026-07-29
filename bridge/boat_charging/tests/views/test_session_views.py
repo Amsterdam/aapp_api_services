@@ -29,8 +29,13 @@ class TestSessionView(BoatChargingTestCase):
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(len(response.json()["result"]), len(sessions.MOCK_RESPONSE))
         self.assertEqual(
+            [item["id"] for item in response.json()["result"]],
+            [item["session"]["uniqueId"] for item in sessions.MOCK_RESPONSE],
+        )
+        self.assertEqual(
             response.json()["page"]["totalElements"], len(sessions.MOCK_RESPONSE)
         )
+        self.assertEqual(response.json()["result"][0]["email"], "test@amsterdam.nl")
 
     def test_pagination_respects_page_and_page_size(self):
         respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
@@ -57,6 +62,52 @@ class TestSessionView(BoatChargingTestCase):
         self.assertIn("self", body["_links"])
         self.assertIn("next", body["_links"])
         self.assertIn("previous", body["_links"])
+
+    def test_status_active_filters_sessions_before_pagination(self):
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
+            return_value=httpx.Response(200, json=sessions.MOCK_RESPONSE)
+        )
+
+        response = self.client.get(
+            self.url,
+            {"status": "ACTIVE", "page": 1, "page_size": 1},
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(
+            [item["id"] for item in body["result"]],
+            [sessions.ACTIVE_SESSION_IDS[0]],
+        )
+        self.assertEqual(body["page"]["number"], 1)
+        self.assertEqual(body["page"]["size"], 1)
+        self.assertEqual(
+            body["page"]["totalElements"], len(sessions.ACTIVE_SESSION_IDS)
+        )
+        self.assertEqual(body["page"]["totalPages"], len(sessions.ACTIVE_SESSION_IDS))
+        self.assertIn("status=ACTIVE", body["_links"]["self"]["href"])
+        self.assertIn("status=ACTIVE", body["_links"]["next"]["href"])
+
+    def test_status_completed_filters_sessions(self):
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
+            return_value=httpx.Response(200, json=sessions.MOCK_RESPONSE)
+        )
+
+        response = self.client.get(
+            self.url,
+            {"status": "COMPLETED"},
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(
+            [item["id"] for item in body["result"]],
+            [sessions.COMPLETED_SESSION_ID],
+        )
+        self.assertEqual(body["page"]["totalElements"], 1)
+        self.assertEqual(body["page"]["totalPages"], 1)
 
     def test_response_no_sessions(self):
         respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(

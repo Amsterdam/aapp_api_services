@@ -24,6 +24,7 @@ class SessionResponseSerializer(serializers.Serializer):
         )
     )
     created_date_time = serializers.DateTimeField()
+    email = serializers.EmailField(allow_null=True)
     # CPMS data
     start_date_time = serializers.DateTimeField(allow_null=True)
     end_date_time = serializers.DateTimeField(allow_null=True)
@@ -33,6 +34,13 @@ class SessionResponseSerializer(serializers.Serializer):
     currency = serializers.ChoiceField(choices=["EUR"])
     # Location data
     location = LocationPropertiesSerializer(required=False)
+
+
+class SessionListRequestSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=["ACTIVE", "COMPLETED"],
+        required=False,
+    )
 
 
 class SessionSocketStatusResponseSerializer(serializers.Serializer):
