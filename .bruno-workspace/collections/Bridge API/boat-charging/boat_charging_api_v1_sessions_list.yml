@@ -7,12 +7,16 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/boat-charging/api/v1/sessions"
+  url: "{{baseUrl}}/boat-charging/api/v1/sessions?status=COMPLETED"
   headers:
     - name: Access-Token
       value: "{{access-token}}"
     - name: X-Api-Key
       value: "{{apiKey}}"
+  params:
+    - name: status
+      value: COMPLETED
+      type: query
   auth: inherit
 
 runtime:

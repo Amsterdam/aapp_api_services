@@ -14,7 +14,11 @@ http:
     - name: Authorization
       value: "{{token}}"
       disabled: true
-  auth: inherit
+
+runtime:
+  variables:
+    - name: token
+      value: "123"
 
 settings:
   encodeUrl: true

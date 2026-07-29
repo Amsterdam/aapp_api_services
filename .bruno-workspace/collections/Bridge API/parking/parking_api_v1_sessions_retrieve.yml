@@ -7,7 +7,7 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/parking/api/v1/sessions?sort=started_at:desc&status=ACTIVE"
+  url: "{{baseUrl}}/parking/api/v1/sessions?status=PLANNED"
   headers:
     - name: SSP-Access-Token
       value: "{{access-token}}"
@@ -28,17 +28,6 @@ http:
       value: ""
       type: query
       disabled: true
-    - name: sort
-      value: started_at:desc
-      type: query
-    - name: status
-      value: ACTIVE
-      type: query
-      description: |-
-        * `ACTIVE` - ACTIVE
-        * `PLANNED` - PLANNED
-        * `COMPLETED` - COMPLETED
-        * `CANCELLED` - CANCELLED
     - name: status
       value: PLANNED
       type: query
@@ -47,7 +36,7 @@ http:
         * `PLANNED` - PLANNED
         * `COMPLETED` - COMPLETED
         * `CANCELLED` - CANCELLED
-      disabled: true
+        * `ACTIVE_OR_PLANNED` - ACTIVE,FUTURE
     - name: status
       value: COMPLETED
       type: query
