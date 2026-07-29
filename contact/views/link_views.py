@@ -20,7 +20,7 @@ class LinksView(generics.RetrieveAPIView):
         "cityPassRequest": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/HulpBijLaagInkomen.aspx",
         "cityPassChildBudget": "https://www.amsterdam.nl/stadspas/kindtegoed/",
         "cityPassUsage": "https://stadspas.amsterdam.nl/informatie/zo-werkt-het",
-        "cityPassLowIncomeSupport": "https://stadspas.amsterdam.nl/tegoed-en-meer",
+        "cityPassLowIncomeSupport": "https://www.amsterdam.nl/werk-en-inkomen/regelingen-bij-laag-inkomen-pak-je-kans",
         "contactNewsletterSignup": "https://cloud.nieuwsbrief.amsterdam.nl/nieuwsbrief-aanmelden?type=amsterdam",
         "documents": "https://www.amsterdam.nl/burgerzaken/akten-uittreksels/",
         "elections": "https://www.amsterdam.nl/verkiezingen/",
