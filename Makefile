@@ -1,4 +1,4 @@
-.PHONY: deploy requirements
+.PHONY: deploy requirements configure-tests
 
 ALL_SERVICES = bridge city_pass construction_work news contact image modules notification waste survey
 
@@ -121,6 +121,10 @@ check-service:
 		echo "ERROR: SERVICE_NAME is not set"; \
 		exit 1; \
 	fi
+
+configure-tests: check-service migrate
+	# Switch VS Code test discovery and debug config to the selected service
+	@SERVICE_NAME="$(SERVICE_NAME)" ALL_SERVICES="$(ALL_SERVICES)" bash deploy/configure-tests.sh
 
 run_etl: check-service
 	# Django command for the construction_work service

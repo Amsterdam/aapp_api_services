@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Pytest: current file (bridge)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.vscode/.env.test.bridge",
+      "args": [
+        "${file}",
+        "-q"
+      ],
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "preLaunchTask": "Bridge: start test services"
+    }
+  ]
+}
