@@ -57,6 +57,11 @@ urlpatterns = [
         name="boat-charging-session-stop",
     ),
     path(
+        BASE_PATH + "/sessions/<str:session_id>/cancel",
+        session_start_stop.SessionCancelView.as_view(),
+        name="boat-charging-session-cancel",
+    ),
+    path(
         BASE_PATH + "/terms",
         terms_view.TermsView.as_view(),
         name="boat-charging-terms",

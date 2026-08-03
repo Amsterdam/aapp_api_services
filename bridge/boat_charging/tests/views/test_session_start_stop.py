@@ -112,3 +112,39 @@ class TestSessionStopView(BoatChargingTestCase):
         response = self.client.post(self.url, data={}, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 400)
+
+
+class TestSessionCancelView(BoatChargingTestCase):
+    def setUp(self):
+        super().setUp()
+        self.session_id = "foobar"
+        self.url = reverse(
+            "boat-charging-session-cancel",
+            kwargs={"session_id": self.session_id},
+        )
+
+    def test_cancel_session_success(self):
+        baker.make(
+            BoatChargingSession,
+            device__external_id=self.api_headers["DeviceId"],
+            session_id=self.session_id,
+        )
+
+        url = f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{self.session_id}/cancel"
+        resp = respx.post(url).mock(return_value=httpx.Response(200, json={}))
+
+        response = self.client.post(self.url, data={}, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertTrue(
+            BoatChargingSession.objects.filter(session_id=self.session_id)
+            .first()
+            .deleted
+        )
+
+    def test_missing_device_id(self):
+        self.api_headers.pop("DeviceId")
+        response = self.client.post(self.url, data={}, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 400)
