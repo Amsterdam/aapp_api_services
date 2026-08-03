@@ -132,4 +132,8 @@ class SessionCancelView(DeviceIdMixin, BaseView):
             await sync_to_async(service.mark_boat_charging_session_as_deleted)(
                 device_id=self.device_id,
                 session_id=session_id,
+            )
+        except Exception:
+            # logging already handled in service
+            pass
         return Response(status=204)
