@@ -52,3 +52,14 @@ class SessionSocketStatusResponseSerializer(serializers.Serializer):
         required=False,
         help_text="Substatus is only provided when status is OCCUPIED",
     )
+
+
+class CostBreakdownItem(serializers.Serializer):
+    type = serializers.ChoiceField(choices=["ENERGY", "TIME", "FLAT"])
+    cost_incl_vat = serializers.FloatField(help_text="Incl VAT")
+    unit_price = serializers.FloatField()
+
+
+class SessionCostBreakdownResponseSerializer(serializers.Serializer):
+    total_incl_vat = serializers.FloatField(help_text="Excl VAT")
+    items = serializers.ListField(child=CostBreakdownItem())

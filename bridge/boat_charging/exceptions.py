@@ -43,3 +43,9 @@ class BoatChargingTransactionRejected(BaseApiException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Transaction rejected"
     default_code = "BOAT_CHARGING_TRANSACTION_REJECTED"
+
+
+class BoatChargingCostBreakdownNotFound(BaseApiException):
+    status_code = status.HTTP_412_PRECONDITION_FAILED
+    default_detail = "Cost breakdown not found"
+    default_code = "BOAT_CHARGING_COST_BREAKDOWN_NOT_FOUND"

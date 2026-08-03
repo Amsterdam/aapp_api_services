@@ -4,6 +4,7 @@ from django.conf import settings
 from django.urls import reverse
 
 from bridge.boat_charging.tests.mock_data import (
+    cost_breakdown,
     session_detail,
     sessions,
     socket_status,
@@ -164,7 +165,7 @@ class TestSessionSocketStatusView(BoatChargingTestCase):
             kwargs={"session_id": self.session_id},
         )
         self.external_endpoint = (
-            f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS_SOCKET_STATUS']}/"
+            f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/"
             f"{self.session_id}/socket-status"
         )
 
@@ -205,3 +206,56 @@ class TestSessionSocketStatusView(BoatChargingTestCase):
         response = self.client.get(invalid_url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 400)
+
+
+class TestSessionCostBreakdownView(BoatChargingTestCase):
+    def setUp(self):
+        super().setUp()
+        self.session_id = "foobar"
+        self.url = reverse(
+            "boat-charging-session-cost-breakdown",
+            kwargs={"session_id": self.session_id},
+        )
+        self.external_endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/"
+            f"{self.session_id}/cost-breakdown"
+        )
+
+    def test_success(self):
+        respx.get(self.external_endpoint).mock(
+            return_value=httpx.Response(
+                200,
+                json=cost_breakdown.MOCK_RESPONSE,
+            )
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["total_incl_vat"],
+            cost_breakdown.MOCK_RESPONSE["totalInclVat"],
+        )
+        self.assertEqual(len(response.json()["items"]), 3)
+
+    def test_invalid_session_id_returns_400(self):
+        invalid_url = reverse(
+            "boat-charging-session-cost-breakdown",
+            kwargs={"session_id": "invalid$id"},
+        )
+
+        response = self.client.get(invalid_url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_404_response_to_400(self):
+        respx.get(self.external_endpoint).mock(
+            return_value=httpx.Response(
+                404,
+                json={"detail": "Session not found"},
+            )
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertContains(response, "Session not found", status_code=400)

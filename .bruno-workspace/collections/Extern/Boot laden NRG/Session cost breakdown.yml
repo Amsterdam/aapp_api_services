@@ -1,0 +1,34 @@
+info:
+  name: Session cost breakdown
+  type: http
+  seq: 14
+
+http:
+  method: GET
+  url: "{{NRG_base_url}}/sessions/:id/cost-breakdown"
+  headers:
+    - name: User-Agent
+      value: Mozilla/5.0
+    - name: Accept
+      value: application/json, text/plain, */*
+    - name: Authorization
+      value: "{{token}}"
+      disabled: true
+  params:
+    - name: id
+      value: 0eb8c3fd-6dba-405d-b8c5-c088d6ed1b76
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "name": "VariableName",
+        "value": 2
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
