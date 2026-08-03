@@ -19,7 +19,6 @@ runtime:
   variables:
     - name: access-token
       value: "{{access-token}}"
-
 settings:
   encodeUrl: true
   timeout: 0
