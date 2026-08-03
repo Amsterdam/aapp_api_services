@@ -44,7 +44,7 @@ SETTINGS_MAPPING = {
 
 
 @boat_charging_openapi_decorator(
-    response_serializer_class=SettingsResponseSerializer(many=True),
+    response_serializer_class=SettingsResponseSerializer,
     requires_access_token=False,
     accepts_access_token=True,
 )
