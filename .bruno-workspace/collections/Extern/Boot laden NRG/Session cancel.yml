@@ -1,0 +1,27 @@
+info:
+  name: Session cancel
+  type: http
+  seq: 13
+
+http:
+  method: POST
+  url: "{{NRG_base_url}}/sessions/:id/cancel"
+  headers:
+    - name: User-Agent
+      value: Mozilla/5.0
+    - name: Accept
+      value: application/json, text/plain, */*
+    - name: Authorization
+      value: "{{token}}"
+      disabled: true
+  params:
+    - name: id
+      value: 084ebc90-e1a2-463b-b21f-2d912204e619
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

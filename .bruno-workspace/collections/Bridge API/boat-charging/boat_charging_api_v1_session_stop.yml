@@ -17,7 +17,7 @@ http:
       value: bruno-user
   params:
     - name: session_id
-      value: ""
+      value: 084ebc90-e1a2-463b-b21f-2d912204e619
       type: path
   auth: inherit
 
