@@ -110,3 +110,30 @@ class SessionStopView(DeviceIdMixin, BaseView):
             # logging already handled in service
             pass
         return Response(status=204)
+
+
+class SessionCancelView(DeviceIdMixin, BaseView):
+    @boat_charging_openapi_decorator(
+        response_serializer_class=None,
+        requires_device_id=True,
+        accepts_access_token=True,
+        requires_access_token=False,
+    )
+    async def post(self, request, *args, **kwargs):
+        session_id = self.get_safe_path_param(kwargs["session_id"])
+        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{session_id}/cancel"
+
+        await self.api_call(
+            "post",
+            endpoint=endpoint,
+        )
+        service = BoatChargingSessionService()
+        try:
+            await sync_to_async(service.mark_boat_charging_session_as_deleted)(
+                device_id=self.device_id,
+                session_id=session_id,
+            )
+        except Exception:
+            # logging already handled in service
+            pass
+        return Response(status=204)
