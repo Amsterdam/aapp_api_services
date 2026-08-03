@@ -14,6 +14,13 @@ endif
 
 API_AUTH_TOKENS ?= insecure-token
 
+TEST_TARGETS := run-test coverage test
+TEST_SELECTION := $(filter-out $(TEST_TARGETS),$(MAKECMDGOALS))
+
+ifeq ($(filter $(TEST_TARGETS),$(firstword $(MAKECMDGOALS))),$(firstword $(MAKECMDGOALS)))
+$(foreach target,$(TEST_SELECTION),$(eval $(target):;@:))
+endif
+
 dc = SERVICE_NAME=${SERVICE_NAME} docker compose
 run = $(dc) run --rm
 lint = $(run) lint
@@ -66,11 +73,11 @@ lint:
 
 run-test:
 	# Run tests
-	$(call dc_for_all,run test)
+	$(call dc_for_all,run test $(TEST_SELECTION))
 
 coverage:
 	# Run pytest coverage
-	$(call dc_for_all,run --rm test sh -c "coverage run -m pytest $$s core && coverage report")
+	$(call dc_for_all,run --rm test sh -c "coverage run -m pytest $(if $(TEST_SELECTION),$(TEST_SELECTION),$$s core) && coverage report")
 
 integration-test:
 	# Run integration tests
