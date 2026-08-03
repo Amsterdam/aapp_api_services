@@ -25,6 +25,7 @@ class SessionResponseSerializer(serializers.Serializer):
     )
     created_date_time = serializers.DateTimeField()
     email = serializers.EmailField(allow_null=True)
+    stop_reason = serializers.CharField(allow_null=True)
     # CPMS data
     start_date_time = serializers.DateTimeField(allow_null=True)
     end_date_time = serializers.DateTimeField(allow_null=True)
