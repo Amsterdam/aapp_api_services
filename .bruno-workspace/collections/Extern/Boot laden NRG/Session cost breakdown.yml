@@ -18,13 +18,6 @@ http:
     - name: id
       value: 0eb8c3fd-6dba-405d-b8c5-c088d6ed1b76
       type: path
-  body:
-    type: json
-    data: |-
-      {
-        "name": "VariableName",
-        "value": 2
-      }
   auth: inherit
 
 settings:

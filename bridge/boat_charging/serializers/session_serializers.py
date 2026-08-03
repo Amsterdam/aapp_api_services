@@ -86,5 +86,5 @@ class CostBreakdownItem(serializers.Serializer):
 
 
 class SessionCostBreakdownResponseSerializer(serializers.Serializer):
-    total_incl_vat = serializers.FloatField(help_text="Excl VAT")
+    total_incl_vat = serializers.FloatField(help_text="Incl VAT")
     items = serializers.ListField(child=CostBreakdownItem())
