@@ -135,7 +135,7 @@ class TestSessionCancelView(BoatChargingTestCase):
 
         response = self.client.post(self.url, data={}, headers=self.api_headers)
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         self.assertEqual(resp.call_count, 1)
         self.assertTrue(
             BoatChargingSession.objects.filter(session_id=self.session_id)
