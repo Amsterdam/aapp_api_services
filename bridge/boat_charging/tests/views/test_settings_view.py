@@ -28,6 +28,7 @@ class TestSettingsView(BoatChargingTestCase):
                 "session_expiry_hours": 24,
                 "session_expiry_warning_hours": 2,
                 "standard_fine": 1,
+                "vat_fraction": 1.21,
             },
         )
 

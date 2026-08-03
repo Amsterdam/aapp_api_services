@@ -36,16 +36,21 @@ SETTINGS_MAPPING = {
         "name": "standard_fine",
         "value_type": int,
     },
+    "VatFraction": {
+        "name": "vat_fraction",
+        "value_type": float,
+    },
 }
 
 
 @boat_charging_openapi_decorator(
     response_serializer_class=SettingsResponseSerializer(many=True),
-    requires_access_token=True,
+    requires_access_token=False,
+    accepts_access_token=True,
 )
 class SettingsView(BaseView):
     response_serializer_class = SettingsResponseSerializer
-    requires_access_token = True
+    requires_access_token = False
 
     async def get(self, request, *args, **kwargs):
         response_json = await self.api_call(

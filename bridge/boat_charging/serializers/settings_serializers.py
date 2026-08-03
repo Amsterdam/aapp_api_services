@@ -7,3 +7,4 @@ class SettingsResponseSerializer(serializers.Serializer):
     session_expiry_hours = serializers.IntegerField(allow_null=True)
     session_expiry_warning_hours = serializers.IntegerField(allow_null=True)
     standard_fine = serializers.IntegerField(allow_null=True)
+    vat_fraction = serializers.FloatField(allow_null=True)
