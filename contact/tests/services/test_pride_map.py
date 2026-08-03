@@ -222,6 +222,41 @@ class PrideMapServiceTest(SimpleTestCase):
         self.assertEqual(date_and_time, "wo 8 jul 2026 - do 9 jul 2026")
         warning.assert_called_once()
 
+    def test_get_start_end_date_and_time_ignores_dated_meta_time(self):
+        with patch("contact.services.pride_map.logger.warning") as warning:
+            date_and_time = self.service._get_date_and_time(
+                properties={
+                    "meta": [
+                        {"key": "datum-start", "value": "2026-07-17"},
+                        {"key": "datum-eind", "value": "2026-07-17"},
+                        {"key": "tijd", "value": "17-07-2026 - 20:30"},
+                    ]
+                },
+                layer_type="Evenement",
+            )
+
+        self.assertEqual(date_and_time, "vr 17 jul 2026")
+        warning.assert_not_called()
+
+    def test_get_start_end_date_and_time_ignores_dated_multiline_meta_time(self):
+        with patch("contact.services.pride_map.logger.warning") as warning:
+            date_and_time = self.service._get_date_and_time(
+                properties={
+                    "meta": [
+                        {"key": "datum-start", "value": "2026-07-17"},
+                        {"key": "datum-eind", "value": "2026-07-18"},
+                        {
+                            "key": "tijd",
+                            "value": "16-07-2026 - 20:30\n17-07-2026 - 20:30\n17-07-2026 - 22:30\n18-07-2026 - 20:30",
+                        },
+                    ]
+                },
+                layer_type="Evenement",
+            )
+
+        self.assertEqual(date_and_time, "vr 17 jul 2026 - za 18 jul 2026")
+        warning.assert_not_called()
+
     def test_get_start_end_date_and_time_skips_meta_time_without_range(self):
         date_and_time = self.service._get_date_and_time(
             properties={

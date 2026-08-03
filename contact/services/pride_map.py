@@ -18,6 +18,11 @@ from contact.services.event_abstract import EventAbstractService
 
 logger = logging.getLogger(__name__)
 
+TIME_RANGE_PATTERN = re.compile(
+    r"^\s*(?P<start_time>\d{1,2}[:.]\d{2})\s*-\s*(?P<end_time>\d{1,2}[:.]\d{2})\s*$"
+)
+DATED_TIME_PATTERN = re.compile(r"\d{1,2}-\d{1,2}-\d{4}|\d{4}-\d{2}-\d{2}")
+
 
 class PrideMapService(EventAbstractService):
     TOILET_LAYER = "Toilet"
@@ -342,15 +347,18 @@ class PrideMapService(EventAbstractService):
         if not value or "-" not in value:
             return None
 
-        split_time = value.split("-")
-        if len(split_time) != 2:
+        if "\n" in value or DATED_TIME_PATTERN.search(value):
+            return None
+
+        match = TIME_RANGE_PATTERN.fullmatch(value)
+        if not match:
             logger.warning(
                 f"Unexpected time format: {value}. Expected format is HH:MM-HH:MM. Skipping time parsing."
             )
             return None
 
-        start_time = split_time[0].replace(".", ":").strip()
-        end_time = split_time[1].replace(".", ":").strip()
+        start_time = match.group("start_time").replace(".", ":")
+        end_time = match.group("end_time").replace(".", ":")
         return start_time, end_time
 
     @staticmethod
