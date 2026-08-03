@@ -4,6 +4,7 @@ MOCK_RESPONSE = [
     {"id": 3, "name": "SessionExpiryHours", "value": "24"},
     {"id": 4, "name": "SessionExpiryWarningHours", "value": "2"},
     {"id": 5, "name": "StandardFine", "value": "1"},
+    {"id": 6, "name": "VatFraction", "value": "1.21"},
 ]
 
 MOCK_RESPONSE_MISSING_FIELDS = [

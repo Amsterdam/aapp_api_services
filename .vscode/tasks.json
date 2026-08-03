@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Bridge: start test services",
+      "type": "shell",
+      "command": "docker compose up -d db redis",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Bridge: stop test services",
+      "type": "shell",
+      "command": "docker compose stop db redis",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Bridge: run current file in Docker",
+      "type": "shell",
+      "command": "docker compose run --rm test pytest ${relativeFile}",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "SERVICE_NAME": "bridge"
+        }
+      },
+      "problemMatcher": []
+    }
+  ]
+}

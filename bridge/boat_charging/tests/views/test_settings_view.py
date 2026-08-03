@@ -28,6 +28,29 @@ class TestSettingsView(BoatChargingTestCase):
                 "session_expiry_hours": 24,
                 "session_expiry_warning_hours": 2,
                 "standard_fine": 1,
+                "vat_fraction": 1.21,
+            },
+        )
+
+    def test_settings_endpoint_success_without_access_token(self):
+        resp = respx.get(settings.BOAT_CHARGING_ENDPOINTS["SETTINGS"]).mock(
+            return_value=httpx.Response(200, json=app_settings.MOCK_RESPONSE)
+        )
+        headers = self.api_headers.copy()
+        headers.pop("Authorization", None)  # Remove Authorization header
+        response = self.client.get(self.url, headers=headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertEqual(
+            response.json(),
+            {
+                "pre_authorization_amount": 45.0,
+                "session_cleanup_enabled": False,
+                "session_expiry_hours": 24,
+                "session_expiry_warning_hours": 2,
+                "standard_fine": 1,
+                "vat_fraction": 1.21,
             },
         )
 
@@ -49,5 +72,6 @@ class TestSettingsView(BoatChargingTestCase):
                 "session_expiry_hours": 24,
                 "session_expiry_warning_hours": None,
                 "standard_fine": None,
+                "vat_fraction": None,
             },
         )

@@ -1,11 +1,11 @@
 info:
-  name: Add settings
+  name: settings public
   type: http
-  seq: 12
+  seq: 14
 
 http:
-  method: POST
-  url: "{{NRG_base_url}}/app-settings"
+  method: GET
+  url: "{{NRG_base_url}}/app-settings/public"
   headers:
     - name: User-Agent
       value: Mozilla/5.0
@@ -14,13 +14,6 @@ http:
     - name: Authorization
       value: "{{token}}"
       disabled: true
-  body:
-    type: json
-    data: |-
-      {
-        "name": "VatFraction",
-        "value": 1.21
-      }
   auth: inherit
 
 settings:
