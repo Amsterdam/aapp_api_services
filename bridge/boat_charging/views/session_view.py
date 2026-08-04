@@ -9,6 +9,7 @@ from bridge.boat_charging.constants import (
     OPERATION_STATE_MAPPING,
 )
 from bridge.boat_charging.serializers.session_serializers import (
+    SessionCostBreakdownResponseSerializer,
     SessionListRequestSerializer,
     SessionResponseSerializer,
     SessionSocketStatusResponseSerializer,
@@ -154,8 +155,7 @@ class SessionSocketStatusView(BaseView):
     async def get(self, request, *args, **kwargs):
         session_id = self.get_safe_path_param(kwargs["session_id"])
         endpoint = (
-            f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS_SOCKET_STATUS']}/"
-            f"{session_id}/socket-status"
+            f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{session_id}/socket-status"
         )
         response_json = await self.api_call("get", endpoint=endpoint)
 
@@ -164,6 +164,40 @@ class SessionSocketStatusView(BaseView):
             "substatus": response_json.get("substatus"),
         }
 
+        serializer = self.response_serializer_class(data=response_data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=200)
+
+
+@boat_charging_openapi_decorator(
+    response_serializer_class=SessionCostBreakdownResponseSerializer,
+    accepts_access_token=True,
+    requires_access_token=False,
+)
+class SessionCostBreakdownView(BaseView):
+    response_serializer_class = SessionCostBreakdownResponseSerializer
+    requires_access_token = False
+
+    async def get(self, request, *args, **kwargs):
+        session_id = self.get_safe_path_param(kwargs["session_id"])
+        endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/"
+            f"{session_id}/cost-breakdown"
+        )
+        response_json = await self.api_call("get", endpoint=endpoint)
+
+        response_data = {
+            "total_incl_vat": response_json.get("totalInclVat"),
+            "items": [
+                {
+                    "type": item.get("type"),
+                    "cost_incl_vat": item.get("costInclVat"),
+                    "unit_price": item.get("unitPrice"),
+                    "volume": item.get("volume"),
+                }
+                for item in response_json.get("items", [])
+            ],
+        }
         serializer = self.response_serializer_class(data=response_data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=200)
