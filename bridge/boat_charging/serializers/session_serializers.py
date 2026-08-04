@@ -80,9 +80,10 @@ class SessionSocketStatusResponseSerializer(serializers.Serializer):
 
 
 class CostBreakdownItem(serializers.Serializer):
-    type = serializers.ChoiceField(choices=["ENERGY", "TIME", "FLAT"])
+    type = serializers.ChoiceField(choices=["ENERGY", "TIME", "FLAT", "PARKING_TIME"])
     cost_incl_vat = serializers.FloatField(help_text="Incl VAT")
-    unit_price = serializers.FloatField()
+    unit_price = serializers.FloatField(allow_null=True)
+    volume = serializers.FloatField(allow_null=True)
 
 
 class SessionCostBreakdownResponseSerializer(serializers.Serializer):

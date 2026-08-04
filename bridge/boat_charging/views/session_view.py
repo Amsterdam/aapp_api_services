@@ -193,6 +193,7 @@ class SessionCostBreakdownView(BaseView):
                     "type": item.get("type"),
                     "cost_incl_vat": item.get("costInclVat"),
                     "unit_price": item.get("unitPrice"),
+                    "volume": item.get("volume"),
                 }
                 for item in response_json.get("items", [])
             ],
