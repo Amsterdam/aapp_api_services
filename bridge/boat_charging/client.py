@@ -13,6 +13,16 @@ LIMITS = httpx.Limits(
     keepalive_expiry=30.0,
 )
 
+
+def with_read_timeout(read_timeout: float) -> httpx.Timeout:
+    return httpx.Timeout(
+        connect=TIMEOUT.connect,
+        read=read_timeout,
+        write=TIMEOUT.write,
+        pool=TIMEOUT.pool,
+    )
+
+
 _client = httpx.AsyncClient(timeout=TIMEOUT, limits=LIMITS)
 
 

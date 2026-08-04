@@ -4,6 +4,7 @@ from asgiref.sync import sync_to_async
 from django.conf import settings
 from rest_framework.response import Response
 
+from bridge.boat_charging.client import with_read_timeout
 from bridge.boat_charging.serializers.session_start_stop_serializers import (
     SessionInitRequestSerializer,
     SessionInitResponseSerializer,
@@ -67,6 +68,7 @@ class SessionStartView(DeviceIdMixin, BaseView):
         response_json = await self.api_call(
             "post",
             endpoint=endpoint,
+            timeout=with_read_timeout(180.0),
         )
         try:
             service = BoatChargingSessionService()

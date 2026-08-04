@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock, patch
+
 import httpx
 import respx
 from django.conf import settings
@@ -71,6 +73,18 @@ class TestSessionStartView(BoatChargingTestCase):
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(BoatChargingSession.objects.count(), 1)
 
+    @patch(
+        "bridge.boat_charging.views.base_view.client.request", new_callable=AsyncMock
+    )
+    def test_start_session_uses_extended_timeout(self, mocked_request):
+        mocked_request.return_value = httpx.Response(200, json={})
+
+        response = self.client.post(self.url, data={}, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        timeout = mocked_request.await_args.kwargs["timeout"]
+        self.assertEqual(timeout.read, 180.0)
+
     def test_missing_device_id(self):
         self.api_headers.pop("DeviceId")
         response = self.client.post(self.url, data={}, headers=self.api_headers)
@@ -106,6 +120,22 @@ class TestSessionStopView(BoatChargingTestCase):
             .first()
             .deleted
         )
+
+    @patch(
+        "bridge.boat_charging.views.base_view.client.request", new_callable=AsyncMock
+    )
+    def test_stop_session_keeps_default_timeout(self, mocked_request):
+        mocked_request.return_value = httpx.Response(200, json={})
+        baker.make(
+            BoatChargingSession,
+            device__external_id=self.api_headers["DeviceId"],
+            session_id=self.session_id,
+        )
+
+        response = self.client.post(self.url, data={}, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 204)
+        self.assertNotIn("timeout", mocked_request.await_args.kwargs)
 
     def test_missing_device_id(self):
         self.api_headers.pop("DeviceId")
