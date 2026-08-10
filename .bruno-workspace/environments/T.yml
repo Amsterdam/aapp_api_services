@@ -2,7 +2,13 @@ name: T
 variables:
   - secret: true
     name: apiKey
+    description: ""
   - name: baseUrl
     value: https://test.app.amsterdam.nl
+    description: ""
   - secret: true
     name: access-token
+    description: ""
+  - secret: true
+    name: nrg-token
+    description: ""

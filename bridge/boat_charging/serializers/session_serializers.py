@@ -24,6 +24,33 @@ class SessionResponseSerializer(serializers.Serializer):
         )
     )
     created_date_time = serializers.DateTimeField()
+    email = serializers.EmailField(allow_null=True)
+    stop_reason = serializers.ChoiceField(
+        choices=(
+            ("manual", "User stopped charging via the stop endpoint."),
+            (
+                "cancelled",
+                "User cancelled a paid session before charging started; pre-auth refunded.",
+            ),
+            (
+                "outOfBalance",
+                "Cleanup stopped charging because the estimated cost neared the pre-auth budget.",
+            ),
+            (
+                "unplugged",
+                "The CPMS transaction was stopped externally (e.g. cable unplugged).",
+            ),
+            (
+                "timeLimit",
+                "Cleanup force-stopped a charging session that exceeded the session time limit.",
+            ),
+            (
+                "expired",
+                "A session that never started charging lapsed (stale or expired); any payment refunded.",
+            ),
+        ),
+        allow_null=True,
+    )
     # CPMS data
     start_date_time = serializers.DateTimeField(allow_null=True)
     end_date_time = serializers.DateTimeField(allow_null=True)
@@ -35,6 +62,13 @@ class SessionResponseSerializer(serializers.Serializer):
     location = LocationPropertiesSerializer(required=False)
 
 
+class SessionListRequestSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=["ACTIVE", "COMPLETED"],
+        required=False,
+    )
+
+
 class SessionSocketStatusResponseSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES)
     substatus = serializers.ChoiceField(
@@ -43,3 +77,15 @@ class SessionSocketStatusResponseSerializer(serializers.Serializer):
         required=False,
         help_text="Substatus is only provided when status is OCCUPIED",
     )
+
+
+class CostBreakdownItem(serializers.Serializer):
+    type = serializers.ChoiceField(choices=["ENERGY", "TIME", "FLAT", "PARKING_TIME"])
+    cost_incl_vat = serializers.FloatField(help_text="Incl VAT")
+    unit_price = serializers.FloatField(allow_null=True)
+    volume = serializers.FloatField(allow_null=True)
+
+
+class SessionCostBreakdownResponseSerializer(serializers.Serializer):
+    total_incl_vat = serializers.FloatField(help_text="Incl VAT")
+    items = serializers.ListField(child=CostBreakdownItem())

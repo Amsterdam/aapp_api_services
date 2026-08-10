@@ -45,7 +45,8 @@ class LocationView(BaseView):
         return Response(serializer.data, status=200)
 
     def get_location_feature_data(self, item: dict[str, Any]) -> dict[str, Any]:
-        item_dict = self.get_location_data(item)
+        sockets = item.get("sockets", [])
+        item_dict = self.get_location_data(item, sockets)
         return {
             "type": "Feature",
             "properties": item_dict,
@@ -58,13 +59,15 @@ class LocationView(BaseView):
             },
         }
 
-    def get_location_data(self, item: dict[str, Any]) -> dict[str, Any]:
+    def get_location_data(
+        self, item: dict[str, Any], sockets: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """
         Convert the location data from the API to the format expected by the frontend.
         """
         street, number = self.split_address(item["address"])
 
-        status, max_kw = self._get_status_and_kw_from_sockets(item.get("sockets", []))
+        status, max_kw = self._get_status_and_kw_from_sockets(sockets)
 
         return {
             "id": item["id"],
@@ -199,7 +202,11 @@ class LocationDetailView(LocationView):
         except BoatChargingForbiddenError:
             raise BoatChargingLocationNotFoundError()
 
-        serializer_data = self.get_location_data(response_json)
+        sockets = []
+        for station in response_json["chargingStations"]:
+            for evse in station["evses"]:
+                sockets += evse["connectors"]
+        serializer_data = self.get_location_data(response_json, sockets)
 
         serializer = self.response_serializer_class(data=serializer_data)
         serializer.is_valid(raise_exception=True)

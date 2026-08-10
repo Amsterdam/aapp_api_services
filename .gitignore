@@ -1,6 +1,10 @@
 # IDEs
 .idea/
-.vscode
+.vscode/*
+!.vscode/.env.test.*
+!.vscode/tasks.json
+!.vscode/settings.template.json
+!.vscode/launch.template.json
 
 # DB files
 data/

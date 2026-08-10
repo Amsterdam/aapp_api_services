@@ -72,7 +72,7 @@ variables:
 
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
-      value: $[ format('{0}-{1}', replace(variables['Self.BranchName'], '/', '-'), variables['Build.SourceVersion']) ]
+      value: $[ replace(variables['Self.BranchName'], '/', '-') ]
     ${{ else }}:
       value: ${{ parameters.versionOverride }}
 
@@ -84,6 +84,7 @@ stages:
     parameters:
       services: ${{ parameters.services }}
       stageDisplayName: Build & push
+      includeQA: false
 
   # --------------------
   # DEV

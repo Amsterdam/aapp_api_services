@@ -1,11 +1,11 @@
 info:
-  name: Session details
+  name: settings public
   type: http
-  seq: 7
+  seq: 14
 
 http:
   method: GET
-  url: "{{NRG_base_url}}/sessions/:id"
+  url: "{{NRG_base_url}}/app-settings/public"
   headers:
     - name: User-Agent
       value: Mozilla/5.0
@@ -14,10 +14,6 @@ http:
     - name: Authorization
       value: "{{token}}"
       disabled: true
-  params:
-    - name: id
-      value: 75bd25a9-ad17-473f-a19b-d2c65d608e0d
-      type: path
   auth: inherit
 
 settings:

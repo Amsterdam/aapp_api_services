@@ -1,4 +1,4 @@
-.PHONY: deploy requirements
+.PHONY: deploy requirements configure-tests
 
 ALL_SERVICES = bridge city_pass construction_work news contact image modules notification waste survey
 
@@ -13,6 +13,13 @@ export TARGET_MIGRATION_APP=$(SERVICE_NAME)
 endif
 
 API_AUTH_TOKENS ?= insecure-token
+
+TEST_TARGETS := run-test coverage test
+TEST_SELECTION := $(filter-out $(TEST_TARGETS),$(MAKECMDGOALS))
+
+ifeq ($(filter $(TEST_TARGETS),$(firstword $(MAKECMDGOALS))),$(firstword $(MAKECMDGOALS)))
+$(foreach target,$(TEST_SELECTION),$(eval $(target):;@:))
+endif
 
 dc = SERVICE_NAME=${SERVICE_NAME} docker compose
 run = $(dc) run --rm
@@ -66,11 +73,11 @@ lint:
 
 run-test:
 	# Run tests
-	$(call dc_for_all,run test)
+	$(call dc_for_all,run test $(TEST_SELECTION))
 
 coverage:
 	# Run pytest coverage
-	$(call dc_for_all,run --rm test sh -c "coverage run -m pytest $$s core && coverage report")
+	$(call dc_for_all,run --rm test sh -c "coverage run -m pytest $(if $(TEST_SELECTION),$(TEST_SELECTION),$$s core) && coverage report")
 
 integration-test:
 	# Run integration tests
@@ -114,6 +121,10 @@ check-service:
 		echo "ERROR: SERVICE_NAME is not set"; \
 		exit 1; \
 	fi
+
+configure-tests: check-service migrate
+	# Switch VS Code test discovery and debug config to the selected service
+	@SERVICE_NAME="$(SERVICE_NAME)" ALL_SERVICES="$(ALL_SERVICES)" bash deploy/configure-tests.sh
 
 run_etl: check-service
 	# Django command for the construction_work service

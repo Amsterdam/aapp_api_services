@@ -68,9 +68,51 @@ stages:
                     command: login
 
                 - script: |
+                    az login --identity
+                    az acr login -n $(registry)
+                  displayName: ACR login
+
+                - script: |
                     kubectl config set-context deploy --namespace=${{ parameters.namespace }}
                     kubectl config use-context deploy
                   displayName: Setup kubectl
+
+                - ${{ if eq(parameters.environment, 'prod') }}:
+                  # LOCK PRODUCTION IMAGES AND UNLOCK PREVIOUS IMAGES
+                  - script: |
+                      set -euo pipefail
+
+                      repository="aapp/images/app-${{ service }}"
+
+                      # Unlock only locked tags (exclude newest 3)
+                      for tag in $(az acr repository show-tags \
+                        --name "$(registry)" \
+                        --repository "$repository" \
+                        --detail \
+                        --orderby time_desc \
+                        --query '[?changeableAttributes.writeEnabled == `false`].name | [3:]' \
+                        --output tsv)
+                      do
+                        image="${repository}:${tag}"
+                        echo "Unlocking image: $image"
+
+                        az acr repository update \
+                          --name "$(registry)" \
+                          --image "$image" \
+                          --write-enabled true \
+                          --output none
+                      done
+
+                      # Lock the newly produced image
+                      image="${repository}:$(version)"
+                      echo "Locking image: $image"
+
+                      az acr repository update \
+                        --name "$(registry)" \
+                        --image "$image" \
+                        --write-enabled false \
+                        --output none
+                    displayName: "Unlock previous tags and lock app-${{ service }}"
 
                 - ${{ if eq(parameters.force, true) }}:
                   - script: helm uninstall $(service_name) --ignore-not-found

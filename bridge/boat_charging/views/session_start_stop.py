@@ -4,6 +4,7 @@ from asgiref.sync import sync_to_async
 from django.conf import settings
 from rest_framework.response import Response
 
+from bridge.boat_charging.client import with_read_timeout
 from bridge.boat_charging.serializers.session_start_stop_serializers import (
     SessionInitRequestSerializer,
     SessionInitResponseSerializer,
@@ -24,6 +25,8 @@ class SessionInitView(BaseView):
 
     @boat_charging_openapi_decorator(
         response_serializer_class=SessionInitResponseSerializer,
+        accepts_access_token=True,
+        requires_access_token=False,
     )
     async def post(self, request, *args, **kwargs):
         request_data = SessionInitRequestSerializer(data=request.data)
@@ -53,7 +56,10 @@ class SessionInitView(BaseView):
 
 class SessionStartView(DeviceIdMixin, BaseView):
     @boat_charging_openapi_decorator(
-        response_serializer_class=None, requires_device_id=True
+        response_serializer_class=None,
+        requires_device_id=True,
+        accepts_access_token=True,
+        requires_access_token=False,
     )
     async def post(self, request, *args, **kwargs):
         session_id = self.get_safe_path_param(kwargs["session_id"])
@@ -62,6 +68,7 @@ class SessionStartView(DeviceIdMixin, BaseView):
         response_json = await self.api_call(
             "post",
             endpoint=endpoint,
+            timeout=with_read_timeout(180.0),
         )
         try:
             service = BoatChargingSessionService()
@@ -82,11 +89,41 @@ class SessionStartView(DeviceIdMixin, BaseView):
 
 class SessionStopView(DeviceIdMixin, BaseView):
     @boat_charging_openapi_decorator(
-        response_serializer_class=None, requires_device_id=True
+        response_serializer_class=None,
+        requires_device_id=True,
+        accepts_access_token=True,
+        requires_access_token=False,
     )
     async def post(self, request, *args, **kwargs):
         session_id = self.get_safe_path_param(kwargs["session_id"])
         endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{session_id}/stop"
+
+        await self.api_call(
+            "post",
+            endpoint=endpoint,
+        )
+        service = BoatChargingSessionService()
+        try:
+            await sync_to_async(service.mark_boat_charging_session_as_deleted)(
+                device_id=self.device_id,
+                session_id=session_id,
+            )
+        except Exception:
+            # logging already handled in service
+            pass
+        return Response(status=204)
+
+
+class SessionCancelView(DeviceIdMixin, BaseView):
+    @boat_charging_openapi_decorator(
+        response_serializer_class=None,
+        requires_device_id=True,
+        accepts_access_token=True,
+        requires_access_token=False,
+    )
+    async def post(self, request, *args, **kwargs):
+        session_id = self.get_safe_path_param(kwargs["session_id"])
+        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{session_id}/cancel"
 
         await self.api_call(
             "post",

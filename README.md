@@ -36,6 +36,8 @@ Run a service via this command:
 
 If there are necessary migrations, this will show in the logs when running the above command. To run the migrations: `SERVICE_NAME=%service_name% make migrate`
 
+To use the VS Code Testing tab for a specific service, switch the active test configuration with `SERVICE_NAME=%service_name% make configure-tests`. This updates the local `.vscode` test settings for that service. After running it, refresh tests in the VS Code Testing view.
+
 When running a service, the API docs can be found at: <http://127.0.0.1:8000/%service_name%/api/v1/apidocs>
 
 

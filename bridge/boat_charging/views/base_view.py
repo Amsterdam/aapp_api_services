@@ -42,6 +42,7 @@ class BaseView(GenericAPIView):
         body_data=None,
         query_params=None,
         paginated=False,
+        timeout=None,
     ):
         headers = {
             "Content-Type": "application/json",
@@ -61,6 +62,7 @@ class BaseView(GenericAPIView):
                 headers=headers,
                 query_params=query_params,
                 body_data=body_data,
+                timeout=timeout,
             )
         except httpx.HTTPError as exc:
             logger.warning(
@@ -90,18 +92,25 @@ class BaseView(GenericAPIView):
         query_params=None,
         auth=None,
         data=None,
+        timeout=None,
     ):
         assert not (body_data and data), (
             "Either body_data or data must be provided, not both"
         )
+        request_kwargs = {
+            "method": method,
+            "url": endpoint,
+            "params": query_params,
+            "json": body_data,
+            "data": data,
+            "headers": headers,
+            "auth": auth,
+        }
+        if timeout is not None:
+            request_kwargs["timeout"] = timeout
+
         response = await client.request(
-            method=method,
-            url=endpoint,
-            params=query_params,
-            json=body_data,  # json payload
-            data=data,  # for form data
-            headers=headers,
-            auth=auth,
+            **request_kwargs,
         )
         if response.is_success:
             return response.json()

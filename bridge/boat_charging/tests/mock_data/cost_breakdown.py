@@ -1,0 +1,36 @@
+MOCK_RESPONSE = {
+    "currency": "EUR",
+    "items": [
+        {
+            "type": "ENERGY",
+            "volume": 0.183,
+            "unitPrice": 0.23,
+            "vatPercent": 21.00,
+            "costExclVat": 0.0421,
+            "costInclVat": 0.0509,
+        },
+        {
+            "type": "TIME",
+            "volume": 0.0044,
+            "unitPrice": 0.45,
+            "vatPercent": 21.00,
+            "costExclVat": 0.0020,
+            "costInclVat": 0.0024,
+        },
+        {
+            "type": "FLAT",
+            "volume": 1.0,
+            "unitPrice": 1.0,
+            "vatPercent": 21.00,
+            "costExclVat": 1.0,
+            "costInclVat": 1.21,
+        },
+    ],
+    "totalExclVat": 1.0441,
+    "totalInclVat": 1.2633,
+    "cdrTotalExclVat": 1.0441,
+    "totalEnergyKwh": 0.183,
+    "totalTimeHours": 0.0044,
+    "startDateTime": "2026-07-02T14:01:47Z",
+    "endDateTime": "2026-07-02T14:02:04Z",
+}

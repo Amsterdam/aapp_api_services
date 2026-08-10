@@ -1,11 +1,11 @@
 info:
-  name: Session details
+  name: Session cost breakdown
   type: http
-  seq: 7
+  seq: 14
 
 http:
   method: GET
-  url: "{{NRG_base_url}}/sessions/:id"
+  url: "{{NRG_base_url}}/sessions/:id/cost-breakdown"
   headers:
     - name: User-Agent
       value: Mozilla/5.0
@@ -16,7 +16,7 @@ http:
       disabled: true
   params:
     - name: id
-      value: 75bd25a9-ad17-473f-a19b-d2c65d608e0d
+      value: 0eb8c3fd-6dba-405d-b8c5-c088d6ed1b76
       type: path
   auth: inherit
 

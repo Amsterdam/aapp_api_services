@@ -47,6 +47,11 @@ urlpatterns = [
         name="boat-charging-session-socket-status",
     ),
     path(
+        BASE_PATH + "/sessions/<str:session_id>/cost-breakdown",
+        session_view.SessionCostBreakdownView.as_view(),
+        name="boat-charging-session-cost-breakdown",
+    ),
+    path(
         BASE_PATH + "/sessions/<str:session_id>/start",
         session_start_stop.SessionStartView.as_view(),
         name="boat-charging-session-start",
@@ -55,6 +60,11 @@ urlpatterns = [
         BASE_PATH + "/sessions/<str:session_id>/stop",
         session_start_stop.SessionStopView.as_view(),
         name="boat-charging-session-stop",
+    ),
+    path(
+        BASE_PATH + "/sessions/<str:session_id>/cancel",
+        session_start_stop.SessionCancelView.as_view(),
+        name="boat-charging-session-cancel",
     ),
     path(
         BASE_PATH + "/terms",
