@@ -45,19 +45,19 @@ class NotificationAdmin(admin.ModelAdmin):
         else:
             self.message_user(
                 request,
-                "Bericht is verstuurd en kan niet meer verwijderd worden.",
+                f"Bericht kan niet verwijderd worden, omdat deze al verstuurd is of binnen de bufferperiode (van {DEADLINE_BUFFER_MINUTES} minuten) valt.",
                 level=messages.INFO,
             )
 
     def has_change_permission(self, request, obj=None):
         if obj and self._notification_is_locked(obj):
             return False
-        return True
+        return super().has_change_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
         if obj and self._notification_is_locked(obj):
             return False
-        return True
+        return super().has_delete_permission(request, obj)
 
     def get_urls(self):
         urls = super().get_urls()
@@ -131,7 +131,7 @@ class NotificationAdmin(admin.ModelAdmin):
         device_ids = notification_service.get_device_qs(obj)
         context = {
             **self.admin_site.each_context(request),
-            "nr_sessions": len(device_ids),
+            "nr_sessions": device_ids.count(),
             "notification": obj,
             "budgets": self.budgets_display(obj),
             "notification_deadline": max(

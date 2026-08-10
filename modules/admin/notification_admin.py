@@ -43,19 +43,19 @@ class NotificationAdmin(admin.ModelAdmin):
         else:
             self.message_user(
                 request,
-                "Bericht is verstuurd en kan niet meer verwijderd worden.",
+                f"Bericht kan niet verwijderd worden, omdat deze al verstuurd is of binnen de bufferperiode (van {DEADLINE_BUFFER_MINUTES} minuten) valt.",
                 level=messages.INFO,
             )
 
     def has_change_permission(self, request, obj=None):
         if obj and self._notification_is_locked(obj):
             return False
-        return True
+        return super().has_change_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
         if obj and self._notification_is_locked(obj):
             return False
-        return True
+        return super().has_delete_permission(request, obj)
 
     @staticmethod
     def _notification_is_locked(notification: Notification) -> bool:
@@ -140,7 +140,8 @@ class NotificationAdmin(admin.ModelAdmin):
                 # make sure the scheduled notification is deleted if it was created before the user canceled the action
                 notification_service.delete_general_notification(obj)
                 obj.send_at = None
-                obj.save()
+                obj.nr_sessions = 0
+                obj.save(update_fields=["send_at", "nr_sessions"])
             return HttpResponseRedirect(
                 reverse("admin:modules_notification_changelist")
             )
