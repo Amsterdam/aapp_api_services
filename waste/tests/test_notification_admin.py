@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import Group, User
 from django.test import RequestFactory, TestCase
@@ -16,7 +17,9 @@ class TestNotificationAdmin(TestCase):
 
     def setUp(self):
         self.user = baker.make(User, username="mockuser")
-        group = Group.objects.create(name="dev-waste-notification-publisher")
+        group = Group.objects.create(
+            name=f"{settings.ENVIRONMENT_SLUG}-waste-notification-publisher"
+        )
         self.user.groups.add(group)
         self.factory = RequestFactory()
         self.admin_instance = NotificationAdmin(ManualNotification, admin.site)

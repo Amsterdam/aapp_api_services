@@ -1,7 +1,6 @@
 from datetime import timedelta
 
-from django.contrib import admin
-from django.core.checks import messages
+from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
