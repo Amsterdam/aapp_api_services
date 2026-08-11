@@ -119,3 +119,14 @@ class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
         self.notification_service.delete_notification(notification)
 
         self.assertFalse(ScheduledNotification.objects.exists())
+
+    def test_error_raised_if_notification_not_saved(self):
+        notification = ManualNotification(
+            title="Test",
+            message="Test message",
+            created_by=self.user,
+            send_at=timezone.now() + timedelta(days=1),
+        )
+
+        with self.assertRaises(ValueError):
+            self.notification_service._create_identifier(notification.id)

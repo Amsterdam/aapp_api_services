@@ -160,7 +160,11 @@ class NotificationAdmin(admin.ModelAdmin):
 
     @admin.display(boolean=True, description="Verstuurd?")
     def send(self, obj) -> bool:
-        return obj.send_at is not None and obj.nr_sessions > 0
+        return (
+            obj.send_at is not None
+            and obj.nr_sessions > 0
+            and obj.send_at <= timezone.now()
+        )
 
     def budgets_display(self, obj):
         budgets = list(obj.budgets.all())

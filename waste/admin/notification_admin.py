@@ -7,6 +7,7 @@ from django.urls import path, reverse
 from django.utils import timezone
 
 from core.authentication import AuthenticationGroupModelAdmin
+from waste.models import ManualNotification
 from waste.services.notification import ManualNotificationService
 
 DEADLINE_BUFFER_MINUTES = 15
@@ -29,7 +30,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
         "can_change_notification",
     ]
     list_select_related = ("created_by",)
-    ordering = ["-pk"]
+    ordering = ["-send_at"]
     actions = None
 
     def save_model(self, request, obj, form, change):
@@ -69,24 +70,29 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
         ]
         return custom + urls
 
-    def response_add(self, request, obj, post_url_continue=None):
-        if obj.send_at is None:
-            return super().response_add(request, obj, post_url_continue)
-        return HttpResponseRedirect(
-            reverse("admin:notification_confirm_send", args=[obj.pk])
-        )
-
-    def response_change(self, request, obj, post_url_continue=None):
+    def response_add(self, request, obj: ManualNotification, post_url_continue=None):
+        # only ask for confirmation if notification has send date
         if obj.send_at is not None:
             return HttpResponseRedirect(
                 reverse("admin:notification_confirm_send", args=[obj.pk])
             )
+        return super().response_add(request, obj, post_url_continue)
 
-        notification_service = ManualNotificationService()
-        notification_service.delete_notification(obj)
-        obj.nr_sessions = 0
-        obj.save(update_fields=["nr_sessions"])
-        return super().response_change(request, obj, post_url_continue)
+    def response_change(self, request, obj: ManualNotification):
+        # only ask for confirmation if notification has send date
+        if obj.send_at is not None:
+            return HttpResponseRedirect(
+                reverse("admin:notification_confirm_send", args=[obj.pk])
+            )
+        # if notification has no send date, we make sure the scheduled notification is deleted
+        # if it was created before with a send date and the user changed it to no send date
+        else:
+            notification_service = ManualNotificationService()
+            notification_service.delete_notification(obj)
+            obj.send_at = None
+            obj.nr_sessions = 0
+            obj.save(update_fields=["send_at", "nr_sessions"])
+        return super().response_change(request, obj)
 
     def confirm_send(self, request, object_id):
         obj = self.get_object(request, object_id)
@@ -151,11 +157,15 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
             return exclude + ["created_by"]
 
     @admin.display(boolean=True, description="Verstuurd?")
-    def send(self, obj) -> bool:
-        return obj.send_at is not None and obj.nr_sessions > 0
+    def send(self, obj: ManualNotification) -> bool:
+        return (
+            obj.send_at is not None
+            and obj.nr_sessions > 0
+            and obj.send_at <= timezone.now()
+        )
 
     @admin.display(boolean=True, description="Kan gewijzigd worden")
-    def can_change_notification(self, obj) -> bool:
+    def can_change_notification(self, obj: ManualNotification) -> bool:
         return not self._notification_is_locked(obj)
 
     def render_change_form(
@@ -167,7 +177,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
         return super().render_change_form(request, context, add, change, form_url, obj)
 
     @staticmethod
-    def _notification_is_locked(notification) -> bool:
+    def _notification_is_locked(notification: ManualNotification) -> bool:
         if (
             notification.send_at is not None
             and notification.send_at

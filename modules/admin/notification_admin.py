@@ -86,9 +86,7 @@ class NotificationAdmin(admin.ModelAdmin):
             readonly.append("is_test")
         return readonly
 
-    def response_change(
-        self, request, obj: Notification, post_url_continue: str = None
-    ):
+    def response_change(self, request, obj: Notification):
         # only ask for confirmation if notification has send date
         if obj.send_at is not None:
             return HttpResponseRedirect(
@@ -99,9 +97,10 @@ class NotificationAdmin(admin.ModelAdmin):
         else:
             notification_service = NotificationService()
             notification_service.delete_general_notification(obj)
+            obj.send_at = None
             obj.nr_sessions = 0
-            obj.save()
-        return super().response_change(request, obj, post_url_continue)
+            obj.save(update_fields=["send_at", "nr_sessions"])
+        return super().response_change(request, obj)
 
     def response_add(self, request, obj: Notification, post_url_continue: str = None):
         # only ask for confirmation if notification has send date
