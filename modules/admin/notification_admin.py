@@ -97,9 +97,8 @@ class NotificationAdmin(admin.ModelAdmin):
         else:
             notification_service = NotificationService()
             notification_service.delete_general_notification(obj)
-            obj.send_at = None
             obj.nr_sessions = 0
-            obj.save(update_fields=["send_at", "nr_sessions"])
+            obj.save()
         return super().response_change(request, obj)
 
     def response_add(self, request, obj: Notification, post_url_continue: str = None):
