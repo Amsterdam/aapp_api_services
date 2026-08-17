@@ -1,12 +1,18 @@
+from datetime import timedelta
+
 from django.contrib import admin
 from django.core.checks import messages
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 
+from city_pass.models import Notification
 from city_pass.services.notification import NotificationService
+
+DEADLINE_BUFFER_MINUTES = 15
 
 
 class NotificationAdmin(admin.ModelAdmin):
@@ -18,6 +24,7 @@ class NotificationAdmin(admin.ModelAdmin):
         "selected_budgets",
         "created_by",
         "send_at",
+        "can_change_notification",
     ]
     list_select_related = ("created_by",)
     ordering = ["-pk"]
@@ -27,6 +34,30 @@ class NotificationAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+    def delete_model(self, request, obj):
+        # delete the scheduled notification in the notification service when the
+        # notification is deleted in the admin
+        if obj and not self._notification_is_locked(obj):
+            notification_service = NotificationService()
+            notification_service.delete_notification(obj)
+            super().delete_model(request, obj)
+        else:
+            self.message_user(
+                request,
+                f"Bericht kan niet verwijderd worden, omdat deze al verstuurd is of binnen de bufferperiode (van {DEADLINE_BUFFER_MINUTES} minuten) valt.",
+                level=messages.INFO,
+            )
+
+    def has_change_permission(self, request, obj=None):
+        if obj and self._notification_is_locked(obj):
+            return False
+        return super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and self._notification_is_locked(obj):
+            return False
+        return super().has_delete_permission(request, obj)
 
     def get_urls(self):
         urls = super().get_urls()
@@ -39,10 +70,29 @@ class NotificationAdmin(admin.ModelAdmin):
         ]
         return custom + urls
 
-    def response_add(self, request, obj, post_url_continue=None):
-        return HttpResponseRedirect(
-            reverse("admin:notification_confirm_send", args=[obj.pk])
-        )
+    def response_change(self, request, obj: Notification):
+        # only ask for confirmation if notification has send date
+        if obj.send_at is not None:
+            return HttpResponseRedirect(
+                reverse("admin:notification_confirm_send", args=[obj.pk])
+            )
+        # if notification has no send date, we make sure the scheduled notification is deleted
+        # if it was created before with a send date and the user changed it to no send date
+        else:
+            notification_service = NotificationService()
+            notification_service.delete_notification(obj)
+            obj.send_at = None
+            obj.nr_sessions = 0
+            obj.save(update_fields=["send_at", "nr_sessions"])
+        return super().response_change(request, obj)
+
+    def response_add(self, request, obj: Notification, post_url_continue: str = None):
+        # only ask for confirmation if notification has send date
+        if obj.send_at is not None:
+            return HttpResponseRedirect(
+                reverse("admin:notification_confirm_send", args=[obj.pk])
+            )
+        return super().response_add(request, obj, post_url_continue)
 
     def confirm_send(self, request, object_id):
         obj = self.get_object(request, object_id)
@@ -54,22 +104,26 @@ class NotificationAdmin(admin.ModelAdmin):
                 if obj.nr_sessions:
                     self.message_user(
                         request,
-                        f"Bericht verstuurd aan {obj.nr_sessions} gebruikers",
+                        f"Bericht aangemaakt voor {obj.nr_sessions} gebruikers",
                         level=messages.INFO,
                     )
                 else:
                     self.message_user(
                         request,
-                        "Geen gebruikers gevonden om bericht aan te versturen!",
+                        "Geen gebruikers gevonden om bericht voor aan te maken!",
                         level=messages.ERROR,
                     )
             else:
                 self.message_user(
                     request,
-                    "Actie is afgebroken. Bericht is niet verstuurd.",
+                    "Actie is afgebroken. Verzenddatum is leeggemaakt.",
                     level=messages.WARNING,
                 )
-                obj.delete()
+                # make sure the scheduled notification is deleted if it was created before the user canceled the action
+                notification_service.delete_notification(obj)
+                obj.send_at = None
+                obj.nr_sessions = 0
+                obj.save(update_fields=["send_at", "nr_sessions"])
             return HttpResponseRedirect(
                 reverse("admin:city_pass_notification_changelist")
             )
@@ -77,24 +131,20 @@ class NotificationAdmin(admin.ModelAdmin):
         device_ids = notification_service.get_device_qs(obj)
         context = {
             **self.admin_site.each_context(request),
-            "nr_sessions": len(device_ids),
+            "nr_sessions": device_ids.count(),
             "notification": obj,
             "budgets": self.budgets_display(obj),
+            "notification_deadline": max(
+                obj.send_at - timedelta(minutes=DEADLINE_BUFFER_MINUTES), timezone.now()
+            ),
         }
         return TemplateResponse(
             request, "admin/notification_confirm_send.html", context
         )
 
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
     def get_readonly_fields(self, request, obj=None):
         if obj:
             return [
-                "send_at",
                 "nr_sessions",
                 "created_by",
                 "budgets_display",
@@ -106,7 +156,7 @@ class NotificationAdmin(admin.ModelAdmin):
         if obj:
             return exclude + ["budgets"]
         else:
-            return exclude + ["send_at", "created_by"]
+            return exclude + ["created_by"]
 
     @admin.display(boolean=True, description="Verstuurd?")
     def send(self, obj) -> bool:
@@ -153,6 +203,20 @@ class NotificationAdmin(admin.ModelAdmin):
         context["show_save_and_continue"] = False
         context["show_save_and_add_another"] = False
         return super().render_change_form(request, context, add, change, form_url, obj)
+
+    @admin.display(boolean=True, description="Kan gewijzigd worden")
+    def can_change_notification(self, obj: Notification) -> bool:
+        return not self._notification_is_locked(obj)
+
+    @staticmethod
+    def _notification_is_locked(notification: Notification) -> bool:
+        if (
+            notification.send_at is not None
+            and notification.send_at
+            <= timezone.now() + timedelta(minutes=DEADLINE_BUFFER_MINUTES)
+        ):
+            return True
+        return False
 
     class Media:
         js = ("js/persist_scroll.js",)

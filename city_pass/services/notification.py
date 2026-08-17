@@ -1,7 +1,7 @@
 import logging
+from datetime import timedelta
 
 from django.db.models import QuerySet
-from django.utils import timezone
 
 from city_pass.models import Notification, Session
 from core.enums import Module, NotificationType
@@ -26,11 +26,29 @@ class NotificationService(AbstractNotificationService):
             device_ids=device_qs,
         )
 
-        self.upsert(notification_data)
+        if notification.send_at is not None:
+            scheduled_notification = self.upsert(
+                notification=notification_data,
+                scheduled_for=notification.send_at,
+                expires_at=notification.send_at + timedelta(minutes=30),
+                identifier=self._create_identifier(notification.id),
+            )
 
-        notification.send_at = timezone.now()
-        notification.nr_sessions = device_qs.count()
+            notification.nr_sessions = scheduled_notification.devices.count()
+        else:
+            notification.nr_sessions = 0
         notification.save()
+
+    def delete_notification(self, notification: Notification):
+        identifier = self._create_identifier(notification.id)
+        self.delete_scheduled_notification(identifier)
+
+    def _create_identifier(self, notification_id: int) -> str:
+        if not notification_id:
+            raise ValueError(
+                "Notification must be saved and have an id to create an identifier"
+            )
+        return f"{self.module_slug}_notification_{notification_id}"
 
     def get_device_qs(self, notification: Notification) -> QuerySet:
         budgets = list(notification.budgets.all())

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
@@ -18,6 +19,7 @@ class TestNotificationService(APITestCase):
 
         self.budget_1 = baker.make("Budget", code="budget1")
         self.budget_2 = baker.make("Budget", code="budget2")
+        self.scheduled_for = timezone.now() + timezone.timedelta(days=1)
 
         baker.make(
             "PassData", session=session_1, budgets=[self.budget_1, self.budget_2]
@@ -25,7 +27,11 @@ class TestNotificationService(APITestCase):
         baker.make("PassData", session=session_2, budgets=[self.budget_1])
 
     def test_call_everybody(self):
-        notification = baker.make(Notification, budgets=[])
+        notification = baker.make(
+            Notification,
+            budgets=[],
+            send_at=self.scheduled_for,
+        )
         service = NotificationService()
 
         service.send(notification)
@@ -34,7 +40,11 @@ class TestNotificationService(APITestCase):
         self.assertEqual(notification.nr_sessions, 3)
 
     def test_call_budget1(self):
-        notification = baker.make(Notification, budgets=[self.budget_1])
+        notification = baker.make(
+            Notification,
+            budgets=[self.budget_1],
+            send_at=self.scheduled_for,
+        )
         service = NotificationService()
 
         service.send(notification)
@@ -43,10 +53,25 @@ class TestNotificationService(APITestCase):
         self.assertEqual(notification.nr_sessions, 2)
 
     def test_call_budget2(self):
-        notification = baker.make(Notification, budgets=[self.budget_2])
+        notification = baker.make(
+            Notification,
+            budgets=[self.budget_2],
+            send_at=self.scheduled_for,
+        )
         service = NotificationService()
 
         service.send(notification)
 
         self.assertIsNotNone(notification.send_at)
         self.assertEqual(notification.nr_sessions, 1)
+
+    def test_call_scheduled_notification(self):
+        scheduled_for = timezone.now() + timezone.timedelta(hours=2)
+        notification = baker.make(
+            Notification, budgets=[self.budget_2], send_at=scheduled_for
+        )
+        service = NotificationService()
+
+        service.send(notification)
+
+        self.assertEqual(notification.send_at, scheduled_for)

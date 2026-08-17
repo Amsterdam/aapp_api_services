@@ -1,3 +1,4 @@
+from django.utils import timezone
 from model_bakery import baker
 
 from city_pass.models import Notification, Session
@@ -19,6 +20,7 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
 
         self.budget_1 = baker.make("Budget", code="budget1")
         self.budget_2 = baker.make("Budget", code="budget2")
+        self.scheduled_for = timezone.now() + timezone.timedelta(days=1)
 
         baker.make(
             "PassData", session=session_1, budgets=[self.budget_1, self.budget_2]
@@ -49,7 +51,11 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         self.assertIn(2, device_ids)
 
     def test_call_everybody(self):
-        notification = baker.make(Notification, budgets=[])
+        notification = baker.make(
+            Notification,
+            budgets=[],
+            send_at=self.scheduled_for,
+        )
         service = NotificationService()
 
         service.send(notification)
@@ -59,7 +65,11 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         self.assertEqual(ScheduledNotification.objects.count(), 1)
 
     def test_call_budget1(self):
-        notification = baker.make(Notification, budgets=[self.budget_1])
+        notification = baker.make(
+            Notification,
+            budgets=[self.budget_1],
+            send_at=self.scheduled_for,
+        )
         service = NotificationService()
 
         service.send(notification)
@@ -69,7 +79,11 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         self.assertEqual(ScheduledNotification.objects.count(), 1)
 
     def test_call_budget2(self):
-        notification = baker.make(Notification, budgets=[self.budget_2])
+        notification = baker.make(
+            Notification,
+            budgets=[self.budget_2],
+            send_at=self.scheduled_for,
+        )
         service = NotificationService()
 
         service.send(notification)
@@ -83,6 +97,7 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
             Notification,
             budgets=[self.budget_2],
             image_set_id=1,
+            send_at=self.scheduled_for,
         )
         service = NotificationService()
 
@@ -91,3 +106,20 @@ class TestNotificationService(ResponsesActivatedAPITestCase):
         self.assertIsNotNone(notification.send_at)
         self.assertEqual(notification.nr_sessions, 1)
         self.assertEqual(ScheduledNotification.objects.count(), 1)
+
+    def test_call_uses_existing_send_at_for_schedule(self):
+        scheduled_for = timezone.now() + timezone.timedelta(days=1)
+        notification = baker.make(
+            Notification, budgets=[self.budget_1], send_at=scheduled_for
+        )
+        service = NotificationService()
+
+        service.send(notification)
+
+        scheduled_notification = ScheduledNotification.objects.get()
+        self.assertEqual(
+            scheduled_notification.identifier,
+            service._create_identifier(notification.id),
+        )
+        self.assertEqual(scheduled_notification.scheduled_for, scheduled_for)
+        self.assertEqual(notification.send_at, scheduled_for)
