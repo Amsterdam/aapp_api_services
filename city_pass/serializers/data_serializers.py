@@ -44,6 +44,7 @@ class MijnAmsPassDataSerializer(serializers.Serializer):
     balanceFormatted = serializers.CharField()
     actief = serializers.BooleanField()
     securityCode = NotRequiredBlankToNullCharField()
+    type = serializers.CharField(required=False, allow_null=True)
 
 
 class MijnAmsPassBudgetTransactionsSerializer(serializers.Serializer):

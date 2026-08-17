@@ -1,0 +1,32 @@
+MOCK_DATA = [
+    {
+        "id": "201604",
+        "title": "Hema",
+        "amount": 9.95,
+        "amountFormatted": "€9,95",
+        "datePublished": "2025-07-31T21:59:59.000Z",
+        "datePublishedFormatted": "31 juli 2025",
+        "budget": "24/25 Kindtegoed 4 tm 9 jaar",
+        "budgetCode": "2024_AMSTEG_4-9",
+    },
+    {
+        "id": "201605",
+        "title": "Aktiesport",
+        "amount": 4.95,
+        "amountFormatted": "€4,95",
+        "datePublished": "2025-07-31T21:59:59.000Z",
+        "datePublishedFormatted": "31 juli 2025",
+        "budget": "24/25 Kindtegoed 0 tm 3 jaar",
+        "budgetCode": "2024_AMSTEG_0-3",
+    },
+    {
+        "id": "201606",
+        "title": "AFC Ijburg",
+        "amount": 182.95,
+        "amountFormatted": "€182,95",
+        "datePublished": "2025-07-28T21:59:59.000Z",
+        "datePublishedFormatted": "28 juli 2025",
+        "budget": "24/25 Kindtegoed 0 tm 3 jaar",
+        "budgetCode": "2024_AMSTEG_0-3",
+    },
+]

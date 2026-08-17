@@ -1,4 +1,34 @@
-passes = [
+MOCK_DATA = [
+    {
+        "id": "201603",
+        "owner": {
+            "firstname": "Someone",
+            "lastname": "Lastname",
+            "initials": "S",
+        },
+        "dateEnd": "2025-07-31T21:59:59.000Z",
+        "dateEndFormatted": "31 juli 2025",
+        "budgets": [
+            {
+                "title": "24/25 PC Tegoed",
+                "description": "",
+                "code": "2024_AMSTEG_PC",
+                "budgetAssigned": 580,
+                "budgetAssignedFormatted": "€580,00",
+                "budgetBalance": 0,
+                "budgetBalanceFormatted": "€0,00",
+                "dateEnd": "2025-07-31T21:59:59.000Z",
+                "dateEndFormatted": "31 juli 2025",
+            }
+        ],
+        "balanceFormatted": "€0,00",
+        "passNumber": 6011013116524,
+        "passNumberComplete": "6064366011013116524",
+        "securityCode": "1234",
+        "type": "volwassene",
+        "actief": True,
+        "transactionsKeyEncrypted": "NU-5XEzItABkg7P17AB813RjDSQn8YH9Uj30sSRaO5lkP4zg0J2wABCLu8s9xtj9",
+    },
     {
         "id": "201604",
         "owner": {
@@ -25,6 +55,7 @@ passes = [
         "passNumber": 6011013116525,
         "passNumberComplete": "6064366011013116525",
         "securityCode": "1234",
+        "type": "kind",
         "actief": True,
         "transactionsKeyEncrypted": "NU-5XEzItQQkg7P17RT813RjDSQn8YH9Uj30sSRaO5lkP4zg0J2wXAYLu8s9xtj9",
     },
@@ -79,63 +110,3 @@ passes = [
         "transactionsKeyEncrypted": "somesupersecretstring123",
     },
 ]
-
-budget_transactions = [
-    {
-        "id": "201604",
-        "title": "Hema",
-        "amount": 9.95,
-        "amountFormatted": "€9,95",
-        "datePublished": "2025-07-31T21:59:59.000Z",
-        "datePublishedFormatted": "31 juli 2025",
-        "budget": "24/25 Kindtegoed 4 tm 9 jaar",
-        "budgetCode": "2024_AMSTEG_4-9",
-    },
-    {
-        "id": "201605",
-        "title": "Aktiesport",
-        "amount": 4.95,
-        "amountFormatted": "€4,95",
-        "datePublished": "2025-07-31T21:59:59.000Z",
-        "datePublishedFormatted": "31 juli 2025",
-        "budget": "24/25 Kindtegoed 0 tm 3 jaar",
-        "budgetCode": "2024_AMSTEG_0-3",
-    },
-    {
-        "id": "201606",
-        "title": "AFC Ijburg",
-        "amount": 182.95,
-        "amountFormatted": "€182,95",
-        "datePublished": "2025-07-28T21:59:59.000Z",
-        "datePublishedFormatted": "28 juli 2025",
-        "budget": "24/25 Kindtegoed 0 tm 3 jaar",
-        "budgetCode": "2024_AMSTEG_0-3",
-    },
-]
-
-aanbieding_transactions = {
-    "discountAmountTotal": 150,
-    "discountAmountTotalFormatted": "€150,0",
-    "transactions": [
-        {
-            "id": "201606",
-            "title": "AFC Ijburg",
-            "description": "Schrijf je in voor een proefles bij AFC Ijburg",
-            "discountTitle": "Gratis",
-            "discountAmount": 100,
-            "discountAmountFormatted": "€100,0",
-            "datePublished": "2025-07-28T21:59:59.000Z",
-            "datePublishedFormatted": "28 juli 2025",
-        },
-        {
-            "id": "201607",
-            "title": "Hema",
-            "description": "Koop een leuke knuffel bij Hema",
-            "discountTitle": "50 euro korting",
-            "discountAmount": 50,
-            "discountAmountFormatted": "€50,0",
-            "datePublished": "2025-07-31T21:59:59.000Z",
-            "datePublishedFormatted": "31 juli 2025",
-        },
-    ],
-}

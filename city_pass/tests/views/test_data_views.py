@@ -7,8 +7,12 @@ from django.urls import reverse
 from model_bakery import baker
 
 from city_pass.models import Budget, PassData
-from city_pass.tests import mock_data
 from city_pass.tests.base_test import BaseCityPassTestCase
+from city_pass.tests.mock_data import (
+    aanbieding_transactions,
+    budget_transactions,
+    passes,
+)
 
 
 class BaseCityPassDataViewTestCase(BaseCityPassTestCase):
@@ -51,7 +55,7 @@ class TestPassesView(BaseCityPassDataViewTestCase):
         )
 
     def add_passes_response(
-        self, *, content=mock_data.passes, status=200, payload=None
+        self, *, content=passes.MOCK_DATA, status=200, payload=None
     ):
         self.add_source_api_response(
             responses.GET,
@@ -75,7 +79,7 @@ class TestPassesView(BaseCityPassDataViewTestCase):
         # Check if passNumber and transactionsKeyEncrypted were persisted
         pass_no_trans_key_dict = {
             str(x.get("passNumber")): x.get("transactionsKeyEncrypted")
-            for x in mock_data.passes
+            for x in passes.MOCK_DATA
         }
         for pass_data_dict in result.data:
             pass_data_obj = PassData.objects.get(
@@ -88,9 +92,17 @@ class TestPassesView(BaseCityPassDataViewTestCase):
 
         # Check if budgets were persisted
         budgets = Budget.objects.all()
-        self.assertEqual(len(budgets), 2)
+        self.assertEqual(len(budgets), 3)
         self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_4-9").exists())
         self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_0-3").exists())
+        self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_PC").exists())
+
+        # check if type field is present in the response and matches the original data
+        for original_pass, response_pass in zip(
+            passes.MOCK_DATA, result.data, strict=True
+        ):
+            self.assertIn("type", response_pass)
+            self.assertEqual(original_pass.get("type"), response_pass.get("type"))
 
     def test_get_passes_successful_repeated(self):
         for _i in range(3):
@@ -101,9 +113,10 @@ class TestPassesView(BaseCityPassDataViewTestCase):
 
         # Check if budgets were persisted
         budgets = Budget.objects.all()
-        self.assertEqual(len(budgets), 2)
+        self.assertEqual(len(budgets), 3)
         self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_4-9").exists())
         self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_0-3").exists())
+        self.assertTrue(Budget.objects.filter(code="2024_AMSTEG_PC").exists())
 
     def assert_source_api_error_was_logged_and_500_returned(
         self, status_code: int, error_response: dict
@@ -170,7 +183,7 @@ class TestPassesView(BaseCityPassDataViewTestCase):
     def test_get_budget_transactions_succeeds_after_pass_refresh_with_new_pass_number(
         self,
     ):
-        initial_pass = mock_data.passes[0]
+        initial_pass = passes.MOCK_DATA[0]
         refreshed_pass = deepcopy(initial_pass)
         refreshed_pass["passNumber"] = 6011013119999
         refreshed_pass["passNumberComplete"] = "6064366011013119999"
@@ -181,14 +194,14 @@ class TestPassesView(BaseCityPassDataViewTestCase):
             responses.GET,
             "BUDGET_TRANSACTIONS",
             suffix=initial_pass["transactionsKeyEncrypted"],
-            content=mock_data.budget_transactions,
+            content=budget_transactions.MOCK_DATA,
         )
         self.add_passes_response(content=[refreshed_pass])
         self.add_source_api_response(
             responses.GET,
             "BUDGET_TRANSACTIONS",
             suffix=refreshed_pass["transactionsKeyEncrypted"],
-            content=mock_data.budget_transactions,
+            content=budget_transactions.MOCK_DATA,
         )
 
         first_passes_result = self.client.get(
@@ -294,7 +307,7 @@ class BaseTransactionsViewTestCase(BaseCityPassDataViewTestCase):
 
 class TestBudgetTransactionsViews(BaseTransactionsViewTestCase):
     api_url = reverse("city-pass-data-budget-transactions")
-    source_api_content = mock_data.budget_transactions
+    source_api_content = budget_transactions.MOCK_DATA
     source_api_path_key = "BUDGET_TRANSACTIONS"
     __test__ = True
 
@@ -313,7 +326,7 @@ class TestBudgetTransactionsViews(BaseTransactionsViewTestCase):
 
 class TestAanbiedingTransactionsViews(BaseTransactionsViewTestCase):
     api_url = reverse("city-pass-data-aanbieding-transactions")
-    source_api_content = mock_data.aanbieding_transactions
+    source_api_content = aanbieding_transactions.MOCK_DATA
     source_api_path_key = "AANBIEDING_TRANSACTIONS"
     __test__ = True
 
