@@ -21,8 +21,11 @@ class SessionResponseSerializer(serializers.Serializer):
             (3, "Charging"),
             (4, "Completed"),
             (5, "Cancelled"),
+            (6, "Starting"),
+            (7, "Stopping"),
         )
     )
+    last_command_error = serializers.CharField(allow_null=True)
     created_date_time = serializers.DateTimeField()
     email = serializers.EmailField(allow_null=True)
     stop_reason = serializers.ChoiceField(

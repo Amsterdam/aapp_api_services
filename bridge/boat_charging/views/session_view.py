@@ -89,6 +89,7 @@ class SessionView(BaseView):
             "created_date_time": session.get("createdAt"),
             "email": session.get("userEmail"),
             "stop_reason": session.get("stopReason"),
+            "last_command_error": session.get("lastCommandError"),
             # CPMS, null if session hasn't started
             "start_date_time": cpms_session.get("startDateTime"),
             "end_date_time": cpms_session.get("endDateTime"),

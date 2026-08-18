@@ -30,6 +30,7 @@ MOCK_RESPONSE = [
             "createdAt": "2026-06-29T10:30:04.1035904",
             "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
             "userEmail": "test@amsterdam.nl",
+            "lastCommandError": "The charge point rejected the start command. Check that the cable is plugged in and try again.",
         },
         "cpmsSession": {
             "startDateTime": "2026-06-29T10:35:04.1035904",
@@ -65,6 +66,7 @@ MOCK_RESPONSE = [
             "desiredAmount": 45.0,
             "createdAt": "2026-06-19T11:49:38.6577696",
             "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
+            "lastCommandError": "The charge point rejected the start command. Check that the cable is plugged in and try again.",
         },
         "cpmsSession": {
             "startDateTime": "2026-06-19T11:50:38.6577696",

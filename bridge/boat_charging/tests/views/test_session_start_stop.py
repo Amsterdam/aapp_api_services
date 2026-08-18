@@ -6,7 +6,7 @@ from django.conf import settings
 from django.urls import reverse
 from model_bakery import baker
 
-from bridge.boat_charging.tests.mock_data import init_session
+from bridge.boat_charging.tests.mock_data import init_session, session_start
 from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
 from notification.models import BoatChargingSession
 
@@ -65,7 +65,9 @@ class TestSessionStartView(BoatChargingTestCase):
 
     def test_start_session_success(self):
         url = f"{settings.BOAT_CHARGING_ENDPOINTS['SESSIONS']}/{self.session_id}/start"
-        resp = respx.post(url).mock(return_value=httpx.Response(200, json={}))
+        resp = respx.post(url).mock(
+            return_value=httpx.Response(200, json=session_start.MOCK_RESPONSE)
+        )
 
         response = self.client.post(self.url, data={}, headers=self.api_headers)
 
@@ -77,7 +79,9 @@ class TestSessionStartView(BoatChargingTestCase):
         "bridge.boat_charging.views.base_view.client.request", new_callable=AsyncMock
     )
     def test_start_session_uses_extended_timeout(self, mocked_request):
-        mocked_request.return_value = httpx.Response(200, json={})
+        mocked_request.return_value = httpx.Response(
+            200, json=session_start.MOCK_RESPONSE
+        )
 
         response = self.client.post(self.url, data={}, headers=self.api_headers)
 
