@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
@@ -9,8 +7,6 @@ from django.utils import timezone
 from core.authentication import AuthenticationGroupModelAdmin
 from waste.models import ManualNotification
 from waste.services.notification import ManualNotificationService
-
-DEADLINE_BUFFER_MINUTES = 15
 
 
 class NotificationAdmin(AuthenticationGroupModelAdmin):
@@ -45,7 +41,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
         else:
             self.message_user(
                 request,
-                f"Bericht kan niet verwijderd worden, omdat deze al verstuurd is of binnen de bufferperiode (van {DEADLINE_BUFFER_MINUTES} minuten) valt.",
+                "Bericht kan niet verwijderd worden, omdat deze al verstuurd is.",
                 level=messages.INFO,
             )
 
@@ -132,10 +128,6 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
             **self.admin_site.each_context(request),
             "nr_sessions": len(device_ids),
             "notification": obj,
-            "notification_deadline": max(
-                obj.send_at - timedelta(minutes=DEADLINE_BUFFER_MINUTES),
-                timezone.now(),
-            ),
         }
         return TemplateResponse(
             request, "admin/notification_confirm_send.html", context
@@ -178,11 +170,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
 
     @staticmethod
     def _notification_is_locked(notification: ManualNotification) -> bool:
-        if (
-            notification.send_at is not None
-            and notification.send_at
-            <= timezone.now() + timedelta(minutes=DEADLINE_BUFFER_MINUTES)
-        ):
+        if notification.send_at is not None and notification.send_at <= timezone.now():
             return True
         return False
 

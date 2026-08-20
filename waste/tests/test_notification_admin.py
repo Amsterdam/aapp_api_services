@@ -7,7 +7,7 @@ from django.test import RequestFactory, TestCase
 from django.utils import timezone
 from model_bakery import baker
 
-from waste.admin.notification_admin import DEADLINE_BUFFER_MINUTES, NotificationAdmin
+from waste.admin.notification_admin import NotificationAdmin
 from waste.models import ManualNotification
 from waste.services.notification import ManualNotificationService
 
@@ -51,20 +51,3 @@ class TestNotificationAdmin(TestCase):
             self.notification_service.get_scheduled_notification(identifier)
         )
         self.assertFalse(ManualNotification.objects.filter(pk=notification.pk).exists())
-
-    def test_has_delete_permission_returns_false_within_deadline_buffer(self):
-        notification = baker.make(
-            ManualNotification,
-            created_by=self.user,
-            send_at=timezone.now() + timedelta(minutes=DEADLINE_BUFFER_MINUTES - 1),
-        )
-        request = self.factory.get(
-            f"/admin/waste/manualnotification/{notification.pk}/change/"
-        )
-        request.user = self.user
-
-        has_permission = self.admin_instance.has_delete_permission(
-            request, notification
-        )
-
-        self.assertFalse(has_permission)
