@@ -7,6 +7,6 @@ MOCK_RESPONSE = {
     "desiredAmount": 45.0,
     "createdAt": "2026-08-18T11:56:59.650845",
     "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
-    "userEmail": "j.beekman@amsterdam.nl",
+    "userEmail": "user@example.com",
     "startRequestedAt": "2026-08-18T11:58:30.5004714Z",
 }
