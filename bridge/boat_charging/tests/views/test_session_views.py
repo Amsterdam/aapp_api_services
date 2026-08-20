@@ -42,6 +42,13 @@ class TestSessionView(BoatChargingTestCase):
             if item["nrg_status"] == 5:
                 self.assertEqual(item["stop_reason"], "cancelled")
 
+        for item in response.json()["result"]:
+            if item["nrg_status"] == 2:
+                self.assertEqual(
+                    item["last_command_error"],
+                    "The charge point rejected the start command. Check that the cable is plugged in and try again.",
+                )
+
     def test_pagination_respects_page_and_page_size(self):
         respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
             return_value=httpx.Response(200, json=sessions.MOCK_RESPONSE)
