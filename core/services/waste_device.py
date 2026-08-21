@@ -11,6 +11,13 @@ class WasteDeviceService:
     def get_device_ids(self) -> list[str]:
         return list(WasteDevice.objects.values_list("device_id", flat=True))
 
+    def get_device_ids_for_bag_ids(self, bag_ids: list[str]) -> list[str]:
+        return list(
+            WasteDevice.objects.filter(bag_nummeraanduiding_id__in=bag_ids).values_list(
+                "device_id", flat=True
+            )
+        )
+
     def bulk_create_waste_devices(self, waste_devices: list[WasteDevice]):
         WasteDevice.objects.bulk_create(waste_devices)
 

@@ -3,6 +3,8 @@ from django.core.checks import messages
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
+from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
 
 from core.authentication import AuthenticationGroupModelAdmin
 from waste.services.notification import ManualNotificationService
@@ -26,6 +28,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     list_select_related = ("created_by",)
     ordering = ["-pk"]
     actions = None
+    filter_horizontal = ["affected_routes"]
 
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
@@ -77,15 +80,36 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
                 reverse("admin:waste_manualnotification_changelist")
             )
 
-        device_ids = notification_service.get_device_ids()
+        device_ids = notification_service.get_device_ids(obj)
         context = {
             **self.admin_site.each_context(request),
             "nr_sessions": len(device_ids),
             "notification": obj,
+            "affected_routes": self.affected_routes_display(obj),
         }
         return TemplateResponse(
             request, "admin/notification_confirm_send.html", context
         )
+
+    def affected_routes_display(self, obj):
+        affected_routes = list(obj.affected_routes.all())
+        if not affected_routes:
+            return mark_safe(
+                "<div style='color: #999;'>Geen routes geselecteerd.</div>"
+            )
+
+        inner = format_html_join(
+            "",
+            "<div style='padding:2px 0;'>{}</div>",
+            ((r.name,) for r in affected_routes),
+        )
+        return format_html(
+            "<div style='border:1px solid #ccc; padding:5px; "
+            "max-height:200px; overflow-y:auto; background:#f9f9f9;'>{}</div>",
+            inner,
+        )
+
+    affected_routes_display.short_description = "Geselecteerde routes"
 
     def has_delete_permission(self, request, obj=None):
         return False
