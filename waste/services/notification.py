@@ -1,5 +1,4 @@
 import datetime
-import logging
 
 from django.conf import settings
 from django.utils import timezone
@@ -14,8 +13,6 @@ from waste.models import ManualNotification
 from waste.services.waste_collection_abstract import WasteCollectionAbstractService
 
 waste_device_service = WasteDeviceService()
-
-logger = logging.getLogger(__name__)
 
 
 class NotificationService(AbstractNotificationService):
@@ -73,11 +70,11 @@ class ManualNotificationService(
         notification.save()
 
     def get_device_ids(self, obj: ManualNotification) -> list[str]:
-        if obj.affected_routes.exists():
-            print("There are affected routes, getting bag ids for those routes")
+        route_names = list(obj.affected_routes.values_list("name", flat=True))
+        if route_names:
             all_bag_ids = set()
-            for route in obj.affected_routes.all():
-                bag_ids = self.get_bag_ids_for_route_name(route.name)
+            for route_name in route_names:
+                bag_ids = self.get_bag_ids_for_route_name(route_name)
                 all_bag_ids.update(bag_ids)
             return waste_device_service.get_device_ids_for_bag_ids(list(all_bag_ids))
         return waste_device_service.get_device_ids()
@@ -93,15 +90,13 @@ class ManualNotificationService(
 
         bag_ids = set()
         while next_link:
-            logger.info(f"Fetching data for route {route_name}")
             waste_data_batch, next_link = self.get_validated_data(
                 url=next_link, params=params
             )
-            logger.info(
-                f"Fetched {len(waste_data_batch)} bag ids for route {route_name}"
-            )
             bag_ids.update(
-                item.get("bag_nummeraanduiding_id") for item in waste_data_batch
+                item["bag_nummeraanduiding_id"]
+                for item in waste_data_batch
+                if item.get("bag_nummeraanduiding_id")
             )
             params = None  # params are included in the next_link url already
         return list(bag_ids)

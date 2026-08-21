@@ -12,6 +12,8 @@ class WasteDeviceService:
         return list(WasteDevice.objects.values_list("device_id", flat=True))
 
     def get_device_ids_for_bag_ids(self, bag_ids: list[str]) -> list[str]:
+        if not bag_ids:
+            return []
         return list(
             WasteDevice.objects.filter(bag_nummeraanduiding_id__in=bag_ids).values_list(
                 "device_id", flat=True

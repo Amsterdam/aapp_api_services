@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             name="affected_routes",
             field=models.ManyToManyField(
                 blank=True,
-                help_text="Selecteer de afvalophaalroutes waar deze uitzondering voor geldt",
+                help_text="Selecteer de afvalophaalroutes waar deze notificatie voor geldt. Als er geen routes geselecteerd zijn, wordt de notificatie naar alle gebruikers gestuurd.",
                 to="waste.wastecollectionroutename",
                 verbose_name="afvalwijzerRoutenaam",
             ),
