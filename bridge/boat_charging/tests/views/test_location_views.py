@@ -178,6 +178,36 @@ class TestLocationView(BoatChargingTestCase):
         self.assertEqual(status, "INOPERATIVE")
         self.assertEqual(max_kw, 22.0)
 
+    def test_get_status_and_kw_from_sockets_available_sockets_inavailable_charging_station(
+        self,
+    ):
+        sockets = [
+            {
+                "chargingStationId": "VCPS-MULTI",
+                "evseId": "1",
+                "status": "AVAILABLE",
+                "available": False,
+                "maxElectricPower": 11.7,
+            },
+            {
+                "chargingStationId": "VCPS-MULTI",
+                "evseId": "2",
+                "status": "AVAILABLE",
+                "available": False,
+                "maxElectricPower": 11.7,
+            },
+            {
+                "chargingStationId": "VCPS-RIK",
+                "evseId": "1",
+                "status": "AVAILABLE",
+                "available": False,
+            },
+        ]
+
+        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets)
+        self.assertEqual(status, "INOPERATIVE")
+        self.assertEqual(max_kw, 11.7)
+
     def test_convert_regular_hours(self):
         regular_hours = [
             {"weekday": 1, "periodBegin": "08:00", "periodEnd": "18:00"},
@@ -286,7 +316,21 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
 
-        self.assertEqual(response.data["status"], "OCCUPIED")
+        self.assertEqual(response.data["status"], "OPERATIVE")
+
+    def test_success_offline_charging_station(self):
+
+        resp = respx.get(self.external_endpoint).mock(
+            return_value=httpx.Response(
+                200, json=location_detail.MOCK_RESPONSE_OFFLINE_CHARGING_STATION
+            )
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+
+        self.assertEqual(response.data["status"], "INOPERATIVE")
 
     def test_forbidden_from_upstream_is_mapped_to_not_found(self):
 
