@@ -1,7 +1,4 @@
-from datetime import timedelta
-
-from django.contrib import admin
-from django.core.checks import messages
+from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -11,8 +8,6 @@ from django.utils.safestring import mark_safe
 
 from city_pass.models import Notification
 from city_pass.services.notification import NotificationService
-
-DEADLINE_BUFFER_MINUTES = 15
 
 
 class NotificationAdmin(admin.ModelAdmin):
@@ -45,7 +40,7 @@ class NotificationAdmin(admin.ModelAdmin):
         else:
             self.message_user(
                 request,
-                f"Bericht kan niet verwijderd worden, omdat deze al verstuurd is of binnen de bufferperiode (van {DEADLINE_BUFFER_MINUTES} minuten) valt.",
+                "Bericht kan niet verwijderd worden, omdat deze al verstuurd is.",
                 level=messages.INFO,
             )
 
@@ -134,9 +129,6 @@ class NotificationAdmin(admin.ModelAdmin):
             "nr_sessions": device_ids.count(),
             "notification": obj,
             "budgets": self.budgets_display(obj),
-            "notification_deadline": max(
-                obj.send_at - timedelta(minutes=DEADLINE_BUFFER_MINUTES), timezone.now()
-            ),
         }
         return TemplateResponse(
             request, "admin/notification_confirm_send.html", context
@@ -160,7 +152,11 @@ class NotificationAdmin(admin.ModelAdmin):
 
     @admin.display(boolean=True, description="Verstuurd?")
     def send(self, obj) -> bool:
-        return obj.send_at is not None and obj.nr_sessions > 0
+        return (
+            obj.send_at is not None
+            and obj.nr_sessions > 0
+            and obj.send_at <= timezone.now()
+        )
 
     def budgets_display(self, obj):
         budgets = list(obj.budgets.all())
@@ -210,11 +206,7 @@ class NotificationAdmin(admin.ModelAdmin):
 
     @staticmethod
     def _notification_is_locked(notification: Notification) -> bool:
-        if (
-            notification.send_at is not None
-            and notification.send_at
-            <= timezone.now() + timedelta(minutes=DEADLINE_BUFFER_MINUTES)
-        ):
+        if notification.send_at is not None and notification.send_at <= timezone.now():
             return True
         return False
 

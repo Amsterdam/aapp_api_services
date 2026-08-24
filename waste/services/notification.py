@@ -1,6 +1,5 @@
 import datetime
-
-from django.utils import timezone
+from datetime import timedelta
 
 from core.enums import Module, NotificationType
 from core.services.notification_service import (
@@ -59,11 +58,28 @@ class ManualNotificationService(AbstractNotificationService):
                 link_source_id=notification.pk,
                 device_ids=device_ids,
             )
-            self.upsert(notification_data, expiry_minutes=60)
+            scheduled_notification = self.upsert(
+                notification=notification_data,
+                scheduled_for=notification.send_at,
+                expires_at=notification.send_at + timedelta(minutes=30),
+                identifier=self._create_identifier(notification.id),
+            )
+            notification.nr_sessions = scheduled_notification.devices.count()
+        else:
+            notification.nr_sessions = 0
 
-        notification.send_at = timezone.now()
-        notification.nr_sessions = len(device_ids)
-        notification.save()
+        notification.save(update_fields=["nr_sessions"])
+
+    def delete_notification(self, notification: ManualNotification):
+        identifier = self._create_identifier(notification.id)
+        self.delete_scheduled_notification(identifier)
+
+    def _create_identifier(self, notification_id: int) -> str:
+        if not notification_id:
+            raise ValueError(
+                "Notification must be saved and have an id to create an identifier"
+            )
+        return f"{self.module_slug}_notification_{notification_id}"
 
     def get_device_ids(self) -> list[str]:
         return waste_device_service.get_device_ids()

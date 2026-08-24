@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
@@ -9,8 +7,6 @@ from django.utils.translation import ngettext
 
 from modules.models import Notification, TestDevice
 from modules.services.notification import NotificationService
-
-DEADLINE_BUFFER_MINUTES = 15
 
 
 class NotificationAdmin(admin.ModelAdmin):
@@ -43,7 +39,7 @@ class NotificationAdmin(admin.ModelAdmin):
         else:
             self.message_user(
                 request,
-                f"Bericht kan niet verwijderd worden, omdat deze al verstuurd is of binnen de bufferperiode (van {DEADLINE_BUFFER_MINUTES} minuten) valt.",
+                "Bericht kan niet verwijderd worden, omdat deze al verstuurd is.",
                 level=messages.INFO,
             )
 
@@ -59,11 +55,7 @@ class NotificationAdmin(admin.ModelAdmin):
 
     @staticmethod
     def _notification_is_locked(notification: Notification) -> bool:
-        if (
-            notification.send_at is not None
-            and notification.send_at
-            <= timezone.now() + timedelta(minutes=DEADLINE_BUFFER_MINUTES)
-        ):
+        if notification.send_at is not None and notification.send_at <= timezone.now():
             return True
         return False
 
@@ -86,9 +78,7 @@ class NotificationAdmin(admin.ModelAdmin):
             readonly.append("is_test")
         return readonly
 
-    def response_change(
-        self, request, obj: Notification, post_url_continue: str = None
-    ):
+    def response_change(self, request, obj: Notification):
         # only ask for confirmation if notification has send date
         if obj.send_at is not None:
             return HttpResponseRedirect(
@@ -101,7 +91,7 @@ class NotificationAdmin(admin.ModelAdmin):
             notification_service.delete_general_notification(obj)
             obj.nr_sessions = 0
             obj.save()
-        return super().response_change(request, obj, post_url_continue)
+        return super().response_change(request, obj)
 
     def response_add(self, request, obj: Notification, post_url_continue: str = None):
         # only ask for confirmation if notification has send date
@@ -151,9 +141,6 @@ class NotificationAdmin(admin.ModelAdmin):
             "is_test_notification": is_test_notification,
             "nr_sessions": nr_sessions,
             "notification": obj,
-            "notification_deadline": max(
-                obj.send_at - timedelta(minutes=DEADLINE_BUFFER_MINUTES), timezone.now()
-            ),
         }
         return TemplateResponse(
             request, "admin/app_notification_confirm_send.html", context

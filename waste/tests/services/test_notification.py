@@ -1,5 +1,9 @@
+from datetime import timedelta
+
 import freezegun
 from django.contrib.auth.models import User
+from django.utils import timezone
+from model_bakery import baker
 
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from notification.models.notification_models import Device, ScheduledNotification
@@ -27,31 +31,102 @@ class NotificationServiceTest(ResponsesActivatedAPITestCase):
 
 
 class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
-    def test_call_notification_service(self):
+    def setUp(self):
+        super().setUp()
         for device in ["device1", "device2", "device3"]:
             Device.objects.create(external_id=device, os="ios", firebase_token=None)
             WasteDevice.objects.create(
                 device_id=device, bag_nummeraanduiding_id="foobar"
             )
 
-        notification_service = ManualNotificationService()
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.notification_service = ManualNotificationService()
+
+    def test_call_notification_service(self):
+        scheduled_for = timezone.now() + timedelta(days=1)
         notification = ManualNotification.objects.create(
             title="Vanaf morgen kun je de kerstbook aan de straat zetten",
             message="Zorg dat je hem op de goede plek zet",
-            created_by=User.objects.create_user(
-                username="testuser", password="testpass"
-            ),
+            created_by=self.user,
+            send_at=scheduled_for,
         )
-        notification_service.send(notification=notification)
 
-        notification = ScheduledNotification.objects.first()
+        self.notification_service.send(notification=notification)
+
+        notification.refresh_from_db()
+        scheduled_notification = ScheduledNotification.objects.get()
         self.assertEqual(
-            notification.title, "Vanaf morgen kun je de kerstbook aan de straat zetten"
+            scheduled_notification.title,
+            "Vanaf morgen kun je de kerstbook aan de straat zetten",
         )
-        self.assertEqual(notification.body, "Zorg dat je hem op de goede plek zet")
-        self.assertEqual(notification.module_slug, "waste-guide")
         self.assertEqual(
-            notification.notification_type, "waste-guide:manual-notification"
+            scheduled_notification.body, "Zorg dat je hem op de goede plek zet"
         )
-        devices = set(notification.devices.values_list("external_id", flat=True))
+        self.assertEqual(scheduled_notification.module_slug, "waste-guide")
+        self.assertEqual(
+            scheduled_notification.notification_type, "waste-guide:manual-notification"
+        )
+        self.assertEqual(scheduled_notification.scheduled_for, scheduled_for)
+        self.assertEqual(
+            scheduled_notification.identifier,
+            self.notification_service._create_identifier(notification.id),
+        )
+        self.assertEqual(notification.send_at, scheduled_for)
+        self.assertEqual(notification.nr_sessions, 3)
+        devices = set(
+            scheduled_notification.devices.values_list("external_id", flat=True)
+        )
         self.assertEqual(devices, {"device1", "device2", "device3"})
+
+    def test_call_notification_service_updates_existing_schedule(self):
+        initial_send_at = timezone.now() + timedelta(days=1)
+        updated_send_at = initial_send_at + timedelta(hours=2)
+        notification = ManualNotification.objects.create(
+            title="Eerste titel",
+            message="Eerste bericht",
+            created_by=self.user,
+            send_at=initial_send_at,
+        )
+
+        self.notification_service.send(notification=notification)
+
+        notification.title = "Bijgewerkte titel"
+        notification.message = "Bijgewerkt bericht"
+        notification.send_at = updated_send_at
+        notification.save(update_fields=["title", "message", "send_at"])
+
+        self.notification_service.send(notification=notification)
+
+        scheduled_notification = ScheduledNotification.objects.get()
+        self.assertEqual(ScheduledNotification.objects.count(), 1)
+        self.assertEqual(scheduled_notification.title, "Bijgewerkte titel")
+        self.assertEqual(scheduled_notification.body, "Bijgewerkt bericht")
+        self.assertEqual(scheduled_notification.scheduled_for, updated_send_at)
+        self.assertEqual(
+            scheduled_notification.identifier,
+            self.notification_service._create_identifier(notification.id),
+        )
+
+    def test_delete_notification_removes_existing_schedule(self):
+        notification = baker.make(
+            ManualNotification,
+            created_by=self.user,
+            send_at=timezone.now() + timedelta(days=1),
+        )
+
+        self.notification_service.send(notification=notification)
+
+        self.notification_service.delete_notification(notification)
+
+        self.assertFalse(ScheduledNotification.objects.exists())
+
+    def test_error_raised_if_notification_not_saved(self):
+        notification = ManualNotification(
+            title="Test",
+            message="Test message",
+            created_by=self.user,
+            send_at=timezone.now() + timedelta(days=1),
+        )
+
+        with self.assertRaises(ValueError):
+            self.notification_service._create_identifier(notification.id)
