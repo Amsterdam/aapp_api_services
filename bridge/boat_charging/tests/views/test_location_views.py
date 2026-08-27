@@ -178,7 +178,7 @@ class TestLocationView(BoatChargingTestCase):
         self.assertEqual(status, "INOPERATIVE")
         self.assertEqual(max_kw, 22.0)
 
-    def test_get_status_and_kw_from_sockets_available_sockets_inavailable_charging_station(
+    def test_get_status_and_kw_from_sockets_available_sockets_unavailable_charging_station(
         self,
     ):
         sockets = [
