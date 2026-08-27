@@ -209,10 +209,11 @@ class LocationDetailView(LocationView):
             for evse in station["evses"]:
                 # add available field to connector based on station and connector status (same logic as in location overview)
                 connectors = evse["connectors"]
-                connectors[0]["available"] = (
-                    station["status"] == "AVAILABLE"
-                    and connectors[0]["status"] == "AVAILABLE"
-                )
+                for connector in connectors:
+                    connector["available"] = (
+                        station["status"] == "AVAILABLE"
+                        and connector["status"] == "AVAILABLE"
+                    )
                 sockets += connectors
         serializer_data = self.get_location_data(response_json, sockets)
 
