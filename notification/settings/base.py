@@ -47,3 +47,8 @@ APPEND_SLASH = True
 MAX_FIREBASE_WORKERS = 10
 
 STATIC_URL = "/notification/static/"
+
+WASTE_GUIDE_URL = os.getenv(
+    "WASTE_GUIDE_URL", "https://acc.api.data.amsterdam.nl/v1/afvalwijzer/afvalwijzer/"
+)
+WASTE_GUIDE_API_KEY = os.getenv("WASTE_GUIDE_API_KEY")

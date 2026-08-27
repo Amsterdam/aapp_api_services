@@ -1,3 +1,6 @@
+import logging
+from concurrent.futures import ThreadPoolExecutor
+
 from django.db import transaction
 from django.db.models import Count
 from drf_spectacular.utils import OpenApiExample
@@ -6,6 +9,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from core.exceptions import InputDataException
+from core.services.waste_device import WasteDeviceService
 from core.utils.openapi_utils import extend_schema_for_device_id
 from core.views.mixins import DeviceIdMixin
 from notification.models.burning_guide_models import BurningGuideDevice
@@ -30,6 +34,9 @@ from notification.serializers.notification_config_serializers import (
     NotificationPushTypeDisabledSerializer,
 )
 from notification.views.service_device_abstract_view import ServiceDeviceView
+
+logger = logging.getLogger(__name__)
+_waste_route_refresh_executor = ThreadPoolExecutor(max_workers=2)
 
 
 class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
@@ -264,6 +271,48 @@ class WasteDeviceView(ServiceDeviceView):
 
     def _get_instance(self):
         return WasteDevice.objects.filter(device_id=self.device_id).first()
+
+    @staticmethod
+    def _refresh_route_data_for_device(device_id: str) -> None:
+        try:
+            waste_device = WasteDevice.objects.filter(device_id=device_id).first()
+            if waste_device is None:
+                return
+
+            WasteDeviceService().fill_empty_row(waste_device)
+        except Exception:
+            logger.exception(
+                "Unexpected error while refreshing waste route data",
+                extra={"device_id": device_id},
+            )
+
+    def _enqueue_route_data_refresh(self, device_id: str) -> None:
+        transaction.on_commit(
+            lambda: _waste_route_refresh_executor.submit(
+                self._refresh_route_data_for_device,
+                device_id,
+            )
+        )
+
+    def post(self, request, *args, **kwargs):
+        """Overwrite post method, because for waste device, we call the API to extract data for the bag_nummeraanduiding_id"""
+        instance = self._get_instance()
+        if instance is None:
+            self.get_or_create_device(self.device_id)
+            serializer = self.get_serializer(
+                data=request.data, context={"device_id": self.device_id}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            self._enqueue_route_data_refresh(self.device_id)
+            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        self.get_or_create_device(self.device_id)
+        self._enqueue_route_data_refresh(self.device_id)
+        return Response({"status": "success"}, status=status.HTTP_200_OK)
 
 
 class BurningGuideDeviceView(ServiceDeviceView):

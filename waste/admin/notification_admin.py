@@ -7,10 +7,13 @@ from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 
 from core.authentication import AuthenticationGroupModelAdmin
+from core.services.waste_device import WasteDeviceService
 from waste.services.notification import ManualNotificationService
 
 
 class NotificationAdmin(AuthenticationGroupModelAdmin):
+    ROUTE_UPDATE_SESSION_KEY = "waste_manual_notification_route_update_state"
+
     authentication_groups = (
         "waste-publisher",
         "waste-delegated",
@@ -29,6 +32,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     ordering = ["-pk"]
     actions = None
     filter_horizontal = ["affected_routes"]
+    change_list_template = "admin/waste/manualnotification/change_list.html"
 
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
@@ -38,12 +42,100 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
         urls = super().get_urls()
         custom = [
             path(
+                "update-routename-data/",
+                self.admin_site.admin_view(self.update_routename_data),
+                name="notification_update_routename_data",
+            ),
+            path(
                 "<path:object_id>/confirm-send/",
                 self.admin_site.admin_view(self.confirm_send),
                 name="notification_confirm_send",
             ),
         ]
         return custom + urls
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["route_update_url"] = (
+            reverse("admin:notification_update_routename_data") + "?restart=1"
+        )
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def update_routename_data(self, request):
+        force_restart = request.GET.get("restart") == "1"
+        state = request.session.get(self.ROUTE_UPDATE_SESSION_KEY)
+
+        if force_restart or not state:
+            updater = WasteDeviceService()
+            total_rows = updater.get_total_rows()
+            state = {
+                "total": total_rows,
+                "processed": 0,
+                "updated": 0,
+                "skipped": 0,
+                "failed": 0,
+                "last_pk": "",
+                "completed": total_rows == 0,
+            }
+
+            if total_rows == 0:
+                self.message_user(
+                    request,
+                    "Geen waste device records gevonden.",
+                    level=messages.INFO,
+                )
+
+        if not state["completed"]:
+            updater = WasteDeviceService()
+            batch_result = updater.process_batch(
+                batch_size=50,
+                last_pk=state["last_pk"],
+            )
+            state["processed"] += batch_result["processed"]
+            state["updated"] += batch_result["updated"]
+            state["skipped"] += batch_result["skipped"]
+            state["failed"] += batch_result["failed"]
+            state["last_pk"] = batch_result["last_pk"]
+
+            if batch_result["processed"] == state["total"]:
+                state["completed"] = True
+                self.message_user(
+                    request,
+                    (
+                        "Routename update voltooid. "
+                        f"{state['updated']} van {state['total']} records bijgewerkt "
+                        f"({state['skipped']} overgeslagen, {state['failed']} gefaald)."
+                    ),
+                    level=messages.INFO,
+                )
+
+        request.session[self.ROUTE_UPDATE_SESSION_KEY] = state
+
+        total = state["total"]
+        processed = state["processed"]
+        progress_percentage = 100 if total == 0 else int((processed / total) * 100)
+
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "total": total,
+            "processed": processed,
+            "updated": state["updated"],
+            "skipped": state["skipped"],
+            "failed": state["failed"],
+            "completed": state["completed"],
+            "progress_percentage": min(progress_percentage, 100),
+            "refresh_seconds": 1,
+            "changelist_url": reverse("admin:waste_manualnotification_changelist"),
+            "restart_url": reverse("admin:notification_update_routename_data")
+            + "?restart=1",
+        }
+
+        return TemplateResponse(
+            request,
+            "admin/waste/manualnotification/update_routename_data.html",
+            context,
+        )
 
     def response_add(self, request, obj, post_url_continue=None):
         return HttpResponseRedirect(

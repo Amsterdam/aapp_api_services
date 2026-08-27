@@ -32,13 +32,41 @@
 
 /* (Optional) Example of small style change for buttons */
 button, input[type="submit"], .button {
-  background-color: #003087 !important; /* Amsterdam's deep blue */
+  background-color: #004699 !important; /* Amsterdam's deep blue */
   color: #ffffff !important;
   border: none !important;
-  border-radius: 4px !important;
+  border-radius: 0px !important;
   margin: 0 5px;
   padding: 0.4rem 1rem;
+  text-decoration: none;
 }
+
+
+
+a.addlink {
+  background-color: #004699 !important;
+  color: white !important;
+  padding: 6px 12px;
+  border-radius: 0px;
+  text-decoration: none;
+}
+
+a.addlink:hover {
+  background-color: #003677 !important;
+}
+
+a.updateWasteLink {
+  background-color: #004699 !important;
+  color: white !important;
+  padding: 6px 12px;
+  border-radius: 0px;
+  text-decoration: none;
+}
+
+a.updateWasteLink:hover {
+  background-color: #003677 !important;
+}
+
 /* Table headers */
 caption {
   background-color: #003087 !important;

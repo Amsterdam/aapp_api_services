@@ -1,4 +1,5 @@
 import datetime
+from unittest.mock import patch
 
 from django.utils import timezone
 from model_bakery import baker
@@ -127,3 +128,33 @@ class TestWasteDeviceService(ResponsesActivatedAPITestCase):
             Device.objects.filter(external_id=existing_device.external_id).exists()
         )
         self.assertTrue(Device.objects.filter(external_id=new_device_id).exists())
+
+    def test_fill_empty_row_sets_routes_updated_at(self):
+        self._create_device("device_with_route_data")
+        waste_device = baker.make(
+            WasteDevice,
+            device_id="device_with_route_data",
+            bag_nummeraanduiding_id="bag_123",
+            routes_updated_at=None,
+            route_name_organic=None,
+            postal_area=None,
+        )
+
+        with patch.object(
+            WasteDeviceService,
+            "get_bag_nummeraanduiding_data",
+            return_value=[
+                {
+                    "afvalwijzerFractieCode": "gft",
+                    "afvalwijzerRoutenaam": "Route A",
+                    "postcode": "1091AB",
+                }
+            ],
+        ):
+            result = self.service.fill_empty_row(waste_device)
+
+        waste_device.refresh_from_db()
+        self.assertTrue(result)
+        self.assertEqual(waste_device.route_name_organic, "Route A")
+        self.assertEqual(waste_device.postal_area, "1091")
+        self.assertIsNotNone(waste_device.routes_updated_at)

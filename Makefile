@@ -23,7 +23,7 @@ endif
 
 dc = SERVICE_NAME=${SERVICE_NAME} docker compose
 run = $(dc) run --rm
-lint = $(run) lint
+lint = $(dc) run --rm -T lint
 manage = $(run) dev python manage.py
 
 help:
