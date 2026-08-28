@@ -120,6 +120,7 @@ class LocationView(BaseView):
             s.get("maxElectricPower")
             for s in sockets
             if OPERATION_STATE_MAPPING.get(s["status"], "UNKNOWN") == "OPERATIVE"
+            and s.get("available")
         ]
         occupied = [
             s.get("maxElectricPower")
@@ -131,6 +132,7 @@ class LocationView(BaseView):
             for s in sockets
             if OPERATION_STATE_MAPPING.get(s["status"], "UNKNOWN")
             not in ("OPERATIVE", "OCCUPIED")
+            or not s.get("available")
         ]
 
         if available:
@@ -205,7 +207,14 @@ class LocationDetailView(LocationView):
         sockets = []
         for station in response_json["chargingStations"]:
             for evse in station["evses"]:
-                sockets += evse["connectors"]
+                # add available field to connector based on station and connector status (same logic as in location overview)
+                connectors = evse["connectors"]
+                for connector in connectors:
+                    connector["available"] = (
+                        station["status"] == "AVAILABLE"
+                        and connector["status"] == "AVAILABLE"
+                    )
+                sockets += connectors
         serializer_data = self.get_location_data(response_json, sockets)
 
         serializer = self.response_serializer_class(data=serializer_data)
