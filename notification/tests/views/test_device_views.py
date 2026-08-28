@@ -1,6 +1,4 @@
 import datetime
-import threading
-import time
 from unittest.mock import patch
 
 import freezegun
@@ -28,7 +26,6 @@ from notification.models.notification_models import (
     ScheduledNotification,
 )
 from notification.models.waste_guide_models import WasteDevice
-from notification.views.device_views import WasteDeviceView
 
 
 @freezegun.freeze_time("2026-02-25T12:00:00Z")
@@ -624,14 +621,6 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         self.url = reverse("waste-guide-notification")
         self.device_id = "test-device-id"
         self.api_headers[settings.HEADER_DEVICE_ID] = self.device_id
-        self.enqueue_route_data_refresh_patcher = patch.object(
-            WasteDeviceView,
-            "_enqueue_route_data_refresh",
-        )
-        self.mock_enqueue_route_data_refresh = (
-            self.enqueue_route_data_refresh_patcher.start()
-        )
-        self.addCleanup(self.enqueue_route_data_refresh_patcher.stop)
 
     def test_success(self):
         payload = {
@@ -640,20 +629,6 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         response = self.client.post(self.url, data=payload, headers=self.api_headers)
         self.assertEqual(response.status_code, 201)
         WasteDevice.objects.get(device_id=self.device_id)
-
-    def test_create_enqueues_route_refresh(self):
-        payload = {
-            "bag_nummeraanduiding_id": "12345",
-        }
-        self.mock_enqueue_route_data_refresh.reset_mock()
-        response = self.client.post(
-            self.url,
-            data=payload,
-            headers=self.api_headers,
-        )
-
-        self.assertEqual(response.status_code, 201)
-        self.mock_enqueue_route_data_refresh.assert_called_once_with(self.device_id)
 
     def test_create_missing_body_returns_validation_error(self):
         response = self.client.post(self.url, data={}, headers=self.api_headers)
@@ -691,25 +666,6 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
             updated_notification.bag_nummeraanduiding_id,
             payload["bag_nummeraanduiding_id"],
         )
-
-    def test_update_enqueues_route_refresh(self):
-        WasteDevice.objects.create(
-            bag_nummeraanduiding_id="old",
-            device_id=self.device_id,
-        )
-        payload = {
-            "bag_nummeraanduiding_id": "new",
-        }
-
-        self.mock_enqueue_route_data_refresh.reset_mock()
-        response = self.client.post(
-            self.url,
-            data=payload,
-            headers=self.api_headers,
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.mock_enqueue_route_data_refresh.assert_called_once_with(self.device_id)
 
     def test_update_missing_body_returns_validation_error(self):
         Device.objects.create(external_id=self.device_id)
@@ -773,49 +729,6 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         WasteDevice.objects.all().delete()
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 204)
-
-
-class TestWasteDeviceViewBackgroundRefreshNonBlocking(ResponsesActivatedAPITestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("waste-guide-notification")
-        self.device_id = "test-device-id"
-        self.api_headers[settings.HEADER_DEVICE_ID] = self.device_id
-
-    def test_response_not_slow_when_route_refresh_is_slow(self):
-        payload = {
-            "bag_nummeraanduiding_id": "12345",
-        }
-        refresh_started = threading.Event()
-        refresh_finished = threading.Event()
-
-        def slow_background_refresh(*args, **kwargs):
-            refresh_started.set()
-            time.sleep(0.5)
-            refresh_finished.set()
-
-        with patch.object(
-            WasteDeviceView,
-            "_refresh_route_data_for_device",
-            side_effect=slow_background_refresh,
-        ):
-            start = time.perf_counter()
-            with self.captureOnCommitCallbacks(execute=True):
-                response = self.client.post(
-                    self.url,
-                    data=payload,
-                    headers=self.api_headers,
-                )
-            elapsed = time.perf_counter() - start
-
-        self.assertEqual(response.status_code, 201)
-        self.assertLess(
-            elapsed,
-            0.3,
-            "Waste device response should not wait for slow background route refresh",
-        )
-        self.assertTrue(refresh_started.wait(timeout=1))
-        self.assertTrue(refresh_finished.wait(timeout=2))
 
 
 class TestBurningGuideDeviceView(ResponsesActivatedAPITestCase):
