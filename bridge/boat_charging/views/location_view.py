@@ -105,10 +105,10 @@ class LocationView(BaseView):
         """
         To determine the overall status and wattage of each location based on the statuses and wattages of its sockets, the logic described below is followed.
 
-        There are three possible status values for a charging station:
+        There are three possible status values for a location:
         - "OPERATIVE": at least one connector at the location is operative
-        - "OCCUPIED": all connectors at the location are occupied
-        - "INOPERATIVE": no connector is operative and at least one connector is out of order
+        - "OCCUPIED": no connector is operative and at least one connector is occupied
+        - "INOPERATIVE": all connectors are out of order
 
         The wattage of the location is determined by the connector with the highest wattage that is operative at the location,
         or if no connector is operative, the connector with the highest wattage that is out of order/occupied.
@@ -116,7 +116,7 @@ class LocationView(BaseView):
         if not sockets:
             return "UNKNOWN", None
 
-        available = [
+        operative = [
             s.get("maxElectricPower")
             for s in sockets
             if OPERATION_STATE_MAPPING.get(s["status"], "UNKNOWN") == "OPERATIVE"
@@ -135,9 +135,9 @@ class LocationView(BaseView):
             or not s.get("available")
         ]
 
-        if available:
+        if operative:
             overall_status = "OPERATIVE"
-            max_kw = max_or_none(available)
+            max_kw = max_or_none(operative)
             if max_kw is None:
                 max_kw = max_or_none(occupied + out_of_order)
         elif occupied:
