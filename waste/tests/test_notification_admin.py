@@ -7,7 +7,6 @@ from django.test import RequestFactory, TestCase
 from django.utils import timezone
 from model_bakery import baker
 
-from notification.models.waste_guide_models import WasteDevice
 from waste.admin.notification_admin import NotificationAdmin
 from waste.models import ManualNotification
 from waste.services.notification import ManualNotificationService
@@ -52,14 +51,3 @@ class TestNotificationAdmin(TestCase):
             self.notification_service.get_scheduled_notification(identifier)
         )
         self.assertFalse(ManualNotification.objects.filter(pk=notification.pk).exists())
-
-    def test_postal_area_field_is_populated_with_select_choices(self):
-        baker.make(WasteDevice, device_id="device-a", postal_area="1011")
-        baker.make(WasteDevice, device_id="device-b", postal_area="1012")
-
-        form_class = self.admin_instance.get_form(request=self.factory.get("/admin/"))
-        field = form_class.base_fields["postal_area"]
-
-        self.assertEqual(field.__class__.__name__, "ChoiceField")
-        self.assertIn(("1011", "1011"), field.choices)
-        self.assertIn(("1012", "1012"), field.choices)

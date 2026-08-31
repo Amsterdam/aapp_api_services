@@ -47,9 +47,6 @@ class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
                 postal_area=postal_areas[suffix],
             )
 
-        self.user = User.objects.create_user(username="testuser", password="testpass")
-        self.notification_service = ManualNotificationService()
-
     def test_call_notification_service(self):
         scheduled_for = timezone.now() + timedelta(days=1)
         notification = ManualNotification.objects.create(
@@ -146,7 +143,7 @@ class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
             message="Bericht voor een postcodegebied",
             created_by=self.user,
             send_at=scheduled_for,
-            postal_area="1011",
+            affected_postal_area="1011",
         )
 
         self.notification_service.send(notification=notification)

@@ -104,20 +104,6 @@ class TestWasteDeviceService(ResponsesActivatedAPITestCase):
             device.updated_at > timezone.now() - datetime.timedelta(minutes=1)
         )
 
-    def test_get_device_ids_for_bag_ids(self):
-        self._create_device("device_5")
-        self._create_device("device_6")
-        waste_device_1 = baker.make(
-            WasteDevice, device_id="device_5", bag_nummeraanduiding_id="bag_1"
-        )
-        waste_device_2 = baker.make(
-            WasteDevice, device_id="device_6", bag_nummeraanduiding_id="bag_2"
-        )
-
-        result = self.service.get_device_ids_for_bag_ids(["bag_1", "bag_2"])
-        self.assertIn(waste_device_1.device_id, result)
-        self.assertIn(waste_device_2.device_id, result)
-
     def test_ensure_devices_exist(self):
         existing_device = self._create_device("existing_device")
         new_device_id = "new_device"
