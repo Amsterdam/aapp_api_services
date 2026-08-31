@@ -1,6 +1,5 @@
 from urllib.parse import urlencode
 
-from django import forms
 from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
@@ -38,22 +37,6 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     actions = None
     filter_horizontal = ["affected_routes"]
     change_form_template = "admin/waste/manualnotification/change_form.html"
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        postal_areas = WasteDeviceService().get_postal_areas()
-        choices = [("", "---------")] + [(area, area) for area in postal_areas]
-
-        form.base_fields["postal_area"] = forms.ChoiceField(
-            label="Postcodegebied",
-            required=False,
-            choices=choices,
-            help_text=(
-                "Selecteer een postcodegebied om de notificatie naar een deelgebied "
-                "te beperken."
-            ),
-        )
-        return form
 
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
@@ -223,9 +206,13 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
                 else:
                     self.message_user(
                         request,
-                        "Geen gebruikers gevonden om bericht voor aan te maken!",
+                        "Geen gebruikers gevonden om bericht voor aan te maken! Verzenddatum is leeggemaakt.",
                         level=messages.ERROR,
                     )
+                    notification_service.delete_notification(obj)
+                    obj.send_at = None
+                    obj.save(update_fields=["send_at"])
+
             else:
                 self.message_user(
                     request,
@@ -304,6 +291,10 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
         if add:
             waste_device_service = WasteDeviceService()
             total_rows = waste_device_service.get_total_rows()
+            rows_without_route_updated_at = (
+                waste_device_service.get_rowcount_without_route_updated_at()
+            )
+            last_route_update = waste_device_service.get_latest_route_updated_at()
             add_url = reverse("admin:waste_manualnotification_add")
             context["route_update_url"] = (
                 reverse("admin:notification_update_routename_data")
@@ -311,6 +302,8 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
                 + urlencode({"restart": "1", "next": add_url})
             )
             context["total_waste_device_rows"] = total_rows
+            context["rows_without_route_updated_at"] = rows_without_route_updated_at
+            context["last_route_update"] = last_route_update
             context["route_update_state"] = request.session.get(
                 self.ROUTE_UPDATE_SESSION_KEY
             )

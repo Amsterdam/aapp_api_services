@@ -1,8 +1,6 @@
 import datetime
 from datetime import timedelta
 
-from django.conf import settings
-
 from core.enums import Module, NotificationType
 from core.services.notification_service import (
     AbstractNotificationService,
@@ -10,9 +8,6 @@ from core.services.notification_service import (
 )
 from core.services.waste_device import WasteDeviceService
 from waste.models import ManualNotification
-from waste.services.waste_collection_abstract import WasteCollectionAbstractService
-
-waste_device_service = WasteDeviceService()
 
 
 class NotificationService(AbstractNotificationService):
@@ -48,9 +43,7 @@ class NotificationService(AbstractNotificationService):
         return f"{Module.WASTE.value}_{waste_type.replace(' ', '-')}_reminder"
 
 
-class ManualNotificationService(
-    AbstractNotificationService, WasteCollectionAbstractService
-):
+class ManualNotificationService(AbstractNotificationService):
     module_slug = Module.WASTE.value
     notification_type = NotificationType.WASTE_MANUAL_NOTIFICATION.value
 
@@ -87,40 +80,10 @@ class ManualNotificationService(
         return f"{self.module_slug}_notification_{notification_id}"
 
     def get_device_ids(self, obj: ManualNotification) -> list[str]:
+        waste_device_service = WasteDeviceService()
         route_names = list(obj.affected_routes.values_list("name", flat=True))
-        postal_area = obj.postal_area
-        if route_names:
-            all_bag_ids = set()
-            for route_name in route_names:
-                bag_ids = self.get_bag_ids_for_route_name(route_name)
-                all_bag_ids.update(bag_ids)
-            return waste_device_service.get_device_ids_for_bag_ids_and_postal_area(
-                list(all_bag_ids), postal_area
-            )
-
-        if postal_area:
-            return waste_device_service.get_device_ids_for_postal_area(postal_area)
-
-        return waste_device_service.get_device_ids()
-
-    def get_bag_ids_for_route_name(self, route_name: str) -> list[str]:
-        """Get all bag_nummeraanduiding_id's for a given route_name from the waste guide API."""
-
-        params = {
-            "afvalwijzerRoutenaam": route_name,
-            "_pageSize": 20000,
-        }
-        next_link = settings.WASTE_GUIDE_URL
-
-        bag_ids = set()
-        while next_link:
-            waste_data_batch, next_link = self.get_validated_data(
-                url=next_link, params=params
-            )
-            bag_ids.update(
-                item["bag_nummeraanduiding_id"]
-                for item in waste_data_batch
-                if item.get("bag_nummeraanduiding_id")
-            )
-            params = None  # params are included in the next_link url already
-        return list(bag_ids)
+        postal_area = obj.affected_postal_area
+        bag_ids = waste_device_service.get_device_ids_for_route_names_and_postal_area(
+            route_names, postal_area
+        )
+        return list(set(bag_ids))

@@ -43,9 +43,10 @@ class ManualNotification(models.Model):
     nr_sessions = models.PositiveIntegerField(
         "Aantal berichten verstuurd", default=0, editable=False
     )
-    affected_postal_areas = models.CharField(
+    affected_postal_area = models.CharField(
         "Postcodegebied",
         max_length=4,
+        null=True,
         blank=True,
     )
     affected_routes = models.ManyToManyField(

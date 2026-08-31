@@ -3,7 +3,7 @@ from datetime import date, datetime, time
 
 import requests
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.utils import timezone
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
@@ -17,43 +17,23 @@ class WasteDeviceService:
     def get_device_ids(self) -> list[str]:
         return list(WasteDevice.objects.values_list("device_id", flat=True))
 
-    def get_postal_areas(self) -> list[str]:
-        return list(
-            WasteDevice.objects.exclude(postal_area__isnull=True)
-            .exclude(postal_area="")
-            .order_by("postal_area")
-            .values_list("postal_area", flat=True)
-            .distinct()
-        )
-
-    def get_device_ids_for_bag_ids(self, bag_ids: list[str]) -> list[str]:
-        if not bag_ids:
-            return []
-        return list(
-            WasteDevice.objects.filter(bag_nummeraanduiding_id__in=bag_ids).values_list(
-                "device_id", flat=True
-            )
-        )
-
-    def get_device_ids_for_postal_area(self, postal_area: str) -> list[str]:
-        if not postal_area:
-            return self.get_device_ids()
-        return list(
-            WasteDevice.objects.filter(postal_area=postal_area).values_list(
-                "device_id", flat=True
-            )
-        )
-
-    def get_device_ids_for_bag_ids_and_postal_area(
-        self, bag_ids: list[str], postal_area: str | None
+    def get_device_ids_for_route_names_and_postal_area(
+        self, route_names: list[str] | None, postal_area: str | None
     ) -> list[str]:
-        if not bag_ids:
-            return []
-
-        queryset = WasteDevice.objects.filter(bag_nummeraanduiding_id__in=bag_ids)
+        queryset = WasteDevice.objects.all()
+        if route_names:
+            queryset = queryset.filter(
+                Q(route_name_bulk__in=route_names)
+                | Q(route_name_glas__in=route_names)
+                | Q(route_name_organic__in=route_names)
+                | Q(route_name_paper__in=route_names)
+                | Q(route_name_plastic__in=route_names)
+                | Q(route_name_residual__in=route_names)
+                | Q(route_name_residual__in=route_names)
+                | Q(route_name_textile__in=route_names)
+            )
         if postal_area:
             queryset = queryset.filter(postal_area=postal_area)
-
         return list(queryset.values_list("device_id", flat=True))
 
     def bulk_create_waste_devices(self, waste_devices: list[WasteDevice]):
@@ -107,6 +87,15 @@ class WasteDeviceService:
 
     def get_total_rows(self) -> int:
         return self.get_rows_queryset().count()
+
+    def get_rows_without_route_updated_at(self):
+        return WasteDevice.objects.filter(routes_updated_at__isnull=True)
+
+    def get_rowcount_without_route_updated_at(self):
+        return self.get_rows_without_route_updated_at().count()
+
+    def get_latest_route_updated_at(self):
+        return WasteDevice.objects.aggregate(latest=Max("routes_updated_at"))["latest"]
 
     def process_batch(self, batch_size: int = 50, last_pk: str = "") -> dict:
         queryset = self.get_rows_queryset().order_by("pk")
