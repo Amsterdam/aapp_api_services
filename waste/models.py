@@ -26,18 +26,6 @@ class WasteCollectionRouteName(models.Model):
         return self.name
 
 
-class WastePostalArea(models.Model):
-    """Model to store waste collection postal areas"""
-
-    class Meta:
-        ordering = ["area_name"]
-
-    area_name = models.CharField(primary_key=True, max_length=4)
-
-    def __str__(self):
-        return self.area_name
-
-
 class ManualNotification(models.Model):
     class Meta:
         verbose_name = "Notificatie"
@@ -55,10 +43,9 @@ class ManualNotification(models.Model):
     nr_sessions = models.PositiveIntegerField(
         "Aantal berichten verstuurd", default=0, editable=False
     )
-    affected_postal_areas = models.ManyToManyField(
-        WastePostalArea,
-        verbose_name="Postcodegebieden",
-        help_text="Selecteer de postcodegebieden die door deze notificatie worden beïnvloed.",
+    affected_postal_areas = models.CharField(
+        "Postcodegebied",
+        max_length=4,
         blank=True,
     )
     affected_routes = models.ManyToManyField(
