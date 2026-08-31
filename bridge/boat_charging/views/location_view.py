@@ -103,12 +103,16 @@ class LocationView(BaseView):
         self, sockets: list[dict[str, Any]]
     ) -> tuple[str, float | None]:
         """
-        To determine the overall status and wattage of each location based on the statuses and wattages of its sockets, the logic described below is followed.
+        This function determines the overall status and maximum wattage of a location based on its sockets.
 
-        There are three possible status values for a location:
-        - "OPERATIVE": at least one connector at the location is operative
+        Each socket has its own status, but also an available flag. This flag is only true if the socket AND the charging station it belongs to are both available.
+        So only sockets that are truly available (both the socket and its charging station are available) are considered operative.
+
+        There are four possible status values for a location:
+        - "OPERATIVE": at least one connector at the location is operative (and charging station is available)
         - "OCCUPIED": no connector is operative and at least one connector is occupied
         - "INOPERATIVE": all connectors are out of order
+        - "UNKNOWN": no information about the status of the connectors is available
 
         The wattage of the location is determined by the connector with the highest wattage that is operative at the location,
         or if no connector is operative, the connector with the highest wattage that is out of order/occupied.
