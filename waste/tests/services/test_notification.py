@@ -36,12 +36,15 @@ class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
         self.user = User.objects.create_user(username="testuser", password="testpass")
         self.notification_service = ManualNotificationService()
 
+        postal_areas = {"1": "1011", "2": "1012", "3": "1012"}
         for suffix in ["1", "2", "3"]:
             Device.objects.create(
                 external_id=f"device{suffix}", os="ios", firebase_token=None
             )
             WasteDevice.objects.create(
-                device_id=f"device{suffix}", bag_nummeraanduiding_id=f"bag-{suffix}"
+                device_id=f"device{suffix}",
+                bag_nummeraanduiding_id=f"bag-{suffix}",
+                postal_area=postal_areas[suffix],
             )
 
         self.user = User.objects.create_user(username="testuser", password="testpass")
@@ -135,3 +138,24 @@ class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
 
         with self.assertRaises(ValueError):
             self.notification_service._create_identifier(notification.id)
+
+    def test_call_notification_service_filters_on_postal_area(self):
+        scheduled_for = timezone.now() + timedelta(days=1)
+        notification = ManualNotification.objects.create(
+            title="Alleen gebied 1011",
+            message="Bericht voor een postcodegebied",
+            created_by=self.user,
+            send_at=scheduled_for,
+            postal_area="1011",
+        )
+
+        self.notification_service.send(notification=notification)
+
+        notification.refresh_from_db()
+        self.assertEqual(notification.nr_sessions, 1)
+
+        scheduled_notification = ScheduledNotification.objects.get()
+        devices = set(
+            scheduled_notification.devices.values_list("external_id", flat=True)
+        )
+        self.assertEqual(devices, {"device1"})

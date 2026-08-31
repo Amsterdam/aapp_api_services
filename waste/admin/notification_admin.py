@@ -1,3 +1,6 @@
+from urllib.parse import urlencode
+
+from django import forms
 from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
@@ -34,7 +37,23 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     ordering = ["-send_at"]
     actions = None
     filter_horizontal = ["affected_routes"]
-    change_list_template = "admin/waste/manualnotification/change_list.html"
+    change_form_template = "admin/waste/manualnotification/change_form.html"
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        postal_areas = WasteDeviceService().get_postal_areas()
+        choices = [("", "---------")] + [(area, area) for area in postal_areas]
+
+        form.base_fields["postal_area"] = forms.ChoiceField(
+            label="Postcodegebied",
+            required=False,
+            choices=choices,
+            help_text=(
+                "Selecteer een postcodegebied om de notificatie naar een deelgebied "
+                "te beperken."
+            ),
+        )
+        return form
 
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
@@ -78,15 +97,16 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
         ]
         return custom + urls
 
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        extra_context["route_update_url"] = (
-            reverse("admin:notification_update_routename_data") + "?restart=1"
-        )
-        return super().changelist_view(request, extra_context=extra_context)
-
     def update_routename_data(self, request):
         force_restart = request.GET.get("restart") == "1"
+        return_url = request.GET.get("next") or reverse(
+            "admin:waste_manualnotification_changelist"
+        )
+        refresh_url = (
+            reverse("admin:notification_update_routename_data")
+            + "?"
+            + urlencode({"next": return_url})
+        )
         state = request.session.get(self.ROUTE_UPDATE_SESSION_KEY)
 
         if force_restart or not state:
@@ -112,7 +132,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
         if not state["completed"]:
             updater = WasteDeviceService()
             batch_result = updater.process_batch(
-                batch_size=50,
+                batch_size=5,
                 last_pk=state["last_pk"],
             )
             state["processed"] += batch_result["processed"]
@@ -121,7 +141,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
             state["failed"] += batch_result["failed"]
             state["last_pk"] = batch_result["last_pk"]
 
-            if batch_result["processed"] == state["total"]:
+            if not batch_result["has_more"] or state["processed"] >= state["total"]:
                 state["completed"] = True
                 self.message_user(
                     request,
@@ -150,9 +170,11 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
             "completed": state["completed"],
             "progress_percentage": min(progress_percentage, 100),
             "refresh_seconds": 1,
-            "changelist_url": reverse("admin:waste_manualnotification_changelist"),
+            "refresh_url": refresh_url,
+            "return_url": return_url,
             "restart_url": reverse("admin:notification_update_routename_data")
-            + "?restart=1",
+            + "?"
+            + urlencode({"restart": "1", "next": return_url}),
         }
 
         return TemplateResponse(
@@ -279,6 +301,20 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     def render_change_form(
         self, request, context, add=False, change=False, form_url="", obj=None
     ):
+        if add:
+            waste_device_service = WasteDeviceService()
+            total_rows = waste_device_service.get_total_rows()
+            add_url = reverse("admin:waste_manualnotification_add")
+            context["route_update_url"] = (
+                reverse("admin:notification_update_routename_data")
+                + "?"
+                + urlencode({"restart": "1", "next": add_url})
+            )
+            context["total_waste_device_rows"] = total_rows
+            context["route_update_state"] = request.session.get(
+                self.ROUTE_UPDATE_SESSION_KEY
+            )
+
         context["show_save"] = True
         context["show_save_and_continue"] = False
         context["show_save_and_add_another"] = False

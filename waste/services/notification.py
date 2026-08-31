@@ -88,12 +88,19 @@ class ManualNotificationService(
 
     def get_device_ids(self, obj: ManualNotification) -> list[str]:
         route_names = list(obj.affected_routes.values_list("name", flat=True))
+        postal_area = obj.postal_area
         if route_names:
             all_bag_ids = set()
             for route_name in route_names:
                 bag_ids = self.get_bag_ids_for_route_name(route_name)
                 all_bag_ids.update(bag_ids)
-            return waste_device_service.get_device_ids_for_bag_ids(list(all_bag_ids))
+            return waste_device_service.get_device_ids_for_bag_ids_and_postal_area(
+                list(all_bag_ids), postal_area
+            )
+
+        if postal_area:
+            return waste_device_service.get_device_ids_for_postal_area(postal_area)
+
         return waste_device_service.get_device_ids()
 
     def get_bag_ids_for_route_name(self, route_name: str) -> list[str]:

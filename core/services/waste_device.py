@@ -17,6 +17,15 @@ class WasteDeviceService:
     def get_device_ids(self) -> list[str]:
         return list(WasteDevice.objects.values_list("device_id", flat=True))
 
+    def get_postal_areas(self) -> list[str]:
+        return list(
+            WasteDevice.objects.exclude(postal_area__isnull=True)
+            .exclude(postal_area="")
+            .order_by("postal_area")
+            .values_list("postal_area", flat=True)
+            .distinct()
+        )
+
     def get_device_ids_for_bag_ids(self, bag_ids: list[str]) -> list[str]:
         if not bag_ids:
             return []
@@ -25,6 +34,27 @@ class WasteDeviceService:
                 "device_id", flat=True
             )
         )
+
+    def get_device_ids_for_postal_area(self, postal_area: str) -> list[str]:
+        if not postal_area:
+            return self.get_device_ids()
+        return list(
+            WasteDevice.objects.filter(postal_area=postal_area).values_list(
+                "device_id", flat=True
+            )
+        )
+
+    def get_device_ids_for_bag_ids_and_postal_area(
+        self, bag_ids: list[str], postal_area: str | None
+    ) -> list[str]:
+        if not bag_ids:
+            return []
+
+        queryset = WasteDevice.objects.filter(bag_nummeraanduiding_id__in=bag_ids)
+        if postal_area:
+            queryset = queryset.filter(postal_area=postal_area)
+
+        return list(queryset.values_list("device_id", flat=True))
 
     def bulk_create_waste_devices(self, waste_devices: list[WasteDevice]):
         WasteDevice.objects.bulk_create(waste_devices)

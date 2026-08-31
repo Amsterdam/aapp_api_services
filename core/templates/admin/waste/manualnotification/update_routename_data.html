@@ -3,7 +3,7 @@
 {% block extrahead %}
   {{ block.super }}
   {% if not completed %}
-    <meta http-equiv="refresh" content="{{ refresh_seconds }}">
+    <meta http-equiv="refresh" content="{{ refresh_seconds }};url={{ refresh_url }}">
   {% endif %}
 {% endblock %}
 
@@ -24,7 +24,7 @@
   {% if completed %}
     <p><strong>Update is klaar.</strong></p>
     <p>
-      <a class="button" href="{{ changelist_url }}">Terug naar notificaties</a>
+      <a class="button" href="{{ return_url }}">Terug</a>
       <a class="button" href="{{ restart_url }}">Opnieuw uitvoeren</a>
     </p>
   {% else %}

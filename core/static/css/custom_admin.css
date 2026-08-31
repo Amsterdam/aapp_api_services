@@ -41,8 +41,6 @@ button, input[type="submit"], .button {
   text-decoration: none;
 }
 
-
-
 a.addlink {
   background-color: #004699 !important;
   color: white !important;
@@ -87,6 +85,7 @@ nav div {
 
 
 /* Replace default blue text for links with #003087 */
+/*
 #content-main a {
   color: #003087 !important;
 }
@@ -94,3 +93,4 @@ nav div {
 #content-main a:hover {
   color: #00215C !important;
 }
+*/
