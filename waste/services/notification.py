@@ -92,13 +92,16 @@ class ManualNotificationService(AbstractNotificationService):
         return f"{self.module_slug}_notification_{notification_id}"
 
     def get_device_ids(self, obj: ManualNotification) -> list[str]:
+        print("Get device_ids for manual notification")
         route_names = list(obj.affected_routes.values_list("name", flat=True))
         postal_area = obj.affected_postal_area
+        print(f"Affected routes: {route_names}, Affected postal area: {postal_area}")
         bag_ids = (
             self.waste_device_service.get_device_ids_for_route_names_and_postal_area(
                 route_names, postal_area
             )
         )
+        print(f"Retrieved bag_ids: {bag_ids}")
         return list(set(bag_ids))
 
     def process_batch(self, batch_size: int = 50, last_pk: str = "") -> dict:
@@ -156,14 +159,16 @@ class ManualNotificationService(AbstractNotificationService):
         fields_to_update = []
 
         for fraction_data in data:
-            fraction = fraction_data.get("afvalwijzerFractieCode", "").lower()
-            route_name = fraction_data.get("afvalwijzerRoutenaam")
-            postcode = fraction_data.get("postcode")
+            fraction = fraction_data.get("code", "").lower()
+            route_name = fraction_data.get("route_name")
+            postcode = fraction_data.get("postal_code")
 
             if postcode and not postal_area:
                 postal_area = postcode[:4]
 
             column_name = FRACTION_COLUM_MAPPING.get(fraction)
+            if not column_name:
+                logging.warning(f"Unmapped fraction code '{fraction}'")
             if column_name and route_name:
                 field_name = f"route_name_{column_name}"
                 setattr(row, field_name, route_name)

@@ -18,7 +18,7 @@ class WasteDeviceService:
     def get_device_ids_for_route_names_and_postal_area(
         self, route_names: list[str] | None, postal_area: str | None
     ) -> list[str]:
-        queryset = WasteDevice.objects.all()
+        queryset = self.get_rows_queryset()
         if route_names:
             queryset = queryset.filter(
                 Q(route_name_bulk__in=route_names)

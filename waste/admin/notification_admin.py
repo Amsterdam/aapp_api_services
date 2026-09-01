@@ -37,6 +37,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     actions = None
     filter_horizontal = ["affected_routes"]
     change_form_template = "admin/waste/manualnotification/change_form.html"
+    notification_service = ManualNotificationService()
 
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
@@ -44,8 +45,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
 
     def delete_model(self, request, obj):
         if obj and not self._notification_is_locked(obj):
-            notification_service = ManualNotificationService()
-            notification_service.delete_notification(obj)
+            self.notification_service.delete_notification(obj)
             super().delete_model(request, obj)
         else:
             self.message_user(
@@ -93,8 +93,8 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
         state = request.session.get(self.ROUTE_UPDATE_SESSION_KEY)
 
         if force_restart or not state:
-            updater = WasteDeviceService()
-            total_rows = updater.get_total_rows()
+            waste_device_service = WasteDeviceService()
+            total_rows = waste_device_service.get_total_rows()
             state = {
                 "total": total_rows,
                 "processed": 0,
@@ -113,8 +113,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
                 )
 
         if not state["completed"]:
-            updater = WasteDeviceService()
-            batch_result = updater.process_batch(
+            batch_result = self.notification_service.process_batch(
                 batch_size=5,
                 last_pk=state["last_pk"],
             )

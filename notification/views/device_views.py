@@ -1,5 +1,3 @@
-import logging
-
 from django.db import transaction
 from django.db.models import Count
 from drf_spectacular.utils import OpenApiExample
@@ -32,8 +30,6 @@ from notification.serializers.notification_config_serializers import (
     NotificationPushTypeDisabledSerializer,
 )
 from notification.views.service_device_abstract_view import ServiceDeviceView
-
-logger = logging.getLogger(__name__)
 
 
 class DeviceRegisterView(DeviceIdMixin, generics.GenericAPIView):
