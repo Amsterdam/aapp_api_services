@@ -1,13 +1,23 @@
 import datetime
+import logging
 from datetime import timedelta
+
+from django.utils import timezone
 
 from core.enums import Module, NotificationType
 from core.services.notification_service import (
     AbstractNotificationService,
     NotificationData,
 )
-from core.services.waste_device import WasteDeviceService
+from core.services.waste_device import (
+    FRACTION_COLUM_MAPPING,
+    WasteDevice,
+    WasteDeviceService,
+)
 from waste.models import ManualNotification
+from waste.services.waste_collection import WasteCollectionService
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationService(AbstractNotificationService):
@@ -46,6 +56,8 @@ class NotificationService(AbstractNotificationService):
 class ManualNotificationService(AbstractNotificationService):
     module_slug = Module.WASTE.value
     notification_type = NotificationType.WASTE_MANUAL_NOTIFICATION.value
+    waste_device_service = WasteDeviceService()
+    waste_collection_service = WasteCollectionService()
 
     def send(self, notification: ManualNotification):
         device_ids = self.get_device_ids(notification)
@@ -80,10 +92,92 @@ class ManualNotificationService(AbstractNotificationService):
         return f"{self.module_slug}_notification_{notification_id}"
 
     def get_device_ids(self, obj: ManualNotification) -> list[str]:
-        waste_device_service = WasteDeviceService()
         route_names = list(obj.affected_routes.values_list("name", flat=True))
         postal_area = obj.affected_postal_area
-        bag_ids = waste_device_service.get_device_ids_for_route_names_and_postal_area(
-            route_names, postal_area
+        bag_ids = (
+            self.waste_device_service.get_device_ids_for_route_names_and_postal_area(
+                route_names, postal_area
+            )
         )
         return list(set(bag_ids))
+
+    def process_batch(self, batch_size: int = 50, last_pk: str = "") -> dict:
+        queryset = self.waste_device_service.get_rows_queryset().order_by("pk")
+        if last_pk:
+            queryset = queryset.filter(pk__gt=last_pk)
+
+        rows = list(queryset[:batch_size])
+
+        processed = 0
+        updated = 0
+        skipped = 0
+        failed = 0
+
+        for row in rows:
+            processed += 1
+            try:
+                was_updated = self.fill_empty_row(row)
+            except Exception:  # pragma: no cover
+                logger.exception(
+                    f"Unexpected error while updating waste device {row.pk}"
+                )
+                failed += 1
+                continue
+
+            if was_updated:
+                updated += 1
+            else:
+                skipped += 1
+
+        return {
+            "processed": processed,
+            "updated": updated,
+            "skipped": skipped,
+            "failed": failed,
+            "last_pk": str(rows[-1].pk) if rows else last_pk,
+            "has_more": bool(rows),
+        }
+
+    def fill_empty_row(self, row: WasteDevice) -> bool:
+        bag_nummeraanduiding_id = row.bag_nummeraanduiding_id
+        if not bag_nummeraanduiding_id:
+            logger.warning(
+                f"Row with device id {row.device_id} has no bag_nummeraanduiding_id"
+            )
+            return False
+
+        data = self.waste_collection_service.get_validated_data_for_bag_id(
+            bag_nummeraanduiding_id
+        )
+        if not data:
+            return False
+
+        postal_area = None
+        fields_to_update = []
+
+        for fraction_data in data:
+            fraction = fraction_data.get("afvalwijzerFractieCode", "").lower()
+            route_name = fraction_data.get("afvalwijzerRoutenaam")
+            postcode = fraction_data.get("postcode")
+
+            if postcode and not postal_area:
+                postal_area = postcode[:4]
+
+            column_name = FRACTION_COLUM_MAPPING.get(fraction)
+            if column_name and route_name:
+                field_name = f"route_name_{column_name}"
+                setattr(row, field_name, route_name)
+                if field_name not in fields_to_update:
+                    fields_to_update.append(field_name)
+
+        if postal_area:
+            row.postal_area = postal_area
+            fields_to_update.append("postal_area")
+
+        if not fields_to_update:
+            return False
+
+        row.routes_updated_at = timezone.now()
+        fields_to_update.append("routes_updated_at")
+        row.save(update_fields=fields_to_update)
+        return True
