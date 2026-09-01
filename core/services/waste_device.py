@@ -5,10 +5,14 @@ from django.db.models import Max, Q
 from django.utils import timezone
 
 from notification.models.notification_models import Device
-from notification.models.waste_guide_models import FRACTION_COLUM_MAPPING, WasteDevice
+from notification.models.waste_guide_models import (
+    FRACTION_COLUMN_MAPPING as FRACTION_COLUMN_MAPPING,
+)
+from notification.models.waste_guide_models import (
+    WasteDevice,
+)
 
 logger = logging.getLogger(__name__)
-FRACTION_COLUM_MAPPING = FRACTION_COLUM_MAPPING
 
 
 class WasteDeviceService:
@@ -26,7 +30,6 @@ class WasteDeviceService:
                 | Q(route_name_organic__in=route_names)
                 | Q(route_name_paper__in=route_names)
                 | Q(route_name_plastic__in=route_names)
-                | Q(route_name_residual__in=route_names)
                 | Q(route_name_residual__in=route_names)
                 | Q(route_name_textile__in=route_names)
             )

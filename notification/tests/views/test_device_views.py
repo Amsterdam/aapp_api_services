@@ -730,6 +730,22 @@ class TestWasteDeviceView(ResponsesActivatedAPITestCase):
         response = self.client.delete(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 204)
 
+    def test_update_removes_routename_and_postal_area_info(self):
+        self.notification = WasteDevice.objects.create(
+            bag_nummeraanduiding_id="1091",
+            device_id=self.device_id,
+            postal_area="1091",
+        )
+        payload = {
+            "bag_nummeraanduiding_id": "1012",
+        }
+        response = self.client.post(self.url, data=payload, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        updated_notification = WasteDevice.objects.get(
+            device_id=self.notification.device_id
+        )
+        self.assertIsNone(updated_notification.postal_area)
+
 
 class TestBurningGuideDeviceView(ResponsesActivatedAPITestCase):
     def setUp(self):

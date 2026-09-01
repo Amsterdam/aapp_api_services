@@ -10,7 +10,7 @@ from core.services.notification_service import (
     NotificationData,
 )
 from core.services.waste_device import (
-    FRACTION_COLUM_MAPPING,
+    FRACTION_COLUMN_MAPPING,
     WasteDevice,
     WasteDeviceService,
 )
@@ -135,7 +135,7 @@ class ManualNotificationService(AbstractNotificationService):
             "skipped": skipped,
             "failed": failed,
             "last_pk": str(rows[-1].pk) if rows else last_pk,
-            "has_more": bool(rows),
+            "has_more": len(rows) == batch_size,
         }
 
     def fill_empty_row(self, row: WasteDevice) -> bool:
@@ -163,9 +163,9 @@ class ManualNotificationService(AbstractNotificationService):
             if postcode and not postal_area:
                 postal_area = postcode[:4]
 
-            column_name = FRACTION_COLUM_MAPPING.get(fraction)
+            column_name = FRACTION_COLUMN_MAPPING.get(fraction)
             if not column_name:
-                logging.warning(f"Unmapped fraction code '{fraction}'")
+                logger.warning(f"Unmapped fraction code '{fraction}'")
             if column_name and route_name:
                 field_name = f"route_name_{column_name}"
                 setattr(row, field_name, route_name)

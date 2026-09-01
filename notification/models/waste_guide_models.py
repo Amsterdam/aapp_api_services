@@ -2,7 +2,7 @@ from django.db import models
 
 from notification.models.notification_models import Device
 
-FRACTION_COLUM_MAPPING = {
+FRACTION_COLUMN_MAPPING = {
     "glas": "glas",
     "papier": "paper",
     "gft": "organic",
