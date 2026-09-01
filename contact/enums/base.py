@@ -39,6 +39,7 @@ class ServiceClass(NamedTuple):
     icon: str
     input_module: str
     dataservice: Optional[Callable] = None
+    is_active: Optional[bool] = True
 
 
 class DataLayer(NamedTuple):

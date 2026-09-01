@@ -7,6 +7,7 @@ from django.urls import reverse
 from rest_framework import status
 
 from contact.enums.base import ModuleSourceChoices, ServiceClass
+from contact.enums.christmas_tree import ChristmasTreeData, ChristmasTreeLayers
 from contact.enums.kingsday_land import KingsdayLandProperties
 from contact.enums.kingsday_water import KingsdayWaterProperties
 from contact.enums.pride_map import PrideMapProperties
@@ -14,7 +15,7 @@ from contact.enums.services import Services
 from contact.enums.swimming_spots import SwimmingSpotLayers, SwimmingSpotProperties
 from contact.enums.taps import TapFilters, TapProperties
 from contact.enums.toilets import ToiletFilters, ToiletProperties
-from contact.tests.mock_data import swimming_spots, taps, toilets
+from contact.tests.mock_data import christmas_trees, swimming_spots, taps, toilets
 from contact.tests.mock_data.kingsday import (
     boat_block,
     boating_ban,
@@ -464,14 +465,6 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "mock": canal_parade.MOCK_DATA,
                 "expected_features": len(canal_parade.MOCK_DATA["features"]),
             },
-            # {
-            #     "label": "Evenement",
-            #     "code": 2,
-            #     "icon_label": "event",
-            #     "url": f"{settings.MAP_LAYERS_URL}2.json",
-            #     "mock": pride_events.MOCK_DATA,
-            #     "expected_features": len(pride_events.MOCK_DATA["features"]),
-            # },
             {
                 "label": "Pride walk",
                 "code": 3,
@@ -573,6 +566,23 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
         self.assertEqual(
             response.json().get("detail"), "No data service available for this service."
         )
+
+    def test_success_get_service_map_view_christmas_trees(self):
+        # Mock the response from the external API
+        layer_code = ChristmasTreeData.choices_as_list()[0]["code"]
+        responses.get(
+            f"{settings.MAP_LAYERS_URL}{layer_code}.json",
+            json=christmas_trees.MOCK_DATA,
+        )
+
+        url = reverse("service-map", kwargs={"service_id": 7})
+        response = self.client.get(
+            url,
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["layers"], ChristmasTreeLayers.choices_as_list())
 
     def test_not_implemented_get_service_map_view(self):
         response = self.client.get(
