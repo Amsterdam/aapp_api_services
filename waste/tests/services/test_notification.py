@@ -236,9 +236,9 @@ class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
             "get_validated_data_for_bag_id",
             return_value=[
                 {
-                    "afvalwijzerFractieCode": "gft",
-                    "afvalwijzerRoutenaam": "Route A",
-                    "postcode": "1091AB",
+                    "code": "gft",
+                    "route_name": "Route A",
+                    "postal_code": "1091AB",
                 }
             ],
         ):
@@ -302,9 +302,9 @@ class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
             "get_validated_data_for_bag_id",
             return_value=[
                 {
-                    "afvalwijzerFractieCode": "unknown",
-                    "afvalwijzerRoutenaam": "Route X",
-                    "postcode": None,
+                    "code": "unknown",
+                    "route_name": "Route X",
+                    "postal_code": None,
                 }
             ],
         ):
