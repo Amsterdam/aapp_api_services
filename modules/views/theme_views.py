@@ -16,7 +16,6 @@ from modules.models import AppRelease, ReleaseModuleStatus
 from modules.serializers.release_serializers import (
     ReleaseModuleSerializer,
 )
-from modules.tests.mock_data import MOCK_DATA
 from modules.utils import VersionQueries
 
 logger = logging.getLogger(__name__)
@@ -105,7 +104,18 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
         # use serializer to get themes in same format as other modules, but without content
         serialized_themes = ReleaseModuleSerializer(theme_statuses, many=True).data
 
-        response_data = MOCK_DATA  # Replace with actual response
+        response = self._make_request(access_token)
+        try:
+            response_data = response.json()
+        except ValueError:
+            logger.info(
+                "Invalid JSON received from upstream",
+                extra={"url": str(getattr(response, "url", ""))},
+            )
+            return Response(
+                {"detail": "Invalid response received from upstream service."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         # Index themes by module slug once to avoid repeatedly scanning the full list.
         themes_by_slug = {
@@ -125,7 +135,7 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
             content = {
                 field: response_data[field]
                 for field in fields
-                if response_data.get(field)
+                if response_data.get(field, {}).get("content")
             }
 
             if not content:
@@ -143,13 +153,18 @@ class MijnAmsterdamThemesView(generics.GenericAPIView):
         retry=retry_if_exception_type(requests.exceptions.RequestException),
         reraise=True,  # Reraise the RequestException after retries
     )
-    def _make_request(self, access_token, headers) -> requests.Response:
+    def _make_request(self, access_token) -> requests.Response:
         """Make the HTTP request for all mams data with retries and a timeout."""
-        url = settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_API_PATHS["ALL"]
+        url = settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_ALL_PATH
+
+        headers = {
+            "Authorization": "Bearer",
+            settings.MIJN_AMS_SESSION_KEY_HEADER: access_token,
+            settings.MIJN_AMS_API_KEY_HEADER: settings.MIJN_AMS_API_KEY_INBOUND,
+        }
         try:
             response = requests.get(
                 url,
-                cookies={"AccessToken": access_token},
                 headers=headers,
                 timeout=10,
             )
