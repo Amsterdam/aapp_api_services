@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict
 
 from contact.enums.christmas_tree import (
@@ -11,8 +10,6 @@ from contact.enums.christmas_tree import (
     ChristmasTreeSilentProperties,
 )
 from contact.services.event_abstract import EventAbstractService
-
-logger = logging.getLogger(__name__)
 
 
 class ChristmasTreeService(EventAbstractService):
