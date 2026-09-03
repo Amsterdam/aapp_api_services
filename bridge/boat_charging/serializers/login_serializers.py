@@ -10,7 +10,3 @@ class GuestLoginResponseSerializer(serializers.Serializer):
 class OIDCSettingsResponseSerializer(serializers.Serializer):
     user_pool_id = serializers.CharField()
     client_id = serializers.CharField()
-    issuer = serializers.URLField()
-    redirect_url = serializers.URLField()
-    scopes = serializers.ListField(child=serializers.CharField())
-    pkce_required = serializers.BooleanField()
