@@ -55,10 +55,10 @@ class Services(ChoicesEnum):
     CHRISTMAS_TREES = ServiceClass(
         id=7,
         title="Kerstbomen",
-        icon=IconPath.get("info"),
+        icon=IconPath.get("christmas-tree"),
         dataservice=ChristmasTreeService,
-        input_module=ModuleSourceChoices.HANDIG_IN_DE_STAD.value,
-        is_active=False,  # this service should not show up when all services are requested
+        input_module=ModuleSourceChoices.WASTE.value,
+        is_active=False,  # this service should currently not show up when all services are requested
     )
 
     @classmethod

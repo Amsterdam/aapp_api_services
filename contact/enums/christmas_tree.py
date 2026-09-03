@@ -19,12 +19,6 @@ class ChristmasTreeFilters(ChoicesEnum):
 
 class ChristmasTreeLayers(ChoicesEnum):
     pass
-    # CHRISTMAS_TREE = LayerClass(
-    #     label="Inzamelpunten kerstbomen",
-    #     filter_key="aapp_subtitle",
-    #     filter_value="Inzamelpunten kerstbomen",
-    #     icon_label="christmas_tree",
-    # )
 
 
 class ChristmasTreeProperties(ChoicesEnum):
@@ -38,8 +32,8 @@ class ChristmasTreeSilentProperties(ChoicesEnum):
 class ChristmasTreeIcons(ChoicesEnum):
     CHRISTMAS_TREE = IconClass(
         label="christmas_tree",
-        path=IconPath["info"],
-        circle_color="#E50082",
+        path=IconPath["christmas-tree"],
+        circle_color="#EC0000",
         path_color="#FFFFFF",
     )
 
