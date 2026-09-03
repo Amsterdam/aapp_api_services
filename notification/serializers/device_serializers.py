@@ -48,6 +48,21 @@ class WasteDeviceRequestSerializer(serializers.ModelSerializer):
             **validated_data,
         )
 
+    def save(self, **kwargs):
+        "Reset route names and postal area to None before saving the instance."
+        instance = super().save(**kwargs)
+        instance.route_name_bulk = None
+        instance.route_name_glas = None
+        instance.route_name_organic = None
+        instance.route_name_paper = None
+        instance.route_name_plastic = None
+        instance.route_name_residual = None
+        instance.route_name_textile = None
+        instance.postal_area = None
+        instance.routes_updated_at = None
+        instance.save()
+        return instance
+
 
 class BurningGuideDeviceRequestSerializer(
     serializers.ModelSerializer, PostalCodeValidationMixin

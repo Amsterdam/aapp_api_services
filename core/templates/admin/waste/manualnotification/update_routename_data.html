@@ -1,0 +1,33 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {% if not completed %}
+    <meta http-equiv="refresh" content="{{ refresh_seconds }};url={{ refresh_url }}">
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <h1>Update routename data</h1>
+
+  <p><strong>{{ processed }}</strong> van <strong>{{ total }}</strong> records verwerkt.</p>
+  <p>Bijgewerkt: {{ updated }} | Overgeslagen: {{ skipped }} | Gefaald: {{ failed }}</p>
+
+  <div style="width: 100%; max-width: 560px; border: 1px solid #ccc; background: #f4f4f4;">
+    <div
+      style="height: 18px; width: {{ progress_percentage }}%; background: #2f7f3f; transition: width 0.2s ease;"
+      aria-label="Voortgang: {{ progress_percentage }} procent"
+    ></div>
+  </div>
+  <p>{{ progress_percentage }}%</p>
+
+  {% if completed %}
+    <p><strong>Update is klaar.</strong></p>
+    <p>
+      <a class="button" href="{{ return_url }}">Terug</a>
+      <a class="button" href="{{ restart_url }}">Opnieuw uitvoeren</a>
+    </p>
+  {% else %}
+    <p>Deze pagina vernieuwt automatisch totdat de update klaar is.</p>
+  {% endif %}
+{% endblock %}

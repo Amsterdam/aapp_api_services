@@ -15,6 +15,12 @@
   <br>
 {% endif %}
 
+{% if affected_routes %}
+  <b>Route selectie</b>
+  {{ affected_routes }}
+  <br>
+{% endif %}
+
   <form method="post">
     {% csrf_token %}
     <button type="submit" name="confirm" class="default">{% if notification.send_at %}Inplannen{% else %}Nu versturen{% endif %}</button>

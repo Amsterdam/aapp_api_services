@@ -1,0 +1,21 @@
+{% extends "admin/change_form.html" %}
+
+{% block form_top %}
+  {{ block.super }}
+
+  {% if add %}
+    <div style="border: 1px solid #d7d7d7; background: #f8f8f8; padding: 14px; margin-bottom: 14px;">
+      <h2 style="margin-top: 0;">Voorbereiding notificatie</h2>
+      <p>
+        Controleer eerst of de routenaam data van afvalwijzer gebruikers up-to-date is.
+        Dit zorgt ervoor dat notificaties aan de juiste routes worden gekoppeld.
+      </p>
+      <p><strong>Totaal aantal devices voor afvalwijzer notificaties:</strong> {{ total_waste_device_rows }} <br>
+      <strong>Aantal devices zonder routename update:</strong> {{ rows_without_route_updated_at }} <br>
+      <strong>Laatste update van routename data:</strong> {{ last_route_update }}</p>
+      <p>
+        <a class="updateWasteLink" href="{{ route_update_url }}">Update routename data starten</a>
+      </p>
+    </div>
+  {% endif %}
+{% endblock %}

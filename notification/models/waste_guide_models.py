@@ -2,6 +2,16 @@ from django.db import models
 
 from notification.models.notification_models import Device
 
+FRACTION_COLUMN_MAPPING = {
+    "glas": "glas",
+    "papier": "paper",
+    "gft": "organic",
+    "rest": "residual",
+    "ga": "bulk",
+    "plastic": "plastic",
+    "textiel": "textile",
+}
+
 
 class WasteDevice(models.Model):
     """
@@ -23,3 +33,12 @@ class WasteDevice(models.Model):
     bag_nummeraanduiding_id = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True)
+    route_name_bulk = models.CharField(max_length=255, null=True)
+    route_name_glas = models.CharField(max_length=255, null=True)
+    route_name_organic = models.CharField(max_length=255, null=True)
+    route_name_paper = models.CharField(max_length=255, null=True)
+    route_name_plastic = models.CharField(max_length=255, null=True)
+    route_name_residual = models.CharField(max_length=255, null=True)
+    route_name_textile = models.CharField(max_length=255, null=True)
+    postal_area = models.CharField(max_length=4, null=True)
+    routes_updated_at = models.DateTimeField(null=True)

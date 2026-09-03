@@ -105,9 +105,13 @@ class NotificationAdmin(admin.ModelAdmin):
                 else:
                     self.message_user(
                         request,
-                        "Geen gebruikers gevonden om bericht voor aan te maken!",
+                        "Geen gebruikers gevonden om bericht voor aan te maken! Verzenddatum is leeggemaakt.",
                         level=messages.ERROR,
                     )
+                    # make sure the scheduled notification is deleted if it was created before the user confirmed the action
+                    notification_service.delete_notification(obj)
+                    obj.send_at = None
+                    obj.save(update_fields=["send_at"])
             else:
                 self.message_user(
                     request,

@@ -1,15 +1,22 @@
+from urllib.parse import urlencode
+
 from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils import timezone
+from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
 
 from core.authentication import AuthenticationGroupModelAdmin
+from core.services.waste_device import WasteDeviceService
 from waste.models import ManualNotification
 from waste.services.notification import ManualNotificationService
 
 
 class NotificationAdmin(AuthenticationGroupModelAdmin):
+    ROUTE_UPDATE_SESSION_KEY = "waste_manual_notification_route_update_state"
+
     authentication_groups = (
         "waste-publisher",
         "waste-delegated",
@@ -28,6 +35,9 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     list_select_related = ("created_by",)
     ordering = ["-send_at"]
     actions = None
+    filter_horizontal = ["affected_routes"]
+    change_form_template = "admin/waste/manualnotification/change_form.html"
+    notification_service = ManualNotificationService()
 
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
@@ -35,8 +45,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
 
     def delete_model(self, request, obj):
         if obj and not self._notification_is_locked(obj):
-            notification_service = ManualNotificationService()
-            notification_service.delete_notification(obj)
+            self.notification_service.delete_notification(obj)
             super().delete_model(request, obj)
         else:
             self.message_user(
@@ -59,12 +68,102 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
         urls = super().get_urls()
         custom = [
             path(
+                "update-routename-data/",
+                self.admin_site.admin_view(self.update_routename_data),
+                name="notification_update_routename_data",
+            ),
+            path(
                 "<path:object_id>/confirm-send/",
                 self.admin_site.admin_view(self.confirm_send),
                 name="notification_confirm_send",
             ),
         ]
         return custom + urls
+
+    def update_routename_data(self, request):
+        force_restart = request.GET.get("restart") == "1"
+        return_url = request.GET.get("next") or reverse(
+            "admin:waste_manualnotification_changelist"
+        )
+        refresh_url = (
+            reverse("admin:notification_update_routename_data")
+            + "?"
+            + urlencode({"next": return_url})
+        )
+        state = request.session.get(self.ROUTE_UPDATE_SESSION_KEY)
+
+        if force_restart or not state:
+            waste_device_service = WasteDeviceService()
+            total_rows = waste_device_service.get_total_rows()
+            state = {
+                "total": total_rows,
+                "processed": 0,
+                "updated": 0,
+                "skipped": 0,
+                "failed": 0,
+                "last_pk": "",
+                "completed": total_rows == 0,
+            }
+
+            if total_rows == 0:
+                self.message_user(
+                    request,
+                    "Geen waste device records gevonden.",
+                    level=messages.INFO,
+                )
+
+        if not state["completed"]:
+            batch_result = self.notification_service.process_batch(
+                batch_size=5,
+                last_pk=state["last_pk"],
+            )
+            state["processed"] += batch_result["processed"]
+            state["updated"] += batch_result["updated"]
+            state["skipped"] += batch_result["skipped"]
+            state["failed"] += batch_result["failed"]
+            state["last_pk"] = batch_result["last_pk"]
+
+            if not batch_result["has_more"] or state["processed"] >= state["total"]:
+                state["completed"] = True
+                self.message_user(
+                    request,
+                    (
+                        "Routename update voltooid. "
+                        f"{state['updated']} van {state['total']} records bijgewerkt "
+                        f"({state['skipped']} overgeslagen, {state['failed']} gefaald)."
+                    ),
+                    level=messages.INFO,
+                )
+
+        request.session[self.ROUTE_UPDATE_SESSION_KEY] = state
+
+        total = state["total"]
+        processed = state["processed"]
+        progress_percentage = 100 if total == 0 else int((processed / total) * 100)
+
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "total": total,
+            "processed": processed,
+            "updated": state["updated"],
+            "skipped": state["skipped"],
+            "failed": state["failed"],
+            "completed": state["completed"],
+            "progress_percentage": min(progress_percentage, 100),
+            "refresh_seconds": 1,
+            "refresh_url": refresh_url,
+            "return_url": return_url,
+            "restart_url": reverse("admin:notification_update_routename_data")
+            + "?"
+            + urlencode({"restart": "1", "next": return_url}),
+        }
+
+        return TemplateResponse(
+            request,
+            "admin/waste/manualnotification/update_routename_data.html",
+            context,
+        )
 
     def response_add(self, request, obj: ManualNotification, post_url_continue=None):
         # only ask for confirmation if notification has send date
@@ -106,9 +205,13 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
                 else:
                     self.message_user(
                         request,
-                        "Geen gebruikers gevonden om bericht voor aan te maken!",
+                        "Geen gebruikers gevonden om bericht voor aan te maken! Verzenddatum is leeggemaakt.",
                         level=messages.ERROR,
                     )
+                    notification_service.delete_notification(obj)
+                    obj.send_at = None
+                    obj.save(update_fields=["send_at"])
+
             else:
                 self.message_user(
                     request,
@@ -123,15 +226,36 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
                 reverse("admin:waste_manualnotification_changelist")
             )
 
-        device_ids = notification_service.get_device_ids()
+        device_ids = notification_service.get_device_ids(obj)
         context = {
             **self.admin_site.each_context(request),
             "nr_sessions": len(device_ids),
             "notification": obj,
+            "affected_routes": self.affected_routes_display(obj),
         }
         return TemplateResponse(
             request, "admin/notification_confirm_send.html", context
         )
+
+    def affected_routes_display(self, obj):
+        affected_routes = list(obj.affected_routes.all())
+        if not affected_routes:
+            return mark_safe(
+                "<div style='color: #999;'>Geen routes geselecteerd.</div>"
+            )
+
+        inner = format_html_join(
+            "",
+            "<div style='padding:2px 0;'>{}</div>",
+            ((r.name,) for r in affected_routes),
+        )
+        return format_html(
+            "<div style='border:1px solid #ccc; padding:5px; "
+            "max-height:200px; overflow-y:auto; background:#f9f9f9;'>{}</div>",
+            inner,
+        )
+
+    affected_routes_display.short_description = "Geselecteerde routes"
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -163,6 +287,26 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     def render_change_form(
         self, request, context, add=False, change=False, form_url="", obj=None
     ):
+        if add:
+            waste_device_service = WasteDeviceService()
+            total_rows = waste_device_service.get_total_rows()
+            rows_without_route_updated_at = (
+                waste_device_service.get_rowcount_without_route_updated_at()
+            )
+            last_route_update = waste_device_service.get_latest_route_updated_at()
+            add_url = reverse("admin:waste_manualnotification_add")
+            context["route_update_url"] = (
+                reverse("admin:notification_update_routename_data")
+                + "?"
+                + urlencode({"restart": "1", "next": add_url})
+            )
+            context["total_waste_device_rows"] = total_rows
+            context["rows_without_route_updated_at"] = rows_without_route_updated_at
+            context["last_route_update"] = last_route_update
+            context["route_update_state"] = request.session.get(
+                self.ROUTE_UPDATE_SESSION_KEY
+            )
+
         context["show_save"] = True
         context["show_save_and_continue"] = False
         context["show_save_and_add_another"] = False

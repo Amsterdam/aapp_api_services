@@ -14,6 +14,18 @@ class WeekDay(models.IntegerChoices):
     SATURDAY = 6, "Zaterdag"
 
 
+class WasteCollectionRouteName(models.Model):
+    """Model to store waste collection route names"""
+
+    class Meta:
+        ordering = ["name"]
+
+    name = models.CharField(primary_key=True, max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
 class ManualNotification(models.Model):
     class Meta:
         verbose_name = "Notificatie"
@@ -30,6 +42,18 @@ class ManualNotification(models.Model):
     send_at = models.DateTimeField("Verstuurd op", null=True, blank=True)
     nr_sessions = models.PositiveIntegerField(
         "Aantal berichten verstuurd", default=0, editable=False
+    )
+    affected_postal_area = models.CharField(
+        "Postcodegebied",
+        max_length=4,
+        null=True,
+        blank=True,
+    )
+    affected_routes = models.ManyToManyField(
+        WasteCollectionRouteName,
+        verbose_name="afvalwijzerRoutenaam",
+        help_text="Selecteer de afvalophaalroutes waar deze notificatie voor geldt. Als er geen routes geselecteerd zijn, wordt de notificatie naar alle gebruikers gestuurd.",
+        blank=True,
     )
 
     def __str__(self) -> str:
@@ -151,18 +175,6 @@ class OpeningHoursException(OpeningHourAbstract):
         if self.description:
             return f"{self.description} ({date})"
         return date
-
-
-class WasteCollectionRouteName(models.Model):
-    """Model to store waste collection route names"""
-
-    class Meta:
-        ordering = ["name"]
-
-    name = models.CharField(primary_key=True, max_length=300)
-
-    def __str__(self):
-        return self.name
 
 
 class WasteCollectionException(models.Model):

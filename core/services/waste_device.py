@@ -1,15 +1,41 @@
+import logging
 from datetime import date, datetime, time
 
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.utils import timezone
 
 from notification.models.notification_models import Device
-from notification.models.waste_guide_models import WasteDevice
+from notification.models.waste_guide_models import (
+    FRACTION_COLUMN_MAPPING as FRACTION_COLUMN_MAPPING,
+)
+from notification.models.waste_guide_models import (
+    WasteDevice,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class WasteDeviceService:
     def get_device_ids(self) -> list[str]:
         return list(WasteDevice.objects.values_list("device_id", flat=True))
+
+    def get_device_ids_for_route_names_and_postal_area(
+        self, route_names: list[str] | None, postal_area: str | None
+    ) -> list[str]:
+        queryset = self.get_rows_queryset()
+        if route_names:
+            queryset = queryset.filter(
+                Q(route_name_bulk__in=route_names)
+                | Q(route_name_glas__in=route_names)
+                | Q(route_name_organic__in=route_names)
+                | Q(route_name_paper__in=route_names)
+                | Q(route_name_plastic__in=route_names)
+                | Q(route_name_residual__in=route_names)
+                | Q(route_name_textile__in=route_names)
+            )
+        if postal_area:
+            queryset = queryset.filter(postal_area=postal_area)
+        return list(queryset.values_list("device_id", flat=True))
 
     def bulk_create_waste_devices(self, waste_devices: list[WasteDevice]):
         WasteDevice.objects.bulk_create(waste_devices)
@@ -56,3 +82,18 @@ class WasteDeviceService:
         WasteDevice.objects.filter(pk__in=ids_to_update).update(
             updated_at=timezone.now()
         )
+
+    def get_rows_queryset(self):
+        return WasteDevice.objects.all()
+
+    def get_total_rows(self) -> int:
+        return self.get_rows_queryset().count()
+
+    def get_rows_without_route_updated_at(self):
+        return WasteDevice.objects.filter(routes_updated_at__isnull=True)
+
+    def get_rowcount_without_route_updated_at(self):
+        return self.get_rows_without_route_updated_at().count()
+
+    def get_latest_route_updated_at(self):
+        return WasteDevice.objects.aggregate(latest=Max("routes_updated_at"))["latest"]
