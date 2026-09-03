@@ -67,7 +67,7 @@ class TestServiceMapsView(ResponsesActivatedAPITestCase):
         expected_services = [
             service
             for service in Services.choices_as_list()
-            if service["input_module"] == "handig-in-de-stad"
+            if service["input_module"] == "handig-in-de-stad" and service["is_active"]
         ]
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -89,7 +89,7 @@ class TestServiceMapsView(ResponsesActivatedAPITestCase):
         expected_services = [
             service
             for service in Services.choices_as_list()
-            if service["input_module"] == "handig-in-de-stad"
+            if service["input_module"] == "handig-in-de-stad" and service["is_active"]
         ]
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -106,7 +106,7 @@ class TestServiceMapsView(ResponsesActivatedAPITestCase):
         expected_services = [
             service
             for service in Services.choices_as_list()
-            if service["input_module"] == "koningsdag"
+            if service["input_module"] == "koningsdag" and service["is_active"]
         ]
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
