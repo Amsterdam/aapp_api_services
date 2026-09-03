@@ -29,8 +29,4 @@ class OIDCSettingsView(BaseView):
         return {
             "user_pool_id": settings.BOAT_CHARGING_USER_POOL,
             "client_id": settings.BOAT_CHARGING_CLIENT_ID,
-            "issuer": f"https://cognito-idp.{settings.BOAT_CHARGING_REGION}.amazonaws.com/{settings.BOAT_CHARGING_USER_POOL}",
-            "redirect_url": settings.BOAT_CHARGING_REDIRECT_URL,
-            "scopes": settings.BOAT_CHARGING_SCOPES,
-            "pkce_required": settings.BOAT_CHARGING_OIDC_PKCE_REQUIRED,
         }
