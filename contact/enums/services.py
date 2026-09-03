@@ -1,5 +1,6 @@
 from contact.enums.base import ChoicesEnum, ModuleSourceChoices, ServiceClass
 from contact.icons import IconPath
+from contact.services.christmas_tree import ChristmasTreeService
 from contact.services.kingsday_land import KingsdayLandService
 from contact.services.kingsday_water import KingsdayWaterService
 from contact.services.pride_map import PrideMapService
@@ -50,6 +51,14 @@ class Services(ChoicesEnum):
         icon=IconPath.get("pride-map"),
         dataservice=PrideMapService,
         input_module=ModuleSourceChoices.PRIDE.value,
+    )
+    CHRISTMAS_TREES = ServiceClass(
+        id=7,
+        title="Kerstbomen",
+        icon=IconPath.get("christmas-tree"),
+        dataservice=ChristmasTreeService,
+        input_module=ModuleSourceChoices.WASTE.value,
+        is_active=False,  # this service should currently not show up when all services are requested
     )
 
     @classmethod
