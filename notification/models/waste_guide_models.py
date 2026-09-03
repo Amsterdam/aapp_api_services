@@ -40,5 +40,5 @@ class WasteDevice(models.Model):
     route_name_plastic = models.CharField(max_length=255, null=True)
     route_name_residual = models.CharField(max_length=255, null=True)
     route_name_textile = models.CharField(max_length=255, null=True)
-    postal_area = models.CharField(max_length=255, null=True)
+    postal_area = models.CharField(max_length=4, null=True)
     routes_updated_at = models.DateTimeField(null=True)

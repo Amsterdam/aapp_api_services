@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="wastedevice",
             name="postal_area",
-            field=models.CharField(max_length=255, null=True),
+            field=models.CharField(max_length=4, null=True),
         ),
         migrations.AddField(
             model_name="wastedevice",
