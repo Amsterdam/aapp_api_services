@@ -34,7 +34,9 @@ class ServiceMapsView(APIView):
 
         # filter services on module_source
         services = [
-            service for service in services if service["input_module"] == module_source
+            service
+            for service in services
+            if service["input_module"] == module_source and service["is_active"]
         ]
 
         response_serializer = ServiceMapsResponseSerializer(services, many=True)
