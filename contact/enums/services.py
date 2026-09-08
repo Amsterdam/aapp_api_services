@@ -58,7 +58,6 @@ class Services(ChoicesEnum):
         icon=IconPath.get("christmas-tree"),
         dataservice=ChristmasTreeService,
         input_module=ModuleSourceChoices.WASTE.value,
-        is_active=False,  # this service should currently not show up when all services are requested
     )
 
     @classmethod
