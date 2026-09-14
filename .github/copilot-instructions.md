@@ -48,3 +48,16 @@
 - Always activate the venv before running commands.
 - Use the provided Makefile targets for all dev/test workflows.
 - For new integrations, follow the patterns in `core/` and existing apps.
+
+## Documentation rules
+
+- Update documentation when relevant.
+- Store each services documentation in a separate Markdown file under `/.docs/services`.
+- For the bridge services inside the bridge folder, store documentation in `/.docs/services/bridge`.
+- Store all general documentation in `/.docs/`.
+- Write documentation in clear, concise English. Include the following information:
+  - The purpose of the module
+  - The main business rules
+  - Any major non-standard architectural decisions
+- The documentation should not include any implementation details, such as the names of views or functions.
+- It should focus on the business logic and the purpose of the module.

@@ -46,6 +46,7 @@ MOCK_RESPONSE = {
                             "status": "OCCUPIED",
                         }
                     ],
+                    "available": False,
                 },
                 {
                     "id": 56,
@@ -61,6 +62,7 @@ MOCK_RESPONSE = {
                             "status": "AVAILABLE",
                         }
                     ],
+                    "available": True,
                 },
             ],
         },
@@ -82,6 +84,7 @@ MOCK_RESPONSE = {
                             "status": "AVAILABLE",
                         }
                     ],
+                    "available": False,
                 }
             ],
         },
@@ -136,6 +139,7 @@ MOCK_RESPONSE_OFFLINE_CHARGING_STATION = {
                             "status": "AVAILABLE",
                         }
                     ],
+                    "available": False,
                 }
             ],
         }
