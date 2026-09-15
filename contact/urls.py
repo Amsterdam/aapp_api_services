@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path
 
-from contact.views import contact_views, link_views, service_views
+from contact.views import contact_views, link_views, neighborhood_views, service_views
 from contact.views.pride_event_views import PrideEventsView
 from core.urls import get_admin_paths, get_swagger_paths
 from core.views.admin_views import AdminLoginView
@@ -9,6 +9,7 @@ from core.views.admin_views import AdminLoginView
 BASE_PATH_CONTACT = "contact/api/v1"
 BASE_PATH_ADMIN = "contact/admin"
 BASE_PATH_SERVICE = "service/api/v1"
+BASE_PATH_NEIGHBORHOOD = "neighborhood/api/v1"
 
 urlpatterns = [
     path(
@@ -51,6 +52,16 @@ urlpatterns = [
         BASE_PATH_SERVICE + "/pride/events",
         PrideEventsView.as_view(),
         name="contact-pride-events",
+    ),
+    path(
+        BASE_PATH_NEIGHBORHOOD + "/notes",
+        neighborhood_views.CreateNeighborhoodNoteView.as_view(),
+        name="neighborhood-notes-create",
+    ),
+    path(
+        BASE_PATH_NEIGHBORHOOD + "/notes/images",
+        neighborhood_views.NeighborhoodNoteImageUploadView.as_view(),
+        name="neighborhood-note-images",
     ),
 ]
 

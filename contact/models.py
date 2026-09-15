@@ -129,3 +129,29 @@ class OpeningHoursException(OpeningHourAbstract):
         if self.description:
             return f"{self.description} ({date})"
         return date
+
+
+class NeighborhoodNotes(models.Model):
+    """Model for neighborhood notes"""
+
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    contact_name = models.CharField(max_length=50)
+    contact_number = models.CharField(max_length=10)
+    lat = models.DecimalField(max_digits=9, decimal_places=6)
+    lng = models.DecimalField(max_digits=9, decimal_places=6)
+    external_device_id = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class NeighborhoodNotesImage(models.Model):
+    foreign_id = models.BigIntegerField()
+    uri = models.URLField(max_length=2048)
+    width = models.IntegerField()
+    height = models.IntegerField()
+    note = models.ForeignKey(
+        NeighborhoodNotes, on_delete=models.CASCADE, related_name="images"
+    )
+
+    class Meta:
+        unique_together = ("note", "uri")
