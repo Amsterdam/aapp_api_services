@@ -261,25 +261,21 @@ class AfvalscheidingswijzerView(GenericAPIView):
         },
     )
     def post(self, request):
-        try:
-            response = requests.post(
-                settings.AFVALSCHEIDINGSWIJZER_URL,
-                data=request.body,
-                headers={
-                    "content-type": "text/plain;charset=UTF-8",
-                    "next-action": "40f8fc5dcb243472b32eb5cb1040d8e6e896f79498",
-                    "origin": "https://www.afvalscheidingswijzer.nl",
-                    "user-agent": "Mozilla/5.0",
-                },
-                timeout=5,
-            )
-        except requests.exceptions.RequestException:
-            return Response(self.error_response, status=status.HTTP_502_BAD_GATEWAY)
-
-        try:
-            payload = self._extract_payload(response.text)
-        except ValueError:
-            return Response(self.error_response, status=status.HTTP_502_BAD_GATEWAY)
+        # try:
+        response = requests.post(
+            settings.AFVALSCHEIDINGSWIJZER_URL,
+            data=request.body,
+            headers={
+                "content-type": "text/plain;charset=UTF-8",
+                "next-action": "40f8fc5dcb243472b32eb5cb1040d8e6e896f79498",
+                "origin": "https://www.afvalscheidingswijzer.nl",
+                "user-agent": "Mozilla/5.0",
+            },
+            timeout=5,
+        )
+        payload = self._extract_payload(response.text)
+        # except ValueError:
+        #     return Response(self.error_response, status=status.HTTP_502_BAD_GATEWAY)
 
         return Response(payload, status=response.status_code)
 
