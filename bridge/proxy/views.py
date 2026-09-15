@@ -255,6 +255,7 @@ class AfvalscheidingswijzerView(GenericAPIView):
             response=OpenApiTypes.OBJECT,
             description="Parsed upstream payload",
         ),
+        success_status_code="2XX",
         additional_responses={
             502: OpenApiResponse(description="Upstream afvalscheidingswijzer error.")
         },
