@@ -6,6 +6,7 @@ from bridge.proxy.views import (
     AddressSearchByCoordinateView,
     AddressSearchByNameView,
     AddressSearchView,
+    AfvalscheidingswijzerView,
     EgisProxyExternalView,
     EgisProxyView,
     HealthCheckView,
@@ -41,6 +42,11 @@ urlpatterns += [
         "bridge/api/v1/time",
         ServerTimeView.as_view(),
         name="server-time",
+    ),
+    path(
+        "bridge/api/v1/afvalscheidingswijzer",
+        AfvalscheidingswijzerView.as_view(),
+        name="afvalscheidingswijzer",
     ),
     # election locations
     path(

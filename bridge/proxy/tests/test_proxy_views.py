@@ -5,6 +5,7 @@ import freezegun
 import responses
 from django.conf import settings
 from django.urls import reverse
+from requests.exceptions import RequestException
 
 from bridge.proxy.tests import mock_data
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
@@ -175,6 +176,69 @@ class TestAddressPostalAreaByCoordinateView(ResponsesActivatedAPITestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+
+class TestAfvalscheidingswijzerView(ResponsesActivatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("afvalscheidingswijzer")
+
+    def test_success(self):
+        upstream_response = responses.post(
+            settings.AFVALSCHEIDINGSWIJZER_URL,
+            body=mock_data.AFVALSCHEIDINGSWIJZER,
+            content_type="text/x-component",
+            status=201,
+        )
+
+        response = self.client.post(
+            self.url,
+            data="potgrond",
+            content_type="text/plain",
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.content.decode(), mock_data.AFVALSCHEIDINGSWIJZER)
+        self.assertEqual(response["Content-Type"], "text/x-component")
+        self.assertEqual(upstream_response.call_count, 1)
+        self.assertEqual(
+            upstream_response.calls[0].request.url,
+            settings.AFVALSCHEIDINGSWIJZER_URL,
+        )
+        self.assertEqual(upstream_response.calls[0].request.method, "POST")
+        self.assertEqual(upstream_response.calls[0].request.body, b"potgrond")
+        self.assertEqual(
+            upstream_response.calls[0].request.headers["content-type"],
+            "text/plain;charset=UTF-8",
+        )
+        self.assertEqual(
+            upstream_response.calls[0].request.headers["next-action"],
+            "40f8fc5dcb243472b32eb5cb1040d8e6e896f79498",
+        )
+        self.assertEqual(
+            upstream_response.calls[0].request.headers["origin"],
+            "https://www.afvalscheidingswijzer.nl",
+        )
+        self.assertEqual(
+            upstream_response.calls[0].request.headers["user-agent"],
+            "Mozilla/5.0",
+        )
+
+    @patch("bridge.proxy.views.requests.post", side_effect=RequestException)
+    def test_returns_502_on_upstream_failure(self, patched_post):
+        response = self.client.post(
+            self.url,
+            data="potgrond",
+            content_type="text/plain",
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(
+            response.data, {"detail": "Upstream afvalscheidingswijzer error"}
+        )
+        patched_post.assert_called_once()
 
 
 class TestPollingStationsView(ResponsesActivatedAPITestCase):

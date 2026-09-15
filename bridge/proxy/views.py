@@ -10,7 +10,8 @@ from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from requests import JSONDecodeError
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
@@ -242,6 +243,45 @@ class AddressSearchByCoordinateView(AddressSearchAbstractView):
         params.append(("fq", "type:adres"))
         params.append(("rows", "5"))
         return params
+
+
+class AfvalscheidingswijzerView(GenericAPIView):
+    http_method_names = ["post"]
+
+    @extend_schema_for_api_key(
+        request={"text/plain": OpenApiTypes.STR},
+        success_response=OpenApiResponse(
+            response=OpenApiTypes.BINARY,
+            description="Raw upstream response passthrough.",
+        ),
+        additional_responses={
+            502: OpenApiResponse(description="Upstream afvalscheidingswijzer error.")
+        },
+    )
+    def post(self, request):
+        try:
+            response = requests.post(
+                settings.AFVALSCHEIDINGSWIJZER_URL,
+                data=request.body,
+                headers={
+                    "content-type": "text/plain;charset=UTF-8",
+                    "next-action": "40f8fc5dcb243472b32eb5cb1040d8e6e896f79498",
+                    "origin": "https://www.afvalscheidingswijzer.nl",
+                    "user-agent": "Mozilla/5.0",
+                },
+                timeout=5,
+            )
+        except requests.exceptions.RequestException:
+            return Response(
+                {"detail": "Upstream afvalscheidingswijzer error"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return HttpResponse(
+            response.content,
+            status=response.status_code,
+            content_type=response.headers.get("Content-Type"),
+        )
 
 
 class AddressPostalAreaByCoordinateView(GenericAPIView):
