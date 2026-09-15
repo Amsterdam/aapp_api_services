@@ -193,7 +193,7 @@ class TestAfvalscheidingswijzerView(ResponsesActivatedAPITestCase):
 
         response = self.client.post(
             self.url,
-            data="potgrond",
+            data='["potgrond"]',
             content_type="text/plain",
             headers=self.api_headers,
         )
@@ -207,7 +207,7 @@ class TestAfvalscheidingswijzerView(ResponsesActivatedAPITestCase):
             settings.AFVALSCHEIDINGSWIJZER_URL,
         )
         self.assertEqual(upstream_response.calls[0].request.method, "POST")
-        self.assertEqual(upstream_response.calls[0].request.body, b"potgrond")
+        self.assertEqual(upstream_response.calls[0].request.body, b'["potgrond"]')
         self.assertEqual(
             upstream_response.calls[0].request.headers["content-type"],
             "text/plain;charset=UTF-8",
