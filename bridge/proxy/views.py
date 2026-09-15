@@ -254,6 +254,7 @@ class AfvalscheidingswijzerView(GenericAPIView):
             response=OpenApiTypes.BINARY,
             description="Raw upstream response passthrough.",
         ),
+        success_status_code="2XX",
         additional_responses={
             502: OpenApiResponse(description="Upstream afvalscheidingswijzer error.")
         },
