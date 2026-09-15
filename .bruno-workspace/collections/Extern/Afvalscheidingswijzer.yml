@@ -4,7 +4,7 @@ info:
   seq: 5
 
 http:
-  method: post
+  method: POST
   url: https://www.afvalscheidingswijzer.nl/alle-afvalproducten
   headers:
     - name: content-type
