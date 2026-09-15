@@ -119,3 +119,7 @@ MOCK_POSTAL_AREA_SHAPES = {
         }
     )
 }
+
+AFVALSCHEIDINGSWIJZER = """0:{"a":"$@1","f":"","q":"","i":false,"b":"YJksOH9jv3dH7qkRJUDt1"}
+1:{"total":3,"skip":0,"take":100,"searchTerm":"potgrond","language":"nl-NL","results":[{"identifier":"25f8b395-1793-4e96-9c27-e2d953118840","name":"Potgrond","route":{"path":"/alle-afvalproducten/tuin/grond/potgrond/"},"contentType":"synonymPage","fields":{"heroTitle":"Potgrond"},"score":0.4191785,"isSameForAllCultures":false},{"identifier":"9a3b6b52-8c6a-4465-bb9e-36471a4177ec","name":"Zak potgrond","route":{"path":"/alle-afvalproducten/plastic/grote-plastic-folieverpakking/zak-potgrond/"},"contentType":"synonymPage","fields":{"heroTitle":"Zak potgrond"},"score":0.30446377,"isSameForAllCultures":false},{"identifier":"663ef79c-d3f0-4411-bf54-3894d42057cf","name":"Potgrondzak","route":{"path":"/alle-afvalproducten/plastic/grote-plastic-folieverpakking/potgrondzak/"},"contentType":"synonymPage","fields":{"heroTitle":"Potgrondzak"},"score":0.11080852,"isSameForAllCultures":false}]}
+"""

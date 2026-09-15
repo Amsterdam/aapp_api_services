@@ -15,7 +15,7 @@ http:
       value: "{{apiKey}}"
   params:
     - name: session_id
-      value: 084ebc90-e1a2-463b-b21f-2d912204e619
+      value: 7c5c54a2-bd74-4457-8f78-b9b11e34c641
       type: path
   auth: inherit
 

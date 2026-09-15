@@ -79,3 +79,7 @@ BOAT_CHARGING_ENDPOINTS = {
     "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "sessions"),
     "SETTINGS": urljoin(BOAT_CHARGING_DOMAIN, "app-settings/public"),
 }
+
+AFVALSCHEIDINGSWIJZER_URL = os.getenv(
+    "AFVALSCHEIDINGSWIJZER_URL", "https://www.afvalscheidingswijzer.nl/alle-afvalproducten"
+)

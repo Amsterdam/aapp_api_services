@@ -1,7 +1,7 @@
 info:
   name: Session socked status
   type: http
-  seq: 11
+  seq: 13
 
 http:
   method: GET

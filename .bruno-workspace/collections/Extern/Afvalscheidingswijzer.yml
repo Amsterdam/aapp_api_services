@@ -1,0 +1,27 @@
+info:
+  name: Afvalscheidingswijzer
+  type: http
+  seq: 5
+
+http:
+  method: post
+  url: https://www.afvalscheidingswijzer.nl/alle-afvalproducten
+  headers:
+    - name: content-type
+      value: text/plain;charset=UTF-8
+    - name: origin
+      value: https://www.afvalscheidingswijzer.nl
+    - name: user-agent
+      value: Mozilla/5.0
+    - name: next-action
+      value: 40f8fc5dcb243472b32eb5cb1040d8e6e896f79498
+  body:
+    type: text
+    data: '["potgrond"]'
+  auth: inherit
+
+settings:
+  encodeUrl: false
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

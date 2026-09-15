@@ -1,11 +1,11 @@
 info:
-  name: Session stop
+  name: Location pins (unused by us)
   type: http
-  seq: 12
+  seq: 5
 
 http:
-  method: POST
-  url: "{{NRG_base_url}}/sessions/:id/stop"
+  method: GET
+  url: "{{NRG_base_url}}/locations/pins"
   headers:
     - name: User-Agent
       value: Mozilla/5.0
@@ -14,11 +14,6 @@ http:
     - name: Authorization
       value: "{{token}}"
       disabled: true
-  params:
-    - name: id
-      value: ""
-      type: path
-  auth: inherit
 
 settings:
   encodeUrl: true
