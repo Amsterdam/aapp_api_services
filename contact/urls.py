@@ -55,8 +55,8 @@ urlpatterns = [
     ),
     path(
         BASE_PATH_NEIGHBORHOOD + "/notes",
-        neighborhood_views.CreateNeighborhoodNoteView.as_view(),
-        name="neighborhood-notes-create",
+        neighborhood_views.CreateRetrieveNeighborhoodNoteView.as_view(),
+        name="neighborhood-notes-create-get",
     ),
     path(
         BASE_PATH_NEIGHBORHOOD + "/notes/<int:note_id>",
@@ -67,6 +67,11 @@ urlpatterns = [
         BASE_PATH_NEIGHBORHOOD + "/notes/images",
         neighborhood_views.NeighborhoodNoteImageUploadView.as_view(),
         name="neighborhood-note-images",
+    ),
+    path(
+        BASE_PATH_NEIGHBORHOOD + "/own-notes",
+        neighborhood_views.RetrieveOwnNeighborhoodNotesView.as_view(),
+        name="neighborhood-notes-own",
     ),
 ]
 

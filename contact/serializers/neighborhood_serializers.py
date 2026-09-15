@@ -81,3 +81,14 @@ class CreateNeighborhoodNoteRequestSerializer(serializers.ModelSerializer):
 
 class CreateNeighborhoodNoteResponseSerializer(serializers.Serializer):
     note_id = serializers.IntegerField()
+
+
+class RetrieveNeighborhoodNotesResponseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NeighborhoodNotes
+        exclude = ["external_device_id"]
+
+
+class RetrieveNeighborhoodNotesRequestSerializer(serializers.Serializer):
+    lat = serializers.FloatField(required=True)
+    lng = serializers.FloatField(required=True)

@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import generics, status
 from rest_framework.response import Response
 
@@ -7,6 +9,8 @@ from contact.serializers.neighborhood_serializers import (
     CreateNeighborhoodNoteResponseSerializer,
     ImageCreateRequestSerializer,
     ImageCreateResponseSerializer,
+    RetrieveNeighborhoodNotesRequestSerializer,
+    RetrieveNeighborhoodNotesResponseSerializer,
 )
 from core.services.image_set import ImageSetService
 from core.utils.openapi_utils import (
@@ -14,6 +18,8 @@ from core.utils.openapi_utils import (
     extend_schema_for_device_id,
 )
 from core.views.mixins import DeviceIdMixin
+
+logger = logging.getLogger(__name__)
 
 
 class NeighborhoodNoteImageUploadView(generics.GenericAPIView):
@@ -53,16 +59,26 @@ class NeighborhoodNoteImageUploadView(generics.GenericAPIView):
         )
 
 
-@extend_schema_for_device_id(success_response=CreateNeighborhoodNoteResponseSerializer)
-class CreateNeighborhoodNoteView(DeviceIdMixin, generics.GenericAPIView):
-    """Create a new neighborhood note."""
+class CreateRetrieveNeighborhoodNoteView(DeviceIdMixin, generics.GenericAPIView):
+    """Create and retrieve neighborhood notes."""
 
-    http_method_names = ["post"]
+    http_method_names = ["post", "get"]
+
+    def initial(self, request, *args, **kwargs):
+        self.device_id_required = request.method.lower() == "post"
+        super().initial(request, *args, **kwargs)
 
     def get_serializer_class(self):
-        return CreateNeighborhoodNoteRequestSerializer
+        if self.request.method.lower() == "get":
+            return RetrieveNeighborhoodNotesRequestSerializer
+        else:
+            return CreateNeighborhoodNoteRequestSerializer
 
+    @extend_schema_for_device_id(
+        success_response=CreateNeighborhoodNoteResponseSerializer
+    )
     def post(self, request, *args, **kwargs):
+        """Create a new neighborhood note."""
         serializer = self.get_serializer(
             data=request.data, context={"external_device_id": self.device_id}
         )
@@ -73,6 +89,24 @@ class CreateNeighborhoodNoteView(DeviceIdMixin, generics.GenericAPIView):
     def get_success_response(self, instance):
         serializer = CreateNeighborhoodNoteResponseSerializer({"note_id": instance.id})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema_for_api_key(
+        success_response=RetrieveNeighborhoodNotesResponseSerializer,
+        additional_params=[RetrieveNeighborhoodNotesRequestSerializer],
+    )
+    def get(self, request, *args, **kwargs):
+        """Retrieve neighborhood notes based on latitude and longitude."""
+        request_serializer = self.get_serializer(data=request.query_params)
+        request_serializer.is_valid(raise_exception=True)
+        data = request_serializer.validated_data
+        lat = data.get("lat")
+        lng = data.get("lng")
+        logger.info(
+            f"Retrieving neighborhood notes for lat={lat}, lng={lng}, but not using them now"
+        )
+        notes = NeighborhoodNotes.objects.all()
+        serializer = RetrieveNeighborhoodNotesResponseSerializer(notes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema_for_device_id(success_response=None)
@@ -94,3 +128,17 @@ class DeleteNeighborhoodNoteView(DeviceIdMixin, generics.GenericAPIView):
 
         note.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RetrieveOwnNeighborhoodNotesView(DeviceIdMixin, generics.GenericAPIView):
+    """Retrieve all neighborhood notes created by the current device."""
+
+    http_method_names = ["get"]
+
+    @extend_schema_for_device_id(
+        success_response=RetrieveNeighborhoodNotesResponseSerializer
+    )
+    def get(self, request, *args, **kwargs):
+        notes = NeighborhoodNotes.objects.filter(external_device_id=self.device_id)
+        serializer = RetrieveNeighborhoodNotesResponseSerializer(notes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
