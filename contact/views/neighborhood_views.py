@@ -1,4 +1,5 @@
 import logging
+import math
 
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -20,6 +21,22 @@ from core.utils.openapi_utils import (
 from core.views.mixins import DeviceIdMixin
 
 logger = logging.getLogger(__name__)
+NOTE_RANGE_METERS = 200  # Define the range for neighborhood notes in meters.
+
+
+def _distance_meters_haversine(lat1, lng1, lat2, lng2):
+    radius = 6371000  # Earth radius in meters.
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    delta_lat = math.radians(lat2 - lat1)
+    delta_lng = math.radians(lng2 - lng1)
+
+    a = (
+        math.sin(delta_lat / 2) ** 2
+        + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lng / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return radius * c
 
 
 class NeighborhoodNoteImageUploadView(generics.GenericAPIView):
@@ -99,14 +116,30 @@ class CreateRetrieveNeighborhoodNoteView(DeviceIdMixin, generics.GenericAPIView)
         request_serializer = self.get_serializer(data=request.query_params)
         request_serializer.is_valid(raise_exception=True)
         data = request_serializer.validated_data
-        lat = data.get("lat")
-        lng = data.get("lng")
-        logger.info(
-            f"Retrieving neighborhood notes for lat={lat}, lng={lng}, but not using them now"
+        lat = data["lat"]
+        lng = data["lng"]
+
+        lat_delta = NOTE_RANGE_METERS / 111320
+        cos_lat = max(0.000001, math.cos(math.radians(lat)))
+        lng_delta = NOTE_RANGE_METERS / (111320 * cos_lat)
+
+        candidate_notes = NeighborhoodNotes.objects.filter(
+            lat__gte=lat - lat_delta,
+            lat__lte=lat + lat_delta,
+            lng__gte=lng - lng_delta,
+            lng__lte=lng + lng_delta,
+        ).prefetch_related("images")
+
+        notes = [
+            note
+            for note in candidate_notes
+            if _distance_meters_haversine(lat, lng, float(note.lat), float(note.lng))
+            <= NOTE_RANGE_METERS
+        ]
+        response_serializer = RetrieveNeighborhoodNotesResponseSerializer(
+            notes, many=True
         )
-        notes = NeighborhoodNotes.objects.all()
-        serializer = RetrieveNeighborhoodNotesResponseSerializer(notes, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema_for_device_id(success_response=None)
@@ -139,6 +172,8 @@ class RetrieveOwnNeighborhoodNotesView(DeviceIdMixin, generics.GenericAPIView):
         success_response=RetrieveNeighborhoodNotesResponseSerializer
     )
     def get(self, request, *args, **kwargs):
-        notes = NeighborhoodNotes.objects.filter(external_device_id=self.device_id)
+        notes = NeighborhoodNotes.objects.filter(
+            external_device_id=self.device_id
+        ).prefetch_related("images")
         serializer = RetrieveNeighborhoodNotesResponseSerializer(notes, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

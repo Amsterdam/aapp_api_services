@@ -83,10 +83,28 @@ class CreateNeighborhoodNoteResponseSerializer(serializers.Serializer):
     note_id = serializers.IntegerField()
 
 
+class NeighborhoodNoteImageResponseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NeighborhoodNotesImage
+        fields = ("foreign_id", "uri", "width", "height")
+
+
 class RetrieveNeighborhoodNotesResponseSerializer(serializers.ModelSerializer):
+    images = NeighborhoodNoteImageResponseSerializer(many=True, read_only=True)
+
     class Meta:
         model = NeighborhoodNotes
-        exclude = ["external_device_id"]
+        fields = (
+            "id",
+            "title",
+            "body",
+            "contact_name",
+            "contact_number",
+            "lat",
+            "lng",
+            "created_at",
+            "images",
+        )
 
 
 class RetrieveNeighborhoodNotesRequestSerializer(serializers.Serializer):
