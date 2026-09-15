@@ -247,12 +247,13 @@ class AddressSearchByCoordinateView(AddressSearchAbstractView):
 
 class AfvalscheidingswijzerView(GenericAPIView):
     http_method_names = ["post"]
+    error_response = {"detail": "Upstream afvalscheidingswijzer error"}
 
     @extend_schema_for_api_key(
         request={"text/plain": OpenApiTypes.STR},
         success_response=OpenApiResponse(
-            response=OpenApiTypes.BINARY,
-            description="Raw upstream response passthrough.",
+            response=OpenApiTypes.OBJECT,
+            description="Parsed upstream payload",
         ),
         additional_responses={
             502: OpenApiResponse(description="Upstream afvalscheidingswijzer error.")
@@ -272,16 +273,30 @@ class AfvalscheidingswijzerView(GenericAPIView):
                 timeout=5,
             )
         except requests.exceptions.RequestException:
-            return Response(
-                {"detail": "Upstream afvalscheidingswijzer error"},
-                status=status.HTTP_502_BAD_GATEWAY,
-            )
+            return Response(self.error_response, status=status.HTTP_502_BAD_GATEWAY)
 
-        return HttpResponse(
-            response.content,
-            status=response.status_code,
-            content_type=response.headers.get("Content-Type"),
-        )
+        try:
+            payload = self._extract_payload(response.text)
+        except ValueError:
+            return Response(self.error_response, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(payload, status=response.status_code)
+
+    @staticmethod
+    def _extract_payload(response_text):
+        payload_lines = [
+            line[len("1:") :]
+            for line in response_text.splitlines()
+            if line.startswith("1:")
+        ]
+        if len(payload_lines) != 1:
+            raise ValueError("Invalid payload line count")
+
+        payload = json.loads(payload_lines[0])
+        if not isinstance(payload, dict):
+            raise ValueError("Payload must be a JSON object")
+
+        return payload
 
 
 class AddressPostalAreaByCoordinateView(GenericAPIView):

@@ -1,5 +1,7 @@
+import json
 import re
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import freezegun
 import responses
@@ -8,6 +10,7 @@ from django.urls import reverse
 from requests.exceptions import RequestException
 
 from bridge.proxy.tests import mock_data
+from bridge.proxy.views import AfvalscheidingswijzerView
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
 
 
@@ -182,63 +185,130 @@ class TestAfvalscheidingswijzerView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("afvalscheidingswijzer")
+        self.expected_payload = json.loads(
+            mock_data.AFVALSCHEIDINGSWIJZER.splitlines()[1][2:]
+        )
+        self.expected_error = {"detail": "Upstream afvalscheidingswijzer error"}
+
+    def _post_plain_text(self, url=None):
+        return self.client.generic(
+            "POST",
+            url or self.url,
+            b"potgrond",
+            content_type="text/plain",
+            headers=self.api_headers,
+        )
 
     def test_success(self):
-        upstream_response = responses.post(
+        upstream_response = Mock(
+            status_code=201,
+            text=mock_data.AFVALSCHEIDINGSWIJZER,
+        )
+
+        with patch(
+            "bridge.proxy.views.requests.post", return_value=upstream_response
+        ) as patched_post:
+            response = AfvalscheidingswijzerView().post(
+                SimpleNamespace(body=b"potgrond")
+            )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data, self.expected_payload)
+        patched_post.assert_called_once_with(
+            settings.AFVALSCHEIDINGSWIJZER_URL,
+            data=b"potgrond",
+            headers={
+                "content-type": "text/plain;charset=UTF-8",
+                "next-action": "40f8fc5dcb243472b32eb5cb1040d8e6e896f79498",
+                "origin": "https://www.afvalscheidingswijzer.nl",
+                "user-agent": "Mozilla/5.0",
+            },
+            timeout=5,
+        )
+
+    def test_success_response_is_json(self):
+        responses.post(
             settings.AFVALSCHEIDINGSWIJZER_URL,
             body=mock_data.AFVALSCHEIDINGSWIJZER,
             content_type="text/x-component",
             status=201,
         )
 
-        response = self.client.post(
-            self.url,
-            data="potgrond",
-            content_type="text/plain",
-            headers=self.api_headers,
-        )
+        response = self._post_plain_text()
 
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.content.decode(), mock_data.AFVALSCHEIDINGSWIJZER)
-        self.assertEqual(response["Content-Type"], "text/x-component")
-        self.assertEqual(upstream_response.call_count, 1)
-        self.assertEqual(
-            upstream_response.calls[0].request.url,
-            settings.AFVALSCHEIDINGSWIJZER_URL,
-        )
-        self.assertEqual(upstream_response.calls[0].request.method, "POST")
-        self.assertEqual(upstream_response.calls[0].request.body, b"potgrond")
-        self.assertEqual(
-            upstream_response.calls[0].request.headers["content-type"],
-            "text/plain;charset=UTF-8",
-        )
-        self.assertEqual(
-            upstream_response.calls[0].request.headers["next-action"],
-            "40f8fc5dcb243472b32eb5cb1040d8e6e896f79498",
-        )
-        self.assertEqual(
-            upstream_response.calls[0].request.headers["origin"],
-            "https://www.afvalscheidingswijzer.nl",
-        )
-        self.assertEqual(
-            upstream_response.calls[0].request.headers["user-agent"],
-            "Mozilla/5.0",
-        )
+        self.assertEqual(response.data, self.expected_payload)
+        self.assertTrue(response["Content-Type"].startswith("application/json"))
 
     @patch("bridge.proxy.views.requests.post", side_effect=RequestException)
     def test_returns_502_on_upstream_failure(self, patched_post):
-        response = self.client.post(
-            self.url,
-            data="potgrond",
-            content_type="text/plain",
-            headers=self.api_headers,
-        )
+        response = self._post_plain_text()
 
         self.assertEqual(response.status_code, 502)
-        self.assertEqual(
-            response.data, {"detail": "Upstream afvalscheidingswijzer error"}
-        )
+        self.assertEqual(response.data, self.expected_error)
         patched_post.assert_called_once()
+
+    def test_returns_502_when_payload_line_is_missing(self):
+        responses.post(
+            settings.AFVALSCHEIDINGSWIJZER_URL,
+            body='0:{"meta":true}\n',
+            content_type="text/x-component",
+            status=200,
+        )
+
+        response = self._post_plain_text()
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.data, self.expected_error)
+
+    def test_returns_502_when_multiple_payload_lines_are_present(self):
+        responses.post(
+            settings.AFVALSCHEIDINGSWIJZER_URL,
+            body='0:{"meta":true}\n1:{"first":true}\n1:{"second":true}\n',
+            content_type="text/x-component",
+            status=200,
+        )
+
+        response = self._post_plain_text()
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.data, self.expected_error)
+
+    def test_returns_502_when_payload_line_contains_invalid_json(self):
+        responses.post(
+            settings.AFVALSCHEIDINGSWIJZER_URL,
+            body='0:{"meta":true}\n1:{invalid json}\n',
+            content_type="text/x-component",
+            status=200,
+        )
+
+        response = self._post_plain_text()
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.data, self.expected_error)
+
+    def test_returns_502_when_payload_is_not_a_json_object(self):
+        responses.post(
+            settings.AFVALSCHEIDINGSWIJZER_URL,
+            body='0:{"meta":true}\n1:[1,2,3]\n',
+            content_type="text/x-component",
+            status=200,
+        )
+
+        response = self._post_plain_text()
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.data, self.expected_error)
+
+    def test_post_only(self):
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_trailing_slash_behavior(self):
+        response = self._post_plain_text(url=f"{self.url}/")
+
+        self.assertEqual(response.status_code, 404)
 
 
 class TestPollingStationsView(ResponsesActivatedAPITestCase):

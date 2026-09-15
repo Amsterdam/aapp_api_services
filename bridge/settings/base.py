@@ -81,5 +81,6 @@ BOAT_CHARGING_ENDPOINTS = {
 }
 
 AFVALSCHEIDINGSWIJZER_URL = os.getenv(
-    "AFVALSCHEIDINGSWIJZER_URL", "https://www.afvalscheidingswijzer.nl/alle-afvalproducten"
+    "AFVALSCHEIDINGSWIJZER_URL",
+    "https://www.afvalscheidingswijzer.nl/alle-afvalproducten",
 )
