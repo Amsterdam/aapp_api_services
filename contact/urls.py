@@ -59,6 +59,11 @@ urlpatterns = [
         name="neighborhood-notes-create",
     ),
     path(
+        BASE_PATH_NEIGHBORHOOD + "/notes/<int:note_id>",
+        neighborhood_views.DeleteNeighborhoodNoteView.as_view(),
+        name="neighborhood-notes-delete",
+    ),
+    path(
         BASE_PATH_NEIGHBORHOOD + "/notes/images",
         neighborhood_views.NeighborhoodNoteImageUploadView.as_view(),
         name="neighborhood-note-images",

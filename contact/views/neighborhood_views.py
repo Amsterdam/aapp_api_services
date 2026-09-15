@@ -1,6 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 
+from contact.models import NeighborhoodNotes
 from contact.serializers.neighborhood_serializers import (
     CreateNeighborhoodNoteRequestSerializer,
     CreateNeighborhoodNoteResponseSerializer,
@@ -72,3 +73,24 @@ class CreateNeighborhoodNoteView(DeviceIdMixin, generics.GenericAPIView):
     def get_success_response(self, instance):
         serializer = CreateNeighborhoodNoteResponseSerializer({"note_id": instance.id})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema_for_device_id(success_response=None)
+class DeleteNeighborhoodNoteView(DeviceIdMixin, generics.GenericAPIView):
+    """Delete a neighborhood note."""
+
+    http_method_names = ["delete"]
+
+    def delete(self, request, note_id, *args, **kwargs):
+        try:
+            note = NeighborhoodNotes.objects.get(
+                id=note_id, external_device_id=self.device_id
+            )
+        except NeighborhoodNotes.DoesNotExist:
+            return Response(
+                {"detail": "Neighborhood note not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        note.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
