@@ -250,10 +250,41 @@ DEFAULT_CHARSET = "utf-8"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-try:
-    REQUEST_LOG_SAMPLE_RATE = float(os.getenv("REQUEST_LOG_SAMPLE_RATE", 1.0))
-except TypeError, ValueError:
-    REQUEST_LOG_SAMPLE_RATE = 1.0
+TELEMETRY_SLOW_REQUEST_THRESHOLD_MS_BY_ENV = {
+    "production": 1500,
+    "acceptance": 1000,
+    "testing": 1000,
+    "development": 1000,
+    "local": 1000,
+}
+TELEMETRY_SUCCESS_SAMPLE_RATE_BY_ENV = {
+    "production": 0.10,
+    "acceptance": 0.50,
+    "testing": 1.00,
+    "development": 1.00,
+    "local": 1.00,
+}
+TELEMETRY_SLOW_REQUEST_THRESHOLD_MS = TELEMETRY_SLOW_REQUEST_THRESHOLD_MS_BY_ENV.get(
+    ENVIRONMENT, 1000
+)
+TELEMETRY_SUCCESS_SAMPLE_RATE = TELEMETRY_SUCCESS_SAMPLE_RATE_BY_ENV.get(
+    ENVIRONMENT, 1.00
+)
+
+# OTLP gRPC endpoint where traces are exported (typically the in-cluster collector).
+OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+OTEL_EXPORTER_OTLP_INSECURE = (
+    os.getenv("OTEL_EXPORTER_OTLP_INSECURE", "true").lower() == "true"
+)
+OTEL_EXPORTER_TIMEOUT_SECONDS = int(os.getenv("OTEL_EXPORTER_TIMEOUT_SECONDS", "10"))
+OTEL_EXPORTER_MAX_QUEUE_SIZE = int(os.getenv("OTEL_EXPORTER_MAX_QUEUE_SIZE", "2048"))
+OTEL_EXPORTER_MAX_BATCH_SIZE = int(os.getenv("OTEL_EXPORTER_MAX_BATCH_SIZE", "512"))
+OTEL_EXPORTER_SCHEDULE_DELAY_MILLIS = int(
+    os.getenv("OTEL_EXPORTER_SCHEDULE_DELAY_MILLIS", "5000")
+)
+OTEL_EXPORTER_EXPORT_TIMEOUT_MILLIS = int(
+    os.getenv("OTEL_EXPORTER_EXPORT_TIMEOUT_MILLIS", "30000")
+)
 
 LOGGING = {
     "version": 1,

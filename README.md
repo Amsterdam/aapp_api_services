@@ -131,6 +131,33 @@ Here are some common issues and their solutions:
 - **Azure Application Insights:** A comprehensive monitoring service that provides real-time error logging, performance tracking, and diagnostic insights to ensure the stability and reliability of our app.
 - **Google Firebase Messaging:** Provides cloud messaging services to send push notifications and in-app messages, enabling real-time communication with users across platforms.
 
+## Telemetry and sampling
+
+Tracing now uses OpenTelemetry with an OTLP gRPC exporter from Django to an OpenTelemetry Collector.
+The Collector is responsible for tail-sampling and exports the sampled traces to Azure Application Insights.
+
+Flow:
+- Django service -> OTLP gRPC (`OTEL_EXPORTER_OTLP_ENDPOINT`, default OTAP value: `http://otel-collector:4317`)
+- OpenTelemetry Collector -> Azure Application Insights
+
+Tail-sampling policy targets:
+- Keep all failed requests
+- Keep slow requests
+    - production threshold: 1500ms
+    - acceptance/development/testing/local threshold: 1000ms
+- Sample successful requests
+    - production: 10%
+    - acceptance: 50%
+    - development/testing/local: 100%
+
+Local/request log sampling mirrors these defaults through Django settings:
+- `TELEMETRY_SLOW_REQUEST_THRESHOLD_MS_BY_ENV`
+- `TELEMETRY_SUCCESS_SAMPLE_RATE_BY_ENV`
+
+Exporter resilience mode:
+- Uses OpenTelemetry `BatchSpanProcessor` with bounded queue and retry behavior.
+- No direct bypass to Azure from Django is used.
+
 
 ## Pre commit hooks
 To use the pre-commit hooks as specified in `.pre-commit-config.yaml`, first install `pre-commit` by running: `pip install pre-commit` (inside your virtual environment). Then run: `pre-commit install`.
