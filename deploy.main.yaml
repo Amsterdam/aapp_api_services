@@ -20,13 +20,13 @@ resources:
   repositories:
     - repository: templates
       type: github
-      endpoint: Amsterdam
+      endpoint: github.com_Amsterdam
       name: Amsterdam/common-azure-pipelines
       ref: refs/tags/1.20.3
 
     - repository: source
       type: git
-      name: Amsterdam-App/aapp_infra_azure
+      name: AMS-PRJ-AAPP/AMS-PRJ-AAPP
       ref: main
       trigger:
         branches:
