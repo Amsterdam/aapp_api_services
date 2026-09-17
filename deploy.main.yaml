@@ -74,7 +74,7 @@ variables:
     value: $[ replace(replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', ''), 'refs/pull/', '') ]
 
   - name: registry
-    value: saks01weuacrpgpgo5qvmwo.azurecr.io
+    value: crsharedaksweu9x4d.azurecr.io
 
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
@@ -100,8 +100,8 @@ stages:
       environment: test
       devopsEnvironment: api-test
       pool: ManagedDevOpsPools
-      namespace: ns-ccc-aapp-tst-01-aapp-test
-      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-tst-01-aapp-test
+      namespace: tst-ams-aapp-aapp-test
+      kubernetesServiceConnection: Azurerm-ams-aapp-tst-weu-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
@@ -122,8 +122,8 @@ stages:
       environment: acc
       devopsEnvironment: api-acc
       pool: ManagedDevOpsPools
-      namespace: ns-ccc-aapp-acc-01-aapp-acc
-      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-acc-01-aapp-acc
+      namespace: acc-ams-aapp-aapp-acc
+      kubernetesServiceConnection: Azurerm-ams-aapp-acc-weu-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
@@ -145,8 +145,8 @@ stages:
       environment: prod
       devopsEnvironment: api-prod
       pool: ManagedDevOpsPools
-      namespace: ns-ccc-aapp-prd-01-aapp-prd
-      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-prd-01-aapp-prd
+      namespace: prd-ams-aapp-aapp-prd
+      kubernetesServiceConnection: Azurerm-ams-aapp-prd-weu-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}

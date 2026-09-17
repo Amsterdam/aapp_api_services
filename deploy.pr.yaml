@@ -68,7 +68,7 @@ variables:
     value: $[ replace(replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', ''), 'refs/pull/', '') ]
 
   - name: registry
-    value: saks01weuacrpgpgo5qvmwo.azurecr.io
+    value: crsharedaksweu9x4d.azurecr.io
 
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
@@ -94,8 +94,8 @@ stages:
       environment: dev
       devopsEnvironment: api-dev
       pool: ManagedDevOpsPools
-      namespace: ns-ccc-aapp-ont-01-aapp-ontw
-      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-ont-01-aapp-ontw
+      namespace: dev-ams-aapp-aapp-ontw
+      kubernetesServiceConnection: Azurerm-ams-aapp-ont-weu-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
