@@ -211,7 +211,7 @@ class LocationDetailView(LocationView):
         sockets = []
         for station in response_json["chargingStations"]:
             for evse in station["evses"]:
-                # add available field to connector based evse "available" flag (logic for flag determined by NRG)
+                # Propagate the NRG-provided EVSE availability flag to each connector.
                 connectors = evse["connectors"]
                 for connector in connectors:
                     connector["available"] = evse["available"]

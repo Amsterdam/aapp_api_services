@@ -52,7 +52,7 @@
 ## Documentation rules
 
 - Update documentation when relevant.
-- Store each services documentation in a separate Markdown file under `/.docs/services`.
+- Store each service's documentation in a separate Markdown file under `/.docs/services`.
 - For the bridge services inside the bridge folder, store documentation in `/.docs/services/bridge`.
 - Store all general documentation in `/.docs/`.
 - Write documentation in clear, concise English. Include the following information:
