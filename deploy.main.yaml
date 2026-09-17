@@ -101,7 +101,7 @@ stages:
       devopsEnvironment: api-test
       pool: ManagedDevOpsPools
       namespace: tst-ams-aapp-aapp-test
-      kubernetesServiceConnection: Azurerm-ams-aapp-tst-weu-01
+      kubernetesServiceConnection: sc-azurerm-ccc-aapp-test-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
@@ -123,7 +123,7 @@ stages:
       devopsEnvironment: api-acc
       pool: ManagedDevOpsPools
       namespace: acc-ams-aapp-aapp-acc
-      kubernetesServiceConnection: Azurerm-ams-aapp-acc-weu-01
+      kubernetesServiceConnection: sc-azurerm-ccc-aapp-acc-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
@@ -146,7 +146,7 @@ stages:
       devopsEnvironment: api-prod
       pool: ManagedDevOpsPools
       namespace: prd-ams-aapp-aapp-prd
-      kubernetesServiceConnection: Azurerm-ams-aapp-prd-weu-01
+      kubernetesServiceConnection: sc-azurerm-ccc-aapp-prd-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}

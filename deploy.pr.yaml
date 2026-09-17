@@ -95,7 +95,7 @@ stages:
       devopsEnvironment: api-dev
       pool: ManagedDevOpsPools
       namespace: dev-ams-aapp-aapp-ontw
-      kubernetesServiceConnection: Azurerm-ams-aapp-ont-weu-01
+      kubernetesServiceConnection: sc-azurerm-ccc-aapp-ont-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
