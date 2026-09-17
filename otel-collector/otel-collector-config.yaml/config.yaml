@@ -1,0 +1,105 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  tail_sampling:
+    decision_wait: 10s
+    expected_new_traces_per_sec: 200
+    num_traces: 50000
+    policies:
+      - name: keep-failed-requests
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+
+      - name: keep-slow-production
+        type: and
+        and:
+          and_sub_policy:
+            - name: production-environment
+              type: string_attribute
+              string_attribute:
+                key: deployment.environment.name
+                values: [production]
+            - name: production-latency-threshold
+              type: latency
+              latency:
+                threshold_ms: 1500
+
+      - name: keep-slow-non-production
+        type: and
+        and:
+          and_sub_policy:
+            - name: non-production-environment
+              type: string_attribute
+              string_attribute:
+                key: deployment.environment.name
+                values: [acceptance, testing, development, local]
+            - name: non-production-latency-threshold
+              type: latency
+              latency:
+                threshold_ms: 1000
+
+      - name: sample-success-production
+        type: and
+        and:
+          and_sub_policy:
+            - name: production-env-success
+              type: string_attribute
+              string_attribute:
+                key: deployment.environment.name
+                values: [production]
+            - name: production-success-rate
+              type: probabilistic
+              probabilistic:
+                sampling_percentage: 10
+
+      - name: sample-success-acceptance
+        type: and
+        and:
+          and_sub_policy:
+            - name: acceptance-env-success
+              type: string_attribute
+              string_attribute:
+                key: deployment.environment.name
+                values: [acceptance]
+            - name: acceptance-success-rate
+              type: probabilistic
+              probabilistic:
+                sampling_percentage: 50
+
+      - name: sample-success-testing-development-local
+        type: and
+        and:
+          and_sub_policy:
+            - name: testing-development-local-env-success
+              type: string_attribute
+              string_attribute:
+                key: deployment.environment.name
+                values: [testing, development, local]
+            - name: testing-development-local-success-rate
+              type: probabilistic
+              probabilistic:
+                sampling_percentage: 100
+
+  batch:
+    send_batch_size: 512
+    timeout: 5s
+
+exporters:
+  azuremonitor:
+    connection_string: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, tail_sampling, batch]
+      exporters: [azuremonitor]
