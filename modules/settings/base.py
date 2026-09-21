@@ -36,8 +36,9 @@ ADMIN_ROLES += ["mbs-admin"]
 MIJN_AMS_API_DOMAIN = os.getenv(
     "MIJN_AMS_API_DOMAIN", "https://mams-t-appservice-bff.azurewebsites.net"
 )
-MIJN_AMS_API_PATHS = {
-    "ALL": "/private/api/v1/services/amsapp/auth/services/all",
-}
+MIJN_AMS_ALL_PATH = "/private/api/v1/services/amsapp/auth/services/all"
 
+MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
 MIJN_AMS_API_KEY_INBOUND = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
+
+MIJN_AMS_SESSION_KEY_HEADER = "X-Amsapp-Session-Token"
