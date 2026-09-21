@@ -1,0 +1,38 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  debug:
+    verbosity: detailed
+
+processors:
+  tail_sampling:
+    decision_wait: 10s
+    policies:
+      - name: http-errors
+        type: numeric_attribute
+        numeric_attribute:
+          key: http.status_code
+          min_value: 400
+          max_value: 599
+      - name: slow-requests
+        type: latency
+        latency:
+          threshold_ms: 1000
+      - name: successful-requests
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [debug]
+      processors: [tail_sampling]
+
