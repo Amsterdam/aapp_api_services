@@ -212,16 +212,16 @@ class LocationDetailView(LocationView):
         for station in response_json["chargingStations"]:
             for evse in station["evses"]:
                 connectors = evse["connectors"]
+                evse_reserved = (
+                    evse["available"] is False
+                    and evse["status"] == "AVAILABLE"
+                    and station["status"] == "AVAILABLE"
+                )
+                if evse_reserved:
+                    evse["status"] = "RESERVED"
                 for connector in connectors:
-                    # determine if a connector (and thus also evse) is reserved. This is the case if all upstream statuses are AVAILABLE, but the evse availability is false.
-                    if (
-                        evse["available"] is False
-                        and evse["status"] == "AVAILABLE"
-                        and station["status"] == "AVAILABLE"
-                        and connector["status"] == "AVAILABLE"
-                    ):
+                    if evse_reserved and connector["status"] == "AVAILABLE":
                         connector["status"] = "RESERVED"
-                        evse["status"] = "RESERVED"
 
                     # Propagate the NRG-provided EVSE availability flag to each connector.
                     connector["available"] = evse["available"]
