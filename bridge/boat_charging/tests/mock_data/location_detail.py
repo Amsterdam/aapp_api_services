@@ -88,9 +88,31 @@ MOCK_RESPONSE = {
                 }
             ],
         },
+        {
+            "id": "VCPS-FRANK",
+            "status": "AVAILABLE",
+            "locationId": "a9d9b42ce3eb4d8cbf50bb6aaeaa6357",
+            "evses": [
+                {
+                    "id": 43,
+                    "ocppEvseId": 1,
+                    "evseId": "1",
+                    "status": "AVAILABLE",
+                    "connectors": [
+                        {
+                            "connectorId": 1,
+                            "maxAmp": 1,
+                            "voltage": 1,
+                            "status": "AVAILABLE",
+                        }
+                    ],
+                    "available": False,
+                }
+            ],
+        },
     ],
     "availableSockets": 1,
-    "totalSockets": 3,
+    "totalSockets": 4,
 }
 
 MOCK_RESPONSE_OFFLINE_CHARGING_STATION = {
