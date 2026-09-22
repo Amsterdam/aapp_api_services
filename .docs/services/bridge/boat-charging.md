@@ -7,7 +7,7 @@ Provide a stable boat charging experience for Amsterdam App by exposing consiste
 - After payment collection, the session is CheckedOut and the socket is blocked for others until session end, or 20 minutes if charging never starts.
 - Availability must be taken from the provided availability boolean (list and detail) and used as source of truth for socket selection.
 - Availability is determined by NRG and is true only when both socket status and charging station status are AVAILABLE.
-- If upstream statuses are AVAILABLE but availability is false, the socket must be treated as RESERVED in API responses to reflect temporary holds.
+- If upstream statuses are AVAILABLE but availability is false, the socket must be treated as OCCUPIED in API responses to reflect temporary holds.
 - Location status is derived as OPERATIVE, OCCUPIED, INOPERATIVE, or UNKNOWN based on connector operability and availability.
 - Location capacity uses the highest relevant connector power, prioritizing operative connectors.
 
