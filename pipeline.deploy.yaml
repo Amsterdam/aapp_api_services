@@ -89,9 +89,8 @@ stages:
   - template: pipeline.stage.prepare.yaml
     parameters:
       ACRKeyvault: ${{ parameters.ACRKeyvault }}
-      ACRtokenServiceconnection: Azurerm-CCC-${{ parameters.teamIdentifier }}-ont-01
-      ACRSecretName: acr-token-ams-${{ parameters.teamIdentifier }}
-      teamIdentifier: ${{ parameters.teamIdentifier }}
+      ACRtokenServiceconnection: Azurerm-CCC-AAPP-ont-01
+      ACRSecretName: acr-token-ams-AAPP
 
   # --------------------
   # BUILD
@@ -111,7 +110,7 @@ stages:
       devopsEnvironment: api-test
       pool: ManagedDevOpsPools
       namespace: tst-ams-aapp-aapp-test
-      kubernetesServiceConnection: sc-azurerm-ccc-aapp-test-01
+      serviceConnection: sc-azurerm-ccc-aapp-test-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
@@ -133,7 +132,7 @@ stages:
       devopsEnvironment: api-acc
       pool: ManagedDevOpsPools
       namespace: acc-ams-aapp-aapp-acc
-      kubernetesServiceConnection: sc-azurerm-ccc-aapp-acc-01
+      serviceConnection: sc-azurerm-ccc-aapp-acc-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
@@ -156,7 +155,7 @@ stages:
       devopsEnvironment: api-prod
       pool: ManagedDevOpsPools
       namespace: prd-ams-aapp-aapp-prd
-      kubernetesServiceConnection: sc-azurerm-ccc-aapp-prd-01
+      serviceConnection: sc-azurerm-ccc-aapp-prd-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}

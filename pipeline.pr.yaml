@@ -85,15 +85,11 @@ stages:
       ACRKeyvault: ${{ parameters.ACRKeyvault }}
       ACRtokenServiceconnection: Azurerm-CCC-AAPP-ont-01
       ACRSecretName: acr-token-ams-AAPP
-      ACRUser: ams-AAPP-token
 
   # --------------------
   # BUILD
   # --------------------
   - template: pipeline.stage.build.yaml
-    variables:
-      ACRToken: $[ stageDependencies.prepare.Get_ACR_Credentials.outputs['Get_ACR_Credentials.token'] ]
-      ACRUser: ams-AAPP-token
     parameters:
       services: ${{ parameters.services }}
       stageDisplayName: Build & push
@@ -103,15 +99,12 @@ stages:
   # DEV
   # --------------------
   - template: pipeline.stage.deploy.yaml
-    variables:
-      ACRToken: $[ stageDependencies.prepare.Get_ACR_Credentials.outputs['Get_ACR_Credentials.token'] ]
-      ACRUser: ams-AAPP-token
     parameters:
       environment: dev
       devopsEnvironment: api-dev
       pool: ManagedDevOpsPools
       namespace: dev-ams-aapp-aapp-ontw
-      kubernetesServiceConnection: sc-azurerm-ccc-aapp-ont-01
+      serviceConnection: sc-azurerm-ccc-aapp-ont-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}

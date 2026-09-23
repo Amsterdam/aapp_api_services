@@ -38,8 +38,11 @@ parameters:
 
 stages:
 - stage: ${{ parameters.environment }}
-  dependsOn: prepare
   displayName: Deploy to ${{ parameters.environment }}
+  dependsOn: prepare
+  variables:
+    ACRToken: $[ stageDependencies.prepare.Get_ACR_Credentials.outputs['Get_ACR_Credentials.token'] ]
+    ACRUser: ams-AAPP-token
 
   ${{ if parameters.condition }}:
     condition: ${{ parameters.condition }}
