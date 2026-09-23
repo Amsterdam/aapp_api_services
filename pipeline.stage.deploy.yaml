@@ -20,6 +20,12 @@ parameters:
   - name: serviceConnection
     type: string
 
+  - name: clusterName
+    type: string
+
+  - name: resourceGroup
+    type: string
+
   - name: services
     type: object
 
