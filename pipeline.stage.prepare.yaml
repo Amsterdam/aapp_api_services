@@ -10,6 +10,7 @@ parameters:
 
 jobs:
   - job: Get_ACR_Credentials
+    pool: ManagedDevOpsPools
     steps:
       - task: AzureCLI@2
         name: Get_ACR_Credentials
