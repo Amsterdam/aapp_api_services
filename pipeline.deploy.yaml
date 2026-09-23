@@ -86,11 +86,14 @@ stages:
   # --------------------
   # PREPARE
   # --------------------
-  - template: pipeline.stage.prepare.yaml
-    parameters:
-      ACRKeyvault: ${{ parameters.ACRKeyvault }}
-      ACRtokenServiceconnection: Azurerm-CCC-AAPP-ont-01
-      ACRSecretName: acr-token-ams-AAPP
+  - stage: prepare
+    displayName: preparing variables
+    jobs:
+      - template: pipeline.stage.prepare.yaml
+        parameters:
+          ACRKeyvault: shared-o-njo5j7pxxiapu
+          ACRtokenServiceconnection: Azurerm-CCC-AAPP-ont-01
+          ACRSecretName: acr-token-ams-AAPP
 
   # --------------------
   # BUILD
