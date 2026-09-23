@@ -86,7 +86,7 @@ stages:
       - template: pipeline.stage.prepare.yaml
         parameters:
           ACRKeyvault: shared-o-njo5j7pxxiapu
-          ACRtokenServiceconnection: Azurerm-CCC-AAPP-ont-01
+          ACRtokenServiceconnection: sc-azurerm-ccc-aapp-ont-01
           ACRSecretName: acr-token-ams-AAPP
 
   # --------------------
