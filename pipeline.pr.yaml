@@ -20,8 +20,8 @@ resources:
     - repository: templates
       type: github
       endpoint: github.com_Amsterdam
-      name: Amsterdam/common-azure-pipelines
-      ref: refs/tags/1.20.3
+      name: Amsterdam/common-amsterdam-pipelines
+      ref: refs/tags/1.0.0
 
     # Infra repo used by deploy.stage.yaml (it does `checkout: source`)
     # No trigger here: infra changes should not start this PR pipeline.
@@ -78,9 +78,22 @@ variables:
 
 stages:
   # --------------------
+  # PREPARE
+  # --------------------
+  - template: pipeline.stage.prepare.yaml
+    parameters:
+      ACRKeyvault: ${{ parameters.ACRKeyvault }}
+      ACRtokenServiceconnection: Azurerm-CCC-AAPP-ont-01
+      ACRSecretName: acr-token-ams-AAPP
+      ACRUser: ams-AAPP-token
+
+  # --------------------
   # BUILD
   # --------------------
-  - template: deploy.build-stage.yaml
+  - template: pipeline.stage.build.yaml
+    variables:
+      ACRToken: $[ stageDependencies.prepare.Get_ACR_Credentials.outputs['Get_ACR_Credentials.token'] ]
+      ACRUser: ams-AAPP-token
     parameters:
       services: ${{ parameters.services }}
       stageDisplayName: Build & push
@@ -89,7 +102,10 @@ stages:
   # --------------------
   # DEV
   # --------------------
-  - template: deploy.stage.yaml
+  - template: pipeline.stage.deploy.yaml
+    variables:
+      ACRToken: $[ stageDependencies.prepare.Get_ACR_Credentials.outputs['Get_ACR_Credentials.token'] ]
+      ACRUser: ams-AAPP-token
     parameters:
       environment: dev
       devopsEnvironment: api-dev

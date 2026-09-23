@@ -17,7 +17,7 @@ parameters:
   - name: namespace
     type: string
 
-  - name: kubernetesServiceConnection
+  - name: serviceConnection
     type: string
 
   - name: services
@@ -38,6 +38,7 @@ parameters:
 
 stages:
 - stage: ${{ parameters.environment }}
+  dependsOn: prepare
   displayName: Deploy to ${{ parameters.environment }}
 
   ${{ if parameters.condition }}:
@@ -58,61 +59,67 @@ stages:
             deploy:
               steps:
                 - checkout: source
-
+                
                 - task: Kubernetes@1
                   displayName: Login to cluster
                   inputs:
-                    connectionType: Kubernetes Service Connection
-                    kubernetesServiceEndpoint: ${{ parameters.kubernetesServiceConnection }}
+                    connectionType: Azure Resource Manager
+                    azureSubscriptionEndpoint: ${{ parameters.serviceConnection }}
+                    azureResourceGroup: ${{ parameters.resourceGroup }}
+                    kubernetesCluster: ${{ parameters.clusterName }}
                     namespace: ${{ parameters.namespace }}
                     command: login
 
                 - script: |
-                    az login --identity
-                    az acr login -n $(registry)
+                    echo "$ACR_TOKEN" | docker login $(registry) \
+                      --username "$ACR_USER" \
+                      --password-stdin
                   displayName: ACR login
+                  env:
+                    ACR_USER: $(ACRUser)
+                    ACR_TOKEN: $(ACRToken)
 
                 - script: |
                     kubectl config set-context deploy --namespace=${{ parameters.namespace }}
                     kubectl config use-context deploy
                   displayName: Setup kubectl
 
-                - ${{ if eq(parameters.environment, 'prod') }}:
-                  # LOCK PRODUCTION IMAGES AND UNLOCK PREVIOUS IMAGES
-                  - script: |
-                      set -euo pipefail
+                # - ${{ if eq(parameters.environment, 'prod') }}:
+                #   # LOCK PRODUCTION IMAGES AND UNLOCK PREVIOUS IMAGES
+                #   - script: |
+                #       set -euo pipefail
 
-                      repository="aapp/images/app-${{ service }}"
+                #       repository="aapp/images/app-${{ service }}"
 
-                      # Unlock only locked tags (exclude newest 3)
-                      for tag in $(az acr repository show-tags \
-                        --name "$(registry)" \
-                        --repository "$repository" \
-                        --detail \
-                        --orderby time_desc \
-                        --query '[?changeableAttributes.writeEnabled == `false`].name | [3:]' \
-                        --output tsv)
-                      do
-                        image="${repository}:${tag}"
-                        echo "Unlocking image: $image"
+                #       # Unlock only locked tags (exclude newest 3)
+                #       for tag in $(az acr repository show-tags \
+                #         --name "$(registry)" \
+                #         --repository "$repository" \
+                #         --detail \
+                #         --orderby time_desc \
+                #         --query '[?changeableAttributes.writeEnabled == `false`].name | [3:]' \
+                #         --output tsv)
+                #       do
+                #         image="${repository}:${tag}"
+                #         echo "Unlocking image: $image"
 
-                        az acr repository update \
-                          --name "$(registry)" \
-                          --image "$image" \
-                          --write-enabled true \
-                          --output none
-                      done
+                #         az acr repository update \
+                #           --name "$(registry)" \
+                #           --image "$image" \
+                #           --write-enabled true \
+                #           --output none
+                #       done
 
-                      # Lock the newly produced image
-                      image="${repository}:$(version)"
-                      echo "Locking image: $image"
+                #       # Lock the newly produced image
+                #       image="${repository}:$(version)"
+                #       echo "Locking image: $image"
 
-                      az acr repository update \
-                        --name "$(registry)" \
-                        --image "$image" \
-                        --write-enabled false \
-                        --output none
-                    displayName: "Unlock previous tags and lock app-${{ service }}"
+                #       az acr repository update \
+                #         --name "$(registry)" \
+                #         --image "$image" \
+                #         --write-enabled false \
+                #         --output none
+                #     displayName: "Unlock previous tags and lock app-${{ service }}"
 
                 - ${{ if eq(parameters.force, true) }}:
                   - script: helm uninstall $(service_name) --ignore-not-found

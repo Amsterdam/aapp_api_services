@@ -1,0 +1,39 @@
+parameters:
+  - name: ACRtokenServiceconnection
+    type: string
+
+  - name: ACRKeyvault
+    type: string
+
+  - name: ACRSecretName
+    type: string
+
+jobs:
+  - job: Get_ACR_Credentials
+    steps:
+      - task: AzureCLI@2
+        name: Get_ACR_Credentials
+        displayName: "Get ACR credentials"
+        inputs:
+          azureSubscription: ${{ parameters.ACRtokenServiceconnection }}
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            set -euo pipefail
+
+            echo "##[section]Retrieving ACR token secret from Key Vault '${{ parameters.acrKeyvault }}'"
+            token="$(az keyvault secret show \
+              --vault-name "${{ parameters.acrKeyvault }}" \
+              --name "${{ parameters.acrSecretName }}" \
+              --query value \
+              -o tsv)"
+
+            if [ -z "$token" ]; then
+              echo "##[error]Secret '${{ parameters.acrSecretName }}' was not found or is empty in Key Vault '${{ parameters.acrKeyvault }}'."
+              echo "Check your Solvinity shared-aks.json if the keyvault is set and the vault name matches the acrKeyvault and the secretname matches acrSecretName"
+              exit 1
+            fi
+
+            echo "##vso[task.setvariable variable=token;issecret=true;isOutput=true]$token"
+            echo "##[section]ACR accesstoken retrieved from Key Vault"
+            

@@ -84,9 +84,19 @@ variables:
 
 stages:
   # --------------------
+  # PREPARE
+  # --------------------
+  - template: pipeline.stage.prepare.yaml
+    parameters:
+      ACRKeyvault: ${{ parameters.ACRKeyvault }}
+      ACRtokenServiceconnection: Azurerm-CCC-${{ parameters.teamIdentifier }}-ont-01
+      ACRSecretName: acr-token-ams-${{ parameters.teamIdentifier }}
+      teamIdentifier: ${{ parameters.teamIdentifier }}
+
+  # --------------------
   # BUILD
   # --------------------
-  - template: deploy.build-stage.yaml
+  - template: pipeline.stage.build.yaml
     parameters:
       services: ${{ parameters.services }}
       stageDisplayName: Build, test, analyze & push
@@ -95,7 +105,7 @@ stages:
   # --------------------
   # TEST
   # --------------------
-  - template: deploy.stage.yaml
+  - template: pipeline.stage.deploy.yaml
     parameters:
       environment: test
       devopsEnvironment: api-test
@@ -117,7 +127,7 @@ stages:
   # --------------------
   # ACC
   # --------------------
-  - template: deploy.stage.yaml
+  - template: pipeline.stage.deploy.yaml
     parameters:
       environment: acc
       devopsEnvironment: api-acc
@@ -140,7 +150,7 @@ stages:
   # --------------------
   # PROD
   # --------------------
-  - template: deploy.stage.yaml
+  - template: pipeline.stage.deploy.yaml
     parameters:
       environment: prod
       devopsEnvironment: api-prod
