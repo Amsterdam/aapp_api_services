@@ -45,6 +45,10 @@ parameters:
     type: string
     default: ''
 
+  - name: workingDirectory
+    type: string
+    default: $[variables['Build.SourcesDirectory']]
+
 
 stages:
 - stage: ${{ parameters.environment }}
@@ -75,6 +79,9 @@ stages:
               steps:
                 - checkout: source
                 
+                - task: KubeloginInstaller@0
+                  displayName: Install kubelogin
+                
                 - task: AzureCLI@2
                   displayName: Configure kubectl
                   inputs:
@@ -82,6 +89,7 @@ stages:
                     scriptType: bash
                     scriptLocation: inlineScript
                     useGlobalConfig: true
+                    workingDirectory: ${{ parameters.workingDirectory }}
                     inlineScript: |
                       set -euo pipefail
 
