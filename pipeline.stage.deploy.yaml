@@ -14,6 +14,10 @@ parameters:
   - name: pool
     type: string
 
+  - name: aksSubscriptionId
+    type: string
+    default: "a1943d29-3d62-4c2c-bd3b-483e39436191"
+
   - name: serviceConnection
     type: string
 
@@ -81,8 +85,8 @@ stages:
                     inlineScript: |
                       set -euo pipefail
 
-                      az account set \
-                        --subscription "${{ parameters.serviceConnection }}"
+                      echo "subscription ID is:" "${{ parameters.aksSubscriptionId }}"
+                      az account set --subscription "${{ parameters.aksSubscriptionId }}"
 
                       az aks get-credentials \
                         --name "${{ parameters.clusterName }}" \
