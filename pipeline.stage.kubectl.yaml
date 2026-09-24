@@ -11,7 +11,7 @@ parameters:
 
   - name: workingDirectory
     type: string
-    default: $[variables['Build.SourcesDirectory']]
+    default: $(Pipeline.Workspace)/s/source
 
   - name: displayName
     type: string

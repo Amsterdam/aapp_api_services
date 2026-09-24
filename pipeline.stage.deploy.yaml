@@ -68,6 +68,7 @@ stages:
             deploy:
               steps:
                 - checkout: source
+                  path: s/source
 
                 - task: Docker@2
                   inputs:
@@ -92,7 +93,7 @@ stages:
                       displayName: Rollback migration ($(service_name))
                       serviceConnection: ${{ parameters.serviceConnection }}
                       namespace: ${{ parameters.namespace }}
-                      script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make -C "$(Pipeline.Workspace)/s/source" rollback/${{ service }}
+                      script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/${{ service }}
 
 
                 - template: pipeline.stage.kubectl.yaml
@@ -100,7 +101,7 @@ stages:
                     displayName: Deploy ($(service_name))
                     serviceConnection: ${{ parameters.serviceConnection }}
                     namespace: ${{ parameters.namespace }}
-                    script: make -C "$(Pipeline.Workspace)/s/source" deploy/${{ service }}
+                    script: make deploy/${{ service }}
 
                 - ${{ if eq(parameters.environment, 'acc') }}:
                   - script: |
