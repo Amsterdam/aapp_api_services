@@ -92,7 +92,7 @@ stages:
                       displayName: Rollback migration ($(service_name))
                       serviceConnection: ${{ parameters.serviceConnection }}
                       namespace: ${{ parameters.namespace }}
-                      script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/${{ service }}
+                      script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make -C "$(Pipeline.Workspace)/s/source" rollback/${{ service }}
 
 
                 - template: pipeline.stage.kubectl.yaml
@@ -100,7 +100,7 @@ stages:
                     displayName: Deploy ($(service_name))
                     serviceConnection: ${{ parameters.serviceConnection }}
                     namespace: ${{ parameters.namespace }}
-                    script: make deploy/${{ service }}
+                    script: make -C "$(Pipeline.Workspace)/s/source" deploy/${{ service }}
 
                 - ${{ if eq(parameters.environment, 'acc') }}:
                   - script: |

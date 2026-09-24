@@ -27,7 +27,7 @@ steps:
       azureSubscription: ${{ parameters.serviceConnection }}
       scriptType: bash
       scriptLocation: inlineScript
-      workingDirectory: $(Pipeline.Workspace)/s/source
+      workingDirectory: ${{ parameters.workingDirectory }}
       inlineScript: |
         echo "Working directory:"
         pwd
