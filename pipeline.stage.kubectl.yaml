@@ -6,12 +6,6 @@ parameters:
     type: string
     default: "a1943d29-3d62-4c2c-bd3b-483e39436191"
 
-  - name: saksResourceGroup
-    type: string
-
-  - name: saksResourceName
-    type: string
-
   - name: namespace
     type: string
 
