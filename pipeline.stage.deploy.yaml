@@ -45,10 +45,6 @@ parameters:
     type: string
     default: ''
 
-  - name: workingDirectory
-    type: string
-    default: $[variables['Build.SourcesDirectory']]
-
 
 stages:
 - stage: ${{ parameters.environment }}
@@ -72,7 +68,6 @@ stages:
         variables:
           environment: ${{ parameters.environment }}
           service_name: ${{ replace(service, '_', '-') }}
-          envShort: 'o'
 
         strategy:
           runOnce:
@@ -88,10 +83,7 @@ stages:
                     parameters:
                       displayName: Helm uninstall ($(service_name))
                       serviceConnection: ${{ parameters.serviceConnection }}
-                      saksResourceGroup: aks-$(envShort)-rg
-                      saksResourceName: aks-$(envShort)-weu-001
                       namespace: ${{ parameters.namespace }}
-                      workingDirectory: ${{ parameters.workingDirectory }}
                       script: helm uninstall $(service_name) --ignore-not-found
 
                 - ${{ if ne(parameters.migrationRollbackTarget, ' ') }}:
@@ -99,10 +91,7 @@ stages:
                     parameters:
                       displayName: Rollback migration ($(service_name))
                       serviceConnection: ${{ parameters.serviceConnection }}
-                      saksResourceGroup: aks-$(envShort)-rg
-                      saksResourceName: aks-$(envShort)-weu-001
                       namespace: ${{ parameters.namespace }}
-                      workingDirectory: ${{ parameters.workingDirectory }}
                       script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/${{ service }}
 
 
@@ -110,10 +99,7 @@ stages:
                   parameters:
                     displayName: Deploy ($(service_name))
                     serviceConnection: ${{ parameters.serviceConnection }}
-                    saksResourceGroup: aks-$(envShort)-rg
-                    saksResourceName: aks-$(envShort)-weu-001
                     namespace: ${{ parameters.namespace }}
-                    workingDirectory: ${{ parameters.workingDirectory }}
                     script: make deploy/${{ service }}
 
                 - ${{ if eq(parameters.environment, 'acc') }}:

@@ -38,8 +38,8 @@ steps:
         echo "subscription ID is:" "${{ parameters.aksSubscriptionId }}"
         az account set --subscription "${{ parameters.aksSubscriptionId }}"
         az aks get-credentials \
-          --name ${{ parameters.saksResourceName }} \
-          --resource-group ${{ parameters.saksResourceGroup }} \
+          --name aks-$(environment)-weu-001 \
+          --resource-group aks-$(environment)-rg \
           --overwrite-existing
         kubelogin convert-kubeconfig -l azurecli
         kubectl config set-context --current --namespace "${{ parameters.namespace }}"
