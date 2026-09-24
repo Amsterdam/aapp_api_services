@@ -15,13 +15,6 @@ DATABASES["notification"]["PASSWORD"] = POSTGRES_PASSWORD
 DATABASES["default"]["CONN_MAX_AGE"] = 60
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
-OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv(
-    "OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317"
-)
-OTEL_EXPORTER_OTLP_INSECURE = (
-    os.getenv("OTEL_EXPORTER_OTLP_INSECURE", "true").lower() == "true"
-)
-
 STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME")
 STORAGES = {
     "default": {
