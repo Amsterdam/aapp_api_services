@@ -27,7 +27,7 @@ steps:
       azureSubscription: ${{ parameters.serviceConnection }}
       scriptType: bash
       scriptLocation: inlineScript
-      workingDirectory: ${{ parameters.workingDirectory }}
+      workingDirectory: source
       inlineScript: |
         echo "subscription ID is:" "${{ parameters.aksSubscriptionId }}"
         az account set --subscription "${{ parameters.aksSubscriptionId }}"

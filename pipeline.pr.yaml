@@ -111,5 +111,3 @@ stages:
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
-      clusterName: aks-dev-weu-001
-      resourceGroup: aks-dev-rg
