@@ -1,0 +1,125 @@
+#################################################
+#
+# Deployment stage template
+#
+#################################################
+
+parameters:
+  - name: environment
+    type: string
+
+  - name: devopsEnvironment
+    type: string
+
+  - name: pool
+    type: string
+
+  - name: aksSubscriptionId
+    type: string
+    default: "a1943d29-3d62-4c2c-bd3b-483e39436191"
+
+  - name: serviceConnection
+    type: string
+
+  - name: namespace
+    type: string
+
+  - name: services
+    type: object
+
+  - name: force
+    type: boolean
+    default: false
+
+  - name: migrationRollbackTarget
+    type: string
+    default: ' '
+
+  - name: condition
+    type: string
+    default: ''
+
+
+stages:
+- stage: ${{ parameters.environment }}
+  displayName: Deploy to ${{ parameters.environment }}
+  dependsOn:
+    - prepare
+    - build
+  variables:
+    ACRToken: $[ stageDependencies.prepare.Get_ACR_Credentials.outputs['Get_ACR_Credentials.token'] ]
+    ACRUser: ams-AAPP-token
+
+  ${{ if parameters.condition }}:
+    condition: ${{ parameters.condition }}
+
+  jobs:
+    - ${{ each service in parameters.services }}:
+      - deployment: deploy_${{ service }}
+        displayName: Deploy ${{ service }}
+        pool: ${{ parameters.pool }}
+        environment: ${{ parameters.devopsEnvironment }}
+        variables:
+          environment: ${{ parameters.environment }}
+          service_name: ${{ replace(service, '_', '-') }}
+
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: source
+                  path: s/source
+
+                - task: Docker@2
+                  displayName: Docker hub login
+                  inputs:
+                    command: login
+                    containerRegistry: Shared-Dockerhub-Datapunt
+                  
+                - script: |
+                    echo "$ACR_TOKEN" | docker login $(registry) \
+                      --username "$ACR_USER" \
+                      --password-stdin
+                    echo "$ACR_TOKEN" | helm registry login $(registry) \
+                      --username "$ACR_USER" \
+                      --password-stdin
+                  displayName: ACR login
+                  env:
+                    ACR_USER: $(ACRUser)
+                    ACR_TOKEN: $(ACRToken)
+                
+                - task: KubeloginInstaller@0
+                  displayName: Install kubelogin
+                
+                - ${{ if eq(parameters.force, true) }}:
+                  - template: pipeline.stage.kubectl.yaml
+                    parameters:
+                      displayName: Helm uninstall ($(service_name))
+                      serviceConnection: ${{ parameters.serviceConnection }}
+                      namespace: ${{ parameters.namespace }}
+                      script: helm uninstall $(service_name) --ignore-not-found
+
+                - ${{ if ne(parameters.migrationRollbackTarget, ' ') }}:
+                  - template: pipeline.stage.kubectl.yaml
+                    parameters:
+                      displayName: Rollback migration ($(service_name))
+                      serviceConnection: ${{ parameters.serviceConnection }}
+                      namespace: ${{ parameters.namespace }}
+                      script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/${{ service }}
+
+
+                - template: pipeline.stage.kubectl.yaml
+                  parameters:
+                    displayName: Deploy ($(service_name))
+                    serviceConnection: ${{ parameters.serviceConnection }}
+                    namespace: ${{ parameters.namespace }}
+                    script: make deploy/${{ service }}
+
+                - ${{ if eq(parameters.environment, 'acc') }}:
+                  - script: |
+                      docker run --rm openapitools/openapi-diff:latest "https://app.amsterdam.nl/$(service_name)/api/v1/openapi" "https://acc.app.amsterdam.nl/$(service_name)/api/v1/openapi" | tee diff_output.txt
+                      cat diff_output.txt
+                      if grep -q "API changes broke backward compatibility" diff_output.txt; then
+                        echo "##vso[task.complete result=SucceededWithIssues;]Breaking OpenAPI changes detected!"
+                      fi
+                    displayName: Run openapi-diff

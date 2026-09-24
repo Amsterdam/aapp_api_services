@@ -19,15 +19,15 @@ resources:
   repositories:
     - repository: templates
       type: github
-      endpoint: Amsterdam
-      name: Amsterdam/common-azure-pipelines
-      ref: refs/tags/1.20.3
+      endpoint: github.com_Amsterdam
+      name: Amsterdam/common-amsterdam-pipelines
+      ref: refs/tags/1.0.0
 
     # Infra repo used by deploy.stage.yaml (it does `checkout: source`)
     # No trigger here: infra changes should not start this PR pipeline.
     - repository: source
       type: git
-      name: Amsterdam-App/aapp_infra_azure
+      name: AMS-PRJ-AAPP/AMS-PRJ-AAPP
       ref: main
 
 parameters:
@@ -68,7 +68,7 @@ variables:
     value: $[ replace(replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', ''), 'refs/pull/', '') ]
 
   - name: registry
-    value: saks01weuacrpgpgo5qvmwo.azurecr.io
+    value: crsharedaksweu9x4d.azurecr.io
 
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
@@ -78,9 +78,21 @@ variables:
 
 stages:
   # --------------------
+  # PREPARE
+  # --------------------
+  - stage: prepare
+    displayName: preparing variables
+    jobs:
+      - template: pipeline.stage.prepare.yaml
+        parameters:
+          ACRKeyvault: shared-o-njo5j7pxxiapu
+          ACRtokenServiceconnection: sc-azurerm-ccc-aapp-ont-01
+          ACRSecretName: acr-token-ams-AAPP
+
+  # --------------------
   # BUILD
   # --------------------
-  - template: deploy.build-stage.yaml
+  - template: pipeline.stage.build.yaml
     parameters:
       services: ${{ parameters.services }}
       stageDisplayName: Build & push
@@ -89,13 +101,13 @@ stages:
   # --------------------
   # DEV
   # --------------------
-  - template: deploy.stage.yaml
+  - template: pipeline.stage.deploy.yaml
     parameters:
       environment: dev
       devopsEnvironment: api-dev
       pool: ManagedDevOpsPools
-      namespace: ns-ccc-aapp-ont-01-aapp-ontw
-      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-ont-01-aapp-ontw
+      namespace: dev-ams-aapp-aapp-ontw
+      serviceConnection: sc-azurerm-ccc-aapp-ont-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}

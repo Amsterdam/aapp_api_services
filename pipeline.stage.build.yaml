@@ -19,6 +19,10 @@ parameters:
 stages:
   - stage: build
     displayName: ${{ parameters.stageDisplayName }}
+    dependsOn: prepare
+    variables:
+      ACRToken: $[ stageDependencies.prepare.Get_ACR_Credentials.outputs['Get_ACR_Credentials.token'] ]
+      ACRUser: ams-AAPP-token
     jobs:
       - job: build
         pool: ManagedDevOpsPools
@@ -40,9 +44,13 @@ stages:
             displayName: Docker hub login
 
           - script: |
-              az login --identity
-              az acr login -n $(registry)
+              echo "$ACR_TOKEN" | docker login $(registry) \
+                --username "$ACR_USER" \
+                --password-stdin
             displayName: ACR login
+            env:
+              ACR_USER: $(ACRUser)
+              ACR_TOKEN: $(ACRToken)
 
           # BUILD
           - script: SERVICE_NAME=$(SERVICE_NAME) make build
