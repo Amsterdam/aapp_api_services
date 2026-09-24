@@ -71,10 +71,22 @@ stages:
                   path: s/source
 
                 - task: Docker@2
+                  displayName: Docker hub login
                   inputs:
                     command: login
                     containerRegistry: Shared-Dockerhub-Datapunt
-                  displayName: Docker hub login
+                  
+                - script: |
+                    echo "$ACR_TOKEN" | docker login $(registry) \
+                      --username "$ACR_USER" \
+                      --password-stdin
+                    echo "$ACR_TOKEN" | helm registry login $(registry) \
+                      --username "$ACR_USER" \
+                      --password-stdin
+                  displayName: ACR login
+                  env:
+                    ACR_USER: $(ACRUser)
+                    ACR_TOKEN: $(ACRToken)
                 
                 - task: KubeloginInstaller@0
                   displayName: Install kubelogin
