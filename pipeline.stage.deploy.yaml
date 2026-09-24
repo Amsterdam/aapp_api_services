@@ -14,13 +14,13 @@ parameters:
   - name: pool
     type: string
 
-  - name: namespace
-    type: string
-
   - name: serviceConnection
     type: string
 
   - name: clusterName
+    type: string
+
+  - name: namespace
     type: string
 
   - name: resourceGroup
@@ -71,15 +71,30 @@ stages:
               steps:
                 - checkout: source
                 
-                - task: Kubernetes@1
-                  displayName: Login to cluster
+                - task: AzureCLI@2
+                  displayName: Configure kubectl
                   inputs:
-                    connectionType: Azure Resource Manager
-                    azureSubscriptionEndpoint: ${{ parameters.serviceConnection }}
-                    azureResourceGroup: ${{ parameters.resourceGroup }}
-                    kubernetesCluster: ${{ parameters.clusterName }}
-                    namespace: ${{ parameters.namespace }}
-                    command: login
+                    azureSubscription: ${{ parameters.serviceConnection }}
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    useGlobalConfig: true
+                    inlineScript: |
+                      set -euo pipefail
+
+                      az account set \
+                        --subscription "${{ parameters.serviceConnection }}"
+
+                      az aks get-credentials \
+                        --name "${{ parameters.clusterName }}" \
+                        --resource-group "${{ parameters.resourceGroup }}" \
+                        --overwrite-existing
+
+                      kubelogin convert-kubeconfig -l azurecli
+
+                      kubectl config set-context --current \
+                        --namespace "${{ parameters.namespace }}"
+
+                      kubectl get pods
 
                 - script: |
                     echo "$ACR_TOKEN" | docker login $(registry) \
@@ -89,11 +104,6 @@ stages:
                   env:
                     ACR_USER: $(ACRUser)
                     ACR_TOKEN: $(ACRToken)
-
-                - script: |
-                    kubectl config set-context deploy --namespace=${{ parameters.namespace }}
-                    kubectl config use-context deploy
-                  displayName: Setup kubectl
 
                 - ${{ if eq(parameters.environment, 'prod') }}:
                   # LOCK PRODUCTION IMAGES AND UNLOCK PREVIOUS IMAGES
