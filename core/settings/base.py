@@ -295,11 +295,6 @@ LOGGING = {
             "format": "%(name)s - %(message)s",
         },
     },
-    "filters": {
-        "request_sampling": {
-            "()": "core.utils.logging_utils.RequestLogSamplingFilter",
-        },
-    },
     "handlers": {
         "console": {
             "class": "rich.logging.RichHandler",
@@ -322,12 +317,6 @@ LOGGING = {
             "handlers": ["console"],
             "level": "DEBUG" if DEBUG else "INFO",
             "propagate": False,
-        },
-        "django.server": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-            "filters": ["request_sampling"],
         },
         "httpx": {
             "handlers": ["console"],

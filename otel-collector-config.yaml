@@ -1,3 +1,7 @@
+# OpenTelemetry Collector Configuration
+# This is only used for local development and debugging purposes
+# The 'real' configuration is specified in the infra repository.
+
 receivers:
   otlp:
     protocols:
@@ -31,6 +35,9 @@ processors:
 
 service:
   pipelines:
+    logs:
+      receivers: [otlp]
+      exporters: [debug]
     traces:
       receivers: [otlp]
       exporters: [debug]
