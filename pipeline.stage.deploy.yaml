@@ -72,6 +72,7 @@ stages:
         variables:
           environment: ${{ parameters.environment }}
           service_name: ${{ replace(service, '_', '-') }}
+          envShort: 'o'
 
         strategy:
           runOnce:
@@ -82,97 +83,38 @@ stages:
                 - task: KubeloginInstaller@0
                   displayName: Install kubelogin
                 
-                - task: AzureCLI@2
-                  displayName: Configure kubectl
-                  inputs:
-                    azureSubscription: ${{ parameters.serviceConnection }}
-                    scriptType: bash
-                    scriptLocation: inlineScript
-                    useGlobalConfig: true
-                    workingDirectory: ${{ parameters.workingDirectory }}
-                    inlineScript: |
-                      set -euo pipefail
-
-                      echo "subscription ID is:" "${{ parameters.aksSubscriptionId }}"
-                      az account set --subscription "${{ parameters.aksSubscriptionId }}"
-
-                      az aks get-credentials \
-                        --name "${{ parameters.clusterName }}" \
-                        --resource-group "${{ parameters.resourceGroup }}" \
-                        --overwrite-existing
-
-                      kubelogin convert-kubeconfig -l azurecli
-
-                      kubectl config set-context --current \
-                        --namespace "${{ parameters.namespace }}"
-
-                      kubectl get pods
-
-                - script: |
-                    echo "$ACR_TOKEN" | docker login $(registry) \
-                      --username "$ACR_USER" \
-                      --password-stdin
-                  displayName: ACR login
-                  env:
-                    ACR_USER: $(ACRUser)
-                    ACR_TOKEN: $(ACRToken)
-
-                - ${{ if eq(parameters.environment, 'prod') }}:
-                  # LOCK PRODUCTION IMAGES AND UNLOCK PREVIOUS IMAGES
-                  - script: |
-                      set -euo pipefail
-
-                      repository="aapp/images/app-${{ service }}"
-
-                      # Unlock only locked tags (exclude newest 3)
-                      for tag in $(az acr repository show-tags \
-                        --name "$(registry)" \
-                        --repository "$repository" \
-                        --detail \
-                        --orderby time_desc \
-                        --query '[?changeableAttributes.writeEnabled == `false`].name | [3:]' \
-                        --output tsv)
-                        --username "$acr_user" \
-                        --password "$acr_token" \
-                      do
-                        image="${repository}:${tag}"
-                        echo "Unlocking image: $image"
-
-                        az acr repository update \
-                          --name "$(registry)" \
-                          --image "$image" \
-                          --write-enabled true \
-                          --output none \
-                          --username "$acr_user" \
-                          --password "$acr_token"
-                      done
-
-                      # Lock the newly produced image
-                      image="${repository}:$(version)"
-                      echo "Locking image: $image"
-
-                      az acr repository update \
-                        --name "$(registry)" \
-                        --image "$image" \
-                        --write-enabled false \
-                        --output none \
-                        --username "$acr_user" \
-                        --password "$acr_token"
-                    displayName: "Unlock previous tags and lock app-${{ service }}"
-                    env:
-                      ACR_USER: $(ACRUser)
-                      ACR_TOKEN: $(ACRToken)
-                      
                 - ${{ if eq(parameters.force, true) }}:
-                  - script: helm uninstall $(service_name) --ignore-not-found
-                    displayName: Helm uninstall $(service_name)
+                  - template: pipeline.stage.kubectl.yaml
+                    parameters:
+                      displayName: Helm uninstall ($(service_name))
+                      serviceConnection: ${{ parameters.serviceConnection }}
+                      saksResourceGroup: aks-$(envShort)-rg
+                      saksResourceName: aks-$(envShort)-weu-001
+                      namespace: ${{ parameters.namespace }}
+                      workingDirectory: ${{ parameters.workingDirectory }}
+                      script: helm uninstall $(service_name) --ignore-not-found
 
                 - ${{ if ne(parameters.migrationRollbackTarget, ' ') }}:
-                  - script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/${{ service }}
-                    displayName: Rollback migration ($(service_name))
+                  - template: pipeline.stage.kubectl.yaml
+                    parameters:
+                      displayName: Rollback migration ($(service_name))
+                      serviceConnection: ${{ parameters.serviceConnection }}
+                      saksResourceGroup: aks-$(envShort)-rg
+                      saksResourceName: aks-$(envShort)-weu-001
+                      namespace: ${{ parameters.namespace }}
+                      workingDirectory: ${{ parameters.workingDirectory }}
+                      script: MIGRATION_TARGET="${{ parameters.migrationRollbackTarget }}" make rollback/${{ service }}
 
-                - script: make deploy/$(service_name)
-                  displayName: Deploy $(service_name)
+
+                - template: pipeline.stage.kubectl.yaml
+                  parameters:
+                    displayName: Deploy ($(service_name))
+                    serviceConnection: ${{ parameters.serviceConnection }}
+                    saksResourceGroup: aks-$(envShort)-rg
+                    saksResourceName: aks-$(envShort)-weu-001
+                    namespace: ${{ parameters.namespace }}
+                    workingDirectory: ${{ parameters.workingDirectory }}
+                    script: make deploy/${{ service }}
 
                 - ${{ if eq(parameters.environment, 'acc') }}:
                   - script: |
