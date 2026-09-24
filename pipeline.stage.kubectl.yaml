@@ -27,8 +27,12 @@ steps:
       azureSubscription: ${{ parameters.serviceConnection }}
       scriptType: bash
       scriptLocation: inlineScript
-      workingDirectory: source
+      workingDirectory: $(Pipeline.Workspace)/s/source
       inlineScript: |
+        echo "Working directory:"
+        pwd
+        ls -la
+
         echo "subscription ID is:" "${{ parameters.aksSubscriptionId }}"
         az account set --subscription "${{ parameters.aksSubscriptionId }}"
         az aks get-credentials \
