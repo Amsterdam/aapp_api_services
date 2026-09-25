@@ -250,10 +250,8 @@ DEFAULT_CHARSET = "utf-8"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-try:
-    REQUEST_LOG_SAMPLE_RATE = float(os.getenv("REQUEST_LOG_SAMPLE_RATE", 1.0))
-except TypeError, ValueError:
-    REQUEST_LOG_SAMPLE_RATE = 1.0
+# OTLP gRPC endpoint where traces are exported (typically the in-cluster collector).
+OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 
 LOGGING = {
     "version": 1,
@@ -262,11 +260,6 @@ LOGGING = {
         "default": {
             "()": "core.logging_formatters.PrettyExtraFormatter",
             "format": "%(name)s - %(message)s",
-        },
-    },
-    "filters": {
-        "request_sampling": {
-            "()": "core.utils.logging_utils.RequestLogSamplingFilter",
         },
     },
     "handlers": {
@@ -291,12 +284,6 @@ LOGGING = {
             "handlers": ["console"],
             "level": "DEBUG" if DEBUG else "INFO",
             "propagate": False,
-        },
-        "django.server": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-            "filters": ["request_sampling"],
         },
         "httpx": {
             "handlers": ["console"],

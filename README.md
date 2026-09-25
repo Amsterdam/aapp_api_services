@@ -126,11 +126,9 @@ Here are some common issues and their solutions:
 - **Migration Errors**: Run `make migrations` to check for needed migrations. Run `make migrate` to apply any pending migrations.
 - **Service Not Starting**: Check the logs for errors and ensure all environment variables are correctly set.
 
-
 ## External services
 - **Azure Application Insights:** A comprehensive monitoring service that provides real-time error logging, performance tracking, and diagnostic insights to ensure the stability and reliability of our app.
 - **Google Firebase Messaging:** Provides cloud messaging services to send push notifications and in-app messages, enabling real-time communication with users across platforms.
-
 
 ## Pre commit hooks
 To use the pre-commit hooks as specified in `.pre-commit-config.yaml`, first install `pre-commit` by running: `pip install pre-commit` (inside your virtual environment). Then run: `pre-commit install`.
