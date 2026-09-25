@@ -1,6 +1,3 @@
-from adminsortable2.admin import (
-    SortableAdminBase,
-)
 from django import forms
 from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
@@ -12,7 +9,7 @@ from modules.admin.inlines.app_release_inline import ReleaseModuleStatusInline
 from modules.models import AppRelease, Module, ReleaseModuleStatus
 
 
-class AppReleaseAdmin(SortableAdminBase, admin.ModelAdmin):
+class AppReleaseAdmin(admin.ModelAdmin):
     form = AppReleaseForm
     list_display = [
         "version",
@@ -46,7 +43,8 @@ class AppReleaseAdmin(SortableAdminBase, admin.ModelAdmin):
     def modules_not_included(self, obj):
         """Returns a list of versions not included in the current release."""
         return " | ".join(
-            [str(m) for m in Module.objects.exclude(moduleversion__apprelease=obj)]
+            str(module)
+            for module in Module.objects.exclude(moduleversion__apprelease=obj)
         )
 
     def add_view(self, request, form_url="", extra_context=None):

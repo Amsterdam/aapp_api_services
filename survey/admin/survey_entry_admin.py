@@ -1,4 +1,3 @@
-from adminsortable2.admin import SortableAdminBase
 from django import forms
 from django.contrib import admin
 from django.contrib.admin import TabularInline
@@ -7,7 +6,7 @@ from django.utils.html import format_html_join
 from survey.models import Answer, SurveyVersionEntry
 
 
-class SurveyVersionEntryAdmin(SortableAdminBase, admin.ModelAdmin):
+class SurveyVersionEntryAdmin(admin.ModelAdmin):
     class SurveyVersionEntryAdminForm(forms.ModelForm):
         class Meta:
             model = SurveyVersionEntry

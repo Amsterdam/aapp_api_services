@@ -85,7 +85,6 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "debug_toolbar",
     "mozilla_django_oidc",
-    "adminsortable2",
     "core.apps.CoreConfig",
 ]
 
