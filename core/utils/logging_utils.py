@@ -17,9 +17,21 @@ from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.sdk.trace.sampling import ALWAYS_ON, ParentBased
+from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 
 logger = logging.getLogger(__name__)
+
+
+def _attach_otlp_handler_to_non_propagating_loggers(otlp_handler):
+    logger_configs = getattr(settings, "LOGGING", {}).get("loggers", {})
+    for logger_name, logger_config in logger_configs.items():
+        if logger_config.get("propagate", True):
+            continue
+
+        configured_logger = logging.getLogger(logger_name)
+        if otlp_handler in configured_logger.handlers:
+            continue
+        configured_logger.addHandler(otlp_handler)
 
 
 def setup_opentelemetry():
@@ -39,14 +51,19 @@ def setup_opentelemetry():
     logger.debug("Setting up OpenTelemetry...")
     resource = Resource.create({SERVICE_NAME: f"api-{settings.SERVICE_NAME}"})
 
-    tracer_provider = TracerProvider(resource=resource, sampler=ParentBased(ALWAYS_ON))
+    tracer_provider = TracerProvider(resource=resource, sampler=ALWAYS_ON)
     tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
     trace.set_tracer_provider(tracer_provider)
 
     logger_provider = LoggerProvider(resource=resource)
     logger_provider.add_log_record_processor(BatchLogRecordProcessor(OTLPLogExporter()))
     set_logger_provider(logger_provider)
-    logging.getLogger().addHandler(LoggingHandler(logger_provider=logger_provider))
+
+    otlp_handler = LoggingHandler(logger_provider=logger_provider)
+    root_logger = logging.getLogger()
+    if otlp_handler not in root_logger.handlers:
+        root_logger.addHandler(otlp_handler)
+    _attach_otlp_handler_to_non_propagating_loggers(otlp_handler)
 
     DjangoInstrumentor().instrument()
     RequestsInstrumentor().instrument()

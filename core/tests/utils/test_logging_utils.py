@@ -1,6 +1,7 @@
-from unittest.mock import patch
+from unittest.mock import ANY, MagicMock, patch
 
 from django.test import TestCase, override_settings
+from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 
 from core.utils.logging_utils import setup_opentelemetry
 
@@ -9,6 +10,12 @@ class TestLoggingUtils(TestCase):
     @override_settings(
         SERVICE_NAME="test",
         ENVIRONMENT_SLUG="o",
+        LOGGING={
+            "loggers": {
+                "django": {"propagate": False},
+                "my.propagating.logger": {"propagate": True},
+            }
+        },
     )
     @patch.dict(
         "os.environ", {"OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4317"}
@@ -50,10 +57,32 @@ class TestLoggingUtils(TestCase):
     ):
         tracer_provider = mock_tracer_provider_cls.return_value
         logger_provider = mock_logger_provider_cls.return_value
-        root_logger = mock_get_logger.return_value
+        root_logger = MagicMock()
+        root_logger.handlers = []
+        django_logger = MagicMock()
+        django_logger.handlers = []
+        propagating_logger = MagicMock()
+        propagating_logger.handlers = []
+
+        def get_logger_side_effect(logger_name=None):
+            if logger_name in (None, ""):
+                return root_logger
+            if logger_name == "django":
+                return django_logger
+            if logger_name == "my.propagating.logger":
+                return propagating_logger
+            fallback_logger = MagicMock()
+            fallback_logger.handlers = []
+            return fallback_logger
+
+        mock_get_logger.side_effect = get_logger_side_effect
 
         setup_opentelemetry()
 
+        mock_tracer_provider_cls.assert_called_once_with(
+            resource=ANY,
+            sampler=ALWAYS_ON,
+        )
         mock_set_tracer_provider.assert_called_once_with(tracer_provider)
         mock_otlp_span_exporter.assert_called_once_with()
         tracer_provider.add_span_processor.assert_called_once()
@@ -72,6 +101,10 @@ class TestLoggingUtils(TestCase):
         root_logger.addHandler.assert_called_once_with(
             mock_logging_handler.return_value
         )
+        django_logger.addHandler.assert_called_once_with(
+            mock_logging_handler.return_value
+        )
+        propagating_logger.addHandler.assert_not_called()
         mock_django_instrumentor.return_value.instrument.assert_called_once()
         mock_requests_instrumentor.return_value.instrument.assert_called_once()
         mock_urllib_instrumentor.return_value.instrument.assert_called_once()
