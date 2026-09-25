@@ -68,10 +68,7 @@ services:
       SECRET_KEY: secret-key-for-development
       EDITOR_GROUP_ID: editor-group-id-for-development
       PUBLISHER_GROUP_ID: publisher-group-id-for-development
-      OTEL_SERVICE_NAME: "${SERVICE_NAME}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
-      OTEL_TRACES_SAMPLER: parentbased_always_on
-      OTEL_PYTHON_LOG_CORRELATION: "true"
     command: python ./manage.py runserver 0.0.0.0:8000
     depends_on:
       redis:

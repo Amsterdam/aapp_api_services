@@ -1,7 +1,7 @@
 # Observability
 
 ## Purpose of the module
-Define how telemetry is collected so operational incidents can be investigated while keeping data volume predictable across environments.
+Define how telemetry is collected so operational incidents can be investigated while keeping data volume predictable across environments. This is only for testing purposes, the real implementation is inside the infra repository.
 
 ## Main business rules
 - Failed requests must always remain observable.
@@ -14,4 +14,6 @@ Define how telemetry is collected so operational incidents can be investigated w
 - Local development routes telemetry through a local collector to keep observability behavior aligned with deployed environments.
 
 ## Testing
-- 
+- First start otel collector container: `docker compose up otel-collector`
+- Then start service `SERVICE_NAME=<service> make dev` 
+- See how requests show up in the otel-collector container 
