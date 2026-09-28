@@ -32,10 +32,6 @@ steps:
       scriptLocation: inlineScript
       workingDirectory: ${{ parameters.workingDirectory }}
       inlineScript: |
-        echo "Working directory:"
-        pwd
-        ls -la
-
         echo "subscription ID is:" "${{ parameters.aksSubscriptionId }}"
         az account set --subscription "${{ parameters.aksSubscriptionId }}"
         az aks get-credentials \
@@ -47,14 +43,6 @@ steps:
         
         acr_user="${ACR_USER:-}"
         acr_token="${ACR_TOKEN:-}"
-        if [[ "$acr_user" =~ ^\$\(.+\)$ ]]; then
-          acr_user=""
-        fi
-
-        if [[ "$acr_token" =~ ^\$\(.+\)$ ]]; then
-          acr_token=""
-        fi
-
         if [[ -n "$acr_user" && -n "$acr_token" ]]; then
           printf '%s' "$acr_token" | helm registry login "$(registry)" -u "$acr_user" --password-stdin
         else

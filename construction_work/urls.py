@@ -7,11 +7,17 @@ from construction_work.views import (
     project_views,
 )
 from core.urls import get_swagger_paths
+from core.views.health_views import HealthCheckView
 
 BASE_PATH = "construction-work/api/v1"
 
-
 _urlpatterns = [
+    # health check
+    path(
+        "construction-work/health",
+        HealthCheckView.as_view(),
+        name="health-check",
+    ),
     # project lists
     path(
         "projects",

@@ -8,7 +8,6 @@ from bridge.proxy.views import (
     AddressSearchView,
     EgisProxyExternalView,
     EgisProxyView,
-    HealthCheckView,
     PollingStationsView,
     ServerTimeView,
 )
@@ -30,12 +29,6 @@ if settings.ENVIRONMENT_SLUG in ["o", "t"]:
     ]
 
 urlpatterns += [
-    # health check
-    path(
-        "bridge/api/v1/health-check",
-        HealthCheckView.as_view(),
-        name="health-check",
-    ),
     # server time
     path(
         "bridge/api/v1/time",
