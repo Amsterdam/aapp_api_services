@@ -3,9 +3,10 @@ import os
 from threading import Lock
 
 from django.conf import settings
-from opentelemetry import trace
+from opentelemetry import metrics, trace
 from opentelemetry._logs import set_logger_provider
 from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
@@ -15,6 +16,8 @@ from opentelemetry.instrumentation.urllib import URLLibInstrumentor
 from opentelemetry.instrumentation.urllib3 import URLLib3Instrumentor
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -35,6 +38,24 @@ def _attach_otlp_handler_to_non_propagating_loggers(otlp_handler):
         if otlp_handler in configured_logger.handlers:
             continue
         configured_logger.addHandler(otlp_handler)
+
+
+def _get_metric_export_interval_millis() -> int:
+    configured_value = os.environ.get("OTEL_METRIC_EXPORT_INTERVAL_MILLIS", "60000")
+    try:
+        interval_millis = int(configured_value)
+    except ValueError:
+        logger.warning(
+            "OTEL_METRIC_EXPORT_INTERVAL_MILLIS must be an integer, using default 60000"
+        )
+        return 60000
+
+    if interval_millis <= 0:
+        logger.warning(
+            "OTEL_METRIC_EXPORT_INTERVAL_MILLIS must be positive, using default 60000"
+        )
+        return 60000
+    return interval_millis
 
 
 def setup_opentelemetry():
@@ -67,6 +88,15 @@ def setup_opentelemetry():
         tracer_provider = TracerProvider(resource=resource, sampler=ALWAYS_ON)
         tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
         trace.set_tracer_provider(tracer_provider)
+
+        metric_reader = PeriodicExportingMetricReader(
+            OTLPMetricExporter(),
+            export_interval_millis=_get_metric_export_interval_millis(),
+        )
+        meter_provider = MeterProvider(
+            resource=resource, metric_readers=[metric_reader]
+        )
+        metrics.set_meter_provider(meter_provider)
 
         logger_provider = LoggerProvider(resource=resource)
         logger_provider.add_log_record_processor(
