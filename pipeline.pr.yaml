@@ -87,7 +87,7 @@ stages:
         parameters:
           ACRKeyvault: shared-o-njo5j7pxxiapu
           ACRtokenServiceconnection: sc-azurerm-ccc-aapp-ont-01
-          ACRSecretName: acr-token-ams-AAPP
+          ACRSecretName: acr-token-ams-aapp
 
   # --------------------
   # BUILD
