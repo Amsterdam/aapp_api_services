@@ -28,6 +28,20 @@ from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 logger = logging.getLogger(__name__)
 _OTEL_SETUP_LOCK = Lock()
 _OTEL_SETUP_COMPLETE = False
+_OTLP_LOGGER_EXCLUDED_PREFIXES = (
+    "opentelemetry.exporter.otlp",
+    "opentelemetry.sdk._logs",
+    "opentelemetry.sdk._shared_internal",
+)
+
+
+class ExcludeLoggerPrefixesFilter(logging.Filter):
+    def __init__(self, excluded_prefixes):
+        super().__init__()
+        self._excluded_prefixes = tuple(excluded_prefixes)
+
+    def filter(self, record):
+        return not record.name.startswith(self._excluded_prefixes)
 
 
 def _attach_otlp_handler_to_non_propagating_loggers(otlp_handler):
@@ -112,6 +126,9 @@ def setup_opentelemetry():
         set_logger_provider(logger_provider)
 
         otlp_handler = LoggingHandler(logger_provider=logger_provider)
+        otlp_handler.addFilter(
+            ExcludeLoggerPrefixesFilter(_OTLP_LOGGER_EXCLUDED_PREFIXES)
+        )
         root_logger = logging.getLogger()
         if otlp_handler not in root_logger.handlers:
             root_logger.addHandler(otlp_handler)

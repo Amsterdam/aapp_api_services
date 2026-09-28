@@ -4,13 +4,27 @@ from django.test import TestCase, override_settings
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 
 import core.utils.logging_utils as logging_utils
-from core.utils.logging_utils import setup_opentelemetry
+from core.utils.logging_utils import ExcludeLoggerPrefixesFilter, setup_opentelemetry
 
 
 class TestLoggingUtils(TestCase):
     def setUp(self):
         super().setUp()
         logging_utils._OTEL_SETUP_COMPLETE = False
+
+    def test_exclude_logger_prefixes_filter_blocks_exporter_loggers(self):
+        filter_instance = ExcludeLoggerPrefixesFilter(("opentelemetry.exporter.otlp",))
+        blocked_record = MagicMock()
+        blocked_record.name = "opentelemetry.exporter.otlp.proto.grpc.trace_exporter"
+
+        self.assertFalse(filter_instance.filter(blocked_record))
+
+    def test_exclude_logger_prefixes_filter_allows_application_loggers(self):
+        filter_instance = ExcludeLoggerPrefixesFilter(("opentelemetry.exporter.otlp",))
+        allowed_record = MagicMock()
+        allowed_record.name = "django.request"
+
+        self.assertTrue(filter_instance.filter(allowed_record))
 
     @override_settings(
         SERVICE_NAME="test",
@@ -126,6 +140,9 @@ class TestLoggingUtils(TestCase):
         )
         mock_set_logger_provider.assert_called_once_with(logger_provider)
         mock_logging_handler.assert_called_once_with(logger_provider=logger_provider)
+        mock_logging_handler.return_value.addFilter.assert_called_once()
+        handler_filter = mock_logging_handler.return_value.addFilter.call_args.args[0]
+        self.assertIsInstance(handler_filter, ExcludeLoggerPrefixesFilter)
         root_logger.addHandler.assert_called_once_with(
             mock_logging_handler.return_value
         )
