@@ -46,6 +46,7 @@ dependencies = [
   "django-storages[azure]",
   "azure-ad-verify-token",
   "azure-core",
+  "azure-core-tracing-opentelemetry",
   "azure-identity",
   "opentelemetry-instrumentation-django",
   "opentelemetry-instrumentation-httpx",

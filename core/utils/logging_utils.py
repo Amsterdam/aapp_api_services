@@ -2,6 +2,8 @@ import logging
 import os
 from threading import Lock
 
+from azure.core.settings import settings as azure_core_settings
+from azure.core.tracing.ext.opentelemetry_span import OpenTelemetrySpan
 from django.conf import settings
 from opentelemetry import metrics, trace
 from opentelemetry._logs import set_logger_provider
@@ -58,6 +60,10 @@ def _get_metric_export_interval() -> int:
     return interval
 
 
+def _configure_azure_sdk_tracing() -> None:
+    azure_core_settings.tracing_implementation = OpenTelemetrySpan
+
+
 def setup_opentelemetry():
     global _OTEL_SETUP_COMPLETE
     if _OTEL_SETUP_COMPLETE:
@@ -88,10 +94,11 @@ def setup_opentelemetry():
         tracer_provider = TracerProvider(resource=resource, sampler=ALWAYS_ON)
         tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
         trace.set_tracer_provider(tracer_provider)
+        _configure_azure_sdk_tracing()
 
         metric_reader = PeriodicExportingMetricReader(
             OTLPMetricExporter(),
-            export_interval=_get_metric_export_interval(),
+            export_interval_millis=_get_metric_export_interval(),
         )
         meter_provider = MeterProvider(
             resource=resource, metric_readers=[metric_reader]

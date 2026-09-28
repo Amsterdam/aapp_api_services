@@ -14,6 +14,7 @@ Define how telemetry is collected so operational incidents can be investigated w
 - Tail sampling is applied centrally in the collector layer so final sampling decisions use complete request outcome information.
 - Local development routes telemetry through a local collector to keep observability behavior aligned with deployed environments.
 - The same collector also accepts OTLP metrics through a dedicated metrics pipeline to keep trace/log/metric export paths consistent.
+- Azure SDK tracing is explicitly bridged to OpenTelemetry so Azure Storage operations keep operation-level spans after moving away from the Azure Monitor SDK setup helper.
 
 ## Testing
 - First start otel collector container: `docker compose up otel-collector`
