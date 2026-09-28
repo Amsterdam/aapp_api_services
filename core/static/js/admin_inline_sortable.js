@@ -68,6 +68,10 @@
     return closest;
   }
 
+  function getEmptyTemplateRow(container) {
+    return container.querySelector("tr.form-row.empty-form");
+  }
+
   function initGroup(group) {
     if (group.dataset.sortableInit === "1") {
       return;
@@ -180,7 +184,8 @@
       clearDropState();
       if (afterElement == null) {
         body.classList.add("drop-at-end");
-        body.appendChild(draggingRow);
+        const emptyTemplateRow = getEmptyTemplateRow(body);
+        body.insertBefore(draggingRow, emptyTemplateRow);
       } else {
         afterElement.classList.add("drop-target");
         dropTargetRow = afterElement;
