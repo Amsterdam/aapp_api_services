@@ -101,7 +101,7 @@ stages:
                     displayName: Deploy ($(service_name))
                     serviceConnection: ${{ parameters.serviceConnection }}
                     namespace: ${{ parameters.namespace }}
-                    script: make deploy/${{ service }}
+                    script: make deploy/$(service_name)
 
                 - ${{ if eq(parameters.environment, 'acc') }}:
                   - script: |
