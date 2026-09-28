@@ -1,5 +1,6 @@
 import logging
 import os
+from threading import Lock
 
 from django.conf import settings
 from opentelemetry import trace
@@ -20,6 +21,8 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 
 logger = logging.getLogger(__name__)
+_OTEL_SETUP_LOCK = Lock()
+_OTEL_SETUP_COMPLETE = False
 
 
 def _attach_otlp_handler_to_non_propagating_loggers(otlp_handler):
@@ -35,42 +38,55 @@ def _attach_otlp_handler_to_non_propagating_loggers(otlp_handler):
 
 
 def setup_opentelemetry():
-    otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
-    if not otlp_endpoint:
-        logger.info(
-            "OTEL_EXPORTER_OTLP_ENDPOINT is not set, skipping OpenTelemetry setup"
-        )
+    global _OTEL_SETUP_COMPLETE
+    if _OTEL_SETUP_COMPLETE:
+        logger.debug("OpenTelemetry already configured, skipping setup")
         return
 
-    if not settings.SERVICE_NAME:
-        logger.warning(
-            "SERVICE_NAME is not set, required for setting up OpenTelemetry, skipping it"
+    with _OTEL_SETUP_LOCK:
+        if _OTEL_SETUP_COMPLETE:
+            logger.debug("OpenTelemetry already configured, skipping setup")
+            return
+
+        otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
+        if not otlp_endpoint:
+            logger.info(
+                "OTEL_EXPORTER_OTLP_ENDPOINT is not set, skipping OpenTelemetry setup"
+            )
+            return
+
+        if not settings.SERVICE_NAME:
+            logger.warning(
+                "SERVICE_NAME is not set, required for setting up OpenTelemetry, skipping it"
+            )
+            return
+
+        logger.debug("Setting up OpenTelemetry...")
+        resource = Resource.create({SERVICE_NAME: f"api-{settings.SERVICE_NAME}"})
+
+        tracer_provider = TracerProvider(resource=resource, sampler=ALWAYS_ON)
+        tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+        trace.set_tracer_provider(tracer_provider)
+
+        logger_provider = LoggerProvider(resource=resource)
+        logger_provider.add_log_record_processor(
+            BatchLogRecordProcessor(OTLPLogExporter())
         )
-        return
+        set_logger_provider(logger_provider)
 
-    logger.debug("Setting up OpenTelemetry...")
-    resource = Resource.create({SERVICE_NAME: f"api-{settings.SERVICE_NAME}"})
+        otlp_handler = LoggingHandler(logger_provider=logger_provider)
+        root_logger = logging.getLogger()
+        if otlp_handler not in root_logger.handlers:
+            root_logger.addHandler(otlp_handler)
+        _attach_otlp_handler_to_non_propagating_loggers(otlp_handler)
 
-    tracer_provider = TracerProvider(resource=resource, sampler=ALWAYS_ON)
-    tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
-    trace.set_tracer_provider(tracer_provider)
+        DjangoInstrumentor().instrument()
+        RequestsInstrumentor().instrument()
+        URLLibInstrumentor().instrument()
+        URLLib3Instrumentor().instrument()
+        HTTPXClientInstrumentor().instrument()
+        if settings.ENVIRONMENT_SLUG in ("o", "t"):
+            Psycopg2Instrumentor().instrument()
 
-    logger_provider = LoggerProvider(resource=resource)
-    logger_provider.add_log_record_processor(BatchLogRecordProcessor(OTLPLogExporter()))
-    set_logger_provider(logger_provider)
-
-    otlp_handler = LoggingHandler(logger_provider=logger_provider)
-    root_logger = logging.getLogger()
-    if otlp_handler not in root_logger.handlers:
-        root_logger.addHandler(otlp_handler)
-    _attach_otlp_handler_to_non_propagating_loggers(otlp_handler)
-
-    DjangoInstrumentor().instrument()
-    RequestsInstrumentor().instrument()
-    URLLibInstrumentor().instrument()
-    URLLib3Instrumentor().instrument()
-    HTTPXClientInstrumentor().instrument()
-    if settings.ENVIRONMENT_SLUG in ("o", "t"):
-        Psycopg2Instrumentor().instrument()
-
-    logger.debug("OpenTelemetry has been enabled!")
+        _OTEL_SETUP_COMPLETE = True
+        logger.debug("OpenTelemetry has been enabled!")

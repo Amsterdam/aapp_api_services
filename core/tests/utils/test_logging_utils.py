@@ -3,10 +3,15 @@ from unittest.mock import ANY, MagicMock, patch
 from django.test import TestCase, override_settings
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 
+import core.utils.logging_utils as logging_utils
 from core.utils.logging_utils import setup_opentelemetry
 
 
 class TestLoggingUtils(TestCase):
+    def setUp(self):
+        super().setUp()
+        logging_utils._OTEL_SETUP_COMPLETE = False
+
     @override_settings(
         SERVICE_NAME="test",
         ENVIRONMENT_SLUG="o",
@@ -105,6 +110,98 @@ class TestLoggingUtils(TestCase):
             mock_logging_handler.return_value
         )
         propagating_logger.addHandler.assert_not_called()
+        mock_django_instrumentor.return_value.instrument.assert_called_once()
+        mock_requests_instrumentor.return_value.instrument.assert_called_once()
+        mock_urllib_instrumentor.return_value.instrument.assert_called_once()
+        mock_urllib3_instrumentor.return_value.instrument.assert_called_once()
+        mock_psycopg2_instrumentor.return_value.instrument.assert_called_once()
+        mock_httpx_instrumentor.return_value.instrument.assert_called_once()
+
+    @override_settings(
+        SERVICE_NAME="test",
+        ENVIRONMENT_SLUG="o",
+        LOGGING={
+            "loggers": {
+                "django": {"propagate": False},
+            }
+        },
+    )
+    @patch.dict(
+        "os.environ", {"OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4317"}
+    )
+    @patch("core.utils.logging_utils.HTTPXClientInstrumentor")
+    @patch("core.utils.logging_utils.Psycopg2Instrumentor")
+    @patch("core.utils.logging_utils.URLLib3Instrumentor")
+    @patch("core.utils.logging_utils.URLLibInstrumentor")
+    @patch("core.utils.logging_utils.RequestsInstrumentor")
+    @patch("core.utils.logging_utils.DjangoInstrumentor")
+    @patch("core.utils.logging_utils.logging.getLogger")
+    @patch("core.utils.logging_utils.LoggingHandler")
+    @patch("core.utils.logging_utils.set_logger_provider")
+    @patch("core.utils.logging_utils.BatchLogRecordProcessor")
+    @patch("core.utils.logging_utils.OTLPLogExporter")
+    @patch("core.utils.logging_utils.LoggerProvider")
+    @patch("core.utils.logging_utils.BatchSpanProcessor")
+    @patch("core.utils.logging_utils.OTLPSpanExporter")
+    @patch("core.utils.logging_utils.trace.set_tracer_provider")
+    @patch("core.utils.logging_utils.TracerProvider")
+    def test_setup_opentelemetry_is_idempotent(
+        self,
+        mock_tracer_provider_cls,
+        mock_set_tracer_provider,
+        mock_otlp_span_exporter,
+        mock_batch_span_processor,
+        mock_logger_provider_cls,
+        mock_otlp_log_exporter,
+        mock_batch_log_record_processor,
+        mock_set_logger_provider,
+        mock_logging_handler,
+        mock_get_logger,
+        mock_django_instrumentor,
+        mock_requests_instrumentor,
+        mock_urllib_instrumentor,
+        mock_urllib3_instrumentor,
+        mock_psycopg2_instrumentor,
+        mock_httpx_instrumentor,
+    ):
+        root_logger = MagicMock()
+        root_logger.handlers = []
+        django_logger = MagicMock()
+        django_logger.handlers = []
+
+        def get_logger_side_effect(logger_name=None):
+            if logger_name in (None, ""):
+                return root_logger
+            if logger_name == "django":
+                return django_logger
+            fallback_logger = MagicMock()
+            fallback_logger.handlers = []
+            return fallback_logger
+
+        mock_get_logger.side_effect = get_logger_side_effect
+
+        setup_opentelemetry()
+        setup_opentelemetry()
+
+        mock_tracer_provider_cls.assert_called_once()
+        mock_set_tracer_provider.assert_called_once()
+        mock_otlp_span_exporter.assert_called_once_with()
+        mock_batch_span_processor.assert_called_once_with(
+            mock_otlp_span_exporter.return_value
+        )
+        mock_logger_provider_cls.assert_called_once()
+        mock_otlp_log_exporter.assert_called_once_with()
+        mock_batch_log_record_processor.assert_called_once_with(
+            mock_otlp_log_exporter.return_value
+        )
+        mock_set_logger_provider.assert_called_once()
+        mock_logging_handler.assert_called_once()
+        root_logger.addHandler.assert_called_once_with(
+            mock_logging_handler.return_value
+        )
+        django_logger.addHandler.assert_called_once_with(
+            mock_logging_handler.return_value
+        )
         mock_django_instrumentor.return_value.instrument.assert_called_once()
         mock_requests_instrumentor.return_value.instrument.assert_called_once()
         mock_urllib_instrumentor.return_value.instrument.assert_called_once()
