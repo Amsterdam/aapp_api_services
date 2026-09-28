@@ -43,8 +43,7 @@ class AppReleaseAdmin(admin.ModelAdmin):
     def modules_not_included(self, obj):
         """Returns a list of versions not included in the current release."""
         return " | ".join(
-            str(module)
-            for module in Module.objects.exclude(moduleversion__apprelease=obj)
+            str(m) for m in Module.objects.exclude(moduleversion__apprelease=obj)
         )
 
     def add_view(self, request, form_url="", extra_context=None):

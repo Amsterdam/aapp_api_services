@@ -38,21 +38,23 @@ class SortableInlineFormSet(BaseInlineFormSet):
 
         active_forms.sort(key=_submitted_sort_value)
 
+        forms_requiring_order_save = []
         for index, form in enumerate(active_forms, start=1):
+            original_value = getattr(form.instance, sort_field, None)
+            if (
+                form.instance.pk is not None
+                and not form.has_changed()
+                and original_value != index
+            ):
+                forms_requiring_order_save.append(form)
             form.cleaned_data[sort_field] = index
             setattr(form.instance, sort_field, index)
 
         saved_instances = super().save(commit=commit)
 
-        # Existing inline rows may not be considered "changed" by Django when only
-        # ordering changed in the DOM. Persist normalized sort values explicitly.
         if commit:
-            for index, form in enumerate(active_forms, start=1):
-                instance = form.instance
-                if instance.pk is None:
-                    continue
-                setattr(instance, sort_field, index)
-                instance.save(update_fields=[sort_field])
+            for form in forms_requiring_order_save:
+                form.instance.save(update_fields=[sort_field])
 
         return saved_instances
 
