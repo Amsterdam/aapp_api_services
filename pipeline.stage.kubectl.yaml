@@ -23,6 +23,9 @@ parameters:
 steps:
   - task: AzureCLI@2
     displayName: ${{ parameters.displayName }}
+    env:
+      ACR_USER: $(ACRUser)
+      ACR_TOKEN: $(ACRToken)
     inputs:
       azureSubscription: ${{ parameters.serviceConnection }}
       scriptType: bash
@@ -42,4 +45,8 @@ steps:
         kubelogin convert-kubeconfig -l azurecli
         kubectl config set-context --current --namespace "${{ parameters.namespace }}"
         
+        echo "$ACR_TOKEN" | helm registry login $(registry) \
+          --username "$ACR_USER" \
+          --password-stdin
+          
         ${{ parameters.script }}
