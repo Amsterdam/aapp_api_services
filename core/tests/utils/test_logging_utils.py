@@ -1,133 +1,429 @@
-import logging
-from unittest.mock import patch
+from unittest.mock import ANY, MagicMock, patch
 
-from django.conf import settings
 from django.test import TestCase, override_settings
+from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 
-from core.utils.logging_utils import RequestLogSamplingFilter, setup_opentelemetry
+import core.utils.logging_utils as logging_utils
+from core.utils.logging_utils import ExcludeLoggerPrefixesFilter, setup_opentelemetry
 
 
 class TestLoggingUtils(TestCase):
-    @override_settings(REQUEST_LOG_SAMPLE_RATE=0.1)
-    @patch("core.utils.logging_utils.random.random", return_value=0.05)
-    def test_successful_request_is_sampled_in(self, _mock_random):
-        sampling_filter = RequestLogSamplingFilter()
-        record = logging.LogRecord(
-            name="django.server",
-            level=logging.INFO,
-            pathname=__file__,
-            lineno=0,
-            msg="request",
-            args=(),
-            exc_info=None,
-        )
-        record.status_code = 200
+    def setUp(self):
+        super().setUp()
+        logging_utils._OTEL_SETUP_COMPLETE = False
 
-        self.assertTrue(sampling_filter.filter(record))
+    def test_exclude_logger_prefixes_filter_blocks_exporter_loggers(self):
+        filter_instance = ExcludeLoggerPrefixesFilter(("opentelemetry.exporter.otlp",))
+        blocked_record = MagicMock()
+        blocked_record.name = "opentelemetry.exporter.otlp.proto.grpc.trace_exporter"
 
-    @override_settings(REQUEST_LOG_SAMPLE_RATE=0.1)
-    @patch("core.utils.logging_utils.random.random", return_value=0.50)
-    def test_successful_request_is_sampled_out(self, _mock_random):
-        sampling_filter = RequestLogSamplingFilter()
-        record = logging.LogRecord(
-            name="django.server",
-            level=logging.INFO,
-            pathname=__file__,
-            lineno=0,
-            msg="request",
-            args=(),
-            exc_info=None,
-        )
-        record.status_code = 201
+        self.assertFalse(filter_instance.filter(blocked_record))
 
-        self.assertFalse(sampling_filter.filter(record))
+    def test_exclude_logger_prefixes_filter_allows_application_loggers(self):
+        filter_instance = ExcludeLoggerPrefixesFilter(("opentelemetry.exporter.otlp",))
+        allowed_record = MagicMock()
+        allowed_record.name = "django.request"
 
-    @override_settings(REQUEST_LOG_SAMPLE_RATE=0.0)
-    def test_failed_request_always_logged(self):
-        sampling_filter = RequestLogSamplingFilter()
-        record = logging.LogRecord(
-            name="django.server",
-            level=logging.INFO,
-            pathname=__file__,
-            lineno=0,
-            msg="request",
-            args=(),
-            exc_info=None,
-        )
-        record.status_code = 500
-
-        self.assertTrue(sampling_filter.filter(record))
-
-    @override_settings(REQUEST_LOG_SAMPLE_RATE=0.0)
-    def test_missing_status_code_is_preserved(self):
-        sampling_filter = RequestLogSamplingFilter()
-        record = logging.LogRecord(
-            name="django.server",
-            level=logging.INFO,
-            pathname=__file__,
-            lineno=0,
-            msg="request",
-            args=(),
-            exc_info=None,
-        )
-
-        self.assertTrue(sampling_filter.filter(record))
-
-    @override_settings(REQUEST_LOG_SAMPLE_RATE=0.0)
-    def test_unknown_status_code_is_preserved(self):
-        sampling_filter = RequestLogSamplingFilter()
-        record = logging.LogRecord(
-            name="django.server",
-            level=logging.INFO,
-            pathname=__file__,
-            lineno=0,
-            msg="request",
-            args=(),
-            exc_info=None,
-        )
-        record.status_code = "unknown"
-
-        self.assertTrue(sampling_filter.filter(record))
-
-    @override_settings(REQUEST_LOG_SAMPLE_RATE="invalid")
-    @patch("core.utils.logging_utils.random.random", return_value=0.50)
-    def test_exceptions_are_handled(self, _mock_random):
-        # ValueError is raised when loading an invalid sample rate.
-        with self.assertRaises(ValueError):
-            RequestLogSamplingFilter()
-
-    @override_settings(REQUEST_LOG_SAMPLE_RATE=1.5)
-    @patch("core.utils.logging_utils.random.random", return_value=0.50)
-    def test_exceptions_are_handled_with_invalid_sample_rate(self, _mock_random):
-        # ValueError is raised when loading an out-of-range sample rate.
-        with self.assertRaises(ValueError):
-            RequestLogSamplingFilter()
-
-    def test_sampling_filter_is_scoped_to_django_server_logger(self):
-        request_logger = settings.LOGGING["loggers"]["django.server"]
-
-        self.assertEqual(request_logger["handlers"], ["console"])
-        self.assertEqual(
-            settings.LOGGING["loggers"]["django.server"]["filters"],
-            ["request_sampling"],
-        )
+        self.assertTrue(filter_instance.filter(allowed_record))
 
     @override_settings(
-        APPLICATIONINSIGHTS_CONNECTION_STRING="test", SERVICE_NAME="test"
+        SERVICE_NAME="test",
+        ENVIRONMENT_SLUG="o",
+        LOGGING={
+            "loggers": {
+                "django": {"propagate": False},
+                "my.propagating.logger": {"propagate": True},
+            }
+        },
     )
-    @patch("core.utils.logging_utils.configure_azure_monitor")
-    def test_configure_azure_monitor_called(self, mock_configure_azure_monitor):
-        setup_opentelemetry()
-        mock_configure_azure_monitor.assert_called_once()
+    @patch.dict(
+        "os.environ", {"OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4317"}
+    )
+    @patch("core.utils.logging_utils.HTTPXClientInstrumentor")
+    @patch("core.utils.logging_utils.Psycopg2Instrumentor")
+    @patch("core.utils.logging_utils.URLLib3Instrumentor")
+    @patch("core.utils.logging_utils.URLLibInstrumentor")
+    @patch("core.utils.logging_utils.RequestsInstrumentor")
+    @patch("core.utils.logging_utils.DjangoInstrumentor")
+    @patch("core.utils.logging_utils.logging.getLogger")
+    @patch("core.utils.logging_utils.LoggingHandler")
+    @patch("core.utils.logging_utils.set_logger_provider")
+    @patch("core.utils.logging_utils.BatchLogRecordProcessor")
+    @patch("core.utils.logging_utils.OTLPLogExporter")
+    @patch("core.utils.logging_utils.LoggerProvider")
+    @patch("core.utils.logging_utils.BatchSpanProcessor")
+    @patch("core.utils.logging_utils.OTLPSpanExporter")
+    @patch("core.utils.logging_utils.metrics.set_meter_provider")
+    @patch("core.utils.logging_utils.MeterProvider")
+    @patch("core.utils.logging_utils.PeriodicExportingMetricReader")
+    @patch("core.utils.logging_utils.OTLPMetricExporter")
+    @patch("core.utils.logging_utils._configure_azure_sdk_tracing")
+    @patch("core.utils.logging_utils.trace.set_tracer_provider")
+    @patch("core.utils.logging_utils.TracerProvider")
+    def test_setup_opentelemetry_configures_otlp_exporter(
+        self,
+        mock_tracer_provider_cls,
+        mock_set_tracer_provider,
+        mock_configure_azure_sdk_tracing,
+        mock_otlp_metric_exporter,
+        mock_periodic_metric_reader,
+        mock_meter_provider_cls,
+        mock_set_meter_provider,
+        mock_otlp_span_exporter,
+        mock_batch_span_processor,
+        mock_logger_provider_cls,
+        mock_otlp_log_exporter,
+        mock_batch_log_record_processor,
+        mock_set_logger_provider,
+        mock_logging_handler,
+        mock_get_logger,
+        mock_django_instrumentor,
+        mock_requests_instrumentor,
+        mock_urllib_instrumentor,
+        mock_urllib3_instrumentor,
+        mock_psycopg2_instrumentor,
+        mock_httpx_instrumentor,
+    ):
+        tracer_provider = mock_tracer_provider_cls.return_value
+        logger_provider = mock_logger_provider_cls.return_value
+        root_logger = MagicMock()
+        root_logger.handlers = []
+        django_logger = MagicMock()
+        django_logger.handlers = []
+        propagating_logger = MagicMock()
+        propagating_logger.handlers = []
 
-    @override_settings(APPLICATIONINSIGHTS_CONNECTION_STRING=None, SERVICE_NAME="test")
-    @patch("core.utils.logging_utils.configure_azure_monitor")
-    def test_no_app_insights_string(self, mock_configure_azure_monitor):
-        setup_opentelemetry()
-        mock_configure_azure_monitor.assert_not_called()
+        def get_logger_side_effect(logger_name=None):
+            if logger_name in (None, ""):
+                return root_logger
+            if logger_name == "django":
+                return django_logger
+            if logger_name == "my.propagating.logger":
+                return propagating_logger
+            fallback_logger = MagicMock()
+            fallback_logger.handlers = []
+            return fallback_logger
 
-    @override_settings(APPLICATIONINSIGHTS_CONNECTION_STRING="test", SERVICE_NAME=None)
-    @patch("core.utils.logging_utils.configure_azure_monitor")
-    def test_no_service_name(self, mock_configure_azure_monitor):
+        mock_get_logger.side_effect = get_logger_side_effect
+
         setup_opentelemetry()
-        mock_configure_azure_monitor.assert_not_called()
+
+        mock_tracer_provider_cls.assert_called_once_with(
+            resource=ANY,
+            sampler=ALWAYS_ON,
+        )
+        mock_set_tracer_provider.assert_called_once_with(tracer_provider)
+        mock_otlp_span_exporter.assert_called_once_with()
+        tracer_provider.add_span_processor.assert_called_once()
+        mock_batch_span_processor.assert_called_once_with(
+            mock_otlp_span_exporter.return_value
+        )
+        mock_otlp_metric_exporter.assert_called_once_with()
+        mock_periodic_metric_reader.assert_called_once_with(
+            mock_otlp_metric_exporter.return_value,
+            export_interval_millis=60000,
+        )
+        mock_meter_provider_cls.assert_called_once_with(
+            resource=ANY,
+            metric_readers=[mock_periodic_metric_reader.return_value],
+        )
+        mock_set_meter_provider.assert_called_once_with(
+            mock_meter_provider_cls.return_value
+        )
+        mock_configure_azure_sdk_tracing.assert_called_once_with()
+        mock_otlp_log_exporter.assert_called_once_with()
+        mock_batch_log_record_processor.assert_called_once_with(
+            mock_otlp_log_exporter.return_value
+        )
+        logger_provider.add_log_record_processor.assert_called_once_with(
+            mock_batch_log_record_processor.return_value
+        )
+        mock_set_logger_provider.assert_called_once_with(logger_provider)
+        mock_logging_handler.assert_called_once_with(logger_provider=logger_provider)
+        mock_logging_handler.return_value.addFilter.assert_called_once()
+        handler_filter = mock_logging_handler.return_value.addFilter.call_args.args[0]
+        self.assertIsInstance(handler_filter, ExcludeLoggerPrefixesFilter)
+        root_logger.addHandler.assert_called_once_with(
+            mock_logging_handler.return_value
+        )
+        django_logger.addHandler.assert_called_once_with(
+            mock_logging_handler.return_value
+        )
+        propagating_logger.addHandler.assert_not_called()
+        mock_django_instrumentor.return_value.instrument.assert_called_once()
+        mock_requests_instrumentor.return_value.instrument.assert_called_once()
+        mock_urllib_instrumentor.return_value.instrument.assert_called_once()
+        mock_urllib3_instrumentor.return_value.instrument.assert_called_once()
+        mock_psycopg2_instrumentor.return_value.instrument.assert_called_once()
+        mock_httpx_instrumentor.return_value.instrument.assert_called_once()
+
+    @override_settings(
+        SERVICE_NAME="test",
+        ENVIRONMENT_SLUG="o",
+        LOGGING={
+            "loggers": {
+                "django": {"propagate": False},
+            }
+        },
+    )
+    @patch.dict(
+        "os.environ", {"OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4317"}
+    )
+    @patch("core.utils.logging_utils.HTTPXClientInstrumentor")
+    @patch("core.utils.logging_utils.Psycopg2Instrumentor")
+    @patch("core.utils.logging_utils.URLLib3Instrumentor")
+    @patch("core.utils.logging_utils.URLLibInstrumentor")
+    @patch("core.utils.logging_utils.RequestsInstrumentor")
+    @patch("core.utils.logging_utils.DjangoInstrumentor")
+    @patch("core.utils.logging_utils.logging.getLogger")
+    @patch("core.utils.logging_utils.LoggingHandler")
+    @patch("core.utils.logging_utils.set_logger_provider")
+    @patch("core.utils.logging_utils.BatchLogRecordProcessor")
+    @patch("core.utils.logging_utils.OTLPLogExporter")
+    @patch("core.utils.logging_utils.LoggerProvider")
+    @patch("core.utils.logging_utils.BatchSpanProcessor")
+    @patch("core.utils.logging_utils.OTLPSpanExporter")
+    @patch("core.utils.logging_utils.metrics.set_meter_provider")
+    @patch("core.utils.logging_utils.MeterProvider")
+    @patch("core.utils.logging_utils.PeriodicExportingMetricReader")
+    @patch("core.utils.logging_utils.OTLPMetricExporter")
+    @patch("core.utils.logging_utils._configure_azure_sdk_tracing")
+    @patch("core.utils.logging_utils.trace.set_tracer_provider")
+    @patch("core.utils.logging_utils.TracerProvider")
+    def test_setup_opentelemetry_is_idempotent(
+        self,
+        mock_tracer_provider_cls,
+        mock_set_tracer_provider,
+        mock_configure_azure_sdk_tracing,
+        mock_otlp_metric_exporter,
+        mock_periodic_metric_reader,
+        mock_meter_provider_cls,
+        mock_set_meter_provider,
+        mock_otlp_span_exporter,
+        mock_batch_span_processor,
+        mock_logger_provider_cls,
+        mock_otlp_log_exporter,
+        mock_batch_log_record_processor,
+        mock_set_logger_provider,
+        mock_logging_handler,
+        mock_get_logger,
+        mock_django_instrumentor,
+        mock_requests_instrumentor,
+        mock_urllib_instrumentor,
+        mock_urllib3_instrumentor,
+        mock_psycopg2_instrumentor,
+        mock_httpx_instrumentor,
+    ):
+        root_logger = MagicMock()
+        root_logger.handlers = []
+        django_logger = MagicMock()
+        django_logger.handlers = []
+
+        def get_logger_side_effect(logger_name=None):
+            if logger_name in (None, ""):
+                return root_logger
+            if logger_name == "django":
+                return django_logger
+            fallback_logger = MagicMock()
+            fallback_logger.handlers = []
+            return fallback_logger
+
+        mock_get_logger.side_effect = get_logger_side_effect
+
+        setup_opentelemetry()
+        setup_opentelemetry()
+
+        mock_tracer_provider_cls.assert_called_once()
+        mock_set_tracer_provider.assert_called_once()
+        mock_otlp_span_exporter.assert_called_once_with()
+        mock_batch_span_processor.assert_called_once_with(
+            mock_otlp_span_exporter.return_value
+        )
+        mock_otlp_metric_exporter.assert_called_once_with()
+        mock_periodic_metric_reader.assert_called_once_with(
+            mock_otlp_metric_exporter.return_value,
+            export_interval_millis=60000,
+        )
+        mock_meter_provider_cls.assert_called_once()
+        mock_set_meter_provider.assert_called_once_with(
+            mock_meter_provider_cls.return_value
+        )
+        mock_configure_azure_sdk_tracing.assert_called_once_with()
+        mock_logger_provider_cls.assert_called_once()
+        mock_otlp_log_exporter.assert_called_once_with()
+        mock_batch_log_record_processor.assert_called_once_with(
+            mock_otlp_log_exporter.return_value
+        )
+        mock_set_logger_provider.assert_called_once()
+        mock_logging_handler.assert_called_once()
+        root_logger.addHandler.assert_called_once_with(
+            mock_logging_handler.return_value
+        )
+        django_logger.addHandler.assert_called_once_with(
+            mock_logging_handler.return_value
+        )
+        mock_django_instrumentor.return_value.instrument.assert_called_once()
+        mock_requests_instrumentor.return_value.instrument.assert_called_once()
+        mock_urllib_instrumentor.return_value.instrument.assert_called_once()
+        mock_urllib3_instrumentor.return_value.instrument.assert_called_once()
+        mock_psycopg2_instrumentor.return_value.instrument.assert_called_once()
+        mock_httpx_instrumentor.return_value.instrument.assert_called_once()
+
+    @override_settings(
+        SERVICE_NAME="test",
+        ENVIRONMENT_SLUG="o",
+        LOGGING={
+            "loggers": {
+                "django": {"propagate": False},
+            }
+        },
+    )
+    @patch.dict(
+        "os.environ",
+        {
+            "OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4317",
+            "OTEL_METRIC_EXPORT_INTERVAL": "15000",
+        },
+    )
+    @patch("core.utils.logging_utils.HTTPXClientInstrumentor")
+    @patch("core.utils.logging_utils.Psycopg2Instrumentor")
+    @patch("core.utils.logging_utils.URLLib3Instrumentor")
+    @patch("core.utils.logging_utils.URLLibInstrumentor")
+    @patch("core.utils.logging_utils.RequestsInstrumentor")
+    @patch("core.utils.logging_utils.DjangoInstrumentor")
+    @patch("core.utils.logging_utils.logging.getLogger")
+    @patch("core.utils.logging_utils.LoggingHandler")
+    @patch("core.utils.logging_utils.set_logger_provider")
+    @patch("core.utils.logging_utils.BatchLogRecordProcessor")
+    @patch("core.utils.logging_utils.OTLPLogExporter")
+    @patch("core.utils.logging_utils.LoggerProvider")
+    @patch("core.utils.logging_utils.BatchSpanProcessor")
+    @patch("core.utils.logging_utils.OTLPSpanExporter")
+    @patch("core.utils.logging_utils.metrics.set_meter_provider")
+    @patch("core.utils.logging_utils.MeterProvider")
+    @patch("core.utils.logging_utils.PeriodicExportingMetricReader")
+    @patch("core.utils.logging_utils.OTLPMetricExporter")
+    @patch("core.utils.logging_utils._configure_azure_sdk_tracing")
+    @patch("core.utils.logging_utils.trace.set_tracer_provider")
+    @patch("core.utils.logging_utils.TracerProvider")
+    def test_setup_opentelemetry_uses_configured_metric_interval(
+        self,
+        _mock_tracer_provider_cls,
+        _mock_set_tracer_provider,
+        _mock_configure_azure_sdk_tracing,
+        mock_otlp_metric_exporter,
+        mock_periodic_metric_reader,
+        _mock_meter_provider_cls,
+        _mock_set_meter_provider,
+        _mock_otlp_span_exporter,
+        _mock_batch_span_processor,
+        _mock_logger_provider_cls,
+        _mock_otlp_log_exporter,
+        _mock_batch_log_record_processor,
+        _mock_set_logger_provider,
+        _mock_logging_handler,
+        mock_get_logger,
+        _mock_django_instrumentor,
+        _mock_requests_instrumentor,
+        _mock_urllib_instrumentor,
+        _mock_urllib3_instrumentor,
+        _mock_psycopg2_instrumentor,
+        _mock_httpx_instrumentor,
+    ):
+        root_logger = MagicMock()
+        root_logger.handlers = []
+        django_logger = MagicMock()
+        django_logger.handlers = []
+
+        def get_logger_side_effect(logger_name=None):
+            if logger_name in (None, ""):
+                return root_logger
+            if logger_name == "django":
+                return django_logger
+            fallback_logger = MagicMock()
+            fallback_logger.handlers = []
+            return fallback_logger
+
+        mock_get_logger.side_effect = get_logger_side_effect
+
+        setup_opentelemetry()
+
+        mock_otlp_metric_exporter.assert_called_once_with()
+        mock_periodic_metric_reader.assert_called_once_with(
+            mock_otlp_metric_exporter.return_value,
+            export_interval_millis=15000,
+        )
+
+    @override_settings(SERVICE_NAME="test")
+    @patch.dict("os.environ", {}, clear=True)
+    @patch("core.utils.logging_utils.TracerProvider")
+    def test_no_otlp_endpoint_skips_configuration(self, mock_tracer_provider_cls):
+        setup_opentelemetry()
+
+        mock_tracer_provider_cls.assert_not_called()
+
+    @override_settings(SERVICE_NAME=None)
+    @patch.dict(
+        "os.environ", {"OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4317"}
+    )
+    @patch("core.utils.logging_utils.TracerProvider")
+    def test_no_service_name_skips_configuration(self, mock_tracer_provider_cls):
+        setup_opentelemetry()
+
+        mock_tracer_provider_cls.assert_not_called()
+
+    @override_settings(
+        SERVICE_NAME="test",
+        ENVIRONMENT_SLUG="a",
+    )
+    @patch.dict(
+        "os.environ", {"OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4317"}
+    )
+    @patch("core.utils.logging_utils.HTTPXClientInstrumentor")
+    @patch("core.utils.logging_utils.Psycopg2Instrumentor")
+    @patch("core.utils.logging_utils.URLLib3Instrumentor")
+    @patch("core.utils.logging_utils.URLLibInstrumentor")
+    @patch("core.utils.logging_utils.RequestsInstrumentor")
+    @patch("core.utils.logging_utils.DjangoInstrumentor")
+    @patch("core.utils.logging_utils.logging.getLogger")
+    @patch("core.utils.logging_utils.LoggingHandler")
+    @patch("core.utils.logging_utils.set_logger_provider")
+    @patch("core.utils.logging_utils.BatchLogRecordProcessor")
+    @patch("core.utils.logging_utils.OTLPLogExporter")
+    @patch("core.utils.logging_utils.LoggerProvider")
+    @patch("core.utils.logging_utils.BatchSpanProcessor")
+    @patch("core.utils.logging_utils.OTLPSpanExporter")
+    @patch("core.utils.logging_utils.metrics.set_meter_provider")
+    @patch("core.utils.logging_utils.MeterProvider")
+    @patch("core.utils.logging_utils.PeriodicExportingMetricReader")
+    @patch("core.utils.logging_utils.OTLPMetricExporter")
+    @patch("core.utils.logging_utils._configure_azure_sdk_tracing")
+    @patch("core.utils.logging_utils.trace.set_tracer_provider")
+    @patch("core.utils.logging_utils.TracerProvider")
+    def test_psycopg2_not_instrumented_outside_o_and_t(
+        self,
+        _mock_tracer_provider_cls,
+        _mock_set_tracer_provider,
+        _mock_configure_azure_sdk_tracing,
+        _mock_otlp_metric_exporter,
+        _mock_periodic_metric_reader,
+        _mock_meter_provider_cls,
+        _mock_set_meter_provider,
+        _mock_otlp_span_exporter,
+        _mock_batch_span_processor,
+        _mock_logger_provider,
+        _mock_otlp_log_exporter,
+        _mock_batch_log_record_processor,
+        _mock_set_logger_provider,
+        _mock_logging_handler,
+        _mock_get_logger,
+        _mock_django_instrumentor,
+        _mock_requests_instrumentor,
+        _mock_urllib_instrumentor,
+        _mock_urllib3_instrumentor,
+        mock_psycopg2_instrumentor,
+        _mock_httpx_instrumentor,
+    ):
+        setup_opentelemetry()
+
+        mock_psycopg2_instrumentor.return_value.instrument.assert_not_called()

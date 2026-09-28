@@ -1,90 +1,146 @@
 import logging
-import random
+import os
+from threading import Lock
 
-from azure.monitor.opentelemetry import configure_azure_monitor
+from azure.core.settings import settings as azure_core_settings
+from azure.core.tracing.ext.opentelemetry_span import OpenTelemetrySpan
 from django.conf import settings
+from opentelemetry import metrics, trace
+from opentelemetry._logs import set_logger_provider
+from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.instrumentation.urllib import URLLibInstrumentor
+from opentelemetry.instrumentation.urllib3 import URLLib3Instrumentor
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 
 logger = logging.getLogger(__name__)
+_OTEL_SETUP_LOCK = Lock()
+_OTEL_SETUP_COMPLETE = False
+_OTLP_LOGGER_EXCLUDED_PREFIXES = (
+    "opentelemetry.exporter.otlp",
+    "opentelemetry.sdk._logs",
+    "opentelemetry.sdk._shared_internal",
+)
 
 
-class RequestLogSamplingFilter(logging.Filter):
-    """
-    Logging filter that samples successful requests at a configurable rate,
-    but always logs failed requests (HTTP status >= 400) and requests with missing/unknown status.
-    Sampling rate is read from the REQUEST_LOG_SAMPLE_RATE environment variable or Django settings.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._sample_rate = self._get_sample_rate()
-
-    @staticmethod
-    def _get_sample_rate() -> float:
-        try:
-            sample_rate = float(getattr(settings, "REQUEST_LOG_SAMPLE_RATE", 1.0))
-        except TypeError, ValueError:
-            raise ValueError(
-                "REQUEST_LOG_SAMPLE_RATE must be a float between 0.0 and 1.0"
-            )
-        if sample_rate < 0.0 or sample_rate > 1.0:
-            raise ValueError(
-                "REQUEST_LOG_SAMPLE_RATE must be a float between 0.0 and 1.0"
-            )
-        return sample_rate
+class ExcludeLoggerPrefixesFilter(logging.Filter):
+    def __init__(self, excluded_prefixes):
+        super().__init__()
+        self._excluded_prefixes = tuple(excluded_prefixes)
 
     def filter(self, record):
-        status_code = getattr(record, "status_code", None)
-        try:
-            if status_code is not None:
-                status_code = int(status_code)
-        except TypeError, ValueError:
-            status_code = None
+        return not record.name.startswith(self._excluded_prefixes)
 
-        # Always log failed requests (status >= 400) or unknown/missing status
-        if status_code is None or status_code >= 400:
-            return True
 
-        # Sample successful requests (status < 400)
-        return random.random() < self._sample_rate
+def _attach_otlp_handler_to_non_propagating_loggers(otlp_handler):
+    logger_configs = getattr(settings, "LOGGING", {}).get("loggers", {})
+    for logger_name, logger_config in logger_configs.items():
+        if logger_config.get("propagate", True):
+            continue
+
+        configured_logger = logging.getLogger(logger_name)
+        if otlp_handler in configured_logger.handlers:
+            continue
+        configured_logger.addHandler(otlp_handler)
+
+
+def _get_metric_export_interval() -> int:
+    configured_value = os.environ.get("OTEL_METRIC_EXPORT_INTERVAL", "60000")
+    try:
+        interval = int(configured_value)
+    except ValueError:
+        logger.warning(
+            "OTEL_METRIC_EXPORT_INTERVAL must be an integer, using default 60000"
+        )
+        return 60000
+
+    if interval <= 0:
+        logger.warning(
+            "OTEL_METRIC_EXPORT_INTERVAL must be positive, using default 60000"
+        )
+        return 60000
+    return interval
+
+
+def _configure_azure_sdk_tracing() -> None:
+    azure_core_settings.tracing_implementation = OpenTelemetrySpan
 
 
 def setup_opentelemetry():
-    if not hasattr(settings, "APPLICATIONINSIGHTS_CONNECTION_STRING"):
-        logger.info(
-            "APPLICATIONINSIGHTS_CONNECTION_STRING is not set, skipping OpenTelemetry setup"
-        )
+    global _OTEL_SETUP_COMPLETE
+    if _OTEL_SETUP_COMPLETE:
+        logger.debug("OpenTelemetry already configured, skipping setup")
         return
 
-    if not settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
-        logger.warning(
-            "APPLICATIONINSIGHTS_CONNECTION_STRING is required to enable OpenTelemetry, skipping it"
-        )
-        return
+    with _OTEL_SETUP_LOCK:
+        if _OTEL_SETUP_COMPLETE:
+            logger.debug("OpenTelemetry already configured, skipping setup")
+            return
 
-    if not settings.SERVICE_NAME:
-        logger.warning(
-            "SERVICE_NAME is not set, required for setting up OpenTelemetry, skipping it"
-        )
-        return
+        otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
+        if not otlp_endpoint:
+            logger.info(
+                "OTEL_EXPORTER_OTLP_ENDPOINT is not set, skipping OpenTelemetry setup"
+            )
+            return
 
-    logger.debug("Setting up OpenTelemetry...")
-    instrumentation_options = {
-        "azure_sdk": {"enabled": True},
-        "django": {"enabled": True},
-        "psycopg2": {"enabled": settings.ENVIRONMENT_SLUG in ("o", "t")},
-        "requests": {"enabled": True},
-        "urllib": {"enabled": True},
-        "urllib3": {"enabled": True},
-        # "httpx": {"enabled": True},  # Doesn't work via configure_azure_monitor
-    }
-    configure_azure_monitor(
-        connection_string=settings.APPLICATIONINSIGHTS_CONNECTION_STRING,
-        enable_live_metrics=True,
-        logger_name="root",
-        instrumentation_options=instrumentation_options,
-        resource=Resource.create({SERVICE_NAME: f"api-{settings.SERVICE_NAME}"}),
-    )
-    HTTPXClientInstrumentor().instrument()
-    logger.debug("OpenTelemetry has been enabled!")
+        if not settings.SERVICE_NAME:
+            logger.warning(
+                "SERVICE_NAME is not set, required for setting up OpenTelemetry, skipping it"
+            )
+            return
+
+        logger.debug("Setting up OpenTelemetry...")
+        resource = Resource.create({SERVICE_NAME: f"api-{settings.SERVICE_NAME}"})
+
+        tracer_provider = TracerProvider(resource=resource, sampler=ALWAYS_ON)
+        tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+        trace.set_tracer_provider(tracer_provider)
+        _configure_azure_sdk_tracing()
+
+        metric_reader = PeriodicExportingMetricReader(
+            OTLPMetricExporter(),
+            export_interval_millis=_get_metric_export_interval(),
+        )
+        meter_provider = MeterProvider(
+            resource=resource, metric_readers=[metric_reader]
+        )
+        metrics.set_meter_provider(meter_provider)
+
+        logger_provider = LoggerProvider(resource=resource)
+        logger_provider.add_log_record_processor(
+            BatchLogRecordProcessor(OTLPLogExporter())
+        )
+        set_logger_provider(logger_provider)
+
+        otlp_handler = LoggingHandler(logger_provider=logger_provider)
+        otlp_handler.addFilter(
+            ExcludeLoggerPrefixesFilter(_OTLP_LOGGER_EXCLUDED_PREFIXES)
+        )
+        root_logger = logging.getLogger()
+        if otlp_handler not in root_logger.handlers:
+            root_logger.addHandler(otlp_handler)
+        _attach_otlp_handler_to_non_propagating_loggers(otlp_handler)
+
+        DjangoInstrumentor().instrument()
+        RequestsInstrumentor().instrument()
+        URLLibInstrumentor().instrument()
+        URLLib3Instrumentor().instrument()
+        HTTPXClientInstrumentor().instrument()
+        if settings.ENVIRONMENT_SLUG in ("o", "t"):
+            Psycopg2Instrumentor().instrument()
+
+        _OTEL_SETUP_COMPLETE = True
+        logger.debug("OpenTelemetry has been enabled!")
