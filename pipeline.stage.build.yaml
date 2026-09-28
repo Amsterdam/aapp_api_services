@@ -52,14 +52,32 @@ stages:
               ACR_USER: $(ACRUser)
               ACR_TOKEN: $(ACRToken)
 
+          - script: |
+              set -euo pipefail
+              echo "REGISTRY=$REGISTRY"
+              echo "REPOSITORY=${REPOSITORY:-aapp/images}"
+              echo "VERSION=$VERSION"
+              SERVICE_NAME=$(SERVICE_NAME) docker compose config app | sed -n 's/^\s*image:\s*//p'
+            displayName: Show push target
+            env:
+              REGISTRY: $(registry)
+              VERSION: $(version)
+
           # BUILD
           - script: SERVICE_NAME=$(SERVICE_NAME) make build
             displayName: make build ($(SERVICE_NAME))
+            env:
+              REGISTRY: $(registry)
+              VERSION: $(version)
 
           # PUSH IMAGE
           - script: |
-              SERVICE_NAME=$(SERVICE_NAME) make push || echo "Image already exists, ignoring"
+              set -euo pipefail
+              SERVICE_NAME=$(SERVICE_NAME) make push
             displayName: make push ($(SERVICE_NAME) )
+            env:
+              REGISTRY: $(registry)
+              VERSION: $(version)
 
           - ${{ if eq(parameters.includeQA, true) }}:
             # UNITTESTING & LINTING

@@ -55,9 +55,6 @@ steps:
           acr_token=""
         fi
 
-        echo "ACR_USER: $acr_user"
-        echo "ACR_TOKEN: $acr_token"
-
         if [[ -n "$acr_user" && -n "$acr_token" ]]; then
           printf '%s' "$acr_token" | helm registry login "$(registry)" -u "$acr_user" --password-stdin
         else
