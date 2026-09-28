@@ -127,7 +127,7 @@ Here are some common issues and their solutions:
 - **Service Not Starting**: Check the logs for errors and ensure all environment variables are correctly set.
 
 ## External services
-- **Azure Application Insights:** A comprehensive monitoring service that provides real-time error logging, performance tracking, and diagnostic insights to ensure the stability and reliability of our app.
+- **OpenTelemetry Collector + Azure Application Insights:** Services emit telemetry over OTLP to a collector, where tail-sampling policies are applied before data is forwarded to Application Insights for monitoring, diagnostics, and performance analysis.
 - **Google Firebase Messaging:** Provides cloud messaging services to send push notifications and in-app messages, enabling real-time communication with users across platforms.
 
 ## Pre commit hooks

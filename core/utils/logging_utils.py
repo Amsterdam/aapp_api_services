@@ -40,22 +40,22 @@ def _attach_otlp_handler_to_non_propagating_loggers(otlp_handler):
         configured_logger.addHandler(otlp_handler)
 
 
-def _get_metric_export_interval_millis() -> int:
-    configured_value = os.environ.get("OTEL_METRIC_EXPORT_INTERVAL_MILLIS", "60000")
+def _get_metric_export_interval() -> int:
+    configured_value = os.environ.get("OTEL_METRIC_EXPORT_INTERVAL", "60000")
     try:
-        interval_millis = int(configured_value)
+        interval = int(configured_value)
     except ValueError:
         logger.warning(
-            "OTEL_METRIC_EXPORT_INTERVAL_MILLIS must be an integer, using default 60000"
+            "OTEL_METRIC_EXPORT_INTERVAL must be an integer, using default 60000"
         )
         return 60000
 
-    if interval_millis <= 0:
+    if interval <= 0:
         logger.warning(
-            "OTEL_METRIC_EXPORT_INTERVAL_MILLIS must be positive, using default 60000"
+            "OTEL_METRIC_EXPORT_INTERVAL must be positive, using default 60000"
         )
         return 60000
-    return interval_millis
+    return interval
 
 
 def setup_opentelemetry():
@@ -91,7 +91,7 @@ def setup_opentelemetry():
 
         metric_reader = PeriodicExportingMetricReader(
             OTLPMetricExporter(),
-            export_interval_millis=_get_metric_export_interval_millis(),
+            export_interval=_get_metric_export_interval(),
         )
         meter_provider = MeterProvider(
             resource=resource, metric_readers=[metric_reader]

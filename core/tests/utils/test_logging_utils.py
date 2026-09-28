@@ -105,7 +105,7 @@ class TestLoggingUtils(TestCase):
         mock_otlp_metric_exporter.assert_called_once_with()
         mock_periodic_metric_reader.assert_called_once_with(
             mock_otlp_metric_exporter.return_value,
-            export_interval_millis=60000,
+            export_interval=60000,
         )
         mock_meter_provider_cls.assert_called_once_with(
             resource=ANY,
@@ -220,7 +220,7 @@ class TestLoggingUtils(TestCase):
         mock_otlp_metric_exporter.assert_called_once_with()
         mock_periodic_metric_reader.assert_called_once_with(
             mock_otlp_metric_exporter.return_value,
-            export_interval_millis=60000,
+            export_interval=60000,
         )
         mock_meter_provider_cls.assert_called_once()
         mock_set_meter_provider.assert_called_once_with(
@@ -259,7 +259,7 @@ class TestLoggingUtils(TestCase):
         "os.environ",
         {
             "OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4317",
-            "OTEL_METRIC_EXPORT_INTERVAL_MILLIS": "15000",
+            "OTEL_METRIC_EXPORT_INTERVAL": "15000",
         },
     )
     @patch("core.utils.logging_utils.HTTPXClientInstrumentor")
@@ -326,7 +326,7 @@ class TestLoggingUtils(TestCase):
         mock_otlp_metric_exporter.assert_called_once_with()
         mock_periodic_metric_reader.assert_called_once_with(
             mock_otlp_metric_exporter.return_value,
-            export_interval_millis=15000,
+            export_interval=15000,
         )
 
     @override_settings(SERVICE_NAME="test")
@@ -368,12 +368,20 @@ class TestLoggingUtils(TestCase):
     @patch("core.utils.logging_utils.LoggerProvider")
     @patch("core.utils.logging_utils.BatchSpanProcessor")
     @patch("core.utils.logging_utils.OTLPSpanExporter")
+    @patch("core.utils.logging_utils.metrics.set_meter_provider")
+    @patch("core.utils.logging_utils.MeterProvider")
+    @patch("core.utils.logging_utils.PeriodicExportingMetricReader")
+    @patch("core.utils.logging_utils.OTLPMetricExporter")
     @patch("core.utils.logging_utils.trace.set_tracer_provider")
     @patch("core.utils.logging_utils.TracerProvider")
     def test_psycopg2_not_instrumented_outside_o_and_t(
         self,
         _mock_tracer_provider_cls,
         _mock_set_tracer_provider,
+        _mock_otlp_metric_exporter,
+        _mock_periodic_metric_reader,
+        _mock_meter_provider_cls,
+        _mock_set_meter_provider,
         _mock_otlp_span_exporter,
         _mock_batch_span_processor,
         _mock_logger_provider,

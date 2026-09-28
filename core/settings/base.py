@@ -292,24 +292,16 @@ LOGGING = {
         },
         "django.db.backends": {
             "handlers": ["console"],
-            "level": "WARNING",  # Needs debug to export traces to Application Insights
+            "level": "WARNING",  # Keep SQL logs limited while OTLP tracing remains enabled
             "propagate": False,
         },
         "azure.core.pipeline.policies.http_logging_policy": {
             "handlers": ["console"],
             "level": "ERROR",
         },
-        "azure.monitor.opentelemetry.exporter.export._base": {
-            "handlers": ["console"],
-            "level": "ERROR",
-        },
         "azure.identity._internal.get_token_mixin": {
             "handlers": ["console"],
             "level": "WARNING",  # Suppresses "WorkloadIdentityCredential.get_token succeeded" message
-        },
-        "azure.monitor.opentelemetry.exporter._configuration._utils": {
-            "handlers": ["console"],
-            "level": "ERROR",  # Suppresses "OneSettings request timed out" message
         },
         "opentelemetry.attributes": {
             "handlers": ["console"],
