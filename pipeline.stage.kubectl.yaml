@@ -45,16 +45,16 @@ steps:
         kubelogin convert-kubeconfig -l azurecli
         kubectl config set-context --current --namespace "${{ parameters.namespace }}"
         
-        if [[ "$acr_user" =~ ^\$\(.+\)$ ]]; then
-          acr_user=""
+        if [[ "$ACR_USER" =~ ^\$\(.+\)$ ]]; then
+          ACR_USER=""
         fi
 
-        if [[ "$acr_token" =~ ^\$\(.+\)$ ]]; then
-          acr_token=""
+        if [[ "$ACR_TOKEN" =~ ^\$\(.+\)$ ]]; then
+          ACR_TOKEN=""
         fi
 
-        if [ -n "$acr_user" ] && [ -n "$acr_token" ]; then
-          printf '%s' "$acr_token" | helm registry login "$(registry)" -u "$acr_user" --password-stdin
+        if [[ -n "$ACR_USER" && -n "$ACR_TOKEN" ]]; then
+          printf '%s' "$ACR_TOKEN" | helm registry login "$(registry)" -u "$ACR_USER" --password-stdin
         else
           echo '##[warning] ACR credentials are not set, the helm registry login will be skipped, if ACR actions are required run the "prepare" stage to set these credentials'
         fi

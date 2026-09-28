@@ -31,6 +31,10 @@ parameters:
     type: boolean
     default: false
 
+  - name: gitHubConnection
+    type: string
+    default: github.com_Amsterdam
+
   - name: migrationRollbackTarget
     type: string
     default: ' '
@@ -78,6 +82,10 @@ stages:
                 
                 - task: KubeloginInstaller@0
                   displayName: Install kubelogin
+                  env:
+                    USE_AUTHORIZATION_FOR_API_CALL: true
+                  inputs:
+                    gitHubConnection: ${{ parameters.gitHubConnection }}
                 
                 - ${{ if eq(parameters.force, true) }}:
                   - template: pipeline.stage.kubectl.yaml
