@@ -12,12 +12,6 @@ from core.views.health_views import HealthCheckView
 BASE_PATH = "construction-work/api/v1"
 
 _urlpatterns = [
-    # health check
-    path(
-        "construction-work/health",
-        HealthCheckView.as_view(),
-        name="health-check",
-    ),
     # project lists
     path(
         "projects",
@@ -110,6 +104,12 @@ _urlpatterns = [
 ]
 
 urlpatterns = [
+    # health check
+    path(
+        "construction-work/health",
+        HealthCheckView.as_view(),
+        name="health-check",
+    ),
     path(
         BASE_PATH + "/",
         include((_urlpatterns, "construction-work"), namespace="construction-work"),
