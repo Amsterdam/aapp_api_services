@@ -21,20 +21,13 @@ resources:
     - repository: templates
       type: github
       endpoint: github.com_Amsterdam
-      name: Amsterdam/common-azure-pipelines
-      ref: refs/tags/1.20.3
+      name: Amsterdam/common-amsterdam-pipelines
+      ref: refs/tags/1.0.0
 
     - repository: source
       type: git
       name: AMS-PRJ-AAPP/AMS-PRJ-AAPP
       ref: main
-      trigger:
-        branches:
-          include:
-            - main
-        paths:
-          include:
-            - deployments/**
 
 parameters:
   - name: versionOverride
