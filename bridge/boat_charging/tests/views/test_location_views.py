@@ -316,7 +316,36 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
 
+        # location station
         self.assertEqual(response.data["status"], "OPERATIVE")
+
+        # define expected status per charging station
+        expected_status_per_charging_station = {
+            "VCPS-MULTI": "OPERATIVE",
+            "VCPS-RIK": "OFFLINE",
+            "VCPS-FRANK": "OPERATIVE",
+        }
+
+        # define expected status per charging station EVSE display name
+        expected_status_per_charging_station_evse_display_name = {
+            "VCPS-MULTI-57": "OCCUPIED",
+            "VCPS-MULTI-56": "OPERATIVE",
+            "VCPS-RIK-51": "OPERATIVE",
+            "VCPS-FRANK-43": "OCCUPIED",
+        }
+        for charging_station in response.data["charging_stations"]:
+            self.assertEqual(
+                charging_station["status"],
+                expected_status_per_charging_station[charging_station["id"]],
+            )
+            for evse in charging_station["evses"]:
+                display_name = evse["display_name"]
+                self.assertEqual(
+                    evse["status"],
+                    expected_status_per_charging_station_evse_display_name[
+                        display_name
+                    ],
+                )
 
     def test_success_offline_charging_station(self):
 
@@ -331,6 +360,20 @@ class TestLocationDetailView(BoatChargingTestCase):
         self.assertEqual(resp.call_count, 1)
 
         self.assertEqual(response.data["status"], "INOPERATIVE")
+
+    def test_success_reserved_charging_station(self):
+
+        resp = respx.get(self.external_endpoint).mock(
+            return_value=httpx.Response(
+                200, json=location_detail.MOCK_RESPONSE_RESERVED_CHARGING_STATION
+            )
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+
+        self.assertEqual(response.data["status"], "OCCUPIED")
 
     def test_forbidden_from_upstream_is_mapped_to_not_found(self):
 
