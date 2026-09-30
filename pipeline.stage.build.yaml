@@ -97,7 +97,7 @@ stages:
               parameters:
                 registry: $(registry)
                 images:
-                  - aapp/images/app-$(SERVICE_NAME)
+                  - ams-aapp/$(SERVICE_NAME)
                 version: $(version)
                 trivyImage: docker.io/aquasec/trivy:0.62.1
                 trivyDbImage: ghcr.io/aquasecurity/trivy-db:2
