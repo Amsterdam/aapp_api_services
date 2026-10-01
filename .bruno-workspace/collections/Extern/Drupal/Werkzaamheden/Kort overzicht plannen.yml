@@ -1,0 +1,27 @@
+info:
+  name: Kort overzicht plannen
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{DrupalBaseUrl}}"
+  body:
+    query: |-
+      {
+        activeNodes(contentTypeSelections: {id: "plan"}) {
+          nodes {
+            id
+            content_type
+            updated_at
+          }
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
