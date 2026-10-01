@@ -1,0 +1,62 @@
+info:
+  name: Liveblog artikel
+  type: graphql
+  seq: 6
+
+graphql:
+  method: POST
+  url: "{{DrupalBaseUrl}}"
+  body:
+    query: |
+      query MyQuery($nodeID: Int!) {
+        nodeByID(id: $nodeID){
+          id
+          title
+          ... on Blog {
+            id
+            metaDescription
+            path
+            blogEntries {
+              ... on ParagraphBlogEntry {
+                id
+                title
+                content {
+                  ... on ParagraphTextAndImage {
+                    id
+                    text
+                    style
+                    position
+                    image_style
+                    image_caption
+                    image {
+                      ... on MediaInterface {
+                        ... on Image {
+                          id
+                          name
+                          src
+                          width
+                          height
+                          alt
+                          description
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    variables: |-
+      {
+        "nodeID": 32368
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

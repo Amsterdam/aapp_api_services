@@ -1,0 +1,70 @@
+info:
+  name: Nieuws overzicht
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{DrupalBaseUrl}}"
+  body:
+    query: |-
+      query MyQuery($paragraphId: Int!) {
+        view(paragraphId: $paragraphId, page: 1) {
+          name
+         ... on View {
+            id
+            name
+            nodes {
+              ... on News {
+                id
+                tag {
+                  id
+                  name
+                }
+                summaryShort
+                title
+                changedDate
+                publicationDate
+                path
+                image {
+                  ... on Image {
+                    name
+                    src
+                  }
+                }
+                newsCategory {
+                  id
+                  name
+                }
+                relatedContent {
+                  ... on ParagraphRelatedPages {
+                    id
+                    title
+                  }
+                }
+              }
+            }
+            itemsPerPage
+            highlightedNumber
+          }
+          pagination {
+            totalPages
+            previousPage
+            nextPage
+            enabled
+            currentPage
+          }
+        }
+      }
+    variables: |-
+      {
+        "paragraphId": 826
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
