@@ -1,9 +1,9 @@
-from adminsortable2.admin import SortableAdminBase, SortableTabularInline
 from django import forms
 from django.contrib import admin
 from django.contrib.admin import TabularInline
 from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
 
+from core.admin.sortable import SortableInlineMixin
 from survey.admin.survey_version_admin import InlineForm
 from survey.models import Choice, Condition, Question, SurveyVersionEntry
 
@@ -11,20 +11,19 @@ from survey.models import Choice, Condition, Question, SurveyVersionEntry
 def question_is_locked(question):
     if not question:
         return False
-    survey_versions = question.survey_versions
-    for sv in survey_versions.all():
-        if SurveyVersionEntry.objects.filter(survey_version=sv).exists():
+    for survey_version in question.survey_versions.all():
+        if SurveyVersionEntry.objects.filter(survey_version=survey_version).exists():
             return True
     return False
 
 
-class QuestionAdmin(SortableAdminBase, admin.ModelAdmin):
+class QuestionAdmin(admin.ModelAdmin):
     class QuestionAdminForm(forms.ModelForm):
         class Meta:
             model = Question
             fields = "__all__"
 
-    class ChoiceInLine(SortableTabularInline):
+    class ChoiceInLine(SortableInlineMixin, TabularInline):
         model = Choice
         fields = ["id", "text", "label", "show_textfield"]
         readonly_fields = ["id"]
