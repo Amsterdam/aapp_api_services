@@ -20,21 +20,14 @@ resources:
   repositories:
     - repository: templates
       type: github
-      endpoint: Amsterdam
-      name: Amsterdam/common-azure-pipelines
-      ref: refs/tags/1.20.3
+      endpoint: github.com_Amsterdam
+      name: Amsterdam/common-amsterdam-pipelines
+      ref: refs/tags/1.0.0
 
     - repository: source
       type: git
-      name: Amsterdam-App/aapp_infra_azure
+      name: AMS-PRJ-AAPP/AMS-PRJ-AAPP
       ref: main
-      trigger:
-        branches:
-          include:
-            - main
-        paths:
-          include:
-            - deployments/**
 
 parameters:
   - name: versionOverride
@@ -74,7 +67,7 @@ variables:
     value: $[ replace(replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', ''), 'refs/pull/', '') ]
 
   - name: registry
-    value: saks01weuacrpgpgo5qvmwo.azurecr.io
+    value: crsharedaksweu9x4d.azurecr.io
 
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
@@ -84,9 +77,21 @@ variables:
 
 stages:
   # --------------------
+  # PREPARE
+  # --------------------
+  - stage: prepare
+    displayName: preparing variables
+    jobs:
+      - template: pipeline.stage.prepare.yaml@source
+        parameters:
+          ACRKeyvault: shared-o-njo5j7pxxiapu
+          ACRtokenServiceconnection: sc-azurerm-ccc-aapp-ont-01
+          ACRSecretName: acr-token-ams-aapp
+
+  # --------------------
   # BUILD
   # --------------------
-  - template: deploy.build-stage.yaml
+  - template: pipeline.stage.build.yaml@source
     parameters:
       services: ${{ parameters.services }}
       stageDisplayName: Build, test, analyze & push
@@ -95,13 +100,13 @@ stages:
   # --------------------
   # TEST
   # --------------------
-  - template: deploy.stage.yaml
+  - template: pipeline.stage.deploy.yaml@source
     parameters:
       environment: test
       devopsEnvironment: api-test
       pool: ManagedDevOpsPools
-      namespace: ns-ccc-aapp-tst-01-aapp-test
-      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-tst-01-aapp-test
+      namespace: tst-ams-aapp-aapp-test
+      serviceConnection: sc-azurerm-ccc-aapp-test-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
@@ -117,13 +122,13 @@ stages:
   # --------------------
   # ACC
   # --------------------
-  - template: deploy.stage.yaml
+  - template: pipeline.stage.deploy.yaml@source
     parameters:
       environment: acc
       devopsEnvironment: api-acc
       pool: ManagedDevOpsPools
-      namespace: ns-ccc-aapp-acc-01-aapp-acc
-      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-acc-01-aapp-acc
+      namespace: acc-ams-aapp-aapp-acc
+      serviceConnection: sc-azurerm-ccc-aapp-acc-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
@@ -140,13 +145,13 @@ stages:
   # --------------------
   # PROD
   # --------------------
-  - template: deploy.stage.yaml
+  - template: pipeline.stage.deploy.yaml@source
     parameters:
       environment: prod
       devopsEnvironment: api-prod
       pool: ManagedDevOpsPools
-      namespace: ns-ccc-aapp-prd-01-aapp-prd
-      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-prd-01-aapp-prd
+      namespace: prd-ams-aapp-aapp-prd
+      serviceConnection: sc-azurerm-ccc-aapp-prd-01
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}

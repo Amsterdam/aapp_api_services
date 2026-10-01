@@ -2,12 +2,12 @@ import logging
 from unittest.mock import patch
 
 from django.conf import settings
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, override_settings
 
 from core.utils.logging_utils import RequestLogSamplingFilter, setup_opentelemetry
 
 
-class TestLoggingUtils(TestCase):
+class TestLoggingUtils(SimpleTestCase):
     @override_settings(REQUEST_LOG_SAMPLE_RATE=0.1)
     @patch("core.utils.logging_utils.random.random", return_value=0.05)
     def test_successful_request_is_sampled_in(self, _mock_random):
@@ -22,6 +22,7 @@ class TestLoggingUtils(TestCase):
             exc_info=None,
         )
         record.status_code = 200
+        record.args = ("GET /city-pass/api/v1/passes HTTP/1.1", 200, 123)
 
         self.assertTrue(sampling_filter.filter(record))
 
@@ -39,6 +40,7 @@ class TestLoggingUtils(TestCase):
             exc_info=None,
         )
         record.status_code = 201
+        record.args = ("GET /city-pass/api/v1/passes HTTP/1.1", 201, 123)
 
         self.assertFalse(sampling_filter.filter(record))
 
@@ -55,8 +57,43 @@ class TestLoggingUtils(TestCase):
             exc_info=None,
         )
         record.status_code = 500
+        record.args = ("GET /city-pass/api/v1/passes HTTP/1.1", 500, 123)
 
         self.assertTrue(sampling_filter.filter(record))
+
+    @override_settings(REQUEST_LOG_SAMPLE_RATE=1.0)
+    def test_health_check_request_is_never_logged(self):
+        sampling_filter = RequestLogSamplingFilter()
+        record = logging.LogRecord(
+            name="django.server",
+            level=logging.INFO,
+            pathname=__file__,
+            lineno=0,
+            msg="request",
+            args=(),
+            exc_info=None,
+        )
+        record.status_code = 200
+        record.args = ("GET /bridge/health HTTP/1.1", 200, 123)
+
+        self.assertFalse(sampling_filter.filter(record))
+
+    @override_settings(REQUEST_LOG_SAMPLE_RATE=1.0)
+    def test_health_check_request_with_query_string_is_never_logged(self):
+        sampling_filter = RequestLogSamplingFilter()
+        record = logging.LogRecord(
+            name="django.server",
+            level=logging.INFO,
+            pathname=__file__,
+            lineno=0,
+            msg="request",
+            args=(),
+            exc_info=None,
+        )
+        record.status_code = 200
+        record.args = ("GET /bridge/health?ready=1 HTTP/1.1", 200, 123)
+
+        self.assertFalse(sampling_filter.filter(record))
 
     @override_settings(REQUEST_LOG_SAMPLE_RATE=0.0)
     def test_missing_status_code_is_preserved(self):
@@ -119,6 +156,13 @@ class TestLoggingUtils(TestCase):
     def test_configure_azure_monitor_called(self, mock_configure_azure_monitor):
         setup_opentelemetry()
         mock_configure_azure_monitor.assert_called_once()
+        instrumentation_options = mock_configure_azure_monitor.call_args.kwargs[
+            "instrumentation_options"
+        ]
+        self.assertEqual(
+            instrumentation_options["django"]["excluded_urls"],
+            r".*/[^/]+/health(?:\?.*)?$",
+        )
 
     @override_settings(APPLICATIONINSIGHTS_CONNECTION_STRING=None, SERVICE_NAME="test")
     @patch("core.utils.logging_utils.configure_azure_monitor")

@@ -9,6 +9,9 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 logger = logging.getLogger(__name__)
 
 
+HEALTH_CHECK_OTEL_EXCLUDED_URLS = r".*/[^/]+/health(?:\?.*)?$"
+
+
 class RequestLogSamplingFilter(logging.Filter):
     """
     Logging filter that samples successful requests at a configurable rate,
@@ -35,6 +38,9 @@ class RequestLogSamplingFilter(logging.Filter):
         return sample_rate
 
     def filter(self, record):
+        if self._is_health_check_request(record):
+            return False
+
         status_code = getattr(record, "status_code", None)
         try:
             if status_code is not None:
@@ -48,6 +54,18 @@ class RequestLogSamplingFilter(logging.Filter):
 
         # Sample successful requests (status < 400)
         return random.random() < self._sample_rate
+
+    @staticmethod
+    def _is_health_check_request(record) -> bool:
+        if not record.args or not isinstance(record.args[0], str):
+            return False
+
+        request_line_parts = record.args[0].split()
+        if len(request_line_parts) < 2:
+            return False
+
+        request_path = request_line_parts[1].partition("?")[0]
+        return request_path.endswith("/health")
 
 
 def setup_opentelemetry():
@@ -72,7 +90,10 @@ def setup_opentelemetry():
     logger.debug("Setting up OpenTelemetry...")
     instrumentation_options = {
         "azure_sdk": {"enabled": True},
-        "django": {"enabled": True},
+        "django": {
+            "enabled": True,
+            "excluded_urls": HEALTH_CHECK_OTEL_EXCLUDED_URLS,
+        },
         "psycopg2": {"enabled": settings.ENVIRONMENT_SLUG in ("o", "t")},
         "requests": {"enabled": True},
         "urllib": {"enabled": True},
