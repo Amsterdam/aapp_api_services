@@ -82,7 +82,7 @@ stages:
   - stage: prepare
     displayName: preparing variables
     jobs:
-      - template: pipeline.stage.prepare.yaml
+      - template: pipeline.stage.prepare.yaml@source
         parameters:
           ACRKeyvault: shared-o-njo5j7pxxiapu
           ACRtokenServiceconnection: sc-azurerm-ccc-aapp-ont-01
@@ -91,7 +91,7 @@ stages:
   # --------------------
   # BUILD
   # --------------------
-  - template: pipeline.stage.build.yaml
+  - template: pipeline.stage.build.yaml@source
     parameters:
       services: ${{ parameters.services }}
       stageDisplayName: Build, test, analyze & push
@@ -100,7 +100,7 @@ stages:
   # --------------------
   # TEST
   # --------------------
-  - template: pipeline.stage.deploy.yaml
+  - template: pipeline.stage.deploy.yaml@source
     parameters:
       environment: test
       devopsEnvironment: api-test
@@ -122,7 +122,7 @@ stages:
   # --------------------
   # ACC
   # --------------------
-  - template: pipeline.stage.deploy.yaml
+  - template: pipeline.stage.deploy.yaml@source
     parameters:
       environment: acc
       devopsEnvironment: api-acc
@@ -145,7 +145,7 @@ stages:
   # --------------------
   # PROD
   # --------------------
-  - template: pipeline.stage.deploy.yaml
+  - template: pipeline.stage.deploy.yaml@source
     parameters:
       environment: prod
       devopsEnvironment: api-prod
