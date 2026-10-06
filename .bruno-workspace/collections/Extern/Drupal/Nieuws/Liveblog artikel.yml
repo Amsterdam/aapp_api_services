@@ -1,7 +1,7 @@
 info:
   name: Liveblog artikel
   type: graphql
-  seq: 6
+  seq: 5
 
 graphql:
   method: POST
@@ -59,4 +59,3 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-  forwardAuthorizationHeader: false

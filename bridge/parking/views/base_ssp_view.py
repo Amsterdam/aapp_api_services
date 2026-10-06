@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+import urllib
 from datetime import datetime
 
 import httpx
@@ -59,6 +60,7 @@ class BaseSSPView(generics.GenericAPIView):
         external_api=False,
         body_data=None,
         query_params=None,
+        query_string=None,
         wrap_body_data_with_token=False,
         requires_access_token=True,
     ):
@@ -84,7 +86,7 @@ class BaseSSPView(generics.GenericAPIView):
             "X-Auth-Token": settings.SSP_API_KEY,
         }
         if settings.ENVIRONMENT == "local":
-            headers["X-Api-Key"] = settings.API_KEYS.split(",")[0]
+            headers["X-Api-Key"] = settings.API_KEYS.split(",")[-1]
         if requires_access_token:
             ssp_access_token = get_access_token(self.request, external_api)
             if wrap_body_data_with_token:
@@ -106,6 +108,7 @@ class BaseSSPView(generics.GenericAPIView):
                 endpoint=endpoint,
                 headers=headers,
                 query_params=query_params,
+                query_string=query_string,
                 body_data=body_data,
             )
         except httpx.HTTPError as exc:
@@ -126,8 +129,21 @@ class BaseSSPView(generics.GenericAPIView):
         reraise=True,  # reraise error after retries are exhausted
     )
     async def make_ssp_request(
-        self, *, body_data, endpoint, headers, method, query_params
+        self, *, body_data, endpoint, headers, method, query_params, query_string=None
     ):
+
+        if query_string:
+            endpoint = f"{endpoint}?{urllib.parse.urlencode(query_params)}&{urllib.parse.quote(query_string)}"
+            query_params = {}
+
+        logging.info(
+            f"Making SSP request to endpoint: {endpoint} with method: {method}"
+        )
+        logging.info(f"Request headers: {headers}")
+        logging.info(f"Request query params: {query_params}")
+        logging.info(f"Request query string: {query_string}")
+        logging.info(f"Request body data: {body_data}")
+
         ssp_response = await ssp_client.request(
             method=method,
             url=endpoint,
@@ -149,6 +165,8 @@ class BaseSSPView(generics.GenericAPIView):
         # cap error message length
         if isinstance(content, str):
             content = content[:500]
+
+        logging.info(f"SSP response content: {content}")
 
         if ssp_response.status_code == 500:
             raise exceptions.SSPServerError(detail=content)  # Map to 500 status
