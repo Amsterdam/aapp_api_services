@@ -134,6 +134,27 @@ class TestParkingSessionListView(BaseSSPTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
 
+    @freeze_time("2025-11-04T14:30:00+00:00")
+    def test_successful_with_next_24_hours(self):
+        resp = respx.post(ParkingSessionListView.ssp_endpoint).mock(
+            return_value=httpx.Response(
+                200, json=parking_session_list.MOCK_RESPONSE_ACTIVE_PLANNED
+            )
+        )
+
+        response = self.client.get(
+            self.url,
+            {"next_24_hours": True, "status": "COMPLETED"},
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertEqual(
+            resp.calls[0].request.url.params["filters[status]"], "ACTIVE,FUTURE"
+        )
+        self.assertEqual(len(response.data["result"]), 2)
+
 
 class TestParkingSessionVisitorListView(BaseSSPTestCase):
     def setUp(self):

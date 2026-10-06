@@ -58,7 +58,9 @@ EXCEPTIONS = [
 
 class ParkingSessionListView(BaseSSPView):
     """
-    Get parking sessions from SSP API
+    Get parking sessions from SSP API.
+
+    Note: when `next_24_hours` is set to True, only sessions within the next 24 hours will be returned (status filter will be overwritten to `ACTIVE_OR_PLANNED`)
     """
 
     serializer_class = ParkingSessionListRequestSerializer
@@ -77,8 +79,7 @@ class ParkingSessionListView(BaseSSPView):
         request_serializer.is_valid(raise_exception=True)
         data = request_serializer.validated_data
         filter_status = self.kwargs.get("status") or data.get("status")
-        next_24_hours = self.kwargs.get("only_relevant") or data.get("only_relevant")
-        query_string = None
+        next_24_hours = self.kwargs.get("next_24_hours") or data.get("next_24_hours")
 
         request_payload = {
             "page": data["page"],
@@ -98,14 +99,13 @@ class ParkingSessionListView(BaseSSPView):
             )
 
             # determine low and high datetime range for the next 24 hours
-            low_datetime = datetime.now()
+            low_datetime = datetime.now(dt_timezone.utc)
             high_datetime = low_datetime + timedelta(hours=24)
 
         response_data = await self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
             query_params=request_payload,
-            query_string=query_string,
             external_api=True,
             wrap_body_data_with_token=True,
         )
@@ -116,6 +116,7 @@ class ParkingSessionListView(BaseSSPView):
                 session
                 for session in sessions_data
                 if session["started_at"]
+                and session["ended_at"]
                 and (
                     low_datetime
                     <= datetime.fromisoformat(session["started_at"])
@@ -153,21 +154,24 @@ class ParkingSessionListView(BaseSSPView):
             }
             for session in sessions_data
         ]
-        response_serializer = self.get_serialized_response(response_data, results)
+
+        response_serializer = self.get_serialized_response(
+            response_data, results, include_totals=not next_24_hours
+        )
         return Response(
             data=response_serializer.data,
             status=status.HTTP_200_OK,
         )
 
-    def get_serialized_response(self, response_data, results):
+    def get_serialized_response(self, response_data, results, include_totals=True):
         total_pages = math.ceil(response_data["count"] / response_data["row_per_page"])
         response_payload = {
             "result": results,
             "page": {
                 "number": response_data["page"],
                 "size": response_data["row_per_page"],
-                "totalElements": response_data["count"],
-                "totalPages": total_pages,
+                "totalElements": response_data["count"] if include_totals else None,
+                "totalPages": total_pages if include_totals else None,
             },
         }
         response_serializer = self.response_serializer_class(data=response_payload)
@@ -202,7 +206,7 @@ class ParkingSessionVisitorListView(ParkingSessionListView):
     async def get(self, request, *args, **kwargs):
         return await super().get(request, *args, **kwargs)
 
-    def get_serialized_response(self, _, results):
+    def get_serialized_response(self, _, results, include_totals=True):
         response_payload = results
         response_serializer = self.response_serializer_class(
             data=response_payload, many=True

@@ -31,7 +31,7 @@ class ParkingSessionListRequestSerializer(serializers.Serializer):
     )
     sort = serializers.CharField(default="started_at:desc")
     status = serializers.ChoiceField(required=False, choices=STATUS_CHOICES)
-    only_relevant = serializers.BooleanField(required=False, default=False)
+    next_24_hours = serializers.BooleanField(required=False, default=False)
     report_code = serializers.CharField(required=False)
     vehicle_id = serializers.CharField(required=False)
 

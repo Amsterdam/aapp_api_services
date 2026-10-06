@@ -4,8 +4,8 @@ from rest_framework import serializers
 class PaginationPageSerializer(serializers.Serializer):
     number = serializers.IntegerField()
     size = serializers.IntegerField()
-    totalElements = serializers.IntegerField()
-    totalPages = serializers.IntegerField()
+    totalElements = serializers.IntegerField(allow_null=True)
+    totalPages = serializers.IntegerField(allow_null=True)
 
 
 class PaginationLinkHrefSerializer(serializers.Serializer):
