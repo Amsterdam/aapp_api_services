@@ -1,11 +1,18 @@
 from django.urls import path
 
 from core.urls import get_swagger_paths
+from core.views.health_views import HealthCheckView
 from news.views import article_views, districts_views, notification_views
 
 BASE_PATH = "news/api/v1"
 
 urlpatterns = [
+    # health check
+    path(
+        "news/health",
+        HealthCheckView.as_view(),
+        name="health-check",
+    ),
     path(
         BASE_PATH + "/articles",
         article_views.ArticleListView.as_view(),

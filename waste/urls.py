@@ -3,6 +3,7 @@ from django.conf.urls.static import static
 from django.urls import path
 
 from core.urls import get_admin_paths, get_swagger_paths
+from core.views.health_views import HealthCheckView
 from waste.views.container_views import WasteContainerPassNumberView
 from waste.views.recycle_views import RecycleLocationsView
 from waste.views.waste_views import (
@@ -15,6 +16,12 @@ BASE_PATH = "waste/api/v1"
 BASE_PATH_ADMIN = "waste/admin"
 
 urlpatterns = [
+    # health check
+    path(
+        "waste/health",
+        HealthCheckView.as_view(),
+        name="health-check",
+    ),
     path(
         BASE_PATH + "/guide",
         WasteGuideView.as_view(),

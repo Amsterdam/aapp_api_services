@@ -5,12 +5,19 @@ from contact.views import contact_views, link_views, service_views
 from contact.views.pride_event_views import PrideEventsView
 from core.urls import get_admin_paths, get_swagger_paths
 from core.views.admin_views import AdminLoginView
+from core.views.health_views import HealthCheckView
 
 BASE_PATH_CONTACT = "contact/api/v1"
 BASE_PATH_ADMIN = "contact/admin"
 BASE_PATH_SERVICE = "service/api/v1"
 
 urlpatterns = [
+    # health check
+    path(
+        "contact/health",
+        HealthCheckView.as_view(),
+        name="health-check",
+    ),
     path(
         BASE_PATH_CONTACT + "/city-offices",
         contact_views.CityOfficesView.as_view(),

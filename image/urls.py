@@ -1,13 +1,19 @@
 from django.urls import path
 
 from core.urls import get_swagger_paths
+from core.views.health_views import HealthCheckView
 from image import views
 
 BASE_PATH = "image/api/v1"
 BASE_PATH_INTERNAL = "internal/api/v1"
 
-
 urlpatterns = [
+    # health check
+    path(
+        "image/health",
+        HealthCheckView.as_view(),
+        name="health-check",
+    ),
     path(
         BASE_PATH_INTERNAL + "/image",
         views.ImageSetCreateView.as_view(),

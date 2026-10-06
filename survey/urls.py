@@ -1,12 +1,19 @@
 from django.urls import path
 
 from core.urls import get_admin_paths, get_swagger_paths
+from core.views.health_views import HealthCheckView
 from survey import views
 
 BASE_PATH = "survey/api/v1"
 BASE_PATH_ADMIN = "survey/admin"
 
 urlpatterns = [
+    # health check
+    path(
+        "survey/health",
+        HealthCheckView.as_view(),
+        name="health-check",
+    ),
     path(
         BASE_PATH + "/surveys",
         views.SurveyView.as_view(),
