@@ -12,6 +12,11 @@ from bridge.boat_charging.views.base_view import (
 
 
 class VignettesRetrieveCreateView(BaseView):
+    def get_serializer(self, *args, **kwargs):
+        if self.request.method.lower() == "post":
+            return VignettesLinkRequestSerializer(*args, **kwargs)
+        return super().get_serializer(*args, **kwargs)
+
     @boat_charging_openapi_decorator(
         response_serializer_class=VignettesListResponseSerializer,
         accepts_access_token=True,
