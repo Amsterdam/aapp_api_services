@@ -1,7 +1,6 @@
 import hashlib
 import json
 import logging
-import urllib
 from datetime import datetime
 
 import httpx
@@ -60,7 +59,6 @@ class BaseSSPView(generics.GenericAPIView):
         external_api=False,
         body_data=None,
         query_params=None,
-        query_string=None,
         wrap_body_data_with_token=False,
         requires_access_token=True,
     ):
@@ -108,7 +106,6 @@ class BaseSSPView(generics.GenericAPIView):
                 endpoint=endpoint,
                 headers=headers,
                 query_params=query_params,
-                query_string=query_string,
                 body_data=body_data,
             )
         except httpx.HTTPError as exc:
@@ -129,20 +126,8 @@ class BaseSSPView(generics.GenericAPIView):
         reraise=True,  # reraise error after retries are exhausted
     )
     async def make_ssp_request(
-        self, *, body_data, endpoint, headers, method, query_params, query_string=None
+        self, *, body_data, endpoint, headers, method, query_params
     ):
-
-        if query_string:
-            endpoint = f"{endpoint}?{urllib.parse.urlencode(query_params)}&{urllib.parse.quote(query_string)}"
-            query_params = {}
-
-        logging.info(
-            f"Making SSP request to endpoint: {endpoint} with method: {method}"
-        )
-        logging.info(f"Request headers: {headers}")
-        logging.info(f"Request query params: {query_params}")
-        logging.info(f"Request query string: {query_string}")
-        logging.info(f"Request body data: {body_data}")
 
         ssp_response = await ssp_client.request(
             method=method,

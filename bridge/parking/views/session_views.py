@@ -1,6 +1,6 @@
 import logging
 import math
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
 
 from asgiref.sync import sync_to_async
@@ -77,7 +77,7 @@ class ParkingSessionListView(BaseSSPView):
         request_serializer.is_valid(raise_exception=True)
         data = request_serializer.validated_data
         filter_status = self.kwargs.get("status") or data.get("status")
-        only_relevant = self.kwargs.get("only_relevant") or data.get("only_relevant")
+        next_24_hours = self.kwargs.get("only_relevant") or data.get("only_relevant")
         query_string = None
 
         request_payload = {
@@ -89,17 +89,18 @@ class ParkingSessionListView(BaseSSPView):
             request_payload["filters[client_product_id]"] = int(data["report_code"])
         if filter_status:
             request_payload["filters[status]"] = self.map_filter_status(filter_status)
-        if only_relevant:
-            # get dates of today and tomorrow in format YYYY-MM-DD
-            today = date.today().strftime("%Y-%m-%d")
-            tomorrow = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
-            # only_relevant = f"{today}"
-            # request_payload["filters[status]"] = self.map_filter_status("ACTIVE_OR_PLANNED")
-            # request_payload["filters[date]"] = today
-            # request_payload["filters[date]"] = tomorrow
-            query_string = f"filters[date]={today}&filters[date]={tomorrow}"
         if data.get("vehicle_id"):
             request_payload["filters[vrn]"] = data["vehicle_id"]
+        if next_24_hours:
+            # overwrite status filter
+            request_payload["filters[status]"] = self.map_filter_status(
+                "ACTIVE_OR_PLANNED"
+            )
+
+            # determine low and high datetime range for the next 24 hours
+            low_datetime = datetime.now()
+            high_datetime = low_datetime + timedelta(hours=24)
+
         response_data = await self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
@@ -109,7 +110,22 @@ class ParkingSessionListView(BaseSSPView):
             wrap_body_data_with_token=True,
         )
         sessions_data = response_data.get("data", [])
-        logging.info(f"Number of sessions retrieved: {len(sessions_data)}")
+
+        if next_24_hours:
+            sessions_data = [
+                session
+                for session in sessions_data
+                if session["started_at"]
+                and (
+                    low_datetime
+                    <= datetime.fromisoformat(session["started_at"])
+                    <= high_datetime
+                    or low_datetime
+                    <= datetime.fromisoformat(session["ended_at"])
+                    <= high_datetime
+                )
+            ]
+
         results = [
             {
                 "start_date_time": session["started_at"],
