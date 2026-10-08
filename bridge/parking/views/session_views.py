@@ -98,10 +98,6 @@ class ParkingSessionListView(BaseSSPView):
                 "ACTIVE_OR_PLANNED"
             )
 
-            # determine low and high datetime range for the next 24 hours
-            low_datetime = datetime.now(dt_timezone.utc)
-            high_datetime = low_datetime + timedelta(hours=24)
-
         response_data = await self.ssp_api_call(
             method="POST",
             endpoint=self.ssp_endpoint,
@@ -112,6 +108,9 @@ class ParkingSessionListView(BaseSSPView):
         sessions_data = response_data.get("data", [])
 
         if next_24_hours:
+            # determine low and high datetime range for the next 24 hours
+            low_datetime = datetime.now(dt_timezone.utc)
+            high_datetime = low_datetime + timedelta(hours=24)
             sessions_data = [
                 session
                 for session in sessions_data
@@ -154,7 +153,6 @@ class ParkingSessionListView(BaseSSPView):
             }
             for session in sessions_data
         ]
-
         response_serializer = self.get_serialized_response(
             response_data, results, include_totals=not next_24_hours
         )

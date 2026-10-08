@@ -84,7 +84,7 @@ class BaseSSPView(generics.GenericAPIView):
             "X-Auth-Token": settings.SSP_API_KEY,
         }
         if settings.ENVIRONMENT == "local":
-            headers["X-Api-Key"] = settings.API_KEYS.split(",")[-1]
+            headers["X-Api-Key"] = settings.API_KEYS.split(",")[0]
         if requires_access_token:
             ssp_access_token = get_access_token(self.request, external_api)
             if wrap_body_data_with_token:
@@ -128,7 +128,6 @@ class BaseSSPView(generics.GenericAPIView):
     async def make_ssp_request(
         self, *, body_data, endpoint, headers, method, query_params
     ):
-
         ssp_response = await ssp_client.request(
             method=method,
             url=endpoint,
@@ -150,8 +149,6 @@ class BaseSSPView(generics.GenericAPIView):
         # cap error message length
         if isinstance(content, str):
             content = content[:500]
-
-        logging.info(f"SSP response content: {content}")
 
         if ssp_response.status_code == 500:
             raise exceptions.SSPServerError(detail=content)  # Map to 500 status
