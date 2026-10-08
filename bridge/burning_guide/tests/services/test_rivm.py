@@ -161,7 +161,6 @@ class TestRIVMService(ResponsesActivatedAPITestCase):
             "FORMAT": "image/png",
             "TRANSPARENT": "true",
             "LAYERS": "stookwijzer_v2",
-            "servicekey": self.rivm_service.service_key,
             "BUFFER": "1",
             "EXCEPTIONS": "INIMAGE",
             "info_format": "application/json",

@@ -30,7 +30,6 @@ ADDRESS_SEARCH_URL = os.getenv(
 )
 
 # Burning guide
-BURNING_GUIDE_SERVICE_KEY = os.getenv("BURNING_GUIDE_SERVICE_KEY", "")
 BURNING_GUIDE_RIVM_URL = os.getenv(
     "BURNING_GUIDE_RIVM_URL", "https://data.rivm.nl/geo/alo/wms"
 )
@@ -44,20 +43,10 @@ SSP_BASE_URL = os.getenv("SSP_BASE_URL", "https://evs-ssp-accp.mendixcloud.com")
 SSP_BASE_URL_V2 = os.getenv(
     "SSP_BASE_URL_V2", "https://api-preprod02-ams-fo.egis-group.io"
 )
-# SSP_BASE_URL_V2 = os.getenv(
-#     "SSP_BASE_URL_V2",
-#     "http://127.0.0.1:8000/parking/api/v1/egis-proxy"
-#     # "https://test.app.amsterdam.nl/parking/api/v1/egis-proxy"
-# )
 SSP_BASE_URL_EXTERNAL = os.getenv(
     "SSP_BASE_URL_EXTERNAL",
     "https://api-preprod02-ams-rest.egis-group.io",
 )
-# SSP_BASE_URL_EXTERNAL = os.getenv(
-#     "SSP_BASE_URL_EXTERNAL",
-#     "http://127.0.0.1:8000/parking/api/v1/egis-ext-proxy"
-#     # "https://test.app.amsterdam.nl/parking/api/v1/egis-ext-proxy",
-# )
 SSP_API_KEY = os.getenv("SSP_API_KEY", "api-key-ssp")
 
 SSP_ACCESS_TOKEN_HEADER = "SSP-Access-Token"
