@@ -54,6 +54,11 @@ SSP_ACCESS_TOKEN_HEADER = "SSP-Access-Token"
 PARKING_REMINDER_TIME = os.getenv("PARKING_REMINDER_TIME", 15)
 SSP_API_TIMEOUT_SECONDS = int(os.getenv("SSP_API_TIMEOUT_SECONDS", 10))
 
+RDW_BASE_URL = os.getenv(
+    "RDW_BASE_URL", "https://opendata.rdw.nl/resource/m9d7-ebf2.json"
+)
+RDW_APP_TOKEN = os.getenv("RDW_APP_TOKEN", "")
+
 # Mijn Amsterdam API
 MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
 MIJN_AMS_API_KEY_INBOUND = os.getenv("CITY_PASS_MIJN_AMS_API_KEY")
