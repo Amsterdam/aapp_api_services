@@ -61,3 +61,43 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
             self.url, data=request_payload, headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
+
+    def test_get_vignettes_without_access_token(self):
+        headers_without_access_token = self.api_headers.copy()
+        headers_without_access_token.pop("access_token")
+
+        endpoint_mock = respx.get(settings.BOAT_CHARGING_ENDPOINTS["VIGNETTES"]).mock(
+            return_value=httpx.Response(200, json=[])
+        )
+
+        response = self.client.get(self.url, headers=headers_without_access_token)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.json(), {"detail": "No access token provided in request headers"}
+        )
+        self.assertFalse(endpoint_mock.called)
+
+    def test_post_vignette_link_without_access_token(self):
+        headers_without_access_token = self.api_headers.copy()
+        headers_without_access_token.pop("access_token")
+        request_payload = {
+            "vignet_number": "V123456",
+            "boat_name": "Boat 1",
+        }
+
+        endpoint_mock = respx.post(settings.BOAT_CHARGING_ENDPOINTS["VIGNETTES"]).mock(
+            return_value=httpx.Response(200, json=vignettes.MOCK_DATA_LINK)
+        )
+
+        response = self.client.post(
+            self.url,
+            data=request_payload,
+            headers=headers_without_access_token,
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.json(), {"detail": "No access token provided in request headers"}
+        )
+        self.assertFalse(endpoint_mock.called)
