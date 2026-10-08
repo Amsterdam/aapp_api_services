@@ -1,7 +1,7 @@
 # Bridge Boat Charging
 
 ## Purpose of the module
-Provide a stable boat charging experience for Amsterdam App by exposing consistent location availability, status, and capacity information.
+Provide a stable boat charging experience for Amsterdam App by exposing consistent location availability, status, capacity information, and customer vignette registration data used in the charging flow.
 
 ## Main business rules
 - After payment collection, the session is CheckedOut and the socket is blocked for others until session end, or 20 minutes if charging never starts.
@@ -10,6 +10,8 @@ Provide a stable boat charging experience for Amsterdam App by exposing consiste
 - If upstream statuses are AVAILABLE but availability is false, the socket must be treated as OCCUPIED in API responses to reflect temporary holds.
 - Location status is derived as OPERATIVE, OCCUPIED, INOPERATIVE, or UNKNOWN based on connector operability and availability.
 - Location capacity uses the highest relevant connector power, prioritizing operative connectors.
+- Vignettes are user-scoped records that can be retrieved and linked for an authenticated user.
+- A vignette link request must include the vignette number and boat name as user-provided ownership details.
 
 ## Major non-standard architectural decisions
 - Availability authority is delegated to NRG signals (including hold effects) instead of being recomputed in this backend.
