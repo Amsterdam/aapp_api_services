@@ -30,7 +30,6 @@ ADDRESS_SEARCH_URL = os.getenv(
 )
 
 # Burning guide
-BURNING_GUIDE_SERVICE_KEY = os.getenv("BURNING_GUIDE_SERVICE_KEY", "")
 BURNING_GUIDE_RIVM_URL = os.getenv(
     "BURNING_GUIDE_RIVM_URL", "https://data.rivm.nl/geo/alo/wms"
 )
