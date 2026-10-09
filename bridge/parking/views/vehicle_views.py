@@ -4,6 +4,7 @@ import requests
 from django.conf import settings
 from rest_framework import generics, status
 from rest_framework.response import Response
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from bridge.burning_guide.utils import (
     extend_schema_for_burning_guide as extend_schema,
@@ -36,46 +37,41 @@ class VehicleInformationView(generics.GenericAPIView):
 
         # transform licence plate to uppercase and remove dashes
         licence_plate = licence_plate.upper().replace("-", "")
-        logger.info(f"Fetching vehicle information for licence plate: {licence_plate}")
         response = self._make_request(licence_plate)
         vehicle_information = response.json()
-        logger.info(f"Vehicle information fetched: {vehicle_information}")
 
         # it there is no vehicle information, we still return a successful response to not clutter logging
         if not vehicle_information:
-            return Response(
-                data={"success": False, "content": {}},
-                status=status.HTTP_200_OK,
-            )
+            success = False
+            content = None
+        else:
+            success = True
+            content = {
+                "brand": vehicle_information[0].get("merk"),
+                "type": vehicle_information[0].get("handelsbenaming"),
+                "color": vehicle_information[0].get("eerste_kleur"),
+            }
 
-        # Map the RDW response to the expected vehicle information format
-        vehicle_information = {
-            "success": True,
-            "content": {
-                "brand": vehicle_information.get("merk"),
-                "type": vehicle_information.get("handelsbenaming"),
-                "color": vehicle_information.get("eerste_kleur"),
-            },
-        }
+        response_serializer = VehicleInformationResponseSerializer(
+            data={"success": success, "content": content}
+        )
+        response_serializer.is_valid(raise_exception=True)
         return Response(
-            data=vehicle_information,
+            data=response_serializer.data,
             status=status.HTTP_200_OK,
         )
 
-    # @retry(
-    #     stop=stop_after_attempt(3),
-    #     wait=wait_fixed(2),
-    #     retry=retry_if_exception_type(requests.exceptions.RequestException),
-    #     reraise=True,  # Reraise the RequestException after retries
-    # )
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(2),
+        retry=retry_if_exception_type(requests.exceptions.RequestException),
+        reraise=True,  # Reraise the RequestException after retries
+    )
     def _make_request(self, licence_plate: str) -> requests.Response:
         """Make the HTTP request to RDW"""
-
-        url = f"{settings.RDW_BASE_URL}"
-        logger.info(f"Making request to URL: {url}, for licence plate: {licence_plate}")
         try:
             response = requests.get(
-                url,
+                settings.RDW_BASE_URL,
                 headers={
                     "Content-Type": "application/json",
                     "X-App-Token": f"{settings.RDW_APP_TOKEN}",
@@ -86,15 +82,9 @@ class VehicleInformationView(generics.GenericAPIView):
                 },
                 timeout=10,
             )
-            logger.info(
-                f"Made request to URL: {url}, for licence plate: {licence_plate}"
-            )
 
             response.raise_for_status()
-            logger.info(
-                f"Successfully fetched vehicle information for licence plate: {licence_plate}"
-            )
             return response
         except requests.exceptions.RequestException:
-            logger.info("Failed to fetch data", extra={"url": url})
+            logger.info("Failed to fetch rdw data")
             raise
