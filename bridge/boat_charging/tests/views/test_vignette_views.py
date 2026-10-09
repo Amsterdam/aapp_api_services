@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 import httpx
 import respx
 from django.conf import settings
@@ -5,14 +7,12 @@ from django.urls import reverse
 
 from bridge.boat_charging.tests.mock_data import vignettes
 from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
-from bridge.boat_charging.views.vignette_view import VignettesRetrieveCreateView
 
 
 class TestVignettesRetrieveCreateView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("boat-charging-vignettes")
-        self.view = VignettesRetrieveCreateView()
 
     def test_get_vignettes_without_data(self):
 
@@ -50,6 +50,7 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
     def test_post_vignette_link(self):
         request_payload = {
             "vignet_number": "V123456",
+            "postal_code": "1234AB",
             "boat_name": "Boat 1",
         }
 
@@ -83,6 +84,7 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
         headers_without_access_token.pop("access_token")
         request_payload = {
             "vignet_number": "V123456",
+            "postal_code": "1234AB",
             "boat_name": "Boat 1",
         }
 
@@ -101,3 +103,27 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
             response.json(), {"detail": "No access token provided in request headers"}
         )
         self.assertFalse(endpoint_mock.called)
+
+
+class TestVerifyVignetteView(BoatChargingTestCase):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("boat-charging-vignettes-verify")
+
+    def test_success(self):
+        request_payload = {
+            "vignet_number": "AB123",
+            "postal_code": "1234AB",
+        }
+
+        respx.post(
+            f"{urljoin(settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'], 'verify')}"
+        ).mock(return_value=httpx.Response(200, json=vignettes.MOCK_DATA_VERIFY))
+
+        response = self.client.post(
+            self.url, data=request_payload, headers=self.api_headers
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(), {"status": "valid", "expiration_date": "2026-12-31"}
+        )

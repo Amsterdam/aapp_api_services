@@ -82,4 +82,9 @@ urlpatterns = [
         vignette_view.VignettesRetrieveCreateView.as_view(),
         name="boat-charging-vignettes",
     ),
+    path(
+        BASE_PATH + "/vignettes/verify",
+        vignette_view.VerifyVignetteView.as_view(),
+        name="boat-charging-vignettes-verify",
+    ),
 ]

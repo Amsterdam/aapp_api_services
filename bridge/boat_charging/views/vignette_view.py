@@ -1,7 +1,11 @@
+from urllib.parse import urljoin
+
 from django.conf import settings
 from rest_framework.response import Response
 
 from bridge.boat_charging.serializers.vignette_serializers import (
+    VerifyVignetteRequestSerializer,
+    VerifyVignetteResponseSerializer,
     VignettesLinkRequestSerializer,
     VignettesListResponseSerializer,
 )
@@ -62,6 +66,7 @@ class VignettesRetrieveCreateView(BaseView):
 
         request_payload = {
             "vignetNumber": validated_data["vignet_number"],
+            "postcode": validated_data["postal_code"],
             "boatName": validated_data["boat_name"],
         }
         endpoint = settings.BOAT_CHARGING_ENDPOINTS["VIGNETTES"]
@@ -72,3 +77,41 @@ class VignettesRetrieveCreateView(BaseView):
         )
 
         return Response(status=200)
+
+
+class VerifyVignetteView(BaseView):
+    requires_access_token = False
+    response_serializer_class = VerifyVignetteResponseSerializer
+    serializer_class = VerifyVignetteRequestSerializer
+
+    @boat_charging_openapi_decorator(
+        response_serializer_class=VerifyVignetteResponseSerializer,
+        accepts_access_token=False,
+        requires_access_token=False,
+    )
+    async def post(self, request, *args, **kwargs):
+        """Verify a vignette."""
+        request_data = VerifyVignetteRequestSerializer(data=request.data)
+        request_data.is_valid(raise_exception=True)
+        validated_data = request_data.validated_data
+
+        request_payload = {
+            "vignetNumber": validated_data["vignet_number"],
+            "postcode": validated_data["postal_code"],
+        }
+        endpoint = f"{urljoin(settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'], 'verify')}"
+        response = await self.api_call(
+            "post",
+            endpoint=endpoint,
+            body_data=request_payload,
+        )
+
+        response_data = {
+            "status": response.get("status"),
+            "expiration_date": response.get("validToDate"),
+        }
+
+        response_serializer = self.response_serializer_class(data=response_data)
+        response_serializer.is_valid(raise_exception=True)
+
+        return Response(response_serializer.data, status=200)

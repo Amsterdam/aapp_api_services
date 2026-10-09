@@ -10,4 +10,15 @@ class VignettesListResponseSerializer(serializers.Serializer):
 
 class VignettesLinkRequestSerializer(serializers.Serializer):
     vignet_number = serializers.CharField()
-    boat_name = serializers.CharField()
+    boat_name = serializers.CharField(required=False)
+    postal_code = serializers.CharField()
+
+
+class VerifyVignetteRequestSerializer(serializers.Serializer):
+    vignet_number = serializers.CharField()
+    postal_code = serializers.CharField()
+
+
+class VerifyVignetteResponseSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    expiration_date = serializers.CharField()
