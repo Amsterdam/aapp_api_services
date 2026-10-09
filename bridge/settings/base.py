@@ -30,7 +30,6 @@ ADDRESS_SEARCH_URL = os.getenv(
 )
 
 # Burning guide
-BURNING_GUIDE_SERVICE_KEY = os.getenv("BURNING_GUIDE_SERVICE_KEY", "")
 BURNING_GUIDE_RIVM_URL = os.getenv(
     "BURNING_GUIDE_RIVM_URL", "https://data.rivm.nl/geo/alo/wms"
 )
@@ -72,10 +71,11 @@ BOAT_CHARGING_CLIENT_ID = os.getenv("NRG_CLIENT_ID")
 BOAT_CHARGING_USER_POOL = os.getenv("NRG_USER_POOL")
 
 BOAT_CHARGING_DOMAIN = os.getenv(
-    "BOAT_CHARGING_DOMAIN", "https://amsboatapp-tst.nrganext.nl/api/"
+    "BOAT_CHARGING_DOMAIN", "https://amsboatapp-acc.nrganext.nl/api/"
 )
 BOAT_CHARGING_ENDPOINTS = {
     "LOCATIONS": urljoin(BOAT_CHARGING_DOMAIN, "locations"),
     "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "sessions"),
     "SETTINGS": urljoin(BOAT_CHARGING_DOMAIN, "app-settings/public"),
+    "VIGNETTES": urljoin(BOAT_CHARGING_DOMAIN, "vignettes"),
 }

@@ -7,6 +7,7 @@ from bridge.boat_charging.views import (
     session_view,
     settings_view,
     terms_view,
+    vignette_view,
 )
 
 BASE_PATH = "boat-charging/api/v1"
@@ -75,5 +76,20 @@ urlpatterns = [
         BASE_PATH + "/settings",
         settings_view.SettingsView.as_view(),
         name="boat-charging-settings",
+    ),
+    path(
+        BASE_PATH + "/vignettes",
+        vignette_view.VignettesRetrieveCreateView.as_view(),
+        name="boat-charging-vignettes",
+    ),
+    path(
+        BASE_PATH + "/vignettes/verify",
+        vignette_view.VerifyVignetteView.as_view(),
+        name="boat-charging-vignettes-verify",
+    ),
+    path(
+        BASE_PATH + "/vignettes/<str:id>",
+        vignette_view.VignettesUpdateDeleteView.as_view(),
+        name="boat-charging-vignettes-update-delete",
     ),
 ]
