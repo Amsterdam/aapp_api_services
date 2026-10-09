@@ -134,6 +134,89 @@ class TestParkingSessionListView(BaseSSPTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
 
+    @freeze_time("2025-11-04T14:30:00+00:00")
+    def test_successful_with_next_24_hours(self):
+        resp = respx.post(ParkingSessionListView.ssp_endpoint).mock(
+            return_value=httpx.Response(
+                200, json=parking_session_list.MOCK_RESPONSE_ACTIVE_PLANNED
+            )
+        )
+
+        response = self.client.get(
+            self.url,
+            {"next_24_hours": True, "status": "COMPLETED"},
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertEqual(
+            resp.calls[0].request.url.params["filters[status]"], "ACTIVE,FUTURE"
+        )
+        self.assertEqual(len(response.data["result"]), 2)
+
+    @freeze_time("2025-11-04T14:30:00+00:00")
+    def test_filter_sessions_on_next_24_hours(self):
+        test_cases = [
+            {
+                "name": "start date before now, end date within 24 hours",
+                "session": {
+                    "started_at": "2025-11-04T14:00:00+00:00",
+                    "ended_at": "2025-11-04T15:00:00+00:00",
+                },
+                "expected_keep": True,
+            },
+            {
+                "name": "start date within 24 hours, end date after 24 hours",
+                "session": {
+                    "started_at": "2025-11-04T15:00:00+00:00",
+                    "ended_at": "2025-11-05T15:00:00+00:00",
+                },
+                "expected_keep": True,
+            },
+            {
+                "name": "start date and end date within next 24 hours",
+                "session": {
+                    "started_at": "2025-11-04T15:00:00+00:00",
+                    "ended_at": "2025-11-04T16:00:00+00:00",
+                },
+                "expected_keep": True,
+            },
+            {
+                "name": "start date before now, end date after 24 hours",
+                "session": {
+                    "started_at": "2025-11-04T14:00:00+00:00",
+                    "ended_at": "2025-11-05T15:00:00+00:00",
+                },
+                "expected_keep": True,
+            },
+            {
+                "name": "start and end date before now",
+                "session": {
+                    "started_at": "2025-11-04T12:00:00+00:00",
+                    "ended_at": "2025-11-04T14:00:00+00:00",
+                },
+                "expected_keep": False,
+            },
+            {
+                "name": "start and end date after 24 hours",
+                "session": {
+                    "started_at": "2025-11-05T15:00:01+00:00",
+                    "ended_at": "2025-11-05T16:00:00+00:00",
+                },
+                "expected_keep": False,
+            },
+        ]
+
+        view = ParkingSessionListView()
+        for case in test_cases:
+            with self.subTest(case=case["name"]):
+                filtered_sessions = view.filter_sessions_on_next_24_hours(
+                    [case["session"]]
+                )
+                expected_length = 1 if case["expected_keep"] else 0
+                self.assertEqual(len(filtered_sessions), expected_length)
+
 
 class TestParkingSessionVisitorListView(BaseSSPTestCase):
     def setUp(self):

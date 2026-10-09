@@ -52,7 +52,6 @@ def load_postal_data():
 
 class RIVMService:
     def __init__(self) -> None:
-        self.service_key = settings.BURNING_GUIDE_SERVICE_KEY
         self.base_url = settings.BURNING_GUIDE_RIVM_URL
         self.model_runtime = None
 

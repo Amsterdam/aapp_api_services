@@ -2,14 +2,13 @@ name: T
 variables:
   - name: NRG_base_url
     value: https://amsboatapp-tst.nrganext.nl/api
-    description: ""
   - name: DrupalBaseUrl
     value: https://dvo.acc.amsterdam.nl/graphql
-    description: ""
   - name: DrupalBasicAuthUsername
     value: acc.amsterdam.nl
-    description: ""
   - secret: true
     name: access-token
+    description: ""
   - secret: true
     name: DrupalBasicAuthPassWord
+    description: ""

@@ -15,6 +15,9 @@
   - Run migrations: `SERVICE_NAME=city_pass make migrate`.
 - **Testing:**
   - Run all tests: `make test` (ensure venv is active).
+  - Run tests for a specific service: `SERVICE_NAME=city_pass make test` (replace `city_pass` as needed).
+  - Run tests for a specific file: `SERVICE_NAME=city_pass docker compose run --rm test pytest path/to/test_file.py` (replace `city_pass` and the file path as needed).
+ 
 - **Pre-commit:**
   - Install hooks: `pip install pre-commit && pre-commit install`.
 

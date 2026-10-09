@@ -8,6 +8,11 @@ class PaginationPageSerializer(serializers.Serializer):
     totalPages = serializers.IntegerField()
 
 
+class SessionPaginationPageSerializer(PaginationPageSerializer):
+    totalElements = serializers.IntegerField(allow_null=True)
+    totalPages = serializers.IntegerField(allow_null=True)
+
+
 class PaginationLinkHrefSerializer(serializers.Serializer):
     href = serializers.URLField()
 
