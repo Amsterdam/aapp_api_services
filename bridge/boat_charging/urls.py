@@ -87,4 +87,9 @@ urlpatterns = [
         vignette_view.VerifyVignetteView.as_view(),
         name="boat-charging-vignettes-verify",
     ),
+    path(
+        BASE_PATH + "/vignettes/<str:id>",
+        vignette_view.VignettesUpdateDeleteView.as_view(),
+        name="boat-charging-vignettes-update-delete",
+    ),
 ]

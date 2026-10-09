@@ -1,22 +1,20 @@
 from rest_framework import serializers
 
 
-class VignettesListResponseSerializer(serializers.Serializer):
+class RequiredVignetteFieldSerializer(serializers.Serializer):
+    vignette_number = serializers.CharField()
+    postal_code = serializers.CharField()
+
+
+class VignettesResponseSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    vignet_number = serializers.CharField()
-    boat_name = serializers.CharField()
+    vignette_number = serializers.CharField()
+    boat_name = serializers.CharField(required=False, allow_null=True)
     created_at = serializers.CharField()
 
 
-class VignettesLinkRequestSerializer(serializers.Serializer):
-    vignet_number = serializers.CharField()
+class VignettesLinkRequestSerializer(RequiredVignetteFieldSerializer):
     boat_name = serializers.CharField(required=False)
-    postal_code = serializers.CharField()
-
-
-class VerifyVignetteRequestSerializer(serializers.Serializer):
-    vignet_number = serializers.CharField()
-    postal_code = serializers.CharField()
 
 
 class VerifyVignetteResponseSerializer(serializers.Serializer):

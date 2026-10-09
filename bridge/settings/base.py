@@ -71,7 +71,7 @@ BOAT_CHARGING_CLIENT_ID = os.getenv("NRG_CLIENT_ID")
 BOAT_CHARGING_USER_POOL = os.getenv("NRG_USER_POOL")
 
 BOAT_CHARGING_DOMAIN = os.getenv(
-    "BOAT_CHARGING_DOMAIN", "https://amsboatapp-tst.nrganext.nl/api/"
+    "BOAT_CHARGING_DOMAIN", "https://amsboatapp-acc.nrganext.nl/api/"
 )
 BOAT_CHARGING_ENDPOINTS = {
     "LOCATIONS": urljoin(BOAT_CHARGING_DOMAIN, "locations"),

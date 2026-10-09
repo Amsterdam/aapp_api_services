@@ -106,6 +106,7 @@ class BaseView(GenericAPIView):
             "headers": headers,
             "auth": auth,
         }
+        logger.info(f"Making request with kwargs: {request_kwargs}")
         if timeout is not None:
             request_kwargs["timeout"] = timeout
 
@@ -113,6 +114,8 @@ class BaseView(GenericAPIView):
             **request_kwargs,
         )
         if response.is_success:
+            if response.status_code == 204 or not response.content:
+                return {}
             return response.json()
         return await self.raise_exception(response)
 
@@ -124,6 +127,7 @@ class BaseView(GenericAPIView):
         if response.status_code == 403:
             raise BoatChargingForbiddenError()
         if response.status_code >= 400:
+            logger.warning(f"Client error: {response.status_code} - {response.text}")
             raise BoatChargingClientError(response.text)
         return
 
