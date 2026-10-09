@@ -11,7 +11,7 @@ from bridge.parking.serializers.general_serializers import (
 )
 from bridge.parking.serializers.pagination_serializers import (
     PaginationLinksSerializer,
-    PaginationPageSerializer,
+    SessionPaginationPageSerializer,
 )
 from core.utils.validation_utils import validate_digits
 
@@ -104,7 +104,7 @@ class ParkingSessionResponseSerializer(serializers.Serializer):
 
 class ParkingSessionListPaginatedResponseSerializer(serializers.Serializer):
     result = ParkingSessionResponseSerializer(many=True)
-    page = PaginationPageSerializer()
+    page = SessionPaginationPageSerializer()
     _links = PaginationLinksSerializer(required=False, help_text="DEPRECATED")
 
 

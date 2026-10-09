@@ -108,23 +108,7 @@ class ParkingSessionListView(BaseSSPView):
         sessions_data = response_data.get("data", [])
 
         if next_24_hours:
-            # determine low and high datetime range for the next 24 hours
-            low_datetime = datetime.now(dt_timezone.utc)
-            high_datetime = low_datetime + timedelta(hours=24)
-            sessions_data = [
-                session
-                for session in sessions_data
-                if session["started_at"]
-                and session["ended_at"]
-                and (
-                    low_datetime
-                    <= datetime.fromisoformat(session["started_at"])
-                    <= high_datetime
-                    or low_datetime
-                    <= datetime.fromisoformat(session["ended_at"])
-                    <= high_datetime
-                )
-            ]
+            sessions_data = self.filter_sessions_on_next_24_hours(sessions_data)
 
         results = [
             {
@@ -160,6 +144,19 @@ class ParkingSessionListView(BaseSSPView):
             data=response_serializer.data,
             status=status.HTTP_200_OK,
         )
+
+    def filter_sessions_on_next_24_hours(self, sessions_data):
+        # determine low and high datetime range for the next 24 hours
+        low_datetime = datetime.now(dt_timezone.utc)
+        high_datetime = low_datetime + timedelta(hours=24)
+        return [
+            session
+            for session in sessions_data
+            if session["started_at"]
+            and session["ended_at"]
+            and datetime.fromisoformat(session["started_at"]) <= high_datetime
+            and datetime.fromisoformat(session["ended_at"]) >= low_datetime
+        ]
 
     def get_serialized_response(self, response_data, results, include_totals=True):
         total_pages = math.ceil(response_data["count"] / response_data["row_per_page"])
