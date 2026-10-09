@@ -6,13 +6,11 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-from bridge.burning_guide.utils import (
-    extend_schema_for_burning_guide as extend_schema,
-)
 from bridge.parking.serializers.vehicle_serializers import (
     VehicleInformationRequestSerializer,
     VehicleInformationResponseSerializer,
 )
+from core.utils.openapi_utils import extend_schema_for_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +22,7 @@ class VehicleInformationView(generics.GenericAPIView):
 
     serializer_class = VehicleInformationRequestSerializer
 
-    @extend_schema(
+    @extend_schema_for_api_key(
         success_response=VehicleInformationResponseSerializer,
         serializer_as_params=VehicleInformationRequestSerializer,
     )
@@ -40,7 +38,7 @@ class VehicleInformationView(generics.GenericAPIView):
         response = self._make_request(licence_plate)
         vehicle_information = response.json()
 
-        # it there is no vehicle information, we still return a successful response to not clutter logging
+        # if there is no vehicle information, we still return a successful response to not clutter logging
         if not vehicle_information:
             success = False
             content = None
