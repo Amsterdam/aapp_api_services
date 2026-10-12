@@ -54,9 +54,7 @@ class BaseView(GenericAPIView):
             headers["Authorization"] = f"Bearer {access_token}"
         elif self.requires_access_token:
             raise NotAuthenticated("No access token provided in request headers")
-        logging.info(
-            f"Making request to: {endpoint} with method {method} and headers: {headers}"
-        )
+
         try:
             payload = await self.make_request(
                 method=method,

@@ -224,6 +224,31 @@ class TestVerifyVignetteView(BoatChargingTestCase):
             response.json(), {"status": "valid", "expiration_date": "2026-12-31"}
         )
 
+    def test_verify_non_valid_status_maps_reason_without_expiration_date(self):
+        request_payload = {
+            "vignette_number": "AB123",
+            "postal_code": "1234AB",
+        }
+        non_valid_response = {"status": "invalid", "reason": "NOT FOUND"}
+
+        respx.post(build_vignettes_endpoint("verify")).mock(
+            return_value=httpx.Response(200, json=non_valid_response)
+        )
+
+        response = self.client.post(
+            self.url, data=request_payload, headers=self.api_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "status": non_valid_response["status"],
+                "reason": non_valid_response["reason"],
+            },
+        )
+        self.assertNotIn("expiration_date", response.json())
+
     def test_verify_without_access_token(self):
         headers_without_access_token = self.api_headers.copy()
         headers_without_access_token.pop("access_token")
