@@ -14,9 +14,8 @@ from bridge.boat_charging.views.base_view import (
 
 def build_vignettes_endpoint(path: str | int) -> str:
     base_endpoint = settings.BOAT_CHARGING_ENDPOINTS["VIGNETTES"].rstrip("/")
-    if not path:
+    if path == "":
         return base_endpoint
-    # check if path is integer
     if isinstance(path, int):
         return f"{base_endpoint}/{path}"
     return f"{base_endpoint}/{path.lstrip('/')}"
@@ -120,15 +119,14 @@ class VignettesUpdateDeleteView(BaseView):
             body_data={
                 "vignetNumber": validated_data["vignette_number"],
                 "postcode": validated_data["postal_code"],
-                "boatName": validated_data.get("boat_name"),
             },
         )
 
         response_data = [
             {
-                "id": item["id"],
                 "vignette_number": item["vignetNumber"],
-                "postal_code": item.get("postcode"),
+                "postal_code": item["postcode"],
+                "id": item["id"],
                 "boat_name": item.get("boatName"),
                 "created_at": item["createdAt"],
             }
@@ -186,10 +184,16 @@ class VerifyVignetteView(BaseView):
             body_data=request_payload,
         )
 
-        response_data = {
-            "status": response.get("status"),
-            "expiration_date": response.get("validToDate"),
-        }
+        if response["status"] == "valid":
+            response_data = {
+                "status": response["status"],
+                "expiration_date": response["validToDate"],
+            }
+        else:
+            response_data = {
+                "status": response["status"],
+                "reason": response["reason"],
+            }
 
         response_serializer = self.response_serializer_class(data=response_data)
         response_serializer.is_valid(raise_exception=True)

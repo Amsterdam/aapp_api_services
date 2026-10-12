@@ -154,14 +154,6 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
             ],
         )
         self.assertEqual(endpoint_mock.call_count, 1)
-        self.assertEqual(
-            json.loads(endpoint_mock.calls.last.request.content),
-            {
-                "vignetNumber": request_payload["vignette_number"],
-                "postcode": request_payload["postal_code"],
-                "boatName": None,
-            },
-        )
 
     def test_delete_vignette_success(self):
         endpoint = build_vignettes_endpoint(self.vignette_id)

@@ -14,4 +14,20 @@ class VignettesResponseSerializer(RequiredVignetteFieldSerializer):
 
 class VerifyVignetteResponseSerializer(serializers.Serializer):
     status = serializers.CharField()
-    expiration_date = serializers.CharField()
+    expiration_date = serializers.CharField(required=False)
+    reason = serializers.CharField(required=False)
+
+    def validate(self, attrs):
+        status = attrs.get("status")
+
+        if status.lower() == "valid" and not attrs.get("expiration_date"):
+            raise serializers.ValidationError(
+                {"expiration_date": "This field is required when status is valid."}
+            )
+
+        if status.lower() != "valid" and not attrs.get("reason"):
+            raise serializers.ValidationError(
+                {"reason": "This field is required when status is not valid."}
+            )
+
+        return attrs
