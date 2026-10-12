@@ -7,6 +7,7 @@ from bridge.parking.views import (
     permit_views,
     session_views,
     transaction_views,
+    vehicle_views,
     visitor_views,
 )
 
@@ -123,5 +124,10 @@ urlpatterns = [
         "parking/api/v1/parking-machines",
         parking_machine_views.ParkingMachineListView.as_view(),
         name="parking-machines-list",
+    ),
+    path(
+        "parking/api/v1/vehicle-information",
+        vehicle_views.VehicleInformationView.as_view(),
+        name="parking-vehicle-information",
     ),
 ]
