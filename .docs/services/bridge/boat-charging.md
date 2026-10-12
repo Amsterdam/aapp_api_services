@@ -12,7 +12,10 @@ Provide a stable boat charging experience for Amsterdam App by exposing consiste
 - Location capacity uses the highest relevant connector power, prioritizing operative connectors.
 - Vignettes are user-scoped records that can be retrieved and linked for an authenticated user.
 - A vignette link request must include the vignette number and postal code as user-provided ownership details.
+- Linked vignettes can be updated and removed by identifier to keep user registration data current.
+- Vignette validity checks are available before account linking and return both a validity status and expiry date for user confirmation.
 
 ## Major non-standard architectural decisions
 - Availability authority is delegated to NRG signals (including hold effects) instead of being recomputed in this backend.
 - Upstream statuses are normalized to a canonical status set for consistent client behavior.
+- Upstream vignette payload fields are mapped to a stable internal response contract to keep app-facing field names consistent across providers.
