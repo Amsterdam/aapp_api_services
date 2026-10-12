@@ -7,13 +7,7 @@ from django.urls import reverse
 
 from bridge.boat_charging.tests.mock_data import vignettes
 from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
-
-
-def build_vignettes_endpoint(path: str = "") -> str:
-    base_endpoint = settings.BOAT_CHARGING_ENDPOINTS["VIGNETTES"].rstrip("/")
-    if not path:
-        return base_endpoint
-    return f"{base_endpoint}/{path.lstrip('/')}"
+from bridge.boat_charging.views.vignette_view import build_vignettes_endpoint
 
 
 class TestVignettesRetrieveCreateView(BoatChargingTestCase):
@@ -45,10 +39,11 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
             self.assertEqual(
                 vignette,
                 {
-                    "id": mock_response_data[enumerate_index]["id"],
                     "vignette_number": mock_response_data[enumerate_index][
                         "vignetNumber"
                     ],
+                    "postal_code": mock_response_data[enumerate_index]["postcode"],
+                    "id": mock_response_data[enumerate_index]["id"],
                     "boat_name": mock_response_data[enumerate_index]["boatName"],
                     "created_at": mock_response_data[enumerate_index]["createdAt"],
                 },
@@ -58,7 +53,6 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
         request_payload = {
             "vignette_number": "V123456",
             "postal_code": "1234AB",
-            "boat_name": "Boat 1",
         }
 
         endpoint_mock = respx.post(settings.BOAT_CHARGING_ENDPOINTS["VIGNETTES"]).mock(
@@ -75,7 +69,6 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
             {
                 "vignetNumber": request_payload["vignette_number"],
                 "postcode": request_payload["postal_code"],
-                "boatName": request_payload["boat_name"],
             },
         )
 
@@ -124,7 +117,7 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
 class TestVignettesUpdateDeleteView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
-        self.vignette_id = "AB123"
+        self.vignette_id = 1
         self.url = reverse(
             "boat-charging-vignettes-update-delete",
             kwargs={"id": self.vignette_id},
@@ -152,8 +145,9 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
             response.json(),
             [
                 {
-                    "id": vignettes.MOCK_DATA_LIST[0]["id"],
                     "vignette_number": vignettes.MOCK_DATA_LIST[0]["vignetNumber"],
+                    "postal_code": vignettes.MOCK_DATA_LIST[0]["postcode"],
+                    "id": vignettes.MOCK_DATA_LIST[0]["id"],
                     "boat_name": vignettes.MOCK_DATA_LIST[0]["boatName"],
                     "created_at": vignettes.MOCK_DATA_LIST[0]["createdAt"],
                 }

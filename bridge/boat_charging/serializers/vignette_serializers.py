@@ -6,15 +6,10 @@ class RequiredVignetteFieldSerializer(serializers.Serializer):
     postal_code = serializers.CharField()
 
 
-class VignettesResponseSerializer(serializers.Serializer):
+class VignettesResponseSerializer(RequiredVignetteFieldSerializer):
     id = serializers.IntegerField()
-    vignette_number = serializers.CharField()
     boat_name = serializers.CharField(required=False, allow_null=True)
     created_at = serializers.CharField()
-
-
-class VignettesLinkRequestSerializer(RequiredVignetteFieldSerializer):
-    boat_name = serializers.CharField(required=False)
 
 
 class VerifyVignetteResponseSerializer(serializers.Serializer):

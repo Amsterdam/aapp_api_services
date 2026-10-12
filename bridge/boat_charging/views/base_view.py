@@ -106,7 +106,6 @@ class BaseView(GenericAPIView):
             "headers": headers,
             "auth": auth,
         }
-        logger.info(f"Making request with kwargs: {request_kwargs}")
         if timeout is not None:
             request_kwargs["timeout"] = timeout
 

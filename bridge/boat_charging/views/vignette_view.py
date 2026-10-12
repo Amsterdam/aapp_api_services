@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from bridge.boat_charging.serializers.vignette_serializers import (
     RequiredVignetteFieldSerializer,
     VerifyVignetteResponseSerializer,
-    VignettesLinkRequestSerializer,
     VignettesResponseSerializer,
 )
 from bridge.boat_charging.views.base_view import (
@@ -13,10 +12,13 @@ from bridge.boat_charging.views.base_view import (
 )
 
 
-def build_vignettes_endpoint(path: str = "") -> str:
+def build_vignettes_endpoint(path: str | int) -> str:
     base_endpoint = settings.BOAT_CHARGING_ENDPOINTS["VIGNETTES"].rstrip("/")
     if not path:
         return base_endpoint
+    # check if path is integer
+    if isinstance(path, int):
+        return f"{base_endpoint}/{path}"
     return f"{base_endpoint}/{path.lstrip('/')}"
 
 
@@ -25,7 +27,7 @@ class VignettesRetrieveCreateView(BaseView):
 
     def get_serializer(self, *args, **kwargs):
         if self.request.method.lower() == "post":
-            return VignettesLinkRequestSerializer(*args, **kwargs)
+            return RequiredVignetteFieldSerializer(*args, **kwargs)
         return super().get_serializer(*args, **kwargs)
 
     @boat_charging_openapi_decorator(
@@ -44,6 +46,7 @@ class VignettesRetrieveCreateView(BaseView):
             {
                 "id": item["id"],
                 "vignette_number": item["vignetNumber"],
+                "postal_code": item.get("postcode"),
                 "boat_name": item.get("boatName"),
                 "created_at": item["createdAt"],
             }
@@ -62,14 +65,13 @@ class VignettesRetrieveCreateView(BaseView):
     )
     async def post(self, request, *args, **kwargs):
         """Link a vignette to a user."""
-        request_data = VignettesLinkRequestSerializer(data=request.data)
+        request_data = RequiredVignetteFieldSerializer(data=request.data)
         request_data.is_valid(raise_exception=True)
         validated_data = request_data.validated_data
 
         request_payload = {
             "vignetNumber": validated_data["vignette_number"],
             "postcode": validated_data["postal_code"],
-            "boatName": validated_data.get("boat_name"),
         }
         endpoint = settings.BOAT_CHARGING_ENDPOINTS["VIGNETTES"]
         response = await self.api_call(
@@ -81,6 +83,7 @@ class VignettesRetrieveCreateView(BaseView):
         response_data = {
             "id": response["id"],
             "vignette_number": response["vignetNumber"],
+            "postal_code": response.get("postcode"),
             "boat_name": response.get("boatName"),
             "created_at": response["createdAt"],
         }
@@ -96,7 +99,7 @@ class VignettesUpdateDeleteView(BaseView):
 
     def get_serializer(self, *args, **kwargs):
         if self.request.method.lower() == "put":
-            return VignettesLinkRequestSerializer(*args, **kwargs)
+            return RequiredVignetteFieldSerializer(*args, **kwargs)
         return super().get_serializer(*args, **kwargs)
 
     @boat_charging_openapi_decorator(
@@ -125,6 +128,7 @@ class VignettesUpdateDeleteView(BaseView):
             {
                 "id": item["id"],
                 "vignette_number": item["vignetNumber"],
+                "postal_code": item.get("postcode"),
                 "boat_name": item.get("boatName"),
                 "created_at": item["createdAt"],
             }
