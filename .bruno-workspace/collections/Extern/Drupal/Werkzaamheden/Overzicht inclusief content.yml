@@ -73,10 +73,10 @@ graphql:
                             type
                             url
                           }
-                          title
+                          # title
                         }
                       }
-                      title
+                      # title
                     }
                     ... on ParagraphDdsGallery {
                       __typename

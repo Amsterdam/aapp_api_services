@@ -15,6 +15,7 @@
   - Run migrations: `SERVICE_NAME=city_pass make migrate`.
 - **Testing:**
   - Run all tests: `make test` (ensure venv is active).
+ 
 - **Pre-commit:**
   - Install hooks: `pip install pre-commit && pre-commit install`.
 
