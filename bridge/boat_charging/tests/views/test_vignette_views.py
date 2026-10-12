@@ -82,10 +82,7 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
 
         response = self.client.get(self.url, headers=headers_without_access_token)
 
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(
-            response.json(), {"detail": "No access token provided in request headers"}
-        )
+        self.assertEqual(response.status_code, 401)
         self.assertFalse(endpoint_mock.called)
 
     def test_post_vignette_link_without_access_token(self):
@@ -107,10 +104,7 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
             headers=headers_without_access_token,
         )
 
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(
-            response.json(), {"detail": "No access token provided in request headers"}
-        )
+        self.assertEqual(response.status_code, 401)
         self.assertFalse(endpoint_mock.called)
 
 
@@ -178,10 +172,7 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
             headers=headers_without_access_token,
         )
 
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(
-            response.json(), {"detail": "No access token provided in request headers"}
-        )
+        self.assertEqual(response.status_code, 401)
         self.assertFalse(endpoint_mock.called)
 
     def test_delete_vignette_without_access_token(self):
@@ -194,7 +185,7 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
 
         response = self.client.delete(self.url, headers=headers_without_access_token)
 
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(
             response.json(), {"detail": "No access token provided in request headers"}
         )

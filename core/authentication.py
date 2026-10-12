@@ -50,6 +50,9 @@ class AbstractAppAuthentication(BaseAuthentication, ABC):
 
         return (None, None)
 
+    def authenticate_header(self, request: HttpRequest) -> str:
+        return self.api_key_header
+
 
 class APIKeyAuthentication(AbstractAppAuthentication):
     @property
