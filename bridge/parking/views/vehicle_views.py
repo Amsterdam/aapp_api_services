@@ -24,7 +24,7 @@ class VehicleInformationView(generics.GenericAPIView):
 
     @extend_schema_for_api_key(
         success_response=VehicleInformationResponseSerializer,
-        serializer_as_params=VehicleInformationRequestSerializer,
+        additional_params=[VehicleInformationRequestSerializer],
     )
     def get(self, request, *args, **kwargs) -> Response:
         request_serializer = self.serializer_class(data=request.query_params)
