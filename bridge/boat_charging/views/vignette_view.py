@@ -12,15 +12,6 @@ from bridge.boat_charging.views.base_view import (
 )
 
 
-def build_vignettes_endpoint(path: str | int) -> str:
-    base_endpoint = settings.BOAT_CHARGING_ENDPOINTS["VIGNETTES"].rstrip("/")
-    if path == "":
-        return base_endpoint
-    if isinstance(path, int):
-        return f"{base_endpoint}/{path}"
-    return f"{base_endpoint}/{path.lstrip('/')}"
-
-
 class VignettesRetrieveCreateView(BaseView):
     requires_access_token = True
 
@@ -115,7 +106,7 @@ class VignettesUpdateDeleteView(BaseView):
 
         response_list = await self.api_call(
             "put",
-            endpoint=build_vignettes_endpoint(id),
+            endpoint=f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'].rstrip('/')}/{id}",
             body_data={
                 "vignetNumber": validated_data["vignette_number"],
                 "postcode": validated_data["postal_code"],
@@ -148,7 +139,7 @@ class VignettesUpdateDeleteView(BaseView):
         """Unlink a vignette from a user."""
         id = kwargs.get("id")
 
-        endpoint = build_vignettes_endpoint(id)
+        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'].rstrip('/')}/{id}"
         await self.api_call(
             "delete",
             endpoint=endpoint,
@@ -177,10 +168,10 @@ class VerifyVignetteView(BaseView):
             "vignetNumber": validated_data["vignette_number"],
             "postcode": validated_data["postal_code"],
         }
-        endpoint = build_vignettes_endpoint("verify")
+
         response = await self.api_call(
             "post",
-            endpoint=endpoint,
+            endpoint=f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'].rstrip('/')}/vignette",
             body_data=request_payload,
         )
 

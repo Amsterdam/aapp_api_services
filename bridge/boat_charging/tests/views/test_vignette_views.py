@@ -7,7 +7,6 @@ from django.urls import reverse
 
 from bridge.boat_charging.tests.mock_data import vignettes
 from bridge.boat_charging.tests.views.base_view import BoatChargingTestCase
-from bridge.boat_charging.views.vignette_view import build_vignettes_endpoint
 
 
 class TestVignettesRetrieveCreateView(BoatChargingTestCase):
@@ -116,6 +115,7 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
             "boat-charging-vignettes-update-delete",
             kwargs={"id": self.vignette_id},
         )
+        self.endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'].rstrip('/')}/{self.vignette_id}"
 
     def test_put_vignette_success(self):
         request_payload = {
@@ -123,8 +123,7 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
             "postal_code": "1234AB",
         }
 
-        endpoint = build_vignettes_endpoint(self.vignette_id)
-        endpoint_mock = respx.put(endpoint).mock(
+        endpoint_mock = respx.put(self.endpoint).mock(
             return_value=httpx.Response(200, json=vignettes.MOCK_DATA_LIST)
         )
 
@@ -150,8 +149,10 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
         self.assertEqual(endpoint_mock.call_count, 1)
 
     def test_delete_vignette_success(self):
-        endpoint = build_vignettes_endpoint(self.vignette_id)
-        endpoint_mock = respx.delete(endpoint).mock(return_value=httpx.Response(204))
+
+        endpoint_mock = respx.delete(self.endpoint).mock(
+            return_value=httpx.Response(204)
+        )
 
         response = self.client.delete(self.url, headers=self.api_headers)
 
@@ -161,8 +162,7 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
     def test_put_vignette_without_access_token(self):
         headers_without_access_token = self.api_headers.copy()
         headers_without_access_token.pop("access_token")
-        endpoint = build_vignettes_endpoint(self.vignette_id)
-        endpoint_mock = respx.put(endpoint).mock(
+        endpoint_mock = respx.put(self.endpoint).mock(
             return_value=httpx.Response(200, json=vignettes.MOCK_DATA_LIST)
         )
 
@@ -178,8 +178,7 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
     def test_delete_vignette_without_access_token(self):
         headers_without_access_token = self.api_headers.copy()
         headers_without_access_token.pop("access_token")
-        endpoint = build_vignettes_endpoint(self.vignette_id)
-        endpoint_mock = respx.delete(endpoint).mock(
+        endpoint_mock = respx.delete(self.endpoint).mock(
             return_value=httpx.Response(200, json={})
         )
 
@@ -196,6 +195,9 @@ class TestVerifyVignetteView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("boat-charging-vignettes-verify")
+        self.endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'].rstrip('/')}/vignette"
+        )
 
     def test_success(self):
         request_payload = {
@@ -203,7 +205,7 @@ class TestVerifyVignetteView(BoatChargingTestCase):
             "postal_code": "1234AB",
         }
 
-        respx.post(build_vignettes_endpoint("verify")).mock(
+        respx.post(self.endpoint).mock(
             return_value=httpx.Response(200, json=vignettes.MOCK_DATA_VERIFY)
         )
 
@@ -222,7 +224,7 @@ class TestVerifyVignetteView(BoatChargingTestCase):
         }
         non_valid_response = {"status": "invalid", "reason": "NOT FOUND"}
 
-        respx.post(build_vignettes_endpoint("verify")).mock(
+        respx.post(self.endpoint).mock(
             return_value=httpx.Response(200, json=non_valid_response)
         )
 
@@ -248,7 +250,7 @@ class TestVerifyVignetteView(BoatChargingTestCase):
             "postal_code": "1234AB",
         }
 
-        endpoint_mock = respx.post(build_vignettes_endpoint("verify")).mock(
+        endpoint_mock = respx.post(self.endpoint).mock(
             return_value=httpx.Response(200, json=vignettes.MOCK_DATA_VERIFY)
         )
 
