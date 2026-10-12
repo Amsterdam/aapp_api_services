@@ -30,7 +30,6 @@ ADDRESS_SEARCH_URL = os.getenv(
 )
 
 # Burning guide
-BURNING_GUIDE_SERVICE_KEY = os.getenv("BURNING_GUIDE_SERVICE_KEY", "")
 BURNING_GUIDE_RIVM_URL = os.getenv(
     "BURNING_GUIDE_RIVM_URL", "https://data.rivm.nl/geo/alo/wms"
 )
@@ -53,6 +52,11 @@ SSP_API_KEY = os.getenv("SSP_API_KEY", "api-key-ssp")
 SSP_ACCESS_TOKEN_HEADER = "SSP-Access-Token"
 PARKING_REMINDER_TIME = os.getenv("PARKING_REMINDER_TIME", 15)
 SSP_API_TIMEOUT_SECONDS = int(os.getenv("SSP_API_TIMEOUT_SECONDS", 10))
+
+RDW_BASE_URL = os.getenv(
+    "RDW_BASE_URL", "https://opendata.rdw.nl/resource/m9d7-ebf2.json"
+)
+RDW_APP_TOKEN = os.getenv("RDW_APP_TOKEN", "")
 
 # Mijn Amsterdam API
 MIJN_AMS_API_KEY_HEADER = "X-Api-Key"
