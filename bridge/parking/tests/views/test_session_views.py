@@ -191,14 +191,6 @@ class TestParkingSessionListView(BaseSSPTestCase):
                 "expected_keep": True,
             },
             {
-                "name": "start and end date before now",
-                "session": {
-                    "started_at": "2025-11-04T12:00:00+00:00",
-                    "ended_at": "2025-11-04T14:00:00+00:00",
-                },
-                "expected_keep": False,
-            },
-            {
                 "name": "start and end date after 24 hours",
                 "session": {
                     "started_at": "2025-11-05T15:00:01+00:00",

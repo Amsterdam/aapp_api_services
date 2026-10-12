@@ -146,16 +146,13 @@ class ParkingSessionListView(BaseSSPView):
         )
 
     def filter_sessions_on_next_24_hours(self, sessions_data):
-        # determine low and high datetime range for the next 24 hours
-        low_datetime = datetime.now(dt_timezone.utc)
-        high_datetime = low_datetime + timedelta(hours=24)
+        higher_bound = datetime.now(dt_timezone.utc) + timedelta(hours=24)
         return [
             session
             for session in sessions_data
             if session["started_at"]
             and session["ended_at"]
-            and datetime.fromisoformat(session["started_at"]) <= high_datetime
-            and datetime.fromisoformat(session["ended_at"]) >= low_datetime
+            and datetime.fromisoformat(session["started_at"]) <= higher_bound
         ]
 
     def get_serialized_response(self, response_data, results, include_totals=True):
