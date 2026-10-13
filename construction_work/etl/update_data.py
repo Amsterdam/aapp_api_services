@@ -1,6 +1,6 @@
-"""IPROX Extract Transform and Load (IPROX-ETL)
+"""DvO Extract Transform and Load (DvO-ETL)
 
-Fetch data from the IPROX API and ingest it into Construction-Work database
+Fetch data from the DvO API and ingest it into Construction-Work database
 """
 
 from logging import getLogger
@@ -8,25 +8,25 @@ from logging import getLogger
 from django.db import transaction
 from django.utils import timezone
 
-from construction_work.etl.extract_data import get_all_iprox_items, get_iprox_items_data
+from construction_work.etl.extract_data import get_all_drupal_projects_with_content
 from construction_work.models.article_models import Article
 from construction_work.models.project_models import Project
 
 logger = getLogger(__name__)
 
 
-def extract_transform_load(*, iprox_url, transform_func, load_func):
+def extract_transform_load(*, transform_func, load_func):
     """
-    Main function call for Fetch and Ingest from Iprox to Construction-Work
+    Main function call for Fetch and Ingest from DvO to Construction-Work
     """
     ### EXTRACT DATA
-    logger.info("Extracting data from IPROX")
+    logger.info("Extracting data from DvO")
 
-    # Collect all items in iprox
-    all_iprox_items = get_all_iprox_items(iprox_url)
-    extracted_data = get_iprox_items_data(
-        url=iprox_url, item_ids=[item["id"] for item in all_iprox_items]
-    )
+    extracted_data = get_all_drupal_projects_with_content()
+    logger.info("Extracted data from DvO")
+    logger.info(f"Extracted {len(extracted_data['nodes'])} items from DvO")
+    all_iprox_items = extracted_data["nodes"]
+    logger.info(f"First extracted items: {all_iprox_items[:2]}")
 
     ### TRANSFORM DATA
     logger.info("Transforming data for Construction-Work")

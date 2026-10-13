@@ -1,0 +1,101 @@
+info:
+  name: PlanNodesByParagraphViewId
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{endpoint}}"
+  body:
+    query: "# use paragraphId 826 or 893 as example for Dvo ACC Env\r
+
+      query MyQuery($paragraphId: Int!) {\r
+
+      \  view(paragraphId: $paragraphId, page: 1) {\r
+
+      \    name\r
+
+      \    pagination {\r
+
+      \      totalPages\r
+
+      \      previousPage\r
+
+      \      nextPage\r
+
+      \      enabled\r
+
+      \      currentPage\r
+
+      \    }\r
+
+      \    ... on View {\r
+
+      \      name\r
+
+      \      nodes {\r
+
+      \        ... on Plan {\r
+
+      \          title\r
+
+      \          changedDate\r
+
+      \          publicationDate\r
+
+      \          image {\r
+
+      \            ... on Image {\r
+
+      \              name\r
+
+      \              src\r
+
+      \            }\r
+
+      \          }\r
+
+      \          planCategory {\r
+
+      \            id\r
+
+      \            name\r
+
+      \          }\r
+
+      \          planStatus {\r
+
+      \            name\r
+
+      \          }\r
+
+      \          id\r
+
+      \          path\r
+
+      \          summaryShort\r
+
+      \          summaryIntroductory\r
+
+      \          metaDescription\r
+
+      \        }\r
+
+      \      }\r
+
+      \      itemsPerPage\r
+
+      \    }\r
+
+      \  }\r
+
+      }\r\n"
+    variables: "{\r\n  \"paragraphId\": 206731\r\n}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

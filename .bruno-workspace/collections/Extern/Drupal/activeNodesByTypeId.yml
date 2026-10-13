@@ -1,0 +1,43 @@
+info:
+  name: activeNodesByTypeId
+  type: graphql
+  seq: 2
+
+graphql:
+  method: POST
+  url: "{{endpoint}}"
+  body:
+    query: "query GetActiveNodes($typeId: String!) {\r
+
+      \  activeNodes(\r
+
+      \    contentTypeSelections: [\r
+
+      \      { id: $typeId }\r
+
+      \    ]\r
+
+      \  ) {\r
+
+      \    nodes {\r
+
+      \      #content_type\r
+
+      \      id\r
+
+      \      updated_at\r
+
+      \    }\r
+
+      \  }\r
+
+      }"
+    variables: "{\r\n  \"typeId\": \"news\"\r\n}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,285 @@
+info:
+  name: PlanNodeByID
+  type: graphql
+  seq: 4
+
+graphql:
+  method: POST
+  url: "{{DrupalBaseUrl}}"
+  body:
+    query: "query MyQuery($nodeID: Int!) {\r
+
+      \  nodeByID(id: $nodeID) {\r
+
+      \    ... on Plan {\r
+
+      \      id\r
+
+      \      content {\r
+
+      \        ... on ParagraphGrid {\r
+
+      \          id\r
+
+      \          rows {\r
+
+      \            content {\r
+
+      \              ... on ParagraphDdsLinkList {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \                content\r
+
+      \                items {\r
+
+      \                  ... on ParagraphDdsLinkListItem {\r
+
+      \                    id\r
+
+      \                    label\r
+
+      \                    link {\r
+
+      \                      label\r
+
+      \                      url\r
+
+      \                    }\r
+
+      \                  }\r
+
+      \                  ... on ParagraphDdsLinkListMediaItem {\r
+
+      \                    id\r
+
+      \                    media {\r
+
+      \                      description\r
+
+      \                      id\r
+
+      \                      name\r
+
+      \                      size\r
+
+      \                      type\r
+
+      \                      url\r
+
+      \                    }\r
+
+      \                    title\r
+
+      \                  }\r
+
+      \                }\r
+
+      \                title\r
+
+      \              }\r
+
+      \              ... on ParagraphDdsGallery {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \                content\r
+
+      \              }\r
+
+      \              ... on ParagraphDdsEmbed {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \                content\r
+
+      \              }\r
+
+      \              ... on ParagraphDdsContentReference {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \                content\r
+
+      \              }\r
+
+      \              ... on ParagraphDdsCard {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \                content\r
+
+      \              }\r
+
+      \              ... on ParagraphDdsAccordion {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \              }\r
+
+      \              ... on ParagraphDdsMapDataset {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \                description\r
+
+      \                mapDataset {\r
+
+      \                  pointsOfInterest {\r
+
+      \                    description\r
+
+      \                    id\r
+
+      \                    link {\r
+
+      \                      label\r
+
+      \                      url\r
+
+      \                    }\r
+
+      \                    location {\r
+
+      \                      latitude\r
+
+      \                      longitude\r
+
+      \                    }\r
+
+      \                    title\r
+
+      \                  }\r
+
+      \                  title\r
+
+      \                  type\r
+
+      \                }\r
+
+      \                title\r
+
+      \              }\r
+
+      \              ... on ParagraphDdsMedia {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \                content\r
+
+      \                image {\r
+
+      \                  ... on Image {\r
+
+      \                    id\r
+
+      \                    name\r
+
+      \                    src\r
+
+      \                  }\r
+
+      \                }\r
+
+      \                imageCaption\r
+
+      \                title\r
+
+      \              }\r
+
+      \              ... on ParagraphDdsProgressList {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \                items {\r
+
+      \                  description\r
+
+      \                  id\r
+
+      \                  initiallyCollapsed\r
+
+      \                  items {\r
+
+      \                    description\r
+
+      \                    id\r
+
+      \                    status\r
+
+      \                    title\r
+
+      \                  }\r
+
+      \                  status\r
+
+      \                  title\r
+
+      \                }\r
+
+      \                intro\r
+
+      \              }\r
+
+      \              ... on ParagraphDdsRichText {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \                content\r
+
+      \              }\r
+
+      \              ... on ParagraphDdsViews {\r
+
+      \                id\r
+
+      \                contentIndication\r
+
+      \                content\r
+
+      \                title\r
+
+      \              }\r
+
+      \            }\r
+
+      \          }\r
+
+      \        }\r
+
+      \      }\r
+
+      \    }\r
+
+      \  }\r
+
+      }\r\n"
+    variables: "{\r\n  \"nodeID\": 30347\r\n}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
