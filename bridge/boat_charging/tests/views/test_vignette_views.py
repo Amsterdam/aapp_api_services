@@ -115,7 +115,9 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
             "boat-charging-vignettes-update-delete",
             kwargs={"id": self.vignette_id},
         )
-        self.endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'].rstrip('/')}/{self.vignette_id}"
+        self.endpoint = (
+            f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES']}/{self.vignette_id}"
+        )
 
     def test_put_vignette_success(self):
         request_payload = {
@@ -195,9 +197,7 @@ class TestVerifyVignetteView(BoatChargingTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("boat-charging-vignettes-verify")
-        self.endpoint = (
-            f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'].rstrip('/')}/vignette"
-        )
+        self.endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES']}/verify"
 
     def test_success(self):
         request_payload = {

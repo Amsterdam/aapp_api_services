@@ -106,7 +106,7 @@ class VignettesUpdateDeleteView(BaseView):
 
         response_list = await self.api_call(
             "put",
-            endpoint=f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'].rstrip('/')}/{id}",
+            endpoint=f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES']}/{id}",
             body_data={
                 "vignetNumber": validated_data["vignette_number"],
                 "postcode": validated_data["postal_code"],
@@ -139,7 +139,7 @@ class VignettesUpdateDeleteView(BaseView):
         """Unlink a vignette from a user."""
         id = kwargs.get("id")
 
-        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'].rstrip('/')}/{id}"
+        endpoint = f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES']}/{id}"
         await self.api_call(
             "delete",
             endpoint=endpoint,
@@ -171,7 +171,7 @@ class VerifyVignetteView(BaseView):
 
         response = await self.api_call(
             "post",
-            endpoint=f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES'].rstrip('/')}/vignette",
+            endpoint=f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES']}/verify",
             body_data=request_payload,
         )
 
