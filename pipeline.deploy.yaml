@@ -141,6 +141,7 @@ stages:
         - prepare
         - build
         - test
+      # startsWith(variables['version'], 'main')
       condition: |
         and(
           not(or(failed(), canceled())),
@@ -148,7 +149,6 @@ stages:
             eq(variables['Self.Ref'], 'refs/heads/main'),
             eq(variables['Build.Reason'], 'Manual')
           )
-          # startsWith(variables['version'], 'main')
         )
 
   # --------------------
@@ -170,6 +170,7 @@ stages:
         - build
         - test
         - acc
+      # startsWith(variables['version'], 'main')
       condition: |
         and(
           not(or(failed(), canceled())),
@@ -177,5 +178,4 @@ stages:
             eq(variables['Self.Ref'], 'refs/heads/main'),
             eq(variables['Build.Reason'], 'Manual')
           )
-          # startsWith(variables['version'], 'main')
         )
