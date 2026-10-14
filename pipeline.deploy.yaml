@@ -104,6 +104,7 @@ stages:
     parameters:
       environment: test
       devopsEnvironment: api-test
+      aksSubscriptionId: db369b0b-5c73-41cf-b089-ec02d80c0bd4
       pool: ManagedDevOpsPools
       namespace: tst-ams-aapp-aapp-test
       serviceConnection: sc-azurerm-ccc-aapp-test-01
@@ -126,6 +127,7 @@ stages:
     parameters:
       environment: acc
       devopsEnvironment: api-acc
+      aksSubscriptionId: ceaaa4a3-c257-4189-bf16-078117df908c
       pool: ManagedDevOpsPools
       namespace: acc-ams-aapp-aapp-acc
       serviceConnection: sc-azurerm-ccc-aapp-acc-01
@@ -149,6 +151,7 @@ stages:
     parameters:
       environment: prod
       devopsEnvironment: api-prod
+      aksSubscriptionId: 58d49111-48f0-4a70-9d9d-d4e163b3e12b
       pool: ManagedDevOpsPools
       namespace: prd-ams-aapp-aapp-prd
       serviceConnection: sc-azurerm-ccc-aapp-prd-01
