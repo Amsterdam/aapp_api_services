@@ -32,16 +32,7 @@ class VignettesRetrieveCreateView(BaseView):
             endpoint=settings.BOAT_CHARGING_ENDPOINTS["VIGNETTES"],
         )
 
-        response_data = [
-            {
-                "id": item["id"],
-                "vignette_number": item["vignetNumber"],
-                "postal_code": item.get("postcode"),
-                "boat_name": item.get("boatName"),
-                "created_at": item["createdAt"],
-            }
-            for item in response_list
-        ]
+        response_data = [create_vignette_response_data(item) for item in response_list]
 
         response_serializer = VignettesResponseSerializer(data=response_data, many=True)
         response_serializer.is_valid(raise_exception=True)
@@ -70,13 +61,7 @@ class VignettesRetrieveCreateView(BaseView):
             body_data=request_payload,
         )
 
-        response_data = {
-            "id": response["id"],
-            "vignette_number": response["vignetNumber"],
-            "postal_code": response.get("postcode"),
-            "boat_name": response.get("boatName"),
-            "created_at": response["createdAt"],
-        }
+        response_data = create_vignette_response_data(response)
 
         response_serializer = VignettesResponseSerializer(data=response_data)
         response_serializer.is_valid(raise_exception=True)
@@ -113,16 +98,7 @@ class VignettesUpdateDeleteView(BaseView):
             },
         )
 
-        response_data = [
-            {
-                "vignette_number": item["vignetNumber"],
-                "postal_code": item["postcode"],
-                "id": item["id"],
-                "boat_name": item.get("boatName"),
-                "created_at": item["createdAt"],
-            }
-            for item in response_list
-        ]
+        response_data = [create_vignette_response_data(item) for item in response_list]
 
         response_serializer = VignettesResponseSerializer(data=response_data, many=True)
         response_serializer.is_valid(raise_exception=True)
@@ -190,3 +166,13 @@ class VerifyVignetteView(BaseView):
         response_serializer.is_valid(raise_exception=True)
 
         return Response(response_serializer.data, status=200)
+
+
+def create_vignette_response_data(item):
+    return {
+        "vignette_number": item["vignetNumber"],
+        "postal_code": item["postcode"],
+        "id": item["id"],
+        "boat_name": item.get("boatName"),
+        "expiration_date": item["validToDate"],
+    }

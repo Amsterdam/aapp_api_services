@@ -9,7 +9,7 @@ class RequiredVignetteFieldSerializer(serializers.Serializer):
 class VignettesResponseSerializer(RequiredVignetteFieldSerializer):
     id = serializers.IntegerField()
     boat_name = serializers.CharField(required=False, allow_null=True)
-    created_at = serializers.CharField()
+    expiration_date = serializers.CharField()
 
 
 class VerifyVignetteResponseSerializer(serializers.Serializer):
