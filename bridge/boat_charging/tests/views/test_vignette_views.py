@@ -44,7 +44,9 @@ class TestVignettesRetrieveCreateView(BoatChargingTestCase):
                     "postal_code": mock_response_data[enumerate_index]["postcode"],
                     "id": mock_response_data[enumerate_index]["id"],
                     "boat_name": mock_response_data[enumerate_index]["boatName"],
-                    "created_at": mock_response_data[enumerate_index]["createdAt"],
+                    "expiration_date": mock_response_data[enumerate_index][
+                        "validToDate"
+                    ],
                 },
             )
 
@@ -144,7 +146,7 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
                     "postal_code": vignettes.MOCK_DATA_LIST[0]["postcode"],
                     "id": vignettes.MOCK_DATA_LIST[0]["id"],
                     "boat_name": vignettes.MOCK_DATA_LIST[0]["boatName"],
-                    "created_at": vignettes.MOCK_DATA_LIST[0]["createdAt"],
+                    "expiration_date": vignettes.MOCK_DATA_LIST[0]["validToDate"],
                 }
             ],
         )
