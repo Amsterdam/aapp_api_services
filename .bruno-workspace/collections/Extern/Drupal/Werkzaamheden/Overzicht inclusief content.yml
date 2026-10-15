@@ -187,7 +187,8 @@ graphql:
       }
     variables: |-
       {
-        "paragraphId": 206731
+        "paragraphId": 206731 //acc: 206731
+        
       }
   auth: inherit
 
