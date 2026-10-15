@@ -5,7 +5,6 @@ from urllib.error import HTTPError
 
 import requests
 from django.conf import settings
-from django.db import connections
 from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -276,20 +275,6 @@ class AddressPostalAreaByCoordinateView(GenericAPIView):
             data="No postal area found.",
             status=status.HTTP_404_NOT_FOUND,
         )
-
-
-class HealthCheckView(GenericAPIView):
-    authentication_classes = []
-
-    def get(self, request, *args, **kwargs) -> Response:
-        """Health Check"""
-        try:
-            connections["default"].cursor()
-        except BaseException:
-            return Response(
-                {"status": "unready"}, status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )
-        return Response({"status": "ok"})
 
 
 class ServerTimeView(GenericAPIView):

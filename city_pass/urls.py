@@ -4,11 +4,18 @@ from django.urls import path
 
 from city_pass.views import data_views, session_views
 from core.urls import get_admin_paths, get_swagger_paths
+from core.views.health_views import HealthCheckView
 
 BASE_PATH = "city-pass/api/v1"
 BASE_PATH_ADMIN = "city-pass/admin"
 
 urlpatterns = [
+    # health check
+    path(
+        "city-pass/health",
+        HealthCheckView.as_view(),
+        name="health-check",
+    ),
     # session
     path(
         BASE_PATH + "/session/init",
