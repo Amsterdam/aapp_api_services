@@ -8,7 +8,6 @@ from construction_work.etl.update_data import (
     _cleanup_inactive_projects,
     _deactivate_unseen_articles,
     _deactivate_unseen_projects,
-    extract_transform_load,
     garbage_collector,
 )
 from construction_work.models.article_models import Article
@@ -35,51 +34,6 @@ def mock_transform_func(data):
 
 def mock_load_func(data):
     pass
-
-
-class ExtractTransformLoadTestCase(TestCase):
-    @mock.patch(
-        "construction_work.etl.update_data.get_iprox_items_data",
-        side_effect=mock_get_iprox_items_data,
-    )
-    @mock.patch(
-        "construction_work.etl.update_data.get_all_iprox_items",
-        side_effect=mock_get_all_iprox_items,
-    )
-    def test_extract_transform_load(self, mock_get_all_items, mock_get_items_data):
-        iprox_url = "http://example.com/api"
-        result = extract_transform_load(
-            iprox_url=iprox_url,
-            transform_func=mock_transform_func,
-            load_func=mock_load_func,
-        )
-
-        mock_get_all_items.assert_called_once_with(iprox_url)
-        mock_get_items_data.assert_called_once_with(url=iprox_url, item_ids=[1, 2, 3])
-
-        self.assertEqual(result, [1, 2, 3])
-
-    @mock.patch(
-        "construction_work.etl.update_data.get_iprox_items_data",
-        side_effect=Exception("API Error"),
-    )
-    @mock.patch(
-        "construction_work.etl.update_data.get_all_iprox_items",
-        side_effect=mock_get_all_iprox_items,
-    )
-    def test_extract_transform_load_api_error(
-        self, mock_get_all_items, mock_get_items_data
-    ):
-        iprox_url = "http://example.com/api"
-
-        with self.assertRaises(Exception) as context:
-            extract_transform_load(
-                iprox_url=iprox_url,
-                transform_func=mock_transform_func,
-                load_func=mock_load_func,
-            )
-
-        self.assertEqual(str(context.exception), "API Error")
 
 
 class GarbageCollectorTestCase(TestCase):

@@ -15,7 +15,7 @@ from construction_work.models.project_models import Project
 logger = getLogger(__name__)
 
 
-def extract_transform_load(*, transform_func, load_func):
+def extract_transform_load():
     """
     Main function call for Fetch and Ingest from DvO to Construction-Work
     """
@@ -24,20 +24,21 @@ def extract_transform_load(*, transform_func, load_func):
 
     extracted_data = get_all_drupal_projects_with_content()
     logger.info("Extracted data from DvO")
-    logger.info(f"Extracted {len(extracted_data['nodes'])} items from DvO")
-    all_iprox_items = extracted_data["nodes"]
-    logger.info(f"First extracted items: {all_iprox_items[:2]}")
+    logger.info(f"Extracted {len(extracted_data['projects'])} items from DvO")
+    logger.info(
+        f"Extracted {len(extracted_data['news_articles'])} news articles from DvO"
+    )
 
-    ### TRANSFORM DATA
-    logger.info("Transforming data for Construction-Work")
-    transformed_data = transform_func(extracted_data)
+    # ### TRANSFORM DATA
+    # logger.info("Transforming data for Construction-Work")
+    # transformed_data = transform_func(extracted_data)
 
-    ### LOAD DATA
-    logger.info("Ingesting data into Construction-Work")
-    load_func(transformed_data)
+    # ### LOAD DATA
+    # logger.info("Ingesting data into Construction-Work")
+    # load_func(transformed_data)
 
-    logger.info("Data ingestion finished!")
-    return [item["id"] for item in all_iprox_items]
+    # logger.info("Data ingestion finished!")
+    # return [item["id"] for item in all_iprox_items]
 
 
 def garbage_collector(found_projects, found_articles):

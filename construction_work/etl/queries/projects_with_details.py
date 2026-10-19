@@ -1,0 +1,179 @@
+QUERY = """
+query ConstructionWorkProjectsWithDetails($page: Int!) {
+  view(paragraphId: 206731, page: $page) {
+    name
+    pagination {
+      totalPages
+      previousPage
+      nextPage
+      enabled
+      currentPage
+    }
+    ... on View {
+      name
+      nodes {
+        ... on Plan {
+          title
+          changedDate
+          publicationDate
+          image {
+            ... on Image {
+              name
+              src
+            }
+          }
+          planCategory {
+            id
+            name
+          }
+          planStatus {
+            name
+          }
+          id
+          path
+          summaryShort
+          summaryIntroductory
+          metaDescription
+          content {
+        ... on ParagraphGrid {
+          id
+          rows {
+            content {
+              ... on ParagraphDdsLinkList {
+                __typename
+                id
+                contentIndication 
+                content
+                items {
+                  ... on ParagraphDdsLinkListItem {
+                    id
+                    label
+                    link {
+                      label
+                      url
+                    }
+                  }
+                  ... on ParagraphDdsLinkListMediaItem {
+                    __typename
+                    id
+                    media {
+                      description
+                      id
+                      name
+                      size
+                      type
+                      url
+                    }
+                    # title
+                  }
+                }
+                # title
+              }
+              ... on ParagraphDdsGallery {
+                __typename
+                id
+                contentIndication
+                content
+              }
+              ... on ParagraphDdsEmbed {
+                __typename
+                id
+                contentIndication
+                content
+              }
+              ... on ParagraphDdsContentReference {
+                __typename
+                id
+                contentIndication
+                content
+              }
+              ... on ParagraphDdsCard {
+                id
+                contentIndication
+                content
+              }
+              ... on ParagraphDdsAccordion {
+                id
+                contentIndication
+              }
+              ... on ParagraphDdsMapDataset {
+                id
+                contentIndication
+                description
+                mapDataset {
+                  pointsOfInterest {
+                    description
+                    id
+                    link {
+                      label
+                      url
+                    }
+                    location {
+                      latitude
+                      longitude
+                    }
+                    title
+                  }
+                  title
+                  type
+                }
+                title
+              }
+              ... on ParagraphDdsMedia {
+                __typename
+                id
+                contentIndication
+                content
+                image {
+                  ... on Image {
+                    id
+                    name
+                    src
+                  }
+                }
+                imageCaption
+                title
+              }
+              ... on ParagraphDdsProgressList {
+                __typename
+                id
+                contentIndication
+                items {
+                  description
+                  id
+                  initiallyCollapsed
+                  items {
+                    description
+                    id
+                    status
+                    title
+                  }
+                  status
+                  title
+                }
+                intro
+              }
+              ... on ParagraphDdsRichText {
+                __typename
+                id
+                contentIndication
+                content
+              }
+              ... on ParagraphDdsViews {
+                __typename
+                id
+                contentIndication
+                content
+                title
+              }
+            }
+          }
+        }
+      }
+        }
+      }
+      itemsPerPage
+    }
+  }
+}
+"""
