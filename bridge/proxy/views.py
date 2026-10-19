@@ -37,13 +37,6 @@ LIMITS = httpx.Limits(
     max_keepalive_connections=20,
     keepalive_expiry=30.0,
 )
-proxy_client = httpx.AsyncClient(
-    timeout=PROXY_TIMEOUT,
-    limits=LIMITS,
-    follow_redirects=True,
-)
-
-
 async def perform_upstream_request(
     *, method, url, params=None, headers=None, content=None, auth=None, timeout=None
 ):
@@ -59,7 +52,12 @@ async def perform_upstream_request(
         request_kwargs["timeout"] = timeout
 
     try:
-        return await proxy_client.request(**request_kwargs)
+        async with httpx.AsyncClient(
+            timeout=PROXY_TIMEOUT,
+            limits=LIMITS,
+            follow_redirects=True,
+        ) as client:
+            return await client.request(**request_kwargs)
     except asyncio.CancelledError:
         logger.info("Client disconnected while waiting for upstream response")
         raise
