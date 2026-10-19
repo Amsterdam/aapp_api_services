@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 import logging
@@ -108,6 +109,9 @@ class BaseSSPView(generics.GenericAPIView):
                 query_params=query_params,
                 body_data=body_data,
             )
+        except asyncio.CancelledError:
+            logger.info("Client disconnected while waiting for SSP response")
+            raise
         except httpx.HTTPError as exc:
             logger.warning(
                 "SSP request failed before response (%s)",

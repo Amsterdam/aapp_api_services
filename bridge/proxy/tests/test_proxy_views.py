@@ -2,12 +2,17 @@ import re
 from unittest.mock import patch
 
 import freezegun
+import httpx
 import responses
+import respx
 from django.conf import settings
 from django.urls import reverse
 
 from bridge.proxy.tests import mock_data
-from core.tests.test_authentication import ResponsesActivatedAPITestCase
+from core.tests.test_authentication import (
+    ResponsesActivatedAPITestCase,
+    RespxActivatedAPITestCase,
+)
 
 
 class TestEgisProxyView(ResponsesActivatedAPITestCase):
@@ -70,13 +75,14 @@ class TestEgisExternalProxyView(ResponsesActivatedAPITestCase):
         self.assertEqual(rsp_post.call_count, 1)
 
 
-class TestAddressSearchByNameView(ResponsesActivatedAPITestCase):
+class TestAddressSearchByNameView(RespxActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("address-search-by-name")
-        self.rsp_get = responses.get(
-            re.compile(settings.ADDRESS_SEARCH_URL + ".*"), json=mock_data.ADDRESS_DATA
-        )
+        self.rsp_get = respx.route(
+            method="GET",
+            url__regex=re.compile(settings.ADDRESS_SEARCH_URL + ".*"),
+        ).mock(return_value=httpx.Response(200, json=mock_data.ADDRESS_DATA))
 
     def test_success(self):
         response = self.client.get(
@@ -108,19 +114,30 @@ class TestAddressSearchByNameView(ResponsesActivatedAPITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.rsp_get.call_count, 0)
 
+    def test_upstream_http_error_maps_to_bad_gateway(self):
+        self.rsp_get.mock(return_value=httpx.Response(500, json={"detail": "boom"}))
+
+        response = self.client.get(
+            self.url, {"query": "amstel"}, headers=self.api_headers
+        )
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(self.rsp_get.call_count, 1)
+
     def test_cache(self):
         self.assert_caching(
             self.url, rsp_get=self.rsp_get, request_body={"query": "amstel"}
         )
 
 
-class TestAddressSearchByCoordinateView(ResponsesActivatedAPITestCase):
+class TestAddressSearchByCoordinateView(RespxActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("address-search-by-coordinate")
-        self.rsp_get = responses.get(
-            re.compile(settings.ADDRESS_SEARCH_URL + ".*"), json=mock_data.ADDRESS_DATA
-        )
+        self.rsp_get = respx.route(
+            method="GET",
+            url__regex=re.compile(settings.ADDRESS_SEARCH_URL + ".*"),
+        ).mock(return_value=httpx.Response(200, json=mock_data.ADDRESS_DATA))
 
     def test_success(self):
         response = self.client.get(
@@ -147,7 +164,7 @@ class TestAddressSearchByCoordinateView(ResponsesActivatedAPITestCase):
         )
 
 
-class TestAddressPostalAreaByCoordinateView(ResponsesActivatedAPITestCase):
+class TestAddressPostalAreaByCoordinateView(RespxActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("address-postal-area-by-coordinate")

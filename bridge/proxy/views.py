@@ -1,18 +1,19 @@
+import asyncio
 import json
 import logging
 import re
-from urllib.error import HTTPError
+from json import JSONDecodeError
 
+import httpx
 import requests
+from adrf.generics import GenericAPIView
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import extend_schema
-from requests import JSONDecodeError
 from rest_framework import status
-from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from shapely.geometry import Point
 
@@ -27,6 +28,40 @@ from bridge.utils import load_postal_area_shapes
 from core.utils.openapi_utils import extend_schema_for_api_key
 
 logger = logging.getLogger(__name__)
+
+PROXY_TIMEOUT = httpx.Timeout(connect=5.0, read=30.0, write=30.0, pool=5.0)
+ADDRESS_TIMEOUT = httpx.Timeout(connect=5.0, read=5.0, write=5.0, pool=5.0)
+LIMITS = httpx.Limits(
+    max_connections=100,
+    max_keepalive_connections=20,
+    keepalive_expiry=30.0,
+)
+
+
+async def perform_upstream_request(
+    *, method, url, params=None, headers=None, content=None, auth=None, timeout=None
+):
+    request_kwargs = {
+        "method": method,
+        "url": url,
+        "params": params,
+        "headers": headers,
+        "content": content,
+        "auth": auth,
+    }
+    if timeout is not None:
+        request_kwargs["timeout"] = timeout
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=PROXY_TIMEOUT,
+            limits=LIMITS,
+            follow_redirects=True,
+        ) as client:
+            return await client.request(**request_kwargs)
+    except asyncio.CancelledError:
+        logger.info("Client disconnected while waiting for upstream response")
+        raise
 
 
 class EgisProxyView(GenericAPIView):
@@ -108,12 +143,16 @@ class AddressSearchView(GenericAPIView):
     serializer_class = AddressSearchRequestSerializer
 
     @extend_schema(parameters=[AddressSearchRequestSerializer])
-    def get(self, request):
+    async def get(self, request):
         url = settings.ADDRESS_SEARCH_URL
         # Since the query params are repetitive, we need to construct the list ourselves to avoid losing duplicate keys
         params = [(k, v) for k, vs in request.GET.lists() for v in vs]
-        response = requests.get(
-            url, params=params, headers={"Referer": "app.amsterdam.nl"}
+        response = await perform_upstream_request(
+            method="GET",
+            url=url,
+            params=params,
+            headers={"Referer": "app.amsterdam.nl"},
+            timeout=ADDRESS_TIMEOUT,
         )
         return HttpResponse(
             response.content,
@@ -124,24 +163,33 @@ class AddressSearchView(GenericAPIView):
 
 @method_decorator(cache_page(60 * 60 * 24), name="get")
 class AddressSearchAbstractView(GenericAPIView):
-    def get(self, request):
+    async def get(self, request):
         serializer = self.get_serializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
         params = self.get_params(data=serializer.validated_data)
         try:
-            response = requests.get(
-                settings.ADDRESS_SEARCH_URL,
+            response = await perform_upstream_request(
+                method="GET",
+                url=settings.ADDRESS_SEARCH_URL,
                 params=params,
                 headers={"Referer": "app.amsterdam.nl"},
-                timeout=5,
+                timeout=ADDRESS_TIMEOUT,
             )
             response.raise_for_status()
-        except HTTPError as e:
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTPError: {e}")
+            return Response({"detail": "Upstream address service error"}, status=502)
+        except httpx.HTTPError as e:
             logger.error(f"HTTPError: {e}")
             return Response({"detail": "Upstream address service error"}, status=502)
 
-        data = json.loads(response.content)
+        try:
+            data = response.json()
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON response from upstream address service")
+            return Response({"detail": "Upstream address service error"}, status=502)
+
         if not data.get("response"):
             logger.error(f"Invalid response: {data}")
             return Response({"detail": "Upstream address service error"}, status=502)
@@ -205,8 +253,8 @@ class AddressSearchByNameView(AddressSearchAbstractView):
         success_response=AddressSearchResponseSerializer(many=True),
         additional_params=[AddressSearchByNameSerializer],
     )
-    def get(self, request):
-        return super().get(request)
+    async def get(self, request):
+        return await super().get(request)
 
     def get_params(self, data):
         params = super().get_params(data)
@@ -230,8 +278,8 @@ class AddressSearchByCoordinateView(AddressSearchAbstractView):
         success_response=AddressSearchResponseSerializer(many=True),
         additional_params=[AddressSearchByCoordinateSerializer],
     )
-    def get(self, request):
-        return super().get(request)
+    async def get(self, request):
+        return await super().get(request)
 
     def get_params(self, data):
         params = super().get_params(data)
