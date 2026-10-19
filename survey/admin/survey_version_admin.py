@@ -1,11 +1,8 @@
-from adminsortable2.admin import (
-    SortableAdminBase,
-    SortableTabularInline,
-)
 from django import forms
 from django.contrib import admin
 from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
 
+from core.admin.sortable import SortableInlineMixin
 from survey.models import (
     SurveyVersion,
     SurveyVersionEntry,
@@ -33,13 +30,13 @@ def survey_version_is_locked(survey_version):
     return False
 
 
-class SurveyVersionAdmin(SortableAdminBase, admin.ModelAdmin):
+class SurveyVersionAdmin(admin.ModelAdmin):
     class SurveyVersionAdminForm(forms.ModelForm):
         class Meta:
             model = SurveyVersion
             fields = "__all__"
 
-    class QuestionInLine(SortableTabularInline):
+    class QuestionInLine(SortableInlineMixin, admin.TabularInline):
         model = SurveyVersionQuestion
         form = InlineForm
         extra = 0

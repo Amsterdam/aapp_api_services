@@ -1,6 +1,7 @@
-from adminsortable2.admin import SortableTabularInline
 from django import forms
+from django.contrib import admin
 
+from core.admin.sortable import SortableInlineMixin
 from modules.admin.admin_mixin import ModuleAdminMixin
 from modules.models import Module, ModuleVersion, ReleaseModuleStatus
 
@@ -40,7 +41,9 @@ class ReleaseModuleStatusForm(forms.ModelForm):
         self.fields["module_version"].queryset = qs.distinct()
 
 
-class ReleaseModuleStatusInline(SortableTabularInline, ModuleAdminMixin):
+class ReleaseModuleStatusInline(
+    SortableInlineMixin, admin.TabularInline, ModuleAdminMixin
+):
     model = ReleaseModuleStatus
     form = ReleaseModuleStatusForm
     fields = [
@@ -54,6 +57,7 @@ class ReleaseModuleStatusInline(SortableTabularInline, ModuleAdminMixin):
         "button_label",
     ]
     extra = 0
+    extra_readonly_fields = ("icon_svg", "module_status")
 
     def icon_svg(self, obj):
         return super().icon_svg(obj.module_version)
@@ -62,10 +66,14 @@ class ReleaseModuleStatusInline(SortableTabularInline, ModuleAdminMixin):
         return super().module_status(obj.module_version.module)
 
     def get_readonly_fields(self, request, obj=None):
-        return ["icon_svg", "module_status"]
+        readonly_fields = list(super().get_readonly_fields(request, obj))
+        for field_name in self.extra_readonly_fields:
+            if field_name not in readonly_fields:
+                readonly_fields.append(field_name)
+        return readonly_fields
 
     def get_formset(self, request, obj=None, **kwargs):
-        # ── 1) Prepare your “initial” list and decide how many extra forms
+        # Prepare initial values and decide how many extra forms are needed.
         initial_data = None
         extra_count = self.extra
         if obj is None:
@@ -86,28 +94,30 @@ class ReleaseModuleStatusInline(SortableTabularInline, ModuleAdminMixin):
                 ]
                 extra_count = max(1, len(initial_data))
 
-        # ── 2) Let Django build the formset class with that many extra forms
+        # Let Django build the formset class with the computed extra forms.
         FormSet = super().get_formset(request, obj, extra=extra_count, **kwargs)
 
-        # ── 3) Subclass to inject the data after init
+        # Subclass to inject initial values after the formset initializes.
         class PrefilledFormSet(FormSet):
             def __init__(self, *args, **fs_kwargs):
                 super().__init__(*args, **fs_kwargs)
 
-                # Only prefill when unbound (first GET)
+                # Only prefill when unbound (first GET).
                 if initial_data is not None and not self.is_bound:
                     for idx, form in enumerate(self.forms):
+                        if idx >= len(initial_data):
+                            break
                         for name, val in initial_data[idx].items():
                             form.initial[name] = val
                             form.fields[name].initial = val
 
-        # ── 4) Turn off the icons on the FK widgets
+        # Turn off relation-action icons on FK widgets in inline forms.
         for fld in PrefilledFormSet.form.base_fields.values():
             fld.widget.can_add_related = False
             fld.widget.can_change_related = False
             fld.widget.can_delete_related = False
 
-        # ── 5) Wrap the form so that parent_release arrives in its __init__
+        # Wrap the form so parent_release reaches ReleaseModuleStatusForm.__init__.
         class BoundForm(FormSet.form):
             def __init__(self, *args, **kw):
                 kw["parent_release"] = obj

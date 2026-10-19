@@ -1,4 +1,6 @@
+from django import forms
 from django.contrib import admin, messages
+from django.forms.widgets import SplitDateTimeWidget
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -7,6 +9,24 @@ from django.utils.translation import ngettext
 
 from modules.models import Notification, TestDevice
 from modules.services.notification import NotificationService
+
+
+class NotificationAdminForm(forms.ModelForm):
+    class Meta:
+        model = Notification
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        send_at_field = self.fields.get("send_at")
+        if send_at_field and isinstance(send_at_field.widget, SplitDateTimeWidget):
+            time_widget = forms.TimeInput(
+                format="%H:%M",
+                attrs={"type": "time"},
+            )
+            time_widget.input_type = "time"
+            send_at_field.widget.widgets[1] = time_widget
 
 
 class NotificationAdmin(admin.ModelAdmin):
@@ -24,6 +44,7 @@ class NotificationAdmin(admin.ModelAdmin):
     fields = ["title", "message", "url", "deeplink", "send_at", "is_test"]
     actions = ["copy_notification"]
     ordering = ["-send_at"]
+    form = NotificationAdminForm
 
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user

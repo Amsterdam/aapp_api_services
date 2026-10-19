@@ -1,6 +1,7 @@
 from django.urls import path
 
 from core.urls import get_admin_paths, get_swagger_paths
+from core.views.health_views import HealthCheckView
 from modules.views.module_views import AppReleaseListView, ReleaseDetailView
 from modules.views.theme_views import MijnAmsterdamThemesView
 
@@ -8,6 +9,12 @@ BASE_PATH = "modules/api/v1"
 BASE_PATH_ADMIN = "modules/admin"
 
 urlpatterns = [
+    # health check
+    path(
+        "modules/health",
+        HealthCheckView.as_view(),
+        name="health-check",
+    ),
     path(
         BASE_PATH + "/release/<str:version>",
         ReleaseDetailView.as_view(),

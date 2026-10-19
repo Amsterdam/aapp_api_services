@@ -11,7 +11,7 @@ from bridge.parking.serializers.general_serializers import (
 )
 from bridge.parking.serializers.pagination_serializers import (
     PaginationLinksSerializer,
-    PaginationPageSerializer,
+    SessionPaginationPageSerializer,
 )
 from core.utils.validation_utils import validate_digits
 
@@ -31,6 +31,7 @@ class ParkingSessionListRequestSerializer(serializers.Serializer):
     )
     sort = serializers.CharField(default="started_at:desc")
     status = serializers.ChoiceField(required=False, choices=STATUS_CHOICES)
+    next_24_hours = serializers.BooleanField(required=False, default=False)
     report_code = serializers.CharField(required=False)
     vehicle_id = serializers.CharField(required=False)
 
@@ -103,7 +104,7 @@ class ParkingSessionResponseSerializer(serializers.Serializer):
 
 class ParkingSessionListPaginatedResponseSerializer(serializers.Serializer):
     result = ParkingSessionResponseSerializer(many=True)
-    page = PaginationPageSerializer()
+    page = SessionPaginationPageSerializer()
     _links = PaginationLinksSerializer(required=False, help_text="DEPRECATED")
 
 

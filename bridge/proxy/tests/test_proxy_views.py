@@ -216,17 +216,7 @@ class TestPollingStationsView(ResponsesActivatedAPITestCase):
         self.assert_caching(self.url, rsp_get=self.rsp_get)
 
 
-class TestHealthCheckView(RespxActivatedAPITestCase):
-    def setUp(self):
-        super().setUp()
-        self.url = reverse("health-check")
-
-    def test_health_check(self):
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-
-
-class TestServerTimeView(RespxActivatedAPITestCase):
+class TestServerTimeView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("server-time")

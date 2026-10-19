@@ -31,7 +31,6 @@ dependencies = [
   # modules
   "djangorestframework-simplejwt",
   "django-csp",
-  "django-admin-sortable2",
   # image
   "pillow",
   "pillow-heif",

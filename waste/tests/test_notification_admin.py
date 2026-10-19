@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.admin.widgets import BaseAdminDateWidget
 from django.contrib.auth.models import Group, User
 from django.test import RequestFactory, TestCase
 from django.utils import timezone
@@ -30,6 +31,18 @@ class TestNotificationAdmin(TestCase):
 
         self.assertNotIn("send_at", exclude)
         self.assertIn("created_by", exclude)
+
+    def test_send_at_uses_time_picker_on_time_subwidget(self):
+        request = self.factory.get("/admin/waste/manualnotification/add/")
+        request.user = self.user
+
+        form_class = self.admin_instance.get_form(request)
+        form = form_class()
+        widget = form.fields["send_at"].widget
+
+        self.assertIsInstance(widget.widgets[0], BaseAdminDateWidget)
+        self.assertEqual(widget.widgets[1].input_type, "time")
+        self.assertEqual(widget.widgets[1].format, "%H:%M")
 
     def test_delete_removes_scheduled_notification(self):
         notification = baker.make(

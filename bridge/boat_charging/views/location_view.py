@@ -211,13 +211,20 @@ class LocationDetailView(LocationView):
         sockets = []
         for station in response_json["chargingStations"]:
             for evse in station["evses"]:
-                # add available field to connector based on station and connector status (same logic as in location overview)
                 connectors = evse["connectors"]
+                evse_reserved = (
+                    evse["available"] is False
+                    and evse["status"] == "AVAILABLE"
+                    and station["status"] == "AVAILABLE"
+                )
+                if evse_reserved:
+                    evse["status"] = "RESERVED"
                 for connector in connectors:
-                    connector["available"] = (
-                        station["status"] == "AVAILABLE"
-                        and connector["status"] == "AVAILABLE"
-                    )
+                    if evse_reserved and connector["status"] == "AVAILABLE":
+                        connector["status"] = "RESERVED"
+
+                    # Propagate the NRG-provided EVSE availability flag to each connector.
+                    connector["available"] = evse["available"]
                 sockets += connectors
         serializer_data = self.get_location_data(response_json, sockets)
 

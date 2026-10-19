@@ -1,0 +1,61 @@
+info:
+  name: Nieuws artikel
+  type: graphql
+  seq: 2
+
+graphql:
+  method: POST
+  url: "{{DrupalBaseUrl}}"
+  body:
+    query: |-
+      query MyQuery($nodeID: Int!) {
+        nodeByID(id: $nodeID)  {
+          id
+          ... on News {
+            id
+            metaDescription
+            path
+            publicationDate
+            content {
+              ... on ParagraphGrid {
+                id
+                rows {
+                  content {
+                    ... on ParagraphDdsRichText {
+                      id
+                      content
+                    }
+                  }
+                }
+              }
+            }
+            tag {
+              name
+              id
+            }
+            image {
+              ... on Image {
+                src
+                description
+              }
+            }
+            newsCategory {
+              name
+            }
+            summaryShort
+            summaryIntroductory
+          }
+        }
+      }
+    variables: |-
+      {
+        "nodeID": 32330
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,6 +1,8 @@
 from urllib.parse import urlencode
 
+from django import forms
 from django.contrib import admin, messages
+from django.forms.widgets import SplitDateTimeWidget
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -12,6 +14,24 @@ from core.authentication import AuthenticationGroupModelAdmin
 from core.services.waste_device import WasteDeviceService
 from waste.models import ManualNotification
 from waste.services.notification import ManualNotificationService
+
+
+class NotificationAdminForm(forms.ModelForm):
+    class Meta:
+        model = ManualNotification
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        send_at_field = self.fields.get("send_at")
+        if send_at_field and isinstance(send_at_field.widget, SplitDateTimeWidget):
+            time_widget = forms.TimeInput(
+                format="%H:%M",
+                attrs={"type": "time"},
+            )
+            time_widget.input_type = "time"
+            send_at_field.widget.widgets[1] = time_widget
 
 
 class NotificationAdmin(AuthenticationGroupModelAdmin):
@@ -38,6 +58,7 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     filter_horizontal = ["affected_routes"]
     change_form_template = "admin/waste/manualnotification/change_form.html"
     notification_service = ManualNotificationService()
+    form = NotificationAdminForm
 
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user

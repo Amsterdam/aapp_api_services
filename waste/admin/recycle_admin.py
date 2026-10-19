@@ -1,12 +1,31 @@
+from django import forms
 from django.contrib import admin
 from django.db.models import Case, F, IntegerField, Value, When
 
 from core.authentication import AuthenticationGroupModelAdmin
-from waste.models import RecycleLocationOpeningHours, RegularOpeningHours, WeekDay
+from waste.models import (
+    OpeningHoursException,
+    RecycleLocationOpeningHours,
+    RegularOpeningHours,
+    WeekDay,
+)
+
+OPENING_TIME_WIDGET = {
+    "opens_time": forms.TimeInput(format="%H:%M", attrs={"type": "time"}),
+    "closes_time": forms.TimeInput(format="%H:%M", attrs={"type": "time"}),
+}
+
+
+class RegularOpeningHoursInlineForm(forms.ModelForm):
+    class Meta:
+        model = RegularOpeningHours
+        fields = "__all__"
+        widgets = OPENING_TIME_WIDGET
 
 
 class RegularOpeningHoursInline(admin.TabularInline):
     model = RegularOpeningHours
+    form = RegularOpeningHoursInlineForm
     max_num = 7
     extra = 0
     fields = ["day_of_week", "opens_time", "closes_time"]
@@ -137,6 +156,14 @@ class RecycleLocationAdmin(AuthenticationGroupModelAdmin):
 
 
 class OpeningHoursExceptionAdmin(AuthenticationGroupModelAdmin):
+    class OpeningHoursExceptionAdminForm(forms.ModelForm):
+        class Meta:
+            model = OpeningHoursException
+            fields = "__all__"
+            widgets = OPENING_TIME_WIDGET
+
+    form = OpeningHoursExceptionAdminForm
+
     authentication_groups = (
         "waste-publisher",
         "waste-delegated",

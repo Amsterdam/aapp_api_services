@@ -1,0 +1,26 @@
+info:
+  name: Mogelijke velden Nieuws
+  type: graphql
+  seq: 4
+
+graphql:
+  method: POST
+  url: "{{DrupalBaseUrl}}"
+  body:
+    query: |-
+      query {
+        __type(name: "News") {
+          fields {
+            name
+            type { name kind ofType { name kind } }
+          }
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
