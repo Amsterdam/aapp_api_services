@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
 
 import aiohttp
@@ -8,6 +9,8 @@ from django.test import override_settings
 
 from core.testing_aioresponses import patch_client_response_init
 from core.utils.dvo_utils import (
+    MAX_RETRY_DELAY,
+    MIN_RETRY_DELAY,
     DvOClient,
     DvOResponseError,
     _get_rate_limit_retry_delay,
@@ -79,7 +82,11 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
                         result = await self.client.execute_query(query)
 
         self.assertEqual(result, response_data)
-        self.assertIn("retrying in 0.0 seconds", logs.output[0])
+        logged_delay = float(
+            logs.output[0].split("retrying in ", 1)[1].split(" seconds", 1)[0]
+        )
+        self.assertGreaterEqual(logged_delay, MIN_RETRY_DELAY)
+        self.assertLessEqual(logged_delay, MAX_RETRY_DELAY)
         self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 2)
 
     async def test_execute_query_stops_after_rate_limit_attempts_are_exhausted(self):
@@ -123,23 +130,77 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, response_data)
         self.assertIn("ServerDisconnectedError", logs.output[0])
-        sleep.assert_awaited_once_with(0.0)
+        sleep.assert_awaited_once()
+        self.assertGreaterEqual(sleep.await_args.args[0], MIN_RETRY_DELAY)
+        self.assertLessEqual(sleep.await_args.args[0], MAX_RETRY_DELAY)
         self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 2)
 
     def test_rate_limit_retry_delay_uses_exponential_fallback(self):
         with patch("core.utils.dvo_utils.random.uniform", return_value=1) as jitter:
-            self.assertEqual(_get_rate_limit_retry_delay(None, 1), 1)
-            self.assertEqual(_get_rate_limit_retry_delay(None, 2), 1)
-            self.assertEqual(_get_rate_limit_retry_delay(None, 10), 1)
+            delays = [
+                _get_rate_limit_retry_delay(None, 1),
+                _get_rate_limit_retry_delay(None, 2),
+                _get_rate_limit_retry_delay(None, 10),
+            ]
 
+        self.assertTrue(
+            all(MIN_RETRY_DELAY <= delay <= MAX_RETRY_DELAY for delay in delays)
+        )
         self.assertEqual(
             [call.args for call in jitter.call_args_list],
             [(0, 2), (0, 4), (0, 30)],
         )
 
     def test_rate_limit_retry_delay_uses_retry_after_seconds(self):
+        with patch("core.utils.dvo_utils.random.uniform", return_value=0):
+            delay = _get_rate_limit_retry_delay("1.5", 1)
+
+        self.assertEqual(delay, MIN_RETRY_DELAY)
+
+    def test_rate_limit_retry_delay_preserves_retry_after_above_minimum(self):
         with patch("core.utils.dvo_utils.random.uniform", return_value=0.5):
-            self.assertEqual(_get_rate_limit_retry_delay("1.5", 1), 2)
+            delay = _get_rate_limit_retry_delay("5", 1)
+
+        self.assertGreater(delay, 5)
+        self.assertLess(delay, 6)
+
+    def test_rate_limit_retry_delay_caps_retry_after_seconds(self):
+        with patch("core.utils.dvo_utils.random.uniform", return_value=0.5):
+            delay = _get_rate_limit_retry_delay("300", 1)
+
+        self.assertEqual(delay, MAX_RETRY_DELAY)
+
+    def test_rate_limit_retry_delay_uses_minimum_for_past_retry_after_date(self):
+        past_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        with (
+            patch(
+                "core.utils.dvo_utils.parsedate_to_datetime",
+                return_value=past_date,
+            ),
+            patch("core.utils.dvo_utils.random.uniform", return_value=0),
+        ):
+            delay = _get_rate_limit_retry_delay(
+                "Wed, 21 Oct 2015 07:28:00 GMT",
+                1,
+            )
+
+        self.assertEqual(delay, MIN_RETRY_DELAY)
+
+    def test_rate_limit_retry_delay_caps_future_retry_after_date(self):
+        future_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        with (
+            patch(
+                "core.utils.dvo_utils.parsedate_to_datetime",
+                return_value=future_date,
+            ),
+            patch("core.utils.dvo_utils.random.uniform", return_value=0),
+        ):
+            delay = _get_rate_limit_retry_delay(
+                "Fri, 01 Jan 2100 00:00:00 GMT",
+                1,
+            )
+
+        self.assertEqual(delay, MAX_RETRY_DELAY)
 
     async def test_execute_query_rejects_responses_without_data(self):
         with aioresponses() as mocked:

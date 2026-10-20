@@ -15,7 +15,7 @@ from tenacity import RetryCallState, retry, retry_if_exception, stop_after_attem
 logger = logging.getLogger(__name__)
 
 MAX_RETRY_ATTEMPTS = 3
-DEFAULT_RETRY_DELAY = 2.0
+MIN_RETRY_DELAY = 2.0
 MAX_RETRY_DELAY = 30.0
 RETRY_AFTER_JITTER = 1.0
 DEFAULT_MAX_CONCURRENT_REQUESTS = 2
@@ -33,6 +33,11 @@ async def _gather_all(*awaitables: Awaitable[Any]) -> list[Any]:
             raise result
         values.append(result)
     return values
+
+
+def _clamp_retry_delay(delay: float) -> float:
+    """Return a delay within the configured inclusive retry-delay bounds."""
+    return min(MAX_RETRY_DELAY, max(MIN_RETRY_DELAY, delay))
 
 
 def _get_rate_limit_retry_delay(
@@ -55,16 +60,16 @@ def _get_rate_limit_retry_delay(
                     (retry_at - datetime.now(timezone.utc)).total_seconds(),
                     0,
                 )
-                return delay + random.uniform(0, RETRY_AFTER_JITTER)
+                return _clamp_retry_delay(delay + random.uniform(0, RETRY_AFTER_JITTER))
         else:
             if delay >= 0:
-                return delay + random.uniform(0, RETRY_AFTER_JITTER)
+                return _clamp_retry_delay(delay + random.uniform(0, RETRY_AFTER_JITTER))
 
     max_delay = min(
         MAX_RETRY_DELAY,
-        DEFAULT_RETRY_DELAY * (2 ** (attempt - 1)),
+        MIN_RETRY_DELAY * (2 ** (attempt - 1)),
     )
-    return random.uniform(0, max_delay)
+    return _clamp_retry_delay(random.uniform(0, max_delay))
 
 
 def _is_retryable_error(error: BaseException) -> bool:
@@ -174,6 +179,7 @@ class DvOClient:
         variables: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Post a GraphQL query and return its data, logging any partial errors."""
+        print(f"Executing query with variables: {variables}")
         if self._session is None or self._semaphore is None:
             raise RuntimeError("DvOClient must be used as an async context manager")
 
