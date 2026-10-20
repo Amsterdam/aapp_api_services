@@ -1,7 +1,7 @@
 info:
-  name: PlanNodesByParagraphViewId
+  name: RC - PlanNodesByParagraphViewId
   type: graphql
-  seq: 1
+  seq: 2
 
 graphql:
   method: POST

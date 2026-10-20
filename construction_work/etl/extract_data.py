@@ -6,6 +6,8 @@ import asyncio
 from collections.abc import Mapping
 from typing import Any
 
+from django.conf import settings
+
 from construction_work.etl.queries import news_articles, projects_with_details
 from core.utils.dvo_utils import DvOClient, DvOResponseError
 
@@ -15,8 +17,7 @@ def get_all_drupal_projects_with_content() -> dict[str, Any]:
     Return raw construction-work projects and their related raw news articles.
 
     Projects are fetched first so their news-view paragraph IDs can be used to
-    fetch article views concurrently. The returned data is not adapted for the
-    legacy transform/load format.
+    fetch article views concurrently.
     """
     return asyncio.run(_get_all_drupal_projects_with_content())
 
@@ -25,6 +26,7 @@ async def _get_all_drupal_projects_with_content() -> dict[str, Any]:
     async with DvOClient() as client:
         projects = await client.execute_paginated_view_query(
             projects_with_details.QUERY,
+            {"paragraphId": settings.DVO_CONSTRUCTION_WORK_PARAGRAPH_ID},
         )
 
         paragraph_ids = list(

@@ -3,20 +3,19 @@
 import asyncio
 import logging
 from collections.abc import Awaitable, Mapping, Sequence
-from typing import Any, TypeVar
+from typing import Any
 
 import aiohttp
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
-T = TypeVar("T")
 
 
 class DvOResponseError(Exception):
     """Raised when DvO returns a response that cannot be used."""
 
 
-async def _gather_all(*awaitables: Awaitable[T]) -> list[T]:
+async def _gather_all(*awaitables: Awaitable[Any]) -> list[Any]:
     results = await asyncio.gather(*awaitables, return_exceptions=True)
     values = []
     for result in results:
@@ -95,7 +94,7 @@ class DvOClient:
 
         errors = payload.get("errors")
         if errors:
-            logger.warning("DvO GraphQL response contained errors: %s", errors)
+            logger.warning(f"DvO GraphQL response contained errors: {errors}")
 
         data = payload.get("data")
         if not isinstance(data, dict):

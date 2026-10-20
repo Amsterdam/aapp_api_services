@@ -1,6 +1,6 @@
 QUERY = """
-query ConstructionWorkProjectsWithDetails($page: Int!) {
-  view(paragraphId: 206731, page: $page) {
+query ConstructionWorkProjectsWithDetails($paragraphId: Int!, $page: Int!) {
+  view(paragraphId: $paragraphId, page: $page) {
     name
     pagination {
       totalPages

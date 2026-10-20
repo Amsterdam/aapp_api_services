@@ -1,7 +1,7 @@
 from unittest import mock
 from unittest.mock import AsyncMock
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
 from construction_work.etl import extract_data
 from construction_work.etl.queries import news_articles, projects_with_details
@@ -61,6 +61,7 @@ class DvoExtractionTestCase(SimpleTestCase):
         with self.assertRaises(DvOResponseError):
             extract_data.extract_news_paragraph_id_from_project(project)
 
+    @override_settings(DVO_CONSTRUCTION_WORK_PARAGRAPH_ID=12345)
     def test_get_all_projects_returns_raw_projects_and_grouped_articles(self):
         projects = [
             project_with_news_view(123, title="Nieuws"),
@@ -80,7 +81,8 @@ class DvoExtractionTestCase(SimpleTestCase):
             extracted_data = extract_data.get_all_drupal_projects_with_content()
 
         client.execute_paginated_view_query.assert_awaited_once_with(
-            projects_with_details.QUERY
+            projects_with_details.QUERY,
+            {"paragraphId": 12345},
         )
         client.execute_paginated_view_queries.assert_awaited_once_with(
             news_articles.QUERY,

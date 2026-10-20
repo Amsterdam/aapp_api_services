@@ -1,7 +1,7 @@
 info:
   name: Content werkzaamheid
   type: graphql
-  seq: 2
+  seq: 5
 
 graphql:
   method: POST
@@ -19,10 +19,8 @@ graphql:
                 rows {
                   content {
                     ... on ParagraphDdsLinkList {
-                      __typename
-                      title
                       id
-                      contentIndication 
+                      contentIndication
                       content
                       items {
                         ... on ParagraphDdsLinkListItem {
@@ -34,7 +32,6 @@ graphql:
                           }
                         }
                         ... on ParagraphDdsLinkListMediaItem {
-                          __typename
                           id
                           media {
                             description
@@ -50,19 +47,16 @@ graphql:
                       title
                     }
                     ... on ParagraphDdsGallery {
-                      __typename
                       id
                       contentIndication
                       content
                     }
                     ... on ParagraphDdsEmbed {
-                      __typename
                       id
                       contentIndication
                       content
                     }
                     ... on ParagraphDdsContentReference {
-                      __typename
                       id
                       contentIndication
                       content
@@ -100,7 +94,6 @@ graphql:
                       title
                     }
                     ... on ParagraphDdsMedia {
-                      __typename
                       id
                       contentIndication
                       content
@@ -115,7 +108,6 @@ graphql:
                       title
                     }
                     ... on ParagraphDdsProgressList {
-                      __typename
                       id
                       contentIndication
                       items {
@@ -134,13 +126,11 @@ graphql:
                       intro
                     }
                     ... on ParagraphDdsRichText {
-                      __typename
                       id
                       contentIndication
                       content
                     }
                     ... on ParagraphDdsViews {
-                      __typename
                       id
                       contentIndication
                       content

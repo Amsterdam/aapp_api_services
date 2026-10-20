@@ -1,57 +1,26 @@
 info:
-  name: v2 - Overzicht inclusief content
+  name: RC - PlanNodeByID
   type: graphql
-  seq: 8
+  seq: 4
 
 graphql:
   method: POST
   url: "{{DrupalBaseUrl}}"
   body:
     query: |
-      query MyQuery($paragraphId: Int!) {
-        view(paragraphId: $paragraphId, page: 1) {
-          name
-          pagination {
-            totalPages
-            previousPage
-            nextPage
-            enabled
-            currentPage
-          }
-          ... on View {
-            name
-            nodes {
-              ... on Plan {
-                title
-                changedDate
-                publicationDate
-                image {
-                  ... on Image {
-                    name
-                    src
-                  }
-                }
-                planCategory {
-                  id
-                  name
-                }
-                planStatus {
-                  name
-                }
-                id
-                path
-                summaryShort
-                summaryIntroductory
-                metaDescription
-                content {
+      query MyQuery($nodeID: Int!) {
+        nodeByID(id: $nodeID) {
+          ... on Plan {
+            id
+            title
+            content {
               ... on ParagraphGrid {
                 id
                 rows {
                   content {
                     ... on ParagraphDdsLinkList {
-                      __typename
                       id
-                      contentIndication 
+                      contentIndication
                       content
                       items {
                         ... on ParagraphDdsLinkListItem {
@@ -63,7 +32,6 @@ graphql:
                           }
                         }
                         ... on ParagraphDdsLinkListMediaItem {
-                          __typename
                           id
                           media {
                             description
@@ -73,25 +41,22 @@ graphql:
                             type
                             url
                           }
-                          # title
+                          title
                         }
                       }
-                      # title
+                      title
                     }
                     ... on ParagraphDdsGallery {
-                      __typename
                       id
                       contentIndication
                       content
                     }
                     ... on ParagraphDdsEmbed {
-                      __typename
                       id
                       contentIndication
                       content
                     }
                     ... on ParagraphDdsContentReference {
-                      __typename
                       id
                       contentIndication
                       content
@@ -129,7 +94,6 @@ graphql:
                       title
                     }
                     ... on ParagraphDdsMedia {
-                      __typename
                       id
                       contentIndication
                       content
@@ -144,7 +108,6 @@ graphql:
                       title
                     }
                     ... on ParagraphDdsProgressList {
-                      __typename
                       id
                       contentIndication
                       items {
@@ -163,13 +126,11 @@ graphql:
                       intro
                     }
                     ... on ParagraphDdsRichText {
-                      __typename
                       id
                       contentIndication
                       content
                     }
                     ... on ParagraphDdsViews {
-                      __typename
                       id
                       contentIndication
                       content
@@ -179,16 +140,10 @@ graphql:
                 }
               }
             }
-              }
-            }
-            itemsPerPage
           }
         }
       }
-    variables: |-
-      {
-        "paragraphId": 206731
-      }
+    variables: "{\r\n  \"nodeID\": 30347\r\n}"
   auth: inherit
 
 settings:
