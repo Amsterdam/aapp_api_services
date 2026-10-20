@@ -1,0 +1,99 @@
+info:
+  name: RC - NewsNodesByParagraphViewId
+  type: graphql
+  seq: 7
+
+graphql:
+  method: POST
+  url: "{{DrupalBaseUrl}}"
+  body:
+    query: "# use paragraphId 826 or 893 as example for Dvo ACC Env\r
+
+      query MyQuery($paragraphId: Int!) {\r
+
+      \  view(paragraphId: $paragraphId, page: 1) {\r
+
+      \    name\r
+
+      \   ... on View {\r
+
+      \      id\r
+
+      \      name\r
+
+      \      nodes {\r
+
+      \        ... on News {\r
+
+      \          id\r
+
+      \          tag {\r
+
+      \            id\r
+
+      \            name\r
+
+      \          }\r
+
+      \          summaryShort\r
+
+      \          title\r
+
+      \          changedDate\r
+
+      \          #displayChangedDate\r
+
+      \          publicationDate\r
+
+      \          #metaDescription\r
+
+      \          path\r
+
+      \          image {\r
+
+      \            ... on Image {\r
+
+      \              name\r
+
+      \              src\r
+
+      \            }\r
+
+      \          }\r
+
+      \        }\r
+
+      \      }\r
+
+      \      itemsPerPage\r
+
+      \      highlightedNumber\r
+
+      \    }\r
+
+      \    pagination {\r
+
+      \      totalPages\r
+
+      \      previousPage\r
+
+      \      nextPage\r
+
+      \      enabled\r
+
+      \      currentPage\r
+
+      \    }\r
+
+      \  }\r
+
+      }"
+    variables: "{\r\n  \"paragraphId\": 59632\r\n}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

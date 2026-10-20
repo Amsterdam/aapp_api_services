@@ -1,0 +1,34 @@
+info:
+  name: RC - PlansAll
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{DrupalBaseUrl}}"
+  body:
+    query: "query MyQuery {\r
+
+      \  activeNodes(contentTypeSelections: {id: \"plan\"}) {\r
+
+      \    nodes {\r
+
+      \      id\r
+
+      \      content_type\r
+
+      \      updated_at\r
+
+      \    }\r
+
+      \  }\r
+
+      }"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

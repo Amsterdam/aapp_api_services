@@ -1,4 +1,12 @@
 name: A
 variables:
+  - name: DrupalBaseUrl
+    value: https://dvo.amsterdam.nl/graphql
+    description: ""
+  - name: DrupalBasicAuthUsername
+    value: amsterdam
+    description: ""
   - secret: true
     name: MIJN_AMS_API_KEY
+  - secret: true
+    name: DrupalBasicAuthPassWord

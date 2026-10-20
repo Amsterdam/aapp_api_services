@@ -1,0 +1,65 @@
+info:
+  name: PageNodeByID
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{DrupalBaseUrl}}"
+  body:
+    query: "query MyQuery($nodeID: Int!) {\r
+
+      \  nodeByID(id: $nodeID) {\r
+
+      \    id\r
+
+      \    path\r
+
+      \    title\r
+
+      \    ... on Page {\r
+
+      \      content {\r
+
+      \        ... on ParagraphGrid {\r
+
+      \          id\r
+
+      \          rows {\r
+
+      \            content {\r
+
+      \              ... on ParagraphDdsViews {\r
+
+      \                id\r
+
+      \                content\r
+
+      \                hideTitle\r
+
+      \                title\r
+
+      \              }\r
+
+      \            }\r
+
+      \          }\r
+
+      \        }\r
+
+      \      }\r
+
+      \    }\r
+
+      \  }\r
+
+      }\r\n"
+    variables: "{\r\n  \"nodeID\": 13800\r\n}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

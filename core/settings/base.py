@@ -394,3 +394,7 @@ NOTIFICATION_ENDPOINT = {
     "WASTE": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/waste"),
     "BURNING_GUIDE": urljoin(NOTIFICATION_BASE_URL_EXTERNAL, "device/burning-guide"),
 }
+
+DVO_URL = os.getenv("DVO_URL", "https://dvo.acc.amsterdam.nl/graphql")
+DVO_BASIC_AUTH_USERNAME = os.getenv("DVO_BASIC_AUTH_USERNAME", "acc.amsterdam.nl")
+DVO_BASIC_AUTH_PASSWORD = os.getenv("DVO_BASIC_AUTH_PASSWORD", "")

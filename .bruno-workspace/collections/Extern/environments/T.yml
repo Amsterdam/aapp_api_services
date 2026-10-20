@@ -8,7 +8,5 @@ variables:
     value: acc.amsterdam.nl
   - secret: true
     name: access-token
-    description: ""
   - secret: true
     name: DrupalBasicAuthPassWord
-    description: ""

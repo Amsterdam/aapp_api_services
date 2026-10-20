@@ -1,0 +1,95 @@
+info:
+  name: RC - NewsNodeByID
+  type: graphql
+  seq: 8
+
+graphql:
+  method: POST
+  url: "{{DrupalBaseUrl}}"
+  body:
+    query: "query MyQuery($nodeID: Int!) {\r
+
+      \  nodeByID(id: $nodeID)  {\r
+
+      \    id\r
+
+      \    ... on News {\r
+
+      \      id\r
+
+      \      metaDescription\r
+
+      \      path\r
+
+      \      publicationDate\r
+
+      \      content {\r
+
+      \        ... on ParagraphGrid {\r
+
+      \          id\r
+
+      \          rows {\r
+
+      \            content {\r
+
+      \              ... on ParagraphDdsRichText {\r
+
+      \                id\r
+
+      \                content\r
+
+      \              }\r
+
+      \            }\r
+
+      \          }\r
+
+      \        }\r
+
+      \      }\r
+
+      \      tag {\r
+
+      \        name\r
+
+      \        id\r
+
+      \      }\r
+
+      \      image {\r
+
+      \        ... on Image {\r
+
+      \          src\r
+
+      \          description\r
+
+      \        }\r
+
+      \      }\r
+
+      \      newsCategory {\r
+
+      \        name\r
+
+      \      }\r
+
+      \      summaryShort\r
+
+      \      summaryIntroductory\r
+
+      \    }\r
+
+      \  }\r
+
+      }"
+    variables: "{\r\n  \"nodeID\": 16157\r\n}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

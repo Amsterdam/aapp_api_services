@@ -1,93 +1,102 @@
-from datetime import datetime
+from unittest import mock
+from unittest.mock import AsyncMock
 
-from aioresponses import aioresponses
-from django.conf import settings
+from django.test import SimpleTestCase, override_settings
 
-from construction_work.etl.extract_data import (
-    get_all_iprox_items,
-    get_iprox_items_data,
-)
-from core.testing_aioresponses import patch_client_response_init
-
-patch_client_response_init()
+from construction_work.etl import extract_data
+from construction_work.etl.queries import news_articles, projects_with_details
+from core.utils.dvo_utils import DvOResponseError
 
 
-def test_get_all_iprox_items_success():
-    iprox_url = "http://example.com/api/items"
-
-    # Mock data returned by the API
-    api_response = [
-        {"id": 1, "modified": "2023-10-01T12:34:56+0100"},
-        {"id": 2, "modified": "2023-10-02T12:34:56+0100"},
-    ]
-
-    expected_result = [
-        {
-            "id": 1,
-            "modified": datetime.strptime(
-                "2023-10-01T12:34:56+0100", settings.DATE_FORMAT_IPROX
-            ),
-        },
-        {
-            "id": 2,
-            "modified": datetime.strptime(
-                "2023-10-02T12:34:56+0100", settings.DATE_FORMAT_IPROX
-            ),
-        },
-    ]
-
-    with aioresponses() as mocked:
-        mocked.get(iprox_url, payload=api_response)
-
-        result = get_all_iprox_items(iprox_url)
-        assert result == expected_result
+def project_with_news_view(paragraph_id, **news_view_fields):
+    return {
+        "content": [
+            {
+                "rows": [
+                    {
+                        "content": [
+                            None,
+                            {
+                                "__typename": "ParagraphDdsViews",
+                                "id": paragraph_id,
+                                **news_view_fields,
+                            },
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
 
 
-def test_get_all_iprox_items_non_200_status():
-    iprox_url = "http://example.com/api/items"
+class DvoExtractionTestCase(SimpleTestCase):
+    def test_extracts_news_paragraph_id_from_content_indication(self):
+        project = project_with_news_view(
+            123,
+            contentIndication="news",
+            title="Project updates",
+        )
 
-    with aioresponses() as mocked:
-        mocked.get(iprox_url, status=500)
+        paragraph_id = extract_data.extract_news_paragraph_id_from_project(project)
 
-        result = get_all_iprox_items(iprox_url)
-        assert result is None
+        self.assertEqual(paragraph_id, 123)
 
+    def test_extracts_news_paragraph_id_from_legacy_title(self):
+        project = project_with_news_view(456, title="Nieuws")
 
-def test_get_iprox_items_data_success():
-    base_url = "http://example.com/api/items/"
-    item_ids = [1, 2]
+        paragraph_id = extract_data.extract_news_paragraph_id_from_project(project)
 
-    expected_urls = [f"{base_url}{item_id}" for item_id in item_ids]
+        self.assertEqual(paragraph_id, 456)
 
-    # Mock data for each item
-    api_responses = [{"id": 1, "data": "Item 1 Data"}, {"id": 2, "data": "Item 2 Data"}]
+    def test_returns_none_when_project_has_no_news_view(self):
+        project = {"content": [{"rows": [{"content": [None]}]}]}
 
-    with aioresponses() as mocked:
-        # Mock each item URL with corresponding response
-        for url, response in zip(expected_urls, api_responses, strict=True):
-            mocked.get(url, payload=response)
+        paragraph_id = extract_data.extract_news_paragraph_id_from_project(project)
 
-        result = get_iprox_items_data(base_url, item_ids)
-        assert result == api_responses
+        self.assertIsNone(paragraph_id)
 
+    def test_rejects_news_view_without_integer_id(self):
+        project = project_with_news_view("not-an-integer", title="Nieuws")
 
-def test_get_iprox_items_data_partial_failure():
-    base_url = "http://example.com/api/items/"
-    item_ids = [1, 2]
+        with self.assertRaises(DvOResponseError):
+            extract_data.extract_news_paragraph_id_from_project(project)
 
-    expected_urls = [f"{base_url}{item_id}" for item_id in item_ids]
+    @override_settings(DVO_CONSTRUCTION_WORK_PARAGRAPH_ID=12345)
+    def test_get_all_projects_returns_raw_projects_and_grouped_articles(self):
+        projects = [
+            project_with_news_view(123, title="Nieuws"),
+            project_with_news_view(123, title="Nieuws"),
+            project_with_news_view(456, title="Nieuws"),
+        ]
+        articles_by_paragraph_id = [
+            [{"id": 1001, "title": "First article"}],
+            [{"id": 1002, "title": "Second article"}],
+        ]
+        client = AsyncMock()
+        client.__aenter__.return_value = client
+        client.execute_paginated_view_query.return_value = projects
+        client.execute_paginated_view_queries.return_value = articles_by_paragraph_id
 
-    api_responses = [
-        {"id": 1, "data": "Item 1 Data"},
-        None,  # Simulate failure for the second item
-    ]
+        with mock.patch.object(extract_data, "DvOClient", return_value=client):
+            extracted_data = extract_data.get_all_drupal_projects_with_content()
 
-    with aioresponses() as mocked:
-        # Mock successful response for the first item
-        mocked.get(expected_urls[0], payload=api_responses[0])
-        # Mock failure for the second item
-        mocked.get(expected_urls[1], status=500)
+        client.execute_paginated_view_query.assert_awaited_once_with(
+            projects_with_details.QUERY,
+            {"paragraphId": 12345},
+        )
+        client.execute_paginated_view_queries.assert_awaited_once_with(
+            news_articles.QUERY,
+            [{"paragraphId": 123}, {"paragraphId": 456}],
+        )
+        self.assertEqual(extracted_data["projects"], projects)
+        self.assertEqual(
+            extracted_data["news_articles"],
+            {
+                123: articles_by_paragraph_id[0],
+                456: articles_by_paragraph_id[1],
+            },
+        )
 
-        result = get_iprox_items_data(base_url, item_ids)
-        # Should only include the successful item
-        assert result == [api_responses[0]]
+    def test_news_articles_query_accepts_page_variable(self):
+        self.assertIn("$page: Int!", news_articles.QUERY)
+        self.assertIn("page: $page", news_articles.QUERY)

@@ -1,43 +1,91 @@
-"""Fetch all project and article data from IPROX via its API
-See README.md for more info regarding the IPROX API
+"""
+Fetch all project and article data from DvO via its API
 """
 
 import asyncio
-from datetime import datetime
-from logging import getLogger
-from urllib.parse import urljoin
+from collections.abc import Mapping
+from typing import Any
 
 from django.conf import settings
 
-from core.utils.async_utils import async_fetch
+from construction_work.etl.queries import news_articles, projects_with_details
+from core.utils.dvo_utils import DvOClient, DvOResponseError
 
-logger = getLogger(__name__)
 
-
-def get_all_iprox_items(iprox_url):
-    """Get a list of items from the IPROX API asyncronously
-    The "modified" field is converted to a datetime object
+def get_all_drupal_projects_with_content() -> dict[str, Any]:
     """
-    logger.info("Collecting list of items")
-    result = asyncio.run(async_fetch([iprox_url]))[0]
-    if not result:
-        return None
+    Return raw construction-work projects and their related raw news articles.
 
-    for item in result:
-        date_string = item.get("modified", settings.EPOCH)
-        item["modified"] = datetime.strptime(date_string, settings.DATE_FORMAT_IPROX)
-    return result
+    Projects are fetched first so their news-view paragraph IDs can be used to
+    fetch article views concurrently.
+    """
+    return asyncio.run(_get_all_drupal_projects_with_content())
 
 
-def get_iprox_items_data(url, item_ids):
-    """Get all data for each item by ID."""
-    urls = [urljoin(url, str(item)) for item in item_ids]
-    logger.info(f"Starting async fetch for {len(urls)} items from IPROX")
-    upsert_item_data = asyncio.run(async_fetch(urls))
-    upsert_item_data = [
-        item for item in upsert_item_data if item
-    ]  # Take out None values
-    logger.info(
-        f"Finished async fetch. Successfully collected {len(upsert_item_data)} items"
-    )
-    return upsert_item_data
+async def _get_all_drupal_projects_with_content() -> dict[str, Any]:
+    async with DvOClient() as client:
+        projects = await client.execute_paginated_view_query(
+            projects_with_details.QUERY,
+            {"paragraphId": settings.DVO_CONSTRUCTION_WORK_PARAGRAPH_ID},
+        )
+
+        paragraph_ids = list(
+            dict.fromkeys(
+                paragraph_id
+                for project in projects
+                if (paragraph_id := extract_news_paragraph_id_from_project(project))
+                is not None
+            )
+        )
+
+        articles_by_paragraph_id = await client.execute_paginated_view_queries(
+            news_articles.QUERY,
+            [{"paragraphId": paragraph_id} for paragraph_id in paragraph_ids],
+        )
+
+    return {
+        "projects": projects,
+        "news_articles": dict(
+            zip(paragraph_ids, articles_by_paragraph_id, strict=True)
+        ),
+    }
+
+
+def extract_news_paragraph_id_from_project(
+    project: Mapping[str, Any],
+) -> int | None:
+    """
+    Return the first news view paragraph ID, or None if the project has no news view.
+
+    Some project payloads include ``None`` placeholders in row content, and older
+    news view blocks may omit ``contentIndication`` while still being titled
+    ``Nieuws``.
+
+    TODO: once everything is solid in production, this code may be simplified.
+    """
+    for grid in project.get("content", []) or []:
+        if not isinstance(grid, dict):
+            continue
+        for row in grid.get("rows", []) or []:
+            if not isinstance(row, dict):
+                continue
+            for block in row.get("content", []) or []:
+                if not isinstance(block, dict):
+                    continue
+
+                if block.get("__typename") != "ParagraphDdsViews":
+                    continue
+
+                if (
+                    block.get("contentIndication") == "news"
+                    or block.get("title") == "Nieuws"
+                ):
+                    paragraph_id = block.get("id")
+                    if isinstance(paragraph_id, int) and not isinstance(
+                        paragraph_id, bool
+                    ):
+                        return paragraph_id
+                    raise DvOResponseError(
+                        "DvO news view paragraph did not contain an integer ID"
+                    )
+    return None
