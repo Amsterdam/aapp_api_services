@@ -35,6 +35,7 @@ class DvOClient:
         max_concurrent_requests: int = 20,
         timeout_total: float = 30.0,
     ) -> None:
+        """Initialize the client using explicit options or DvO Django settings."""
         self.api_url = api_url if api_url is not None else settings.DVO_URL
         if headers is None:
             headers = {
@@ -55,6 +56,7 @@ class DvOClient:
         self._semaphore: asyncio.Semaphore | None = None
 
     async def __aenter__(self) -> "DvOClient":
+        """Open the shared HTTP session and initialize the request limit."""
         if self._session is not None:
             raise RuntimeError("DvoClient is already open")
 
@@ -67,6 +69,7 @@ class DvOClient:
         return self
 
     async def __aexit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+        """Close the HTTP session and release its request semaphore."""
         if self._session is not None:
             await self._session.close()
             self._session = None
@@ -77,7 +80,7 @@ class DvOClient:
         query: str,
         variables: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Execute one GraphQL query and return its data object."""
+        """Post a GraphQL query and return its data, logging any partial errors."""
         if self._session is None or self._semaphore is None:
             raise RuntimeError("DvoClient must be used as an async context manager")
 
@@ -107,7 +110,7 @@ class DvOClient:
         variables: Mapping[str, Any] | None = None,
         page_variable: str = "page",
     ) -> list[dict[str, Any]]:
-        """Execute a paginated DvO view query and return all raw nodes."""
+        """Fetch every page of a view query and return the raw nodes in order."""
         query_variables = dict(variables or {})
         first_page = await self.execute_query(
             query,
@@ -135,7 +138,7 @@ class DvOClient:
         variable_sets: Sequence[Mapping[str, Any]],
         page_variable: str = "page",
     ) -> list[list[dict[str, Any]]]:
-        """Execute multiple paginated view queries concurrently."""
+        """Fetch multiple paginated views concurrently, preserving input order."""
         return await _gather_all(
             *(
                 self.execute_paginated_view_query(
@@ -151,6 +154,7 @@ class DvOClient:
     def _get_view_nodes_and_page_count(
         data: Mapping[str, Any],
     ) -> tuple[list[dict[str, Any]], int]:
+        """Extract nodes and total page count, raising if the view data is invalid."""
         view = data.get("view")
         if not isinstance(view, dict):
             raise DvOResponseError("DvO query response did not contain a view")
