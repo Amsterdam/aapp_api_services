@@ -25,9 +25,10 @@ def extract_transform_load():
     extracted_data = get_all_drupal_projects_with_content()
     logger.info("Extracted data from DvO")
     logger.info(f"Extracted {len(extracted_data['projects'])} items from DvO")
-    logger.info(
-        f"Extracted {len(extracted_data['news_articles'])} news articles from DvO"
+    news_article_count = sum(
+        len(articles) for articles in extracted_data["news_articles"].values()
     )
+    logger.info(f"Extracted {news_article_count} news articles from DvO")
 
     # ### TRANSFORM DATA
     # logger.info("Transforming data for Construction-Work")

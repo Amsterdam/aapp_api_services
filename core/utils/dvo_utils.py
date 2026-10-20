@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import random
 from collections.abc import Awaitable, Mapping, Sequence
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -15,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 MAX_RETRY_ATTEMPTS = 3
 DEFAULT_RETRY_DELAY = 2.0
+MAX_RETRY_DELAY = 30.0
+RETRY_AFTER_JITTER = 1.0
+DEFAULT_MAX_CONCURRENT_REQUESTS = 2
 
 
 class DvOResponseError(Exception):
@@ -35,7 +39,7 @@ def _get_rate_limit_retry_delay(
     retry_after: str | None,
     attempt: int,
 ) -> float:
-    """Return the Retry-After delay or an exponential fallback in seconds."""
+    """Return a jittered Retry-After delay or capped exponential backoff."""
     if retry_after is not None:
         try:
             delay = float(retry_after)
@@ -47,12 +51,20 @@ def _get_rate_limit_retry_delay(
             if retry_at is not None:
                 if retry_at.tzinfo is None:
                     retry_at = retry_at.replace(tzinfo=timezone.utc)
-                return max((retry_at - datetime.now(timezone.utc)).total_seconds(), 0)
+                delay = max(
+                    (retry_at - datetime.now(timezone.utc)).total_seconds(),
+                    0,
+                )
+                return delay + random.uniform(0, RETRY_AFTER_JITTER)
         else:
             if delay >= 0:
-                return delay
+                return delay + random.uniform(0, RETRY_AFTER_JITTER)
 
-    return DEFAULT_RETRY_DELAY * (2 ** (attempt - 1))
+    max_delay = min(
+        MAX_RETRY_DELAY,
+        DEFAULT_RETRY_DELAY * (2 ** (attempt - 1)),
+    )
+    return random.uniform(0, max_delay)
 
 
 def _is_retryable_error(error: BaseException) -> bool:
@@ -106,7 +118,7 @@ class DvOClient:
         self,
         api_url: str | None = None,
         headers: Mapping[str, str] | None = None,
-        max_concurrent_requests: int = 20,
+        max_concurrent_requests: int = DEFAULT_MAX_CONCURRENT_REQUESTS,
         timeout_total: float = 30.0,
     ) -> None:
         """Initialize the client using explicit options or DvO Django settings."""

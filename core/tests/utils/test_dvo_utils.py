@@ -22,6 +22,9 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.client = DvOClient(api_url=API_URL, headers={})
 
+    def test_client_limits_default_concurrent_requests(self):
+        self.assertEqual(self.client.max_concurrent_requests, 2)
+
     @override_settings(
         DVO_URL=API_URL,
         DVO_BASIC_AUTH_USERNAME="dvo-user",
@@ -67,9 +70,13 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
             mocked.post(API_URL, status=429, headers={"Retry-After": "0"})
             mocked.post(API_URL, payload={"data": response_data})
 
-            async with self.client:
-                with self.assertLogs("core.utils.dvo_utils", level="WARNING") as logs:
-                    result = await self.client.execute_query(query)
+            with patch("core.utils.dvo_utils.random.uniform", return_value=0):
+                async with self.client:
+                    with self.assertLogs(
+                        "core.utils.dvo_utils",
+                        level="WARNING",
+                    ) as logs:
+                        result = await self.client.execute_query(query)
 
         self.assertEqual(result, response_data)
         self.assertIn("retrying in 0.0 seconds", logs.output[0])
@@ -84,9 +91,12 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
                 repeat=True,
             )
 
-            async with self.client:
-                with self.assertRaises(aiohttp.ClientResponseError):
-                    await self.client.execute_query("query { view { nodes { id } } }")
+            with patch("core.utils.dvo_utils.random.uniform", return_value=0):
+                async with self.client:
+                    with self.assertRaises(aiohttp.ClientResponseError):
+                        await self.client.execute_query(
+                            "query { view { nodes { id } } }"
+                        )
 
         self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 3)
 
@@ -97,10 +107,13 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
             mocked.post(API_URL, exception=aiohttp.ServerDisconnectedError())
             mocked.post(API_URL, payload={"data": response_data})
 
-            with patch(
-                "core.utils.dvo_utils.asyncio.sleep",
-                new_callable=AsyncMock,
-            ) as sleep:
+            with (
+                patch(
+                    "core.utils.dvo_utils.asyncio.sleep",
+                    new_callable=AsyncMock,
+                ) as sleep,
+                patch("core.utils.dvo_utils.random.uniform", return_value=0),
+            ):
                 async with self.client:
                     with self.assertLogs(
                         "core.utils.dvo_utils",
@@ -110,15 +123,23 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, response_data)
         self.assertIn("ServerDisconnectedError", logs.output[0])
-        sleep.assert_awaited_once_with(2.0)
+        sleep.assert_awaited_once_with(0.0)
         self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 2)
 
     def test_rate_limit_retry_delay_uses_exponential_fallback(self):
-        self.assertEqual(_get_rate_limit_retry_delay(None, 1), 2)
-        self.assertEqual(_get_rate_limit_retry_delay(None, 2), 4)
+        with patch("core.utils.dvo_utils.random.uniform", return_value=1) as jitter:
+            self.assertEqual(_get_rate_limit_retry_delay(None, 1), 1)
+            self.assertEqual(_get_rate_limit_retry_delay(None, 2), 1)
+            self.assertEqual(_get_rate_limit_retry_delay(None, 10), 1)
+
+        self.assertEqual(
+            [call.args for call in jitter.call_args_list],
+            [(0, 2), (0, 4), (0, 30)],
+        )
 
     def test_rate_limit_retry_delay_uses_retry_after_seconds(self):
-        self.assertEqual(_get_rate_limit_retry_delay("1.5", 1), 1.5)
+        with patch("core.utils.dvo_utils.random.uniform", return_value=0.5):
+            self.assertEqual(_get_rate_limit_retry_delay("1.5", 1), 2)
 
     async def test_execute_query_rejects_responses_without_data(self):
         with aioresponses() as mocked:

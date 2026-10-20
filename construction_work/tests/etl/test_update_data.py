@@ -1,6 +1,6 @@
 from unittest import mock
 
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 from model_bakery import baker
 
@@ -8,6 +8,7 @@ from construction_work.etl.update_data import (
     _cleanup_inactive_projects,
     _deactivate_unseen_articles,
     _deactivate_unseen_projects,
+    extract_transform_load,
     garbage_collector,
 )
 from construction_work.models.article_models import Article
@@ -34,6 +35,27 @@ def mock_transform_func(data):
 
 def mock_load_func(data):
     pass
+
+
+class ExtractTransformLoadTestCase(SimpleTestCase):
+    @mock.patch(
+        "construction_work.etl.update_data.get_all_drupal_projects_with_content",
+        return_value={
+            "projects": [],
+            "news_articles": {
+                123: [{"id": 1}, {"id": 2}],
+                456: [{"id": 3}],
+                789: [],
+            },
+        },
+    )
+    def test_logs_total_news_article_count(self, mock_extract):
+        with self.assertLogs("construction_work.etl.update_data", level="INFO") as logs:
+            extract_transform_load()
+
+        self.assertTrue(
+            any("Extracted 3 news articles from DvO" in log for log in logs.output)
+        )
 
 
 class GarbageCollectorTestCase(TestCase):
