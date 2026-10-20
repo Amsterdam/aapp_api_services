@@ -1,11 +1,11 @@
 info:
-  name: NewsNodeByID
+  name: RC - NewsNodeByID
   type: graphql
   seq: 8
 
 graphql:
   method: POST
-  url: "{{endpoint}}"
+  url: "{{DrupalBaseUrl}}"
   body:
     query: "query MyQuery($nodeID: Int!) {\r
 

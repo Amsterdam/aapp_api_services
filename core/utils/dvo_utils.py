@@ -3,12 +3,18 @@
 import asyncio
 import logging
 from collections.abc import Awaitable, Mapping, Sequence
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 import aiohttp
 from django.conf import settings
+from tenacity import RetryCallState, retry, retry_if_exception, stop_after_attempt
 
 logger = logging.getLogger(__name__)
+
+MAX_RETRY_ATTEMPTS = 3
+DEFAULT_RETRY_DELAY = 2.0
 
 
 class DvOResponseError(Exception):
@@ -23,6 +29,74 @@ async def _gather_all(*awaitables: Awaitable[Any]) -> list[Any]:
             raise result
         values.append(result)
     return values
+
+
+def _get_rate_limit_retry_delay(
+    retry_after: str | None,
+    attempt: int,
+) -> float:
+    """Return the Retry-After delay or an exponential fallback in seconds."""
+    if retry_after is not None:
+        try:
+            delay = float(retry_after)
+        except ValueError:
+            try:
+                retry_at = parsedate_to_datetime(retry_after)
+            except TypeError, ValueError, OverflowError:
+                retry_at = None
+            if retry_at is not None:
+                if retry_at.tzinfo is None:
+                    retry_at = retry_at.replace(tzinfo=timezone.utc)
+                return max((retry_at - datetime.now(timezone.utc)).total_seconds(), 0)
+        else:
+            if delay >= 0:
+                return delay
+
+    return DEFAULT_RETRY_DELAY * (2 ** (attempt - 1))
+
+
+def _is_retryable_error(error: BaseException) -> bool:
+    """Return whether an HTTP 429 or transient connection error can be retried."""
+    is_rate_limited = (
+        isinstance(error, aiohttp.ClientResponseError) and error.status == 429
+    )
+    is_connection_error = isinstance(
+        error,
+        (aiohttp.ClientConnectionError, asyncio.TimeoutError),
+    )
+    return is_rate_limited or is_connection_error
+
+
+def _wait_for_retry(retry_state: RetryCallState) -> float:
+    """Choose Retry-After for HTTP 429s or exponential backoff for other errors."""
+    error = retry_state.outcome.exception() if retry_state.outcome is not None else None
+    retry_after = (
+        error.headers.get("Retry-After")
+        if (
+            isinstance(error, aiohttp.ClientResponseError)
+            and error.status == 429
+            and error.headers
+        )
+        else None
+    )
+    return _get_rate_limit_retry_delay(retry_after, retry_state.attempt_number)
+
+
+def _log_retry(retry_state: RetryCallState) -> None:
+    """Log each scheduled retry for a DvO request."""
+    if retry_state.next_action is None or retry_state.outcome is None:
+        return
+
+    error = retry_state.outcome.exception()
+    if isinstance(error, aiohttp.ClientResponseError):
+        error_description = f"HTTP {error.status}"
+    else:
+        error_description = type(error).__name__
+    logger.warning(
+        f"DvO request failed with {error_description}; retrying in "
+        f"{retry_state.next_action.sleep} seconds "
+        f"(attempt {retry_state.attempt_number}/{MAX_RETRY_ATTEMPTS})"
+    )
 
 
 class DvOClient:
@@ -75,6 +149,13 @@ class DvOClient:
             self._session = None
             self._semaphore = None
 
+    @retry(
+        stop=stop_after_attempt(MAX_RETRY_ATTEMPTS),
+        wait=_wait_for_retry,
+        retry=retry_if_exception(_is_retryable_error),
+        before_sleep=_log_retry,
+        reraise=True,
+    )
     async def execute_query(
         self,
         query: str,
@@ -82,7 +163,7 @@ class DvOClient:
     ) -> dict[str, Any]:
         """Post a GraphQL query and return its data, logging any partial errors."""
         if self._session is None or self._semaphore is None:
-            raise RuntimeError("DvoClient must be used as an async context manager")
+            raise RuntimeError("DvOClient must be used as an async context manager")
 
         async with self._semaphore:
             async with self._session.post(

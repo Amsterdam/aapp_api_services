@@ -1,11 +1,11 @@
 info:
-  name: activeNodesByTypeId
+  name: RC - activeNodesByTypeId
   type: graphql
   seq: 2
 
 graphql:
   method: POST
-  url: "{{endpoint}}"
+  url: "{{DrupalBaseUrl}}"
   body:
     query: "query GetActiveNodes($typeId: String!) {\r
 

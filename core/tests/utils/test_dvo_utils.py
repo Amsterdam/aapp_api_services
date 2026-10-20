@@ -1,13 +1,17 @@
 import asyncio
 import unittest
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import aiohttp
 from aioresponses import aioresponses
 from django.test import override_settings
 
 from core.testing_aioresponses import patch_client_response_init
-from core.utils.dvo_utils import DvOClient, DvOResponseError
+from core.utils.dvo_utils import (
+    DvOClient,
+    DvOResponseError,
+    _get_rate_limit_retry_delay,
+)
 
 patch_client_response_init()
 
@@ -55,6 +59,66 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
             async with self.client:
                 with self.assertRaises(aiohttp.ClientResponseError):
                     await self.client.execute_query("query { view { nodes { id } } }")
+
+    async def test_execute_query_retries_rate_limit_using_retry_after_header(self):
+        response_data = {"view": {"nodes": [{"id": 1}]}}
+        query = "query { view { nodes { id } } }"
+        with aioresponses() as mocked:
+            mocked.post(API_URL, status=429, headers={"Retry-After": "0"})
+            mocked.post(API_URL, payload={"data": response_data})
+
+            async with self.client:
+                with self.assertLogs("core.utils.dvo_utils", level="WARNING") as logs:
+                    result = await self.client.execute_query(query)
+
+        self.assertEqual(result, response_data)
+        self.assertIn("retrying in 0.0 seconds", logs.output[0])
+        self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 2)
+
+    async def test_execute_query_stops_after_rate_limit_attempts_are_exhausted(self):
+        with aioresponses() as mocked:
+            mocked.post(
+                API_URL,
+                status=429,
+                headers={"Retry-After": "0"},
+                repeat=True,
+            )
+
+            async with self.client:
+                with self.assertRaises(aiohttp.ClientResponseError):
+                    await self.client.execute_query("query { view { nodes { id } } }")
+
+        self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 3)
+
+    async def test_execute_query_retries_server_disconnect(self):
+        response_data = {"view": {"nodes": [{"id": 1}]}}
+        query = "query { view { nodes { id } } }"
+        with aioresponses() as mocked:
+            mocked.post(API_URL, exception=aiohttp.ServerDisconnectedError())
+            mocked.post(API_URL, payload={"data": response_data})
+
+            with patch(
+                "core.utils.dvo_utils.asyncio.sleep",
+                new_callable=AsyncMock,
+            ) as sleep:
+                async with self.client:
+                    with self.assertLogs(
+                        "core.utils.dvo_utils",
+                        level="WARNING",
+                    ) as logs:
+                        result = await self.client.execute_query(query)
+
+        self.assertEqual(result, response_data)
+        self.assertIn("ServerDisconnectedError", logs.output[0])
+        sleep.assert_awaited_once_with(2.0)
+        self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 2)
+
+    def test_rate_limit_retry_delay_uses_exponential_fallback(self):
+        self.assertEqual(_get_rate_limit_retry_delay(None, 1), 2)
+        self.assertEqual(_get_rate_limit_retry_delay(None, 2), 4)
+
+    def test_rate_limit_retry_delay_uses_retry_after_seconds(self):
+        self.assertEqual(_get_rate_limit_retry_delay("1.5", 1), 1.5)
 
     async def test_execute_query_rejects_responses_without_data(self):
         with aioresponses() as mocked:
