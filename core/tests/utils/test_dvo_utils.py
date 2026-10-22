@@ -210,6 +210,59 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
                 with self.assertRaises(DvOResponseError):
                     await self.client.execute_query("query { view { nodes { id } } }")
 
+    async def test_execute_query_limits_concurrent_requests(self):
+        active_requests = []
+        peak_active_requests = []
+        request_barrier = asyncio.Barrier(self.client.max_concurrent_requests)
+        release_requests = asyncio.Event()
+        two_requests_started = asyncio.Event()
+
+        async def execute_query_with_retries(query, variables=None):
+            active_requests.append(variables["request"])
+            peak_active_requests.append(len(active_requests))
+            try:
+                barrier_index = await request_barrier.wait()
+                if barrier_index == 0:
+                    two_requests_started.set()
+                await release_requests.wait()
+                return {"result": variables["request"]}
+            finally:
+                active_requests.remove(variables["request"])
+
+        self.client._execute_query_with_retries = AsyncMock(
+            side_effect=execute_query_with_retries
+        )
+
+        async with self.client:
+            requests = [
+                asyncio.create_task(
+                    self.client.execute_query(
+                        "query { result }",
+                        {"request": request_number},
+                    )
+                )
+                for request_number in range(6)
+            ]
+            await asyncio.wait_for(two_requests_started.wait(), timeout=1)
+            await asyncio.sleep(0)
+            try:
+                self.assertEqual(
+                    len(active_requests),
+                    self.client.max_concurrent_requests,
+                )
+                self.assertEqual(
+                    max(peak_active_requests),
+                    self.client.max_concurrent_requests,
+                )
+            finally:
+                release_requests.set()
+            results = await asyncio.gather(*requests)
+
+        self.assertEqual(
+            results,
+            [{"result": request_number} for request_number in range(6)],
+        )
+
     async def test_execute_paginated_view_query_fetches_every_page(self):
         requested_variables = []
 

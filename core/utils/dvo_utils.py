@@ -166,6 +166,19 @@ class DvOClient:
             self._session = None
             self._semaphore = None
 
+    async def execute_query(
+        self,
+        query: str,
+        variables: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Post a GraphQL query and return its data, logging any partial errors."""
+        if self._session is None or self._semaphore is None:
+            raise RuntimeError("DvOClient must be used as an async context manager")
+
+        async with self._semaphore:
+            logger.info(f"Executing DvO query with variables: {variables}")
+            return await self._execute_query_with_retries(query, variables)
+
     @retry(
         stop=stop_after_attempt(MAX_RETRY_ATTEMPTS),
         wait=_wait_for_retry,
@@ -173,23 +186,21 @@ class DvOClient:
         before_sleep=_log_retry,
         reraise=True,
     )
-    async def execute_query(
+    async def _execute_query_with_retries(
         self,
         query: str,
         variables: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Post a GraphQL query and return its data, logging any partial errors."""
-        print(f"Executing query with variables: {variables}")
-        if self._session is None or self._semaphore is None:
+        """Execute a query with retries while its caller holds a concurrency slot."""
+        if self._session is None:
             raise RuntimeError("DvOClient must be used as an async context manager")
 
-        async with self._semaphore:
-            async with self._session.post(
-                self.api_url,
-                json={"query": query, "variables": dict(variables or {})},
-            ) as response:
-                response.raise_for_status()
-                payload = await response.json()
+        async with self._session.post(
+            self.api_url,
+            json={"query": query, "variables": dict(variables or {})},
+        ) as response:
+            response.raise_for_status()
+            payload = await response.json()
 
         if not isinstance(payload, dict):
             raise DvOResponseError("DvO returned a non-object GraphQL response")
