@@ -54,6 +54,8 @@ class SessionResponseSerializer(serializers.Serializer):
         ),
         allow_null=True,
     )
+    vignette_number = serializers.CharField(allow_null=True)
+    boat_name = serializers.CharField(allow_null=True)
     # CPMS data
     start_date_time = serializers.DateTimeField(allow_null=True)
     end_date_time = serializers.DateTimeField(allow_null=True)

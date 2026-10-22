@@ -23,6 +23,7 @@ class TestSessionInitView(BoatChargingTestCase):
             "name": "Test User",
             "email": "user@example.com",
             "return_url": return_url,
+            "vignette_id": 3,
         }
 
     def test_init_session_success(self):

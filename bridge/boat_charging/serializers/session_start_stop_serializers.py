@@ -27,6 +27,7 @@ class SessionInitRequestSerializer(serializers.Serializer):
     name = serializers.CharField()
     email = serializers.EmailField()
     return_url = serializers.CharField(validators=[validate_return_url])
+    vignette_id = serializers.IntegerField()
 
 
 class SessionInitResponseSerializer(serializers.Serializer):
