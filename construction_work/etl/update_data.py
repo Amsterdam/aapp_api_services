@@ -3,7 +3,9 @@
 Fetch data from the DvO API and ingest it into Construction-Work database
 """
 
+import json
 from logging import getLogger
+from pathlib import Path
 
 from django.db import transaction
 from django.utils import timezone
@@ -29,6 +31,11 @@ def extract_transform_load():
         len(articles) for articles in extracted_data["news_articles"].values()
     )
     logger.info(f"Extracted {news_article_count} news articles from DvO")
+
+    output_path = Path(__file__).resolve().parents[1] / "extracted_data.json"
+    print(f"Saving extracted data to {output_path}")
+    with output_path.open("w", encoding="utf-8") as f:
+        json.dump(extracted_data, f)
 
     # ### TRANSFORM DATA
     # logger.info("Transforming data for Construction-Work")

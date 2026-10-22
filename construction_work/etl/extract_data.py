@@ -4,12 +4,15 @@ Fetch all project and article data from DvO via its API
 
 import asyncio
 from collections.abc import Mapping
+from logging import getLogger
 from typing import Any
 
 from django.conf import settings
 
 from construction_work.etl.queries import news_articles, projects_with_details
 from core.utils.dvo_utils import DvOClient, DvOResponseError
+
+logger = getLogger(__name__)
 
 
 def get_all_drupal_projects_with_content() -> dict[str, Any]:
@@ -28,6 +31,8 @@ async def _get_all_drupal_projects_with_content() -> dict[str, Any]:
             projects_with_details.QUERY,
             {"paragraphId": settings.DVO_CONSTRUCTION_WORK_PARAGRAPH_ID},
         )
+
+        logger.info(f"Extracted {len(projects)} items from DvO")
 
         paragraph_ids = list(
             dict.fromkeys(
