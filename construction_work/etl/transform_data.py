@@ -43,14 +43,9 @@ def transform_data(
     extracted_data: Mapping[str, Any],
 ) -> dict[str, list[dict[str, Any]]]:
     """Return loader-ready projects and articles from the extracted DvO response."""
-    projects = extracted_data.get("projects", [])
-    news_articles = extracted_data.get("news_articles", {})
-    has_images = any(project.get("image") for project in projects) or any(
-        article.get("image")
-        for articles in news_articles.values()
-        for article in articles
-    )
-    image_set_service = ImageSetService() if has_images else None
+    projects = extracted_data["projects"]
+    news_articles = extracted_data["news_articles"]
+    image_set_service = ImageSetService()
 
     transformed_projects = [
         _transform_project(project, image_set_service) for project in projects
@@ -78,6 +73,10 @@ def _transform_project(
     timeline_intro = None
     has_timeline = False
     coordinates = None
+
+    raw_title = project.get("title", "")
+    project_title = raw_title.split(":")[0]
+    project_subtitle = _get_subtitle(raw_title)
 
     for block in _content_blocks(project):
         typename = block.get("__typename")
@@ -110,14 +109,15 @@ def _transform_project(
 
     return {
         "id": project.get("id"),
-        "title": project.get("title"),
-        "subtitle": project.get("summaryShort") or project.get("summaryIntroductory"),
+        "title": project_title,
+        "subtitle": project_subtitle,
         "url": project.get("path"),
-        "created": _parse_datetime(project.get("publicationDate")),
-        "modified": _parse_datetime(project.get("changedDate")),
-        "publicationDate": _parse_datetime(project.get("publicationDate")),
-        "expirationDate": None,
-        "coordinates": coordinates,
+        "creation_date": _parse_datetime(project.get("publicationDate")),
+        "modification_date": _parse_datetime(project.get("changedDate")),
+        "publication_date": _parse_datetime(project.get("publicationDate")),
+        "expiration_date": None,
+        "coordinates_lat": coordinates["lat"] if coordinates else None,
+        "coordinates_lon": coordinates["lon"] if coordinates else None,
         "sections": sections,
         "contacts": contacts,
         "timeline": {
@@ -336,3 +336,14 @@ def _transform_image(
     except HTTPError as e:
         logger.error(f"Error getting or uploading image: {e}")
         return None
+
+
+def _get_subtitle(title: str) -> str | None:
+    """Extract the subtitle from a title string if present."""
+    if not title:
+        return None
+    parts = title.split(":", 1)
+    subtitle = parts[1] if len(parts) > 1 else None
+    # delete leading space if present and capitalize
+    subtitle = subtitle.lstrip().capitalize() if subtitle else None
+    return subtitle
