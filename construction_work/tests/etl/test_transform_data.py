@@ -35,6 +35,7 @@ class TransformDataTestCase(SimpleTestCase):
         result = transform_data(extracted_data)
 
         self.assertEqual(extracted_data, MOCK_EXTRACTED_DATA)
+        image_set_service.assert_called_once_with()
         image_set_service.return_value.get_or_upload_from_url.assert_has_calls(
             [
                 call(
@@ -144,7 +145,8 @@ class TransformDataTestCase(SimpleTestCase):
             ],
         )
 
-    def test_handles_missing_images_and_news_views(self):
+    @patch("construction_work.etl.transform_data.ImageSetService")
+    def test_handles_missing_images_and_news_views(self, image_set_service):
         result = transform_data(
             {
                 "projects": [{"id": 1, "title": "No news", "content": []}],
@@ -155,6 +157,7 @@ class TransformDataTestCase(SimpleTestCase):
         self.assertEqual(result["articles"], [])
         self.assertIsNone(result["projects"][0]["imageSet"])
         self.assertIsNone(result["projects"][0]["timeline"]["title"])
+        image_set_service.assert_not_called()
 
     @patch("construction_work.etl.transform_data.ImageSetService")
     def test_logs_http_error_and_continues_without_image(self, image_set_service):
@@ -172,7 +175,8 @@ class TransformDataTestCase(SimpleTestCase):
         self.assertIsNone(result["projects"][0]["imageSet"])
         self.assertEqual(result["articles"][0]["imageSet"], ARTICLE_IMAGE_SET)
 
-    def test_rejects_image_without_source_path(self):
+    @patch("construction_work.etl.transform_data.ImageSetService")
+    def test_rejects_image_without_source_path(self, image_set_service):
         extracted_data = {
             "projects": [{"id": 1, "image": [{"name": "missing-source.jpg"}]}],
             "news_articles": {},
@@ -180,3 +184,4 @@ class TransformDataTestCase(SimpleTestCase):
 
         with self.assertRaisesRegex(ValueError, "did not contain a source path"):
             transform_data(extracted_data)
+        image_set_service.assert_called_once_with()
