@@ -32,7 +32,10 @@ graphql:
       \  }\r
 
       }"
-    variables: "{\r\n  \"typeId\": \"news\"\r\n}"
+    variables: |-
+      {
+        "typeId": "blog"
+      }
   auth: inherit
 
 settings:

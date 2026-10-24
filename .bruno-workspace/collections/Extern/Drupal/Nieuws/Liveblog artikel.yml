@@ -10,13 +10,26 @@ graphql:
     query: |
       query MyQuery($nodeID: Int!) {
         nodeByID(id: $nodeID){
-          id
-          title
           ... on Blog {
-            id
-            metaDescription
-            path
-            blogEntries {
+                __typename
+                id
+                tag {
+                  id
+                  name
+                }
+                summaryShort
+                title
+                changedDate
+                displayChangedDate
+                metaDescription
+                path
+                image {
+                  ... on Image {
+                    name
+                    src
+                  }
+                }
+              blogEntries {
               ... on ParagraphBlogEntry {
                 id
                 title
@@ -45,7 +58,9 @@ graphql:
                 }
               }
             }
-          }
+                       
+                
+              }
         }
       }
     variables: |-
@@ -59,3 +74,4 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true

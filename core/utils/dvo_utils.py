@@ -15,7 +15,7 @@ from tenacity import RetryCallState, retry, retry_if_exception, stop_after_attem
 logger = logging.getLogger(__name__)
 
 MAX_RETRY_ATTEMPTS = 3
-DEFAULT_RETRY_DELAY = 2.0
+MIN_RETRY_DELAY = 2.0
 MAX_RETRY_DELAY = 30.0
 RETRY_AFTER_JITTER = 1.0
 DEFAULT_MAX_CONCURRENT_REQUESTS = 2
@@ -33,6 +33,11 @@ async def _gather_all(*awaitables: Awaitable[Any]) -> list[Any]:
             raise result
         values.append(result)
     return values
+
+
+def _clamp_retry_delay(delay: float) -> float:
+    """Return a delay within the configured inclusive retry-delay bounds."""
+    return min(MAX_RETRY_DELAY, max(MIN_RETRY_DELAY, delay))
 
 
 def _get_rate_limit_retry_delay(
@@ -55,16 +60,16 @@ def _get_rate_limit_retry_delay(
                     (retry_at - datetime.now(timezone.utc)).total_seconds(),
                     0,
                 )
-                return delay + random.uniform(0, RETRY_AFTER_JITTER)
+                return _clamp_retry_delay(delay + random.uniform(0, RETRY_AFTER_JITTER))
         else:
             if delay >= 0:
-                return delay + random.uniform(0, RETRY_AFTER_JITTER)
+                return _clamp_retry_delay(delay + random.uniform(0, RETRY_AFTER_JITTER))
 
     max_delay = min(
         MAX_RETRY_DELAY,
-        DEFAULT_RETRY_DELAY * (2 ** (attempt - 1)),
+        MIN_RETRY_DELAY * (2 ** (attempt - 1)),
     )
-    return random.uniform(0, max_delay)
+    return _clamp_retry_delay(random.uniform(0, max_delay))
 
 
 def _is_retryable_error(error: BaseException) -> bool:
@@ -161,13 +166,6 @@ class DvOClient:
             self._session = None
             self._semaphore = None
 
-    @retry(
-        stop=stop_after_attempt(MAX_RETRY_ATTEMPTS),
-        wait=_wait_for_retry,
-        retry=retry_if_exception(_is_retryable_error),
-        before_sleep=_log_retry,
-        reraise=True,
-    )
     async def execute_query(
         self,
         query: str,
@@ -178,12 +176,31 @@ class DvOClient:
             raise RuntimeError("DvOClient must be used as an async context manager")
 
         async with self._semaphore:
-            async with self._session.post(
-                self.api_url,
-                json={"query": query, "variables": dict(variables or {})},
-            ) as response:
-                response.raise_for_status()
-                payload = await response.json()
+            logger.info(f"Executing DvO query with variables: {variables}")
+            return await self._execute_query_with_retries(query, variables)
+
+    @retry(
+        stop=stop_after_attempt(MAX_RETRY_ATTEMPTS),
+        wait=_wait_for_retry,
+        retry=retry_if_exception(_is_retryable_error),
+        before_sleep=_log_retry,
+        reraise=True,
+    )
+    async def _execute_query_with_retries(
+        self,
+        query: str,
+        variables: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Execute a query with retries while its caller holds a concurrency slot."""
+        if self._session is None:
+            raise RuntimeError("DvOClient must be used as an async context manager")
+
+        async with self._session.post(
+            self.api_url,
+            json={"query": query, "variables": dict(variables or {})},
+        ) as response:
+            response.raise_for_status()
+            payload = await response.json()
 
         if not isinstance(payload, dict):
             raise DvOResponseError("DvO returned a non-object GraphQL response")
