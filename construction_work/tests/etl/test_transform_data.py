@@ -1,245 +1,187 @@
+from copy import deepcopy
 from datetime import datetime
+from datetime import timezone as datetime_timezone
+from unittest.mock import call, patch
 
-from django.conf import settings
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, override_settings
+from requests import HTTPError
 
-from construction_work.etl.transform_data import _image, _images, articles, projects
+from construction_work.etl.transform_data import transform_data
+from construction_work.tests.mock_data.extracted_data import MOCK_EXTRACTED_DATA
+
+PROJECT_IMAGE_SET = {
+    "id": 1001,
+    "variants": [{"image": "https://images.example.invalid/project.jpg"}],
+}
+ARTICLE_IMAGE_SET = {
+    "id": 1002,
+    "variants": [{"image": "https://images.example.invalid/article.jpg"}],
+}
 
 
 @override_settings(
-    DATE_FORMAT_IPROX="%Y-%m-%dT%H:%M:%S%z", EPOCH="1970-01-01T00:00:00+0000"
+    TIME_ZONE="UTC",
+    DVO_URL="https://source.example.invalid/graphql",
 )
-class TransformDataTestCase(TestCase):
-    def test_projects_transforms_data_correctly(self):
-        # Prepare test data
-        data = [
-            {
-                "id": 1,
-                "title": "Project 1",
-                "image": {
-                    "sources": [
-                        {"url": "http://example.com/image1.jpg"},
-                        {"url": "http://example.com/image2.jpg"},
-                    ]
-                },
-                "images": [
-                    {
-                        "sources": [
-                            {"url": "http://example.com/image3.jpg"},
-                            {"url": "http://example.com/image4.jpg"},
-                        ]
+class TransformDataTestCase(SimpleTestCase):
+    @patch("construction_work.etl.transform_data.ImageSetService")
+    def test_transforms_extraction_shape_for_ingestion(self, image_set_service):
+        image_set_service.return_value.get_or_upload_from_url.side_effect = [
+            PROJECT_IMAGE_SET,
+            ARTICLE_IMAGE_SET,
+        ]
+        extracted_data = deepcopy(MOCK_EXTRACTED_DATA)
+
+        result = transform_data(extracted_data)
+
+        self.assertEqual(extracted_data, MOCK_EXTRACTED_DATA)
+        image_set_service.assert_called_once_with()
+        image_set_service.return_value.get_or_upload_from_url.assert_has_calls(
+            [
+                call(
+                    "https://source.example.invalid/sites/default/files/mock-project-image.jpg"
+                ),
+                call(
+                    "https://source.example.invalid/sites/default/files/mock-article-image.jpg"
+                ),
+            ]
+        )
+        self.assertEqual(
+            result["projects"],
+            [
+                {
+                    "id": 101,
+                    "title": "Mock bridge project",
+                    "subtitle": "A short mock project summary.",
+                    "url": "https://example.invalid/mock-project",
+                    "created": datetime(
+                        2021, 11, 24, 13, 0, tzinfo=datetime_timezone.utc
+                    ),
+                    "modified": datetime(
+                        2026, 8, 10, 9, 46, tzinfo=datetime_timezone.utc
+                    ),
+                    "publicationDate": datetime(
+                        2021, 11, 24, 13, 0, tzinfo=datetime_timezone.utc
+                    ),
+                    "expirationDate": None,
+                    "coordinates": {"lat": 52.37, "lon": 4.89},
+                    "sections": {
+                        "what": [
+                            {
+                                "body": "<p>Work on the bridge.</p>",
+                                "links": [],
+                                "title": "Wat",
+                            }
+                        ],
+                        "where": [
+                            {
+                                "body": "<p>At the mock canal.</p>",
+                                "links": [],
+                                "title": "Waar",
+                            }
+                        ],
+                        "contact": [
+                            {
+                                "body": (
+                                    "<p><strong>Alex Example</strong><br/>Project "
+                                    'manager<br/><a href="mailto:alex@example.invalid">'
+                                    "alex@example.invalid</a></p>"
+                                ),
+                                "links": [
+                                    {
+                                        "url": "mailto:alex@example.invalid",
+                                        "label": "alex@example.invalid",
+                                    }
+                                ],
+                                "title": "Contact",
+                            }
+                        ],
                     },
-                    {"sources": [{"url": "http://example.com/image5.jpg"}]},
-                ],
-                "modified": "2021-10-01T12:34:56+0000",
-            }
-        ]
-
-        # Expected transformed data
-        expected_data = [
-            {
-                "id": 1,
-                "title": "Project 1",
-                "image": {
-                    "sources": [
-                        {"uri": "http://example.com/image1.jpg"},
-                        {"uri": "http://example.com/image2.jpg"},
-                    ]
-                },
-                "images": [
-                    {
-                        "sources": [
-                            {"uri": "http://example.com/image3.jpg"},
-                            {"uri": "http://example.com/image4.jpg"},
-                        ]
+                    "contacts": [
+                        {
+                            "id": 304,
+                            "name": "Alex Example",
+                            "email": "alex@example.invalid",
+                            "phone": None,
+                            "position": "Project manager",
+                        }
+                    ],
+                    "timeline": {
+                        "title": "Wanneer",
+                        "intro": "Mock project planning.",
+                        "items": [
+                            {
+                                "title": "2026",
+                                "body": "<p>Work starts.</p>",
+                                "collapsed": False,
+                                "items": [],
+                            }
+                        ],
                     },
-                    {"sources": [{"uri": "http://example.com/image5.jpg"}]},
-                ],
-                "modified": datetime.strptime(
-                    "2021-10-01T12:34:56+0000", settings.DATE_FORMAT_IPROX
-                ),
-            }
-        ]
-
-        projects(data)
-        self.assertEqual(data, expected_data)
-
-    def test_articles_transforms_data_correctly(self):
-        data = [
-            {
-                "id": 100,
-                "title": "Article 1",
-                "image": {
-                    "sources": [
-                        {"url": "http://example.com/article_image1.jpg"},
-                        {"url": "http://example.com/article_image2.jpg"},
-                    ]
-                },
-                "modified": "2021-10-02T13:45:00+0000",
-            }
-        ]
-
-        expected_data = [
-            {
-                "id": 100,
-                "title": "Article 1",
-                "image": {
-                    "sources": [
-                        {"uri": "http://example.com/article_image1.jpg"},
-                        {"uri": "http://example.com/article_image2.jpg"},
-                    ]
-                },
-                "modified": datetime.strptime(
-                    "2021-10-02T13:45:00+0000", settings.DATE_FORMAT_IPROX
-                ),
-            }
-        ]
-
-        articles(data)
-        self.assertEqual(data, expected_data)
-
-    def test_projects_handles_missing_fields(self):
-        data = [{"id": 2, "title": "Project 2", "modified": "2021-10-03T14:00:00+0000"}]
-        expected_data = [
-            {
-                "id": 2,
-                "title": "Project 2",
-                "modified": datetime.strptime(
-                    "2021-10-03T14:00:00+0000", settings.DATE_FORMAT_IPROX
-                ),
-            }
-        ]
-
-        projects(data)
-        self.assertEqual(data, expected_data)
-
-    def test_articles_handles_missing_image(self):
-        data = [
-            {"id": 101, "title": "Article 2", "modified": "2021-10-04T15:30:00+0000"}
-        ]
-        expected_data = [
-            {
-                "id": 101,
-                "title": "Article 2",
-                "modified": datetime.strptime(
-                    "2021-10-04T15:30:00+0000", settings.DATE_FORMAT_IPROX
-                ),
-            }
-        ]
-
-        articles(data)
-        self.assertEqual(data, expected_data)
-
-    def test_projects_handles_missing_modified_date(self):
-        data = [
-            {
-                "id": 3,
-                "title": "Project 3",
-                "image": {"sources": [{"url": "http://example.com/image6.jpg"}]},
-                "images": [{"sources": [{"url": "http://example.com/image7.jpg"}]}],
-                # 'modified' field is missing
-            }
-        ]
-        expected_modified = datetime.strptime(
-            settings.EPOCH, settings.DATE_FORMAT_IPROX
+                    "imageSet": PROJECT_IMAGE_SET,
+                }
+            ],
+        )
+        self.assertEqual(
+            result["articles"],
+            [
+                {
+                    "id": 601,
+                    "title": "Mock project update",
+                    "intro": "A short mock article summary.",
+                    "body": "<p>Mock article body.</p>",
+                    "type": "Mock construction",
+                    "url": "https://example.invalid/mock-project-update",
+                    "created": datetime(
+                        2026, 8, 11, 8, 15, tzinfo=datetime_timezone.utc
+                    ),
+                    "modified": datetime(
+                        2026, 8, 12, 11, 30, tzinfo=datetime_timezone.utc
+                    ),
+                    "expirationDate": None,
+                    "imageSet": ARTICLE_IMAGE_SET,
+                    "projectIds": [101],
+                }
+            ],
         )
 
-        expected_data = [
+    @patch("construction_work.etl.transform_data.ImageSetService")
+    def test_handles_missing_images_and_news_views(self, image_set_service):
+        result = transform_data(
             {
-                "id": 3,
-                "title": "Project 3",
-                "image": {"sources": [{"uri": "http://example.com/image6.jpg"}]},
-                "images": [{"sources": [{"uri": "http://example.com/image7.jpg"}]}],
-                "modified": expected_modified,
+                "projects": [{"id": 1, "title": "No news", "content": []}],
+                "news_articles": {},
             }
+        )
+
+        self.assertEqual(result["articles"], [])
+        self.assertIsNone(result["projects"][0]["imageSet"])
+        self.assertIsNone(result["projects"][0]["timeline"]["title"])
+        image_set_service.assert_not_called()
+
+    @patch("construction_work.etl.transform_data.ImageSetService")
+    def test_logs_http_error_and_continues_without_image(self, image_set_service):
+        image_set_service.return_value.get_or_upload_from_url.side_effect = [
+            HTTPError("image service unavailable"),
+            ARTICLE_IMAGE_SET,
         ]
 
-        projects(data)
-        self.assertEqual(data, expected_data)
+        with self.assertLogs(
+            "construction_work.etl.transform_data", level="ERROR"
+        ) as logs:
+            result = transform_data(MOCK_EXTRACTED_DATA)
 
-    def test_articles_handles_incorrect_date_format(self):
-        data = [{"id": 102, "title": "Article 3", "modified": "2021/10/05 16:00:00"}]
-        with self.assertRaises(ValueError):
-            articles(data)
+        self.assertIn("Error getting or uploading image", logs.output[0])
+        self.assertIsNone(result["projects"][0]["imageSet"])
+        self.assertEqual(result["articles"][0]["imageSet"], ARTICLE_IMAGE_SET)
 
-    def test_image_transforms_url_to_uri(self):
-        image_set = {
-            "sources": [
-                {"url": "http://example.com/image8.jpg"},
-                {"url": "http://example.com/image9.jpg"},
-            ]
+    @patch("construction_work.etl.transform_data.ImageSetService")
+    def test_rejects_image_without_source_path(self, image_set_service):
+        extracted_data = {
+            "projects": [{"id": 1, "image": [{"name": "missing-source.jpg"}]}],
+            "news_articles": {},
         }
-        expected_image_set = {
-            "sources": [
-                {"uri": "http://example.com/image8.jpg"},
-                {"uri": "http://example.com/image9.jpg"},
-            ]
-        }
 
-        result = _image(image_set)
-        self.assertEqual(result, expected_image_set)
-
-    def test_image_handles_missing_sources(self):
-        image_set = {}
-        expected_image_set = {}
-
-        result = _image(image_set)
-        self.assertEqual(result, expected_image_set)
-
-    def test_images_transforms_list_of_images(self):
-        images_set = [
-            {"sources": [{"url": "http://example.com/image10.jpg"}]},
-            {"sources": [{"url": "http://example.com/image11.jpg"}]},
-        ]
-        expected_images_set = [
-            {"sources": [{"uri": "http://example.com/image10.jpg"}]},
-            {"sources": [{"uri": "http://example.com/image11.jpg"}]},
-        ]
-
-        result = _images(images_set)
-        self.assertEqual(result, expected_images_set)
-
-    def test_projects_with_no_data(self):
-        data = []
-        projects(data)
-
-        self.assertEqual(data, [])
-
-    def test_articles_with_no_data(self):
-        data = []
-        articles(data)
-
-        self.assertEqual(data, [])
-
-    def test_projects_handles_null_image_fields(self):
-        data = [
-            {
-                "id": 4,
-                "title": "Project 4",
-                "image": None,
-                "images": None,
-                "modified": "2021-10-06T17:15:00+0000",
-            }
-        ]
-        expected_data = [
-            {
-                "id": 4,
-                "title": "Project 4",
-                "modified": datetime.strptime(
-                    "2021-10-06T17:15:00+0000", settings.DATE_FORMAT_IPROX
-                ),
-            }
-        ]
-
-        projects(data)
-        # Remove 'image' and 'images' keys since they are None
-        data[0].pop("image", None)
-        data[0].pop("images", None)
-        self.assertEqual(data, expected_data)
-
-    def test_image_handles_empty_sources_list(self):
-        image_set = {"sources": []}
-        expected_image_set = {"sources": []}
-
-        result = _image(image_set)
-        self.assertEqual(result, expected_image_set)
+        with self.assertRaisesRegex(ValueError, "did not contain a source path"):
+            transform_data(extracted_data)
+        image_set_service.assert_called_once_with()
