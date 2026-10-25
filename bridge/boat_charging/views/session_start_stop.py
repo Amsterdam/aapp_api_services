@@ -39,7 +39,9 @@ class SessionInitView(BaseView):
             "name": validated_data["name"],
             "email": validated_data["email"],
             "returnUrl": validated_data["return_url"],
-            "vignetteId": validated_data["vignette_id"],
+            "vignetteId": validated_data.get("vignette_id"),
+            "vignetNumber": validated_data.get("vignette_number"),
+            "postcode": validated_data.get("postal_code"),
         }
         endpoint = settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]
         response_json = await self.api_call(
