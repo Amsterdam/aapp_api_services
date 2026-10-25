@@ -1,6 +1,3 @@
-import json
-import tempfile
-from pathlib import Path
 from unittest import mock
 
 from django.test import SimpleTestCase, TestCase
@@ -16,28 +13,6 @@ from construction_work.etl.update_data import (
 )
 from construction_work.models.article_models import Article
 from construction_work.models.project_models import Project
-
-
-def mock_get_all_iprox_items(url):
-    return [{"id": 1}, {"id": 2}, {"id": 3}]
-
-
-def mock_get_iprox_items_data(*args, **kwargs):
-    return [
-        {"id": 1, "data": "Project 1 Data"},
-        {"id": 2, "data": "Project 2 Data"},
-        {"id": 3, "data": "Project 3 Data"},
-    ]
-
-
-def mock_transform_func(data):
-    for item in data:
-        item["transformed"] = True
-    return data
-
-
-def mock_load_func(data):
-    pass
 
 
 class ExtractTransformLoadTestCase(SimpleTestCase):
@@ -59,26 +34,6 @@ class ExtractTransformLoadTestCase(SimpleTestCase):
         self.assertTrue(
             any("Extracted 3 news articles from DvO" in log for log in logs.output)
         )
-
-    @mock.patch(
-        "construction_work.etl.update_data.get_all_drupal_projects_with_content",
-        return_value={"projects": [{"id": 1}], "news_articles": {}},
-    )
-    def test_saves_extracted_data_in_construction_work_directory(self, mock_extract):
-        with tempfile.TemporaryDirectory() as temp_directory:
-            module_path = Path(temp_directory) / "construction_work/etl/update_data.py"
-            module_path.parent.mkdir(parents=True)
-            with mock.patch(
-                "construction_work.etl.update_data.__file__", str(module_path)
-            ):
-                extract_transform_load()
-
-            output_path = module_path.resolve().parents[1] / "extracted_data.json"
-            with output_path.open(encoding="utf-8") as f:
-                self.assertEqual(
-                    json.load(f),
-                    {"projects": [{"id": 1}], "news_articles": {}},
-                )
 
 
 class GarbageCollectorTestCase(TestCase):

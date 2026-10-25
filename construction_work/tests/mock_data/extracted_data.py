@@ -1,7 +1,7 @@
 MOCK_EXTRACTED_DATA = {
     "projects": [
         {
-            "title": "Mock bridge project",
+            "title": "Mock bridge project: Some work to be done",
             "changedDate": "2026-08-10T09:46:00",
             "publicationDate": "2021-11-24T13:00:00",
             "image": [
@@ -123,6 +123,154 @@ MOCK_EXTRACTED_DATA = {
                     }
                 ],
             }
+        ]
+    },
+}
+
+MOCK_NESTED_CONTENT_AND_SHARED_NEWS_EXTRACTED_DATA = {
+    "projects": [
+        {
+            "id": 5,
+            "title": "",
+            "publicationDate": "2024-01-02T00:00:00+00:00",
+            "changedDate": None,
+            "content": [
+                "not a grid",
+                {
+                    "rows": [
+                        None,
+                        {
+                            "content": [
+                                None,
+                                {
+                                    "__typename": "ParagraphDdsRichText",
+                                    "content": "<p>Unmapped section</p>",
+                                },
+                                {
+                                    "__typename": "ParagraphDdsRichText",
+                                    "contentIndication": "contact",
+                                    "content": "<strong>Unknown</strong>",
+                                },
+                                {
+                                    "__typename": "ParagraphDdsRichText",
+                                    "id": 12,
+                                    "contentIndication": "contact",
+                                    "content": (
+                                        "<p><strong>Sam Example</strong><br/>Manager"
+                                        '<br/><a href="tel:+31201234">Call</a></p>'
+                                    ),
+                                },
+                                {
+                                    "__typename": "ParagraphDdsRichText",
+                                    "contentIndication": "unrecognized",
+                                    "content": (
+                                        '<h2>Waar</h2><p><a href="/route">Route</a></p>'
+                                    ),
+                                },
+                                {
+                                    "__typename": "ParagraphDdsProgressList",
+                                    "intro": "Planning",
+                                    "items": [
+                                        {
+                                            "title": "Stage one",
+                                            "description": "First stage",
+                                            "initiallyCollapsed": True,
+                                            "items": [
+                                                {
+                                                    "title": "Substage",
+                                                    "items": None,
+                                                }
+                                            ],
+                                        }
+                                    ],
+                                },
+                                {
+                                    "__typename": "ParagraphDdsMapDataset",
+                                    "mapDataset": [
+                                        {"pointsOfInterest": [{"location": None}]},
+                                        {
+                                            "pointsOfInterest": [
+                                                {
+                                                    "location": {
+                                                        "latitude": 52.3,
+                                                        "longitude": 4.9,
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                    ],
+                                },
+                                {
+                                    "__typename": "ParagraphDdsViews",
+                                    "contentIndication": "news",
+                                    "id": 700,
+                                },
+                            ]
+                        },
+                    ]
+                },
+            ],
+        },
+        {
+            "id": 6,
+            "content": [
+                {
+                    "rows": [
+                        {
+                            "content": [
+                                {
+                                    "__typename": "ParagraphDdsViews",
+                                    "contentIndication": "news",
+                                    "id": 700,
+                                },
+                                {
+                                    "__typename": "ParagraphDdsMapDataset",
+                                    "mapDataset": [],
+                                },
+                            ]
+                        }
+                    ]
+                }
+            ],
+        },
+    ],
+    "news_articles": {
+        700: [
+            {
+                "id": 901,
+                "tag": {"name": "Notice"},
+                "content": [
+                    "not a grid",
+                    {
+                        "rows": [
+                            None,
+                            {
+                                "content": [
+                                    None,
+                                    {"content": "<p>Article body</p>"},
+                                    {"content": 42},
+                                ]
+                            },
+                        ]
+                    },
+                ],
+            },
+            {
+                "id": 901,
+                "tag": {"name": "Notice"},
+                "content": [
+                    {
+                        "rows": [
+                            {
+                                "content": [
+                                    {"content": "<p>Duplicate article</p>"},
+                                ]
+                            }
+                        ]
+                    }
+                ],
+            },
+            {"id": 902, "tag": []},
         ]
     },
 }

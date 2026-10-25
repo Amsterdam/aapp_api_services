@@ -6,8 +6,15 @@ from unittest.mock import call, patch
 from django.test import SimpleTestCase, override_settings
 from requests import HTTPError
 
-from construction_work.etl.transform_data import transform_data
-from construction_work.tests.mock_data.extracted_data import MOCK_EXTRACTED_DATA
+from construction_work.etl.transform_data import (
+    _transform_article,
+    _transform_project,
+    transform_data,
+)
+from construction_work.tests.mock_data.extracted_data import (
+    MOCK_EXTRACTED_DATA,
+    MOCK_NESTED_CONTENT_AND_SHARED_NEWS_EXTRACTED_DATA,
+)
 
 PROJECT_IMAGE_SET = {
     "id": 1001,
@@ -52,19 +59,20 @@ class TransformDataTestCase(SimpleTestCase):
                 {
                     "id": 101,
                     "title": "Mock bridge project",
-                    "subtitle": "A short mock project summary.",
+                    "subtitle": "Some work to be done",
                     "url": "https://example.invalid/mock-project",
-                    "created": datetime(
+                    "creation_date": datetime(
                         2021, 11, 24, 13, 0, tzinfo=datetime_timezone.utc
                     ),
-                    "modified": datetime(
+                    "modification_date": datetime(
                         2026, 8, 10, 9, 46, tzinfo=datetime_timezone.utc
                     ),
-                    "publicationDate": datetime(
+                    "publication_date": datetime(
                         2021, 11, 24, 13, 0, tzinfo=datetime_timezone.utc
                     ),
-                    "expirationDate": None,
-                    "coordinates": {"lat": 52.37, "lon": 4.89},
+                    "expiration_date": None,
+                    "coordinates_lat": 52.37,
+                    "coordinates_lon": 4.89,
                     "sections": {
                         "what": [
                             {
@@ -149,7 +157,16 @@ class TransformDataTestCase(SimpleTestCase):
     def test_handles_missing_images_and_news_views(self, image_set_service):
         result = transform_data(
             {
-                "projects": [{"id": 1, "title": "No news", "content": []}],
+                "projects": [
+                    {
+                        "id": 1,
+                        "title": "No news",
+                        "path": "https://example.invalid/no-news",
+                        "changedDate": "2026-08-10T09:46:00",
+                        "publicationDate": "2021-11-24T13:00:00",
+                        "content": [],
+                    }
+                ],
                 "news_articles": {},
             }
         )
@@ -157,7 +174,66 @@ class TransformDataTestCase(SimpleTestCase):
         self.assertEqual(result["articles"], [])
         self.assertIsNone(result["projects"][0]["imageSet"])
         self.assertIsNone(result["projects"][0]["timeline"]["title"])
-        image_set_service.assert_not_called()
+        image_set_service.return_value.get_or_upload_from_url.assert_not_called()
+
+    @patch("construction_work.etl.transform_data.ImageSetService")
+    def test_accepts_empty_extraction_result(self, image_set_service):
+        self.assertEqual(
+            transform_data({"projects": [], "news_articles": {}}),
+            {"projects": [], "articles": []},
+        )
+        image_set_service.assert_called_once_with()
+
+    @patch("construction_work.etl.transform_data.ImageSetService")
+    def test_transforms_nested_content_and_shared_news_articles(
+        self, image_set_service
+    ):
+        result = transform_data(MOCK_NESTED_CONTENT_AND_SHARED_NEWS_EXTRACTED_DATA)
+
+        first_project = result["projects"][0]
+        self.assertEqual(first_project["title"], "")
+        self.assertIsNone(first_project["subtitle"])
+        self.assertEqual(
+            first_project["creation_date"],
+            datetime(2024, 1, 2, tzinfo=datetime_timezone.utc),
+        )
+        self.assertIsNone(first_project["modification_date"])
+        self.assertEqual(first_project["coordinates_lat"], 52.3)
+        self.assertEqual(first_project["coordinates_lon"], 4.9)
+        self.assertEqual(first_project["sections"]["where"][0]["title"], "Waar")
+        self.assertEqual(
+            first_project["sections"]["where"][0]["body"],
+            '<p><a href="/route">Route</a></p>',
+        )
+        self.assertEqual(
+            first_project["contacts"],
+            [
+                {
+                    "id": 12,
+                    "name": "Sam Example",
+                    "email": None,
+                    "phone": "+31201234",
+                    "position": "Manager",
+                }
+            ],
+        )
+        self.assertEqual(
+            first_project["timeline"]["items"][0]["items"][0]["title"], "Substage"
+        )
+        self.assertIsNone(result["projects"][1]["coordinates_lat"])
+        self.assertEqual(result["articles"][0]["body"], "<p>Article body</p>")
+        self.assertEqual(result["articles"][0]["type"], "Notice")
+        self.assertEqual(result["articles"][0]["projectIds"], [5, 6])
+        self.assertIsNone(result["articles"][1]["type"])
+        self.assertEqual(result["articles"][1]["projectIds"], [5, 6])
+        image_set_service.return_value.get_or_upload_from_url.assert_not_called()
+
+    def test_requires_image_service_for_project_and_article_images(self):
+        with self.assertRaisesRegex(RuntimeError, "required for project images"):
+            _transform_project({"image": [{"src": "/project.jpg"}]}, None)
+
+        with self.assertRaisesRegex(RuntimeError, "required for article images"):
+            _transform_article({"image": [{"src": "/article.jpg"}]}, None)
 
     @patch("construction_work.etl.transform_data.ImageSetService")
     def test_logs_http_error_and_continues_without_image(self, image_set_service):
@@ -178,7 +254,16 @@ class TransformDataTestCase(SimpleTestCase):
     @patch("construction_work.etl.transform_data.ImageSetService")
     def test_rejects_image_without_source_path(self, image_set_service):
         extracted_data = {
-            "projects": [{"id": 1, "image": [{"name": "missing-source.jpg"}]}],
+            "projects": [
+                {
+                    "id": 1,
+                    "title": "Missing image source",
+                    "path": "https://example.invalid/missing-image-source",
+                    "changedDate": "2026-08-10T09:46:00",
+                    "publicationDate": "2021-11-24T13:00:00",
+                    "image": [{"name": "missing-source.jpg"}],
+                }
+            ],
             "news_articles": {},
         }
 
