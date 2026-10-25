@@ -35,9 +35,9 @@ async def _gather_all(*awaitables: Awaitable[Any]) -> list[Any]:
     return values
 
 
-def _clamp_retry_delay(delay: float) -> float:
-    """Return a delay within the configured inclusive retry-delay bounds."""
-    return min(MAX_RETRY_DELAY, max(MIN_RETRY_DELAY, delay))
+def _ensure_min_retry_delay(delay: float) -> float:
+    """Ensure retries wait for at least the configured minimum delay."""
+    return max(MIN_RETRY_DELAY, delay)
 
 
 def _get_rate_limit_retry_delay(
@@ -60,16 +60,20 @@ def _get_rate_limit_retry_delay(
                     (retry_at - datetime.now(timezone.utc)).total_seconds(),
                     0,
                 )
-                return _clamp_retry_delay(delay + random.uniform(0, RETRY_AFTER_JITTER))
+                return _ensure_min_retry_delay(
+                    delay + random.uniform(0, RETRY_AFTER_JITTER)
+                )
         else:
             if delay >= 0:
-                return _clamp_retry_delay(delay + random.uniform(0, RETRY_AFTER_JITTER))
+                return _ensure_min_retry_delay(
+                    delay + random.uniform(0, RETRY_AFTER_JITTER)
+                )
 
     max_delay = min(
         MAX_RETRY_DELAY,
         MIN_RETRY_DELAY * (2 ** (attempt - 1)),
     )
-    return _clamp_retry_delay(random.uniform(0, max_delay))
+    return _ensure_min_retry_delay(random.uniform(0, max_delay))
 
 
 def _is_retryable_error(error: BaseException) -> bool:

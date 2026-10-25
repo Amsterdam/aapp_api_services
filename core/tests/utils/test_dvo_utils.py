@@ -89,6 +89,27 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertLessEqual(logged_delay, MAX_RETRY_DELAY)
         self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 2)
 
+    async def test_execute_query_honors_retry_after_above_backoff_cap(self):
+        response_data = {"view": {"nodes": [{"id": 1}]}}
+        query = "query { view { nodes { id } } }"
+        with aioresponses() as mocked:
+            mocked.post(API_URL, status=429, headers={"Retry-After": "300"})
+            mocked.post(API_URL, payload={"data": response_data})
+
+            with (
+                patch(
+                    "core.utils.dvo_utils.asyncio.sleep",
+                    new_callable=AsyncMock,
+                ) as sleep,
+                patch("core.utils.dvo_utils.random.uniform", return_value=0.5),
+            ):
+                async with self.client:
+                    result = await self.client.execute_query(query)
+
+        self.assertEqual(result, response_data)
+        sleep.assert_awaited_once_with(300.5)
+        self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 2)
+
     async def test_execute_query_stops_after_rate_limit_attempts_are_exhausted(self):
         with aioresponses() as mocked:
             mocked.post(
@@ -164,11 +185,11 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertGreater(delay, 5)
         self.assertLess(delay, 6)
 
-    def test_rate_limit_retry_delay_caps_retry_after_seconds(self):
+    def test_rate_limit_retry_delay_preserves_retry_after_seconds_above_cap(self):
         with patch("core.utils.dvo_utils.random.uniform", return_value=0.5):
             delay = _get_rate_limit_retry_delay("300", 1)
 
-        self.assertEqual(delay, MAX_RETRY_DELAY)
+        self.assertEqual(delay, 300.5)
 
     def test_rate_limit_retry_delay_uses_minimum_for_past_retry_after_date(self):
         past_date = datetime(2000, 1, 1, tzinfo=timezone.utc)
@@ -186,7 +207,7 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(delay, MIN_RETRY_DELAY)
 
-    def test_rate_limit_retry_delay_caps_future_retry_after_date(self):
+    def test_rate_limit_retry_delay_preserves_future_retry_after_date(self):
         future_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
         with (
             patch(
@@ -200,7 +221,7 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
                 1,
             )
 
-        self.assertEqual(delay, MAX_RETRY_DELAY)
+        self.assertGreater(delay, MAX_RETRY_DELAY)
 
     async def test_execute_query_rejects_responses_without_data(self):
         with aioresponses() as mocked:
