@@ -9,6 +9,8 @@ MOCK_RESPONSE_CHARGING = {
         "createdAt": "2026-06-29T10:30:04.1035904",
         "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
         "userEmail": "test@amsterdam.nl",
+        "vignetNumber": "ABC123",
+        "boatName": "Boaty",
     },
     "cpmsSession": {
         "startDateTime": "2026-06-29T10:30:00Z",
@@ -46,6 +48,8 @@ MOCK_RESPONSE_COMPLETED = {
         "createdAt": "2026-06-29T10:30:04.1035904",
         "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
         "userEmail": "test@amsterdam.nl",
+        "vignetNumber": "ABC123",
+        "boatName": "Boaty",
     },
     "location": {
         "id": "2c0ccfb795d040e39136b7dd1d25f13e",

@@ -1,3 +1,4 @@
+import json
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -23,6 +24,7 @@ class TestSessionInitView(BoatChargingTestCase):
             "name": "Test User",
             "email": "user@example.com",
             "return_url": return_url,
+            "vignette_id": 3,
         }
 
     def test_init_session_success(self):
@@ -36,6 +38,72 @@ class TestSessionInitView(BoatChargingTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
         self.assertIsNotNone(response.data["checkout_url"])
+        self.assertEqual(
+            json.loads(resp.calls.last.request.content),
+            {
+                "stationId": "VCPS-IFZTY",
+                "socketNumber": "1",
+                "name": "Test User",
+                "email": "user@example.com",
+                "returnUrl": "https://yourdomain.com/app/sessions",
+                "vignetteId": 3,
+                "vignetNumber": None,
+                "postcode": None,
+            },
+        )
+
+    def test_init_session_with_vignette_number_and_postal_code(self):
+        resp = respx.post(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
+            return_value=httpx.Response(200, json=init_session.MOCK_RESPONSE)
+        )
+        body = self._get_request_body()
+        body.pop("vignette_id")
+        body["vignette_number"] = "AB123"
+        body["postal_code"] = "1234AB"
+
+        response = self.client.post(self.url, data=body, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertEqual(
+            json.loads(resp.calls.last.request.content),
+            {
+                "stationId": "VCPS-IFZTY",
+                "socketNumber": "1",
+                "name": "Test User",
+                "email": "user@example.com",
+                "returnUrl": "https://yourdomain.com/app/sessions",
+                "vignetteId": None,
+                "vignetNumber": "AB123",
+                "postcode": "1234AB",
+            },
+        )
+
+    def test_init_session_requires_vignette_id_or_number_and_postal_code(self):
+        endpoint_mock = respx.post(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
+            return_value=httpx.Response(200, json=init_session.MOCK_RESPONSE)
+        )
+        invalid_identifiers = [
+            {},
+            {"vignette_number": "AB123"},
+            {"postal_code": "1234AB"},
+        ]
+
+        for identifiers in invalid_identifiers:
+            with self.subTest(identifiers=identifiers):
+                body = self._get_request_body()
+                body.pop("vignette_id")
+                body.update(identifiers)
+
+                response = self.client.post(
+                    self.url,
+                    data=body,
+                    headers=self.api_headers,
+                )
+
+                self.assertEqual(response.status_code, 400)
+
+        self.assertEqual(endpoint_mock.call_count, 0)
 
     def test_init_session_accepts_deeplink_return_url(self):
         resp = respx.post(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(

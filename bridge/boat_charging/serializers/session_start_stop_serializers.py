@@ -27,6 +27,21 @@ class SessionInitRequestSerializer(serializers.Serializer):
     name = serializers.CharField()
     email = serializers.EmailField()
     return_url = serializers.CharField(validators=[validate_return_url])
+    vignette_id = serializers.IntegerField(required=False)
+    vignette_number = serializers.CharField(required=False)
+    postal_code = serializers.CharField(required=False)
+
+    def validate(self, attrs):
+        vignette_id = attrs.get("vignette_id")
+        vignette_number = attrs.get("vignette_number")
+        postal_code = attrs.get("postal_code")
+
+        if not vignette_id and not (vignette_number and postal_code):
+            raise serializers.ValidationError(
+                "Either vignette_id or vignette_number and postal_code must be provided"
+            )
+
+        return attrs
 
 
 class SessionInitResponseSerializer(serializers.Serializer):
