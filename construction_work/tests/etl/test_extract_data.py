@@ -8,8 +8,13 @@ from construction_work.etl.queries import news_articles, projects_with_details
 from core.utils.dvo_utils import DvOResponseError
 
 
-def project_with_news_view(paragraph_id, **news_view_fields):
+def project_with_news_view(paragraph_id, project_id=1, **news_view_fields):
     return {
+        "id": project_id,
+        "title": f"Project {project_id}",
+        "path": f"https://example.invalid/project/{project_id}",
+        "changedDate": "2026-08-10T09:46:00",
+        "publicationDate": "2021-11-24T13:00:00",
         "content": [
             {
                 "rows": [
@@ -25,7 +30,7 @@ def project_with_news_view(paragraph_id, **news_view_fields):
                     }
                 ]
             }
-        ]
+        ],
     }
 
 
@@ -64,13 +69,29 @@ class DvoExtractionTestCase(SimpleTestCase):
     @override_settings(DVO_CONSTRUCTION_WORK_PARAGRAPH_ID=12345)
     def test_get_all_projects_returns_raw_projects_and_grouped_articles(self):
         projects = [
-            project_with_news_view(123, title="Nieuws"),
-            project_with_news_view(123, title="Nieuws"),
-            project_with_news_view(456, title="Nieuws"),
+            project_with_news_view(123, project_id=1, title="Nieuws"),
+            project_with_news_view(123, project_id=2, title="Nieuws"),
+            project_with_news_view(456, project_id=3, title="Nieuws"),
         ]
         articles_by_paragraph_id = [
-            [{"id": 1001, "title": "First article"}],
-            [{"id": 1002, "title": "Second article"}],
+            [
+                {
+                    "id": 1001,
+                    "title": "First article",
+                    "path": "https://example.invalid/article/1001",
+                    "changedDate": "2026-08-10T09:46:00",
+                    "publicationDate": "2021-11-24T13:00:00",
+                }
+            ],
+            [
+                {
+                    "id": 1002,
+                    "title": "Second article",
+                    "path": "https://example.invalid/article/1002",
+                    "changedDate": "2026-08-10T09:46:00",
+                    "publicationDate": "2021-11-24T13:00:00",
+                }
+            ],
         ]
         client = AsyncMock()
         client.__aenter__.return_value = client

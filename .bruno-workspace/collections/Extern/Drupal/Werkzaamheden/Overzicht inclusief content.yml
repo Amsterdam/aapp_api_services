@@ -8,8 +8,8 @@ graphql:
   url: "{{DrupalBaseUrl}}"
   body:
     query: |
-      query MyQuery($paragraphId: Int!) {
-        view(paragraphId: $paragraphId, page: 1) {
+      query ConstructionWorkProjectsWithDetails($paragraphId: Int!, $page: Int!) {
+        view(paragraphId: $paragraphId, page: $page) {
           name
           pagination {
             totalPages
@@ -187,8 +187,8 @@ graphql:
       }
     variables: |-
       {
-        "paragraphId": 206731 //acc: 206731
-        
+        "paragraphId": 206731, //acc: 206731
+        "page": 1
       }
   auth: inherit
 

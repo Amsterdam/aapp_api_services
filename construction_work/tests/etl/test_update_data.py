@@ -15,28 +15,6 @@ from construction_work.models.article_models import Article
 from construction_work.models.project_models import Project
 
 
-def mock_get_all_iprox_items(url):
-    return [{"id": 1}, {"id": 2}, {"id": 3}]
-
-
-def mock_get_iprox_items_data(*args, **kwargs):
-    return [
-        {"id": 1, "data": "Project 1 Data"},
-        {"id": 2, "data": "Project 2 Data"},
-        {"id": 3, "data": "Project 3 Data"},
-    ]
-
-
-def mock_transform_func(data):
-    for item in data:
-        item["transformed"] = True
-    return data
-
-
-def mock_load_func(data):
-    pass
-
-
 class ExtractTransformLoadTestCase(SimpleTestCase):
     @mock.patch(
         "construction_work.etl.update_data.get_all_drupal_projects_with_content",

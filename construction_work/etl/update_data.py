@@ -9,6 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from construction_work.etl.extract_data import get_all_drupal_projects_with_content
+from construction_work.etl.transform_data import transform_data
 from construction_work.models.article_models import Article
 from construction_work.models.project_models import Project
 
@@ -20,7 +21,7 @@ def extract_transform_load():
     Main function call for Fetch and Ingest from DvO to Construction-Work
     """
     ### EXTRACT DATA
-    logger.info("Extracting data from DvO")
+    # logger.info("Extracting data from DvO")
 
     extracted_data = get_all_drupal_projects_with_content()
     logger.info("Extracted data from DvO")
@@ -29,6 +30,26 @@ def extract_transform_load():
         len(articles) for articles in extracted_data["news_articles"].values()
     )
     logger.info(f"Extracted {news_article_count} news articles from DvO")
+
+    # output_path = Path(__file__).resolve().parents[1] / "extracted_data.json"
+    # print(f"Saving extracted data to {output_path}")
+    # with output_path.open("w", encoding="utf-8") as f:
+    #     json.dump(extracted_data, f)
+
+    # read extracted data from file
+    # with output_path.open("r", encoding="utf-8") as f:
+    #     extracted_data = json.load(f)
+
+    transformed_data = transform_data(extracted_data)
+
+    logger.info(
+        f"Transformed data for Construction-Work, found {len(transformed_data['projects'])} projects"
+    )
+
+    # output_path = Path(__file__).resolve().parents[1] / "transformed_data.json"
+    # print(f"Saving transformed data to {output_path}")
+    # with output_path.open("w", encoding="utf-8") as f:
+    #     json.dump(transformed_data, f, cls=DjangoJSONEncoder)
 
     # ### TRANSFORM DATA
     # logger.info("Transforming data for Construction-Work")
