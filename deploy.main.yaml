@@ -20,14 +20,21 @@ resources:
   repositories:
     - repository: templates
       type: github
-      endpoint: github.com_Amsterdam
-      name: Amsterdam/common-amsterdam-pipelines
-      ref: refs/tags/1.0.0
+      endpoint: Amsterdam
+      name: Amsterdam/common-azure-pipelines
+      ref: refs/tags/1.20.3
 
     - repository: source
       type: git
-      name: AMS-PRJ-AAPP/AMS-PRJ-AAPP
+      name: Amsterdam-App/aapp_infra_azure
       ref: main
+      trigger:
+        branches:
+          include:
+            - main
+        paths:
+          include:
+            - deployments/**
 
 parameters:
   - name: versionOverride
@@ -67,7 +74,7 @@ variables:
     value: $[ replace(replace(replace(variables['Self.Ref'], 'refs/heads/', ''), 'refs/tags/', ''), 'refs/pull/', '') ]
 
   - name: registry
-    value: crsharedaksweu9x4d.azurecr.io
+    value: saks01weuacrpgpgo5qvmwo.azurecr.io
 
   - name: version
     ${{ if eq(parameters.versionOverride, ' ') }}:
@@ -77,21 +84,9 @@ variables:
 
 stages:
   # --------------------
-  # PREPARE
-  # --------------------
-  - stage: prepare
-    displayName: preparing variables
-    jobs:
-      - template: pipeline.stage.prepare.yaml@source
-        parameters:
-          ACRKeyvault: shared-o-njo5j7pxxiapu
-          ACRtokenServiceconnection: sc-azurerm-ccc-aapp-ont-01
-          ACRSecretName: acr-token-ams-aapp
-
-  # --------------------
   # BUILD
   # --------------------
-  - template: pipeline.stage.build.yaml@source
+  - template: deploy.build-stage.yaml
     parameters:
       services: ${{ parameters.services }}
       stageDisplayName: Build, test, analyze & push
@@ -100,20 +95,16 @@ stages:
   # --------------------
   # TEST
   # --------------------
-  - template: pipeline.stage.deploy.yaml@source
+  - template: deploy.stage.yaml
     parameters:
       environment: test
       devopsEnvironment: api-test
-      aksSubscriptionId: db369b0b-5c73-41cf-b089-ec02d80c0bd4
       pool: ManagedDevOpsPools
-      namespace: tst-ams-aapp-aapp-test
-      serviceConnection: sc-azurerm-ccc-aapp-test-01
+      namespace: ns-ccc-aapp-tst-01-aapp-test
+      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-tst-01-aapp-test
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
-      dependsOn:
-        - prepare
-        - build
       condition: |
         and(
           not(or(failed(), canceled())),
@@ -126,56 +117,45 @@ stages:
   # --------------------
   # ACC
   # --------------------
-  - template: pipeline.stage.deploy.yaml@source
+  - template: deploy.stage.yaml
     parameters:
       environment: acc
       devopsEnvironment: api-acc
-      aksSubscriptionId: ceaaa4a3-c257-4189-bf16-078117df908c
       pool: ManagedDevOpsPools
-      namespace: acc-ams-aapp-aapp-acc
-      serviceConnection: sc-azurerm-ccc-aapp-acc-01
+      namespace: ns-ccc-aapp-acc-01-aapp-acc
+      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-acc-01-aapp-acc
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
-      dependsOn:
-        - prepare
-        - build
-        - test
-      # startsWith(variables['version'], 'main')
       condition: |
         and(
           not(or(failed(), canceled())),
           or(
             eq(variables['Self.Ref'], 'refs/heads/main'),
             eq(variables['Build.Reason'], 'Manual')
-          )
+          ),
+          startsWith(variables['version'], 'main')
         )
 
   # --------------------
   # PROD
   # --------------------
-  - template: pipeline.stage.deploy.yaml@source
+  - template: deploy.stage.yaml
     parameters:
       environment: prod
       devopsEnvironment: api-prod
-      aksSubscriptionId: 58d49111-48f0-4a70-9d9d-d4e163b3e12b
       pool: ManagedDevOpsPools
-      namespace: prd-ams-aapp-aapp-prd
-      serviceConnection: sc-azurerm-ccc-aapp-prd-01
+      namespace: ns-ccc-aapp-prd-01-aapp-prd
+      kubernetesServiceConnection: SCN-K8S-ns-ccc-aapp-prd-01-aapp-prd
       services: ${{ parameters.services }}
       force: ${{ parameters.forceDeploy }}
       migrationRollbackTarget: ${{ parameters.migrationRollbackTarget }}
-      dependsOn:
-        - prepare
-        - build
-        - test
-        - acc
-      # startsWith(variables['version'], 'main')
       condition: |
         and(
           not(or(failed(), canceled())),
           or(
             eq(variables['Self.Ref'], 'refs/heads/main'),
             eq(variables['Build.Reason'], 'Manual')
-          )
+          ),
+          startsWith(variables['version'], 'main')
         )

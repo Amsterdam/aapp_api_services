@@ -1,7 +1,6 @@
 from django.urls import path
 
 from core.urls import get_swagger_paths
-from core.views.health_views import HealthCheckView
 from notification.views import (
     address_views,
     device_views,
@@ -11,12 +10,6 @@ from notification.views import (
 BASE_PATH = "notification/api/v1"
 
 urlpatterns = [
-    # health check
-    path(
-        "notification/health",
-        HealthCheckView.as_view(),
-        name="health-check",
-    ),
     path(
         BASE_PATH + "/device",
         device_views.DeviceDeleteView.as_view(),
