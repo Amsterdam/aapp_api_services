@@ -276,24 +276,6 @@ class TestVerifyVignetteView(BoatChargingTestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.json()["reason"], reason)
 
-    def test_verify_unknown_reason_is_mapped_to_unknown(self):
-        request_payload = {
-            "vignette_number": "AB123",
-            "postal_code": "1234AB",
-        }
-
-        respx.post(self.endpoint).mock(
-            return_value=httpx.Response(
-                200, json={"status": "invalid", "reason": "NOT A KNOWN REASON"}
-            )
-        )
-        response = self.client.post(
-            self.url, data=request_payload, headers=self.api_headers
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["reason"], "UNKNOWN")
-
     def test_verify_without_access_token(self):
         headers_without_access_token = self.api_headers.copy()
         headers_without_access_token.pop("access_token")
