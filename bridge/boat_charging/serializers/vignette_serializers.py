@@ -1,5 +1,21 @@
 from rest_framework import serializers
 
+KNOWN_VIGNETTE_REASONS = (
+    "NOT_FOUND",
+    "MISMATCH",
+    "CANCELLED",
+    "EXPIRED",
+    "ONLY_ENVIRONMENT_TYPE_ALLOWED",
+    "UNKNOWN",
+)
+
+
+class VignetteReasonField(serializers.ChoiceField):
+    def to_internal_value(self, data):
+        if not isinstance(data, str) or data not in KNOWN_VIGNETTE_REASONS:
+            data = "UNKNOWN"
+        return super().to_internal_value(data)
+
 
 class RequiredVignetteFieldSerializer(serializers.Serializer):
     vignette_number = serializers.CharField()
@@ -15,7 +31,7 @@ class VignettesResponseSerializer(RequiredVignetteFieldSerializer):
 class VerifyVignetteResponseSerializer(serializers.Serializer):
     status = serializers.CharField()
     expiration_date = serializers.CharField(required=False)
-    reason = serializers.CharField(required=False)
+    reason = VignetteReasonField(choices=KNOWN_VIGNETTE_REASONS, required=False)
 
     def validate(self, attrs):
         status = attrs.get("status")
