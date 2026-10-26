@@ -219,12 +219,12 @@ class TestVerifyVignetteView(BoatChargingTestCase):
             response.json(), {"status": "valid", "expiration_date": "2026-12-31"}
         )
 
-    def test_verify_non_valid_status_maps_reason_without_expiration_date(self):
+    def test_verify_unknown_reason_maps_to_unknown_without_expiration_date(self):
         request_payload = {
             "vignette_number": "AB123",
             "postal_code": "1234AB",
         }
-        non_valid_response = {"status": "invalid", "reason": "NOT FOUND"}
+        non_valid_response = {"status": "invalid", "reason": "NOT A KNOWN REASON"}
 
         respx.post(self.endpoint).mock(
             return_value=httpx.Response(200, json=non_valid_response)
@@ -239,10 +239,60 @@ class TestVerifyVignetteView(BoatChargingTestCase):
             response.json(),
             {
                 "status": non_valid_response["status"],
-                "reason": non_valid_response["reason"],
+                "reason": "UNKNOWN",
             },
         )
         self.assertNotIn("expiration_date", response.json())
+
+    def test_verify_known_reasons_are_preserved(self):
+        request_payload = {
+            "vignette_number": "AB123",
+            "postal_code": "1234AB",
+        }
+        reasons = [
+            "NOT_FOUND",
+            "MISMATCH",
+            "CANCELLED",
+            "EXPIRED",
+            "ONLY_ENVIRONMENT_TYPE_ALLOWED",
+            "UNKNOWN",
+        ]
+        endpoint_mock = respx.post(self.endpoint).mock(
+            return_value=httpx.Response(
+                200, json={"status": "invalid", "reason": reasons[0]}
+            )
+        )
+
+        for reason in reasons:
+            with self.subTest(reason=reason):
+                endpoint_mock.return_value = httpx.Response(
+                    200, json={"status": "invalid", "reason": reason}
+                )
+
+                response = self.client.post(
+                    self.url, data=request_payload, headers=self.api_headers
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["reason"], reason)
+
+    def test_verify_unknown_reason_is_mapped_to_unknown(self):
+        request_payload = {
+            "vignette_number": "AB123",
+            "postal_code": "1234AB",
+        }
+
+        respx.post(self.endpoint).mock(
+            return_value=httpx.Response(
+                200, json={"status": "invalid", "reason": "NOT A KNOWN REASON"}
+            )
+        )
+        response = self.client.post(
+            self.url, data=request_payload, headers=self.api_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["reason"], "UNKNOWN")
 
     def test_verify_without_access_token(self):
         headers_without_access_token = self.api_headers.copy()

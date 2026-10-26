@@ -15,7 +15,7 @@ Provide one consistent boat-charging journey in the app: discover locations to c
 - When charging completes, a completion notification is sent and the session is removed from active notification tracking.
 - Terms are versioned documents; the highest numeric version is the active one.
 - Settings are exposed as typed values (amounts, VAT, expiry/fine flags), with missing or invalid upstream values returned as empty.
-- Vignettes are user-bound: users can link, list, update, unlink, and pre-verify vignette ownership using vignette number plus postal code.
+- Vignettes are user-bound: users can link, list, update, unlink, and pre-verify vignette ownership using vignette number plus postal code. Verification reasons use the supported reason codes; unrecognized upstream reasons are reported as `UNKNOWN`.
 
 ## Major non-standard architectural decisions
 - The module trusts upstream availability/hold semantics as source of truth instead of recalculating occupancy locally.
