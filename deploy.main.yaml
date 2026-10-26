@@ -133,8 +133,7 @@ stages:
           or(
             eq(variables['Self.Ref'], 'refs/heads/main'),
             eq(variables['Build.Reason'], 'Manual')
-          ),
-          startsWith(variables['version'], 'main')
+          )
         )
 
   # --------------------
@@ -156,6 +155,5 @@ stages:
           or(
             eq(variables['Self.Ref'], 'refs/heads/main'),
             eq(variables['Build.Reason'], 'Manual')
-          ),
-          startsWith(variables['version'], 'main')
+          )
         )
