@@ -1,11 +1,13 @@
 import json
 from unittest.mock import patch
 
+import responses
+from django.conf import settings
 from django.urls import reverse
 from model_bakery import baker
 from requests import Response
 
-from core.tests.test_authentication import BasicAPITestCase
+from core.tests.test_authentication import ResponsesActivatedAPITestCase
 from modules.icons import ModuleIconPath
 from modules.models import AppRelease, Module, ReleaseModuleStatus
 from modules.tests.mock_data import MOCK_DATA
@@ -20,7 +22,7 @@ from modules.views.theme_views import MijnAmsterdamThemesView
     },
     clear=True,
 )
-class TestMijnAmsterdamThemesView(BasicAPITestCase):
+class TestMijnAmsterdamThemesView(ResponsesActivatedAPITestCase):
     def setUp(self):
         super().setUp()
 
@@ -67,15 +69,27 @@ class TestMijnAmsterdamThemesView(BasicAPITestCase):
         self.api_headers = {**self.api_headers, "AccessToken": "dummy-access-token"}
         self.view = MijnAmsterdamThemesView()
 
+    def _add_responses(self, status=200, json_data=MOCK_DATA):
+        url = settings.MIJN_AMS_API_DOMAIN + settings.MIJN_AMS_ALL_PATH
+
+        resp = responses.add(
+            responses.GET,
+            url,
+            json=json_data,
+            status=status,
+        )
+
+        return resp
+
     def test_version_latest(self):
         url = reverse("modules-themes-list", kwargs={"release_version": "latest"})
-
         baker.make(
             ReleaseModuleStatus,
             app_release=self.release_2_10,
             module_version=self.theme_module_1_version_2,
             sort_order=1,
         )
+        resp = self._add_responses()
 
         response = self.client.get(url, headers=self.api_headers)
 
@@ -86,6 +100,7 @@ class TestMijnAmsterdamThemesView(BasicAPITestCase):
             response.data["themes"][0]["iconPath"],
             ModuleIconPath[self.theme_module_1_version_2.icon],
         )
+        self.assertEqual(resp.call_count, 1)
 
     def test_version_specific(self):
         url = reverse("modules-themes-list", kwargs={"release_version": "2.0.0"})
@@ -103,12 +118,15 @@ class TestMijnAmsterdamThemesView(BasicAPITestCase):
             sort_order=2,
         )
 
+        resp = self._add_responses()
+
         response = self.client.get(url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["themes"]), 1)
         self.assertEqual(response.data["themes"][0]["moduleSlug"], "theme-module-1")
         self.assertEqual(response.data["themes"][0]["status"], 1)
+        self.assertEqual(resp.call_count, 1)
 
     def test_inactive_module(self):
         url = reverse("modules-themes-list", kwargs={"release_version": "2.0.0"})
@@ -121,11 +139,13 @@ class TestMijnAmsterdamThemesView(BasicAPITestCase):
             module_version=self.theme_module_2_version_1,
             sort_order=1,
         )
+        resp = self._add_responses()
 
         response = self.client.get(url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["themes"][0]["status"], 0)
+        self.assertEqual(resp.call_count, 1)
 
     def test_inactive_release_version(self):
         url = reverse("modules-themes-list", kwargs={"release_version": "2.0.0"})
@@ -139,10 +159,13 @@ class TestMijnAmsterdamThemesView(BasicAPITestCase):
             sort_order=1,
         )
 
+        resp = self._add_responses()
+
         response = self.client.get(url, headers=self.api_headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["themes"][0]["status"], 0)
+        self.assertEqual(resp.call_count, 1)
 
     def test_get_release_without_auth_headers(self):
         url = reverse("modules-themes-list", kwargs={"release_version": "2.0.0"})
@@ -154,10 +177,13 @@ class TestMijnAmsterdamThemesView(BasicAPITestCase):
             sort_order=1,
         )
 
+        resp = self._add_responses()
+
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.data["detail"], "Access token is required.")
+        self.assertEqual(resp.call_count, 0)
 
     def test_latest_release_without_any_releases_returns_404(self):
         AppRelease.objects.all().delete()
@@ -192,5 +218,5 @@ class TestMijnAmsterdamThemesView(BasicAPITestCase):
 
         mock_get.side_effect = [mock_response_1, mock_response_2]
 
-        resp = self.view._make_request("dummy-access-token", headers={})
+        resp = self.view._make_request("dummy-access-token")
         self.assertEqual(resp.status_code, 200)
