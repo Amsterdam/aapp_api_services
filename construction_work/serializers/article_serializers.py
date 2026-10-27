@@ -3,38 +3,22 @@ from datetime import datetime
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from construction_work.models.article_models import (
-    Article,
-    ArticleImage,
-    ArticleImageSource,
-)
+from construction_work.models.article_models import Article
 from construction_work.models.manage_models import WarningImage, WarningMessage
 from construction_work.serializers.general_serializers import (
     ImagePublicSerializer,
+    IproxImageSerializer,
     MetaIdSerializer,
+    serialize_image_variants,
 )
 from construction_work.utils.model_utils import create_id_dict
-
-
-class ArticleImageSourceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ArticleImageSource
-        exclude = ["image", "id"]
-
-
-class ArticleImageSerializer(serializers.ModelSerializer):
-    sources = ArticleImageSourceSerializer(many=True)
-
-    class Meta:
-        model = ArticleImage
-        exclude = ["parent"]
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     """Article serializer"""
 
     meta_id = serializers.SerializerMethodField()
-    image = ArticleImageSerializer()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -44,6 +28,10 @@ class ArticleSerializer(serializers.ModelSerializer):
     def get_meta_id(self, obj: Article) -> dict:
         return create_id_dict(obj)
 
+    @extend_schema_field(IproxImageSerializer(allow_null=True))
+    def get_image(self, obj: Article):
+        return serialize_image_variants(list(obj.images.all()))
+
 
 class ArticleListSerializer(serializers.ModelSerializer):
     """
@@ -51,7 +39,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
     """
 
     meta_id = serializers.SerializerMethodField()
-    images = ArticleImageSerializer(source="image")
+    images = serializers.SerializerMethodField()
     publication_date = serializers.SerializerMethodField()
 
     class Meta:
@@ -65,6 +53,10 @@ class ArticleListSerializer(serializers.ModelSerializer):
     # NOTE: somehow, somewhere the datetime object is translated to string
     def get_publication_date(self, obj) -> datetime:
         return obj.publication_date
+
+    @extend_schema_field(IproxImageSerializer(many=True))
+    def get_images(self, obj: Article):
+        return serialize_image_variants(list(obj.images.all()))
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

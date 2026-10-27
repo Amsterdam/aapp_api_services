@@ -7,9 +7,9 @@ graphql:
   method: POST
   url: "{{DrupalBaseUrl}}"
   body:
-    query: "query MyQuery($paragraphId: Int!) {
+    query: "query NewsAndBlogsWithContent($paragraphId: Int!, $page: Int!) {
 
-      \  view(paragraphId: $paragraphId, page: 1) {
+      \  view(paragraphId: $paragraphId, page: $page) {
 
       \    name
 
@@ -220,7 +220,8 @@ graphql:
       \ "
     variables: |-
       {
-        "paragraphId": 59632
+        "paragraphId": 59632,
+        "page": 1
       }
   auth: inherit
 

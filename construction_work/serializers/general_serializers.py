@@ -24,11 +24,32 @@ class IproxImageSourceSerializer(serializers.Serializer):
     height = serializers.IntegerField()
 
 
+class ImageVariantSerializer(serializers.Serializer):
+    uri = serializers.CharField()
+    width = serializers.IntegerField()
+    height = serializers.IntegerField()
+
+
 class IproxImageSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    image_set = serializers.IntegerField(required=False)
     sources = IproxImageSourceSerializer(many=True)
-    aspectRatio = serializers.FloatField()
-    alternativeText = serializers.CharField()
+    aspectRatio = serializers.FloatField(allow_null=True)
+    alternativeText = serializers.CharField(allow_null=True)
+
+
+def serialize_image_variants(variants):
+    if not variants:
+        return None
+
+    image = variants[0]
+    return {
+        "id": image.foreign_id,
+        "aspectRatio": image.width / image.height if image.height else None,
+        "alternativeText": None,
+        "image_set": image.foreign_id,
+        "sources": ImageVariantSerializer(variants, many=True).data,
+    }
 
 
 class IproxProjectSectionLinkSerializer(serializers.Serializer):

@@ -7,21 +7,21 @@ from core.services.notification_service import (
 
 
 def send_article_notifications(
-    current_foreign_ids: list[int], found_articles: list[int]
+    current_drupal_ids: list[int], found_drupal_ids: list[int]
 ):
     notification_service = ArticleNotificationService(use_image_service=True)
     new_article_ids = get_new_articles(
-        current_foreign_ids=current_foreign_ids, found_article_ids=found_articles
+        current_drupal_ids=current_drupal_ids, found_drupal_ids=found_drupal_ids
     )
 
     for new_article_id in new_article_ids:
-        new_article = Article.objects.filter(foreign_id=new_article_id).first()
+        new_article = Article.objects.filter(drupal_id=new_article_id).first()
         projects = new_article.projects.all()
 
         # get image of article
-        article_image = ArticleImage.objects.filter(parent_id=new_article.id).first()
-        if article_image and article_image.image_set:
-            image_set_id = article_image.image_set
+        article_image = ArticleImage.objects.filter(article_id=new_article.id).first()
+        if article_image:
+            image_set_id = article_image.foreign_id
         else:
             image_set_id = None
 
@@ -44,11 +44,11 @@ def send_article_notifications(
 
 
 def get_new_articles(
-    current_foreign_ids: list[int], found_article_ids: list[int]
+    current_drupal_ids: list[int], found_drupal_ids: list[int]
 ) -> list[int]:
     new_articles_foreign_ids = []
-    for found_article_id in found_article_ids:
-        if found_article_id not in current_foreign_ids:
+    for found_article_id in found_drupal_ids:
+        if found_article_id not in current_drupal_ids:
             new_articles_foreign_ids.append(found_article_id)
 
     return new_articles_foreign_ids

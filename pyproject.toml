@@ -37,6 +37,7 @@ dependencies = [
   # construction work ETL
   "aiohttp",
   "tenacity",
+  "openpyxl",
   # news ETL
   "beautifulsoup4",
   # notifications

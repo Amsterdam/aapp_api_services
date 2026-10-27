@@ -3,11 +3,14 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+from construction_work.models.image_models import BaseImage
+
 
 class Project(models.Model):
     """Projects db model"""
 
-    foreign_id = models.BigIntegerField(unique=True)
+    foreign_id = models.BigIntegerField(unique=True)  # Legacy Iprox ID.
+    drupal_id = models.BigIntegerField(unique=True, null=True, blank=True)
     active = models.BooleanField(default=True)
     last_seen = models.DateTimeField()
     hidden = models.BooleanField(default=False)
@@ -59,35 +62,13 @@ class ProjectTimelineItem(models.Model):
     )
 
 
-class BaseImage(models.Model):
-    id = models.IntegerField(primary_key=True)
-    aspectRatio = models.FloatField()
-    alternativeText = models.CharField(null=True, blank=True)
-    image_set = models.IntegerField()
-
-    class Meta:
-        abstract = True
-
-
-class BaseImageSource(models.Model):
-    uri = models.CharField()
-    width = models.IntegerField()
-    height = models.IntegerField()
-
-    class Meta:
-        abstract = True
-
-
 class ProjectImage(BaseImage):
-    parent = models.OneToOneField(
-        Project, on_delete=models.CASCADE, related_name="image"
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name="images"
     )
 
-
-class ProjectImageSource(BaseImageSource):
-    image = models.ForeignKey(
-        ProjectImage, on_delete=models.CASCADE, related_name="sources"
-    )
+    class Meta:
+        unique_together = ("project", "uri")
 
 
 class ProjectSection(models.Model):

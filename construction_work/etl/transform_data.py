@@ -112,9 +112,11 @@ def _transform_project(
         "title": project_title,
         "subtitle": project_subtitle,
         "url": project.get("path"),
+        # there is no creation date field in the source data, so it is filled with the publication date
         "creation_date": _parse_datetime(project.get("publicationDate")),
         "modification_date": _parse_datetime(project.get("changedDate")),
         "publication_date": _parse_datetime(project.get("publicationDate")),
+        # there is no expiration date field in the source data, so it is set to None
         "expiration_date": None,
         "coordinates_lat": coordinates["lat"] if coordinates else None,
         "coordinates_lon": coordinates["lon"] if coordinates else None,
@@ -125,7 +127,7 @@ def _transform_project(
             "intro": timeline_intro,
             "items": timeline_items,
         },
-        "imageSet": image_set,
+        "image_set": image_set,
     }
 
 
@@ -184,12 +186,12 @@ def _transform_article(
         "title": article.get("title"),
         "intro": article.get("summaryShort"),
         "body": body,
-        "type": tags[0].get("name") if tags else None,
         "url": article.get("path"),
-        "created": _parse_datetime(article.get("publicationDate")),
-        "modified": _parse_datetime(article.get("changedDate")),
-        "expirationDate": None,
-        "imageSet": image_set,
+        "creation_date": _parse_datetime(article.get("publicationDate")),
+        "publication_date": _parse_datetime(article.get("publicationDate")),
+        "modification_date": _parse_datetime(article.get("changedDate")),
+        "expiration_date": None,
+        "image_set": image_set,
     }
 
 
@@ -332,10 +334,20 @@ def _transform_image(
 
     absolute_image_url = urljoin(settings.DVO_URL, image_url)
     try:
-        return image_set_service.get_or_upload_from_url(absolute_image_url)
+        image_set = image_set_service.get_or_upload_from_url(absolute_image_url)
     except HTTPError as e:
         logger.error(f"Error getting or uploading image: {e}")
         return None
+    source_image = images[0]
+    return {
+        **image_set,
+        **({"image_id": source_image["id"]} if "id" in source_image else {}),
+        **{
+            key: source_image[key]
+            for key in ("aspectRatio", "alternativeText")
+            if key in source_image
+        },
+    }
 
 
 def _get_subtitle(title: str) -> str | None:

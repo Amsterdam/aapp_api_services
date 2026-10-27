@@ -10,8 +10,6 @@ from construction_work.models.manage_models import ProjectManager, WarningMessag
 from construction_work.models.project_models import (
     Project,
     ProjectContact,
-    ProjectImage,
-    ProjectImageSource,
     ProjectTimelineItem,
 )
 from construction_work.serializers.article_serializers import (
@@ -25,22 +23,9 @@ from construction_work.serializers.general_serializers import (
     IproxProjectSectionsSerializer,
     IproxProjectTimelineSerializer,
     MetaIdSerializer,
+    serialize_image_variants,
 )
 from construction_work.utils.model_utils import create_id_dict
-
-
-class ProjectImageSourceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProjectImageSource
-        exclude = ["image", "id"]
-
-
-class ProjectImageSerializer(serializers.ModelSerializer):
-    sources = ProjectImageSourceSerializer(many=True)
-
-    class Meta:
-        model = ProjectImage
-        exclude = ["parent"]
 
 
 class RecentArticlesIdDateSerializer(serializers.Serializer):
@@ -54,7 +39,7 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
     meter = serializers.SerializerMethodField()
     followed = serializers.SerializerMethodField()
     recent_articles = serializers.SerializerMethodField()
-    image = ProjectImageSerializer()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -84,6 +69,10 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
         """Check if project is being followed by given device"""
         followed_projects_ids = self.context.get("followed_projects_ids", [])
         return obj.pk in followed_projects_ids
+
+    @extend_schema_field(IproxImageSerializer(allow_null=True))
+    def get_image(self, obj: Project):
+        return serialize_image_variants(list(obj.images.all()))
 
     @extend_schema_field(RecentArticlesIdDateSerializer)
     def get_recent_articles(self, obj: Project) -> list:
