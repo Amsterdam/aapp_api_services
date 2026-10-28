@@ -78,10 +78,10 @@ class LoadDataTestCase(TestCase):
                     "aspectRatio": 2,
                 },
                 "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
             },
             {
                 "id": 2,
@@ -131,13 +131,13 @@ class LoadDataTestCase(TestCase):
         load_projects(project_data)
 
         self.assertEqual(Project.objects.count(), 2)
-        project1 = Project.objects.get(foreign_id=1)
-        project2 = Project.objects.get(foreign_id=2)
+        project1 = Project.objects.get(drupal_id=1)
+        project2 = Project.objects.get(drupal_id=2)
 
         self.assertEqual(project1.title, "Project 1")
         self.assertEqual(project2.title, "Project 2")
         self.assertEqual(
-            ProjectContact.objects.get(id=2).project.foreign_id,
+            ProjectContact.objects.get(id=2).project.drupal_id,
             2,
         )
 
@@ -185,18 +185,21 @@ class LoadDataTestCase(TestCase):
                     "title": "Wanneer",
                 },
                 "url": "http://example.com/project/1",
-                "image": {
+                "image_set": {
                     "id": 236,
-                    "sources": [
-                        {"uri": "https://image.jpg", "width": 940, "height": 415}
+                    "variants": [
+                        {
+                            "uri": "https://image.jpg",
+                            "width": 940,
+                            "height": 415,
+                        }
                     ],
-                    "aspectRatio": 2,
                 },
                 "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
             },
             {
                 "id": 2,
@@ -246,10 +249,10 @@ class LoadDataTestCase(TestCase):
                 },
                 "url": "http://example.com/project/2",
                 "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
             },
             {
                 "id": 3,
@@ -284,9 +287,9 @@ class LoadDataTestCase(TestCase):
         load_projects(project_data)
 
         self.assertEqual(Project.objects.count(), 3)
-        project1 = Project.objects.get(foreign_id=1)
-        project2 = Project.objects.get(foreign_id=2)
-        project3 = Project.objects.get(foreign_id=3)
+        project1 = Project.objects.get(drupal_id=1)
+        project2 = Project.objects.get(drupal_id=2)
+        project3 = Project.objects.get(drupal_id=3)
 
         self.assertEqual(project1.active, False)
         self.assertEqual(project2.active, True)
@@ -295,9 +298,9 @@ class LoadDataTestCase(TestCase):
     def test_projects_update_conflict(self):
         """Test that projects function updates existing Project instances on conflict."""
         # Create an initial project
-        initial_project = baker.make(Project, foreign_id=1)
+        initial_project = baker.make(Project, foreign_id=51, drupal_id=1)
 
-        # New data with the same foreign_id
+        # New data with the same Drupal ID
         project_data = [
             {
                 "id": 1,
@@ -338,12 +341,15 @@ class LoadDataTestCase(TestCase):
                     ],
                     "title": "Wanneer",
                 },
-                "image": {
+                "image_set": {
                     "id": 236,
-                    "sources": [
-                        {"uri": "https://image.jpg", "width": 940, "height": 415}
+                    "variants": [
+                        {
+                            "uri": "https://image.jpg",
+                            "width": 940,
+                            "height": 415,
+                        }
                     ],
-                    "aspectRatio": 2,
                 },
                 "url": "http://example.com/project/1",
                 "coordinates": {"lat": 10, "lon": 20},
@@ -356,7 +362,8 @@ class LoadDataTestCase(TestCase):
         load_projects(project_data)
 
         # Fetch the project again to check updates
-        updated_project = Project.objects.get(foreign_id=1)
+        updated_project = Project.objects.get(drupal_id=1)
+        self.assertEqual(updated_project.foreign_id, 51)
         self.assertEqual(updated_project.title, "Updated Title")
         self.assertEqual(updated_project.subtitle, "Updated Subtitle")
         self.assertEqual(updated_project.sections.count(), 3)
@@ -426,29 +433,30 @@ class LoadDataTestCase(TestCase):
             },
             "url": "http://example.com/project/1",
             "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-            "created": timezone.now(),
-            "modified": timezone.now(),
-            "publicationDate": timezone.now(),
-            "expirationDate": None,
+            "creation_date": timezone.now(),
+            "modification_date": timezone.now(),
+            "publication_date": timezone.now(),
+            "expiration_date": None,
         }
         project = get_project_object(data)
-        self.assertEqual(project.foreign_id, data["id"])
+        self.assertEqual(project.drupal_id, data["id"])
+        self.assertIsNone(project.foreign_id)
         self.assertEqual(project.title, data["title"])
         self.assertEqual(project.subtitle, data["subtitle"])
         self.assertEqual(project.url, data["url"])
         self.assertEqual(project.coordinates_lat, data["coordinates"]["lat"])
         self.assertEqual(project.coordinates_lon, data["coordinates"]["lon"])
-        self.assertEqual(project.creation_date, data["created"])
-        self.assertEqual(project.modification_date, data["modified"])
-        self.assertEqual(project.publication_date, data["created"])
-        self.assertEqual(project.expiration_date, data["expirationDate"])
+        self.assertEqual(project.creation_date, data["creation_date"])
+        self.assertEqual(project.modification_date, data["modification_date"])
+        self.assertEqual(project.publication_date, data["publication_date"])
+        self.assertEqual(project.expiration_date, data["expiration_date"])
         self.assertTrue(project.active)
         self.assertIsNotNone(project.last_seen)
 
     def test_articles(self):
         """Test that articles function correctly creates or updates Article instances and their relationships."""
-        project1 = baker.make(Project, foreign_id=1)
-        project2 = baker.make(Project, foreign_id=2)
+        project1 = baker.make(Project, foreign_id=1, drupal_id=1)
+        project2 = baker.make(Project, foreign_id=2, drupal_id=2)
 
         article_data = [
             {
@@ -458,10 +466,10 @@ class LoadDataTestCase(TestCase):
                 "body": "Body 1",
                 "type": "announcement",
                 "url": "http://example.com/article/100",
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
                 "projectIds": [1, 2],
             },
             {
@@ -471,10 +479,10 @@ class LoadDataTestCase(TestCase):
                 "body": "Body 2",
                 "type": "update",
                 "url": "http://example.com/article/101",
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
                 "projectIds": [1],
             },
         ]
@@ -482,8 +490,8 @@ class LoadDataTestCase(TestCase):
         load_articles(article_data)
 
         self.assertEqual(Article.objects.count(), 2)
-        article1 = Article.objects.get(foreign_id=100)
-        article2 = Article.objects.get(foreign_id=101)
+        article1 = Article.objects.get(drupal_id=100)
+        article2 = Article.objects.get(drupal_id=101)
 
         self.assertEqual(article1.title, "Article 1")
         self.assertEqual(article2.title, "Article 2")
@@ -494,10 +502,10 @@ class LoadDataTestCase(TestCase):
 
     def test_articles_update_conflict(self):
         """Test that articles function updates existing Article instances on conflict."""
-        article100 = baker.make(Article, id=100)
-        project1 = baker.make(Project, foreign_id=1)
+        article100 = baker.make(Article, id=100, drupal_id=100, foreign_id=500)
+        project1 = baker.make(Project, foreign_id=1, drupal_id=1)
 
-        # New data with the same foreign_id
+        # New data with the same Drupal ID
         article_data = [
             {
                 "id": 100,
@@ -506,17 +514,20 @@ class LoadDataTestCase(TestCase):
                 "body": "Updated Body",
                 "type": "announcement",
                 "url": "http://example.com/article/100",
-                "created": article100.creation_date,
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": article100.creation_date,
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
                 "projectIds": [1],
-                "imageSet": {
+                "image_set": {
                     "id": 23626572,
                     "variants": [
-                        {"image": "https://image.jpg", "width": 940, "height": 415}
+                        {
+                            "uri": "https://image.jpg",
+                            "width": 940,
+                            "height": 415,
+                        }
                     ],
-                    "aspectRatio": 2,
                 },
             },
         ]
@@ -524,7 +535,8 @@ class LoadDataTestCase(TestCase):
         load_articles(article_data)
 
         # Fetch the article again to check updates
-        updated_article = Article.objects.get(foreign_id=100)
+        updated_article = Article.objects.get(drupal_id=100)
+        self.assertEqual(updated_article.foreign_id, 500)
         self.assertEqual(updated_article.title, "Updated Article Title")
         self.assertEqual(updated_article.intro, "Updated Intro")
         self.assertEqual(updated_article.body, "Updated Body")
@@ -533,6 +545,30 @@ class LoadDataTestCase(TestCase):
         )
         self.assertEqual(updated_article.type, "announcement")
         self.assertEqual(set(updated_article.projects.all()), {project1})
+
+    def test_articles_load_with_nullable_legacy_id(self):
+        project = baker.make(Project, foreign_id=None, drupal_id=1)
+        article_data = [
+            {
+                "id": 100,
+                "title": "Article without legacy ID",
+                "intro": "Intro",
+                "body": "Body",
+                "type": "news",
+                "url": "http://example.com/article/100",
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
+                "projectIds": [1],
+            }
+        ]
+
+        load_articles(article_data)
+
+        article = Article.objects.get(drupal_id=100)
+        self.assertIsNone(article.foreign_id)
+        self.assertEqual(list(article.projects.all()), [project])
 
     def test_articles_missing_project(self):
         """Test that articles function logs an error when a referenced project does not exist."""
@@ -544,10 +580,10 @@ class LoadDataTestCase(TestCase):
                 "body": "Body",
                 "type": "news",
                 "url": "http://example.com/article/200",
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
                 "projectIds": [999],  # Non-existent project ID
             },
         ]
@@ -556,7 +592,7 @@ class LoadDataTestCase(TestCase):
             load_articles(article_data)
 
         self.assertIn("Project ID 999 not found in database", cm.output[0])
-        article = Article.objects.get(foreign_id=200)
+        article = Article.objects.get(drupal_id=200)
         self.assertEqual(article.projects.count(), 0)
 
     def test_get_article_object(self):
@@ -568,10 +604,10 @@ class LoadDataTestCase(TestCase):
             "body": "Article Body",
             "type": "news",
             "url": "http://example.com/article/100",
-            "created": timezone.now(),
-            "modified": timezone.now(),
-            "publicationDate": timezone.now(),
-            "expirationDate": None,
+            "creation_date": timezone.now(),
+            "modification_date": timezone.now(),
+            "publication_date": timezone.now(),
+            "expiration_date": None,
             "image": {
                 "id": 23626572,
                 "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
@@ -579,16 +615,17 @@ class LoadDataTestCase(TestCase):
             },
         }
         article = get_article_object(data)
-        self.assertEqual(article.foreign_id, data["id"])
+        self.assertEqual(article.drupal_id, data["id"])
+        self.assertIsNone(article.foreign_id)
         self.assertEqual(article.title, data["title"])
         self.assertEqual(article.intro, data["intro"])
         self.assertEqual(article.body, data["body"])
         self.assertEqual(article.type, data["type"])
         self.assertEqual(article.url, data["url"])
-        self.assertEqual(article.creation_date, data["created"])
-        self.assertEqual(article.modification_date, data["modified"])
-        self.assertEqual(article.publication_date, data["created"])
-        self.assertEqual(article.expiration_date, data["expirationDate"])
+        self.assertEqual(article.creation_date, data["creation_date"])
+        self.assertEqual(article.modification_date, data["modification_date"])
+        self.assertEqual(article.publication_date, data["publication_date"])
+        self.assertEqual(article.expiration_date, data["expiration_date"])
 
     def test_store_image_creates_one_row_per_variant(self):
         project = baker.make(Project, foreign_id=1)

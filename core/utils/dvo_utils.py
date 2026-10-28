@@ -25,6 +25,10 @@ class DvOResponseError(Exception):
     """Raised when DvO returns a response that cannot be used."""
 
 
+class DvORequestError(Exception):
+    """Raised when a DvO request cannot be completed."""
+
+
 async def _gather_all(*awaitables: Awaitable[Any]) -> list[Any]:
     results = await asyncio.gather(*awaitables, return_exceptions=True)
     values = []
@@ -179,9 +183,14 @@ class DvOClient:
         if self._session is None or self._semaphore is None:
             raise RuntimeError("DvOClient must be used as an async context manager")
 
-        async with self._semaphore:
-            logger.info(f"Executing DvO query with variables: {variables}")
-            return await self._execute_query_with_retries(query, variables)
+        try:
+            async with self._semaphore:
+                logger.info(f"Executing DvO query with variables: {variables}")
+                return await self._execute_query_with_retries(query, variables)
+        except (aiohttp.ClientError, asyncio.TimeoutError) as error:
+            raise DvORequestError(
+                f"DvO request failed: {type(error).__name__}: {error}"
+            ) from error
 
     @retry(
         stop=stop_after_attempt(MAX_RETRY_ATTEMPTS),

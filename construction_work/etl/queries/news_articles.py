@@ -1,5 +1,5 @@
 QUERY = """
-query MyQuery($paragraphId: Int!, $page: Int!) {
+query NewsView($paragraphId: Int!, $page: Int!) {
   view(paragraphId: $paragraphId, page: $page) {
     name
    ... on View {
@@ -15,9 +15,7 @@ query MyQuery($paragraphId: Int!, $page: Int!) {
           summaryShort
           title
           changedDate
-          #displayChangedDate
           publicationDate
-          #metaDescription
           path
           content {
             ... on ParagraphGrid {

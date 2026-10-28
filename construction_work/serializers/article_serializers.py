@@ -22,7 +22,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        exclude = ["type"]
+        exclude = ["foreign_id", "type"]
 
     @extend_schema_field(MetaIdSerializer)
     def get_meta_id(self, obj: Article) -> dict:

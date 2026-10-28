@@ -20,9 +20,11 @@ class Command(BaseCommand):
 
         # get all projects from Database
         projects = Project.objects.all()
+        logger.info(f"Retrieved {projects.count()} projects from the database")
 
         # get all ID pairs from the Excel file
         id_pairs = self.read_id_mapping_file()
+        logger.info(f"Retrieved {len(id_pairs)} ID pairs from the Excel file")
 
         for project in projects:
             # find id pair where iprox_id matches the project's iprox_id
@@ -31,8 +33,9 @@ class Command(BaseCommand):
                 None,
             )
             if id_pair:
-                project.drupal_id = id_pair["drupal_id"]
-                project.save()
+                Project.objects.filter(pk=project.pk).update(
+                    drupal_id=id_pair["drupal_id"]
+                )
             else:
                 logger.warning(
                     f"No ID pair found for project with Iprox ID: {project.foreign_id}"
@@ -60,7 +63,5 @@ class Command(BaseCommand):
             ]
         finally:
             workbook.close()
-
-        logger.info(f"Read {len(id_pairs)} project ID pairs from the Excel file")
 
         return id_pairs

@@ -25,6 +25,7 @@ class SendNotificationTestCase(TestCase):
         self.article1 = baker.make(
             Article,
             foreign_id=1,
+            drupal_id=101,
             title="Article 1",
             last_seen=timezone.now(),
             projects=[self.project1],
@@ -32,18 +33,19 @@ class SendNotificationTestCase(TestCase):
         baker.make(Device, device_id="test_id", followed_projects=[self.project1])
 
     def test_send_notification(self):
-        current_article_ids = set(Article.objects.values_list("foreign_id", flat=True))
+        current_article_ids = set(Article.objects.values_list("drupal_id", flat=True))
         self.article2 = baker.make(
             Article,
             foreign_id=2,
+            drupal_id=102,
             title="Article 2",
             last_seen=timezone.now(),
             projects=[self.project1],
         )
-        found_articles = [1, 2]  # Two articles are found
+        found_articles = [101, 102]  # Two articles are found
 
         send_article_notifications(
-            current_foreign_ids=current_article_ids, found_articles=found_articles
+            current_drupal_ids=current_article_ids, found_drupal_ids=found_articles
         )
 
         notifications = ScheduledNotification.objects.all()

@@ -9,7 +9,7 @@ from construction_work.models.image_models import BaseImage
 class Project(models.Model):
     """Projects db model"""
 
-    foreign_id = models.BigIntegerField(unique=True)  # Legacy Iprox ID.
+    foreign_id = models.BigIntegerField(unique=True, null=True, blank=True)
     drupal_id = models.BigIntegerField(unique=True, null=True, blank=True)
     active = models.BooleanField(default=True)
     last_seen = models.DateTimeField()

@@ -71,7 +71,6 @@ class TestArticleDetailView(BasicAPITestCase):
                 "id": article.pk,
                 "type": "article",
             },
-            "foreign_id": article.foreign_id,
             "drupal_id": article.drupal_id,
             "active": article.active,
             "last_seen": tt(str(article.last_seen), target_tzinfo_last_seen),

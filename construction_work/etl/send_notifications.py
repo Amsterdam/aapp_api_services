@@ -46,9 +46,9 @@ def send_article_notifications(
 def get_new_articles(
     current_drupal_ids: list[int], found_drupal_ids: list[int]
 ) -> list[int]:
-    new_articles_foreign_ids = []
+    new_article_ids = []
     for found_article_id in found_drupal_ids:
         if found_article_id not in current_drupal_ids:
-            new_articles_foreign_ids.append(found_article_id)
+            new_article_ids.append(found_article_id)
 
-    return new_articles_foreign_ids
+    return new_article_ids

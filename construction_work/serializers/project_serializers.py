@@ -188,7 +188,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
             "recent_articles",
             "image",
             "followers",
-            "foreign_id",
+            "drupal_id",
             "active",
             "last_seen",
             "title",

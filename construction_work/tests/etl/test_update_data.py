@@ -1,6 +1,6 @@
 from unittest import mock
 
-from django.test import SimpleTestCase, TestCase
+from django.test import TestCase
 from django.utils import timezone
 from model_bakery import baker
 
@@ -15,7 +15,7 @@ from construction_work.models.article_models import Article
 from construction_work.models.project_models import Project
 
 
-class ExtractTransformLoadTestCase(SimpleTestCase):
+class ExtractTransformLoadTestCase(TestCase):
     @mock.patch(
         "construction_work.etl.update_data.get_all_drupal_projects_with_content",
         return_value={
@@ -41,6 +41,7 @@ class GarbageCollectorTestCase(TestCase):
         # Create some test projects and articles
         self.project1 = Project.objects.create(
             foreign_id=1,
+            drupal_id=101,
             title="Project 1",
             active=True,
             hidden=False,
@@ -48,6 +49,7 @@ class GarbageCollectorTestCase(TestCase):
         )
         self.project2 = Project.objects.create(
             foreign_id=2,
+            drupal_id=102,
             title="Project 2",
             active=True,
             hidden=False,
@@ -55,17 +57,22 @@ class GarbageCollectorTestCase(TestCase):
         )
         self.project_hidden = Project.objects.create(
             foreign_id=3,
+            drupal_id=103,
             title="Hidden Project",
             active=True,
             hidden=True,  # Should not be deactivated or deleted
             last_seen=timezone.now(),
         )
-        self.article1 = baker.make(Article, foreign_id=1, title="Article 1")
-        self.article2 = baker.make(Article, foreign_id=2, title="Article 2")
+        self.article1 = baker.make(
+            Article, foreign_id=1, drupal_id=201, title="Article 1"
+        )
+        self.article2 = baker.make(
+            Article, foreign_id=2, drupal_id=202, title="Article 2"
+        )
 
     def test_garbage_collector(self):
-        found_projects = [self.project1.foreign_id]  # Only project1 is found
-        found_articles = [1]  # Only article1 is found
+        found_projects = [self.project1.drupal_id]  # Only project1 is found
+        found_articles = [self.article1.drupal_id]  # Only article1 is found
 
         self.project2.last_seen = timezone.now() - timezone.timedelta(days=6)
         self.project2.active = False
@@ -74,7 +81,7 @@ class GarbageCollectorTestCase(TestCase):
         garbage_collector(found_projects, found_articles)
 
         self.project1.refresh_from_db()
-        self.project2_exists = Project.objects.filter(foreign_id=2).exists()
+        self.project2_exists = Project.objects.filter(drupal_id=102).exists()
         self.project_hidden.refresh_from_db()
         self.article1.refresh_from_db()
         self.article2.refresh_from_db()
@@ -86,7 +93,7 @@ class GarbageCollectorTestCase(TestCase):
         self.assertFalse(self.article2.active)  # Should be inactive
 
     def test_deactivate_unseen_projects(self):
-        found_projects = [self.project1.foreign_id]
+        found_projects = [self.project1.drupal_id]
         _deactivate_unseen_projects(found_projects)
 
         self.project1.refresh_from_db()
@@ -99,6 +106,20 @@ class GarbageCollectorTestCase(TestCase):
             self.project_hidden.active
         )  # Hidden projects should not be deactivated
 
+    def test_deactivate_legacy_project_without_drupal_id(self):
+        legacy_project = Project.objects.create(
+            foreign_id=4,
+            title="Legacy project",
+            active=True,
+            hidden=False,
+            last_seen=timezone.now(),
+        )
+
+        _deactivate_unseen_projects([self.project1.drupal_id])
+
+        legacy_project.refresh_from_db()
+        self.assertFalse(legacy_project.active)
+
     def test_cleanup_inactive_projects(self):
         self.project2.last_seen = timezone.now() - timezone.timedelta(days=6)
         self.project2.active = False
@@ -106,24 +127,32 @@ class GarbageCollectorTestCase(TestCase):
 
         _cleanup_inactive_projects()
 
-        project2_exists = Project.objects.filter(foreign_id=2).exists()
+        project2_exists = Project.objects.filter(drupal_id=102).exists()
         self.assertFalse(project2_exists)
-        project1_exists = Project.objects.filter(foreign_id=1).exists()
+        project1_exists = Project.objects.filter(drupal_id=101).exists()
         self.assertTrue(project1_exists)
 
     def test_deactivate_unseen_articles(self):
-        found_articles = [1]
+        found_articles = [self.article1.drupal_id]
         _deactivate_unseen_articles(found_articles)
         self.article2.refresh_from_db()
 
         # Check that article2 is deleted
-        article2_exists = Article.objects.filter(foreign_id=2).exists()
+        article2_exists = Article.objects.filter(drupal_id=202).exists()
         self.assertTrue(article2_exists)
         self.assertFalse(self.article2.active)
 
+    def test_deactivate_legacy_article_without_drupal_id(self):
+        legacy_article = baker.make(Article, foreign_id=3, drupal_id=None, active=True)
+
+        _deactivate_unseen_articles([self.article1.drupal_id])
+
+        legacy_article.refresh_from_db()
+        self.assertFalse(legacy_article.active)
+
     def test_garbage_collector_status_logging(self):
-        found_projects = [self.project1.foreign_id]
-        found_articles = [1]
+        found_projects = [self.project1.drupal_id]
+        found_articles = [self.article1.drupal_id]
 
         with self.assertLogs("construction_work.etl.update_data", level="INFO") as cm:
             garbage_collector(found_projects, found_articles)
@@ -134,7 +163,7 @@ class GarbageCollectorTestCase(TestCase):
         self.assertTrue(any("articles" in log for log in logs))
 
     def test_deactivate_unseen_projects_transaction(self):
-        found_projects = [self.project1.foreign_id]
+        found_projects = [self.project1.drupal_id]
 
         with mock.patch(
             "construction_work.etl.update_data.transaction.atomic"

@@ -9,7 +9,7 @@ from construction_work.utils.model_utils import create_id_dict
 class Article(models.Model):
     """Article db model"""
 
-    foreign_id = models.BigIntegerField(unique=True)  # Legacy Iprox ID.
+    foreign_id = models.BigIntegerField(unique=True, null=True, blank=True)
     drupal_id = models.BigIntegerField(unique=True, null=True, blank=True)
     active = models.BooleanField(default=True)
     last_seen = models.DateTimeField(auto_now=True)

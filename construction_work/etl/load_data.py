@@ -33,9 +33,7 @@ def load_data(transformed_data: dict):
 
 def load_projects(project_data: list):
 
-    truncated_list = project_data[:1]
-
-    projects_list = [get_project_object(data) for data in truncated_list]
+    projects_list = [get_project_object(data) for data in project_data]
     Project.objects.bulk_create(
         projects_list,
         update_conflicts=True,
@@ -64,7 +62,7 @@ def load_projects(project_data: list):
         [],
         [],
     )
-    for data in truncated_list:
+    for data in project_data:
         project = projects_dict.get(data.get("id"))  # This is the drupal_id now
 
         contacts += get_contacts(data, project)
@@ -202,31 +200,31 @@ def get_sections(data, project):
 
 def load_articles(article_data: list):
     articles, article_project_mapping = [], {}
-    project_dict = {project.foreign_id: project for project in Project.objects.all()}
+    project_dict = {project.drupal_id: project for project in Project.objects.all()}
     for item in article_data:
-        foreign_project_ids = list(item.pop("projectIds"))
+        project_ids = list(item.pop("projectIds"))
         article_object = get_article_object(item)
         articles.append(article_object)
 
         projects = []
-        for id in foreign_project_ids:
-            proj = project_dict.get(id)
+        for project_id in project_ids:
+            proj = project_dict.get(project_id)
             if proj:
                 projects.append(proj)
             else:
                 logger.error(
-                    f"Project ID {id} not found in database",
+                    f"Project ID {project_id} not found in database",
                     extra={
-                        "project_id": id,
+                        "project_id": project_id,
                         "article_id": item.get("id"),
                     },
                 )
-        article_project_mapping[article_object.foreign_id] = projects
+        article_project_mapping[article_object.drupal_id] = projects
 
     Article.objects.bulk_create(
         articles,
         update_conflicts=True,
-        unique_fields=["foreign_id"],
+        unique_fields=["drupal_id"],
         update_fields=[
             "title",
             "intro",
@@ -242,14 +240,14 @@ def load_articles(article_data: list):
 
     # Projects can only be set after the articles are saved, because they are a many-to-many relationship
     articles_saved = Article.objects.filter(
-        foreign_id__in=[article for article in article_project_mapping.keys()]
+        drupal_id__in=article_project_mapping.keys()
     )
     with transaction.atomic():
         for article in articles_saved:
-            projects = article_project_mapping.get(article.foreign_id)
+            projects = article_project_mapping.get(article.drupal_id)
             article.projects.set(projects)
 
-    articles_dict = {article.foreign_id: article for article in articles_saved}
+    articles_dict = {article.drupal_id: article for article in articles_saved}
     images = []
     for data in article_data:
         article = articles_dict.get(data.get("id"))

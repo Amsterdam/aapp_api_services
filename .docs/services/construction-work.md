@@ -35,7 +35,14 @@ Check image-set associations against the image service beforehand: some legacy
 records may still contain the historical placeholder ID of 1, which cannot be
 distinguished automatically from a genuine ID.
 
-Drupal identifiers remain optional during the transition and must be unique
-when supplied. Existing records are not assigned guessed identifiers.
-Authoritative mappings must cover both projects and articles before a later
-release can switch ingestion identity and require Drupal identifiers.
+Drupal IDs are the canonical identifiers for imported projects and articles
+and are used by their public representations. Legacy Iprox IDs are optional
+and are retained only on records that already have them; new Drupal content
+does not receive an invented Iprox ID. Drupal IDs must be unique when supplied.
+
+Existing projects receive a Drupal ID only when the authoritative mapping
+contains a match. Unmatched legacy records are not assigned guessed IDs; a
+subsequent normal synchronization treats records without a Drupal ID as unseen.
+The first synchronization should not send notifications for all imported
+articles. Because it also skips cleanup, unmatched legacy records can remain
+visible until a later normal synchronization.

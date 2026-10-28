@@ -12,6 +12,7 @@ from core.utils.dvo_utils import (
     MAX_RETRY_DELAY,
     MIN_RETRY_DELAY,
     DvOClient,
+    DvORequestError,
     DvOResponseError,
     _get_rate_limit_retry_delay,
 )
@@ -63,8 +64,10 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
             mocked.post(API_URL, status=503)
 
             async with self.client:
-                with self.assertRaises(aiohttp.ClientResponseError):
+                with self.assertRaises(DvORequestError) as error:
                     await self.client.execute_query("query { view { nodes { id } } }")
+
+        self.assertIsInstance(error.exception.__cause__, aiohttp.ClientResponseError)
 
     async def test_execute_query_retries_rate_limit_using_retry_after_header(self):
         response_data = {"view": {"nodes": [{"id": 1}]}}
@@ -121,12 +124,34 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
 
             with patch("core.utils.dvo_utils.random.uniform", return_value=0):
                 async with self.client:
-                    with self.assertRaises(aiohttp.ClientResponseError):
+                    with self.assertRaises(DvORequestError) as error:
                         await self.client.execute_query(
                             "query { view { nodes { id } } }"
                         )
 
+        self.assertIsInstance(error.exception.__cause__, aiohttp.ClientResponseError)
         self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 3)
+
+    async def test_execute_query_wraps_connection_failure_after_retries(self):
+        query = "query { view { nodes { id } } }"
+        with aioresponses() as mocked:
+            mocked.post(
+                API_URL,
+                exception=aiohttp.ClientConnectionError("connection refused"),
+                repeat=True,
+            )
+
+            with patch(
+                "core.utils.dvo_utils.asyncio.sleep",
+                new_callable=AsyncMock,
+            ) as sleep:
+                async with self.client:
+                    with self.assertRaises(DvORequestError) as error:
+                        await self.client.execute_query(query)
+
+        self.assertIsInstance(error.exception.__cause__, aiohttp.ClientConnectionError)
+        self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 3)
+        self.assertEqual(sleep.await_count, 2)
 
     async def test_execute_query_retries_server_disconnect(self):
         response_data = {"view": {"nodes": [{"id": 1}]}}

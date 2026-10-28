@@ -8,7 +8,11 @@ from typing import Any
 
 from django.conf import settings
 
-from construction_work.etl.queries import news_articles, projects_with_details
+from construction_work.etl.queries import (
+    news_articles,
+    projects_with_details,
+    work_articles,
+)
 from core.utils.dvo_utils import DvOClient, DvOResponseError
 
 
@@ -29,29 +33,65 @@ async def _get_all_drupal_projects_with_content() -> dict[str, Any]:
             {"paragraphId": settings.DVO_CONSTRUCTION_WORK_PARAGRAPH_ID},
         )
 
-        paragraph_ids = list(
+        paragraph_ids_dicts = list(
             dict.fromkeys(
                 paragraph_id
                 for project in projects
-                if (paragraph_id := extract_news_paragraph_id_from_project(project))
+                if (
+                    paragraph_id := extract_news_and_work_paragraph_id_from_project(
+                        project
+                    )
+                )
                 is not None
             )
         )
 
-        articles_by_paragraph_id = await client.execute_paginated_view_queries(
+        news_articles_by_paragraph_id = await client.execute_paginated_view_queries(
             news_articles.QUERY,
-            [{"paragraphId": paragraph_id} for paragraph_id in paragraph_ids],
+            [
+                {"paragraphId": paragraph_id_dict["paragraph_id"]}
+                for paragraph_id_dict in paragraph_ids_dicts
+                if paragraph_id_dict["type"] == "news"
+            ],
+        )
+
+        work_articles_by_paragraph_id = await client.execute_paginated_view_queries(
+            work_articles.QUERY,
+            [
+                {"paragraphId": paragraph_id_dict["paragraph_id"]}
+                for paragraph_id_dict in paragraph_ids_dicts
+                if paragraph_id_dict["type"] == "work"
+            ],
         )
 
     return {
         "projects": projects,
         "news_articles": dict(
-            zip(paragraph_ids, articles_by_paragraph_id, strict=True)
+            zip(
+                [
+                    paragraph_id_dict["paragraph_id"]
+                    for paragraph_id_dict in paragraph_ids_dicts
+                    if paragraph_id_dict["type"] == "news"
+                ],
+                news_articles_by_paragraph_id,
+                strict=True,
+            )
+        ),
+        "work_articles": dict(
+            zip(
+                [
+                    paragraph_id_dict["paragraph_id"]
+                    for paragraph_id_dict in paragraph_ids_dicts
+                    if paragraph_id_dict["type"] == "work"
+                ],
+                work_articles_by_paragraph_id,
+                strict=True,
+            )
         ),
     }
 
 
-def extract_news_paragraph_id_from_project(
+def extract_news_and_work_paragraph_id_from_project(
     project: Mapping[str, Any],
 ) -> int | None:
     """
@@ -78,14 +118,27 @@ def extract_news_paragraph_id_from_project(
 
                 if (
                     block.get("contentIndication") == "news"
-                    or block.get("title") == "Nieuws"
+                    and block.get("title") == "Nieuws"
                 ):
                     paragraph_id = block.get("id")
                     if isinstance(paragraph_id, int) and not isinstance(
                         paragraph_id, bool
                     ):
-                        return paragraph_id
+                        return {"paragraph_id": paragraph_id, "type": "news"}
                     raise DvOResponseError(
                         "DvO news view paragraph did not contain an integer ID"
+                    )
+
+                if (
+                    block.get("contentIndication") == "work"
+                    and block.get("title") == "Werk aan de weg"
+                ):
+                    paragraph_id = block.get("id")
+                    if isinstance(paragraph_id, int) and not isinstance(
+                        paragraph_id, bool
+                    ):
+                        return {"paragraph_id": paragraph_id, "type": "work"}
+                    raise DvOResponseError(
+                        "DvO work view paragraph did not contain an integer ID"
                     )
     return None

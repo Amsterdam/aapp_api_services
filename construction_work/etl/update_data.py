@@ -6,6 +6,7 @@ Fetch data from the DvO API and ingest it into Construction-Work database
 from logging import getLogger
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from construction_work.etl.extract_data import get_all_drupal_projects_with_content
@@ -76,8 +77,8 @@ def garbage_collector(found_projects, found_articles):
 
 
 def _deactivate_unseen_projects(found_projects):
-    unseen_projects = Project.objects.exclude(foreign_id__in=found_projects).filter(
-        hidden=False
+    unseen_projects = Project.objects.filter(hidden=False).filter(
+        Q(drupal_id__isnull=True) | ~Q(drupal_id__in=found_projects)
     )
     with transaction.atomic():
         for project in unseen_projects:
@@ -92,7 +93,9 @@ def _cleanup_inactive_projects():
 
 
 def _deactivate_unseen_articles(found_articles):
-    unseen_articles = Article.objects.exclude(foreign_id__in=found_articles)
+    unseen_articles = Article.objects.filter(
+        Q(drupal_id__isnull=True) | ~Q(drupal_id__in=found_articles)
+    )
     with transaction.atomic():
         for article in unseen_articles:
             article.deactivate()

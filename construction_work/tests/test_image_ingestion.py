@@ -37,13 +37,13 @@ class ImageIngestionTests(TestCase):
         }
 
         for _ in range(2):
-            load_projects([{**common_data, "id": project.foreign_id}])
+            load_projects([{**common_data, "id": project.drupal_id}])
             load_articles(
                 [
                     {
                         **common_data,
-                        "id": article.foreign_id,
-                        "projectIds": [project.foreign_id],
+                        "id": article.drupal_id,
+                        "projectIds": [project.drupal_id],
                     }
                 ]
             )
