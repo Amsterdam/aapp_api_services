@@ -15,17 +15,24 @@ class ImageMigrationTests(TransactionTestCase):
             cursor.execute("SHOW search_path")
             self.original_search_path = cursor.fetchone()[0]
             cursor.execute(f"CREATE SCHEMA {self.schema}")
+            self.schema_created = True
             cursor.execute(f"SET search_path TO {self.schema}")
         self.addCleanup(self.remove_schema)
         self.old_apps = self.migrate("0022_projectcontact_extra")
 
     def remove_schema(self):
+        if not self.schema_created:
+            return
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT set_config('search_path', %s, false)",
                 [self.original_search_path],
             )
             cursor.execute(f"DROP SCHEMA {self.schema} CASCADE")
+        self.schema_created = False
+
+    def _fixture_teardown(self):
+        self.remove_schema()
 
     def migrate(self, name):
         executor = MigrationExecutor(connection)
