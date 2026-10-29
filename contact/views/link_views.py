@@ -14,6 +14,7 @@ class LinksView(generics.RetrieveAPIView):
     links = {
         "acknowledgeChild": "https://www.amsterdam.nl/veelgevraagd/een-kind-erkennen-b0bd7",
         "birth": "https://www.amsterdam.nl/burgerzaken/geboorte-erkenning-kinderen/geboorteaangifte/",
+        "boatChargingInfo": "https://www.amsterdam.nl/verkeer-vervoer/varen/elektrische-boot-laden-betalen/",
         "chatPrivacy": "https://www.amsterdam.nl/privacy/specifieke/privacyverklaringen-burgerzaken-contact/klantcontact/",
         "citypass": "https://stadspas.amsterdam.nl/",
         "contactForm": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/Contactformulier.aspx",
