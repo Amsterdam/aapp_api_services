@@ -33,6 +33,7 @@ query PageView($paragraphId: Int!, $page: Int!) {
             ... on Image {
               name
               src
+              alt
             }
           }
         }

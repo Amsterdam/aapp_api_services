@@ -1,10 +1,14 @@
+from unittest import mock
+
 from django.test import TestCase
 from django.utils import timezone
 from model_bakery import baker
 
+from construction_work.etl import load_data as load_data_module
 from construction_work.etl.load_data import (
     get_article_object,
     get_project_object,
+    get_sections,
     load_articles,
     load_projects,
     store_image,
@@ -18,6 +22,19 @@ from construction_work.models.project_models import (
 
 
 class LoadDataTestCase(TestCase):
+    def test_load_data_dispatches_empty_defaults(self):
+        with (
+            mock.patch.object(load_data_module, "load_projects") as load_projects,
+            mock.patch.object(load_data_module, "load_articles") as load_articles,
+        ):
+            load_data_module.load_data({})
+
+        load_projects.assert_called_once_with([])
+        load_articles.assert_called_once_with([])
+
+    def test_get_sections_without_sections(self):
+        self.assertEqual(get_sections({}, None), ([], []))
+
     def test_projects(self):
         """Test that projects function correctly creates or updates Project instances."""
         project_data = [
@@ -44,7 +61,6 @@ class LoadDataTestCase(TestCase):
                 },
                 "contacts": [
                     {
-                        "id": 1,
                         "name": "Jan",
                         "email": "jan@amsterdam.nl",
                         "phone": None,
@@ -119,7 +135,6 @@ class LoadDataTestCase(TestCase):
                 "expirationDate": None,
                 "contacts": [
                     {
-                        "id": 2,
                         "name": "Wendy",
                         "email": "wendy@amsterdam.nl",
                         "phone": None,
@@ -137,9 +152,37 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(project1.title, "Project 1")
         self.assertEqual(project2.title, "Project 2")
         self.assertEqual(
-            ProjectContact.objects.get(id=2).project.drupal_id,
+            ProjectContact.objects.get(name="Wendy").project.drupal_id,
             2,
         )
+
+    def test_multiple_contacts_receive_generated_primary_keys(self):
+        load_projects(
+            [
+                {
+                    "id": 3,
+                    "title": "Project with multiple contacts",
+                    "url": "https://example.com/project/3",
+                    "creation_date": timezone.now(),
+                    "modification_date": timezone.now(),
+                    "publication_date": timezone.now(),
+                    "contacts": [
+                        {"name": "First contact"},
+                        {"name": "Second contact"},
+                        {"name": "Third contact"},
+                    ],
+                }
+            ]
+        )
+
+        contacts = list(ProjectContact.objects.order_by("id"))
+
+        self.assertEqual(len(contacts), 3)
+        self.assertEqual(
+            [contact.name for contact in contacts],
+            ["First contact", "Second contact", "Third contact"],
+        )
+        self.assertEqual(len({contact.pk for contact in contacts}), 3)
 
     def test_projects_no_sections(self):
         """
@@ -159,7 +202,6 @@ class LoadDataTestCase(TestCase):
                 },
                 "contacts": [
                     {
-                        "id": 1,
                         "name": "Jan",
                         "email": "jan@amsterdam.nl",
                         "phone": None,
@@ -692,3 +734,23 @@ class LoadDataTestCase(TestCase):
             ),
             [],
         )
+
+    def test_store_image_without_uri_returns_empty_list(self):
+        project = baker.make(Project, foreign_id=1)
+        image_data = {
+            "image_set": {
+                "id": 100,
+                "variants": [
+                    {
+                        "image": "https://example.invalid/image.jpg",
+                        "width": 20,
+                        "height": 10,
+                    }
+                ],
+            }
+        }
+
+        with self.assertLogs("construction_work.etl.load_data", level="ERROR"):
+            images = store_image(image_data, project, ProjectImage, "project")
+
+        self.assertEqual(images, [])

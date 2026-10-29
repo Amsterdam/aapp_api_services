@@ -1,38 +1,48 @@
 from unittest import mock
 
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 from model_bakery import baker
 
+from construction_work.etl import update_data
 from construction_work.etl.update_data import (
     _cleanup_inactive_projects,
     _deactivate_unseen_articles,
     _deactivate_unseen_projects,
-    extract_transform_load,
     garbage_collector,
 )
 from construction_work.models.article_models import Article
 from construction_work.models.project_models import Project
 
 
-class ExtractTransformLoadTestCase(TestCase):
-    @mock.patch(
-        "construction_work.etl.update_data.get_all_drupal_projects_with_content",
-        return_value={
-            "projects": [],
-            "news_articles": {
-                123: [{"id": 1}, {"id": 2}],
-                456: [{"id": 3}],
-                789: [],
-            },
-        },
-    )
-    def test_logs_total_news_article_count(self, mock_extract):
-        with self.assertLogs("construction_work.etl.update_data", level="INFO") as logs:
-            extract_transform_load()
+class ExtractTransformLoadTestCase(SimpleTestCase):
+    def test_extract_transform_load(self):
+        extracted = {
+            "projects": [{"id": 101}],
+            "news_articles": {501: [{"id": 201}, {"id": 202}]},
+        }
+        transformed = {"projects": [{"id": 101}], "articles": []}
 
+        with (
+            mock.patch.object(
+                update_data,
+                "get_all_drupal_projects_with_content",
+                return_value=extracted,
+            ) as extract,
+            mock.patch.object(
+                update_data, "transform_data", return_value=transformed
+            ) as transform,
+            mock.patch.object(update_data, "load_data") as load,
+            self.assertLogs("construction_work.etl.update_data", level="INFO") as logs,
+        ):
+            result = update_data.extract_transform_load()
+
+        extract.assert_called_once_with()
+        transform.assert_called_once_with(extracted)
+        load.assert_called_once_with(transformed)
+        self.assertEqual(result, ([101], [201, 202]))
         self.assertTrue(
-            any("Extracted 3 news articles from DvO" in log for log in logs.output)
+            any("Loaded data into Construction-Work" in line for line in logs.output)
         )
 
 

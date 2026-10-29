@@ -34,6 +34,7 @@ query NewsView($paragraphId: Int!, $page: Int!) {
             ... on Image {
               name
               src
+              alt
             }
           }
         }

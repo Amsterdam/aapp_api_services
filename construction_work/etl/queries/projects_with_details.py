@@ -20,6 +20,7 @@ query ConstructionWorkProjectsWithDetails($paragraphId: Int!, $page: Int!) {
             ... on Image {
               name
               src
+              alt
             }
           }
           planCategory {
@@ -64,10 +65,8 @@ query ConstructionWorkProjectsWithDetails($paragraphId: Int!, $page: Int!) {
                       type
                       url
                     }
-                    # title
                   }
                 }
-                # title
               }
               ... on ParagraphDdsGallery {
                 __typename
@@ -129,6 +128,7 @@ query ConstructionWorkProjectsWithDetails($paragraphId: Int!, $page: Int!) {
                     id
                     name
                     src
+                    alt
                   }
                 }
                 imageCaption

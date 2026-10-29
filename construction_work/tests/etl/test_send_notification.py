@@ -60,3 +60,20 @@ class SendNotificationTestCase(TestCase):
             NotificationType.CONSTRUCTION_WORK_ARTICLE_MESSAGE.value,
         )
         self.assertEqual(notifications[0].context["subtype"], "article")
+
+    def test_does_not_send_without_following_devices(self):
+        Device.objects.all().delete()
+        baker.make(
+            Article,
+            foreign_id=2,
+            drupal_id=102,
+            title="Article without followers",
+            projects=[self.project1],
+        )
+
+        send_article_notifications(
+            current_drupal_ids=[101],
+            found_drupal_ids=[102],
+        )
+
+        self.assertFalse(ScheduledNotification.objects.exists())

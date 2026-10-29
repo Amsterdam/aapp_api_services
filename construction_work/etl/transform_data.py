@@ -11,7 +11,9 @@ from django.conf import settings
 from django.utils import timezone
 from requests import HTTPError
 
-from construction_work.etl.extract_data import extract_news_paragraph_id_from_project
+from construction_work.etl.extract_data import (
+    extract_news_and_work_paragraph_id_from_project,
+)
 from core.services.image_set import ImageSetService
 
 logger = logging.getLogger(__name__)
@@ -45,13 +47,17 @@ def transform_data(
     """Return loader-ready projects and articles from the extracted DvO response."""
     projects = extracted_data["projects"]
     news_articles = extracted_data["news_articles"]
+    work_articles = extracted_data["work_articles"]
     image_set_service = ImageSetService()
 
     transformed_projects = [
         _transform_project(project, image_set_service) for project in projects
     ]
     transformed_articles = _transform_articles(
-        projects, news_articles, image_set_service
+        projects, news_articles, image_set_service, "news"
+    )
+    transformed_articles += _transform_articles(
+        projects, work_articles, image_set_service, "work"
     )
     return {"projects": transformed_projects, "articles": transformed_articles}
 
@@ -91,9 +97,7 @@ def _transform_project(
                 }
                 sections.setdefault(section_type, []).append(section)
                 if section_type == "contact":
-                    contact = _transform_contact(block, body)
-                    if contact:
-                        contacts.append(contact)
+                    contacts.extend(_transform_contacts(body))
 
         elif typename == "ParagraphDdsProgressList":
             has_timeline = True
@@ -135,28 +139,34 @@ def _transform_articles(
     projects: list[Mapping[str, Any]],
     articles_by_paragraph_id: Mapping[int | str, list[Mapping[str, Any]]],
     image_set_service: ImageSetService | None,
+    article_type: str,
 ) -> list[dict[str, Any]]:
     """Transform news articles and associate each with its related projects."""
     transformed_by_id = {}
 
     for project in projects:
-        paragraph_id = extract_news_paragraph_id_from_project(project)
-        if paragraph_id is None:
-            continue
+        for paragraph_id_dict in extract_news_and_work_paragraph_id_from_project(
+            project
+        ):
+            if paragraph_id_dict["type"] != article_type:
+                continue
+            paragraph_id = paragraph_id_dict["paragraph_id"]
 
-        articles = articles_by_paragraph_id.get(
-            paragraph_id, articles_by_paragraph_id.get(str(paragraph_id), [])
-        )
-        for article in articles:
-            article_id = article.get("id")
-            transformed = transformed_by_id.get(article_id)
-            if transformed is None:
-                transformed = _transform_article(article, image_set_service)
-                transformed["projectIds"] = []
-                transformed_by_id[article_id] = transformed
-            project_id = project.get("id")
-            if project_id not in transformed["projectIds"]:
-                transformed["projectIds"].append(project_id)
+            articles = articles_by_paragraph_id.get(
+                paragraph_id, articles_by_paragraph_id.get(str(paragraph_id), [])
+            )
+            for article in articles:
+                article_id = article.get("id")
+                transformed = transformed_by_id.get(article_id)
+                if transformed is None:
+                    transformed = _transform_article(
+                        article, image_set_service, article_type
+                    )
+                    transformed["projectIds"] = []
+                    transformed_by_id[article_id] = transformed
+                project_id = project.get("id")
+                if project_id not in transformed["projectIds"]:
+                    transformed["projectIds"].append(project_id)
 
     return list(transformed_by_id.values())
 
@@ -164,6 +174,7 @@ def _transform_articles(
 def _transform_article(
     article: Mapping[str, Any],
     image_set_service: ImageSetService | None,
+    article_type: str,
 ) -> dict[str, Any]:
     """Convert a DvO news article and its content to loader fields."""
     image_set = None
@@ -186,6 +197,7 @@ def _transform_article(
         "title": article.get("title"),
         "intro": article.get("summaryShort"),
         "body": body,
+        "type": article_type,
         "url": article.get("path"),
         "creation_date": _parse_datetime(article.get("publicationDate")),
         "publication_date": _parse_datetime(article.get("publicationDate")),
@@ -244,48 +256,64 @@ def _links(body: str) -> list[dict[str, str]]:
     ]
 
 
-def _transform_contact(block: Mapping[str, Any], body: str) -> dict[str, Any] | None:
-    """Extract contact details from rich-text HTML, or return None without an ID."""
-    contact_id = block.get("id")
-    if contact_id is None:
-        return None
-
+def _transform_contacts(body: str) -> list[dict[str, Any]]:
+    """Extract each contact paragraph from rich-text HTML."""
     soup = BeautifulSoup(body, "html.parser")
-    name = (soup.find("strong") or soup).get_text(" ", strip=True)
-    anchors = soup.find_all("a", href=True)
-    email = next(
-        (
-            anchor["href"].removeprefix("mailto:")
-            for anchor in anchors
-            if anchor["href"].startswith("mailto:")
-        ),
-        None,
-    )
-    phone = next(
-        (
-            anchor["href"].removeprefix("tel:")
-            for anchor in anchors
-            if anchor["href"].startswith("tel:")
-        ),
-        None,
-    )
-    anchor_texts = {anchor.get_text(" ", strip=True) for anchor in anchors}
-    position = next(
-        (
-            line
-            for line in soup.get_text("\n", strip=True).splitlines()
-            if line != name and line not in anchor_texts and line.lower() != "contact"
-        ),
-        None,
-    )
+    contact_paragraphs = soup.find_all("p") or [soup]
+    contacts = []
 
-    return {
-        "id": contact_id,
-        "name": name or None,
-        "email": email,
-        "phone": phone,
-        "position": position,
-    }
+    for paragraph in contact_paragraphs:
+        name = (paragraph.find("strong") or paragraph).get_text(" ", strip=True)
+        anchors = paragraph.find_all("a", href=True)
+        email = next(
+            (
+                anchor["href"].removeprefix("mailto:")
+                for anchor in anchors
+                if anchor["href"].startswith("mailto:")
+            ),
+            None,
+        )
+        phone = next(
+            (
+                anchor["href"].removeprefix("tel:")
+                for anchor in anchors
+                if anchor["href"].startswith("tel:")
+            ),
+            None,
+        )
+        anchor_texts = {anchor.get_text(" ", strip=True) for anchor in anchors}
+        position = next(
+            (
+                line
+                for line in paragraph.get_text("\n", strip=True).splitlines()
+                if line != name
+                and line not in anchor_texts
+                and line.lower() != "contact"
+            ),
+            None,
+        )
+        extra = next(
+            (
+                line
+                for line in paragraph.get_text("\n", strip=True).splitlines()
+                if line != name
+                and line not in anchor_texts
+                and line.lower() != "contact"
+                and line != position
+            ),
+            None,
+        )
+        contacts.append(
+            {
+                "name": name or None,
+                "email": email,
+                "phone": phone,
+                "position": position,
+                "extra": extra,
+            }
+        )
+
+    return contacts
 
 
 def _transform_timeline_item(item: Mapping[str, Any]) -> dict[str, Any]:
