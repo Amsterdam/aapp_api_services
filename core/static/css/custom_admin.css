@@ -70,10 +70,10 @@ body {
   color: var(--amsterdam-blue);
 }
 
-#nav-sidebar .current-app caption a.section:link,
-#nav-sidebar .current-app caption a.section:visited,
-#nav-sidebar .current-app caption a.section:hover,
-#nav-sidebar .current-app caption a.section:focus-visible {
+#nav-sidebar caption a.section:link,
+#nav-sidebar caption a.section:visited,
+#nav-sidebar caption a.section:hover,
+#nav-sidebar caption a.section:focus-visible {
   color: #ffffff;
 }
 
