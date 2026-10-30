@@ -266,6 +266,35 @@ class TestSessionCostBreakdownView(BoatChargingTestCase):
                 item_resp["unit_price_incl_vat"], expected_unit_price_incl_vat
             )
 
+    def test_missing_or_null_unit_price_inputs(self):
+        item = cost_breakdown.MOCK_RESPONSE["items"][0]
+        item_without_unit_price = {
+            key: value for key, value in item.items() if key != "unitPrice"
+        }
+        item_without_vat = {
+            key: value for key, value in item.items() if key != "vatPercent"
+        }
+        mock_response = {
+            **cost_breakdown.MOCK_RESPONSE,
+            "items": [
+                item_without_unit_price,
+                {**item, "unitPrice": None},
+                {**item, "vatPercent": None},
+                item_without_vat,
+            ],
+        }
+        respx.get(self.external_endpoint).mock(
+            return_value=httpx.Response(200, json=mock_response)
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [item["unit_price_incl_vat"] for item in response.json()["items"]],
+            [None, None, None, item["unitPrice"]],
+        )
+
     def test_invalid_session_id_returns_400(self):
         invalid_url = reverse(
             "boat-charging-session-cost-breakdown",

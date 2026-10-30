@@ -195,8 +195,12 @@ class SessionCostBreakdownView(BaseView):
                 {
                     "type": item.get("type"),
                     "cost_incl_vat": item.get("costInclVat"),
-                    "unit_price_incl_vat": item.get("unitPrice")
-                    * (1 + (item.get("vatPercent", 0) / 100)),
+                    "unit_price_incl_vat": (
+                        item.get("unitPrice") * (1 + (item.get("vatPercent", 0) / 100))
+                        if item.get("unitPrice") is not None
+                        and item.get("vatPercent", 0) is not None
+                        else None
+                    ),
                     "volume": item.get("volume"),
                     "vat_percentage": item.get("vatPercent"),
                 }
