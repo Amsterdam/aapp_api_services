@@ -243,7 +243,28 @@ class TestSessionCostBreakdownView(BoatChargingTestCase):
             response.json()["total_incl_vat"],
             cost_breakdown.MOCK_RESPONSE["totalInclVat"],
         )
-        self.assertEqual(len(response.json()["items"]), 3)
+        self.assertEqual(len(response.json()["items"]), 5)
+
+    def test_calculation_unitprice_incl_vat(self):
+        respx.get(self.external_endpoint).mock(
+            return_value=httpx.Response(
+                200,
+                json=cost_breakdown.MOCK_RESPONSE,
+            )
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        for item_resp, item_mock in zip(
+            response.json()["items"], cost_breakdown.MOCK_RESPONSE["items"], strict=True
+        ):
+            expected_unit_price_incl_vat = item_mock["unitPrice"] * (
+                1 + (item_mock.get("vatPercent", 0) / 100)
+            )
+            self.assertAlmostEqual(
+                item_resp["unit_price_incl_vat"], expected_unit_price_incl_vat
+            )
 
     def test_invalid_session_id_returns_400(self):
         invalid_url = reverse(
