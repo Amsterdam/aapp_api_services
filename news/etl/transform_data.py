@@ -10,63 +10,119 @@ from news.serializers.article_serializers import NewsArticleTransformSerializer
 
 logger = logging.getLogger(__name__)
 
+TAG_MAPPING: dict[int | str, dict[str, str | bool]] = {
+    780: {"district": "Oost"},
+    781: {"district": "West"},
+    778: {"district": "Nieuw-West"},
+    782: {"district": "Zuid"},
+    783: {"district": "Zuidoost"},
+    779: {"district": "Noord"},
+    777: {"district": "Centrum"},
+    531: {"in_all_news": True},
+}
 
-def transform(extracted_data: list[dict]) -> list[dict]:
+
+def transform(extracted_data: dict[str, list[dict]]) -> list[dict]:
     """
     Transform the extracted news articles data into a list of transformed articles (dicts).
     - Cleans 'body' and text fields
     - Deduplicates by id
     - Logs and skips invalid articles
     """
-    seen_ids = set()
+
+    # get all news articles from the extracted data
+    all_news_articels = extracted_data.get("all_news", [])
+
+    # get highlighted news articles from the extracted data
+    highlighted_news_articels = extracted_data.get("highlighted_news", [])
+
+    # highlighted news ids
+    _ = [article.get("id") for article in highlighted_news_articels]
+
     transformed = []
-    for article in extracted_data:
-        article_id = article.get("id")
-        url = article.get("url")
-
-        # Validate required fields
-        if not validate_article(article):
-            logger.warning(
-                "Skipping article due to validation failure.",
-                extra={"article_id": article_id},
-            )
+    for article in all_news_articels:
+        print("--\n--")
+        print(article.get("id"))
+        print(article.get("tag"))
+        if not article.get("tag"):
+            print(article.keys())
             continue
+        _ = get_article_properties(article.get("tag", []), article.get("__typename"))
 
-        # Deduplication by id
-        if article_id in seen_ids:
-            logger.warning(
-                "Duplicate article ID found. Skipping duplicate.",
-                extra={"article_id": article_id},
-            )
-            continue
+        # article_id = article.get("id")
+        # url = article.get("url")
 
-        seen_ids.add(article_id)
+        # # Validate required fields
+        # if not validate_article(article):
+        #     logger.warning(
+        #         "Skipping article due to validation failure.",
+        #         extra={"article_id": article_id},
+        #     )
+        #     continue
 
-        # Clean and transform fields
-        transformed.append(
-            {
-                "foreign_id": article_id,
-                "title": decode_and_strip_outer_div(article.get("title")),
-                "body": parse_article_messages(article.get("body"))
-                if not article.get("is_liveblog", False)
-                else parse_liveblog_messages(article.get("body")),
-                "summary": decode_and_strip_outer_div(article.get("summary")),
-                "intro": decode_and_strip_outer_div(article.get("intro")),
-                "in_all_news": article.get("in_all_news", False),
-                "is_highlight": article.get("is_highlight", False),
-                "is_liveblog": article.get("is_liveblog", False),
-                "is_district": article.get("is_district", False),
-                "district": article.get("district"),
-                "url": url,
-                "creation_datetime": article.get("created"),
-                "modification_datetime": article.get("modified"),
-                "publication_datetime": article.get("publicationDate"),
-                "expiration_datetime": article.get("expirationDate"),
-                "image_url": article.get("image_url"),
-                "is_active_liveblog": article.get("is_active_liveblog", False),
-            }
-        )
+        # # Deduplication by id
+        # if article_id in seen_ids:
+        #     logger.warning(
+        #         "Duplicate article ID found. Skipping duplicate.",
+        #         extra={"article_id": article_id},
+        #     )
+        #     continue
+
+        # seen_ids.add(article_id)
+
+        # # Clean and transform fields
+        # transformed.append(
+        #     {
+        #         "foreign_id": article_id,
+        #         "title": decode_and_strip_outer_div(article.get("title")),
+        #         "body": parse_article_messages(article.get("body"))
+        #         if not article.get("is_liveblog", False)
+        #         else parse_liveblog_messages(article.get("body")),
+        #         "summary": decode_and_strip_outer_div(article.get("summary")),
+        #         "intro": decode_and_strip_outer_div(article.get("intro")),
+        #         "in_all_news": article.get("in_all_news", False),
+        #         "is_highlight": article_id in highlighted_news_ids,
+        #         "is_liveblog": article.get("is_liveblog", False),
+        #         "is_district": article.get("is_district", False),
+        #         "district": article.get("district"),
+        #         "url": url,
+        #         "creation_datetime": article.get("created"),
+        #         "modification_datetime": article.get("modified"),
+        #         "publication_datetime": article.get("publicationDate"),
+        #         "expiration_datetime": article.get("expirationDate"),
+        #         "image_url": article.get("image_url"),
+        #         "is_active_liveblog": article.get("is_active_liveblog", False),
+        #     }
+        # )
     return transformed
+
+
+def get_article_properties(
+    tags: list[dict], type: str | None = None
+) -> dict[str, bool | str | None]:
+    properties = {
+        "in_all_news": False,
+        "is_liveblog": False,
+        "is_district": False,
+        "district": None,
+    }
+
+    if type == "Blog":
+        properties["is_liveblog"] = True
+
+    for tag in tags:
+        tag_properties = TAG_MAPPING.get(tag.get("id"))
+        if tag_properties is None:
+            continue
+
+        if tag_properties.get("in_all_news"):
+            properties["in_all_news"] = True
+        district = tag_properties.get("district")
+        if isinstance(district, str):
+            properties["is_district"] = True
+            properties["district"] = district
+
+    return properties
 
 
 def validate_article(article: dict) -> bool:

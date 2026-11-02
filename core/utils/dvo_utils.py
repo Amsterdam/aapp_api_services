@@ -232,6 +232,13 @@ class DvOClient:
         )
         nodes, total_pages = self._get_view_nodes_and_page_count(first_page)
 
+        ## TODO: remove this later when we are out of the initial development phase
+        logger.info(
+            f"Fetched first page with {len(nodes)} nodes out of {total_pages} total pages"
+        )
+        if total_pages > 2:
+            total_pages = 2
+
         remaining_pages = await _gather_all(
             *(
                 self.execute_query(

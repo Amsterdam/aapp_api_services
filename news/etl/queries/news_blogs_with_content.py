@@ -1,5 +1,5 @@
 QUERY = """
-query MyQuery($paragraphId: Int!, $page: Int!) {
+query NewsAndBlogsWithContent($paragraphId: Int!, $page: Int!) {
   view(paragraphId: $paragraphId, page: $page) {
     name
    ... on View {
@@ -87,7 +87,7 @@ query MyQuery($paragraphId: Int!, $page: Int!) {
             }
           }
         }
-      }   
+      }
     }
       }
       itemsPerPage
