@@ -6,7 +6,7 @@ from typing import Any
 from django.conf import settings
 
 from core.utils.dvo_utils import DvOClient
-from news.etl.queries import news_blogs_with_content
+from news.etl.queries import news_blogs_ids, news_blogs_with_content
 
 
 def get_all_drupal_news() -> list[dict[str, Any]]:
@@ -16,7 +16,12 @@ def get_all_drupal_news() -> list[dict[str, Any]]:
 
 async def _get_all_drupal_news() -> list[dict[str, Any]]:
     async with DvOClient() as client:
-        return await client.execute_paginated_view_query(
+        _ = await client.execute_paginated_view_query(
             news_blogs_with_content.QUERY,
             {"paragraphId": settings.DVO_NEWS_PARAGRAPH_ID},
+        )
+
+        _ = await client.execute_paginated_view_query(
+            news_blogs_ids.QUERY,
+            {"paragraphId": settings.DVO_NEWS_HIGHLIGHTED_PARAGRAPH_ID, "page": 1},
         )
