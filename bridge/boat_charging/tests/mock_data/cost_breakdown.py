@@ -39,7 +39,7 @@ MOCK_RESPONSE = {
             "unitPrice": 1.0,
             "vatPercent": 0.0,
             "costExclVat": 2318.0,
-            "costInclVat": 2804.78,
+            "costInclVat": 2318.0,
         },
     ],
     "totalExclVat": 3373.1182,
