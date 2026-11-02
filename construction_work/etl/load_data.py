@@ -110,8 +110,6 @@ def load_projects(project_data: list):
 
 
 def get_project_object(data):
-    logger.info(f"Creating project object for data with id: {data.get('id')}")
-    logger.info(f"Data received: {data}")
     timeline_data = data.get("timeline") or {}
     coordinates_data = data.get("coordinates") or {}
     sections_filled = check_sections_filled(data)
@@ -135,7 +133,6 @@ def get_project_object(data):
         # the only ones that can be shown on the frontend in a proper way.
         active=sections_filled,
     )
-    logger.info(f"Created project object: {project}")
     return project
 
 
