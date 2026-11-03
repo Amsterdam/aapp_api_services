@@ -54,7 +54,9 @@ class NewsArticleLoader:
         for article in transformed_data:
             news_article = news_articles_dict.get(str(article.get("foreign_id")))
             try:
-                self._upsert_images_and_liveblog_items(article, news_article)
+                self._upsert_images_and_liveblog_items_and_item_images(
+                    article, news_article
+                )
             except ArticleLoaderError as e:
                 logger.error(
                     "Unable to load article images or liveblog items",
@@ -149,7 +151,7 @@ class NewsArticleLoader:
         news_article_objects = NewsArticle.objects.all()
         return {str(article.foreign_id): article for article in news_article_objects}
 
-    def _upsert_images_and_liveblog_items(
+    def _upsert_images_and_liveblog_items_and_item_images(
         self, article: dict, news_article: NewsArticle
     ):
         """
@@ -161,12 +163,10 @@ class NewsArticleLoader:
         self._upsert_article_images(article, news_article)
 
         if article.get("is_liveblog", False):
-            if not isinstance(article.get("body"), list):
-                raise ArticleLoaderError(
-                    "Something went wrong with importing the liveblog data"
-                )
+            if not isinstance(article.get("liveblog_messages"), list):
+                raise ArticleLoaderError("Liveblog messages should be a list")
 
-            self._upsert_liveblog_items(article, news_article)
+            self._upsert_liveblog_items_and_item_images(article, news_article)
 
     def _upsert_article_images(self, article: dict, news_article: NewsArticle):
         """
@@ -183,7 +183,7 @@ class NewsArticleLoader:
                 image_set_data = self.image_set_service.get_or_upload_from_url(
                     url=image_url, description=article.get("image", {}).get("alt")
                 )
-            except (HTTPError, RequestException) as e:
+            except (HTTPError, RequestException, ValueError) as e:
                 logger.error(
                     "Error getting or uploading image",
                     extra={"image_url": image_url, "error": str(e)},
@@ -256,13 +256,14 @@ class NewsArticleLoader:
         - If there is an image for a liveblog item, but the url is different than the existing one, delete the old image and create a new one
         - If there is no image for a liveblog item, create a new one
         """
-        image_url = message.get("image", {}).get("url")
+        image = message.get("image") or {}
+        image_url = image.get("url")
         if image_url:
             try:
                 image_set_data = self.image_set_service.get_or_upload_from_url(
-                    url=image_url, description=message.get("image", {}).get("alt")
+                    url=image_url, description=image.get("alt")
                 )
-            except (HTTPError, RequestException) as e:
+            except (HTTPError, RequestException, ValueError) as e:
                 logger.error(
                     "Error getting or uploading image",
                     extra={"image_url": image_url, "error": str(e)},
@@ -276,8 +277,8 @@ class NewsArticleLoader:
                     uri=v["image"],
                     width=v["width"],
                     height=v["height"],
-                    alt=message.get("image", {}).get("alt"),
-                    description=message.get("image", {}).get("description"),
+                    alt=image.get("alt"),
+                    description=image.get("description"),
                 )
                 for v in image_set_data["variants"]
             ]
@@ -323,6 +324,7 @@ class NewsArticleLoader:
             update_notification_service.send(
                 device_ids=device_ids,
                 update_title=message.get("title"),
+                liveblog_id=news_article.foreign_id,
             )
 
 

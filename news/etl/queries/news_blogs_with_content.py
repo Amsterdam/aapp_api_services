@@ -2,7 +2,7 @@ QUERY = """
 query NewsAndBlogsWithContent($paragraphId: Int!, $page: Int!) {
   view(paragraphId: $paragraphId, page: $page) {
     name
-   ... on View {
+    ... on View {
       id
       name
       nodes {
@@ -64,37 +64,37 @@ query NewsAndBlogsWithContent($paragraphId: Int!, $page: Int!) {
               description
             }
           }
-        blogEntries {
-        ... on ParagraphBlogEntry {
-          id
-          title
-          dateTime
-          content {
-            ... on ParagraphTextAndImage {
+          blogEntries {
+            ... on ParagraphBlogEntry {
               id
-              text
-              style
-              position
-              image_style
-              image_caption
-              image {
-                ... on MediaInterface {
-                  ... on Image {
-                    id
-                    name
-                    src
-                    width
-                    height
-                    alt
-                    description
+              title
+              dateTime
+              content {
+                ... on ParagraphTextAndImage {
+                  id
+                  text
+                  style
+                  position
+                  image_style
+                  image_caption
+                  image {
+                    ... on MediaInterface {
+                      ... on Image {
+                        id
+                        name
+                        src
+                        width
+                        height
+                        alt
+                        description
+                      }
+                    }
                   }
                 }
               }
             }
           }
         }
-      }
-    }
       }
       itemsPerPage
       highlightedNumber

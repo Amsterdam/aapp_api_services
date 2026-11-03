@@ -1,6 +1,9 @@
 import html
 import logging
 import re
+from urllib.parse import urljoin
+
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +54,18 @@ def transform(extracted_data: dict[str, list[dict]]) -> list[dict]:
                 "is_district": article_properties.get("is_district", False),
                 "district": article_properties.get("district"),
                 "url": article.get("path"),
-                "creation_datetime": article.get("publicationDate"),
+                "creation_datetime": article.get(
+                    "publicationDate", "2026-11-01T13:00:00Z"
+                ),  # !! DO NOT GO LIVE WITH THIS DEFAULT
                 "modification_datetime": article.get("changedDate"),
-                "publication_datetime": article.get("publicationDate"),
+                "publication_datetime": article.get(
+                    "publicationDate", "2026-11-01T13:00:00Z"
+                ),  # !! DO NOT GO LIVE WITH THIS DEFAULT
                 "expiration_datetime": article.get("expirationDate"),
                 "image": {
-                    "url": article_image.get("src") if article_image else None,
+                    "url": construct_image_url(article_image.get("src"))
+                    if article_image
+                    else None,
                     "alt": article_image.get("alt") if article_image else None,
                     "description": article_image.get("description")
                     if article_image
@@ -135,7 +144,9 @@ def get_liveblog_messages(blog_entries: list[dict]) -> list[dict]:
                 "creation_datetime": date_string,
                 "body": body,
                 "image": {
-                    "url": image_information.get("src"),
+                    "url": construct_image_url(image_information.get("src"))
+                    if image_information.get("src")
+                    else None,
                     "alt": image_information.get("alt"),
                     "description": image_information.get("description"),
                 }
@@ -154,3 +165,7 @@ def decode_and_strip_outer_div(input_str: str | None) -> str:
     if match:
         return match.group(1)
     return decoded
+
+
+def construct_image_url(image_source: str) -> str:
+    return urljoin(settings.DVO_URL, image_source)
