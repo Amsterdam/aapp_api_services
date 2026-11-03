@@ -20,7 +20,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
 
         extracted_data = get_all_drupal_news()
-        if not extracted_data.get("all_news"):
+        if not extracted_data:
             logger.info("No articles found. Ending ETL process.")
             return
 

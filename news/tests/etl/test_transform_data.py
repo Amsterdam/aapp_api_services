@@ -1,6 +1,15 @@
 from django.test import TestCase
 
-from news.etl.transform_data import get_article_properties
+from news.etl.transform_data import (
+    get_article_properties,
+    get_body_from_content,
+    get_liveblog_messages,
+)
+from news.tests.mock_data.all_news import (
+    BLOG_ARTICLE_368,
+    NEWS_ARTICLE_396,
+    NEWS_ARTICLE_426,
+)
 
 
 class TransformDataTest(TestCase):
@@ -51,3 +60,30 @@ class TransformDataTest(TestCase):
         self.assertEqual(properties["is_liveblog"], False)
         self.assertEqual(properties["is_district"], True)
         self.assertEqual(properties["district"], "West")
+
+    def test_get_body_from_content(self):
+        content = NEWS_ARTICLE_426["content"]
+        body = get_body_from_content(content)
+        self.assertIn(
+            "Sportclubs, sportscholen en buurtinitiatieven organiseren tijdens deze 10 dagen gratis activiteiten in Oost",
+            body,
+        )
+
+    def test_get_body_from_content_with_empty_content(self):
+        content = []
+        body = get_body_from_content(content)
+        self.assertEqual(body, "")
+
+    def test_get_body_from_content_with_multiple_content_blocks(self):
+        content = NEWS_ARTICLE_396["content"]
+        body = get_body_from_content(content)
+        self.assertIn(
+            "Met de campagne Sterker vanaf de start willen we ouders betrouwbare en begrijpelijke informatie over vaccineren geven.",
+            body,
+        )
+
+    def test_get_liveblog_messages(self):
+        blog_entries = BLOG_ARTICLE_368.get("blogEntries", [])
+        liveblog_messages = get_liveblog_messages(blog_entries)
+        self.assertIsInstance(liveblog_messages, list)
+        self.assertEqual(len(liveblog_messages), len(blog_entries))

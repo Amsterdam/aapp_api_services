@@ -14,6 +14,7 @@ query NewsAndBlogsWithContent($paragraphId: Int!, $page: Int!) {
             name
           }
           summaryShort
+          summaryIntroductory
           title
           changedDate
           displayChangedDate
@@ -24,6 +25,8 @@ query NewsAndBlogsWithContent($paragraphId: Int!, $page: Int!) {
             ... on Image {
               name
               src
+              alt
+              description
             }
           }
           content {
@@ -57,12 +60,15 @@ query NewsAndBlogsWithContent($paragraphId: Int!, $page: Int!) {
             ... on Image {
               name
               src
+              alt
+              description
             }
           }
         blogEntries {
         ... on ParagraphBlogEntry {
           id
           title
+          dateTime
           content {
             ... on ParagraphTextAndImage {
               id

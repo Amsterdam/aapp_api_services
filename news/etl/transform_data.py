@@ -1,12 +1,6 @@
-import datetime
 import html
 import logging
 import re
-
-from bs4 import BeautifulSoup
-from django.utils import timezone
-
-from news.serializers.article_serializers import NewsArticleTransformSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +13,8 @@ TAG_MAPPING: dict[int | str, dict[str, str | bool]] = {
     779: {"district": "Noord"},
     777: {"district": "Centrum"},
     531: {"in_all_news": True},
+    491: {"is_highlight": True},
+    2696: {"is_active_liveblog": True},
 }
 
 
@@ -30,70 +26,47 @@ def transform(extracted_data: dict[str, list[dict]]) -> list[dict]:
     - Logs and skips invalid articles
     """
 
-    # get all news articles from the extracted data
-    all_news_articels = extracted_data.get("all_news", [])
-
-    # get highlighted news articles from the extracted data
-    highlighted_news_articels = extracted_data.get("highlighted_news", [])
-
-    # highlighted news ids
-    _ = [article.get("id") for article in highlighted_news_articels]
-
     transformed = []
-    for article in all_news_articels:
-        print("--\n--")
-        print(article.get("id"))
-        print(article.get("tag"))
-        if not article.get("tag"):
-            print(article.keys())
-            continue
-        _ = get_article_properties(article.get("tag", []), article.get("__typename"))
+    for article in extracted_data:
+        article_properties = get_article_properties(
+            article.get("tag", []), article.get("__typename")
+        )
+        article_image = article.get("image", [])[0] if article.get("image") else None
 
-        # article_id = article.get("id")
-        # url = article.get("url")
-
-        # # Validate required fields
-        # if not validate_article(article):
-        #     logger.warning(
-        #         "Skipping article due to validation failure.",
-        #         extra={"article_id": article_id},
-        #     )
-        #     continue
-
-        # # Deduplication by id
-        # if article_id in seen_ids:
-        #     logger.warning(
-        #         "Duplicate article ID found. Skipping duplicate.",
-        #         extra={"article_id": article_id},
-        #     )
-        #     continue
-
-        # seen_ids.add(article_id)
-
-        # # Clean and transform fields
-        # transformed.append(
-        #     {
-        #         "foreign_id": article_id,
-        #         "title": decode_and_strip_outer_div(article.get("title")),
-        #         "body": parse_article_messages(article.get("body"))
-        #         if not article.get("is_liveblog", False)
-        #         else parse_liveblog_messages(article.get("body")),
-        #         "summary": decode_and_strip_outer_div(article.get("summary")),
-        #         "intro": decode_and_strip_outer_div(article.get("intro")),
-        #         "in_all_news": article.get("in_all_news", False),
-        #         "is_highlight": article_id in highlighted_news_ids,
-        #         "is_liveblog": article.get("is_liveblog", False),
-        #         "is_district": article.get("is_district", False),
-        #         "district": article.get("district"),
-        #         "url": url,
-        #         "creation_datetime": article.get("created"),
-        #         "modification_datetime": article.get("modified"),
-        #         "publication_datetime": article.get("publicationDate"),
-        #         "expiration_datetime": article.get("expirationDate"),
-        #         "image_url": article.get("image_url"),
-        #         "is_active_liveblog": article.get("is_active_liveblog", False),
-        #     }
-        # )
+        # Clean and transform fields
+        transformed.append(
+            {
+                "foreign_id": article.get("id"),
+                "type": article.get("__typename"),
+                "title": article.get("title"),
+                "article_body": get_body_from_content(article.get("content", [])),
+                "liveblog_messages": get_liveblog_messages(
+                    article.get("blogEntries", [])
+                ),
+                "summary": article.get("summaryShort"),
+                "intro": article.get("summaryIntroductory"),
+                "in_all_news": article_properties.get("in_all_news", False),
+                "is_highlight": article_properties.get("is_highlight", False),
+                "is_liveblog": article_properties.get("is_liveblog", False),
+                "is_district": article_properties.get("is_district", False),
+                "district": article_properties.get("district"),
+                "url": article.get("path"),
+                "creation_datetime": article.get("publicationDate"),
+                "modification_datetime": article.get("changedDate"),
+                "publication_datetime": article.get("publicationDate"),
+                "expiration_datetime": article.get("expirationDate"),
+                "image": {
+                    "url": article_image.get("src") if article_image else None,
+                    "alt": article_image.get("alt") if article_image else None,
+                    "description": article_image.get("description")
+                    if article_image
+                    else None,
+                },
+                "is_active_liveblog": article_properties.get(
+                    "is_active_liveblog", False
+                ),
+            }
+        )
     return transformed
 
 
@@ -102,7 +75,9 @@ def get_article_properties(
 ) -> dict[str, bool | str | None]:
     properties = {
         "in_all_news": False,
+        "is_highlight": False,
         "is_liveblog": False,
+        "is_active_liveblog": False,
         "is_district": False,
         "district": None,
     }
@@ -117,6 +92,10 @@ def get_article_properties(
 
         if tag_properties.get("in_all_news"):
             properties["in_all_news"] = True
+        if tag_properties.get("is_highlight"):
+            properties["is_highlight"] = True
+        if tag_properties.get("is_active_liveblog"):
+            properties["is_active_liveblog"] = True
         district = tag_properties.get("district")
         if isinstance(district, str):
             properties["is_district"] = True
@@ -125,9 +104,46 @@ def get_article_properties(
     return properties
 
 
-def validate_article(article: dict) -> bool:
-    news_article_serializer = NewsArticleTransformSerializer(data=article)
-    return news_article_serializer.is_valid()
+def get_body_from_content(content: list[dict]) -> str:
+    body = ""
+    for item in content:
+        if "rows" in item:
+            for row in item["rows"]:
+                for c in row.get("content", []):
+                    body += c.get("content", "")
+    return body
+
+
+def get_liveblog_messages(blog_entries: list[dict]) -> list[dict]:
+
+    messages = []
+
+    for entry in blog_entries:
+        title = entry.get("title")
+        date_string = entry.get("dateTime")
+        body = decode_and_strip_outer_div(entry.get("content", [])[0].get("text"))
+
+        image_information = (
+            entry.get("content", [])[0].get("image", [])[0]
+            if entry.get("content") and entry.get("content", [])[0].get("image")
+            else {}
+        )
+
+        messages.append(
+            {
+                "title": title,
+                "creation_datetime": date_string,
+                "body": body,
+                "image": {
+                    "url": image_information.get("src"),
+                    "alt": image_information.get("alt"),
+                    "description": image_information.get("description"),
+                }
+                if image_information
+                else None,
+            }
+        )
+    return messages
 
 
 def decode_and_strip_outer_div(input_str: str | None) -> str:
@@ -138,123 +154,3 @@ def decode_and_strip_outer_div(input_str: str | None) -> str:
     if match:
         return match.group(1)
     return decoded
-
-
-def parse_article_messages(input_str: str | None) -> str:
-    """
-    For non-liveblog articles, we still want to clean the body content by:
-     - decoding HTML entities and stripping outer divs.
-     - add quotes around blockquote elements.
-    """
-    decoded = decode_and_strip_outer_div(input_str)
-    return add_quotes_around_blockquotes(decoded)
-
-
-def parse_liveblog_messages(input_str: str | None) -> list[dict]:
-    decoded = decode_and_strip_outer_div(input_str)
-    if not decoded:
-        return []
-    soup = BeautifulSoup(decoded, "html.parser")
-    messages = []
-
-    # Find all datetime <p> tags.
-    # In liveblogs, each message starts with a <p class="datetime">datetime</p> tag,
-    # followed by content until the next datetime tag.
-    # We can use this structure to split the liveblog body into individual messages.
-    datetimes = soup.find_all("p", class_="datetime")
-    for dt_tag in datetimes:
-        dt = dt_tag.get_text(strip=True)
-        date_string = change_date_string_to_iso(dt)
-
-        elements = find_elements_between_datetimes(dt_tag)
-
-        title = extract_title_from_elements(elements)
-        body = extract_body_from_elements(elements, title)
-
-        messages.append(
-            {
-                "title": title,
-                "creation_datetime": date_string,
-                "body": body,
-            }
-        )
-    return messages
-
-
-def find_elements_between_datetimes(dt_tag):
-    """
-    Find all elements between this datetime tag and the next datetime tag.
-    Uses BeautifulSoup's find_next_sibling to iterate through siblings until the next <p class="datetime"> is found.
-    """
-    next_sibling = dt_tag.find_next_sibling()
-    elements = []
-    while next_sibling and not (
-        next_sibling.name == "p" and "datetime" in next_sibling.get("class", [])
-    ):
-        elements.append(next_sibling)
-        next_sibling = next_sibling.find_next_sibling()
-    return elements
-
-
-def extract_title_from_elements(elements) -> str:
-    """
-    Find the first h3 or h4 element in the list of elements and return its text as the title.
-    If no such element is found, return an empty string."""
-    title = ""
-    for el in elements:
-        if el.name in ["h3", "h4"]:
-            title = el.get_text(strip=True)
-            break
-    return title
-
-
-def extract_body_from_elements(elements, title) -> str:
-    """
-    Build the body HTML by concatenating the HTML of all elements, but skip the title element if it
-    matches the provided title.
-
-    Also adds quotes around blockquote elements in the body.
-    """
-    body_html = ""
-    for el in elements:
-        if el.name in ["h3", "h4"] and el.get_text(strip=True) == title:
-            continue
-        body_html += str(el)
-
-    body_html = add_quotes_around_blockquotes(body_html)
-    return body_html.strip()
-
-
-def add_quotes_around_blockquotes(input_str: str) -> str:
-    """
-    Add quotes around blockquote elements in the input HTML string.
-    For example, <blockquote>Some quote</blockquote> becomes <blockquote>"Some quote"</blockquote>.
-    """
-    soup = BeautifulSoup(input_str, "html.parser")
-    for blockquote in soup.find_all("blockquote"):
-        text = blockquote.get_text()
-        blockquote.string = f'"{text}"'
-    return str(soup)
-
-
-def change_date_string_to_iso(input_str: str) -> str:
-    """
-    Convert a datetime string from "DD-MM-YYYY, HH:MM" or "YYYY-MM-DD, HH:MM" format to ISO 8601
-    datetime string with timezone offset (using Django's default timezone).
-
-    Example input: "12-01-2024, 14:30" or "2024-01-12, 14:30"
-    Desired output: "2024-01-12T14:30:00+01:00" (assuming default timezone is CET/CEST)
-    """
-    # First check which format the date string is in, then parse accordingly.
-    if len(input_str.split("-")[0]) == 4:  # Format is likely "YYYY-MM-DD, HH:MM"
-        datetime_format = "%Y-%m-%d, %H:%M"
-    else:  # Format is likely "DD-MM-YYYY, HH:MM"
-        datetime_format = "%d-%m-%Y, %H:%M"
-
-    try:
-        dt = datetime.datetime.strptime(input_str, datetime_format)
-        aware_dt = timezone.make_aware(dt, timezone.get_default_timezone())
-        return aware_dt.isoformat()
-    except ValueError as e:
-        logger.error(f"Error parsing datetime string '{input_str}': {e}")
-    return input_str  # Return original string if parsing fails
