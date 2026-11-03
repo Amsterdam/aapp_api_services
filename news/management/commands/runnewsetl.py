@@ -24,6 +24,10 @@ class Command(BaseCommand):
             logger.info("No articles found. Ending ETL process.")
             return
 
+        logger.info(
+            f"Extracted data successfully. Found {len(extracted_data)} articles."
+        )
+
         transformed_data = transform(extracted_data)
         if not transformed_data:
             logger.info("No valid transformed articles found. Ending ETL process.")

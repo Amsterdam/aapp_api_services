@@ -3,6 +3,7 @@ import logging
 import requests
 from django.conf import settings
 from django.core.cache import cache
+from django.core.validators import URLValidator
 
 from core.services.internal_http_client import InternalServiceSession
 
@@ -57,6 +58,13 @@ class ImageSetService:
         If the image already exists, it will be returned.
         If the image does not exist, it will be uploaded and then returned.
         """
+        # check if url is valid
+        validator = URLValidator()
+        try:
+            validator(url)
+        except Exception:
+            raise ValueError(f"Invalid URL provided for image upload: {url}")
+
         cache_key = f"{__name__}.get_from_url.{url}"
         cached_data = cache.get(cache_key)
         if cached_data:

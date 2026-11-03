@@ -9,6 +9,7 @@ from requests.exceptions import HTTPError, RequestException
 from core.services.image_set import ImageSetService
 from news.models import (
     LiveBlogItem,
+    LiveBlogItemImage,
     LiveblogNotification,
     NewsArticle,
     NewsArticleImage,
@@ -73,7 +74,7 @@ class NewsArticleLoader:
             foreign_id=data.get("foreign_id"),
             deleted=False,
             title=data.get("title"),
-            body=data.get("body") if not data["is_liveblog"] else None,
+            body=data.get("article_body") if not data["is_liveblog"] else None,
             summary=data.get("summary"),
             intro=data.get("intro"),
             in_all_news=data.get("in_all_news", False) or False,
@@ -176,11 +177,11 @@ class NewsArticleLoader:
         - If there is an image for an article, but the url is different than the existing one, delete the old image and create a new one
         - If there is no image for an article, create a new one
         """
-        image_url = article.get("image_url")
+        image_url = article.get("image", {}).get("url")
         if image_url:
             try:
                 image_set_data = self.image_set_service.get_or_upload_from_url(
-                    image_url
+                    url=image_url, description=article.get("image", {}).get("alt")
                 )
             except (HTTPError, RequestException) as e:
                 logger.error(
@@ -199,6 +200,8 @@ class NewsArticleLoader:
                     uri=v["image"],
                     width=v["width"],
                     height=v["height"],
+                    alt=article.get("image", {}).get("alt"),
+                    description=article.get("image", {}).get("description"),
                 )
                 for v in image_set_data["variants"]
             ]
@@ -219,13 +222,15 @@ class NewsArticleLoader:
                 update_fields=["width", "height"],
             )
 
-    def _upsert_liveblog_items(self, article: dict, news_article: NewsArticle):
-        messages = article.get("body")
+    def _upsert_liveblog_items_and_item_images(
+        self, article: dict, news_article: NewsArticle
+    ):
+        messages = article.get("liveblog_messages")
         # make sure messages are sorted by creation_datetime ascending before creating LiveBlogItems
         messages.sort(key=lambda x: x.get("creation_datetime"))
 
         for i, message in enumerate(messages):
-            _, created = LiveBlogItem.objects.update_or_create(
+            liveblog_item, created = LiveBlogItem.objects.update_or_create(
                 article=news_article,
                 message_order=i,
                 defaults={
@@ -235,8 +240,66 @@ class NewsArticleLoader:
                 },
             )
 
+            self._upsert_liveblog_item_images(message, liveblog_item)
+
             if created:
                 self.send_liveblog_updates(message, news_article)
+
+    def _upsert_liveblog_item_images(
+        self, message: dict, liveblog_item: LiveBlogItem
+    ) -> int | None:
+        """
+        Upsert liveblog item images for a given liveblog item. If the liveblog item has an image_url, we will attempt to get or upload the image using the ImageSetService.
+        Then we will upsert the LiveBlogItemImage instances for the liveblog item based on the image variants returned by the ImageSetService.
+        The logic is as follows:
+        - If an image with the same url already exists for the liveblog item, update its width and height
+        - If there is an image for a liveblog item, but the url is different than the existing one, delete the old image and create a new one
+        - If there is no image for a liveblog item, create a new one
+        """
+        image_url = message.get("image", {}).get("url")
+        if image_url:
+            try:
+                image_set_data = self.image_set_service.get_or_upload_from_url(
+                    url=image_url, description=message.get("image", {}).get("alt")
+                )
+            except (HTTPError, RequestException) as e:
+                logger.error(
+                    "Error getting or uploading image",
+                    extra={"image_url": image_url, "error": str(e)},
+                )
+                return None
+            image_set_id = image_set_data["id"]
+            image_sources = [
+                LiveBlogItemImage(
+                    liveblog_item=liveblog_item,
+                    foreign_id=image_set_id,  # use the image set id as the image foreign_id for reference.
+                    uri=v["image"],
+                    width=v["width"],
+                    height=v["height"],
+                    alt=message.get("image", {}).get("alt"),
+                    description=message.get("image", {}).get("description"),
+                )
+                for v in image_set_data["variants"]
+            ]
+
+            # Gather all URIs for this liveblog item from the new image_sources
+            new_uris = {img.uri for img in image_sources}
+            # Find all existing images for this liveblog item
+            existing_images = LiveBlogItemImage.objects.filter(
+                liveblog_item=liveblog_item
+            )
+            # Delete images for this liveblog item whose URI is not in the new set
+            images_to_delete = existing_images.exclude(uri__in=new_uris)
+            if images_to_delete.exists():
+                images_to_delete.delete()
+
+            # Upsert new images (create or update width/height)
+            LiveBlogItemImage.objects.bulk_create(
+                image_sources,
+                update_conflicts=True,
+                unique_fields=["liveblog_item", "uri"],
+                update_fields=["width", "height"],
+            )
 
     def send_liveblog_updates(
         self,
@@ -260,7 +323,6 @@ class NewsArticleLoader:
             update_notification_service.send(
                 device_ids=device_ids,
                 update_title=message.get("title"),
-                liveblog_id=news_article.id,
             )
 
 
