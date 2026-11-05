@@ -9,7 +9,7 @@ Provide one consistent boat-charging journey in the app: discover locations to c
 - Location health is derived from socket-level data into a single user-facing state (operative, occupied, inoperative, unknown).
 - Reported location capacity uses the highest relevant power value, prioritizing currently operative sockets.
 - Session flow is payment-first: users initialize a session to obtain checkout, then can start/stop/cancel.
-- Session lists support filtering by charging-session status (active or completed) before pagination.
+- Session lists classify NRG statuses 2, 3, 6, and 7 as active, and statuses 4 and 5 as completed; filtering happens before pagination.
 - Stopping or cancelling a session ends local notification tracking for that session.
 - During charging, reminder notifications are sent at +16h and +20h; from +24h onward, penalty reminders repeat hourly.
 - When charging completes, a completion notification is sent and the session is removed from active notification tracking.

@@ -101,6 +101,68 @@ class TestSessionView(BoatChargingTestCase):
         self.assertIn("status=ACTIVE", body["_links"]["self"]["href"])
         self.assertIn("status=ACTIVE", body["_links"]["next"]["href"])
 
+    def test_active_filter_uses_nrg_status_without_cpms_data(self):
+        def make_session_response(unique_id, status):
+            return {
+                "session": {
+                    "uniqueId": unique_id,
+                    "stationId": "VCPS-TEST",
+                    "socketNumber": "1",
+                    "status": status,
+                    "createdAt": "2026-06-29T10:30:04Z",
+                    "userEmail": "test@amsterdam.nl",
+                    "lastCommandError": None,
+                    "stopReason": None,
+                    "vignetNumber": "ABC123",
+                    "boatName": "Boaty",
+                }
+            }
+
+        response_data = [
+            make_session_response(f"nrg-status-{status}", status)
+            for status in (2, 3, 6, 7)
+        ]
+        conflicting_session = make_session_response("active-with-conflicting-cpms", 3)
+        conflicting_session["cpmsSession"] = {"status": "COMPLETED"}
+        response_data.append(conflicting_session)
+        null_session = make_session_response("active-with-null-cpms", 7)
+        null_session["cpmsSession"] = None
+        response_data.append(null_session)
+
+        expected_ids = [
+            "nrg-status-2",
+            "nrg-status-3",
+            "nrg-status-6",
+            "nrg-status-7",
+            "active-with-conflicting-cpms",
+            "active-with-null-cpms",
+        ]
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
+            return_value=httpx.Response(200, json=response_data)
+        )
+
+        page_size = 2
+        total_pages = 3
+        for page in range(1, total_pages + 1):
+            with self.subTest(page=page):
+                response = self.client.get(
+                    self.url,
+                    {"status": "ACTIVE", "page": page, "page_size": page_size},
+                    headers=self.api_headers,
+                )
+
+                self.assertEqual(response.status_code, 200)
+                body = response.json()
+                expected_page_ids = expected_ids[
+                    (page - 1) * page_size : page * page_size
+                ]
+                self.assertEqual(
+                    [item["id"] for item in body["result"]],
+                    expected_page_ids,
+                )
+                self.assertEqual(body["page"]["totalElements"], len(expected_ids))
+                self.assertEqual(body["page"]["totalPages"], total_pages)
+
     def test_status_completed_filters_sessions(self):
         respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
             return_value=httpx.Response(200, json=sessions.MOCK_RESPONSE)
@@ -116,9 +178,12 @@ class TestSessionView(BoatChargingTestCase):
         body = response.json()
         self.assertEqual(
             [item["id"] for item in body["result"]],
-            [sessions.COMPLETED_SESSION_ID],
+            [sessions.COMPLETED_SESSION_ID] + sessions.CANCELLED_SESSION_IDS,
         )
-        self.assertEqual(body["page"]["totalElements"], 1)
+        self.assertEqual(
+            body["page"]["totalElements"],
+            len([sessions.COMPLETED_SESSION_ID] + sessions.CANCELLED_SESSION_IDS),
+        )
         self.assertEqual(body["page"]["totalPages"], 1)
 
     def test_response_no_sessions(self):
