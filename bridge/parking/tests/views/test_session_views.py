@@ -134,6 +134,34 @@ class TestParkingSessionListView(BaseSSPTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
 
+    def test_successful_with_vehicle_id(self):
+        resp = respx.post(ParkingSessionListView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.test_response)
+        )
+
+        response = self.client.get(
+            self.url,
+            {"vehicle_id": "ABC123"},
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertEqual(len(response.data["result"]), 1)
+
+    def test_successful_with_vehicle_id_no_results(self):
+        resp = respx.post(ParkingSessionListView.ssp_endpoint).mock(
+            return_value=httpx.Response(200, json=self.test_response)
+        )
+
+        response = self.client.get(
+            self.url,
+            {"vehicle_id": "1"},
+            headers=self.api_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp.call_count, 1)
+        self.assertEqual(len(response.data["result"]), 0)
+
     @freeze_time("2025-11-04T14:30:00+00:00")
     def test_successful_with_next_24_hours(self):
         resp = respx.post(ParkingSessionListView.ssp_endpoint).mock(
