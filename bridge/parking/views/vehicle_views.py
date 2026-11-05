@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class VehicleInformationView(generics.GenericAPIView):
     """
-    Get vehicle information for a given licence plate number
+    Get vehicle information for a given license plate number
     """
 
     serializer_class = VehicleInformationRequestSerializer
@@ -31,11 +31,11 @@ class VehicleInformationView(generics.GenericAPIView):
         request_serializer.is_valid(raise_exception=True)
         data = request_serializer.validated_data
 
-        licence_plate = data.get("licence_plate")
+        license_plate = data.get("license_plate")
 
-        # transform licence plate to uppercase and remove dashes
-        licence_plate = licence_plate.upper().replace("-", "")
-        response = self._make_request(licence_plate)
+        # transform license plate to uppercase and remove dashes
+        license_plate = license_plate.upper().replace("-", "")
+        response = self._make_request(license_plate)
         vehicle_information = response.json()
 
         # if there is no vehicle information, we still return a successful response to not clutter logging
@@ -65,7 +65,7 @@ class VehicleInformationView(generics.GenericAPIView):
         retry=retry_if_exception_type(requests.exceptions.RequestException),
         reraise=True,  # Reraise the RequestException after retries
     )
-    def _make_request(self, licence_plate: str) -> requests.Response:
+    def _make_request(self, license_plate: str) -> requests.Response:
         """Make the HTTP request to RDW"""
         try:
             response = requests.get(
@@ -75,7 +75,7 @@ class VehicleInformationView(generics.GenericAPIView):
                     "X-App-Token": f"{settings.RDW_APP_TOKEN}",
                 },
                 params={
-                    "kenteken": licence_plate,
+                    "kenteken": license_plate,
                     "$select": "merk, handelsbenaming, eerste_kleur",
                 },
                 timeout=10,

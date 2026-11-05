@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 
 class VehicleInformationRequestSerializer(serializers.Serializer):
-    licence_plate = serializers.CharField()
+    license_plate = serializers.CharField()
 
 
 class VehicleInformationContentSerializer(serializers.Serializer):
