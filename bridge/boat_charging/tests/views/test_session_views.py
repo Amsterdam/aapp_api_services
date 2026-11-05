@@ -116,9 +116,12 @@ class TestSessionView(BoatChargingTestCase):
         body = response.json()
         self.assertEqual(
             [item["id"] for item in body["result"]],
-            [sessions.COMPLETED_SESSION_ID],
+            [sessions.COMPLETED_SESSION_ID] + sessions.CANCELLED_SESSION_IDS,
         )
-        self.assertEqual(body["page"]["totalElements"], 1)
+        self.assertEqual(
+            body["page"]["totalElements"],
+            len([sessions.COMPLETED_SESSION_ID] + sessions.CANCELLED_SESSION_IDS),
+        )
         self.assertEqual(body["page"]["totalPages"], 1)
 
     def test_response_no_sessions(self):

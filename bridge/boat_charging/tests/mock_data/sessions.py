@@ -4,7 +4,10 @@ ACTIVE_SESSION_IDS = [
     "82621518-fc55-4213-8833-39404382f121",
 ]
 COMPLETED_SESSION_ID = "c7d62a24-53fd-4bc4-864e-33545c2c2ccb"
-
+CANCELLED_SESSION_IDS = [
+    "f1e2d3c4-b5a6-7890-1234-56789abcdef0",
+    "75bd25a9-ad17-473f-a19b-d2c65d608e0d",
+]
 
 MOCK_RESPONSE = [
     {
@@ -155,7 +158,7 @@ MOCK_RESPONSE = [
     },
     {
         "session": {
-            "uniqueId": "75bd25a9-ad17-473f-a19b-d2c65d608e0d",
+            "uniqueId": CANCELLED_SESSION_IDS[0],
             "stationId": "VCPS-IFZTY",
             "socketNumber": "1",
             "status": 5,
@@ -189,7 +192,7 @@ MOCK_RESPONSE = [
     },
     {
         "session": {
-            "uniqueId": "75bd25a9-ad17-473f-a19b-d2c65d608e0d",
+            "uniqueId": CANCELLED_SESSION_IDS[1],
             "stationId": "VCPS-IFZTY",
             "socketNumber": "1",
             "status": 5,

@@ -67,13 +67,36 @@ class SessionView(BaseView):
         response_json: list[dict[str, Any]],
         status: str | None,
     ) -> list[dict[str, Any]]:
+        """
+        Filter the list of sessions based on the provided status. We do this using the "status" field of the "NRG" session.
+
+        We do not use the cpmsSession for filtering because it may not be available for all sessions.
+
+        The status of the NRG session is numerical. Where the following mapping applies:
+        - "ACTIVE" corresponds to status 2, 3, 6 or 7
+        - "COMPLETED" corresponds to status 4 or 5
+
+        Args:
+            response_json (list[dict[str, Any]]): The list of session dictionaries.
+            status (str | None): The status to filter by, or None to return all sessions.
+
+        Returns:
+            list[dict[str, Any]]: The filtered list of session dictionaries.
+        """
         if status is None:
             return response_json
 
         return [
             item
             for item in response_json
-            if (item.get("cpmsSession") or {}).get("status") == status
+            if (
+                status == "ACTIVE"
+                and (item.get("session") or {}).get("status") in [2, 3, 6, 7]
+            )
+            or (
+                status == "COMPLETED"
+                and (item.get("session") or {}).get("status") in [4, 5]
+            )
         ]
 
     def get_session_data(self, item):
