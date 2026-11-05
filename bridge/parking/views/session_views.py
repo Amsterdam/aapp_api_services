@@ -110,6 +110,13 @@ class ParkingSessionListView(BaseSSPView):
         if next_24_hours:
             sessions_data = self.filter_sessions_on_next_24_hours(sessions_data)
 
+        if data.get("vehicle_id"):
+            sessions_data = [
+                session
+                for session in sessions_data
+                if session["vrn"] == data["vehicle_id"]
+            ]
+
         results = [
             {
                 "start_date_time": session["started_at"],
@@ -138,7 +145,9 @@ class ParkingSessionListView(BaseSSPView):
             for session in sessions_data
         ]
         response_serializer = self.get_serialized_response(
-            response_data, results, include_totals=not next_24_hours
+            response_data,
+            results,
+            include_totals=not (next_24_hours or data.get("vehicle_id")),
         )
         return Response(
             data=response_serializer.data,
