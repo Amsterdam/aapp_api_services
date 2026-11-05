@@ -9,6 +9,7 @@ from core.services.notification_service import ScheduledNotification
 from news.etl.load_data import NewsArticleLoader, garbage_collect_unseen_articles
 from news.models import (
     LiveBlogItem,
+    LiveBlogItemImage,
     LiveblogNotification,
     NewsArticle,
     NewsArticleImage,
@@ -81,6 +82,36 @@ class LoadDataTest(TestCase):
         )
         self.assertFalse(NewsArticle.objects.first().deleted)
         self.assertEqual(NewsArticleImage.objects.count(), 3)
+
+    @override_settings(ENABLE_LIVEBLOG_NOTIFICATIONS=True)
+    @patch("news.etl.load_data.NewLiveblogNotificationService")
+    def test_load_sends_notification_for_new_active_liveblog(
+        self, mock_notification_service
+    ):
+        liveblog_data = {
+            "foreign_id": "123123",
+            "title": "New liveblog",
+            "url": "https://example.com/liveblog",
+            "is_liveblog": True,
+            "is_active_liveblog": True,
+            "creation_datetime": "2024-01-01T12:00:00Z",
+            "modification_datetime": "2024-01-01T12:00:00Z",
+            "publication_datetime": "2024-01-01T12:00:00Z",
+            "expiration_datetime": None,
+            "liveblog_messages": [],
+        }
+
+        self.loader.load([liveblog_data])
+
+        liveblog = NewsArticle.objects.get(foreign_id=liveblog_data["foreign_id"])
+        mock_notification_service.return_value.send.assert_called_once_with(
+            liveblog_id=liveblog.id,
+            liveblog_title=liveblog_data["title"],
+        )
+        self.assertIsNotNone(liveblog.liveblog_notification_send)
+
+        self.loader.load([liveblog_data])
+        mock_notification_service.return_value.send.assert_called_once()
 
     @patch("news.etl.load_data.ImageSetService")
     def test_load_continues_when_image_upload_fails(self, mock_image_set_service):
@@ -221,6 +252,32 @@ class LoadDataTest(TestCase):
             NewsArticleImage.objects.filter(article__foreign_id="123124").exists()
         )
 
+    def test_load_with_wrong_liveblog_messages(self):
+        transformed_data = [
+            {
+                "foreign_id": "123125",
+                "title": "Liveblog article",
+                "url": "https://example.com/test-article-3",
+                "modification_datetime": "2024-01-01T12:00:00Z",
+                "in_all_news": True,
+                "is_liveblog": True,
+                "is_highlight": False,
+                "is_district": False,
+                "creation_datetime": "2024-01-01T12:00:00Z",
+                "publication_datetime": "2024-01-01T12:00:00Z",
+                "expiration_datetime": None,
+                "liveblog_messages": "not a list",
+            }
+        ]
+
+        loader = NewsArticleLoader(image_set_service=None)
+
+        loader.load(transformed_data)
+        self.assertTrue(NewsArticle.objects.filter(foreign_id="123125").exists())
+        self.assertFalse(
+            LiveBlogItem.objects.filter(article__foreign_id="123125").exists()
+        )
+
     def test_get_news_article_object(self):
         article_data = {
             "foreign_id": "123123",
@@ -349,6 +406,7 @@ class LoadDataTest(TestCase):
     def test_garbage_collect_unseen_articles_marks_only_stale_articles(self):
         stale_article = baker.make(NewsArticle, deleted=False, in_all_news=True)
         recent_article = baker.make(NewsArticle, deleted=False, in_all_news=True)
+        cut_off_timestamp = timezone.now() - timezone.timedelta(minutes=45)
 
         NewsArticle.objects.filter(id=stale_article.id).update(
             last_seen=timezone.now() - timezone.timedelta(hours=3)
@@ -357,7 +415,9 @@ class LoadDataTest(TestCase):
             last_seen=timezone.now() - timezone.timedelta(minutes=30)
         )
 
-        deleted_count = garbage_collect_unseen_articles(threshold_seconds=7200)
+        deleted_count = garbage_collect_unseen_articles(
+            cut_off_timestamp=cut_off_timestamp
+        )
 
         stale_article.refresh_from_db()
         recent_article.refresh_from_db()
@@ -548,6 +608,47 @@ class LoadDataTest(TestCase):
         self.assertEqual(
             LiveBlogItem.objects.first().title,
             liveblog_article_data["liveblog_messages"][0]["title"],
+        )
+
+    @patch("news.etl.load_data.ImageSetService")
+    def test_upsert_liveblog_item_images(self, mock_image_set_service):
+        article = baker.make(
+            NewsArticle,
+            foreign_id=123123,
+            title="A title",
+            url="https://example.com/article/123123",
+            modification_datetime="2024-01-01T13:00:00Z",
+        )
+        liveblog_item = baker.make(
+            LiveBlogItem,
+            article=article,
+            title="A liveblog item",
+            creation_datetime="2024-01-01T12:00:00Z",
+        )
+        loader = self._set_mock_image_set_service_side_effect(mock_image_set_service)
+        message = {
+            "image": {
+                "url": "https://example.com/image.jpg",
+                "alt": "Alt text for the image",
+                "description": "Description of the image",
+            }
+        }
+
+        loader._upsert_liveblog_item_images(message, liveblog_item)
+
+        mock_image_set_service.return_value.get_or_upload_from_url.assert_called_once_with(
+            url=message["image"]["url"],
+            description=message["image"]["alt"],
+        )
+        images = LiveBlogItemImage.objects.filter(liveblog_item=liveblog_item)
+        self.assertEqual(images.count(), 3)
+        self.assertEqual(set(images.values_list("foreign_id", flat=True)), {12345})
+        self.assertEqual(
+            set(images.values_list("alt", flat=True)), {"Alt text for the image"}
+        )
+        self.assertEqual(
+            set(images.values_list("description", flat=True)),
+            {"Description of the image"},
         )
 
     def test_upsert_liveblog_items_existing(self):

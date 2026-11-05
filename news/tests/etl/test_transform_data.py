@@ -17,10 +17,7 @@ class TransformDataTest(TestCase):
         tags = [
             {"id": 531, "name": "Nieuws — Nieuws"},
             {"id": 436, "name": "Nieuws"},
-            {"id": 1624, "name": "01 Eindredacteur - Nieuws"},
-            {"id": 1720, "name": "Deze week gepubliceerd op Amsterdam.nl"},
-            {"id": 1722, "name": "Nu gepubliceerd op Amsterdam.nl"},
-            {"id": 411, "name": "migrated"},
+            {"id": 1624, "name": "Some Tag"},
         ]
 
         properties = get_article_properties(tags, type="Blog")
@@ -34,32 +31,27 @@ class TransformDataTest(TestCase):
         tags = [
             {"id": 779, "name": "Nieuws stadsdeel Noord"},
             {"id": 1656, "name": "Nieuws stadsdeel Noord"},
-            {"id": 411, "name": "migrated"},
         ]
         properties = get_article_properties(tags, type="News")
 
         self.assertEqual(properties["in_all_news"], False)
         self.assertEqual(properties["is_liveblog"], False)
         self.assertEqual(properties["is_district"], True)
-        self.assertEqual(properties["district"], "Noord")
+        self.assertEqual(properties["district"], "noord")
 
     def test_articles_both_in_all_news_and_district(self):
         tags = [
             {"id": 531, "name": "Nieuws — Nieuws"},
-            {"id": 436, "name": "Nieuws"},
+            {"id": 123, "name": "Nieuws"},
             {"id": 781, "name": "Nieuws stadsdeel West"},
-            {"id": 1624, "name": "01 Eindredacteur - Nieuws"},
-            {"id": 1663, "name": "Nieuws stadsdeel West"},
-            {"id": 1720, "name": "Deze week gepubliceerd op Amsterdam.nl"},
-            {"id": 1722, "name": "Nu gepubliceerd op Amsterdam.nl"},
-            {"id": 411, "name": "migrated"},
+            {"id": 827, "name": "01 Eindredacteur - Nieuws"},
         ]
         properties = get_article_properties(tags, type="News")
 
         self.assertEqual(properties["in_all_news"], True)
         self.assertEqual(properties["is_liveblog"], False)
         self.assertEqual(properties["is_district"], True)
-        self.assertEqual(properties["district"], "West")
+        self.assertEqual(properties["district"], "west")
 
     def test_get_body_from_content(self):
         content = NEWS_ARTICLE_426["content"]

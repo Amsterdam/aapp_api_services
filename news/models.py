@@ -124,6 +124,9 @@ class LiveBlogItemImage(BaseImage):
         LiveBlogItem, on_delete=models.CASCADE, related_name="images"
     )
 
+    class Meta:
+        unique_together = ("liveblog_item", "uri")
+
 
 class LiveblogNotification(models.Model):
     class Meta:
