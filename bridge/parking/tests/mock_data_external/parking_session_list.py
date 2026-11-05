@@ -43,7 +43,7 @@ MOCK_RESPONSE = {
             "zone_description": "CE02E Centrum-2e",
             "started_at": "2025-11-04T14:15:54+00:00",
             "ended_at": "2025-11-04T15:15:54+00:00",
-            "vrn": "ABC001",
+            "vrn": "ABC123",
             "time_frame_data": [
                 [{"startTime": "0000", "endTime": "2359"}],
                 [{"startTime": "0000", "endTime": "2359"}],
