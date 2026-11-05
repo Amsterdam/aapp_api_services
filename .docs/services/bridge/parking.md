@@ -15,7 +15,7 @@ Provide a single, client-stable parking domain for Amsterdam App, covering permi
 - Wallet top-up supports payment initiation, confirmation, and transaction history in a consistent format.
 - Parking machine retrieval is limited to Amsterdam machines and returned in normalized location fields.
 - Parking reminder notifications are managed around session timing (create, update, cancel) to avoid stale reminders.
-- For vehicle information: A licence plate that is not found must be handled as a valid functional outcome, not as a technical failure.
+- For vehicle information: A license plate that is not found must be handled as a valid functional outcome, not as a technical failure.
 
 ## Major non-standard architectural decisions
 - The module brokers two upstream SSP API contexts (internal APIs and external APIs) behind one client contract and keeps provider-specific concerns inside the backend.

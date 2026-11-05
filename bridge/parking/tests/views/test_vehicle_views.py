@@ -9,8 +9,8 @@ class TestVehicleInformationView(ResponsesActivatedAPITestCase):
         super().setUp()
         self.url = reverse("parking-vehicle-information")
 
-    def test_licence_plate_not_found(self):
-        licence_plate = "not_valid"
+    def test_license_plate_not_found(self):
+        license_plate = "not_valid"
 
         responses.get(
             "https://opendata.rdw.nl/resource/m9d7-ebf2.json",
@@ -18,13 +18,13 @@ class TestVehicleInformationView(ResponsesActivatedAPITestCase):
             status=200,
         )
         response = self.client.get(
-            self.url + f"?licence_plate={licence_plate}", headers=self.api_headers
+            self.url + f"?license_plate={license_plate}", headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"success": False, "content": None})
 
-    def test_licence_plate_found(self):
-        licence_plate = "valid_plate"
+    def test_license_plate_found(self):
+        license_plate = "valid_plate"
         mock_response = [
             {
                 "merk": "Toyota",
@@ -38,7 +38,7 @@ class TestVehicleInformationView(ResponsesActivatedAPITestCase):
             status=200,
         )
         response = self.client.get(
-            self.url + f"?licence_plate={licence_plate}", headers=self.api_headers
+            self.url + f"?license_plate={license_plate}", headers=self.api_headers
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
