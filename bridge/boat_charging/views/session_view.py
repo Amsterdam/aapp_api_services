@@ -101,7 +101,7 @@ class SessionView(BaseView):
 
     def get_session_data(self, item):
         session = item["session"]
-        cpms_session = item.get("cpmsSession", {})
+        cpms_session = item.get("cpmsSession", {}) or {}
 
         session_data = {
             # NRG
