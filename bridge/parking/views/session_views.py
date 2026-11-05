@@ -145,7 +145,9 @@ class ParkingSessionListView(BaseSSPView):
             for session in sessions_data
         ]
         response_serializer = self.get_serialized_response(
-            response_data, results, include_totals=not next_24_hours
+            response_data,
+            results,
+            include_totals=not (next_24_hours or data.get("vehicle_id")),
         )
         return Response(
             data=response_serializer.data,

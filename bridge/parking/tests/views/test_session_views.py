@@ -147,6 +147,7 @@ class TestParkingSessionListView(BaseSSPTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(len(response.data["result"]), 1)
+        self.assertEqual(response.data["page"]["totalElements"], None)
 
     def test_successful_with_vehicle_id_no_results(self):
         resp = respx.post(ParkingSessionListView.ssp_endpoint).mock(
