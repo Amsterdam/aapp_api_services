@@ -323,7 +323,7 @@ class NewsArticleLoader:
             update_notification_service.send(
                 device_ids=device_ids,
                 update_title=message.get("title"),
-                liveblog_id=news_article.foreign_id,
+                liveblog_id=news_article.id,
             )
 
 
