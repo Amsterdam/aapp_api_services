@@ -1,5 +1,4 @@
 import logging
-from datetime import timedelta
 
 from django.conf import settings
 from django.db import transaction
@@ -328,9 +327,8 @@ class NewsArticleLoader:
             )
 
 
-def garbage_collect_unseen_articles(*, threshold_seconds: int) -> int:
-    stale_before = timezone.now() - timedelta(seconds=threshold_seconds)
+def garbage_collect_unseen_articles(*, cut_off_timestamp) -> int:
     return NewsArticle.objects.filter(
         deleted=False,
-        last_seen__lt=stale_before,
+        last_seen__lt=cut_off_timestamp,
     ).update(deleted=True)

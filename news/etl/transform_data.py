@@ -8,13 +8,13 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 TAG_MAPPING: dict[int | str, dict[str, str | bool]] = {
-    780: {"district": "Oost"},
-    781: {"district": "West"},
-    778: {"district": "Nieuw-West"},
-    782: {"district": "Zuid"},
-    783: {"district": "Zuidoost"},
-    779: {"district": "Noord"},
-    777: {"district": "Centrum"},
+    780: {"district": "oost"},
+    781: {"district": "west"},
+    778: {"district": "nieuw-west"},
+    782: {"district": "zuid"},
+    783: {"district": "zuidoost"},
+    779: {"district": "noord"},
+    777: {"district": "centrum"},
     531: {"in_all_news": True},
     491: {"is_highlight": True},
     2696: {"is_active_liveblog": True},
