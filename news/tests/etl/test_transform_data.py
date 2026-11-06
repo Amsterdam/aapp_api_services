@@ -1,243 +1,140 @@
-from bs4 import BeautifulSoup
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from news.etl.transform_data import (
-    add_quotes_around_blockquotes,
-    change_date_string_to_iso,
-    decode_and_strip_outer_div,
-    extract_body_from_elements,
-    extract_title_from_elements,
-    find_elements_between_datetimes,
-    parse_liveblog_messages,
+    get_article_properties,
+    get_body_from_content,
+    get_liveblog_messages,
     transform,
-    validate_article,
 )
-from news.tests.mock_data import item_article, item_liveblog
+from news.tests.mock_data.all_news import (
+    BLOG_ARTICLE_368,
+    NEWS_ARTICLE_396,
+    NEWS_ARTICLE_426,
+)
 
 
 class TransformDataTest(TestCase):
-    def test_transform_item(self):
-        extracted_data = [
-            {
-                **item_article.MOCK_RESPONSE_123123,
-                **{"in_all_news": True, "district": None},
-            }
-        ]
-        transformed = transform(extracted_data)
-        self.assertEqual(len(transformed), 1)
-        article = transformed[0]
-        self.assertEqual(article["foreign_id"], 123123)
-        self.assertEqual(
-            article["title"], "Award voor Amsterdam: 44% vrouwen in de top"
-        )
-        self.assertEqual(
-            article["summary"],
-            "<p>Amsterdam streeft naar een diverse organisatie en heeft daarmee een prijs in de wacht gesleept.</p>",
-        )
-        self.assertEqual(
-            article["url"], "https://example.com/news/highlighted/women-top/"
-        )
-        self.assertEqual(article["image_url"], "https://example.com/image.jpg")
-
-    def test_transform_liveblog(self):
-        extracted_data = [
-            {
-                **item_liveblog.MOCK_RESPONSE_1234123,
-                **{"district": None, "is_liveblog": True},
-            }
-        ]
-        transformed = transform(extracted_data)
-        self.assertEqual(len(transformed), 1)
-        article = transformed[0]
-        self.assertEqual(article["foreign_id"], 1234123)
-        self.assertEqual(
-            article["title"],
-            "Liveblog verkiezingen Europees Parlement en referendum Hoofdgroenstructuur 2024",
-        )
-        self.assertIsInstance(article["body"], list)
-        self.assertEqual(len(article["body"]), 19)
-        self.assertEqual(article["body"][0]["title"], "Title")
-        self.assertEqual(article["body"][1]["title"], "Another title")
-
-    def test_transform_liveblog_when_legacy_indicators_differ(self):
-        extracted_data = [
-            {
-                **item_liveblog.MOCK_RESPONSE_1234123,
-                **{
-                    "district": "noord",
-                    "is_liveblog": True,
-                    "is_district": True,
-                },
-            }
-        ]
-
-        transformed = transform(extracted_data)
-        self.assertEqual(len(transformed), 1)
-        article = transformed[0]
-        self.assertIsInstance(article["body"], list)
-        self.assertTrue(article["is_liveblog"])
-        self.assertTrue(article["is_district"])
-
-    def test_transform_invalid_article(self):
-        extracted_data = [
-            {
-                "id": "123",
-                "title": "<div>Test Article</div>",
-                # Missing body
-                "summary": "<div>Summary</div>",
-            }
-        ]
-        with self.assertLogs(level="WARNING") as log:
-            transformed = transform(extracted_data)
-            self.assertEqual(len(transformed), 0)
-            self.assertIn("Skipping article due to validation failure.", log.output[0])
-
-    def test_validate_article_valid(self):
+    def test_transform_skips_articles_missing_required_fields(self):
         article = {
-            "id": "123",
-            "title": "Test Article",
-            "body": "This is a test article.",
-            "in_all_news": True,
-            "district": None,
-            "url": "https://example.com/test-article",
-            "publicationDate": "2024-01-01T12:00:00Z",
+            "id": 123,
+            "__typename": "News",
+            "title": "A title",
+            "publicationDate": "2026-11-01T13:00:00Z",
+            "changedDate": "2026-11-06T09:00:00Z",
+            "path": "https://example.com/article",
         }
-        self.assertTrue(validate_article(article))
+        required_fields = ("id", "title", "changedDate", "publicationDate", "path")
+        incomplete_articles = [{**article, field: None} for field in required_fields]
 
-    def test_validate_article_missing_field(self):
-        article = {"id": "123", "title": "Test Article"}
-        self.assertFalse(validate_article(article))
+        with self.assertLogs("news.etl.transform_data", level="WARNING") as logs:
+            transformed = transform([*incomplete_articles, article])
 
-    def test_decode_and_strip_outer_div(self):
-        html = item_article.MOCK_RESPONSE_123123["summary"]
-        expected = "<p>Amsterdam streeft naar een diverse organisatie en heeft daarmee een prijs in de wacht gesleept.</p>"
-        result = decode_and_strip_outer_div(html)
-        self.assertEqual(result, expected)
+        self.assertEqual([item["foreign_id"] for item in transformed], [123])
+        self.assertEqual(
+            [record.missing_fields for record in logs.records],
+            [[field] for field in required_fields],
+        )
 
-    def test_decode_and_strip_outer_div_no_div(self):
-        html = "<p>This is a test.</p>"
-        expected = "<p>This is a test.</p>"
-        result = decode_and_strip_outer_div(html)
-        self.assertEqual(result, expected)
+    def test_get_article_properties(self):
+        tags = [
+            {"id": 531, "name": "Nieuws — Nieuws"},
+            {"id": 436, "name": "Nieuws"},
+            {"id": 1624, "name": "Some Tag"},
+        ]
 
-    def test_decode_and_strip_outer_div_other_tags_remain(self):
-        html = "<div><p>This is a <strong>test</strong>.</p></div>"
-        expected = "<p>This is a <strong>test</strong>.</p>"
-        result = decode_and_strip_outer_div(html)
-        self.assertEqual(result, expected)
+        properties = get_article_properties(tags, type="Blog")
 
-    def test_add_quotes_around_blockquotes(self):
-        html = "<div><blockquote>This is a quote.</blockquote></div>"
-        expected = '<div><blockquote>"This is a quote."</blockquote></div>'
-        result = add_quotes_around_blockquotes(html)
-        self.assertEqual(result, expected)
+        self.assertEqual(properties["in_all_news"], True)
+        self.assertEqual(properties["is_liveblog"], True)
+        self.assertEqual(properties["is_district"], False)
+        self.assertEqual(properties["district"], None)
 
-    def test_decode_and_strip_outer_div_None(self):
-        html = None
-        expected = ""
-        result = decode_and_strip_outer_div(html)
-        self.assertEqual(result, expected)
+    def test_get_article_properties_with_district_tag(self):
+        tags = [
+            {"id": 779, "name": "Nieuws stadsdeel Noord"},
+            {"id": 1656, "name": "Nieuws stadsdeel Noord"},
+        ]
+        properties = get_article_properties(tags, type="News")
 
-    def test_parse_liveblog_messages(self):
-        input_str = """
-        <div>
-            <p class="datetime">2024-01-01, 12:00</p>
-            <h3>First update</h3>
-            <p>Details of the first update.</p>
-            <img src="https://example.com/image1.jpg" alt="Image 1 description">
-            <p class="datetime">2024-01-01, 13:00</p>
-            <h4>Second update</h4>
-            <p>Details of the second update.</p>
-        </div>
-        """
-        messages = parse_liveblog_messages(input_str)
-        self.assertEqual(len(messages), 2)
-        self.assertEqual(messages[0]["creation_datetime"], "2024-01-01T12:00:00+01:00")
-        self.assertEqual(messages[0]["title"], "First update")
-        self.assertIn("<img", messages[0]["body"])  # Image should be present in body
-        self.assertIn("Details of the first update.", messages[0]["body"])
-        self.assertEqual(messages[1]["creation_datetime"], "2024-01-01T13:00:00+01:00")
-        self.assertEqual(messages[1]["title"], "Second update")
-        self.assertIn("Details of the second update.", messages[1]["body"])
+        self.assertEqual(properties["in_all_news"], False)
+        self.assertEqual(properties["is_liveblog"], False)
+        self.assertEqual(properties["is_district"], True)
+        self.assertEqual(properties["district"], "noord")
 
-    def test_parse_liveblog_messages_image_nesting(self):
-        input_str = """
-        <div>
-            <p class="datetime">2024-06-09, 23:03</p>
-            <h3 id="a3"><strong>Derde titel</strong></h3>
-            <p>Eerste deel tekst.</p>
-            <p>
-                <img src="https://www.example.com/image1.jpg" width="609" data-sources="[{&quot;width&quot;:80,&quot;height&quot;:80,&quot;src&quot;:&quot;/publish/pages/1072780/80px/ep_2024_corr.jpg&quot;,&quot;sizeClass&quot;:&quot;size_80px&quot;},{&quot;width&quot;:220,&quot;height&quot;:220,&quot;src&quot;:&quot;/publish/pages/1072780/220px/ep_2024_corr.jpg&quot;,&quot;sizeClass&quot;:&quot;size_220px&quot;},{&quot;width&quot;:609,&quot;height&quot;:609,&quot;src&quot;:&quot;/publish/pages/1072780/ep_2024_corr.jpg&quot;}]" height="609" data-id="1072780" alt="" id="img_pagvld_23966763_0" class="img_pagvld_23966763_0" resolved="true" />
-            </p>
-            <p>Tweede deel tekst.</p>
-            <p>Derde deel tekst.</p>
-            <p class="Calltoaction-blauw">
-                <a href="https://example.com/action-punt" class="externLink">Meer over de voorlopige uitslag</a>
-            </p>
-        </div>
-        """
-        messages = parse_liveblog_messages(input_str)
-        self.assertEqual(len(messages), 1)
+    def test_articles_both_in_all_news_and_district(self):
+        tags = [
+            {"id": 531, "name": "Nieuws — Nieuws"},
+            {"id": 123, "name": "Nieuws"},
+            {"id": 781, "name": "Nieuws stadsdeel West"},
+            {"id": 827, "name": "01 Eindredacteur - Nieuws"},
+        ]
+        properties = get_article_properties(tags, type="News")
 
-        self.assertIn("<img", messages[0]["body"])  # Image should be present in body
-        self.assertIn("Eerste deel tekst.", messages[0]["body"])
-        self.assertIn("Tweede deel tekst.", messages[0]["body"])
-        self.assertIn("Derde deel tekst.", messages[0]["body"])
+        self.assertEqual(properties["in_all_news"], True)
+        self.assertEqual(properties["is_liveblog"], False)
+        self.assertEqual(properties["is_district"], True)
+        self.assertEqual(properties["district"], "west")
 
-    def test_find_elements_between_datetimes(self):
-        html = """<div>
-            <p class="datetime">2024-01-01, 12:00</p>
-            <h3>First update</h3>
-            <p>Details of the first update.</p>
-            <img src="https://example.com/image1.jpg" alt="Image 1 description">
-            <p class="datetime">2024-01-01, 13:00</p>
-            <h4>Second update</h4>
-            <p>Details of the second update.</p>
-        </div>"""
-        soup = BeautifulSoup(html, "html.parser")
-        datetimes = soup.find_all("p", class_="datetime")
-        elements = find_elements_between_datetimes(datetimes[0])
-        self.assertEqual(len(elements), 3)
-        self.assertEqual(elements[0].name, "h3")
-        self.assertEqual(elements[1].name, "p")
-        self.assertEqual(elements[2].name, "img")
+    def test_get_body_from_content(self):
+        content = NEWS_ARTICLE_426["content"]
+        body = get_body_from_content(content, foreign_id=426)
+        self.assertIn(
+            "Sportclubs, sportscholen en buurtinitiatieven organiseren tijdens deze 10 dagen gratis activiteiten in Oost",
+            body,
+        )
 
-    def test_extract_title_from_elements(self):
-        html = "<h3>My Title</h3><p>Body</p>"
-        soup = BeautifulSoup(html, "html.parser")
-        elements = list(soup.children)
-        title = extract_title_from_elements(elements)
-        self.assertEqual(title, "My Title")
+    def test_get_body_from_content_with_empty_content(self):
+        content = []
+        body = get_body_from_content(content, foreign_id=0)
+        self.assertEqual(body, "")
 
-    def test_extract_title_from_elements_no_title(self):
-        html = "<p>Body</p>"
-        soup = BeautifulSoup(html, "html.parser")
-        elements = list(soup.children)
-        title = extract_title_from_elements(elements)
-        self.assertEqual(title, "")
+    def test_get_body_from_content_with_multiple_content_blocks(self):
+        content = NEWS_ARTICLE_396["content"]
+        body = get_body_from_content(content, foreign_id=396)
+        self.assertIn(
+            "Met de campagne Sterker vanaf de start willen we ouders betrouwbare en begrijpelijke informatie over vaccineren geven.",
+            body,
+        )
 
-    def test_extract_body_from_elements(self):
-        html = "<h3>Title</h3><p>Body</p>"
-        soup = BeautifulSoup(html, "html.parser")
-        elements = list(soup.children)
-        body = extract_body_from_elements(elements, "Title")
-        self.assertNotIn("Title", body)
-        self.assertIn("Body", body)
+    def test_get_liveblog_messages(self):
+        blog_entries = BLOG_ARTICLE_368.get("blogEntries", [])
+        liveblog_messages = get_liveblog_messages(blog_entries)
+        self.assertIsInstance(liveblog_messages, list)
+        self.assertEqual(len(liveblog_messages), len(blog_entries))
 
-    def test_extract_body_from_elements_no_title_to_skip(self):
-        html = "<p>Body</p>"
-        soup = BeautifulSoup(html, "html.parser")
-        elements = list(soup.children)
-        body = extract_body_from_elements(elements, "")
-        self.assertIn("Body", body)
+    @override_settings(DVO_URL="https://dvo.example.test")
+    def test_get_liveblog_messages_uses_first_image_across_content_blocks(self):
+        blog_entries = [
+            {
+                "content": [
+                    {
+                        "text": '<div class="dds-prose"><p class="dds-paragraph"><span>Lorem ipsum dolor sit amet</span></p></div>'
+                    },
+                    {
+                        "text": '<div class="dds-prose"><p class="dds-paragraph">Sed commodo volutpat nibh sed ullamcorper.</p></div>',
+                        "image": [
+                            {
+                                "src": "/image.jpg",
+                                "alt": "Image alt",
+                                "description": "Image description",
+                            }
+                        ],
+                    },
+                ]
+            }
+        ]
 
-    def test_change_date_string_to_iso_valid(self):
-        input_str = "12-01-2024, 14:30"
-        expected = "2024-01-12T14:30:00+01:00"
-        result = change_date_string_to_iso(input_str)
-        self.assertEqual(result, expected)
+        message = get_liveblog_messages(blog_entries)[0]
 
-    def test_change_date_string_to_iso_invalid(self):
-        input_str = "invalid date string"
-        result = change_date_string_to_iso(input_str)
-        self.assertEqual(result, input_str)  # Should return original string on failure
+        self.assertEqual(
+            message["body"],
+            '<p class="dds-paragraph"><span>Lorem ipsum dolor sit amet</span></p><p class="dds-paragraph">Sed commodo volutpat nibh sed ullamcorper.</p>',
+        )
+        self.assertEqual(
+            message["image"],
+            {
+                "url": "https://dvo.example.test/image.jpg",
+                "alt": "Image alt",
+                "description": "Image description",
+            },
+        )

@@ -1,29 +1,150 @@
-import json
-from unittest.mock import patch
-from urllib.parse import urljoin
+import asyncio
+from copy import deepcopy
+from datetime import datetime
+from unittest.mock import AsyncMock, call, patch
 
-import responses
-from django.conf import settings
+import aiohttp
 from django.core.management import call_command
+from django.test import SimpleTestCase
 from django.utils import timezone
 from model_bakery import baker
-from requests import Response
 
 from core.services.notification_service import ScheduledNotification
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+from core.utils.dvo_utils import DvOResponseError
 from news.management.commands import checkliveblogupdate
 from news.models import (
     LiveBlogItem,
     LiveblogNotification,
     NewsArticle,
 )
-from news.tests.mock_data import item_liveblog, liveblog_latest_version
+from news.tests.mock_data.all_news import BLOG_ARTICLE_368
 
-IPROX_URL = urljoin(settings.IPROX_SERVER, "appidt/news/")
-IPROX_DETAIL_URL = urljoin(IPROX_URL, "item/")
+
+class LiveblogHasUpdateTest(SimpleTestCase):
+    def test_handle_continues_after_dvo_query_failures(self):
+        command = checkliveblogupdate.Command()
+        liveblogs = [
+            baker.prepare(
+                NewsArticle,
+                foreign_id=foreign_id,
+                modification_datetime=None,
+            )
+            for foreign_id in range(1, 5)
+        ]
+        changed_date = {"nodeByID": {"changedDate": "2026-11-06T09:00:00+00:00"}}
+        http_error = aiohttp.ClientResponseError(None, (), status=500)
+        query_results = [
+            http_error,
+            changed_date,
+            asyncio.TimeoutError(),
+            changed_date,
+            DvOResponseError("Invalid DvO response"),
+            changed_date,
+            {"nodeByID": {"id": 4}},
+        ]
+
+        with (
+            patch.object(
+                checkliveblogupdate.NewsArticle.objects,
+                "filter",
+                return_value=liveblogs,
+            ),
+            patch.object(
+                command,
+                "_run_query",
+                new=AsyncMock(side_effect=query_results),
+            ) as mock_query,
+            patch.object(
+                checkliveblogupdate, "transform", return_value=["transformed"]
+            ),
+            patch.object(checkliveblogupdate.data_loader, "load") as mock_load,
+            self.assertLogs(checkliveblogupdate.logger, level="ERROR") as captured_logs,
+        ):
+            command.handle()
+
+        self.assertEqual(
+            mock_query.await_args_list,
+            [
+                call(checkliveblogupdate.blog_base_info.QUERY, 1),
+                call(checkliveblogupdate.blog_base_info.QUERY, 2),
+                call(checkliveblogupdate.blog_full_content.QUERY, 2),
+                call(checkliveblogupdate.blog_base_info.QUERY, 3),
+                call(checkliveblogupdate.blog_full_content.QUERY, 3),
+                call(checkliveblogupdate.blog_base_info.QUERY, 4),
+                call(checkliveblogupdate.blog_full_content.QUERY, 4),
+            ],
+        )
+        mock_load.assert_called_once_with(["transformed"])
+        self.assertEqual(
+            {record.foreign_id for record in captured_logs.records},
+            {1, 2, 3},
+        )
+
+    def test_liveblog_has_update_compares_timezone_naive_api_date(self):
+        command = checkliveblogupdate.Command()
+        liveblog = baker.prepare(
+            NewsArticle,
+            foreign_id=1234123,
+            modification_datetime=datetime.fromisoformat("2026-11-03T09:18:04+00:00"),
+        )
+
+        with patch.object(
+            command,
+            "_run_query",
+            new=AsyncMock(
+                return_value={"nodeByID": {"changedDate": "2026-11-03T10:18:04"}}
+            ),
+        ) as mock_query:
+            self.assertFalse(command.liveblog_has_update(liveblog))
+
+        mock_query.assert_awaited_once_with(
+            checkliveblogupdate.blog_base_info.QUERY, liveblog.foreign_id
+        )
+
+    def test_liveblog_has_update_returns_true_for_newer_api_date(self):
+        command = checkliveblogupdate.Command()
+        liveblog = baker.prepare(
+            NewsArticle,
+            foreign_id=1234123,
+            modification_datetime=datetime.fromisoformat("2026-11-03T09:18:04+00:00"),
+        )
+
+        with patch.object(
+            command,
+            "_run_query",
+            new=AsyncMock(
+                return_value={"nodeByID": {"changedDate": "2026-11-03T10:19:04"}}
+            ),
+        ) as mock_query:
+            self.assertTrue(command.liveblog_has_update(liveblog))
+
+        mock_query.assert_awaited_once_with(
+            checkliveblogupdate.blog_base_info.QUERY, liveblog.foreign_id
+        )
 
 
 class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
+    def _mock_liveblog_queries(self, include_image_update=False):
+        full_blog = deepcopy(BLOG_ARTICLE_368)
+        full_blog["id"] = 1234123
+        full_blog["changedDate"] = "2026-10-02T08:27:17"
+        full_blog["tag"].append({"id": 2696, "name": "Active liveblog"})
+
+        for index, entry in enumerate(full_blog["blogEntries"]):
+            entry["dateTime"] = f"2026-10-{3 - index:02d}T08:27:17"
+
+        if include_image_update:
+            full_blog["blogEntries"][0]["title"] = "Update with image"
+
+        mock_query = AsyncMock(
+            side_effect=[
+                {"nodeByID": {"changedDate": "2026-10-02T08:27:17"}},
+                {"nodeByID": full_blog},
+            ]
+        )
+        return full_blog, mock_query
+
     def test_run_news_etl_no_liveblogs(self):
         """Test that the command runs without errors when there are no active liveblogs in the database."""
         call_command("checkliveblogupdate")
@@ -46,120 +167,6 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
         self.assertEqual(LiveBlogItem.objects.count(), 0)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
 
-    def test_run_news_etl_active_liveblogs_no_version_number(self):
-        """Test that the command runs without errors when there are active liveblogs in the database but none of them have a version number."""
-        baker.make(
-            NewsArticle,
-            foreign_id=1234123,
-            title="Test Liveblog",
-            is_liveblog=True,
-            is_active_liveblog=True,
-        )
-
-        # mock the response as invalid from the Iprox API for the latest version of the liveblog
-        responses.get(urljoin(IPROX_DETAIL_URL, "1234123/latest-version"), status=503)
-
-        call_command("checkliveblogupdate")
-        self.assertEqual(NewsArticle.objects.count(), 1)
-        self.assertEqual(LiveBlogItem.objects.count(), 0)
-        self.assertEqual(ScheduledNotification.objects.count(), 0)
-
-    def test_run_news_etl_active_liveblogs_no_valid_version_key(self):
-        """Test that the command runs without errors when there are active liveblogs in the database but none of them have a version number."""
-        baker.make(
-            NewsArticle,
-            foreign_id=1234123,
-            title="Test Liveblog",
-            is_liveblog=True,
-            is_active_liveblog=True,
-        )
-
-        # mock the response as invalid from the Iprox API for the latest version of the liveblog
-        responses.get(
-            urljoin(IPROX_DETAIL_URL, "1234123/latest-version"),
-            status=200,
-            json={"invalid_key": "invalid_value"},
-        )
-
-        call_command("checkliveblogupdate")
-        self.assertEqual(NewsArticle.objects.count(), 1)
-        self.assertEqual(LiveBlogItem.objects.count(), 0)
-        self.assertEqual(ScheduledNotification.objects.count(), 0)
-
-    def test_run_news_etl_active_liveblogs_no_valid_version_value(self):
-        """Test that the command runs without errors when there are active liveblogs in the database but none of them have a version number."""
-        baker.make(
-            NewsArticle,
-            foreign_id=1234123,
-            title="Test Liveblog",
-            is_liveblog=True,
-            is_active_liveblog=True,
-        )
-
-        # mock the response as invalid from the Iprox API for the latest version of the liveblog
-        responses.get(
-            urljoin(IPROX_DETAIL_URL, "1234123/latest-version"),
-            status=200,
-            json={"Vrs": "invalid_value"},
-        )
-
-        call_command("checkliveblogupdate")
-        self.assertEqual(NewsArticle.objects.count(), 1)
-        self.assertEqual(LiveBlogItem.objects.count(), 0)
-        self.assertEqual(ScheduledNotification.objects.count(), 0)
-
-    def test_run_news_etl_active_liveblogs_no_higher_version_number(self):
-        """Test that the command runs without errors when there are active liveblogs in the database but none of them have a version number."""
-        baker.make(
-            NewsArticle,
-            foreign_id=1234123,
-            title="Test Liveblog",
-            is_liveblog=True,
-            is_active_liveblog=True,
-            liveblog_version=123,
-        )
-
-        # mock the response from the Iprox API for the latest version of the liveblog
-        responses.get(
-            urljoin(IPROX_DETAIL_URL, "1234123/latest-version"),
-            status=200,
-            json=liveblog_latest_version.MOCK_RESPONSE,
-        )
-
-        call_command("checkliveblogupdate")
-        self.assertEqual(NewsArticle.objects.count(), 1)
-        self.assertEqual(LiveBlogItem.objects.count(), 0)
-        self.assertEqual(ScheduledNotification.objects.count(), 0)
-
-    def test_run_news_etl_active_liveblogs_no_valid_liveblog_data(self):
-        """Test that the command runs without errors when there are active liveblogs in the database but none of them have a version number."""
-        baker.make(
-            NewsArticle,
-            foreign_id=1234123,
-            title="Test Liveblog",
-            is_liveblog=True,
-            is_active_liveblog=True,
-            liveblog_version=123,
-        )
-
-        # mock the response from the Iprox API for the latest version of the liveblog
-        responses.get(
-            urljoin(IPROX_DETAIL_URL, "1234123/latest-version"),
-            status=200,
-            json=liveblog_latest_version.MOCK_RESPONSE,
-        )
-
-        # mock the response from the Iprox API for the latest version of the liveblog
-        responses.get(
-            urljoin(IPROX_DETAIL_URL, "1234123/retrieve-version/123"),
-            status=503,
-        )
-
-        call_command("checkliveblogupdate")
-        self.assertEqual(NewsArticle.objects.count(), 1)
-        self.assertEqual(LiveBlogItem.objects.count(), 0)
-        self.assertEqual(ScheduledNotification.objects.count(), 0)
-
     def test_run_news_etl_with_active_liveblogs(self):
         """Test that the command runs without errors when there are active liveblogs in the database."""
 
@@ -170,27 +177,22 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             is_liveblog=True,
             is_active_liveblog=True,
             liveblog_notification_send=timezone.now(),  # This is to test that no new liveblog notification is created
+            modification_datetime=datetime.fromisoformat("2026-10-01T08:27:17+02:00"),
         )
 
-        # mock the response from the Iprox API for the latest version of the liveblog
-        responses.get(
-            urljoin(IPROX_DETAIL_URL, "1234123/latest-version"),
-            status=200,
-            json=liveblog_latest_version.MOCK_RESPONSE,
-        )
+        full_blog, mock_query = self._mock_liveblog_queries()
+        with patch.object(checkliveblogupdate.Command, "_run_query", mock_query):
+            call_command("checkliveblogupdate")
 
-        # mock the response from the Iprox API for the latest version of the liveblog
-        responses.get(
-            urljoin(IPROX_DETAIL_URL, "1234123/retrieve-version/123"),
-            status=200,
-            json=item_liveblog.MOCK_RESPONSE_1234123,
+        mock_query.assert_has_awaits(
+            [
+                call(checkliveblogupdate.blog_base_info.QUERY, 1234123),
+                call(checkliveblogupdate.blog_full_content.QUERY, 1234123),
+            ]
         )
-
-        call_command("checkliveblogupdate")
+        self.assertEqual(mock_query.await_count, 2)
         self.assertEqual(NewsArticle.objects.count(), 1)
-        self.assertEqual(
-            LiveBlogItem.objects.count(), 19
-        )  # There are 19 items in the mocked response
+        self.assertEqual(LiveBlogItem.objects.count(), len(full_blog["blogEntries"]))
         self.assertEqual(
             ScheduledNotification.objects.count(), 0
         )  # There should be no notifications because the liveblog already exists in the database (so no new liveblog notification)
@@ -209,6 +211,7 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             is_liveblog=True,
             is_active_liveblog=True,
             liveblog_notification_send=timezone.now(),
+            modification_datetime=datetime.fromisoformat("2026-10-01T08:27:17+02:00"),
         )
 
         baker.make(
@@ -217,51 +220,24 @@ class LiveblogUpdateTest(ResponsesActivatedAPITestCase):
             device_id="device1",
         )
 
-        # mock the response from the Iprox API for the latest version of the liveblog
-        responses.get(
-            urljoin(IPROX_DETAIL_URL, "1234123/latest-version"),
-            status=200,
-            json=liveblog_latest_version.MOCK_RESPONSE,
-        )
+        full_blog, mock_query = self._mock_liveblog_queries(include_image_update=True)
+        with patch.object(checkliveblogupdate.Command, "_run_query", mock_query):
+            call_command("checkliveblogupdate")
 
-        # mock the response from the Iprox API for the latest version of the liveblog
-        responses.get(
-            urljoin(IPROX_DETAIL_URL, "1234123/retrieve-version/123"),
-            status=200,
-            json=item_liveblog.MOCK_RESPONSE_1234123,
+        mock_query.assert_has_awaits(
+            [
+                call(checkliveblogupdate.blog_base_info.QUERY, 1234123),
+                call(checkliveblogupdate.blog_full_content.QUERY, 1234123),
+            ]
         )
-
-        call_command("checkliveblogupdate")
+        self.assertEqual(mock_query.await_count, 2)
         self.assertEqual(NewsArticle.objects.count(), 1)
+        self.assertEqual(LiveBlogItem.objects.count(), len(full_blog["blogEntries"]))
         self.assertEqual(
-            LiveBlogItem.objects.count(), 19
-        )  # There are 19 items in the mocked response
-        self.assertEqual(
-            ScheduledNotification.objects.count(), 19
+            ScheduledNotification.objects.count(), len(full_blog["blogEntries"])
         )  # There should be a notification for each new liveblog item.
 
         notification_with_image = ScheduledNotification.objects.filter(
             body="Update with image"
         ).first()
         self.assertIsNotNone(notification_with_image)
-
-    @patch("news.management.commands.checkliveblogupdate.requests.get")
-    def test_make_request_succeeds_after_retry(self, mock_get):
-        # Simulate a 500 error on the first request
-        mock_response_1 = Response()
-        mock_response_1.status_code = 500
-        mock_response_1._content = json.dumps(
-            {"status": "ERROR", "message": "Internal Server Error"}
-        ).encode("utf-8")
-
-        # Simulate a successful response on the second request
-        mock_response_2 = Response()
-        mock_response_2.status_code = 200
-        mock_response_2._content = json.dumps(
-            {"content": liveblog_latest_version.MOCK_RESPONSE, "status": "SUCCESS"}
-        ).encode("utf-8")
-
-        mock_get.side_effect = [mock_response_1, mock_response_2]
-
-        resp = checkliveblogupdate.Command()._make_request("some_url")
-        self.assertEqual(resp.status_code, 200)

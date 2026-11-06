@@ -333,7 +333,7 @@ def _transform_image(
     absolute_image_url = urljoin(settings.DVO_URL, image_url)
     try:
         return image_set_service.get_or_upload_from_url(absolute_image_url)
-    except HTTPError as e:
+    except (HTTPError, ValueError) as e:
         logger.error(f"Error getting or uploading image: {e}")
         return None
 

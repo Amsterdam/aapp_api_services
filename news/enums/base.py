@@ -9,11 +9,11 @@ class ChoicesEnum(Enum):
 
     @classmethod
     def choices_as_dict(cls):
-        return {item.value._asdict()["index"]: item.value._asdict() for item in cls}
+        return {item.value._asdict()["tag_id"]: item.value._asdict() for item in cls}
 
 
 class NewsArticleExtract(NamedTuple):
-    index: str  # indexAlias in IPROX
+    tag_id: int  # tag id in Drupal
     boolean_column: str  # the name of the boolean column to set to True for articles retrieved from this source, e.g. "is_highlight", "is_liveblog", "is_district"
     district: Optional[
         str

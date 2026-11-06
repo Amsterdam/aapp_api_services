@@ -1,8 +1,8 @@
 QUERY = """
-query MyQuery($paragraphId: Int!, $page: Int!) {
+query NewsAndBlogsWithContent($paragraphId: Int!, $page: Int!) {
   view(paragraphId: $paragraphId, page: $page) {
     name
-   ... on View {
+    ... on View {
       id
       name
       nodes {
@@ -14,6 +14,7 @@ query MyQuery($paragraphId: Int!, $page: Int!) {
             name
           }
           summaryShort
+          summaryIntroductory
           title
           changedDate
           displayChangedDate
@@ -24,6 +25,8 @@ query MyQuery($paragraphId: Int!, $page: Int!) {
             ... on Image {
               name
               src
+              alt
+              description
             }
           }
           content {
@@ -57,38 +60,41 @@ query MyQuery($paragraphId: Int!, $page: Int!) {
             ... on Image {
               name
               src
+              alt
+              description
             }
           }
-        blogEntries {
-        ... on ParagraphBlogEntry {
-          id
-          title
-          content {
-            ... on ParagraphTextAndImage {
+          blogEntries {
+            ... on ParagraphBlogEntry {
               id
-              text
-              style
-              position
-              image_style
-              image_caption
-              image {
-                ... on MediaInterface {
-                  ... on Image {
-                    id
-                    name
-                    src
-                    width
-                    height
-                    alt
-                    description
+              title
+              dateTime
+              content {
+                ... on ParagraphTextAndImage {
+                  id
+                  text
+                  style
+                  position
+                  image_style
+                  image_caption
+                  image {
+                    ... on MediaInterface {
+                      ... on Image {
+                        id
+                        name
+                        src
+                        width
+                        height
+                        alt
+                        description
+                      }
+                    }
                   }
                 }
               }
             }
           }
         }
-      }   
-    }
       }
       itemsPerPage
       highlightedNumber

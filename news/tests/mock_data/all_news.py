@@ -1,11 +1,9 @@
 NEWS_ARTICLE_426 = {
     "__typename": "News",
     "id": 26,
-    "tag": [
-        {"id": 123, "name": "Nieuws stadsdeel Oost"},
-        {"id": 585, "name": "Nieuws stadsdeel Oost"},
-    ],
+    "tag": [{"id": 169, "name": "Informatie"}, {"id": 531, "name": "Nieuws — Nieuws"}],
     "summaryShort": "Van yoga tot boksen: van 18 tot en met 27 september kunt u in Oost gratis kennismaken met allerlei sporten en activiteiten.",
+    "summaryIntroductory": "Van 18 tot en met 27 september kunt u gratis sporten en bewegen in Oost. Doe mee met activiteiten in de buurt en ontdek welke sport of beweegactiviteit bij u past.",
     "title": "Amsterdamse Sport- en Beweegweek in Oost",
     "changedDate": "2026-09-16T16:29:00",
     "displayChangedDate": False,
@@ -16,6 +14,7 @@ NEWS_ARTICLE_426 = {
         {
             "name": "71773-zeeburgereiland-19-16juni2023-e-v-eis.jpg",
             "src": "/sites/default/files/pages/1085610/71773-zeeburgereiland-19-16juni2023-e-v-eis.jpg",
+            "alt": "Zeeburgereiland foto",
         }
     ],
     "content": [
@@ -39,39 +38,43 @@ NEWS_ARTICLE_396 = {
     "__typename": "News",
     "id": 396,
     "tag": [
-        {"id": 961, "name": "Achtergrond"},
-        {"id": 891, "name": "Nieuws"},
-        {"id": 556, "name": "01 Eindredacteur - Nieuws"},
-        {"id": 632, "name": "Deze week gepubliceerd op Amsterdam.nl"},
-        {"id": 633, "name": "Nu gepubliceerd op Amsterdam.nl"},
+        {"id": 169, "name": "Informatie"},
+        {"id": 1624, "name": "01 Eindredacteur - Nieuws"},
+        {"id": 1696, "name": "Nieuws"},
+        {"id": 491, "name": "Nieuws — Featured"},
+        {"id": 531, "name": "Nieuws — Nieuws"},
     ],
-    "summaryShort": "Ongeveer 30.000 medewerkers van de Nederlandse Spoorwegen legden op 17 september 1944 hun werk neer en doken onder. Dat veroorzaakte een kettingreactie.",
-    "title": "Hoe een spoorwegstaking tot de Hongerwinter leidde",
-    "changedDate": "2026-09-16T15:48:00",
+    "summaryShort": "We geven informatie en u kunt uw vragen stellen aan een jeugdverpleegkundige of -arts.",
+    "summaryIntroductory": "Als ouder wilt u weten wat goed is voor uw kind. Maar als het om vaccineren gaat, kan het lastig zijn om de juiste informatie te vinden. Op sociale media, in groepsapps en in gesprekken met andere ouders komen verschillende verhalen en meningen voorbij. Daarom besteedt de GGD tot en met 17 november extra aandacht aan vaccinaties voor kinderen.",
+    "title": "Weten wat goed is voor uw kind: alles over vaccineren",
+    "changedDate": "2026-10-28T13:47:27",
     "displayChangedDate": False,
-    "publicationDate": "2026-09-16T14:00:00",
-    "metaDescription": "Ongeveer 30.000 medewerkers van de Nederlandse Spoorwegen legden op 17 september 1944 hun werk neer en doken onder. Dat veroorzaakte een kettingreactie.",
-    "path": "https://website.nl/hoe-een-spoorwegstaking-tot-de-hongerwinter-leidde",
+    "publicationDate": "2026-10-27T13:00:00",
+    "metaDescription": "We geven informatie en u kunt uw vragen stellen aan een jeugdverpleegkundige of -arts.",
+    "path": "https://website.nl/weten-wat-goed-voor-uw-kind-alles-over-vaccineren",
     "image": [
         {
-            "name": "tijdens_de_hongerwinter_44_45_toen_er_ook_geen_brandstof_meer_was_werden_de_houten_blokjes_tusse.jpg",
-            "src": "/sites/default/files/pages/1085492/tijdens_de_hongerwinter_44_45_toen_er_ook_geen_brandstof_meer_was_werden_de_houten_blokjes_tusse.jpg",
+            "name": "vaccineren",
+            "src": "/sites/default/files/2026-10/vaccineren.jpg",
+            "alt": "vaccineren",
         }
     ],
     "content": [
         {
-            "id": 5974,
+            "id": 2987,
             "rows": [
                 {
                     "content": [
                         {
-                            "id": 1326,
-                            "content": """<p>In de zomer van 1944 stonden op het Centraal Station in Amsterdam reizigers met hun persoonsbewijs in de hand. Rangeerders liepen tussen de wagons en machinisten maakten zich op voor hun volgende rit. Vanaf de perrons zag het spoor er vertrouwd uit, maar achter dat beeld was alles veranderd. Nederland leefde al 4 jaar onder Duitse bezetting en de spoorwegen waren een onmisbaar onderdeel geworden van de Duitse oorlogsvoering.</p><h3 id="h0e718da7-ad3f-4b12-be9d-4d3c5e387895">Deportatietreinen</h3><p>Vrijwel alles dat de bezetter nodig had om het land in handen te houden en de oorlog voort te zetten, ging over het spoor. Ook deportaties. Vanuit Amsterdam werden Joodse mensen, en ook Roma en Sinti, naar de verzamelplaats aan de Polderweg en later naar Westerbork gebracht. Vanaf daar gingen de deportatietreinen verder naar de vernietigingskampen. De Nederlandse spoorwegen verzorgden het transport dat de Duitse bezetter daarvoor nodig had.</p><drupal-media data-entity-type="media" data-entity-uuid="083f042c-f4fb-4b86-8e2a-768364411c00"></drupal-media>\n<p>Treinbord Westerbork - Auschwitz</p>\n<h3 id="h72dd624d-010e-48b9-a733-a3c1bb2cf18c">Geallieerden rukken op</h3><p>In de zomer van 1944 begon het beeld van de oorlog snel te veranderen. Op 6 juni waren de geallieerden in Normandië geland. Daarna trokken Britse en Amerikaanse legers door Frankrijk en België steeds verder naar het noorden. In Nederland groeide de verwachting dat ook hier de bevrijding nabij was.</p><h3 id="h88287bec-731c-48cd-b536-8ba9ae6f6ba8">Duitsers verzwakken</h3><p>Een spoorwegstaking om de Duitsers te verzwakken kon de geallieerden helpen, maar bracht ook risico’s met zich mee. In februari 1944 had spoorwegdirecteur Willem Hupkes geld laten reserveren om de lonen van het personeel tijdens een eventuele staking te kunnen blijven betalen. Hij wilde zo’n middel niet te vroeg gebruiken. Een staking moest samenvallen met een geallieerde operatie waarbij het stilleggen van het Nederlandse spoor écht van betekenis kon zijn.</p><h3 id="hbfb7e124-9e16-4abc-92f4-53d10d8d74db">Spoorwegstaking</h3><p>Dat moment kwam op 17 september 1944. In de ochtend begonnen de geallieerden aan Operatie Market Garden. Rond Arnhem, Nijmegen en Eindhoven kwamen duizenden parachutisten naar beneden, terwijl geallieerde grondtroepen vanuit België oprukten. Het plan was om een reeks bruggen over de grote rivieren te veroveren, om zo een snelle doorgang naar het noorden van Nederland te forceren. Duitse versterkingen moesten worden tegengehouden. Een spoorstaking kon helpen.</p><drupal-media data-entity-type="media" data-entity-uuid="37988765-7bf7-4de0-92cc-d64a8adf0d7d"></drupal-media>\n<p>Parachutisten landen in Nederland als onderdeel van Operatie Market Garden.</p>\n<h3 id="h8dca9dc5-0fa6-4ac3-a30a-96c4bc379191">De kinderen van Versteeg</h3><p>Om 17.45 uur werd via Radio Oranje het bevel gegeven om het werk neer te leggen. "De kinderen van Versteeg moeten allen onder de wol." Versteeg was een schuilnaam van Hupkes, de kinderen medewerkers van de spoorwegen. Ongeveer 30.000 spoorwegmedewerkers, van machinisten en conducteurs tot monteurs en meer, verlieten hun werk en doken onder. Zij zetten daarmee hun eigen veiligheid en die van hun gezinnen op het spel.</p><h3 id="hcacb18c3-42b0-4f6f-8c93-58c75838d30e">Amsterdam niet bevrijd</h3><p>Als Arnhem, Nijmegen en de andere bruggen in geallieerde handen kwamen, zouden de spoorwegmedewerkers hun werk weer kunnen hervatten. Maar Arnhem viel niet. De geallieerde opmars liep vast en het front bleef maandenlang dwars door Nederland liggen. Het zuiden werd bevrijd, maar Amsterdam en de rest van het westen niet. De spoorwegstaking duurde voort en de stad bleef afgesneden.</p><drupal-media data-entity-type="media" data-entity-uuid="7c0cbe28-5f17-432d-8198-dc7f59687519"></drupal-media>\n<p>Affiche tegen de spoorwegstaking</p>\n<drupal-media data-entity-type="media" data-entity-uuid="dd4e34d1-2c12-4cbc-80eb-589fedb8c087"></drupal-media>\n<p>Affiche met daarop de mogelijke gevolgen van de spoorwegstaking</p>\n<h3 id="h1921c014-c402-46be-abb4-4d2885ea84e5">Strafmaatregelen</h3><p>Als represaille voor de staking verbood Arthur Seyss-Inquart, een Oostenrijkse nazi en de hoogste Duitse bestuurder in Nederland, het vervoer van voedsel vanuit de landbouwgebieden in het noordoosten naar het westen van Nederland. Amsterdam was voor de voedselvoorziening sterk afhankelijk van aanvoer van buitenaf en werd hierdoor nog verder geïsoleerd. De winkels begonnen eind september leeg te raken en de rantsoenen werden kleiner. Schepen mochten na enkele weken weer varen, maar de schade was toen al groot en in december begon het te vriezen. De rivieren en kanalen raakten dicht waardoor ook over water steeds minder voedsel de stad bereikte.</p><h3 id="h2c553e93-8509-4a33-851f-74dc385cf853">Hongerwinter</h3><p>In Amsterdam waren kolen nauwelijks te krijgen, en verwarming, gas en elektriciteit werden steeds verder beperkt. Alles dat kon branden was kostbaar. Hout werd uit leegstaande huizen gehaald, bomen werden gekapt en houten blokjes werden tussen de tramrails vandaan gehaald. De trams reden toch niet meer. In de straten van onder meer de Jordaan en de Pijp stonden mensen uren in de kou voor voedsel en gaarkeukens. Wie nog een fiets had, trok de stad uit, in de hoop op het platteland een boer te vinden die iets wilde ruilen voor aardappelen, graan of andere levensmiddelen. Anderen gingen met handkarren op pad. Op het Centraal Station, waar normaal gesproken voortdurend mensen en goederen de stad binnenkwamen, was het stil.</p><drupal-media data-entity-type="media" data-entity-uuid="afab220d-45ba-4af1-a3c9-bd07a1730a65"></drupal-media>\n<p>Tijdens de Hongerwinter, toen er ook geen brandstof meer was, werden de houten blokjes tussen de tramrails vandaan gehaald om opgestookt te worden.</p>\n<drupal-media data-entity-type="media" data-entity-uuid="7426ffdc-55b9-49ad-b95b-b6c8729101f2"></drupal-media>\n<p>Mensen zoeken naar blokjes hout en sintels tussen de tramrails.</p>\n<drupal-media data-entity-type="media" data-entity-uuid="a83b426d-f231-4acd-8ad6-8e4da1cdf4bb"></drupal-media>\n<p>In de buitenwijken ging men op zoek naar kolengruis.</p>\n<h3 id="hff3777bd-9152-4363-9816-08720a3a63c5">Stadskindjes naar de provincie</h3><p>Vooral kinderen leden onder de schaarste. Ze werden magerder en zwakker, en hadden steeds minder weerstand tegen de kou en ziekten. Ongeveer 40.000 Amsterdamse kinderen gingen naar gezinnen in andere delen van Nederland, zoals Drenthe, Overijssel, Friesland en Groningen, waar de voedselvoorziening iets beter was. Voor veel ouders moet het een ingrijpende beslissing zijn geweest om hun kinderen mee te geven aan mensen die ze nauwelijks kenden, in de hoop dat ze daar de winter zouden overleven.</p><drupal-media data-entity-type="media" data-entity-uuid="4dc6fade-10a1-41f8-9860-a97c3f2258fe"></drupal-media>\n<p>Iedereen werd geraakt door de Hongerwinter.</p>\n<drupal-media data-entity-type="media" data-entity-uuid="f0e7ca42-151c-448b-990a-f08591f8aa2a"></drupal-media>\n<p>Maar de kinderen en ouderen leden het meest. Zij werden steeds magerder en zwakker. Hun weerstand tegen de kou en ziekten ging snel achteruit.</p>\n<h3 id="habae3feb-6d92-4fba-bd44-cec95bd39487">55.000 liter warm eten</h3><p>Toen de officiële voorzieningen steeds verder wegvielen, ontstonden in verschillende buurten eigen hulpnetwerken. Buurtcomités zamelden voedsel en brandstof in voor mensen die het zelf niet meer konden redden. In Betondorp werd in de wintermaanden van 1945 meer dan 55.000 liter warm voedsel bereid, vooral voor schoolkinderen. In de armste delen van de stad, de Oostelijke Eilanden, kregen 3.000 kinderen en 500 onderduikers dagelijks warm eten. Kerken, buurtbewoners en vrijwilligers probeerden zo de ergste gevolgen van de honger op te vangen. Toch stierven in januari 1945 in Amsterdam ruim 3 keer zoveel mensen als normaal.</p><drupal-media data-entity-type="media" data-entity-uuid="3cc5fb03-15bc-4f65-99fe-e6475c6dbd97"></drupal-media>\n<p>Tijdens de Hongerwinter werd door de stichting Winterhulp Nederland aan 1.800 Jordaneesjes een warme maaltijd aangeboden.</p>\n<drupal-media data-entity-type="media" data-entity-uuid="74b0e99e-2bde-48cb-bf26-e49083de8f49"></drupal-media>\n<p>Een man staat bij een huisje, waar tijdens de spoorwegstaking in 1944 en 1945 het woord ‘doorstaken’ op is geschilderd.</p>\n<h3 id="h25416b61-9561-4953-bd45-7f78e8a99c12">Opeenstapeling</h3><p>De Hongerwinter was het gevolg van verschillende ontwikkelingen die elkaar versterkten. De staking was niet bevorderlijk, maar de Duitse maatregelen tegen vervoer, het stilvallen van de scheepvaart, de bevroren waterwegen, het gebrek aan brandstof en de uitputting van Nederland na jaren oorlog zorgden samen voor de perfecte storm in een winter die steeds meer mensen verzwakte.</p><h3 id="h006c008c-68d1-439e-b6eb-82a1d0bc84e3">Bevrijd</h3><p>Pas in het voorjaar van 1945 kwam de bevrijding dichterbij. In april trokken de geallieerden verder door het noorden en oosten van Nederland. Op 5 mei capituleerden de Duitse troepen en kwam ook de spoorwegstaking na 8 maanden eindelijk ten einde. Amsterdam werd uiteindelijk op 8 mei door de Canadezen bevrijd.</p><p> <br/> <br/>Beeld: Nationaal Archief en Stadsarchief Amsterdam</p>""",
+                            "id": 2985,
+                            "content": '<p>Met de campagne Sterker vanaf de start willen we ouders betrouwbare en begrijpelijke informatie over vaccineren geven. Ook kunnen ouders hun&nbsp;vragen en twijfels bespreken met een jeugdarts of jeugdverpleegkundige. Als het om de gezondheid van uw kind gaat, is het belangrijk dat u een weloverwogen keuze maakt.</p><h3><strong>Jeugdarts Salem antwoordt</strong></h3><p>Jeugdarts Salem Zeggay beantwoordt vragen die ouders in de praktijk stellen. U vindt de video op <a href="http://ggd.amsterdam.nl/vaccinatie">Sterker vanaf de start</a>.&nbsp;Ook vindt u hier&nbsp;antwoorden op veelgestelde vragen, feiten en fabels en verhalen van Amsterdamse ouders over hun ervaringen met vaccineren.</p><h3><strong>In gesprek in de wijk</strong></h3><p>Daarnaast zijn we aanwezig in de wijken. In Nieuw-West, Zuidoost en Noord kunt u op drukbezochte pleinen en in winkelcentra terecht voor een laagdrempelig gesprek met een jeugdverpleegkundige. Kinderen kunnen spelenderwijs meer leren over hoe een vaccinatie werkt. Ondertussen kunnen ouders onder het genot van een kopje koffie hun vragen of twijfels over vaccineren bespreken. U hoeft niet alles al te weten om het gesprek aan te gaan.</p><h3><strong>Meer weten over vaccineren?</strong></h3><p>Wilt u meer weten over vaccineren of heeft u vragen of twijfels? Kijk op <a href="http://ggd.amsterdam.nl/vaccinatie">Sterker vanaf de start</a> voor meer informatie en mogelijkheden om uw vragen te&nbsp;stellen aan een jeugdverpleegkundige of jeugdarts.</p>',
                         }
                     ]
                 }
             ],
-        }
+        },
+        {"id": 2991, "rows": [{"content": [{}]}]},
+        {"id": 2994, "rows": [{"content": [{}]}]},
     ],
 }
 
@@ -84,7 +87,8 @@ BLOG_ARTICLE_368 = {
     ],
     "summaryShort": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse interdum mi velit, at facilisis nulla blandit ac. Praesent elementum tellus diam, aliquet bibendum erat pretium id. Etiam vitae ex nec quam scelerisque ultricies. Curabitur blandit gravida tellus, ac ullamcorper ex fermentum molestie. Mauris nec ligula sapien. Fusce faucibusodio purus, eget dapibus massa lacinia non. Cras rutrum eget lectus interdum dapibus.",
     "title": "Demo | 01-10-2026 | Liveblog",
-    "changedDate": "2026-10-01T08:27:17",
+    "publicationDate": "2026-10-27T13:00:00",
+    "changedDate": "2026-11-01T08:27:17",
     "displayChangedDate": False,
     "metaDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse interdum mi velit, at facilisis nulla blandit ac. Praesent elementum tellus diam, aliquet bibendum erat pretium id. Etiam vitae ex nec quam scelerisque ultricies. Curabitur blandit gravida tellus, ac ullamcorper ex fermentum molestie. Mauris nec ligula sapien. Fusce faucibusodio purus, eget dapibus massa lacinia non. Cras rutrum eget lectus interdum dapibus.",
     "path": "https://dvo.acc.amsterdam.nl/demo-01-10-2026-liveblog",
@@ -92,6 +96,7 @@ BLOG_ARTICLE_368 = {
         {
             "name": "muurkunst camuslaan",
             "src": "/sites/default/files/2026-09/69606-muurkunst-3-a-camuslaan-01-8feb2023-e-v-eis_1_.jpg",
+            "alt": "muurkunst camuslaan",
         }
     ],
     "blogEntries": [
