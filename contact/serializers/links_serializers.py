@@ -5,6 +5,7 @@ class LinksOutSerializer(serializers.Serializer):
     acknowledgeChild = serializers.URLField()
     birth = serializers.URLField()
     boatChargingInfo = serializers.URLField()
+    boatChargingPrivacyStatement = serializers.URLField()
     chatPrivacy = serializers.URLField()
     citypass = serializers.URLField()
     cityPassRequest = serializers.URLField()
