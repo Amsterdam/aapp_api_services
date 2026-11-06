@@ -126,10 +126,13 @@ def get_liveblog_messages(blog_entries: list[dict]) -> list[dict]:
             for content in (entry.get("content") or [])
         )
 
-        image_information = (
-            entry.get("content", [])[0].get("image", [])[0]
-            if entry.get("content") and entry.get("content", [])[0].get("image")
-            else {}
+        image_information = next(
+            (
+                image
+                for content in entry.get("content") or []
+                for image in content.get("image") or []
+            ),
+            {},
         )
 
         messages.append(

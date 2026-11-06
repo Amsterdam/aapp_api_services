@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from news.etl.transform_data import (
     get_article_properties,
@@ -79,3 +79,40 @@ class TransformDataTest(TestCase):
         liveblog_messages = get_liveblog_messages(blog_entries)
         self.assertIsInstance(liveblog_messages, list)
         self.assertEqual(len(liveblog_messages), len(blog_entries))
+
+    @override_settings(DVO_URL="https://dvo.example.test")
+    def test_get_liveblog_messages_uses_first_image_across_content_blocks(self):
+        blog_entries = [
+            {
+                "content": [
+                    {
+                        "text": '<div class="dds-prose"><p class="dds-paragraph"><span>Lorem ipsum dolor sit amet</span></p></div>'
+                    },
+                    {
+                        "text": '<div class="dds-prose"><p class="dds-paragraph">Sed commodo volutpat nibh sed ullamcorper.</p></div>',
+                        "image": [
+                            {
+                                "src": "/image.jpg",
+                                "alt": "Image alt",
+                                "description": "Image description",
+                            }
+                        ],
+                    },
+                ]
+            }
+        ]
+
+        message = get_liveblog_messages(blog_entries)[0]
+
+        self.assertEqual(
+            message["body"],
+            '<p class="dds-paragraph"><span>Lorem ipsum dolor sit amet</span></p><p class="dds-paragraph">Sed commodo volutpat nibh sed ullamcorper.</p>',
+        )
+        self.assertEqual(
+            message["image"],
+            {
+                "url": "https://dvo.example.test/image.jpg",
+                "alt": "Image alt",
+                "description": "Image description",
+            },
+        )

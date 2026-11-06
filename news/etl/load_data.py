@@ -218,7 +218,7 @@ class NewsArticleLoader:
                 image_sources,
                 update_conflicts=True,
                 unique_fields=["article", "uri"],
-                update_fields=["width", "height", "alt", "description"],
+                update_fields=["width", "height", "alt", "description", "foreign_id"],
             )
 
     def _upsert_liveblog_items_and_item_images(
@@ -303,7 +303,7 @@ class NewsArticleLoader:
                 image_sources,
                 update_conflicts=True,
                 unique_fields=["liveblog_item", "uri"],
-                update_fields=["width", "height", "alt", "description"],
+                update_fields=["width", "height", "alt", "description", "foreign_id"],
             )
 
     def send_liveblog_updates(
