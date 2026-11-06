@@ -218,7 +218,7 @@ class NewsArticleLoader:
                 image_sources,
                 update_conflicts=True,
                 unique_fields=["article", "uri"],
-                update_fields=["width", "height"],
+                update_fields=["width", "height", "alt", "description"],
             )
 
     def _upsert_liveblog_items_and_item_images(
@@ -257,6 +257,11 @@ class NewsArticleLoader:
         """
         image = message.get("image") or {}
         image_url = image.get("url")
+
+        if not image_url:
+            LiveBlogItemImage.objects.filter(liveblog_item=liveblog_item).delete()
+            return None
+
         if image_url:
             try:
                 image_set_data = self.image_set_service.get_or_upload_from_url(
@@ -298,7 +303,7 @@ class NewsArticleLoader:
                 image_sources,
                 update_conflicts=True,
                 unique_fields=["liveblog_item", "uri"],
-                update_fields=["width", "height"],
+                update_fields=["width", "height", "alt", "description"],
             )
 
     def send_liveblog_updates(

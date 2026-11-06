@@ -15,6 +15,7 @@ TAG_MAPPING: dict[int | str, dict[str, str | bool]] = {
     783: {"district": "zuidoost"},
     779: {"district": "noord"},
     777: {"district": "centrum"},
+    814: {"district": "weesp"},
     531: {"in_all_news": True},
     491: {"is_highlight": True},
     2696: {"is_active_liveblog": True},
@@ -130,7 +131,10 @@ def get_liveblog_messages(blog_entries: list[dict]) -> list[dict]:
     for entry in blog_entries:
         title = entry.get("title")
         date_string = entry.get("dateTime")
-        body = decode_and_strip_outer_div(entry.get("content", [])[0].get("text"))
+        body = "".join(
+            decode_and_strip_outer_div(content.get("text"))
+            for content in (entry.get("content") or [])
+        )
 
         image_information = (
             entry.get("content", [])[0].get("image", [])[0]
