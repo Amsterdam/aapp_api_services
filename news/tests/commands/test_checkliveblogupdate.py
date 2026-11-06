@@ -1,8 +1,9 @@
+import asyncio
 from copy import deepcopy
 from datetime import datetime
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, call, patch
 
+import aiohttp
 from django.core.management import call_command
 from django.test import SimpleTestCase
 from django.utils import timezone
@@ -10,6 +11,7 @@ from model_bakery import baker
 
 from core.services.notification_service import ScheduledNotification
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+from core.utils.dvo_utils import DvOResponseError
 from news.management.commands import checkliveblogupdate
 from news.models import (
     LiveBlogItem,
@@ -20,9 +22,69 @@ from news.tests.mock_data.all_news import BLOG_ARTICLE_368
 
 
 class LiveblogHasUpdateTest(SimpleTestCase):
+    def test_handle_continues_after_dvo_query_failures(self):
+        command = checkliveblogupdate.Command()
+        liveblogs = [
+            baker.prepare(
+                NewsArticle,
+                foreign_id=foreign_id,
+                modification_datetime=None,
+            )
+            for foreign_id in range(1, 5)
+        ]
+        changed_date = {"nodeByID": {"changedDate": "2026-11-06T09:00:00+00:00"}}
+        http_error = aiohttp.ClientResponseError(None, (), status=500)
+        query_results = [
+            http_error,
+            changed_date,
+            asyncio.TimeoutError(),
+            changed_date,
+            DvOResponseError("Invalid DvO response"),
+            changed_date,
+            {"nodeByID": {"id": 4}},
+        ]
+
+        with (
+            patch.object(
+                checkliveblogupdate.NewsArticle.objects,
+                "filter",
+                return_value=liveblogs,
+            ),
+            patch.object(
+                command,
+                "_run_query",
+                new=AsyncMock(side_effect=query_results),
+            ) as mock_query,
+            patch.object(
+                checkliveblogupdate, "transform", return_value=["transformed"]
+            ),
+            patch.object(checkliveblogupdate.data_loader, "load") as mock_load,
+            self.assertLogs(checkliveblogupdate.logger, level="ERROR") as captured_logs,
+        ):
+            command.handle()
+
+        self.assertEqual(
+            mock_query.await_args_list,
+            [
+                call(checkliveblogupdate.blog_base_info.QUERY, 1),
+                call(checkliveblogupdate.blog_base_info.QUERY, 2),
+                call(checkliveblogupdate.blog_full_content.QUERY, 2),
+                call(checkliveblogupdate.blog_base_info.QUERY, 3),
+                call(checkliveblogupdate.blog_full_content.QUERY, 3),
+                call(checkliveblogupdate.blog_base_info.QUERY, 4),
+                call(checkliveblogupdate.blog_full_content.QUERY, 4),
+            ],
+        )
+        mock_load.assert_called_once_with(["transformed"])
+        self.assertEqual(
+            {record.foreign_id for record in captured_logs.records},
+            {1, 2, 3},
+        )
+
     def test_liveblog_has_update_compares_timezone_naive_api_date(self):
         command = checkliveblogupdate.Command()
-        liveblog = SimpleNamespace(
+        liveblog = baker.prepare(
+            NewsArticle,
             foreign_id=1234123,
             modification_datetime=datetime.fromisoformat("2026-11-03T09:18:04+00:00"),
         )
@@ -42,7 +104,8 @@ class LiveblogHasUpdateTest(SimpleTestCase):
 
     def test_liveblog_has_update_returns_true_for_newer_api_date(self):
         command = checkliveblogupdate.Command()
-        liveblog = SimpleNamespace(
+        liveblog = baker.prepare(
+            NewsArticle,
             foreign_id=1234123,
             modification_datetime=datetime.fromisoformat("2026-11-03T09:18:04+00:00"),
         )

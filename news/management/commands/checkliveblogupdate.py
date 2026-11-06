@@ -1,11 +1,12 @@
 import asyncio
 import logging
 
+import aiohttp
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from core.utils.dvo_utils import DvOClient
+from core.utils.dvo_utils import DvOClient, DvOResponseError
 from news.etl.load_data import NewsArticleLoader
 from news.etl.queries import blog_base_info, blog_full_content
 from news.etl.transform_data import transform
@@ -54,7 +55,20 @@ class Command(BaseCommand):
             foreign_id = liveblog.foreign_id
 
             # Step 2: check if the liveblog has updates based on the changedDate from the API
-            if not self.liveblog_has_update(liveblog):
+            try:
+                has_update = self.liveblog_has_update(liveblog)
+            except (
+                aiohttp.ClientError,
+                asyncio.TimeoutError,
+                DvOResponseError,
+            ):
+                logger.exception(
+                    "Failed to check for liveblog updates.",
+                    extra={"foreign_id": foreign_id},
+                )
+                continue
+
+            if not has_update:
                 logger.info(
                     "No new updates for liveblog based on changedDate.",
                     extra={"foreign_id": foreign_id},
@@ -67,7 +81,25 @@ class Command(BaseCommand):
                 extra={"foreign_id": foreign_id},
             )
 
-            full_blog = self.fetch_full_blog_information(foreign_id)
+            try:
+                full_blog = self.fetch_full_blog_information(foreign_id)
+            except (
+                aiohttp.ClientError,
+                asyncio.TimeoutError,
+                DvOResponseError,
+            ):
+                logger.exception(
+                    "Failed to fetch liveblog updates.",
+                    extra={"foreign_id": foreign_id},
+                )
+                continue
+
+            if not full_blog:
+                logger.error(
+                    "Failed to fetch full blog information for liveblog.",
+                    extra={"foreign_id": foreign_id},
+                )
+                continue
 
             # Step 4: Transform the data to match the format of our database models.
             transformed_data = transform([full_blog])
@@ -93,7 +125,7 @@ class Command(BaseCommand):
         blog_info = asyncio.run(
             self._run_query(blog_base_info.QUERY, liveblog.foreign_id)
         )
-        new_changed_date = blog_info.get("nodeByID", {}).get("changedDate")
+        new_changed_date = (blog_info.get("nodeByID") or {}).get("changedDate")
         if not new_changed_date:
             return False
 
