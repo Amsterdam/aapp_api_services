@@ -5,21 +5,11 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 
+from news.enums.news_article import NewsArticleSource
+
 logger = logging.getLogger(__name__)
 
-TAG_MAPPING: dict[int | str, dict[str, str | bool]] = {
-    780: {"district": "oost"},
-    781: {"district": "west"},
-    778: {"district": "nieuw-west"},
-    782: {"district": "zuid"},
-    783: {"district": "zuidoost"},
-    779: {"district": "noord"},
-    777: {"district": "centrum"},
-    814: {"district": "weesp"},
-    531: {"in_all_news": True},
-    491: {"is_highlight": True},
-    2696: {"is_active_liveblog": True},
-}
+TAG_MAPPING = NewsArticleSource.choices_as_dict()
 
 
 def transform(extracted_data: dict[str, list[dict]]) -> list[dict]:
@@ -100,11 +90,11 @@ def get_article_properties(
         if tag_properties is None:
             continue
 
-        if tag_properties.get("in_all_news"):
+        if tag_properties.get("boolean_column") == "in_all_news":
             properties["in_all_news"] = True
-        if tag_properties.get("is_highlight"):
+        if tag_properties.get("boolean_column") == "is_highlight":
             properties["is_highlight"] = True
-        if tag_properties.get("is_active_liveblog"):
+        if tag_properties.get("boolean_column") == "is_active_liveblog":
             properties["is_active_liveblog"] = True
         district = tag_properties.get("district")
         if isinstance(district, str):
