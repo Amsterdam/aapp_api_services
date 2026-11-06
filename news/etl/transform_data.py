@@ -10,6 +10,7 @@ from news.enums.news_article import NewsArticleSource
 logger = logging.getLogger(__name__)
 
 TAG_MAPPING = NewsArticleSource.choices_as_dict()
+REQUIRED_DRUPAL_FIELDS = ("id", "title", "changedDate", "publicationDate", "path")
 
 
 def transform(extracted_data: dict[str, list[dict]]) -> list[dict]:
@@ -22,6 +23,20 @@ def transform(extracted_data: dict[str, list[dict]]) -> list[dict]:
 
     transformed = []
     for article in extracted_data:
+        missing_fields = [
+            field for field in REQUIRED_DRUPAL_FIELDS if not article.get(field)
+        ]
+
+        if missing_fields:
+            logger.warning(
+                "Skipping Drupal node with missing required fields",
+                extra={
+                    "article_id": article.get("id"),
+                    "missing_fields": missing_fields,
+                },
+            )
+            continue
+
         article_properties = get_article_properties(
             article.get("tag", []), article.get("__typename")
         )
@@ -33,7 +48,9 @@ def transform(extracted_data: dict[str, list[dict]]) -> list[dict]:
                 "foreign_id": article.get("id"),
                 "type": article.get("__typename"),
                 "title": article.get("title"),
-                "article_body": get_body_from_content(article.get("content", [])),
+                "article_body": get_body_from_content(
+                    article.get("content", []), article.get("id")
+                ),
                 "liveblog_messages": get_liveblog_messages(
                     article.get("blogEntries", [])
                 ),
@@ -45,13 +62,9 @@ def transform(extracted_data: dict[str, list[dict]]) -> list[dict]:
                 "is_district": article_properties.get("is_district", False),
                 "district": article_properties.get("district"),
                 "url": article.get("path"),
-                "creation_datetime": article.get(
-                    "publicationDate", "2026-11-01T13:00:00Z"
-                ),  # !! DO NOT GO LIVE WITH THIS DEFAULT
+                "creation_datetime": article.get("publicationDate"),
                 "modification_datetime": article.get("changedDate"),
-                "publication_datetime": article.get(
-                    "publicationDate", "2026-11-01T13:00:00Z"
-                ),  # !! DO NOT GO LIVE WITH THIS DEFAULT
+                "publication_datetime": article.get("publicationDate"),
                 "expiration_datetime": article.get("expirationDate"),
                 "image": {
                     "url": construct_image_url(article_image.get("src"))
@@ -104,13 +117,23 @@ def get_article_properties(
     return properties
 
 
-def get_body_from_content(content: list[dict]) -> str:
+def get_body_from_content(content: list[dict], foreign_id: int) -> str:
     body = ""
     for item in content:
         if "rows" in item:
             for row in item["rows"]:
                 for c in row.get("content", []):
                     body += c.get("content", "")
+
+    # remove any drupal-media tags from the body
+    if "drupal-media" in body:
+        logger.info(
+            "There is a drupal media tag in the article body",
+            extra={"foreign_id": foreign_id},
+        )
+        body = re.sub(
+            r"<drupal-media[^>]*>.*?</drupal-media>", "", body, flags=re.DOTALL
+        )
     return body
 
 

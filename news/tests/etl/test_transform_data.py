@@ -4,6 +4,7 @@ from news.etl.transform_data import (
     get_article_properties,
     get_body_from_content,
     get_liveblog_messages,
+    transform,
 )
 from news.tests.mock_data.all_news import (
     BLOG_ARTICLE_368,
@@ -13,6 +14,27 @@ from news.tests.mock_data.all_news import (
 
 
 class TransformDataTest(TestCase):
+    def test_transform_skips_articles_missing_required_fields(self):
+        article = {
+            "id": 123,
+            "__typename": "News",
+            "title": "A title",
+            "publicationDate": "2026-11-01T13:00:00Z",
+            "changedDate": "2026-11-06T09:00:00Z",
+            "path": "https://example.com/article",
+        }
+        required_fields = ("id", "title", "changedDate", "publicationDate", "path")
+        incomplete_articles = [{**article, field: None} for field in required_fields]
+
+        with self.assertLogs("news.etl.transform_data", level="WARNING") as logs:
+            transformed = transform([*incomplete_articles, article])
+
+        self.assertEqual([item["foreign_id"] for item in transformed], [123])
+        self.assertEqual(
+            [record.missing_fields for record in logs.records],
+            [[field] for field in required_fields],
+        )
+
     def test_get_article_properties(self):
         tags = [
             {"id": 531, "name": "Nieuws — Nieuws"},
@@ -55,7 +77,7 @@ class TransformDataTest(TestCase):
 
     def test_get_body_from_content(self):
         content = NEWS_ARTICLE_426["content"]
-        body = get_body_from_content(content)
+        body = get_body_from_content(content, foreign_id=426)
         self.assertIn(
             "Sportclubs, sportscholen en buurtinitiatieven organiseren tijdens deze 10 dagen gratis activiteiten in Oost",
             body,
@@ -63,12 +85,12 @@ class TransformDataTest(TestCase):
 
     def test_get_body_from_content_with_empty_content(self):
         content = []
-        body = get_body_from_content(content)
+        body = get_body_from_content(content, foreign_id=0)
         self.assertEqual(body, "")
 
     def test_get_body_from_content_with_multiple_content_blocks(self):
         content = NEWS_ARTICLE_396["content"]
-        body = get_body_from_content(content)
+        body = get_body_from_content(content, foreign_id=396)
         self.assertIn(
             "Met de campagne Sterker vanaf de start willen we ouders betrouwbare en begrijpelijke informatie over vaccineren geven.",
             body,
