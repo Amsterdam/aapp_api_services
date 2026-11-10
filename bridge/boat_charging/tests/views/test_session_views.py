@@ -160,8 +160,48 @@ class TestSessionView(BoatChargingTestCase):
                     [item["id"] for item in body["result"]],
                     expected_page_ids,
                 )
+                # all statuses should be "ACTIVE"
+                for item in body["result"]:
+                    self.assertEqual(item["status"], "ACTIVE")
                 self.assertEqual(body["page"]["totalElements"], len(expected_ids))
                 self.assertEqual(body["page"]["totalPages"], total_pages)
+
+    def test_status_completed_return_value(self):
+
+        response_data = [
+            {
+                "session": {
+                    "uniqueId": "some-unique-id",
+                    "stationId": "string",
+                    "socketNumber": "0",
+                    "status": 5,
+                    "createdAt": "2026-06-29T12:09:21.5983604",
+                    "userEmail": "test@amsterdam.nl",
+                    "vignetNumber": "ABC123",
+                    "boatName": "Boaty",
+                }
+            },
+        ]
+
+        respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
+            return_value=httpx.Response(200, json=response_data)
+        )
+
+        response = self.client.get(
+            self.url,
+            {"status": "COMPLETED"},
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(
+            body["page"]["totalElements"],
+            1,
+        )
+        response_session_data = body["result"][0]
+        self.assertEqual(response_session_data["id"], "some-unique-id")
+        self.assertEqual(response_session_data["status"], "COMPLETED")
 
     def test_status_completed_filters_sessions(self):
         respx.get(settings.BOAT_CHARGING_ENDPOINTS["SESSIONS"]).mock(
