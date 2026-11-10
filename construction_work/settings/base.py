@@ -25,10 +25,6 @@ ADDRESS_SEARCH_URL = os.getenv(
 
 MIN_SEARCH_QUERY_LENGTH = 3
 
-IPROX_SERVER = os.getenv("IPROX_SERVER", "https://www.amsterdam.nl/")
-EPOCH = "1970-01-01 00:00:00"
-DATE_FORMAT_IPROX = "%Y-%m-%dT%H:%M:%S%z"
-
 ENTRA_ID_JWKS_URI = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
 
 ENTRA_TENANT_ID = os.getenv("TENANT_ID")
@@ -43,3 +39,4 @@ STATIC_URL = "/construction-work/static/"
 DVO_CONSTRUCTION_WORK_PARAGRAPH_ID = int(
     os.getenv("DVO_CONSTRUCTION_WORK_PARAGRAPH_ID", 102938)
 )
+SEND_ETL_NOTIFICATIONS = os.getenv("SEND_ETL_NOTIFICATIONS", "True").lower() == "true"

@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import random
+import time
 from collections.abc import Awaitable, Mapping, Sequence
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -207,6 +208,10 @@ class DvOClient:
         """Execute a query with retries while its caller holds a concurrency slot."""
         if self._session is None:
             raise RuntimeError("DvOClient must be used as an async context manager")
+
+        if settings.ENVIRONMENT == "local":
+            # locally we are not whitelisted for DvO, so we add a small delay to make sure we don't hit rate limits.
+            time.sleep(1)
 
         async with self._session.post(
             self.api_url,

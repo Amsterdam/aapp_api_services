@@ -9,11 +9,7 @@ from typing import Any
 
 from django.conf import settings
 
-from construction_work.etl.queries import (
-    news_articles,
-    projects_with_details,
-    work_articles,
-)
+from construction_work.etl.queries import news_articles, projects_with_details
 from core.utils.dvo_utils import DvOClient, DvOResponseError
 
 logger = logging.getLogger(__name__)
@@ -56,11 +52,11 @@ async def _get_all_drupal_projects_with_content() -> dict[str, Any]:
             ],
         )
         logger.info(
-            f"Fetched news articles for {len(news_articles_by_paragraph_id)} paragraph IDs"
+            f"Fetched {sum(len(articles) for articles in news_articles_by_paragraph_id)} news articles for {len(news_articles_by_paragraph_id)} paragraph IDs"
         )
 
         work_articles_by_paragraph_id = await client.execute_paginated_view_queries(
-            work_articles.QUERY,
+            news_articles.QUERY,
             [
                 {"paragraphId": paragraph_id_dict["paragraph_id"]}
                 for paragraph_id_dict in paragraph_ids_dicts
@@ -68,7 +64,7 @@ async def _get_all_drupal_projects_with_content() -> dict[str, Any]:
             ],
         )
         logger.info(
-            f"Fetched work articles for {len(work_articles_by_paragraph_id)} paragraph IDs"
+            f"Fetched {sum(len(articles) for articles in work_articles_by_paragraph_id)} work articles for {len(work_articles_by_paragraph_id)} paragraph IDs"
         )
 
     return {

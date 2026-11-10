@@ -10,9 +10,6 @@ from construction_work.etl.queries import (
 from construction_work.etl.queries import (
     projects_with_details,
 )
-from construction_work.etl.queries import (
-    work_articles as work_articles_query,
-)
 from construction_work.tests.mock_data.source.articles import (
     news_article_view,
     work_article_view,
@@ -65,7 +62,7 @@ class ExtractDataTestCase(SimpleTestCase):
                     ],
                 ),
                 mock.call(
-                    work_articles_query.QUERY,
+                    news_articles_query.QUERY,
                     [{"paragraphId": 79593}],
                 ),
             ],

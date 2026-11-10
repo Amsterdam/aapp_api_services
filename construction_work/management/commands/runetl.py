@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from construction_work.etl.send_notifications import send_article_notifications
@@ -11,16 +12,9 @@ class Command(BaseCommand):
 
     help = "Upsert construction work projects and articles"
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--first_run",
-            action="store_true",
-            help="Skip notifications and garbage collection for the initial ETL run",
-        )
+    def handle(self):
 
-    def handle(self, *args, **kwargs):
-
-        if not kwargs.get("first_run", False):
+        if settings.SEND_ETL_NOTIFICATIONS:
             current_article_ids = set(
                 Article.objects.values_list("drupal_id", flat=True)
             )
@@ -33,6 +27,7 @@ class Command(BaseCommand):
                 f"{error}"
             ) from error
 
-        if not kwargs.get("first_run", False):
+        if settings.SEND_ETL_NOTIFICATIONS:
             send_article_notifications(current_article_ids, found_articles)
-            garbage_collector(found_projects, found_articles)
+
+        garbage_collector(found_projects, found_articles)
