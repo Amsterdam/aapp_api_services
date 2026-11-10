@@ -20,13 +20,22 @@ from bridge.boat_charging.views.base_view import (
 )
 from core.pagination import CustomPagination
 
+NRG_SESSION_STATUS_MAPPING = {
+    2: "ACTIVE",
+    3: "ACTIVE",
+    4: "COMPLETED",
+    5: "COMPLETED",
+    6: "ACTIVE",
+    7: "ACTIVE",
+}
+
 
 @boat_charging_openapi_decorator(
     response_serializer_class=SessionResponseSerializer(many=True),
     additional_params=[
         OpenApiParameter(
             name="status",
-            description="Filter sessions by CPMS session status.",
+            description="Filter sessions by NRG session status.",
             type=OpenApiTypes.STR,
             enum=["ACTIVE", "COMPLETED"],
             location=OpenApiParameter.QUERY,
@@ -89,14 +98,8 @@ class SessionView(BaseView):
         return [
             item
             for item in response_json
-            if (
-                status == "ACTIVE"
-                and (item.get("session") or {}).get("status") in [2, 3, 6, 7]
-            )
-            or (
-                status == "COMPLETED"
-                and (item.get("session") or {}).get("status") in [4, 5]
-            )
+            if NRG_SESSION_STATUS_MAPPING.get((item.get("session") or {}).get("status"))
+            == status
         ]
 
     def get_session_data(self, item):
@@ -119,7 +122,9 @@ class SessionView(BaseView):
             "start_date_time": cpms_session.get("startDateTime"),
             "end_date_time": cpms_session.get("endDateTime"),
             "kwh": cpms_session.get("kwh"),
-            "status": cpms_session.get("status"),
+            "status": NRG_SESSION_STATUS_MAPPING.get(
+                session.get("status"), cpms_session.get("status")
+            ),
             "total_cost": cpms_session.get("totalCost", {}).get("exclVat"),
             "currency": "EUR",
         }
