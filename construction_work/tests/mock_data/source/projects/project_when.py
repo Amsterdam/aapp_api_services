@@ -6,6 +6,7 @@ MOCK_DATA = {
         {
             "name": "haven-stad_940x528.jpg",
             "src": "/sites/default/files/pages/864463/haven-stad_940x528.jpg",
+            "alt": "An example image",
         }
     ],
     "planCategory": [

@@ -36,6 +36,7 @@ MOCK_RESPONSE = {
                         {
                             "name": "some-image.jpg",
                             "src": "/sites/default/files/pages/1080533/some-image.jpg",
+                            "alt": "An example image",
                         }
                     ],
                 }

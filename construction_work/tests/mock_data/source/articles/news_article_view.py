@@ -34,6 +34,7 @@ MOCK_RESPONSE_79631 = {
                         {
                             "name": "image-ab.jpg",
                             "src": "/sites/default/files/pages/1084359/image-ab.jpg",
+                            "alt": "An example image",
                         }
                     ],
                 }

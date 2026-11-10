@@ -36,33 +36,47 @@ async def _get_all_drupal_projects_with_content() -> dict[str, Any]:
 
         paragraph_ids_by_type = {}
         for project in projects:
-            for paragraph_id_dict in extract_news_and_work_paragraph_id_from_project(
-                project
-            ):
+            try:
+                project_paragraph_id_dicts = (
+                    extract_news_and_work_paragraph_id_from_project(project)
+                )
+            except DvOResponseError as e:
+                logger.error(f"Failed to extract paragraph IDs from project: {e}")
+                continue
+
+            for paragraph_id_dict in project_paragraph_id_dicts:
                 key = (paragraph_id_dict["paragraph_id"], paragraph_id_dict["type"])
                 paragraph_ids_by_type.setdefault(key, paragraph_id_dict)
         paragraph_ids_dicts = list(paragraph_ids_by_type.values())
 
-        news_articles_by_paragraph_id = await client.execute_paginated_view_queries(
-            news_articles.QUERY,
-            [
-                {"paragraphId": paragraph_id_dict["paragraph_id"]}
-                for paragraph_id_dict in paragraph_ids_dicts
-                if paragraph_id_dict["type"] == "news"
-            ],
-        )
+        try:
+            news_articles_by_paragraph_id = await client.execute_paginated_view_queries(
+                news_articles.QUERY,
+                [
+                    {"paragraphId": paragraph_id_dict["paragraph_id"]}
+                    for paragraph_id_dict in paragraph_ids_dicts
+                    if paragraph_id_dict["type"] == "news"
+                ],
+            )
+        except DvOResponseError as e:
+            logger.error(f"Failed to fetch news articles: {e}")
+            news_articles_by_paragraph_id = {}
         logger.info(
             f"Fetched {sum(len(articles) for articles in news_articles_by_paragraph_id)} news articles for {len(news_articles_by_paragraph_id)} paragraph IDs"
         )
 
-        work_articles_by_paragraph_id = await client.execute_paginated_view_queries(
-            news_articles.QUERY,
-            [
-                {"paragraphId": paragraph_id_dict["paragraph_id"]}
-                for paragraph_id_dict in paragraph_ids_dicts
-                if paragraph_id_dict["type"] == "work"
-            ],
-        )
+        try:
+            work_articles_by_paragraph_id = await client.execute_paginated_view_queries(
+                news_articles.QUERY,
+                [
+                    {"paragraphId": paragraph_id_dict["paragraph_id"]}
+                    for paragraph_id_dict in paragraph_ids_dicts
+                    if paragraph_id_dict["type"] == "work"
+                ],
+            )
+        except DvOResponseError as e:
+            logger.error(f"Failed to fetch work articles: {e}")
+            work_articles_by_paragraph_id = {}
         logger.info(
             f"Fetched {sum(len(articles) for articles in work_articles_by_paragraph_id)} work articles for {len(work_articles_by_paragraph_id)} paragraph IDs"
         )
@@ -100,11 +114,7 @@ def extract_news_and_work_paragraph_id_from_project(
     """
     Return paragraph IDs for all news and work views in a project.
 
-    Some project payloads include ``None`` placeholders in row content, and older
-    news view blocks may omit ``contentIndication`` while still being titled
-    ``Nieuws``.
-
-    TODO: once everything is solid in production, this code may be simplified.
+    Some project payloads include ``None`` placeholders in row content.
     """
     paragraph_ids = []
     for grid in project.get("content", []) or []:

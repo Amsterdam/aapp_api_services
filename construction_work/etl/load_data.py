@@ -10,11 +10,13 @@ from django.utils import timezone
 from construction_work.models.article_models import (
     Article,
     ArticleImage,
+    ArticleImageSource,
 )
 from construction_work.models.project_models import (
     Project,
     ProjectContact,
     ProjectImage,
+    ProjectImageSource,
     ProjectSection,
     ProjectSectionUrl,
     ProjectTimelineItem,
@@ -55,7 +57,8 @@ def load_projects(project_data: list):
 
     project_objects = Project.objects.all()
     projects_dict = {project.drupal_id: project for project in project_objects}
-    contacts, images, timelines, sections, section_urls = (
+    contacts, images, image_sources, timelines, sections, section_urls = (
+        [],
         [],
         [],
         [],
@@ -67,14 +70,15 @@ def load_projects(project_data: list):
 
         contacts += get_contacts(data, project)
 
-        new_images = store_image(
+        new_images, new_image_sources = store_image(
             data,
             project,
             image_class=ProjectImage,
-            parent_field="project",
+            image_source_class=ProjectImageSource,
         )
 
         images += new_images
+        image_sources += new_image_sources
 
         timelines += get_timeline(data, project)
 
@@ -89,6 +93,7 @@ def load_projects(project_data: list):
     with transaction.atomic():
         ProjectImage.objects.all().delete()
         ProjectImage.objects.bulk_create(images)
+        ProjectImageSource.objects.bulk_create(image_sources)
 
     with transaction.atomic():
         ProjectTimelineItem.objects.all().delete()
@@ -111,7 +116,6 @@ def load_projects(project_data: list):
 
 def get_project_object(data):
     timeline_data = data.get("timeline") or {}
-    coordinates_data = data.get("coordinates") or {}
     sections_filled = check_sections_filled(data)
     project = Project(
         drupal_id=data.get("id"),
@@ -119,15 +123,13 @@ def get_project_object(data):
         subtitle=data.get("subtitle"),
         timeline_title=timeline_data.get("title"),
         timeline_intro=timeline_data.get("intro"),
-        coordinates_lat=data.get("coordinates_lat", coordinates_data.get("lat")),
-        coordinates_lon=data.get("coordinates_lon", coordinates_data.get("lon")),
+        coordinates_lat=data.get("coordinates_lat"),
+        coordinates_lon=data.get("coordinates_lon"),
         url=data.get("url"),
-        creation_date=data.get("creation_date", data.get("created")),
-        modification_date=data.get("modification_date", data.get("modified")),
-        # 133548: the publicationDate field is filled with the modification date from Iprox' side,
-        # because of that we will use the created date as publication date
-        publication_date=data.get("publication_date", data.get("created")),
-        expiration_date=data.get("expiration_date", data.get("expirationDate")),
+        creation_date=data.get("creation_date"),
+        modification_date=data.get("modification_date"),
+        publication_date=data.get("publication_date"),
+        expiration_date=data.get("expiration_date"),
         last_seen=timezone.now(),
         # only projects with filled sections are set to active, because those are
         # the only ones that can be shown on the frontend in a proper way.
@@ -237,7 +239,7 @@ def load_articles(article_data: list):
 
     # Projects can only be set after the articles are saved, because they are a many-to-many relationship
     articles_saved = Article.objects.filter(
-        drupal_id__in=article_project_mapping.keys()
+        drupal_id__in=[article for article in article_project_mapping.keys()]
     )
     with transaction.atomic():
         for article in articles_saved:
@@ -245,20 +247,22 @@ def load_articles(article_data: list):
             article.projects.set(projects)
 
     articles_dict = {article.drupal_id: article for article in articles_saved}
-    images = []
+    images, image_sources = [], []
     for data in article_data:
         article = articles_dict.get(data.get("id"))
-        new_images = store_image(
+        new_images, new_image_sources = store_image(
             data,
             article,
             image_class=ArticleImage,
-            parent_field="article",
+            image_source_class=ArticleImageSource,
         )
         images += new_images
+        image_sources += new_image_sources
 
     with transaction.atomic():
         ArticleImage.objects.all().delete()
         ArticleImage.objects.bulk_create(images)
+        ArticleImageSource.objects.bulk_create(image_sources)
 
 
 def get_article_object(data):
@@ -271,41 +275,34 @@ def get_article_object(data):
         url=data.get("url"),
         creation_date=data.get("creation_date"),
         modification_date=data.get("modification_date"),
-        # 133548: the publicationDate field is filled with the modification date from Iprox' side,
-        # because of that we will use the created date as publication date
         publication_date=data.get("publication_date"),
         expiration_date=data.get("expiration_date"),
     )
     return article
 
 
-def store_image(item_data, parent, image_class, parent_field: str) -> list:
-    image_set_data = item_data.get("image_set")
+def store_image(
+    project_data, parent, image_class, image_source_class
+) -> tuple[list, list]:
+    image_set_data = project_data.get("image_set")
     if not image_set_data:
-        return []
+        return [], []
+    image = image_class(
+        id=image_set_data.get("image_id"),
+        aspectRatio=image_set_data.get("aspectRatio"),
+        alternativeText=image_set_data.get("alternativeText"),
+        parent=parent,
+    )
 
-    images = []
-    for variant in image_set_data.get("variants", []):
-        try:
-            width = int(variant["width"])
-            height = int(variant["height"])
-        except (KeyError, TypeError, ValueError) as e:
-            logger.error(
-                "Invalid image variant dimensions",
-                extra={"variant": variant, "error": e},
-            )
-            return []
-        if not variant.get("uri"):
-            logger.error("Missing image variant uri", extra={"variant": variant})
-            return []
+    image.image_set = image_set_data["id"]
 
-        images.append(
-            image_class(
-                **{parent_field: parent},
-                foreign_id=image_set_data["id"],
-                uri=variant.get("uri"),
-                width=width,
-                height=height,
-            )
+    image_sources = [
+        image_source_class(
+            image=image,
+            uri=v["image"],
+            width=v["width"],
+            height=v["height"],
         )
-    return images
+        for v in image_set_data["variants"]
+    ]
+    return [image], image_sources

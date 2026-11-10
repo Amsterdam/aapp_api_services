@@ -6,6 +6,7 @@ MOCK_DATA = {
         {
             "name": "lammetjes.jpg",
             "src": "/sites/default/files/pages/955394/lammetjes.jpg",
+            "alt": "An example image",
         }
     ],
     "planCategory": [{"id": 1741, "name": "Woningen"}],

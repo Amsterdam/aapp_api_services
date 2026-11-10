@@ -8,6 +8,7 @@ from requests import HTTPError
 from construction_work.etl.transform_data import (
     _transform_article,
     _transform_contacts,
+    _transform_image,
     _transform_project,
     transform_data,
 )
@@ -216,3 +217,21 @@ class TransformDataTestCase(SimpleTestCase):
             contacts[2]["extra"],
             "Voor vragen over het winkelgebied, of als u wilt meedenken",
         )
+
+    @patch("construction_work.etl.transform_data.ImageSetService")
+    def test_transform_image(self, image_set_service):
+        image_set_service.return_value.get_or_upload_from_url.return_value = (
+            PROJECT_IMAGE_SET
+        )
+        images = [
+            {
+                "id": "source-image-id",
+                "src": "/path/to/image.jpg",
+                "alt": "An example image",
+            }
+        ]
+        result = _transform_image(images, image_set_service.return_value)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["id"], 12)
+        self.assertEqual(result["description"], "An example image")
+        self.assertEqual(len(result["variants"]), 3)

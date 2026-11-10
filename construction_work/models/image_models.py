@@ -2,8 +2,17 @@ from django.db import models
 
 
 class BaseImage(models.Model):
-    foreign_id = models.BigIntegerField()  # Image service image-set ID.
-    uri = models.URLField(max_length=2048)
+    id = models.IntegerField(primary_key=True)
+    aspectRatio = models.FloatField()
+    alternativeText = models.CharField(null=True, blank=True)
+    image_set = models.IntegerField()
+
+    class Meta:
+        abstract = True
+
+
+class BaseImageSource(models.Model):
+    uri = models.CharField()
     width = models.IntegerField()
     height = models.IntegerField()
 

@@ -3,7 +3,7 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
-from construction_work.models.image_models import BaseImage
+from construction_work.models.image_models import BaseImage, BaseImageSource
 
 
 class Project(models.Model):
@@ -63,12 +63,15 @@ class ProjectTimelineItem(models.Model):
 
 
 class ProjectImage(BaseImage):
-    project = models.ForeignKey(
-        Project, on_delete=models.CASCADE, related_name="images"
+    parent = models.OneToOneField(
+        Project, on_delete=models.CASCADE, related_name="image"
     )
 
-    class Meta:
-        unique_together = ("project", "uri")
+
+class ProjectImageSource(BaseImageSource):
+    image = models.ForeignKey(
+        ProjectImage, on_delete=models.CASCADE, related_name="sources"
+    )
 
 
 class ProjectSection(models.Model):
@@ -94,6 +97,7 @@ class ProjectSectionUrl(models.Model):
 
 
 class ProjectContact(models.Model):
+    id = models.FloatField(primary_key=True)
     name = models.CharField(null=True, blank=True)
     email = models.CharField(null=True, blank=True)
     phone = models.CharField(null=True, blank=True)

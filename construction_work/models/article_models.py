@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from construction_work.models.image_models import BaseImage
+from construction_work.models.image_models import BaseImage, BaseImageSource
 from construction_work.models.project_models import Project
 from construction_work.utils.model_utils import create_id_dict
 
@@ -39,9 +39,12 @@ class Article(models.Model):
 
 
 class ArticleImage(BaseImage):
-    article = models.ForeignKey(
-        Article, on_delete=models.CASCADE, related_name="images"
+    parent = models.OneToOneField(
+        Article, on_delete=models.CASCADE, related_name="image"
     )
 
-    class Meta:
-        unique_together = ("article", "uri")
+
+class ArticleImageSource(BaseImageSource):
+    image = models.ForeignKey(
+        ArticleImage, on_delete=models.CASCADE, related_name="sources"
+    )

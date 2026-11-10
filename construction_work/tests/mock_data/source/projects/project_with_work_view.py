@@ -6,6 +6,7 @@ MOCK_DATA = {
         {
             "name": "oku_house_kcap_ckcap_view_from_kw-plein_1.jpg",
             "src": "/sites/default/files/pages/800299/oku_house_kcap_ckcap_view_from_kw-plein_1.jpg",
+            "alt": "An example image",
         }
     ],
     "planCategory": [{"id": 1741, "name": "Woningen"}],
@@ -31,6 +32,7 @@ MOCK_DATA = {
                                     "id": 33386,
                                     "name": "bv_cornelis_lelylaan_luchtfoto1440x810.jpg",
                                     "src": "/sites/default/files/pages/800299/bv_cornelis_lelylaan_luchtfoto1440x810.jpg",
+                                    "alt": "An example image",
                                 }
                             ],
                             "imageCaption": None,

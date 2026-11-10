@@ -355,7 +355,25 @@ def _transform_image(
     images: list[Mapping[str, Any]],
     image_set_service: ImageSetService,
 ) -> dict[str, Any] | None:
-    """Upload the first DvO image by URL and return its image-set data."""
+    """
+    Upload the first DvO image by URL and return its image-set data.
+    Args:
+        images: A list of image data dictionaries from DvO.
+        image_set_service: An instance of ImageSetService to handle image uploads.
+
+    Returns:
+        A dictionary containing the image-set data, or None if the upload fails.
+
+    Example return value:
+        {
+            "id": "image-set-id",
+            "variants": [
+                {"image": "url-to-variant", "width": 800, "height": 600},
+                {"image": "url-to-variant", "width": 400, "height": 300},
+            ],
+            "description": "An example image"
+        }
+    """
     image_url = images[0].get("src")
     if not isinstance(image_url, str) or not image_url:
         raise ValueError("DvO image did not contain a source path")
@@ -366,16 +384,7 @@ def _transform_image(
     except HTTPError as e:
         logger.error(f"Error getting or uploading image: {e}")
         return None
-    source_image = images[0]
-    return {
-        **image_set,
-        **({"image_id": source_image["id"]} if "id" in source_image else {}),
-        **{
-            key: source_image[key]
-            for key in ("aspectRatio", "alternativeText")
-            if key in source_image
-        },
-    }
+    return image_set
 
 
 def _get_subtitle(title: str) -> str | None:
