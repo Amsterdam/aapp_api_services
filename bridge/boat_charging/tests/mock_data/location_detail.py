@@ -225,3 +225,60 @@ MOCK_RESPONSE_RESERVED_CHARGING_STATION = {
     "availableSockets": 0,
     "totalSockets": 1,
 }
+
+
+MOCK_RESPONSE_OCCUPIED_EVSE = {
+    "id": "a9d9b42ce3eb4d8cbf50bb6aaeaa6357",
+    "name": "AmsterdamBoatTest3",
+    "address": "Funenkade 7",
+    "city": "Amsterdam",
+    "postalCode": "1093 SJ",
+    "coordinates": {"latitude": "52.366474", "longitude": "4.926436"},
+    "openingTimes": {
+        "twentyfourseven": False,
+        "regularHours": [
+            {"weekday": 1, "periodBegin": "04:15", "periodEnd": "12:15"},
+            {"weekday": 3, "periodBegin": "09:15", "periodEnd": "16:15"},
+            {"weekday": 4, "periodBegin": "09:15", "periodEnd": "15:15"},
+            {"weekday": 2, "periodBegin": "10:15", "periodEnd": "12:15"},
+        ],
+    },
+    "chargingStationsIds": ["VCPS-RIK"],
+    "tariffId": "NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY",
+    "tariff": {
+        "id": "NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY",
+        "energyPricePerKwh": 0.23,
+        "chargingTimePricePerHour": 0.45,
+        "parkingTimePricePerHour": 0.12,
+        "flatFeePrice": 1.0,
+        "standardFine": 0.0,
+        "standardFineAfterHours": 24.0,
+    },
+    "chargingStations": [
+        {
+            "id": "863866073623829",
+            "status": "OFFLINE",
+            "locationId": "2c0ccfb795d040e39136b7dd1d25f13e",
+            "evses": [
+                {
+                    "id": 95,
+                    "ocppEvseId": 1,  # deze is op website 'bezet', bij ons 'storing'
+                    "evseId": "1",
+                    "status": "UNKNOWN",
+                    "connectors": [
+                        {
+                            "connectorId": 1,
+                            "maxAmp": 16,
+                            "voltage": 230,
+                            "maxElectricPower": 3.6,
+                            "status": "OCCUPIED",
+                        }
+                    ],
+                    "available": False,
+                },
+            ],
+        },
+    ],
+    "availableSockets": 0,
+    "totalSockets": 1,
+}

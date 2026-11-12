@@ -118,6 +118,7 @@ class SessionView(BaseView):
             "last_command_error": session.get("lastCommandError"),
             "vignette_number": session.get("vignetNumber"),
             "boat_name": session.get("boatName"),
+            "total_cost_incl_vat": session.get("finalAmount"),
             # CPMS, null if session hasn't started
             "start_date_time": cpms_session.get("startDateTime"),
             "end_date_time": cpms_session.get("endDateTime"),
@@ -125,11 +126,10 @@ class SessionView(BaseView):
             "status": NRG_SESSION_STATUS_MAPPING.get(
                 session.get("status"), cpms_session.get("status")
             ),
-            "total_cost": cpms_session.get("totalCost", {}).get("exclVat"),
             "currency": "EUR",
+            # location data
+            "location": self.get_location_data(item.get("location", {})),
         }
-        if location := item.get("location", {}):
-            session_data["location"] = self.get_location_data(location)
         return session_data
 
     def get_location_data(self, location: dict[str | Any, Any]):
