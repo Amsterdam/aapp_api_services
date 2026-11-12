@@ -287,6 +287,10 @@ def store_image(
     image_set_data = project_data.get("image_set")
     if not image_set_data:
         return [], []
+
+    if not image_set_data.get("variants"):
+        return [], []
+
     image = image_class(
         id=image_set_data.get("image_id"),
         aspectRatio=image_set_data.get("aspectRatio"),

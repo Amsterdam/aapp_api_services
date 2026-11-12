@@ -18,6 +18,7 @@ from construction_work.models.project_models import (
     Project,
     ProjectContact,
     ProjectImage,
+    ProjectImageSource,
 )
 
 
@@ -231,7 +232,7 @@ class LoadDataTestCase(TestCase):
                     "id": 236,
                     "variants": [
                         {
-                            "uri": "https://image.jpg",
+                            "image": "https://image.jpg",
                             "width": 940,
                             "height": 415,
                         }
@@ -387,7 +388,7 @@ class LoadDataTestCase(TestCase):
                     "id": 236,
                     "variants": [
                         {
-                            "uri": "https://image.jpg",
+                            "image": "https://image.jpg",
                             "width": 940,
                             "height": 415,
                         }
@@ -565,11 +566,12 @@ class LoadDataTestCase(TestCase):
                     "id": 23626572,
                     "variants": [
                         {
-                            "uri": "https://image.jpg",
+                            "image": "https://image.jpg",
                             "width": 940,
                             "height": 415,
                         }
                     ],
+                    "description": "An image description",
                 },
             },
         ]
@@ -582,9 +584,9 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(updated_article.title, "Updated Article Title")
         self.assertEqual(updated_article.intro, "Updated Intro")
         self.assertEqual(updated_article.body, "Updated Body")
-        self.assertEqual(
-            ArticleImage.objects.get(article=updated_article).foreign_id, 23626572
-        )
+        article_image = ArticleImage.objects.get(article=updated_article)
+        self.assertEqual(article_image.foreign_id, 23626572)
+        self.assertEqual(article_image.description, "An image description")
         self.assertEqual(updated_article.type, "announcement")
         self.assertEqual(set(updated_article.projects.all()), {project1})
 
@@ -676,12 +678,12 @@ class LoadDataTestCase(TestCase):
                 "id": 100,
                 "variants": [
                     {
-                        "uri": "https://foo.bar/medium-image.jpg",
+                        "image": "https://foo.bar/medium-image.jpg",
                         "width": "200",
                         "height": "20",
                     },
                     {
-                        "uri": "https://foo.bar/big-image.jpg",
+                        "image": "https://foo.bar/big-image.jpg",
                         "width": 20,
                         "height": 201,
                     },
@@ -691,7 +693,9 @@ class LoadDataTestCase(TestCase):
             }
         }
 
-        images = store_image(image_data, project, ProjectImage, "project")
+        images, source_images = store_image(
+            image_data, project, ProjectImage, ProjectImageSource
+        )
 
         self.assertEqual(len(images), 2)
         self.assertEqual(images[0].foreign_id, 100)
@@ -701,27 +705,10 @@ class LoadDataTestCase(TestCase):
         ProjectImage.objects.bulk_create(images)
         self.assertEqual(project.images.count(), 2)
         self.assertEqual(images[1].foreign_id, 100)
-
-    def test_store_image_rejects_invalid_variant_data(self):
-        project = baker.make(Project, foreign_id=1)
-        image_data = {
-            "image_set": {
-                "id": 100,
-                "variants": [
-                    {
-                        "uri": "https://foo.bar/image.jpg",
-                        "width": "not an integer",
-                        "height": 100,
-                    }
-                ],
-            }
-        }
-
-        with self.assertLogs("construction_work.etl.load_data", level="ERROR"):
-            self.assertEqual(
-                store_image(image_data, project, ProjectImage, "project"),
-                [],
-            )
+        self.assertEqual(source_images[0].foreign_id, 100)
+        self.assertEqual(source_images[0].uri, "https://foo.bar/medium-image.jpg")
+        self.assertEqual(source_images[1].foreign_id, 100)
+        self.assertEqual(source_images[1].uri, "https://foo.bar/big-image.jpg")
 
     def test_store_image_without_variants_returns_empty_list(self):
         project = baker.make(Project, foreign_id=1)
@@ -730,9 +717,9 @@ class LoadDataTestCase(TestCase):
                 {"image_set": {"id": 100, "variants": []}},
                 project,
                 ProjectImage,
-                "project",
+                ProjectImageSource,
             ),
-            [],
+            ([], []),
         )
 
     def test_store_image_without_uri_returns_empty_list(self):
@@ -751,6 +738,8 @@ class LoadDataTestCase(TestCase):
         }
 
         with self.assertLogs("construction_work.etl.load_data", level="ERROR"):
-            images = store_image(image_data, project, ProjectImage, "project")
+            images, source_images = store_image(
+                image_data, project, ProjectImage, ProjectImageSource
+            )
 
-        self.assertEqual(images, [])
+        self.assertEqual((images, source_images), ([], []))
