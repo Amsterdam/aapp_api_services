@@ -130,7 +130,7 @@ rpds-py==2026.9.1
 ruff==0.17.3
 shapely==2.2.0
 six==1.17.0
-soupsieve==3.0.4
+soupsieve==4.0
 sqlparse==0.6.1
 tatsu==5.15.1
 tenacity==9.2.1
