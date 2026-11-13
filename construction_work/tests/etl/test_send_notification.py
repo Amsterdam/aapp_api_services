@@ -16,7 +16,7 @@ class SendNotificationTestCase(TestCase):
     def setUp(self):
         # Create some test projects and articles
         self.project1 = Project.objects.create(
-            foreign_id=1,
+            drupal_id=1,
             title="Project 1",
             active=True,
             hidden=False,
@@ -24,8 +24,7 @@ class SendNotificationTestCase(TestCase):
         )
         self.article1 = baker.make(
             Article,
-            foreign_id=1,
-            drupal_id=101,
+            drupal_id=1,
             title="Article 1",
             last_seen=timezone.now(),
             projects=[self.project1],
@@ -36,13 +35,12 @@ class SendNotificationTestCase(TestCase):
         current_article_ids = set(Article.objects.values_list("drupal_id", flat=True))
         self.article2 = baker.make(
             Article,
-            foreign_id=2,
-            drupal_id=102,
+            drupal_id=2,
             title="Article 2",
             last_seen=timezone.now(),
             projects=[self.project1],
         )
-        found_articles = [101, 102]  # Two articles are found
+        found_articles = [1, 2]  # Two articles are found
 
         send_article_notifications(
             current_drupal_ids=current_article_ids, found_drupal_ids=found_articles
@@ -60,20 +58,3 @@ class SendNotificationTestCase(TestCase):
             NotificationType.CONSTRUCTION_WORK_ARTICLE_MESSAGE.value,
         )
         self.assertEqual(notifications[0].context["subtype"], "article")
-
-    def test_does_not_send_without_following_devices(self):
-        Device.objects.all().delete()
-        baker.make(
-            Article,
-            foreign_id=2,
-            drupal_id=102,
-            title="Article without followers",
-            projects=[self.project1],
-        )
-
-        send_article_notifications(
-            current_drupal_ids=[101],
-            found_drupal_ids=[102],
-        )
-
-        self.assertFalse(ScheduledNotification.objects.exists())

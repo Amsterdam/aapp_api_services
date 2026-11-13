@@ -367,14 +367,19 @@ def _transform_image(
     Example return value:
         {
             "id": "image-set-id",
+            "description": "An example image"
             "variants": [
                 {"image": "url-to-variant", "width": 800, "height": 600},
                 {"image": "url-to-variant", "width": 400, "height": 300},
             ],
-            "description": "An example image"
+            "image_id": "source-image-id",
         }
     """
-    image_url = images[0].get("src")
+    if not images:
+        return None
+
+    source_image = images[0]
+    image_url = source_image.get("src")
     if not isinstance(image_url, str) or not image_url:
         raise ValueError("DvO image did not contain a source path")
 
@@ -384,7 +389,11 @@ def _transform_image(
     except HTTPError as e:
         logger.error(f"Error getting or uploading image: {e}")
         return None
-    return image_set
+
+    return {
+        **image_set,
+        "image_id": source_image.get("id"),
+    }
 
 
 def _get_subtitle(title: str) -> str | None:

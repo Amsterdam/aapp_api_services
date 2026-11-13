@@ -18,72 +18,50 @@ class ImagePublicSerializer(serializers.ModelSerializer):
         fields = ["uri", "width", "height"]
 
 
-class IproxImageSourceSerializer(serializers.Serializer):
+class DvOImageSourceSerializer(serializers.Serializer):
     uri = serializers.CharField()
     width = serializers.IntegerField()
     height = serializers.IntegerField()
 
 
-class ImageVariantSerializer(serializers.Serializer):
-    uri = serializers.CharField()
-    width = serializers.IntegerField()
-    height = serializers.IntegerField()
-
-
-class IproxImageSerializer(serializers.Serializer):
+class DvOImageSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    image_set = serializers.IntegerField(required=False)
-    sources = IproxImageSourceSerializer(many=True)
-    aspectRatio = serializers.FloatField(allow_null=True)
-    alternativeText = serializers.CharField(allow_null=True)
+    sources = DvOImageSourceSerializer(many=True)
+    alternativeText = serializers.CharField()
 
 
-def serialize_image_variants(variants):
-    if not variants:
-        return None
-
-    image = variants[0]
-    return {
-        "id": image.foreign_id,
-        "aspectRatio": image.width / image.height if image.height else None,
-        "alternativeText": None,
-        "image_set": image.foreign_id,
-        "sources": ImageVariantSerializer(variants, many=True).data,
-    }
-
-
-class IproxProjectSectionLinkSerializer(serializers.Serializer):
+class DvOProjectSectionLinkSerializer(serializers.Serializer):
     url = serializers.CharField()
     label = serializers.CharField()
 
 
-class IproxProjectSectionSerializer(serializers.Serializer):
+class DvOProjectSectionSerializer(serializers.Serializer):
     body = serializers.CharField()
     title = serializers.CharField()
-    links = IproxProjectSectionLinkSerializer(many=True)
+    links = DvOProjectSectionLinkSerializer(many=True)
 
 
-class IproxProjectSectionsSerializer(serializers.Serializer):
-    what = IproxProjectSectionSerializer()
-    when = IproxProjectSectionSerializer()
-    work = IproxProjectSectionSerializer()
-    contact = IproxProjectSectionSerializer()
+class DvOProjectSectionsSerializer(serializers.Serializer):
+    what = DvOProjectSectionSerializer()
+    when = DvOProjectSectionSerializer()
+    work = DvOProjectSectionSerializer()
+    contact = DvOProjectSectionSerializer()
 
 
-class IproxCoordinatesSerializer(serializers.Serializer):
+class DvOCoordinatesSerializer(serializers.Serializer):
     lat = serializers.FloatField()
     lon = serializers.FloatField()
 
 
 class RecursiveField(serializers.Field):
     def to_representation(self, value):
-        serializer = IproxProjectTimelineItemSerializer(
+        serializer = DvOProjectTimelineItemSerializer(
             value, many=True, context=self.context
         )
         return serializer.data
 
 
-class IproxProjectTimelineItemSerializer(serializers.Serializer):
+class DvOProjectTimelineItemSerializer(serializers.Serializer):
     title = serializers.CharField()
     body = serializers.CharField()
     collapsed = serializers.BooleanField()
@@ -91,10 +69,10 @@ class IproxProjectTimelineItemSerializer(serializers.Serializer):
     items = serializers.ListField(child=RecursiveField())
 
 
-class IproxProjectTimelineSerializer(serializers.Serializer):
+class DvOProjectTimelineSerializer(serializers.Serializer):
     title = serializers.CharField()
     intro = serializers.CharField()
-    items = IproxProjectTimelineItemSerializer(many=True)
+    items = DvOProjectTimelineItemSerializer(many=True)
 
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):

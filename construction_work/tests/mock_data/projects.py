@@ -1,6 +1,7 @@
 MOCK_DATA = [
     {
         "foreign_id": 2048,
+        "drupal_id": 557,
         "active": True,
         "title": "title first project",
         "subtitle": "subtitle first project",
@@ -14,6 +15,7 @@ MOCK_DATA = [
     },
     {
         "foreign_id": 4096,
+        "drupal_id": 558,
         "active": True,
         "title": "title second project",
         "subtitle": "subtitle second project",

@@ -1,4 +1,5 @@
 import json
+import pprint
 from datetime import datetime
 
 from django.urls import reverse
@@ -7,6 +8,7 @@ from model_bakery import baker
 from construction_work.models.article_models import (
     Article,
     ArticleImage,
+    ArticleImageSource,
 )
 from construction_work.models.manage_models import Image, WarningImage, WarningMessage
 from construction_work.models.project_models import Project
@@ -40,15 +42,7 @@ class TestArticleDetailView(BasicAPITestCase):
         article_list[1].publication_date = "2023-01-01T11:00:00+00:00"
         article_list[1].save()
 
-        baker.make(
-            ArticleImage,
-            id=1,
-            article=article_list[0],
-            foreign_id=123,
-            uri="https://example.invalid/article.jpg",
-            width=100,
-            height=50,
-        )
+        baker.make(ArticleImage, id=1, parent=article_list[0])
 
     def test_get_single_article(self):
         """Test retrieving single article"""
@@ -71,6 +65,7 @@ class TestArticleDetailView(BasicAPITestCase):
                 "id": article.pk,
                 "type": "article",
             },
+            "foreign_id": article.foreign_id,
             "drupal_id": article.drupal_id,
             "active": article.active,
             "last_seen": tt(str(article.last_seen), target_tzinfo_last_seen),
@@ -78,17 +73,10 @@ class TestArticleDetailView(BasicAPITestCase):
             "intro": article.intro,
             "body": article.body,
             "image": {
-                "id": article.images.first().foreign_id,
-                "aspectRatio": 2.0,
-                "alternativeText": None,
-                "image_set": article.images.first().foreign_id,
-                "sources": [
-                    {
-                        "uri": article.images.first().uri,
-                        "width": article.images.first().width,
-                        "height": article.images.first().height,
-                    }
-                ],
+                "id": article.image.id,
+                "alternativeText": article.image.alternativeText,
+                "image_set": article.image.image_set,
+                "sources": [],
             },
             "url": article.url,
             "creation_date": tt(str(article.creation_date), target_tzinfo_creation),
@@ -102,6 +90,10 @@ class TestArticleDetailView(BasicAPITestCase):
             "projects": [x.pk for x in article.projects.all()],
         }
         result_dict = json.loads(result.content)
+        pprint.pprint("Result: ")
+        pprint.pprint(result_dict)
+        pprint.pprint("Expected: ")
+        pprint.pprint(expected_data)
         self.assertDictEqual(result_dict, expected_data)
 
     def test_missing_article_id(self):
@@ -230,21 +222,23 @@ class TestArticleListView(BaseTestProjectView):
                     "height": 50,
                 },
             ],
-            "aspectRatio": 2.0,
             "alternativeText": None,
             "image_set": 123,
         }
 
         article_data = articles.MOCK_DATA[0].copy()
         article_data["foreign_id"] = 9999
+        article_data["drupal_id"] = 9999
         article = Article.objects.create(**article_data)
-        baker.make(
+        image = baker.make(
             ArticleImage,
-            article=article,
-            foreign_id=123,
-            uri="/foo/bar.png",
-            width=100,
-            height=50,
+            parent=article,
+            alternativeText=None,
+            id=123,
+            image_set=123,
+        )
+        baker.make(
+            ArticleImageSource, image=image, height=50, uri="/foo/bar.png", width=100
         )
 
         # Refresh from db to create datetime objects from datetime strings
@@ -252,6 +246,7 @@ class TestArticleListView(BaseTestProjectView):
 
         project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 9999
+        project_data["drupal_id"] = 9999
         project = Project.objects.create(**project_data)
 
         article.projects.add(project)
@@ -298,6 +293,7 @@ class TestArticleListView(BaseTestProjectView):
         """Test if content of warning with image is as expected"""
         project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 9999
+        project_data["drupal_id"] = 9999
         project = Project.objects.create(**project_data)
 
         warning_data = warning_message.MOCK_DATA.copy()

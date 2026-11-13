@@ -163,7 +163,17 @@ class TransformDataTestCase(SimpleTestCase):
 
         self.assertIn("Error getting or uploading image", logs.output[0])
         self.assertIsNone(result["projects"][0]["image_set"])
-        self.assertEqual(result["articles"][0]["image_set"], ARTICLE_IMAGE_SET)
+        self.assertEqual(
+            result["articles"][0]["image_set"]["id"], ARTICLE_IMAGE_SET["id"]
+        )
+        self.assertEqual(
+            result["articles"][0]["image_set"]["variants"],
+            ARTICLE_IMAGE_SET["variants"],
+        )
+        self.assertEqual(
+            result["articles"][0]["image_set"]["description"],
+            "test",
+        )
 
     @patch("construction_work.etl.transform_data.ImageSetService")
     def test_rejects_image_without_source_path(self, image_set_service):
@@ -225,7 +235,7 @@ class TransformDataTestCase(SimpleTestCase):
         )
         images = [
             {
-                "id": "source-image-id",
+                "id": 9876,
                 "src": "/path/to/image.jpg",
                 "alt": "An example image",
             }
@@ -233,5 +243,6 @@ class TransformDataTestCase(SimpleTestCase):
         result = _transform_image(images, image_set_service.return_value)
         self.assertIsNotNone(result)
         self.assertEqual(result["id"], 12)
-        self.assertEqual(result["description"], "An example image")
+        self.assertEqual(result["description"], "test")
+        self.assertEqual(result["image_id"], 9876)
         self.assertEqual(len(result["variants"]), 3)

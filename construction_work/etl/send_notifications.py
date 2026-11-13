@@ -19,7 +19,7 @@ def send_article_notifications(
         projects = new_article.projects.all()
 
         # get image of article
-        article_image = ArticleImage.objects.filter(article_id=new_article.id).first()
+        article_image = ArticleImage.objects.filter(parent=new_article.id).first()
         if article_image:
             image_set_id = article_image.foreign_id
         else:

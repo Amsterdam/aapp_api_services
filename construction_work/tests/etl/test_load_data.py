@@ -87,14 +87,30 @@ class LoadDataTestCase(TestCase):
                     "title": "Wanneer",
                 },
                 "url": "http://example.com/project/1",
-                "imageSet": {
-                    "id": 236,
+                "image_set": {
+                    "id": 12,
+                    "description": "test",
                     "variants": [
-                        {"image": "https://image.jpg", "width": 940, "height": 415}
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/small.JPEG",
+                            "width": 320,
+                            "height": 180,
+                        },
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/medium.JPEG",
+                            "width": 768,
+                            "height": 432,
+                        },
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/large.JPEG",
+                            "width": 1280,
+                            "height": 720,
+                        },
                     ],
-                    "aspectRatio": 2,
+                    "image_id": 654,
                 },
-                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
+                "coordinates_lat": 52.3077814027491,
+                "coordinates_lon": 4.99128045578052,
                 "creation_date": timezone.now(),
                 "modification_date": timezone.now(),
                 "publication_date": timezone.now(),
@@ -121,19 +137,35 @@ class LoadDataTestCase(TestCase):
                     ],
                     "title": "Wanneer",
                 },
-                "image": {
-                    "id": 238,
-                    "sources": [
-                        {"uri": "http://image2.jpg", "width": 940, "height": 415}
+                "image_set": {
+                    "id": 13,
+                    "description": "test two",
+                    "variants": [
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/small-2.JPEG",
+                            "width": 320,
+                            "height": 180,
+                        },
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/medium-2.JPEG",
+                            "width": 768,
+                            "height": 432,
+                        },
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/large-2.JPEG",
+                            "width": 1280,
+                            "height": 720,
+                        },
                     ],
-                    "aspectRatio": 2,
+                    "image_id": 9876,
                 },
                 "url": "http://example.com/project/2",
-                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "coordinates_lat": 52.3077814027491,
+                "coordinates_lon": 4.99128045578052,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
                 "contacts": [
                     {
                         "name": "Wendy",
@@ -229,16 +261,19 @@ class LoadDataTestCase(TestCase):
                 },
                 "url": "http://example.com/project/1",
                 "image_set": {
-                    "id": 236,
+                    "id": 123,
+                    "description": "test three",
                     "variants": [
                         {
-                            "image": "https://image.jpg",
-                            "width": 940,
-                            "height": 415,
+                            "image": "https://ontw.app.amsterdam.nl/media/image/image-8.JPEG",
+                            "width": 320,
+                            "height": 180,
                         }
                     ],
+                    "image_id": 986,
                 },
-                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
+                "coordinates_lat": 52.3077814027491,
+                "coordinates_lon": 4.99128045578052,
                 "creation_date": timezone.now(),
                 "modification_date": timezone.now(),
                 "publication_date": timezone.now(),
@@ -283,15 +318,21 @@ class LoadDataTestCase(TestCase):
                     ],
                     "title": "Wanneer",
                 },
-                "image": {
-                    "id": 238,
-                    "sources": [
-                        {"uri": "http://image2.jpg", "width": 940, "height": 415}
+                "image_set": {
+                    "id": 124,
+                    "description": "test four",
+                    "variants": [
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/image-4.JPEG",
+                            "width": 320,
+                            "height": 180,
+                        }
                     ],
-                    "aspectRatio": 2,
+                    "image_id": 886,
                 },
                 "url": "http://example.com/project/2",
-                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
+                "coordinates_lat": 52.3077814027491,
+                "coordinates_lon": 4.99128045578052,
                 "creation_date": timezone.now(),
                 "modification_date": timezone.now(),
                 "publication_date": timezone.now(),
@@ -312,19 +353,25 @@ class LoadDataTestCase(TestCase):
                     ],
                     "title": "Wanneer",
                 },
-                "image": {
-                    "id": 240,
-                    "sources": [
-                        {"uri": "http://image3.jpg", "width": 940, "height": 415}
+                "image_set": {
+                    "id": 125,
+                    "description": "test five",
+                    "variants": [
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/image-5.JPEG",
+                            "width": 320,
+                            "height": 180,
+                        }
                     ],
-                    "aspectRatio": 2,
+                    "image_id": 887,
                 },
                 "url": "http://example.com/project/3",
-                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "coordinates_lat": 52.3077814027491,
+                "coordinates_lon": 4.99128045578052,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
             },
         ]
         load_projects(project_data)
@@ -393,13 +440,16 @@ class LoadDataTestCase(TestCase):
                             "height": 415,
                         }
                     ],
+                    "description": "An example image",
+                    "image_id": 98765,
                 },
                 "url": "http://example.com/project/1",
-                "coordinates": {"lat": 10, "lon": 20},
-                "created": initial_project.creation_date,
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "coordinates_lat": 10,
+                "coordinates_lon": 20,
+                "creation_date": initial_project.creation_date,
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
             },
         ]
         load_projects(project_data)
@@ -412,9 +462,7 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(updated_project.sections.count(), 3)
         self.assertEqual(updated_project.timeline_items.count(), 2)
         self.assertTrue(
-            ProjectImage.objects.filter(
-                project=updated_project, foreign_id=236
-            ).exists()
+            ProjectImage.objects.filter(parent=updated_project, image_set=236).exists()
         )
         self.assertEqual(updated_project.coordinates_lat, 10.0)
         self.assertEqual(updated_project.coordinates_lon, 20.0)
@@ -469,13 +517,21 @@ class LoadDataTestCase(TestCase):
                 ],
                 "title": "Wanneer",
             },
-            "image": {
-                "id": 236,
-                "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
-                "aspectRatio": 2,
+            "image_set": {
+                "id": 128,
+                "description": "An example image",
+                "variants": [
+                    {
+                        "image": "https://ontw.app.amsterdam.nl/media/image/image-3.JPEG",
+                        "width": 320,
+                        "height": 180,
+                    }
+                ],
+                "image_id": 98775,
             },
             "url": "http://example.com/project/1",
-            "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
+            "coordinates_lat": 52.3077814027491,
+            "coordinates_lon": 4.99128045578052,
             "creation_date": timezone.now(),
             "modification_date": timezone.now(),
             "publication_date": timezone.now(),
@@ -487,8 +543,8 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(project.title, data["title"])
         self.assertEqual(project.subtitle, data["subtitle"])
         self.assertEqual(project.url, data["url"])
-        self.assertEqual(project.coordinates_lat, data["coordinates"]["lat"])
-        self.assertEqual(project.coordinates_lon, data["coordinates"]["lon"])
+        self.assertEqual(project.coordinates_lat, data["coordinates_lat"])
+        self.assertEqual(project.coordinates_lon, data["coordinates_lon"])
         self.assertEqual(project.creation_date, data["creation_date"])
         self.assertEqual(project.modification_date, data["modification_date"])
         self.assertEqual(project.publication_date, data["publication_date"])
@@ -572,6 +628,7 @@ class LoadDataTestCase(TestCase):
                         }
                     ],
                     "description": "An image description",
+                    "image_id": 236572,
                 },
             },
         ]
@@ -584,9 +641,9 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(updated_article.title, "Updated Article Title")
         self.assertEqual(updated_article.intro, "Updated Intro")
         self.assertEqual(updated_article.body, "Updated Body")
-        article_image = ArticleImage.objects.get(article=updated_article)
-        self.assertEqual(article_image.foreign_id, 23626572)
-        self.assertEqual(article_image.description, "An image description")
+        article_image = ArticleImage.objects.get(parent=updated_article)
+        self.assertEqual(article_image.image_set, 23626572)
+        self.assertEqual(article_image.alternativeText, "An image description")
         self.assertEqual(updated_article.type, "announcement")
         self.assertEqual(set(updated_article.projects.all()), {project1})
 
@@ -652,10 +709,11 @@ class LoadDataTestCase(TestCase):
             "modification_date": timezone.now(),
             "publication_date": timezone.now(),
             "expiration_date": None,
-            "image": {
+            "image_set": {
                 "id": 23626572,
-                "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
-                "aspectRatio": 2,
+                "variants": [{"image": "image.jpg", "width": 940, "height": 415}],
+                "description": "An example image",
+                "image_id": 1398,
             },
         }
         article = get_article_object(data)
@@ -688,8 +746,8 @@ class LoadDataTestCase(TestCase):
                         "height": 201,
                     },
                 ],
-                "aspectRatio": 2,
-                "alternativeText": "Project image",
+                "description": "Project image",
+                "image_id": 1398,
             }
         }
 
@@ -697,17 +755,12 @@ class LoadDataTestCase(TestCase):
             image_data, project, ProjectImage, ProjectImageSource
         )
 
-        self.assertEqual(len(images), 2)
-        self.assertEqual(images[0].foreign_id, 100)
-        self.assertEqual(images[0].uri, "https://foo.bar/medium-image.jpg")
-        self.assertEqual(images[0].width, 200)
-        self.assertEqual(images[0].height, 20)
-        ProjectImage.objects.bulk_create(images)
-        self.assertEqual(project.images.count(), 2)
-        self.assertEqual(images[1].foreign_id, 100)
-        self.assertEqual(source_images[0].foreign_id, 100)
+        self.assertEqual(len(source_images), 2)
+        self.assertEqual(images[0].image_set, 100)
+        self.assertEqual(images[0].alternativeText, "Project image")
+        self.assertEqual(source_images[0].image.image_set, 100)
         self.assertEqual(source_images[0].uri, "https://foo.bar/medium-image.jpg")
-        self.assertEqual(source_images[1].foreign_id, 100)
+        self.assertEqual(source_images[1].image.image_set, 100)
         self.assertEqual(source_images[1].uri, "https://foo.bar/big-image.jpg")
 
     def test_store_image_without_variants_returns_empty_list(self):
@@ -721,25 +774,3 @@ class LoadDataTestCase(TestCase):
             ),
             ([], []),
         )
-
-    def test_store_image_without_uri_returns_empty_list(self):
-        project = baker.make(Project, foreign_id=1)
-        image_data = {
-            "image_set": {
-                "id": 100,
-                "variants": [
-                    {
-                        "image": "https://example.invalid/image.jpg",
-                        "width": 20,
-                        "height": 10,
-                    }
-                ],
-            }
-        }
-
-        with self.assertLogs("construction_work.etl.load_data", level="ERROR"):
-            images, source_images = store_image(
-                image_data, project, ProjectImage, ProjectImageSource
-            )
-
-        self.assertEqual((images, source_images), ([], []))

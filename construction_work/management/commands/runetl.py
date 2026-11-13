@@ -12,7 +12,7 @@ class Command(BaseCommand):
 
     help = "Upsert construction work projects and articles"
 
-    def handle(self):
+    def handle(self, *args, **kwargs):
 
         if settings.SEND_ETL_NOTIFICATIONS:
             current_article_ids = set(

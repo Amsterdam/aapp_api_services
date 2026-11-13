@@ -120,7 +120,7 @@ class ProjectListForManageSerializer(ProjectExtendedWithFollowersSerializer):
         model = Project
         fields = [
             "id",
-            "drupal_id",
+            "foreign_id",
             "title",
             "subtitle",
             "image",
@@ -155,7 +155,7 @@ class ProjectDetailsForManagementSerializer(ProjectListForManageSerializer):
         model = Project
         fields = [
             "id",
-            "drupal_id",
+            "foreign_id",
             "url",
             "title",
             "subtitle",

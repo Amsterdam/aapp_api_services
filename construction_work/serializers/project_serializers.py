@@ -10,22 +10,37 @@ from construction_work.models.manage_models import ProjectManager, WarningMessag
 from construction_work.models.project_models import (
     Project,
     ProjectContact,
+    ProjectImage,
+    ProjectImageSource,
     ProjectTimelineItem,
 )
 from construction_work.serializers.article_serializers import (
     ArticleSerializer,
 )
 from construction_work.serializers.general_serializers import (
+    DvOCoordinatesSerializer,
+    DvOImageSerializer,
+    DvOProjectSectionsSerializer,
+    DvOProjectTimelineSerializer,
     DynamicFieldsModelSerializer,
     ImagePublicSerializer,
-    IproxCoordinatesSerializer,
-    IproxImageSerializer,
-    IproxProjectSectionsSerializer,
-    IproxProjectTimelineSerializer,
     MetaIdSerializer,
-    serialize_image_variants,
 )
 from construction_work.utils.model_utils import create_id_dict
+
+
+class ProjectImageSourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectImageSource
+        exclude = ["image", "id"]
+
+
+class ProjectImageSerializer(serializers.ModelSerializer):
+    sources = ProjectImageSourceSerializer(many=True)
+
+    class Meta:
+        model = ProjectImage
+        exclude = ["parent"]
 
 
 class RecentArticlesIdDateSerializer(serializers.Serializer):
@@ -39,7 +54,7 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
     meter = serializers.SerializerMethodField()
     followed = serializers.SerializerMethodField()
     recent_articles = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
+    image = ProjectImageSerializer()
 
     class Meta:
         model = Project
@@ -69,10 +84,6 @@ class ProjectExtendedSerializer(DynamicFieldsModelSerializer):
         """Check if project is being followed by given device"""
         followed_projects_ids = self.context.get("followed_projects_ids", [])
         return obj.pk in followed_projects_ids
-
-    @extend_schema_field(IproxImageSerializer(allow_null=True))
-    def get_image(self, obj: Project):
-        return serialize_image_variants(list(obj.images.all()))
 
     @extend_schema_field(RecentArticlesIdDateSerializer)
     def get_recent_articles(self, obj: Project) -> list:
@@ -124,7 +135,7 @@ class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
     def get_meta_id(self, obj: WarningMessage) -> dict:
         return create_id_dict(obj)
 
-    @extend_schema_field(IproxImageSerializer(many=True))
+    @extend_schema_field(DvOImageSerializer(many=True))
     def get_images(self, obj: WarningMessage):
         """Get images"""
         media_url = self.context.get("media_url", "")
@@ -188,7 +199,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
             "recent_articles",
             "image",
             "followers",
-            "drupal_id",
+            "foreign_id",
             "active",
             "last_seen",
             "title",
@@ -233,7 +244,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
         all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
         return all_items
 
-    @extend_schema_field(IproxProjectSectionsSerializer)
+    @extend_schema_field(DvOProjectSectionsSerializer)
     def get_sections(self, obj):
         response = {key: [] for key in ("where", "what", "when", "work", "contact")}
         for section in obj.sections.all():
@@ -249,7 +260,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
             )
         return response
 
-    @extend_schema_field(IproxProjectTimelineSerializer)
+    @extend_schema_field(DvOProjectTimelineSerializer)
     def get_timeline(self, obj):
         items = self.get_timeline_items(obj.timeline_items.all())
         if not items:
@@ -295,7 +306,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
             )
         return response
 
-    @extend_schema_field(IproxCoordinatesSerializer)
+    @extend_schema_field(DvOCoordinatesSerializer)
     def get_coordinates(self, obj: Project) -> dict:
         """Get coordinates"""
         return {

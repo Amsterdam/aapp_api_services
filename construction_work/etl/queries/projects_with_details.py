@@ -18,6 +18,7 @@ query ConstructionWorkProjectsWithDetails($paragraphId: Int!, $page: Int!) {
           publicationDate
           image {
             ... on Image {
+              id
               name
               src
               alt

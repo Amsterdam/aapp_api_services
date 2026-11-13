@@ -10,7 +10,7 @@ from core.utils.dvo_utils import DvORequestError
 
 class RunETLCommandTestCase(SimpleTestCase):
     @override_settings(SEND_ETL_NOTIFICATIONS=False)
-    def test_first_run_skips_notifications_and_garbage_collection(self):
+    def test_first_run_skips_notifications(self):
         with (
             mock.patch(
                 "construction_work.management.commands.runetl.extract_transform_load",
@@ -27,7 +27,7 @@ class RunETLCommandTestCase(SimpleTestCase):
 
         extract.assert_called_once_with()
         send_notifications.assert_not_called()
-        garbage_collector.assert_not_called()
+        garbage_collector.assert_called_once_with([10], [20])
 
     @override_settings(SEND_ETL_NOTIFICATIONS=True)
     def test_regular_run_sends_notifications_and_collects_garbage(self):

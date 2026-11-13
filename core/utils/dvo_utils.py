@@ -211,7 +211,7 @@ class DvOClient:
 
         if settings.ENVIRONMENT == "local":
             # locally we are not whitelisted for DvO, so we add a small delay to make sure we don't hit rate limits.
-            time.sleep(1)
+            time.sleep(2)
 
         async with self._session.post(
             self.api_url,

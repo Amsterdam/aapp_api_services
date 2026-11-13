@@ -3,7 +3,6 @@ from django.db import models
 
 class BaseImage(models.Model):
     id = models.IntegerField(primary_key=True)
-    aspectRatio = models.FloatField()
     alternativeText = models.CharField(null=True, blank=True)
     image_set = models.IntegerField()
 

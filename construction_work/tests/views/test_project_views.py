@@ -58,27 +58,36 @@ class BaseTestProjectView(BasicAPITestCase):
         WarningMessage.objects.all().delete()
 
     def create_project_and_article(
-        self, project_foreign_id, article_pub_date, project_pub_date=None
+        self,
+        project_foreign_id,
+        project_drupal_id,
+        article_pub_date,
+        project_pub_date=None,
     ):
         """Create project and article"""
         project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = project_foreign_id
+        project_data["drupal_id"] = project_drupal_id
         if project_pub_date:
             project_data["publication_date"] = project_pub_date
         project = Project.objects.create(**project_data)
 
         article_data = articles.MOCK_DATA[0].copy()
         article_data["foreign_id"] = project_foreign_id + 1
+        article_data["drupal_id"] = project_drupal_id
         article_data["publication_date"] = article_pub_date
         article = Article.objects.create(**article_data)
         article.projects.add(project)
 
         return project, article
 
-    def create_project_and_warning(self, project_foreign_id, pub_date):
+    def create_project_and_warning(
+        self, project_foreign_id, project_drupal_id, pub_date
+    ):
         """Create project and warning"""
         project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = project_foreign_id
+        project_data["drupal_id"] = project_drupal_id
         project = Project.objects.create(**project_data)
 
         warning_data = warning_message.MOCK_DATA.copy()
@@ -89,10 +98,11 @@ class BaseTestProjectView(BasicAPITestCase):
 
         return project, warning
 
-    def add_article_to_project(self, project: Project, foreign_id, pub_date):
+    def add_article_to_project(self, project: Project, foreign_id, drupal_id, pub_date):
         """Add article to projects"""
         article_data = articles.MOCK_DATA[0].copy()
         article_data["foreign_id"] = foreign_id
+        article_data["drupal_id"] = drupal_id
         article_data["publication_date"] = pub_date
         article = Article.objects.create(**article_data)
         article.projects.add(project)
@@ -132,7 +142,7 @@ class TestProjectListView(BaseTestProjectView):
         super().tearDown()
 
     def create_project_with_location(
-        self, foreign_id: int, location_index: int
+        self, foreign_id: int, drupal_id: int, location_index: int
     ) -> Project:
         """Helper to create project with specific location"""
         location = self.test_locations[location_index]
@@ -140,6 +150,7 @@ class TestProjectListView(BaseTestProjectView):
             **{
                 **projects.MOCK_DATA[0].copy(),
                 "foreign_id": foreign_id,
+                "drupal_id": drupal_id,
                 "coordinates_lat": location[0],
                 "coordinates_lon": location[1],
             }
@@ -148,6 +159,7 @@ class TestProjectListView(BaseTestProjectView):
     def create_projects_with_articles(
         self,
         base_foreign_id: int,
+        base_drupal_id: int,
         article_pub_dates: list[str],
         project_pub_dates: list[str] = None,
     ) -> list[Project]:
@@ -156,6 +168,7 @@ class TestProjectListView(BaseTestProjectView):
         for i, article_timestamp in enumerate(article_pub_dates):
             project, _ = self.create_project_and_article(
                 base_foreign_id + i,
+                base_drupal_id + i,
                 article_timestamp,
                 project_pub_dates[i] if project_pub_dates else None,
             )
@@ -172,6 +185,7 @@ class TestProjectListView(BaseTestProjectView):
         # Create projects with articles
         article_projects = self.create_projects_with_articles(
             10,
+            100,
             [
                 "2023-01-01T12:00:00+00:00",  # Oldest
                 "2023-01-01T12:30:00+00:00",  # Newest
@@ -181,9 +195,9 @@ class TestProjectListView(BaseTestProjectView):
 
         # Create projects with only locations
         location_projects = [
-            self.create_project_with_location(20, 1),  # Middle
-            self.create_project_with_location(30, 0),  # Closest
-            self.create_project_with_location(40, 2),  # Furthest
+            self.create_project_with_location(20, 120, 1),  # Middle
+            self.create_project_with_location(30, 130, 0),  # Closest
+            self.create_project_with_location(40, 140, 2),  # Furthest
         ]
 
         # Create device and follow all projects
@@ -224,6 +238,7 @@ class TestProjectListView(BaseTestProjectView):
         # Create projects with articles at different times
         article_projects = self.create_projects_with_articles(
             10,
+            100,
             [
                 "2023-01-01T12:15:00+00:00",  # Middle
                 "2023-01-01T12:00:00+00:00",  # Oldest
@@ -237,12 +252,14 @@ class TestProjectListView(BaseTestProjectView):
 
         # Earlier publication date
         project_data["foreign_id"] = 30
+        project_data["drupal_id"] = 130
         project_data["publication_date"] = "2023-01-01T11:00:00+00:00"
         no_article_projects.append(Project.objects.create(**project_data))
 
         # Later publication date
         project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 40
+        project_data["drupal_id"] = 140
         project_data["publication_date"] = "2023-01-01T11:30:00+00:00"
         no_article_projects.append(Project.objects.create(**project_data))
 
@@ -274,9 +291,9 @@ class TestProjectListView(BaseTestProjectView):
         """
         # Create projects at different locations
         project_list = [
-            self.create_project_with_location(10, 1),  # Middle
-            self.create_project_with_location(20, 2),  # Furthest
-            self.create_project_with_location(30, 0),  # Closest
+            self.create_project_with_location(10, 110, 1),  # Middle
+            self.create_project_with_location(20, 120, 2),  # Furthest
+            self.create_project_with_location(30, 130, 0),  # Closest
         ]
 
         # Create device but don't follow any projects
@@ -310,18 +327,21 @@ class TestProjectListView(BaseTestProjectView):
 
         # Oldest
         project_data["foreign_id"] = 10
+        project_data["drupal_id"] = 1000
         project_data["publication_date"] = "2023-01-01T12:00:00+00:00"
         project_list.append(Project.objects.create(**project_data))
 
         # Newest
         project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 20
+        project_data["drupal_id"] = 1001
         project_data["publication_date"] = "2023-01-01T12:30:00+00:00"
         project_list.append(Project.objects.create(**project_data))
 
         # Middle
         project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 30
+        project_data["drupal_id"] = 1002
         project_data["publication_date"] = "2023-01-01T12:15:00+00:00"
         project_list.append(Project.objects.create(**project_data))
 
@@ -353,6 +373,7 @@ class TestProjectListView(BaseTestProjectView):
         # Create unfollowed projects with articles
         unfollowed_projects = self.create_projects_with_articles(
             base_foreign_id=20,
+            base_drupal_id=100,
             article_pub_dates=[
                 "2023-01-01T12:30:00+00:00",
                 "2023-01-01T12:15:00+00:00",
@@ -395,6 +416,7 @@ class TestProjectListView(BaseTestProjectView):
         # Create followed projects with articles
         followed_article_projects = self.create_projects_with_articles(
             10,
+            100,
             [
                 "2023-01-01T12:00:00+00:00",  # Older
                 "2023-01-01T12:30:00+00:00",  # Newer
@@ -403,14 +425,14 @@ class TestProjectListView(BaseTestProjectView):
 
         # Create followed projects with only locations
         followed_location_projects = [
-            self.create_project_with_location(30, 0),  # Closest
-            self.create_project_with_location(40, 2),  # Furthest
+            self.create_project_with_location(30, 130, 0),  # Closest
+            self.create_project_with_location(40, 140, 2),  # Furthest
         ]
 
         # Create unfollowed projects with locations
         unfollowed_projects = [
-            self.create_project_with_location(50, 1),  # Middle distance
-            self.create_project_with_location(60, 2),  # Furthest
+            self.create_project_with_location(50, 150, 1),  # Middle distance
+            self.create_project_with_location(60, 160, 2),  # Furthest
         ]
 
         # Create device and follow specific projects
@@ -453,6 +475,7 @@ class TestProjectListView(BaseTestProjectView):
         # Create followed projects with articles
         followed_article_projects = self.create_projects_with_articles(
             base_foreign_id=10,
+            base_drupal_id=100,
             article_pub_dates=[
                 "2023-01-01T12:00:00+00:00",  # Older
                 "2023-01-01T12:30:00+00:00",  # Newer
@@ -465,18 +488,21 @@ class TestProjectListView(BaseTestProjectView):
 
         # Earlier publication date
         project_data["foreign_id"] = 30
+        project_data["drupal_id"] = 130
         project_data["publication_date"] = "2023-01-01T11:00:00+00:00"
         followed_no_article_projects.append(Project.objects.create(**project_data))
 
         # Later publication date
         project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 40
+        project_data["drupal_id"] = 140
         project_data["publication_date"] = "2023-01-01T11:30:00+00:00"
         followed_no_article_projects.append(Project.objects.create(**project_data))
 
         # Create unfollowed projects with articles
         unfollowed_projects = self.create_projects_with_articles(
             base_foreign_id=50,
+            base_drupal_id=150,
             article_pub_dates=[
                 "2023-01-01T12:00:00+00:00",
                 "2023-01-01T12:00:00+00:00",
@@ -517,13 +543,14 @@ class TestProjectListView(BaseTestProjectView):
         """Test that projects with NULL coordinates appear last when sorting by distance"""
         # Create projects with valid coordinates
         valid_projects = [
-            self.create_project_with_location(10, 1),  # Middle
-            self.create_project_with_location(20, 0),  # Closest
+            self.create_project_with_location(10, 100, 1),  # Middle
+            self.create_project_with_location(20, 110, 0),  # Closest
         ]
 
         # Create project with NULL coordinates
         project_data = projects.MOCK_DATA[0].copy()
         project_data["foreign_id"] = 30
+        project_data["drupal_id"] = 130
         project_data["coordinates_lat"] = None
         project_data["coordinates_lon"] = None
         null_coord_project = Project.objects.create(**project_data)
@@ -562,6 +589,7 @@ class TestProjectListView(BaseTestProjectView):
         for i in range(100):
             project_data = projects.MOCK_DATA[0].copy()
             project_data["foreign_id"] = i
+            project_data["drupal_id"] = 100 + i
             all_projects.append(Project.objects.create(**project_data))
 
         # Create device and make it follow 42 random projects
@@ -613,6 +641,7 @@ class TestProjectListView(BaseTestProjectView):
         for i in range(1, 10 + 1):
             project_data = projects.MOCK_DATA[0].copy()
             project_data["foreign_id"] = i * 10
+            project_data["drupal_id"] = 100 + i * 10
             Project.objects.create(**project_data)
         self.assertEqual(len(Project.objects.all()), 10)
 
@@ -660,6 +689,7 @@ class TestProjectListView(BaseTestProjectView):
         unfollowed_project_data = projects.MOCK_DATA[0].copy()
         unfollowed_project_data["title"] = "this_unfollowed_project_will_be_deactivated"
         unfollowed_project_data["foreign_id"] = 888
+        unfollowed_project_data["drupal_id"] = 888
 
         # First create new project that is active and not followed
         unfollowed_project = Project.objects.create(**unfollowed_project_data)
@@ -669,6 +699,7 @@ class TestProjectListView(BaseTestProjectView):
         followed_project_data = projects.MOCK_DATA[0].copy()
         followed_project_data["title"] = "this_followed_project_will_be_deactivated"
         followed_project_data["foreign_id"] = 999
+        followed_project_data["drupal_id"] = 999
 
         followed_project = Project.objects.create(**followed_project_data)
         followed_project.active = True
@@ -701,9 +732,9 @@ class TestProjectListView(BaseTestProjectView):
         """Check if only active projects are returned"""
         self.api_headers[settings.HEADER_DEVICE_ID] = "foobar"
         _ = [
-            self.create_project_with_location(10, 1),  # Middle
-            self.create_project_with_location(20, 2),  # Furthest
-            self.create_project_with_location(30, 0),  # Closest
+            self.create_project_with_location(10, 110, 1),  # Middle
+            self.create_project_with_location(20, 120, 2),  # Furthest
+            self.create_project_with_location(30, 130, 0),  # Closest
         ]
 
         # The projects should not be returned now
@@ -880,6 +911,7 @@ class TestProjectSearchView(BaseTestProjectView):
         project_data = projects.MOCK_DATA[0].copy()
         project_data["title"] = "this_project_will_be_deactivated"
         project_data["foreign_id"] = 999
+        project_data["drupal_id"] = 999
 
         # First create new project that is active
         new_project = Project.objects.create(**project_data)

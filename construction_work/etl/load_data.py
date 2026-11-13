@@ -293,8 +293,7 @@ def store_image(
 
     image = image_class(
         id=image_set_data.get("image_id"),
-        aspectRatio=image_set_data.get("aspectRatio"),
-        alternativeText=image_set_data.get("alternativeText"),
+        alternativeText=image_set_data.get("description"),
         parent=parent,
     )
 

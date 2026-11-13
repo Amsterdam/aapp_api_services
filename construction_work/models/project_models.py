@@ -97,7 +97,6 @@ class ProjectSectionUrl(models.Model):
 
 
 class ProjectContact(models.Model):
-    id = models.FloatField(primary_key=True)
     name = models.CharField(null=True, blank=True)
     email = models.CharField(null=True, blank=True)
     phone = models.CharField(null=True, blank=True)
