@@ -16,6 +16,7 @@ class LinksView(generics.RetrieveAPIView):
         "birth": "https://www.amsterdam.nl/burgerzaken/geboorte-erkenning-kinderen/geboorteaangifte/",
         "boatChargingInfo": "https://www.amsterdam.nl/verkeer-vervoer/varen/elektrische-boot-laden-betalen/",
         "boatChargingPrivacyStatement": "https://www.amsterdam.nl/privacy/specifieke/privacyverklaring-parkeren-verkeer-bouw/privacyverklaring-laden-pleziervaart",
+        "boatChargingRequestVignette": "https://www.amsterdam.nl/verkeer-vervoer/varen/vaarvignet-aanvragen/",
         "chatPrivacy": "https://www.amsterdam.nl/privacy/specifieke/privacyverklaringen-burgerzaken-contact/klantcontact/",
         "citypass": "https://stadspas.amsterdam.nl/",
         "contactForm": "https://formulieren.amsterdam.nl/TriplEforms/DirectRegelen/formulier/nl-NL/evAmsterdam/Contactformulier.aspx",
