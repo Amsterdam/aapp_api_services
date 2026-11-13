@@ -94,9 +94,7 @@ class LocationView(BaseView):
                 self.get_charging_station_data(cs)
                 for cs in item.get("chargingStations", [])
             ],
-            "tariff": self.get_tariff_data(item["tariff"])
-            if "tariff" in item
-            else None,
+            "tariff": self.get_tariff_data(item["tariff"]),
         }
 
     def _get_status_and_kw_from_sockets(

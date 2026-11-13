@@ -78,6 +78,7 @@ class VignettesUpdateDeleteView(BaseView):
         return super().get_serializer(*args, **kwargs)
 
     @boat_charging_openapi_decorator(
+        success_status_code=204,
         response_serializer_class=None,
         accepts_access_token=True,
         requires_access_token=True,
@@ -101,6 +102,7 @@ class VignettesUpdateDeleteView(BaseView):
         return Response(status=204)
 
     @boat_charging_openapi_decorator(
+        success_status_code=204,
         response_serializer_class=None,
         accepts_access_token=True,
         requires_access_token=True,
