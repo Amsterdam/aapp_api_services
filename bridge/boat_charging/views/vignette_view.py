@@ -78,7 +78,7 @@ class VignettesUpdateDeleteView(BaseView):
         return super().get_serializer(*args, **kwargs)
 
     @boat_charging_openapi_decorator(
-        response_serializer_class=VignettesResponseSerializer(many=True),
+        response_serializer_class=None,
         accepts_access_token=True,
         requires_access_token=True,
     )
@@ -89,7 +89,7 @@ class VignettesUpdateDeleteView(BaseView):
         request_data.is_valid(raise_exception=True)
         validated_data = request_data.validated_data
 
-        response_list = await self.api_call(
+        await self.api_call(
             "put",
             endpoint=f"{settings.BOAT_CHARGING_ENDPOINTS['VIGNETTES']}/{id}",
             body_data={
@@ -98,13 +98,7 @@ class VignettesUpdateDeleteView(BaseView):
             },
         )
 
-        response_data = [create_vignette_response_data(item) for item in response_list]
-
-        response_serializer = VignettesResponseSerializer(data=response_data, many=True)
-        response_serializer.is_valid(raise_exception=True)
-
-        serializer = response_serializer
-        return Response(serializer.data, status=200)
+        return Response(status=204)
 
     @boat_charging_openapi_decorator(
         response_serializer_class=None,
