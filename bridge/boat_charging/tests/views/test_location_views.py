@@ -41,10 +41,13 @@ class TestLocationView(BoatChargingTestCase):
                 },
             },
         )
+        self.assertEqual(len(response.data["features"]), 3)
         self.assertEqual(
-            response.data["features"][0]["properties"]["status"], "OCCUPIED"
+            response.data["features"][0]["properties"]["status"], "UNKNOWN"
         )
-        self.assertEqual(response.data["features"][0]["properties"]["max_kw"], 22.0)
+        self.assertEqual(
+            response.data["features"][2]["properties"]["status"], "OCCUPIED"
+        )
 
     def test_address_without_number(self):
         mock_response = copy.deepcopy(locations.MOCK_RESPONSE)
@@ -74,6 +77,7 @@ class TestLocationView(BoatChargingTestCase):
         )
 
     def test_get_status_and_kw_from_sockets_occupied(self):
+        tariff_data = {"some_tariff_key": "some_tariff_value"}
         sockets = [
             {
                 "chargingStationId": "ABC-7BMY2",
@@ -95,11 +99,12 @@ class TestLocationView(BoatChargingTestCase):
                 "available": False,
             },
         ]
-        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets)
+        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets, tariff_data)
         self.assertEqual(status, "OCCUPIED")
         self.assertEqual(max_kw, 22.0)
 
     def test_get_status_and_kw_from_sockets_operative(self):
+        tariff_data = {"some_tariff_key": "some_tariff_value"}
         sockets = [
             {
                 "chargingStationId": "ABC-7BMY2",
@@ -122,11 +127,12 @@ class TestLocationView(BoatChargingTestCase):
                 "available": False,
             },
         ]
-        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets)
+        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets, tariff_data)
         self.assertEqual(status, "OPERATIVE")
         self.assertEqual(max_kw, 19.0)
 
     def test_get_status_and_kw_from_sockets_operative_no_max_kw(self):
+        tariff_data = {"some_tariff_key": "some_tariff_value"}
         sockets = [
             {
                 "chargingStationId": "ABC-7BMY2",
@@ -148,11 +154,12 @@ class TestLocationView(BoatChargingTestCase):
                 "available": False,
             },
         ]
-        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets)
+        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets, tariff_data)
         self.assertEqual(status, "OPERATIVE")
         self.assertEqual(max_kw, 22.0)
 
     def test_get_status_and_kw_from_sockets_inoperative(self):
+        tariff_data = {"some_tariff_key": "some_tariff_value"}
         sockets = [
             {
                 "chargingStationId": "ABC-7BMY2",
@@ -174,13 +181,14 @@ class TestLocationView(BoatChargingTestCase):
                 "available": False,
             },
         ]
-        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets)
+        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets, tariff_data)
         self.assertEqual(status, "INOPERATIVE")
         self.assertEqual(max_kw, 22.0)
 
     def test_get_status_and_kw_from_sockets_available_sockets_unavailable_charging_station(
         self,
     ):
+        tariff_data = {"some_tariff_key": "some_tariff_value"}
         sockets = [
             {
                 "chargingStationId": "VCPS-MULTI",
@@ -204,9 +212,79 @@ class TestLocationView(BoatChargingTestCase):
             },
         ]
 
-        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets)
+        status, max_kw = self.view._get_status_and_kw_from_sockets(sockets, tariff_data)
         self.assertEqual(status, "INOPERATIVE")
         self.assertEqual(max_kw, 11.7)
+
+    def test_get_status_and_kw_from_sockets_missing_tariff_data(self):
+        sockets = [
+            {
+                "chargingStationId": "VCPS-MULTI",
+                "evseId": "1",
+                "status": "AVAILABLE",
+                "available": True,
+                "maxElectricPower": 11.7,
+            }
+        ]
+        status, max_kw = self.view._get_status_and_kw_from_sockets(
+            sockets, tariff_data=None
+        )
+        self.assertEqual(status, "UNKNOWN")
+        self.assertEqual(max_kw, None)
+
+    def test_get_charging_station_data(self):
+        tariff_data = {"some_tariff_key": "some_tariff_value"}
+        cs_json = {
+            "id": "CS-1",
+            "status": "AVAILABLE",
+            "locationId": "LOC-1",
+            "evses": [
+                {
+                    "id": "EVSE-1",
+                    "ocppEvseId": "O-1",
+                    "evseId": "E-1",
+                    "status": "AVAILABLE",
+                    "connectors": [
+                        {
+                            "connectorId": "C-1",
+                            "maxAmp": 32,
+                            "voltage": 230,
+                            "status": "AVAILABLE",
+                        }
+                    ],
+                }
+            ],
+        }
+        cs_data = self.view.get_charging_station_data(cs_json, tariff_data)
+        self.assertEqual(cs_data["id"], "CS-1")
+        self.assertEqual(cs_data["status"], "OPERATIVE")
+
+    def test_get_charging_station_data_without_tariff_data(self):
+        tariff_data = None
+        cs_json = {
+            "id": "CS-1",
+            "status": "AVAILABLE",
+            "locationId": "LOC-1",
+            "evses": [
+                {
+                    "id": "EVSE-1",
+                    "ocppEvseId": "O-1",
+                    "evseId": "E-1",
+                    "status": "AVAILABLE",
+                    "connectors": [
+                        {
+                            "connectorId": "C-1",
+                            "maxAmp": 32,
+                            "voltage": 230,
+                            "status": "AVAILABLE",
+                        }
+                    ],
+                }
+            ],
+        }
+        cs_data = self.view.get_charging_station_data(cs_json, tariff_data)
+        self.assertEqual(cs_data["id"], "CS-1")
+        self.assertEqual(cs_data["status"], "UNKNOWN")
 
     def test_convert_regular_hours(self):
         regular_hours = [

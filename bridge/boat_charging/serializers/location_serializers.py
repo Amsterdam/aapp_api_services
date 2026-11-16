@@ -59,7 +59,6 @@ class ConnectorSerializer(serializers.Serializer):
     connector_id = serializers.IntegerField()
     max_amp = serializers.IntegerField()
     voltage = serializers.IntegerField()
-    # max_electric_powers = serializers.IntegerField()
     status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES)
 
 

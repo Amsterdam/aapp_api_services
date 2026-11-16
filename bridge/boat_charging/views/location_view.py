@@ -67,7 +67,9 @@ class LocationView(BaseView):
         """
         street, number = self.split_address(item["address"])
 
-        status, max_kw = self._get_status_and_kw_from_sockets(sockets)
+        tariff_data = item["tariff"] if "tariff" in item else None
+
+        status, max_kw = self._get_status_and_kw_from_sockets(sockets, tariff_data)
 
         return {
             "id": item["id"],
@@ -91,16 +93,14 @@ class LocationView(BaseView):
             "max_kw": max_kw,
             "charging_stations_ids": item.get("chargingStationsIds", []),
             "charging_stations": [
-                self.get_charging_station_data(cs)
+                self.get_charging_station_data(cs, tariff_data)
                 for cs in item.get("chargingStations", [])
             ],
-            "tariff": self.get_tariff_data(item["tariff"])
-            if "tariff" in item
-            else None,
+            "tariff": self.get_tariff_data(tariff_data) if tariff_data else None,
         }
 
     def _get_status_and_kw_from_sockets(
-        self, sockets: list[dict[str, Any]]
+        self, sockets: list[dict[str, Any]], tariff_data: dict[str, Any] | None
     ) -> tuple[str, float | None]:
         """
         This function determines the overall status and maximum wattage of a location based on its sockets.
@@ -116,8 +116,13 @@ class LocationView(BaseView):
 
         The wattage of the location is determined by the connector with the highest wattage that is operative at the location,
         or if no connector is operative, the connector with the highest wattage that is out of order/occupied.
+
+        If no tariff data is available, the status of the location is considered "UNKNOWN" and the maximum wattage is None.
         """
         if not sockets:
+            return "UNKNOWN", None
+
+        if not tariff_data:
             return "UNKNOWN", None
 
         operative = [
@@ -153,10 +158,12 @@ class LocationView(BaseView):
 
         return overall_status, max_kw
 
-    def get_charging_station_data(self, cs_json) -> dict:
+    def get_charging_station_data(self, cs_json, tariff_data) -> dict:
         return {
             "id": cs_json["id"],
-            "status": OPERATION_STATE_MAPPING.get(cs_json["status"], "UNKNOWN"),
+            "status": OPERATION_STATE_MAPPING.get(cs_json["status"], "UNKNOWN")
+            if tariff_data
+            else "UNKNOWN",
             "location_id": cs_json["locationId"],
             "evses": [
                 {

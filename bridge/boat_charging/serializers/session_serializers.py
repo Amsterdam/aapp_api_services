@@ -56,12 +56,14 @@ class SessionResponseSerializer(serializers.Serializer):
     )
     vignette_number = serializers.CharField(allow_null=True)
     boat_name = serializers.CharField(allow_null=True)
+    total_cost_incl_vat = serializers.FloatField(
+        help_text="Incl VAT", allow_null=True
+    )  # only not 0.0 when session has finished
     # CPMS data
     start_date_time = serializers.DateTimeField(allow_null=True)
     end_date_time = serializers.DateTimeField(allow_null=True)
     kwh = serializers.FloatField(allow_null=True)
     status = serializers.ChoiceField(choices=["ACTIVE", "COMPLETED"], allow_null=True)
-    total_cost = serializers.FloatField(help_text="Excl VAT", allow_null=True)
     currency = serializers.ChoiceField(choices=["EUR"])
     # Location data
     location = LocationPropertiesSerializer(required=False)
