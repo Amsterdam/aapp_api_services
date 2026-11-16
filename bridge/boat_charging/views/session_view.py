@@ -127,9 +127,10 @@ class SessionView(BaseView):
                 session.get("status"), cpms_session.get("status")
             ),
             "currency": "EUR",
-            # location data
-            "location": self.get_location_data(item.get("location", {})),
         }
+
+        if location := item.get("location", {}):
+            session_data["location"] = self.get_location_data(location)
         return session_data
 
     def get_location_data(self, location: dict[str | Any, Any]):
