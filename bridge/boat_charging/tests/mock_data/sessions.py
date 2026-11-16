@@ -22,7 +22,7 @@ MOCK_RESPONSE = [
             "userEmail": "test@amsterdam.nl",
             "vignetNumber": "ABC123",
             "boatName": "Boaty",
-        }
+        },
     },
     {
         "session": {

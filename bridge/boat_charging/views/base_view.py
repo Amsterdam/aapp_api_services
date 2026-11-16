@@ -202,6 +202,7 @@ class BaseView(GenericAPIView):
 
 def boat_charging_openapi_decorator(
     response_serializer_class,
+    success_status_code=200,
     additional_params=None,
     accepts_access_token=True,
     requires_access_token=True,
@@ -263,4 +264,8 @@ def boat_charging_openapi_decorator(
                 location="query",
             )
         )
-    return extend_schema_for_api_key(**kwargs, additional_params=additional_params)
+    return extend_schema_for_api_key(
+        **kwargs,
+        success_status_code=success_status_code,
+        additional_params=additional_params,
+    )

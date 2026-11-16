@@ -137,19 +137,7 @@ class TestVignettesUpdateDeleteView(BoatChargingTestCase):
             headers=self.api_headers,
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            [
-                {
-                    "vignette_number": vignettes.MOCK_DATA_LIST[0]["vignetNumber"],
-                    "postal_code": vignettes.MOCK_DATA_LIST[0]["postcode"],
-                    "id": vignettes.MOCK_DATA_LIST[0]["id"],
-                    "boat_name": vignettes.MOCK_DATA_LIST[0]["boatName"],
-                    "expiration_date": vignettes.MOCK_DATA_LIST[0]["validToDate"],
-                }
-            ],
-        )
+        self.assertEqual(response.status_code, 204)
         self.assertEqual(endpoint_mock.call_count, 1)
 
     def test_delete_vignette_success(self):
