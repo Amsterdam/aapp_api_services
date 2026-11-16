@@ -232,6 +232,60 @@ class TestLocationView(BoatChargingTestCase):
         self.assertEqual(status, "UNKNOWN")
         self.assertEqual(max_kw, None)
 
+    def test_get_charging_station_data(self):
+        tariff_data = {"some_tariff_key": "some_tariff_value"}
+        cs_json = {
+            "id": "CS-1",
+            "status": "AVAILABLE",
+            "locationId": "LOC-1",
+            "evses": [
+                {
+                    "id": "EVSE-1",
+                    "ocppEvseId": "O-1",
+                    "evseId": "E-1",
+                    "status": "AVAILABLE",
+                    "connectors": [
+                        {
+                            "connectorId": "C-1",
+                            "maxAmp": 32,
+                            "voltage": 230,
+                            "status": "AVAILABLE",
+                        }
+                    ],
+                }
+            ],
+        }
+        cs_data = self.view.get_charging_station_data(cs_json, tariff_data)
+        self.assertEqual(cs_data["id"], "CS-1")
+        self.assertEqual(cs_data["status"], "OPERATIVE")
+
+    def test_get_charging_station_data_without_tariff_data(self):
+        tariff_data = None
+        cs_json = {
+            "id": "CS-1",
+            "status": "AVAILABLE",
+            "locationId": "LOC-1",
+            "evses": [
+                {
+                    "id": "EVSE-1",
+                    "ocppEvseId": "O-1",
+                    "evseId": "E-1",
+                    "status": "AVAILABLE",
+                    "connectors": [
+                        {
+                            "connectorId": "C-1",
+                            "maxAmp": 32,
+                            "voltage": 230,
+                            "status": "AVAILABLE",
+                        }
+                    ],
+                }
+            ],
+        }
+        cs_data = self.view.get_charging_station_data(cs_json, tariff_data)
+        self.assertEqual(cs_data["id"], "CS-1")
+        self.assertEqual(cs_data["status"], "UNKNOWN")
+
     def test_convert_regular_hours(self):
         regular_hours = [
             {"weekday": 1, "periodBegin": "08:00", "periodEnd": "18:00"},

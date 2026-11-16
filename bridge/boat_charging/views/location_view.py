@@ -163,7 +163,7 @@ class LocationView(BaseView):
             "id": cs_json["id"],
             "status": OPERATION_STATE_MAPPING.get(cs_json["status"], "UNKNOWN")
             if tariff_data
-            else None,
+            else "UNKNOWN",
             "location_id": cs_json["locationId"],
             "evses": [
                 {
