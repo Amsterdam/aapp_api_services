@@ -4,7 +4,6 @@ from rest_framework import serializers
 class LinksOutSerializer(serializers.Serializer):
     acknowledgeChild = serializers.URLField()
     birth = serializers.URLField()
-    boatChargingInfo = serializers.URLField()
     chatPrivacy = serializers.URLField()
     citypass = serializers.URLField()
     cityPassRequest = serializers.URLField()

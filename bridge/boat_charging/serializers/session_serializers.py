@@ -89,9 +89,8 @@ class CostBreakdownItem(serializers.Serializer):
         choices=["ENERGY", "TIME", "FLAT", "PARKING_TIME", "STANDARD_FINE"]
     )
     cost_incl_vat = serializers.FloatField(help_text="Incl VAT")
-    unit_price_incl_vat = serializers.FloatField(allow_null=True, help_text="Incl VAT")
+    unit_price = serializers.FloatField(allow_null=True)
     volume = serializers.FloatField(allow_null=True)
-    vat_percentage = serializers.FloatField(allow_null=True)
 
 
 class SessionCostBreakdownResponseSerializer(serializers.Serializer):
