@@ -1,3 +1,5 @@
+import copy
+
 import httpx
 import respx
 from django.conf import settings
@@ -29,6 +31,17 @@ class TestSessionView(BoatChargingTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
         self.assertEqual(len(response.json()["result"]), len(sessions.MOCK_RESPONSE))
+        sessions_by_id = {item["id"]: item for item in response.json()["result"]}
+        self.assertEqual(
+            sessions_by_id[sessions.COMPLETED_SESSION_ID]["total_cost_incl_vat"],
+            3.12,
+        )
+        self.assertEqual(
+            sessions_by_id[sessions.SESSION_WITHOUT_CPMS_STATUS_ID][
+                "total_cost_incl_vat"
+            ],
+            0.0,
+        )
         self.assertEqual(
             [item["id"] for item in response.json()["result"]],
             [item["session"]["uniqueId"] for item in sessions.MOCK_RESPONSE],
@@ -307,6 +320,31 @@ class TestSessionDetailView(BoatChargingTestCase):
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(resp.call_count, 1)
+        self.assertEqual(response.json()["total_cost_incl_vat"], 0.0)
+
+    def test_final_amount_missing_is_returned_as_null(self):
+        response_data = copy.deepcopy(session_detail.MOCK_RESPONSE_CHARGING)
+        response_data["session"].pop("finalAmount")
+        respx.get(self.external_endpoint).mock(
+            return_value=httpx.Response(200, json=response_data)
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["total_cost_incl_vat"])
+
+    def test_final_amount_null_is_returned_as_null(self):
+        response_data = copy.deepcopy(session_detail.MOCK_RESPONSE_CHARGING)
+        response_data["session"]["finalAmount"] = None
+        respx.get(self.external_endpoint).mock(
+            return_value=httpx.Response(200, json=response_data)
+        )
+
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["total_cost_incl_vat"])
 
     def test_invalid_session_id_returns_400(self):
         invalid_url = reverse(
