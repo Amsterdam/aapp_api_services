@@ -1,0 +1,5 @@
+MOCK_RESPONSE = {
+    "language": "nl",
+    "version": "e59i422c4ebb2bcc",
+    "html": '<p>In het kort</p><ul><li>Uw boot laadt tijdens het afmeren.</li><li>De laadplek is alleen voor elektrische pleziervaart.</li><li>Voor het laden is een geldig milieuvignet nodig.</li><li>Laden mag maximaal 1 uur. Daarna betaalt u € 2,00 extra per uur. Ook als u maar een deel van een uur gebruikt, betaalt u voor het hele uur.</li><li>Na 48 uur stopt het laden automatisch en gaat er een melding naar de afdeling Handhaving.</li><li>We reserveren tijdelijk € 50,00 op uw rekening. Wat u niet gebruikt wordt teruggestort als het laden gestopt is.</li></ul><p>Sluit na het betalen de kabel aan op je boot en start het laden vanaf je sessiepagina.</p><p>Lees ook onze Privacyverklaring.</p><p><a href="https://www.amsterdam.nl/privacy/specifieke/privacyverklaring-parkeren-verkeer-bouw/privacyverklaring-laden-pleziervaart" target="_blank" rel="noopener noreferrer">Privacyverklaring Laden Pleziervaart</a></p><p>Ga je hiermee akkoord?</p>',
+}
