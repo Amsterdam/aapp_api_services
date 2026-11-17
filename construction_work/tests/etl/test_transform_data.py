@@ -290,6 +290,92 @@ class TransformDataTestCase(SimpleTestCase):
             ],
         )
 
+    def test_links_extraction_sections(self):
+        project = {
+            "id": 12,
+            "title": "Buikslotermeerplein: stap voor stap levendiger en groener",
+            "content": [
+                {
+                    "id": 86076,
+                    "rows": [
+                        {
+                            "content": [
+                                {
+                                    "__typename": "ParagraphDdsLinkList",
+                                    "id": 1,
+                                    "contentIndication": "what",
+                                    "content": '<div class="dds-prose"><p class="dds-paragraph">Het Buikslotermeerplein groeit stap voor stap uit tot een levendig hart van Noord. Met meer ruimte voor wonen, werken, groen, winkelen en uitgaan. We willen dat het Buikslotermeerplein een wijk wordt waar Noorderlingen trots op zijn, bewoners zich thuis voelen en Amsterdammers graag naar toe gaan. In de toekomst willen we de bouw van ongeveer 3000 woningen mogelijk maken. Deze plannen zijn gemaakt na gesprekken met buurtbewoners, ondernemers en andere belanghebbenden van het Buikslotermeerplein.</p><p class="dds-paragraph">Vanaf het begin spreken we met bewoners, ondernemers en andere betrokkenen over hun wensen en ideeën voor het gebied. Wilt u ook meedenken en meedoen?</p></div>',
+                                    "items": [
+                                        {
+                                            "id": 2,
+                                            "label": "Meedoen Buikslotermeerplein",
+                                            "link": {
+                                                "label": "Meedoen Buikslotermeerplein",
+                                                "url": "https://dvo.amsterdam.nl/meedoen-buikslotermeerplein",
+                                            },
+                                        }
+                                    ],
+                                },
+                            ]
+                        },
+                    ],
+                }
+            ],
+        }
+
+        result = _transform_project(project, None)
+
+        self.assertEqual(
+            result["sections"]["what"],
+            [
+                {
+                    "body": '<div class="dds-prose"><p class="dds-paragraph">Het Buikslotermeerplein groeit stap voor stap uit tot een levendig hart van Noord. Met meer ruimte voor wonen, werken, groen, winkelen en uitgaan. We willen dat het Buikslotermeerplein een wijk wordt waar Noorderlingen trots op zijn, bewoners zich thuis voelen en Amsterdammers graag naar toe gaan. In de toekomst willen we de bouw van ongeveer 3000 woningen mogelijk maken. Deze plannen zijn gemaakt na gesprekken met buurtbewoners, ondernemers en andere belanghebbenden van het Buikslotermeerplein.</p><p class="dds-paragraph">Vanaf het begin spreken we met bewoners, ondernemers en andere betrokkenen over hun wensen en ideeën voor het gebied. Wilt u ook meedenken en meedoen?</p></div>',
+                    "title": "Wat",
+                    "links": [
+                        {
+                            "label": "Meedoen Buikslotermeerplein",
+                            "url": "https://dvo.amsterdam.nl/meedoen-buikslotermeerplein",
+                        }
+                    ],
+                }
+            ],
+        )
+
+    def test_no_link_extraction_sections(self):
+        project = {
+            "id": 12,
+            "title": "Buikslotermeerplein: stap voor stap levendiger en groener",
+            "content": [
+                {
+                    "id": 86076,
+                    "rows": [
+                        {
+                            "content": [
+                                {
+                                    "__typename": "ParagraphDdsRichText",
+                                    "id": 4844,
+                                    "contentIndication": "when",
+                                    "content": '<div class="dds-prose"><h2 class="dds-heading dds-heading--2">Wanneer</h2><p class="dds-paragraph">In februari 2020 is het <a href="https://omgevingswet.overheid.nl/regels-op-de-kaart/documenten/NL-IMRO-0363-N1703BPGST-VG01-1/regels" class="dds-link">bestemmingsplan voor Elzenhagen Zuid</a> vastgesteld. We verwachten dat de ontwikkeling van Elzenhagen Zuid tot 2028 duurt.</p></div>',
+                                },
+                            ]
+                        },
+                    ],
+                }
+            ],
+        }
+
+        result = _transform_project(project, None)
+        self.assertEqual(
+            result["sections"]["when"],
+            [
+                {
+                    "body": '<div class="dds-prose"><p class="dds-paragraph">In februari 2020 is het <a class="dds-link" href="https://omgevingswet.overheid.nl/regels-op-de-kaart/documenten/NL-IMRO-0363-N1703BPGST-VG01-1/regels">bestemmingsplan voor Elzenhagen Zuid</a> vastgesteld. We verwachten dat de ontwikkeling van Elzenhagen Zuid tot 2028 duurt.</p></div>',
+                    "title": "Wanneer",
+                    "links": [],
+                }
+            ],
+        )
+
     @patch("construction_work.etl.transform_data.ImageSetService")
     def test_transform_image(self, image_set_service):
         image_set_service.return_value.get_or_upload_from_url.return_value = (

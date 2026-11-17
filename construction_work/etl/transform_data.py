@@ -87,7 +87,7 @@ def _transform_project(
     for block in _content_blocks(project):
         typename = block.get("__typename")
 
-        if typename == "ParagraphDdsRichText":
+        if typename in ("ParagraphDdsRichText", "ParagraphDdsLinkList"):
             section_type, title, body = _transform_rich_text_block(block)
             if section_type:
                 if section_type == "contact":
@@ -95,7 +95,11 @@ def _transform_project(
                     contacts.extend(section_contacts)
                 section = {
                     "body": body,
-                    "links": _links(body),
+                    "links": (
+                        _links(block.get("items", []))
+                        if typename == "ParagraphDdsLinkList"
+                        else []
+                    ),
                     "title": title,
                 }
                 sections.setdefault(section_type, []).append(section)
@@ -248,13 +252,20 @@ def _section_type(indication: Any, heading: str) -> str | None:
     return None
 
 
-def _links(body: str) -> list[dict[str, str]]:
-    """Extract link URLs and labels from a section's HTML body."""
-    soup = BeautifulSoup(body, "html.parser")
-    return [
-        {"url": anchor["href"], "label": anchor.get_text(" ", strip=True)}
-        for anchor in soup.find_all("a", href=True)
-    ]
+def _links(items: Any) -> list[dict[str, str]]:
+    """Extract link URLs and labels from link-list items."""
+    links = []
+    for item in items or []:
+        if not isinstance(item, Mapping):
+            continue
+        link = item.get("link")
+        if not isinstance(link, Mapping):
+            continue
+        label = link.get("label")
+        url = link.get("url")
+        if isinstance(label, str) and isinstance(url, str):
+            links.append({"label": label, "url": url})
+    return links
 
 
 def _transform_contact_content(body: str) -> tuple[list[dict[str, Any]], str]:
