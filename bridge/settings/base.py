@@ -83,4 +83,5 @@ BOAT_CHARGING_ENDPOINTS = {
     "SESSIONS": urljoin(BOAT_CHARGING_DOMAIN, "sessions"),
     "SETTINGS": urljoin(BOAT_CHARGING_DOMAIN, "app-settings/public"),
     "VIGNETTES": urljoin(BOAT_CHARGING_DOMAIN, "vignettes"),
+    "TERMS": urljoin(BOAT_CHARGING_DOMAIN, "terms"),
 }
