@@ -757,11 +757,47 @@ class LoadDataTestCase(TestCase):
 
         self.assertEqual(len(source_images), 2)
         self.assertEqual(images[0].image_set, 100)
+        self.assertEqual(images[0].source_media_id, 1398)
         self.assertEqual(images[0].alternativeText, "Project image")
         self.assertEqual(source_images[0].image.image_set, 100)
         self.assertEqual(source_images[0].uri, "https://foo.bar/medium-image.jpg")
         self.assertEqual(source_images[1].image.image_set, 100)
         self.assertEqual(source_images[1].uri, "https://foo.bar/big-image.jpg")
+
+    def test_store_image_allows_source_media_to_be_reused_by_parents(self):
+        projects = [baker.make(Project) for _ in range(2)]
+        image_data = {
+            "image_set": {
+                "id": 100,
+                "variants": [
+                    {"image": "https://foo.bar/image.jpg", "width": 20, "height": 10}
+                ],
+                "description": "Shared image",
+                "image_id": 1398,
+            }
+        }
+
+        images_and_sources = [
+            store_image(image_data, project, ProjectImage, ProjectImageSource)
+            for project in projects
+        ]
+        images = [
+            image for parent_images, _ in images_and_sources for image in parent_images
+        ]
+        sources = [
+            source
+            for _, parent_sources in images_and_sources
+            for source in parent_sources
+        ]
+
+        ProjectImage.objects.bulk_create(images)
+        ProjectImageSource.objects.bulk_create(sources)
+
+        saved_images = list(ProjectImage.objects.order_by("parent_id"))
+        self.assertEqual(len(saved_images), 2)
+        self.assertEqual({image.source_media_id for image in saved_images}, {1398})
+        self.assertEqual(len({image.id for image in saved_images}), 2)
+        self.assertEqual(ProjectImageSource.objects.count(), 2)
 
     def test_store_image_without_variants_returns_empty_list(self):
         project = baker.make(Project, foreign_id=1)

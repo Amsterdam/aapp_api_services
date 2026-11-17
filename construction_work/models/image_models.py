@@ -2,9 +2,11 @@ from django.db import models
 
 
 class BaseImage(models.Model):
-    id = models.IntegerField(primary_key=True)
     alternativeText = models.CharField(null=True, blank=True)
-    image_set = models.IntegerField()
+    image_set = (
+        models.IntegerField()
+    )  # id of the image set (from internal image service)
+    foreign_id = models.IntegerField(null=True, blank=True)  # id of Drupal image
 
     class Meta:
         abstract = True

@@ -76,6 +76,7 @@ class TestArticleDetailView(BasicAPITestCase):
                 "id": article.image.id,
                 "alternativeText": article.image.alternativeText,
                 "image_set": article.image.image_set,
+                "foreign_id": article.image.foreign_id,
                 "sources": [],
             },
             "url": article.url,
@@ -224,6 +225,7 @@ class TestArticleListView(BaseTestProjectView):
             ],
             "alternativeText": None,
             "image_set": 123,
+            "foreign_id": 8,
         }
 
         article_data = articles.MOCK_DATA[0].copy()
@@ -236,6 +238,7 @@ class TestArticleListView(BaseTestProjectView):
             alternativeText=None,
             id=123,
             image_set=123,
+            foreign_id=8,
         )
         baker.make(
             ArticleImageSource, image=image, height=50, uri="/foo/bar.png", width=100

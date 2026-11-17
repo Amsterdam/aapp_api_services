@@ -292,7 +292,7 @@ def store_image(
         return [], []
 
     image = image_class(
-        id=image_set_data.get("image_id"),
+        source_media_id=image_set_data.get("image_id"),
         alternativeText=image_set_data.get("description"),
         parent=parent,
     )
