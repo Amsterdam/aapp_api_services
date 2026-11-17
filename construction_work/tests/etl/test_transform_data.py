@@ -7,7 +7,7 @@ from requests import HTTPError
 
 from construction_work.etl.transform_data import (
     _transform_article,
-    _transform_contacts,
+    _transform_contact_content,
     _transform_image,
     _transform_project,
     transform_data,
@@ -196,7 +196,7 @@ class TransformDataTestCase(SimpleTestCase):
             transform_data(extracted_data)
         image_set_service.assert_called_once_with()
 
-    def test_transform_contacts(self):
+    def test_transform_contact_content(self):
 
         block = {
             "__typename": "ParagraphDdsRichText",
@@ -205,9 +205,10 @@ class TransformDataTestCase(SimpleTestCase):
             "content": '<h2>Contact</h2><p><strong>Voornaam Achternaam</strong><br>Position A<br>Extra info<br><a href="mailto:project.osdorpplein@amsterdam.nl">project.osdorpplein@amsterdam.nl</a></p><p><strong>Jane Smith</strong><br>Gebiedsmakelaar wonen<br>Voor vragen over wonen in de buurt, of als u wilt meedenken<br><a href="mailto:jane.smith@amsterdam.nl">jane.smith@amsterdam.nl</a></p><p><strong>Sarah Names</strong><br>Gebiedsmakelaar winkelgebied<br>Voor vragen over het winkelgebied, of als u wilt meedenken<br><a href="mailto:sarah.names@amsterdam.nl">sarah.names@amsterdam.nl</a></p>',
         }
 
-        contacts = _transform_contacts(block["content"])
+        contacts, remaining_body = _transform_contact_content(block["content"])
 
         self.assertEqual(len(contacts), 3)
+        self.assertEqual(remaining_body, "")
         self.assertTrue(all("id" not in contact for contact in contacts))
         self.assertEqual(contacts[0]["name"], "Voornaam Achternaam")
         self.assertEqual(contacts[0]["email"], "project.osdorpplein@amsterdam.nl")
@@ -226,6 +227,67 @@ class TransformDataTestCase(SimpleTestCase):
         self.assertEqual(
             contacts[2]["extra"],
             "Voor vragen over het winkelgebied, of als u wilt meedenken",
+        )
+
+    def test_contact_section_keeps_intro_separate_from_contact_details(self):
+        project = {
+            "id": 1,
+            "title": "Project",
+            "content": [
+                {
+                    "rows": [
+                        {
+                            "content": [
+                                {
+                                    "__typename": "ParagraphDdsRichText",
+                                    "contentIndication": "contact",
+                                    "content": (
+                                        '<div class="dds-prose"><h2 class="dds-heading '
+                                        'dds-heading--2">Contact</h2><p class="dds-paragraph">'
+                                        "Inloop voor vragen: elke laatste dinsdag van de "
+                                        "maand van 15.00 tot 17.00 uur, in InfoStek, "
+                                        "Buikslotermeerplein 13b</p><p class="
+                                        '"dds-paragraph"><strong>Projectteam '
+                                        'Buikslotermeerplein</strong><br><a href="mailto:'
+                                        'buikslotermeerplein@amsterdam.nl" class="dds-link">'
+                                        "buikslotermeerplein@amsterdam.nl</a></p></div>"
+                                    ),
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+        }
+
+        result = _transform_project(project, None)
+
+        self.assertEqual(
+            result["contacts"],
+            [
+                {
+                    "name": "Projectteam Buikslotermeerplein",
+                    "email": "buikslotermeerplein@amsterdam.nl",
+                    "phone": None,
+                    "position": None,
+                    "extra": None,
+                }
+            ],
+        )
+        self.assertEqual(
+            result["sections"]["contact"],
+            [
+                {
+                    "body": (
+                        '<div class="dds-prose"><p class="dds-paragraph">'
+                        "Inloop voor vragen: elke laatste dinsdag van de maand "
+                        "van 15.00 tot 17.00 uur, in InfoStek, "
+                        "Buikslotermeerplein 13b</p></div>"
+                    ),
+                    "links": [],
+                    "title": "Contact",
+                }
+            ],
         )
 
     @patch("construction_work.etl.transform_data.ImageSetService")

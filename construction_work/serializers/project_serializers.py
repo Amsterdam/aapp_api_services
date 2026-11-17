@@ -187,7 +187,6 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
     sections = serializers.SerializerMethodField()
     timeline = serializers.SerializerMethodField()
     coordinates = serializers.SerializerMethodField()
-
     contacts = ProjectContactSerializer(many=True)
 
     class Meta:
@@ -200,6 +199,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
             "image",
             "followers",
             "foreign_id",
+            "drupal_id",
             "active",
             "last_seen",
             "title",

@@ -90,14 +90,15 @@ def _transform_project(
         if typename == "ParagraphDdsRichText":
             section_type, title, body = _transform_rich_text_block(block)
             if section_type:
+                if section_type == "contact":
+                    section_contacts, body = _transform_contact_content(body)
+                    contacts.extend(section_contacts)
                 section = {
                     "body": body,
                     "links": _links(body),
                     "title": title,
                 }
                 sections.setdefault(section_type, []).append(section)
-                if section_type == "contact":
-                    contacts.extend(_transform_contacts(body))
 
         elif typename == "ParagraphDdsProgressList":
             has_timeline = True
@@ -256,15 +257,22 @@ def _links(body: str) -> list[dict[str, str]]:
     ]
 
 
-def _transform_contacts(body: str) -> list[dict[str, Any]]:
-    """Extract each contact paragraph from rich-text HTML."""
+def _transform_contact_content(body: str) -> tuple[list[dict[str, Any]], str]:
+    """Extract contact paragraphs and leave non-contact content in the section."""
     soup = BeautifulSoup(body, "html.parser")
-    contact_paragraphs = soup.find_all("p") or [soup]
+    for heading in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
+        heading.decompose()
+
     contacts = []
 
-    for paragraph in contact_paragraphs:
-        name = (paragraph.find("strong") or paragraph).get_text(" ", strip=True)
+    for paragraph in soup.find_all("p"):
         anchors = paragraph.find_all("a", href=True)
+        if not paragraph.find("strong") and not any(
+            anchor["href"].startswith(("mailto:", "tel:")) for anchor in anchors
+        ):
+            continue
+
+        name = (paragraph.find("strong") or paragraph).get_text(" ", strip=True)
         email = next(
             (
                 anchor["href"].removeprefix("mailto:")
@@ -312,8 +320,10 @@ def _transform_contacts(body: str) -> list[dict[str, Any]]:
                 "extra": extra,
             }
         )
+        paragraph.decompose()
 
-    return contacts
+    remaining_body = "".join(str(element) for element in soup.contents).strip()
+    return contacts, remaining_body
 
 
 def _transform_timeline_item(item: Mapping[str, Any]) -> dict[str, Any]:
