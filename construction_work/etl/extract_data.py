@@ -32,6 +32,9 @@ async def _get_all_drupal_projects_with_content() -> dict[str, Any]:
             {"paragraphId": settings.DVO_CONSTRUCTION_WORK_PARAGRAPH_ID},
         )
 
+        ## NOTE: just for testing, remove before push
+        projects = projects[:10]
+
         logger.info(f"Fetched {len(projects)} projects")
 
         paragraph_ids_by_type = {}
