@@ -61,5 +61,39 @@ MOCK_DATA = {
                 "type": "Regulier, 24-7 open",
             },
         },
+        {
+            "type": "Feature",
+            "id": "tap.5",
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [[111509.2373, 509420.7382]],
+            },
+            "geometry_name": "geom",
+            "properties": {
+                "ogc_fid": 1,
+                "beschrijvi": "Watertap vlak bij veerpont Akersloot.",
+                "type": "Regulier, 24-7 open",
+                "plaats": "Akersloot",
+                "x": 111509.237,
+                "y": 509420.738,
+            },
+        },
+        {
+            "type": "Feature",
+            "id": "tap.6",
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [[122779.8487, 493552.5493]],
+            },
+            "geometry_name": "geom",
+            "properties": {
+                "ogc_fid": 2,
+                "beschrijvi": "Watertap vlak bij Nieuwe Gouw 18, Landsmeer.",
+                "type": "Regulier, 24-7 open",
+                "plaats": "Landsmeer",
+                "x": 122779.849,
+                "y": 493552.549,
+            },
+        },
     ],
 }
