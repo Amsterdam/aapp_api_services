@@ -7,13 +7,13 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/burning-guide/api/v1/advice"
+  url: "{{baseUrl}}/burning-guide/api/v1/advice?postal_code=1091BK"
   headers:
     - name: X-Api-Key
       value: "{{apiKey}}"
   params:
     - name: postal_code
-      value: ""
+      value: 1091BK
       type: query
   auth:
     type: apikey
@@ -26,6 +26,7 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true
 
 examples:
   - name: 200 Response
