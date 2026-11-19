@@ -3,6 +3,7 @@ import datetime
 MOCK_DATA = [
     {
         "foreign_id": 128,
+        "drupal_id": 1236,
         "active": True,
         "last_seen": datetime.datetime.strptime(
             "2023-01-01T00:00:00", "%Y-%d-%mT%H:%M:%S"
@@ -23,6 +24,7 @@ MOCK_DATA = [
     },
     {
         "foreign_id": 256,
+        "drupal_id": 1237,
         "active": True,
         "last_seen": datetime.datetime.strptime(
             "2023-01-01T12:00:00", "%Y-%d-%mT%H:%M:%S"

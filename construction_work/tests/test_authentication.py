@@ -1,10 +1,15 @@
-from django.test import TestCase
+from unittest import mock
+
+from django.test import TestCase, override_settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
 
-from construction_work.authentication import EntraIDAuthentication
+from construction_work.authentication import (
+    EntraIDAuthentication,
+    MockEntraIDAuthentication,
+)
 from construction_work.permissions import IsEditor, IsPublisher
 from construction_work.utils.patch_utils import (
     create_bearer_token,
@@ -153,6 +158,30 @@ class TestEntraIDAuthentication(TestCase):
         response = TestView.as_view()(request)
         self.assertEqual(response.status_code, 403)
         self.assertIn("permission_denied", str(response.data).lower())
+
+    @mock.patch(
+        "construction_work.models.manage_models.ProjectManager.objects.get_or_create"
+    )
+    @override_settings(ENTRA_CLIENT_ID="test-client", ENTRA_TENANT_ID="test-tenant")
+    def test_returns_editor_claims_and_creates_mock_manager(self, get_or_create):
+        result = MockEntraIDAuthentication().authenticate(None)
+
+        self.assertIsNone(result[0])
+        self.assertEqual(
+            result[1],
+            {
+                "aud": "api://test-client",
+                "iss": "https://sts.windows.net/test-tenant/",
+                "roles": ["o-pbs-editor-delegated"],
+                "upn": "mock.user@amsterdam.nl",
+                "family_name": "User",
+                "given_name": "Mock",
+            },
+        )
+        get_or_create.assert_called_once_with(
+            name="Mock User",
+            email="mock.user@amsterdam.nl",
+        )
 
     def test_publisher_cannot_access_editor_view(self):
         """

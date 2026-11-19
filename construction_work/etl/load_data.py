@@ -1,5 +1,5 @@
-"""Write all project and article data from IPROX to Construction Work database
-See README.md for more info regarding the IPROX API
+"""
+Write all project and article data from Drupal to Construction Work database
 """
 
 from logging import getLogger
@@ -27,12 +27,21 @@ from core.services.image_set import ImageSetService
 logger = getLogger(__name__)
 
 
-def projects(project_data):
+def load_data(transformed_data: dict):
+    project_data = transformed_data.get("projects", [])
+    load_projects(project_data)
+
+    article_data = transformed_data.get("articles", [])
+    load_articles(article_data)
+
+
+def load_projects(project_data: list):
+
     projects_list = [get_project_object(data) for data in project_data]
     Project.objects.bulk_create(
         projects_list,
         update_conflicts=True,
-        unique_fields=["foreign_id"],
+        unique_fields=["drupal_id"],
         update_fields=[
             "title",
             "subtitle",
@@ -49,7 +58,7 @@ def projects(project_data):
     )
 
     project_objects = Project.objects.all()
-    projects_dict = {project.foreign_id: project for project in project_objects}
+    projects_dict = {project.drupal_id: project for project in project_objects}
     contacts, images, image_sources, timelines, sections, section_urls = (
         [],
         [],
@@ -59,7 +68,7 @@ def projects(project_data):
         [],
     )
     for data in project_data:
-        project = projects_dict.get(data.get("id"))
+        project = projects_dict.get(data.get("id"))  # This is the drupal_id now
 
         contacts += get_contacts(data, project)
 
@@ -109,23 +118,20 @@ def projects(project_data):
 
 def get_project_object(data):
     timeline_data = data.get("timeline") or {}
-    coordinates_data = data.get("coordinates") or {}
     sections_filled = check_sections_filled(data)
     project = Project(
-        foreign_id=data.get("id"),
+        drupal_id=data.get("id"),
         title=data.get("title"),
         subtitle=data.get("subtitle"),
         timeline_title=timeline_data.get("title"),
         timeline_intro=timeline_data.get("intro"),
-        coordinates_lat=coordinates_data.get("lat"),
-        coordinates_lon=coordinates_data.get("lon"),
+        coordinates_lat=data.get("coordinates_lat"),
+        coordinates_lon=data.get("coordinates_lon"),
         url=data.get("url"),
-        creation_date=data.get("created"),
-        modification_date=data.get("modified"),
-        # 133548: the publicationDate field is filled with the modification date from Iprox' side,
-        # because of that we will use the created date as publication date
-        publication_date=data.get("created"),
-        expiration_date=data.get("expirationDate"),
+        creation_date=data.get("creation_date"),
+        modification_date=data.get("modification_date"),
+        publication_date=data.get("publication_date"),
+        expiration_date=data.get("expiration_date"),
         last_seen=timezone.now(),
         # only projects with filled sections are set to active, because those are
         # the only ones that can be shown on the frontend in a proper way.
@@ -193,34 +199,36 @@ def get_sections(data, project):
     return sections, section_urls
 
 
-def articles(article_data):
+def load_articles(article_data: list):
     articles, article_project_mapping = [], {}
-    project_dict = {project.foreign_id: project for project in Project.objects.all()}
+    project_dict = {project.drupal_id: project for project in Project.objects.all()}
     for item in article_data:
-        foreign_project_ids = list(item.pop("projectIds"))
+        project_ids = list(item.pop("projectIds"))
         article_object = get_article_object(item)
         articles.append(article_object)
 
         projects = []
-        for id in foreign_project_ids:
-            proj = project_dict.get(id)
+        for project_id in project_ids:
+            proj = project_dict.get(project_id)
             if proj:
                 projects.append(proj)
             else:
                 logger.error(
-                    f"Project ID {id} not found in database",
+                    f"Project ID {project_id} not found in database",
                     extra={
-                        "project_id": id,
+                        "project_id": project_id,
                         "article_id": item.get("id"),
                     },
                 )
-        article_project_mapping[article_object.foreign_id] = projects
+        article_project_mapping[article_object.drupal_id] = projects
 
     Article.objects.bulk_create(
         articles,
         update_conflicts=True,
-        unique_fields=["foreign_id"],
+        unique_fields=["drupal_id"],
         update_fields=[
+            "active",
+            "last_seen",
             "title",
             "intro",
             "body",
@@ -235,14 +243,14 @@ def articles(article_data):
 
     # Projects can only be set after the articles are saved, because they are a many-to-many relationship
     articles_saved = Article.objects.filter(
-        foreign_id__in=[article for article in article_project_mapping.keys()]
+        drupal_id__in=[article for article in article_project_mapping.keys()]
     )
     with transaction.atomic():
         for article in articles_saved:
-            projects = article_project_mapping.get(article.foreign_id)
+            projects = article_project_mapping.get(article.drupal_id)
             article.projects.set(projects)
 
-    articles_dict = {article.foreign_id: article for article in articles_saved}
+    articles_dict = {article.drupal_id: article for article in articles_saved}
     images, image_sources = [], []
     for data in article_data:
         article = articles_dict.get(data.get("id"))
@@ -263,69 +271,55 @@ def articles(article_data):
 
 def get_article_object(data):
     article = Article(
-        foreign_id=data.get("id"),
+        drupal_id=data.get("id"),
         title=data.get("title"),
         intro=data.get("intro"),
         body=data.get("body"),
         type=data.get("type"),
         url=data.get("url"),
-        creation_date=data.get("created"),
-        modification_date=data.get("modified"),
-        # 133548: the publicationDate field is filled with the modification date from Iprox' side,
-        # because of that we will use the created date as publication date
-        publication_date=data.get("created"),
-        expiration_date=data.get("expirationDate"),
+        creation_date=data.get("creation_date"),
+        modification_date=data.get("modification_date"),
+        publication_date=data.get("publication_date"),
+        expiration_date=data.get("expiration_date"),
     )
     return article
 
 
 def store_image(
-    project_data, parent, image_class, image_source_class
+    item_data, parent, image_class, image_source_class
 ) -> tuple[list, list]:
-    image_data = project_data.get("image")
-    if not image_data and project_data.get("images"):
-        image_data = project_data.get("images")[0]
+    """
+    item_data is a dictionary containing project/article information. One of the keys should be "image" containing image details.
+
+    the image is also a dictionary containing the following fields:
+        - id: ID of the image (drupal ID)
+        - url: URL of the image
+        - alt: Alternative text for the image
+        - description: Description of the image
+
+    """
+    image_data = item_data.get("image")
     if not image_data:
-        return [], []
-    image = image_class(
-        id=image_data.get("id"),
-        aspectRatio=image_data.get("aspectRatio"),
-        alternativeText=image_data.get("alternativeText"),
-        parent=parent,
-    )
-
-    image_data_sources = image_data.get("sources")
-    if not image_data_sources:
-        return [], []
-
-    for source in image_data_sources:
-        try:
-            source["width"] = int(source["width"])
-            source["height"] = int(source["height"])
-        except (KeyError, ValueError) as e:
-            logger.error(
-                "Invalid image source width/height data",
-                extra={"sources": image_data_sources, "error": e},
-            )
-            return [], []
-
-    biggest_source_image = max(
-        image_data_sources,
-        key=lambda s: s["width"] * s["height"],
-    )
-    if not biggest_source_image.get("uri"):
-        logger.error("Missing image source uri", extra={"sources": image_data_sources})
         return [], []
 
     try:
         image_set_data = ImageSetService().get_or_upload_from_url(
-            biggest_source_image["uri"]
+            image_data.get("url"),
+            description=image_data.get("alt"),
         )
     except HTTPError as e:
         logger.error(f"Error getting or uploading image: {e}")
         return [], []
 
-    image.image_set = image_set_data["id"]
+    if not image_set_data.get("variants"):
+        return [], []
+
+    image = image_class(
+        foreign_id=image_data.get("id"),
+        image_set=image_set_data.get("id"),
+        alternativeText=image_data.get("alt"),
+        parent=parent,
+    )
 
     image_sources = [
         image_source_class(

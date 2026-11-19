@@ -1,14 +1,16 @@
 from django.db import models
 from django.utils import timezone
 
-from construction_work.models.project_models import BaseImage, BaseImageSource, Project
+from construction_work.models.image_models import BaseImage, BaseImageSource
+from construction_work.models.project_models import Project
 from construction_work.utils.model_utils import create_id_dict
 
 
 class Article(models.Model):
     """Article db model"""
 
-    foreign_id = models.BigIntegerField(unique=True)
+    foreign_id = models.BigIntegerField(unique=True, null=True, blank=True)
+    drupal_id = models.BigIntegerField(unique=True, null=True, blank=True)
     active = models.BooleanField(default=True)
     last_seen = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=1000, db_index=True)

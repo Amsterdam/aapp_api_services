@@ -18,51 +18,50 @@ class ImagePublicSerializer(serializers.ModelSerializer):
         fields = ["uri", "width", "height"]
 
 
-class IproxImageSourceSerializer(serializers.Serializer):
+class DvOImageSourceSerializer(serializers.Serializer):
     uri = serializers.CharField()
     width = serializers.IntegerField()
     height = serializers.IntegerField()
 
 
-class IproxImageSerializer(serializers.Serializer):
+class DvOImageSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    sources = IproxImageSourceSerializer(many=True)
-    aspectRatio = serializers.FloatField()
+    sources = DvOImageSourceSerializer(many=True)
     alternativeText = serializers.CharField()
 
 
-class IproxProjectSectionLinkSerializer(serializers.Serializer):
+class DvOProjectSectionLinkSerializer(serializers.Serializer):
     url = serializers.CharField()
     label = serializers.CharField()
 
 
-class IproxProjectSectionSerializer(serializers.Serializer):
+class DvOProjectSectionSerializer(serializers.Serializer):
     body = serializers.CharField()
     title = serializers.CharField()
-    links = IproxProjectSectionLinkSerializer(many=True)
+    links = DvOProjectSectionLinkSerializer(many=True)
 
 
-class IproxProjectSectionsSerializer(serializers.Serializer):
-    what = IproxProjectSectionSerializer()
-    when = IproxProjectSectionSerializer()
-    work = IproxProjectSectionSerializer()
-    contact = IproxProjectSectionSerializer()
+class DvOProjectSectionsSerializer(serializers.Serializer):
+    what = DvOProjectSectionSerializer()
+    when = DvOProjectSectionSerializer()
+    work = DvOProjectSectionSerializer()
+    contact = DvOProjectSectionSerializer()
 
 
-class IproxCoordinatesSerializer(serializers.Serializer):
+class DvOCoordinatesSerializer(serializers.Serializer):
     lat = serializers.FloatField()
     lon = serializers.FloatField()
 
 
 class RecursiveField(serializers.Field):
     def to_representation(self, value):
-        serializer = IproxProjectTimelineItemSerializer(
+        serializer = DvOProjectTimelineItemSerializer(
             value, many=True, context=self.context
         )
         return serializer.data
 
 
-class IproxProjectTimelineItemSerializer(serializers.Serializer):
+class DvOProjectTimelineItemSerializer(serializers.Serializer):
     title = serializers.CharField()
     body = serializers.CharField()
     collapsed = serializers.BooleanField()
@@ -70,10 +69,10 @@ class IproxProjectTimelineItemSerializer(serializers.Serializer):
     items = serializers.ListField(child=RecursiveField())
 
 
-class IproxProjectTimelineSerializer(serializers.Serializer):
+class DvOProjectTimelineSerializer(serializers.Serializer):
     title = serializers.CharField()
     intro = serializers.CharField()
-    items = IproxProjectTimelineItemSerializer(many=True)
+    items = DvOProjectTimelineItemSerializer(many=True)
 
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):

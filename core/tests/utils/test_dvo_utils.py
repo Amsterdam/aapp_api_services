@@ -12,6 +12,7 @@ from core.utils.dvo_utils import (
     MAX_RETRY_DELAY,
     MIN_RETRY_DELAY,
     DvOClient,
+    DvORequestError,
     DvOResponseError,
     _get_rate_limit_retry_delay,
 )
@@ -63,9 +64,12 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
             mocked.post(API_URL, status=503)
 
             async with self.client:
-                with self.assertRaises(aiohttp.ClientResponseError):
+                with self.assertRaises(DvORequestError) as error:
                     await self.client.execute_query("query { view { nodes { id } } }")
 
+        self.assertIsInstance(error.exception.__cause__, aiohttp.ClientResponseError)
+
+    @override_settings(ENVIRONMENT="otap")
     async def test_execute_query_retries_rate_limit_using_retry_after_header(self):
         response_data = {"view": {"nodes": [{"id": 1}]}}
         query = "query { view { nodes { id } } }"
@@ -89,6 +93,7 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertLessEqual(logged_delay, MAX_RETRY_DELAY)
         self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 2)
 
+    @override_settings(ENVIRONMENT="otap")
     async def test_execute_query_honors_retry_after_above_backoff_cap(self):
         response_data = {"view": {"nodes": [{"id": 1}]}}
         query = "query { view { nodes { id } } }"
@@ -110,6 +115,7 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
         sleep.assert_awaited_once_with(300.5)
         self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 2)
 
+    @override_settings(ENVIRONMENT="otap")
     async def test_execute_query_stops_after_rate_limit_attempts_are_exhausted(self):
         with aioresponses() as mocked:
             mocked.post(
@@ -121,13 +127,37 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
 
             with patch("core.utils.dvo_utils.random.uniform", return_value=0):
                 async with self.client:
-                    with self.assertRaises(aiohttp.ClientResponseError):
+                    with self.assertRaises(DvORequestError) as error:
                         await self.client.execute_query(
                             "query { view { nodes { id } } }"
                         )
 
+        self.assertIsInstance(error.exception.__cause__, aiohttp.ClientResponseError)
         self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 3)
 
+    @override_settings(ENVIRONMENT="otap")
+    async def test_execute_query_wraps_connection_failure_after_retries(self):
+        query = "query { view { nodes { id } } }"
+        with aioresponses() as mocked:
+            mocked.post(
+                API_URL,
+                exception=aiohttp.ClientConnectionError("connection refused"),
+                repeat=True,
+            )
+
+            with patch(
+                "core.utils.dvo_utils.asyncio.sleep",
+                new_callable=AsyncMock,
+            ) as sleep:
+                async with self.client:
+                    with self.assertRaises(DvORequestError) as error:
+                        await self.client.execute_query(query)
+
+        self.assertIsInstance(error.exception.__cause__, aiohttp.ClientConnectionError)
+        self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 3)
+        self.assertEqual(sleep.await_count, 2)
+
+    @override_settings(ENVIRONMENT="otap")
     async def test_execute_query_retries_server_disconnect(self):
         response_data = {"view": {"nodes": [{"id": 1}]}}
         query = "query { view { nodes { id } } }"
@@ -155,6 +185,24 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertGreaterEqual(sleep.await_args.args[0], MIN_RETRY_DELAY)
         self.assertLessEqual(sleep.await_args.args[0], MAX_RETRY_DELAY)
         self.assertEqual(sum(len(calls) for calls in mocked.requests.values()), 2)
+
+    @override_settings(ENVIRONMENT="local")
+    async def test_local_request_delay_is_awaited(self):
+        response_data = {"view": {"nodes": [{"id": 1}]}}
+        with aioresponses() as mocked:
+            mocked.post(API_URL, payload={"data": response_data})
+
+            with patch(
+                "core.utils.dvo_utils.asyncio.sleep",
+                new_callable=AsyncMock,
+            ) as sleep:
+                async with self.client:
+                    result = await self.client.execute_query(
+                        "query { view { nodes { id } } }"
+                    )
+
+        self.assertEqual(result, response_data)
+        sleep.assert_awaited_once_with(2)
 
     def test_rate_limit_retry_delay_uses_exponential_fallback(self):
         with patch("core.utils.dvo_utils.random.uniform", return_value=1) as jitter:

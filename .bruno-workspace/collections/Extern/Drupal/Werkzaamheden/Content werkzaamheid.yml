@@ -11,141 +11,170 @@ graphql:
       query MyQuery($nodeID: Int!) {
         nodeByID(id: $nodeID) {
           ... on Plan {
-            id
-            title
-            content {
-              ... on ParagraphGrid {
+                title
+                changedDate
+                publicationDate
+                image {
+                  ... on Image {
+                    id
+                    name
+                    src
+                    alt
+                  }
+                }
+                planCategory {
+                  id
+                  name
+                }
+                planStatus {
+                  name
+                }
                 id
-                rows {
-                  content {
-                    ... on ParagraphDdsLinkList {
-                      id
-                      contentIndication
-                      content
-                      items {
-                        ... on ParagraphDdsLinkListItem {
+                path
+                summaryShort
+                summaryIntroductory
+                metaDescription
+                content {
+                  ... on ParagraphGrid {
+                    id
+                    rows {
+                      content {
+                        ... on ParagraphDdsLinkList {
+                          __typename
                           id
-                          label
-                          link {
-                            label
-                            url
+                          contentIndication
+                          content
+                          items {
+                            ... on ParagraphDdsLinkListItem {
+                              id
+                              label
+                              link {
+                                label
+                                url
+                              }
+                            }
+                            ... on ParagraphDdsLinkListMediaItem {
+                              __typename
+                              id
+                              media {
+                                description
+                                id
+                                name
+                                size
+                                type
+                                url
+                              }
+                            }
                           }
                         }
-                        ... on ParagraphDdsLinkListMediaItem {
+                        ... on ParagraphDdsGallery {
+                          __typename
                           id
-                          media {
+                          contentIndication
+                          content
+                        }
+                        ... on ParagraphDdsEmbed {
+                          __typename
+                          id
+                          contentIndication
+                          content
+                        }
+                        ... on ParagraphDdsContentReference {
+                          __typename
+                          id
+                          contentIndication
+                          content
+                        }
+                        ... on ParagraphDdsCard {
+                          id
+                          contentIndication
+                          content
+                        }
+                        ... on ParagraphDdsAccordion {
+                          id
+                          contentIndication
+                        }
+                        ... on ParagraphDdsMapDataset {
+                          id
+                          contentIndication
+                          description
+                          mapDataset {
+                            pointsOfInterest {
+                              description
+                              id
+                              link {
+                                label
+                                url
+                              }
+                              location {
+                                latitude
+                                longitude
+                              }
+                              title
+                            }
+                            title
+                            type
+                          }
+                          title
+                        }
+                        ... on ParagraphDdsMedia {
+                          __typename
+                          id
+                          contentIndication
+                          content
+                          image {
+                            ... on Image {
+                              id
+                              name
+                              src
+                              alt
+                            }
+                          }
+                          imageCaption
+                          title
+                        }
+                        ... on ParagraphDdsProgressList {
+                          __typename
+                          id
+                          contentIndication
+                          items {
                             description
                             id
-                            name
-                            size
-                            type
-                            url
+                            initiallyCollapsed
+                            items {
+                              description
+                              id
+                              status
+                              title
+                            }
+                            status
+                            title
                           }
+                          intro
+                        }
+                        ... on ParagraphDdsRichText {
+                          __typename
+                          id
+                          contentIndication
+                          content
+                        }
+                        ... on ParagraphDdsViews {
+                          __typename
+                          id
+                          contentIndication
+                          content
                           title
                         }
                       }
-                      title
-                    }
-                    ... on ParagraphDdsGallery {
-                      id
-                      contentIndication
-                      content
-                    }
-                    ... on ParagraphDdsEmbed {
-                      id
-                      contentIndication
-                      content
-                    }
-                    ... on ParagraphDdsContentReference {
-                      id
-                      contentIndication
-                      content
-                    }
-                    ... on ParagraphDdsCard {
-                      id
-                      contentIndication
-                      content
-                    }
-                    ... on ParagraphDdsAccordion {
-                      id
-                      contentIndication
-                    }
-                    ... on ParagraphDdsMapDataset {
-                      id
-                      contentIndication
-                      description
-                      mapDataset {
-                        pointsOfInterest {
-                          description
-                          id
-                          link {
-                            label
-                            url
-                          }
-                          location {
-                            latitude
-                            longitude
-                          }
-                          title
-                        }
-                        title
-                        type
-                      }
-                      title
-                    }
-                    ... on ParagraphDdsMedia {
-                      id
-                      contentIndication
-                      content
-                      image {
-                        ... on Image {
-                          id
-                          name
-                          src
-                        }
-                      }
-                      imageCaption
-                      title
-                    }
-                    ... on ParagraphDdsProgressList {
-                      id
-                      contentIndication
-                      items {
-                        description
-                        id
-                        initiallyCollapsed
-                        items {
-                          description
-                          id
-                          status
-                          title
-                        }
-                        status
-                        title
-                      }
-                      intro
-                    }
-                    ... on ParagraphDdsRichText {
-                      id
-                      contentIndication
-                      content
-                    }
-                    ... on ParagraphDdsViews {
-                      id
-                      contentIndication
-                      content
-                      title
                     }
                   }
                 }
               }
-            }
-          }
         }
       }
     variables: |-
       {
-        "nodeID": 30342
+        "nodeID": 13234
       }
   auth: inherit
 

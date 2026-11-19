@@ -9,10 +9,10 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.utils import timezone
-from requests import HTTPError
 
-from construction_work.etl.extract_data import extract_news_paragraph_id_from_project
-from core.services.image_set import ImageSetService
+from construction_work.etl.extract_data import (
+    extract_news_and_work_paragraph_id_from_project,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,27 +45,50 @@ def transform_data(
     """Return loader-ready projects and articles from the extracted DvO response."""
     projects = extracted_data["projects"]
     news_articles = extracted_data["news_articles"]
-    image_set_service = ImageSetService()
+    work_articles = extracted_data["work_articles"]
 
-    transformed_projects = [
-        _transform_project(project, image_set_service) for project in projects
-    ]
-    transformed_articles = _transform_articles(
-        projects, news_articles, image_set_service
+    transformed_projects = [_transform_project(project) for project in projects]
+    transformed_news_articles = _transform_articles(projects, news_articles, "news")
+    transformed_work_articles = _transform_articles(projects, work_articles, "work")
+    transformed_articles = _merge_article_groups(
+        transformed_news_articles,
+        transformed_work_articles,
     )
     return {"projects": transformed_projects, "articles": transformed_articles}
 
 
+def _merge_article_groups(
+    news_articles: list[dict[str, Any]],
+    work_articles: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Deduplicate articles across view groups, preferring news on type conflicts."""
+    articles_by_id = {}
+
+    for article in news_articles + work_articles:
+        article_id = article["id"]
+        existing_article = articles_by_id.get(article_id)
+        if existing_article is None:
+            articles_by_id[article_id] = article
+            continue
+
+        if existing_article["type"] != article["type"]:
+            logger.warning(
+                f"Article {article_id} appears in both news and work views; "
+                "using news type"
+            )
+            existing_article["type"] = "news"
+
+        existing_article["projectIds"] = list(
+            dict.fromkeys(existing_article["projectIds"] + article["projectIds"])
+        )
+
+    return list(articles_by_id.values())
+
+
 def _transform_project(
     project: Mapping[str, Any],
-    image_set_service: ImageSetService | None,
 ) -> dict[str, Any]:
     """Convert a DvO project, including its content blocks, to loader fields."""
-    image_set = None
-    if project.get("image"):
-        if image_set_service is None:
-            raise RuntimeError("ImageSetService is required for project images")
-        image_set = _transform_image(project["image"], image_set_service)
 
     sections = {}
     contacts = []
@@ -77,23 +100,27 @@ def _transform_project(
     raw_title = project.get("title", "")
     project_title = raw_title.split(":")[0]
     project_subtitle = _get_subtitle(raw_title)
+    project_image = project.get("image", [])[0] if project.get("image") else None
 
     for block in _content_blocks(project):
         typename = block.get("__typename")
 
-        if typename == "ParagraphDdsRichText":
+        if typename in ("ParagraphDdsRichText", "ParagraphDdsLinkList"):
             section_type, title, body = _transform_rich_text_block(block)
             if section_type:
+                if section_type == "contact":
+                    section_contacts, body = _transform_contact_content(body)
+                    contacts.extend(section_contacts)
                 section = {
                     "body": body,
-                    "links": _links(body),
+                    "links": (
+                        _links(block.get("items", []))
+                        if typename == "ParagraphDdsLinkList"
+                        else []
+                    ),
                     "title": title,
                 }
                 sections.setdefault(section_type, []).append(section)
-                if section_type == "contact":
-                    contact = _transform_contact(block, body)
-                    if contact:
-                        contacts.append(contact)
 
         elif typename == "ParagraphDdsProgressList":
             has_timeline = True
@@ -112,9 +139,11 @@ def _transform_project(
         "title": project_title,
         "subtitle": project_subtitle,
         "url": project.get("path"),
+        # there is no creation date field in the source data, so it is filled with the publication date
         "creation_date": _parse_datetime(project.get("publicationDate")),
         "modification_date": _parse_datetime(project.get("changedDate")),
         "publication_date": _parse_datetime(project.get("publicationDate")),
+        # there is no expiration date field in the source data, so it is set to None
         "expiration_date": None,
         "coordinates_lat": coordinates["lat"] if coordinates else None,
         "coordinates_lon": coordinates["lon"] if coordinates else None,
@@ -125,50 +154,56 @@ def _transform_project(
             "intro": timeline_intro,
             "items": timeline_items,
         },
-        "imageSet": image_set,
+        "image": {
+            "id": project_image.get("id"),
+            "url": construct_image_url(project_image.get("src")),
+            "alt": project_image.get("alt"),
+            "description": project_image.get("description"),
+        }
+        if project_image
+        else None,
     }
 
 
 def _transform_articles(
     projects: list[Mapping[str, Any]],
     articles_by_paragraph_id: Mapping[int | str, list[Mapping[str, Any]]],
-    image_set_service: ImageSetService | None,
+    article_type: str,
 ) -> list[dict[str, Any]]:
     """Transform news articles and associate each with its related projects."""
     transformed_by_id = {}
 
     for project in projects:
-        paragraph_id = extract_news_paragraph_id_from_project(project)
-        if paragraph_id is None:
-            continue
+        for paragraph_id_dict in extract_news_and_work_paragraph_id_from_project(
+            project
+        ):
+            if paragraph_id_dict["type"] != article_type:
+                continue
+            paragraph_id = paragraph_id_dict["paragraph_id"]
 
-        articles = articles_by_paragraph_id.get(
-            paragraph_id, articles_by_paragraph_id.get(str(paragraph_id), [])
-        )
-        for article in articles:
-            article_id = article.get("id")
-            transformed = transformed_by_id.get(article_id)
-            if transformed is None:
-                transformed = _transform_article(article, image_set_service)
-                transformed["projectIds"] = []
-                transformed_by_id[article_id] = transformed
-            project_id = project.get("id")
-            if project_id not in transformed["projectIds"]:
-                transformed["projectIds"].append(project_id)
+            articles = articles_by_paragraph_id.get(
+                paragraph_id, articles_by_paragraph_id.get(str(paragraph_id), [])
+            )
+            for article in articles:
+                article_id = article.get("id")
+                transformed = transformed_by_id.get(article_id)
+                if transformed is None:
+                    transformed = _transform_article(article, article_type)
+                    transformed["projectIds"] = []
+                    transformed_by_id[article_id] = transformed
+                project_id = project.get("id")
+                if project_id not in transformed["projectIds"]:
+                    transformed["projectIds"].append(project_id)
 
     return list(transformed_by_id.values())
 
 
 def _transform_article(
     article: Mapping[str, Any],
-    image_set_service: ImageSetService | None,
+    article_type: str,
 ) -> dict[str, Any]:
     """Convert a DvO news article and its content to loader fields."""
-    image_set = None
-    if article.get("image"):
-        if image_set_service is None:
-            raise RuntimeError("ImageSetService is required for article images")
-        image_set = _transform_image(article["image"], image_set_service)
+    article_image = article.get("image", [])[0] if article.get("image") else None
 
     body = "".join(
         block.get("content") or ""
@@ -184,12 +219,20 @@ def _transform_article(
         "title": article.get("title"),
         "intro": article.get("summaryShort"),
         "body": body,
-        "type": tags[0].get("name") if tags else None,
+        "type": article_type,
         "url": article.get("path"),
-        "created": _parse_datetime(article.get("publicationDate")),
-        "modified": _parse_datetime(article.get("changedDate")),
-        "expirationDate": None,
-        "imageSet": image_set,
+        "creation_date": _parse_datetime(article.get("publicationDate")),
+        "publication_date": _parse_datetime(article.get("publicationDate")),
+        "modification_date": _parse_datetime(article.get("changedDate")),
+        "expiration_date": None,
+        "image": {
+            "id": article_image.get("id"),
+            "url": construct_image_url(article_image.get("src")),
+            "alt": article_image.get("alt"),
+            "description": article_image.get("description"),
+        }
+        if article_image
+        else None,
     }
 
 
@@ -233,57 +276,89 @@ def _section_type(indication: Any, heading: str) -> str | None:
     return None
 
 
-def _links(body: str) -> list[dict[str, str]]:
-    """Extract link URLs and labels from a section's HTML body."""
+def _links(items: Any) -> list[dict[str, str]]:
+    """Extract link URLs and labels from link-list items."""
+    links = []
+    for item in items or []:
+        if not isinstance(item, Mapping):
+            continue
+        link = item.get("link")
+        if not isinstance(link, Mapping):
+            continue
+        label = link.get("label")
+        url = link.get("url")
+        if isinstance(label, str) and isinstance(url, str):
+            links.append({"label": label, "url": url})
+    return links
+
+
+def _transform_contact_content(body: str) -> tuple[list[dict[str, Any]], str]:
+    """Extract contact paragraphs and leave non-contact content in the section."""
     soup = BeautifulSoup(body, "html.parser")
-    return [
-        {"url": anchor["href"], "label": anchor.get_text(" ", strip=True)}
-        for anchor in soup.find_all("a", href=True)
-    ]
+    for heading in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
+        heading.decompose()
 
+    contacts = []
 
-def _transform_contact(block: Mapping[str, Any], body: str) -> dict[str, Any] | None:
-    """Extract contact details from rich-text HTML, or return None without an ID."""
-    contact_id = block.get("id")
-    if contact_id is None:
-        return None
+    for paragraph in soup.find_all("p"):
+        anchors = paragraph.find_all("a", href=True)
+        if not paragraph.find("strong") and not any(
+            anchor["href"].startswith(("mailto:", "tel:")) for anchor in anchors
+        ):
+            continue
 
-    soup = BeautifulSoup(body, "html.parser")
-    name = (soup.find("strong") or soup).get_text(" ", strip=True)
-    anchors = soup.find_all("a", href=True)
-    email = next(
-        (
-            anchor["href"].removeprefix("mailto:")
-            for anchor in anchors
-            if anchor["href"].startswith("mailto:")
-        ),
-        None,
-    )
-    phone = next(
-        (
-            anchor["href"].removeprefix("tel:")
-            for anchor in anchors
-            if anchor["href"].startswith("tel:")
-        ),
-        None,
-    )
-    anchor_texts = {anchor.get_text(" ", strip=True) for anchor in anchors}
-    position = next(
-        (
-            line
-            for line in soup.get_text("\n", strip=True).splitlines()
-            if line != name and line not in anchor_texts and line.lower() != "contact"
-        ),
-        None,
-    )
+        name = (paragraph.find("strong") or paragraph).get_text(" ", strip=True)
+        email = next(
+            (
+                anchor["href"].removeprefix("mailto:")
+                for anchor in anchors
+                if anchor["href"].startswith("mailto:")
+            ),
+            None,
+        )
+        phone = next(
+            (
+                anchor["href"].removeprefix("tel:")
+                for anchor in anchors
+                if anchor["href"].startswith("tel:")
+            ),
+            None,
+        )
+        anchor_texts = {anchor.get_text(" ", strip=True) for anchor in anchors}
+        position = next(
+            (
+                line
+                for line in paragraph.get_text("\n", strip=True).splitlines()
+                if line != name
+                and line not in anchor_texts
+                and line.lower() != "contact"
+            ),
+            None,
+        )
+        extra = next(
+            (
+                line
+                for line in paragraph.get_text("\n", strip=True).splitlines()
+                if line != name
+                and line not in anchor_texts
+                and line.lower() != "contact"
+                and line != position
+            ),
+            None,
+        )
+        contacts.append(
+            {
+                "name": name or None,
+                "email": email,
+                "phone": phone,
+                "position": position,
+                "extra": extra,
+            }
+        )
+        paragraph.decompose()
 
-    return {
-        "id": contact_id,
-        "name": name or None,
-        "email": email,
-        "phone": phone,
-        "position": position,
-    }
+    remaining_body = "".join(str(element) for element in soup.contents).strip()
+    return contacts, remaining_body
 
 
 def _transform_timeline_item(item: Mapping[str, Any]) -> dict[str, Any]:
@@ -321,21 +396,8 @@ def _parse_datetime(value: str | datetime | None) -> datetime | None:
     return parsed
 
 
-def _transform_image(
-    images: list[Mapping[str, Any]],
-    image_set_service: ImageSetService,
-) -> dict[str, Any] | None:
-    """Upload the first DvO image by URL and return its image-set data."""
-    image_url = images[0].get("src")
-    if not isinstance(image_url, str) or not image_url:
-        raise ValueError("DvO image did not contain a source path")
-
-    absolute_image_url = urljoin(settings.DVO_URL, image_url)
-    try:
-        return image_set_service.get_or_upload_from_url(absolute_image_url)
-    except HTTPError as e:
-        logger.error(f"Error getting or uploading image: {e}")
-        return None
+def construct_image_url(image_source: str) -> str:
+    return urljoin(settings.DVO_URL, image_source)
 
 
 def _get_subtitle(title: str) -> str | None:

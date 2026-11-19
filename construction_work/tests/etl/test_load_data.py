@@ -1,46 +1,43 @@
-from unittest.mock import patch
+from unittest import mock
 
 from django.test import TestCase
 from django.utils import timezone
 from model_bakery import baker
 from requests import HTTPError
 
+from construction_work.etl import load_data as load_data_module
 from construction_work.etl.load_data import (
-    articles,
     get_article_object,
     get_project_object,
-    projects,
+    get_sections,
+    load_articles,
+    load_projects,
     store_image,
 )
-from construction_work.models.article_models import Article
+from construction_work.models.article_models import Article, ArticleImage
 from construction_work.models.project_models import (
     Project,
+    ProjectContact,
     ProjectImage,
     ProjectImageSource,
 )
 
 
 class LoadDataTestCase(TestCase):
-    def _set_mock_image_set_service_side_effect(
-        self, mock_image_set_service, image_data_list
-    ):
-        mock_image_set_service.return_value.get_or_upload_from_url.side_effect = [
-            {
-                "id": image_data["id"],
-                "variants": [
-                    {
-                        "image": x["uri"],
-                        "width": x["width"],
-                        "height": x["height"],
-                    }
-                    for x in image_data["sources"]
-                ],
-            }
-            for image_data in image_data_list
-        ]
+    def test_load_data_dispatches_empty_defaults(self):
+        with (
+            mock.patch.object(load_data_module, "load_projects") as load_projects,
+            mock.patch.object(load_data_module, "load_articles") as load_articles,
+        ):
+            load_data_module.load_data({})
 
-    @patch("construction_work.etl.load_data.ImageSetService")
-    def test_projects(self, mock_image_set_service):
+        load_projects.assert_called_once_with([])
+        load_articles.assert_called_once_with([])
+
+    def test_get_sections_without_sections(self):
+        self.assertEqual(get_sections({}, None), ([], []))
+
+    def test_projects(self):
         """Test that projects function correctly creates or updates Project instances."""
         project_data = [
             {
@@ -66,7 +63,6 @@ class LoadDataTestCase(TestCase):
                 },
                 "contacts": [
                     {
-                        "id": 1,
                         "name": "Jan",
                         "email": "jan@amsterdam.nl",
                         "phone": None,
@@ -92,18 +88,34 @@ class LoadDataTestCase(TestCase):
                     "title": "Wanneer",
                 },
                 "url": "http://example.com/project/1",
-                "image": {
-                    "id": 236,
-                    "sources": [
-                        {"uri": "https://image.jpg", "width": 940, "height": 415}
+                "image_set": {
+                    "id": 12,
+                    "description": "test",
+                    "variants": [
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/small.JPEG",
+                            "width": 320,
+                            "height": 180,
+                        },
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/medium.JPEG",
+                            "width": 768,
+                            "height": 432,
+                        },
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/large.JPEG",
+                            "width": 1280,
+                            "height": 720,
+                        },
                     ],
-                    "aspectRatio": 2,
+                    "image_id": 654,
                 },
-                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "coordinates_lat": 52.3077814027491,
+                "coordinates_lon": 4.99128045578052,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
             },
             {
                 "id": 2,
@@ -126,36 +138,87 @@ class LoadDataTestCase(TestCase):
                     ],
                     "title": "Wanneer",
                 },
-                "image": {
-                    "id": 238,
-                    "sources": [
-                        {"uri": "http://image2.jpg", "width": 940, "height": 415}
+                "image_set": {
+                    "id": 13,
+                    "description": "test two",
+                    "variants": [
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/small-2.JPEG",
+                            "width": 320,
+                            "height": 180,
+                        },
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/medium-2.JPEG",
+                            "width": 768,
+                            "height": 432,
+                        },
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/large-2.JPEG",
+                            "width": 1280,
+                            "height": 720,
+                        },
                     ],
-                    "aspectRatio": 2,
+                    "image_id": 9876,
                 },
                 "url": "http://example.com/project/2",
-                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "coordinates_lat": 52.3077814027491,
+                "coordinates_lon": 4.99128045578052,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
+                "contacts": [
+                    {
+                        "name": "Wendy",
+                        "email": "wendy@amsterdam.nl",
+                        "phone": None,
+                        "position": "Omgevingsmanager",
+                    }
+                ],
             },
         ]
-        self._set_mock_image_set_service_side_effect(
-            mock_image_set_service, [p["image"] for p in project_data]
-        )
-
-        projects(project_data)
+        load_projects(project_data)
 
         self.assertEqual(Project.objects.count(), 2)
-        project1 = Project.objects.get(foreign_id=1)
-        project2 = Project.objects.get(foreign_id=2)
+        project1 = Project.objects.get(drupal_id=1)
+        project2 = Project.objects.get(drupal_id=2)
 
         self.assertEqual(project1.title, "Project 1")
         self.assertEqual(project2.title, "Project 2")
+        self.assertEqual(
+            ProjectContact.objects.get(name="Wendy").project.drupal_id,
+            2,
+        )
 
-    @patch("construction_work.etl.load_data.ImageSetService")
-    def test_projects_no_sections(self, mock_image_set_service):
+    def test_multiple_contacts_receive_generated_primary_keys(self):
+        load_projects(
+            [
+                {
+                    "id": 3,
+                    "title": "Project with multiple contacts",
+                    "url": "https://example.com/project/3",
+                    "creation_date": timezone.now(),
+                    "modification_date": timezone.now(),
+                    "publication_date": timezone.now(),
+                    "contacts": [
+                        {"name": "First contact"},
+                        {"name": "Second contact"},
+                        {"name": "Third contact"},
+                    ],
+                }
+            ]
+        )
+
+        contacts = list(ProjectContact.objects.order_by("id"))
+
+        self.assertEqual(len(contacts), 3)
+        self.assertEqual(
+            [contact.name for contact in contacts],
+            ["First contact", "Second contact", "Third contact"],
+        )
+        self.assertEqual(len({contact.pk for contact in contacts}), 3)
+
+    def test_projects_no_sections(self):
         """
         Test that without filled sections are deactivated and those
         with filled sections remain active
@@ -173,7 +236,6 @@ class LoadDataTestCase(TestCase):
                 },
                 "contacts": [
                     {
-                        "id": 1,
                         "name": "Jan",
                         "email": "jan@amsterdam.nl",
                         "phone": None,
@@ -199,18 +261,24 @@ class LoadDataTestCase(TestCase):
                     "title": "Wanneer",
                 },
                 "url": "http://example.com/project/1",
-                "image": {
-                    "id": 236,
-                    "sources": [
-                        {"uri": "https://image.jpg", "width": 940, "height": 415}
+                "image_set": {
+                    "id": 123,
+                    "description": "test three",
+                    "variants": [
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/image-8.JPEG",
+                            "width": 320,
+                            "height": 180,
+                        }
                     ],
-                    "aspectRatio": 2,
+                    "image_id": 986,
                 },
-                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "coordinates_lat": 52.3077814027491,
+                "coordinates_lon": 4.99128045578052,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
             },
             {
                 "id": 2,
@@ -251,19 +319,25 @@ class LoadDataTestCase(TestCase):
                     ],
                     "title": "Wanneer",
                 },
-                "image": {
-                    "id": 238,
-                    "sources": [
-                        {"uri": "http://image2.jpg", "width": 940, "height": 415}
+                "image_set": {
+                    "id": 124,
+                    "description": "test four",
+                    "variants": [
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/image-4.JPEG",
+                            "width": 320,
+                            "height": 180,
+                        }
                     ],
-                    "aspectRatio": 2,
+                    "image_id": 886,
                 },
                 "url": "http://example.com/project/2",
-                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "coordinates_lat": 52.3077814027491,
+                "coordinates_lon": 4.99128045578052,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
             },
             {
                 "id": 3,
@@ -280,43 +354,44 @@ class LoadDataTestCase(TestCase):
                     ],
                     "title": "Wanneer",
                 },
-                "image": {
-                    "id": 240,
-                    "sources": [
-                        {"uri": "http://image3.jpg", "width": 940, "height": 415}
+                "image_set": {
+                    "id": 125,
+                    "description": "test five",
+                    "variants": [
+                        {
+                            "image": "https://ontw.app.amsterdam.nl/media/image/image-5.JPEG",
+                            "width": 320,
+                            "height": 180,
+                        }
                     ],
-                    "aspectRatio": 2,
+                    "image_id": 887,
                 },
                 "url": "http://example.com/project/3",
-                "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "coordinates_lat": 52.3077814027491,
+                "coordinates_lon": 4.99128045578052,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
             },
         ]
-        self._set_mock_image_set_service_side_effect(
-            mock_image_set_service, [p["image"] for p in project_data]
-        )
-
-        projects(project_data)
+        load_projects(project_data)
 
         self.assertEqual(Project.objects.count(), 3)
-        project1 = Project.objects.get(foreign_id=1)
-        project2 = Project.objects.get(foreign_id=2)
-        project3 = Project.objects.get(foreign_id=3)
+        project1 = Project.objects.get(drupal_id=1)
+        project2 = Project.objects.get(drupal_id=2)
+        project3 = Project.objects.get(drupal_id=3)
 
         self.assertEqual(project1.active, False)
         self.assertEqual(project2.active, True)
         self.assertEqual(project3.active, False)
 
-    @patch("construction_work.etl.load_data.ImageSetService")
-    def test_projects_update_conflict(self, mock_image_set_service):
+    def test_projects_update_conflict(self):
         """Test that projects function updates existing Project instances on conflict."""
         # Create an initial project
-        initial_project = baker.make(Project, foreign_id=1)
+        initial_project = baker.make(Project, foreign_id=51, drupal_id=1)
 
-        # New data with the same foreign_id
+        # New data with the same Drupal ID
         project_data = [
             {
                 "id": 1,
@@ -358,33 +433,44 @@ class LoadDataTestCase(TestCase):
                     "title": "Wanneer",
                 },
                 "image": {
-                    "id": 236,
-                    "sources": [
-                        {"uri": "https://image.jpg", "width": 940, "height": 415}
-                    ],
-                    "aspectRatio": 2,
+                    "id": 98765,
+                    "url": "https://example.com/image.jpg",
+                    "alt": "An example image",
                 },
                 "url": "http://example.com/project/1",
-                "coordinates": {"lat": 10, "lon": 20},
-                "created": initial_project.creation_date,
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "coordinates_lat": 10,
+                "coordinates_lon": 20,
+                "creation_date": initial_project.creation_date,
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
             },
         ]
-        self._set_mock_image_set_service_side_effect(
-            mock_image_set_service, [p["image"] for p in project_data]
-        )
-
-        projects(project_data)
+        with mock.patch.object(
+            load_data_module, "ImageSetService"
+        ) as image_set_service:
+            image_set_service.return_value.get_or_upload_from_url.return_value = {
+                "id": 236,
+                "variants": [
+                    {
+                        "image": "https://image.jpg",
+                        "width": 940,
+                        "height": 415,
+                    }
+                ],
+            }
+            load_projects(project_data)
 
         # Fetch the project again to check updates
-        updated_project = Project.objects.get(foreign_id=1)
+        updated_project = Project.objects.get(drupal_id=1)
+        self.assertEqual(updated_project.foreign_id, 51)
         self.assertEqual(updated_project.title, "Updated Title")
         self.assertEqual(updated_project.subtitle, "Updated Subtitle")
         self.assertEqual(updated_project.sections.count(), 3)
         self.assertEqual(updated_project.timeline_items.count(), 2)
-        self.assertEqual(updated_project.image.id, 236)
+        self.assertTrue(
+            ProjectImage.objects.filter(parent=updated_project, image_set=236).exists()
+        )
         self.assertEqual(updated_project.coordinates_lat, 10.0)
         self.assertEqual(updated_project.coordinates_lon, 20.0)
 
@@ -438,36 +524,45 @@ class LoadDataTestCase(TestCase):
                 ],
                 "title": "Wanneer",
             },
-            "image": {
-                "id": 236,
-                "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
-                "aspectRatio": 2,
+            "image_set": {
+                "id": 128,
+                "description": "An example image",
+                "variants": [
+                    {
+                        "image": "https://ontw.app.amsterdam.nl/media/image/image-3.JPEG",
+                        "width": 320,
+                        "height": 180,
+                    }
+                ],
+                "image_id": 98775,
             },
             "url": "http://example.com/project/1",
-            "coordinates": {"lat": 52.3077814027491, "lon": 4.99128045578052},
-            "created": timezone.now(),
-            "modified": timezone.now(),
-            "publicationDate": timezone.now(),
-            "expirationDate": None,
+            "coordinates_lat": 52.3077814027491,
+            "coordinates_lon": 4.99128045578052,
+            "creation_date": timezone.now(),
+            "modification_date": timezone.now(),
+            "publication_date": timezone.now(),
+            "expiration_date": None,
         }
         project = get_project_object(data)
-        self.assertEqual(project.foreign_id, data["id"])
+        self.assertEqual(project.drupal_id, data["id"])
+        self.assertIsNone(project.foreign_id)
         self.assertEqual(project.title, data["title"])
         self.assertEqual(project.subtitle, data["subtitle"])
         self.assertEqual(project.url, data["url"])
-        self.assertEqual(project.coordinates_lat, data["coordinates"]["lat"])
-        self.assertEqual(project.coordinates_lon, data["coordinates"]["lon"])
-        self.assertEqual(project.creation_date, data["created"])
-        self.assertEqual(project.modification_date, data["modified"])
-        self.assertEqual(project.publication_date, data["created"])
-        self.assertEqual(project.expiration_date, data["expirationDate"])
+        self.assertEqual(project.coordinates_lat, data["coordinates_lat"])
+        self.assertEqual(project.coordinates_lon, data["coordinates_lon"])
+        self.assertEqual(project.creation_date, data["creation_date"])
+        self.assertEqual(project.modification_date, data["modification_date"])
+        self.assertEqual(project.publication_date, data["publication_date"])
+        self.assertEqual(project.expiration_date, data["expiration_date"])
         self.assertTrue(project.active)
         self.assertIsNotNone(project.last_seen)
 
     def test_articles(self):
         """Test that articles function correctly creates or updates Article instances and their relationships."""
-        project1 = baker.make(Project, foreign_id=1)
-        project2 = baker.make(Project, foreign_id=2)
+        project1 = baker.make(Project, foreign_id=1, drupal_id=1)
+        project2 = baker.make(Project, foreign_id=2, drupal_id=2)
 
         article_data = [
             {
@@ -477,10 +572,10 @@ class LoadDataTestCase(TestCase):
                 "body": "Body 1",
                 "type": "announcement",
                 "url": "http://example.com/article/100",
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
                 "projectIds": [1, 2],
             },
             {
@@ -490,19 +585,19 @@ class LoadDataTestCase(TestCase):
                 "body": "Body 2",
                 "type": "update",
                 "url": "http://example.com/article/101",
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
                 "projectIds": [1],
             },
         ]
 
-        articles(article_data)
+        load_articles(article_data)
 
         self.assertEqual(Article.objects.count(), 2)
-        article1 = Article.objects.get(foreign_id=100)
-        article2 = Article.objects.get(foreign_id=101)
+        article1 = Article.objects.get(drupal_id=100)
+        article2 = Article.objects.get(drupal_id=101)
 
         self.assertEqual(article1.title, "Article 1")
         self.assertEqual(article2.title, "Article 2")
@@ -511,13 +606,12 @@ class LoadDataTestCase(TestCase):
         self.assertEqual(set(article1.projects.all()), {project1, project2})
         self.assertEqual(set(article2.projects.all()), {project1})
 
-    @patch("construction_work.etl.load_data.ImageSetService")
-    def test_articles_update_conflict(self, mock_image_set_service):
+    def test_articles_update_conflict(self):
         """Test that articles function updates existing Article instances on conflict."""
-        article100 = baker.make(Article, id=100)
-        project1 = baker.make(Project, foreign_id=1)
+        article100 = baker.make(Article, id=100, drupal_id=100, foreign_id=500)
+        project1 = baker.make(Project, foreign_id=1, drupal_id=1)
 
-        # New data with the same foreign_id
+        # New data with the same Drupal ID
         article_data = [
             {
                 "id": 100,
@@ -526,34 +620,69 @@ class LoadDataTestCase(TestCase):
                 "body": "Updated Body",
                 "type": "announcement",
                 "url": "http://example.com/article/100",
-                "created": article100.creation_date,
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": article100.creation_date,
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
                 "projectIds": [1],
                 "image": {
-                    "id": 23626572,
-                    "sources": [
-                        {"uri": "https://image.jpg", "width": 940, "height": 415}
-                    ],
-                    "aspectRatio": 2,
+                    "id": 236572,
+                    "url": "https://example.com/image.jpg",
+                    "alt": "An image description",
                 },
             },
         ]
-        self._set_mock_image_set_service_side_effect(
-            mock_image_set_service, [a["image"] for a in article_data]
-        )
 
-        articles(article_data)
+        with mock.patch.object(
+            load_data_module, "ImageSetService"
+        ) as image_set_service:
+            image_set_service.return_value.get_or_upload_from_url.return_value = {
+                "id": 23626572,
+                "variants": [
+                    {
+                        "image": "https://image.jpg",
+                        "width": 940,
+                        "height": 415,
+                    }
+                ],
+            }
+            load_articles(article_data)
 
         # Fetch the article again to check updates
-        updated_article = Article.objects.get(foreign_id=100)
+        updated_article = Article.objects.get(drupal_id=100)
+        self.assertEqual(updated_article.foreign_id, 500)
         self.assertEqual(updated_article.title, "Updated Article Title")
         self.assertEqual(updated_article.intro, "Updated Intro")
         self.assertEqual(updated_article.body, "Updated Body")
-        self.assertEqual(updated_article.image.id, 23626572)
+        article_image = ArticleImage.objects.get(parent=updated_article)
+        self.assertEqual(article_image.image_set, 23626572)
+        self.assertEqual(article_image.alternativeText, "An image description")
         self.assertEqual(updated_article.type, "announcement")
         self.assertEqual(set(updated_article.projects.all()), {project1})
+
+    def test_articles_load_with_nullable_legacy_id(self):
+        project = baker.make(Project, foreign_id=None, drupal_id=1)
+        article_data = [
+            {
+                "id": 100,
+                "title": "Article without legacy ID",
+                "intro": "Intro",
+                "body": "Body",
+                "type": "news",
+                "url": "http://example.com/article/100",
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
+                "projectIds": [1],
+            }
+        ]
+
+        load_articles(article_data)
+
+        article = Article.objects.get(drupal_id=100)
+        self.assertIsNone(article.foreign_id)
+        self.assertEqual(list(article.projects.all()), [project])
 
     def test_articles_missing_project(self):
         """Test that articles function logs an error when a referenced project does not exist."""
@@ -565,19 +694,19 @@ class LoadDataTestCase(TestCase):
                 "body": "Body",
                 "type": "news",
                 "url": "http://example.com/article/200",
-                "created": timezone.now(),
-                "modified": timezone.now(),
-                "publicationDate": timezone.now(),
-                "expirationDate": None,
+                "creation_date": timezone.now(),
+                "modification_date": timezone.now(),
+                "publication_date": timezone.now(),
+                "expiration_date": None,
                 "projectIds": [999],  # Non-existent project ID
             },
         ]
 
         with self.assertLogs("construction_work.etl.load_data", level="ERROR") as cm:
-            articles(article_data)
+            load_articles(article_data)
 
         self.assertIn("Project ID 999 not found in database", cm.output[0])
-        article = Article.objects.get(foreign_id=200)
+        article = Article.objects.get(drupal_id=200)
         self.assertEqual(article.projects.count(), 0)
 
     def test_get_article_object(self):
@@ -589,191 +718,154 @@ class LoadDataTestCase(TestCase):
             "body": "Article Body",
             "type": "news",
             "url": "http://example.com/article/100",
-            "created": timezone.now(),
-            "modified": timezone.now(),
-            "publicationDate": timezone.now(),
-            "expirationDate": None,
-            "image": {
+            "creation_date": timezone.now(),
+            "modification_date": timezone.now(),
+            "publication_date": timezone.now(),
+            "expiration_date": None,
+            "image_set": {
                 "id": 23626572,
-                "sources": [{"uri": "image.jpg", "width": 940, "height": 415}],
-                "aspectRatio": 2,
+                "variants": [{"image": "image.jpg", "width": 940, "height": 415}],
+                "description": "An example image",
+                "image_id": 1398,
             },
         }
         article = get_article_object(data)
-        self.assertEqual(article.foreign_id, data["id"])
+        self.assertEqual(article.drupal_id, data["id"])
+        self.assertIsNone(article.foreign_id)
         self.assertEqual(article.title, data["title"])
         self.assertEqual(article.intro, data["intro"])
         self.assertEqual(article.body, data["body"])
         self.assertEqual(article.type, data["type"])
         self.assertEqual(article.url, data["url"])
-        self.assertEqual(article.creation_date, data["created"])
-        self.assertEqual(article.modification_date, data["modified"])
-        self.assertEqual(article.publication_date, data["created"])
-        self.assertEqual(article.expiration_date, data["expirationDate"])
+        self.assertEqual(article.creation_date, data["creation_date"])
+        self.assertEqual(article.modification_date, data["modification_date"])
+        self.assertEqual(article.publication_date, data["publication_date"])
+        self.assertEqual(article.expiration_date, data["expiration_date"])
 
-    @patch("construction_work.etl.load_data.ImageSetService")
-    def test_store_image_expected_source_data(self, mock_image_set_service):
-        parent = baker.make(Project, foreign_id=1)
-        image_class = ProjectImage
-        image_source_class = ProjectImageSource
-
-        project_data = {
+    def test_store_image_creates_one_row_per_variant(self):
+        project = baker.make(Project, foreign_id=1)
+        image_data = {
             "image": {
-                "id": 100,
-                "sources": [
-                    {
-                        "uri": "https://foo.bar/medium-image.jpg",
-                        "width": 200,
-                        "height": 20,
-                    },
-                    {
-                        "uri": "https://foo.bar/big-image.jpg",
-                        "width": 20,
-                        "height": 201,
-                    },
-                    {
-                        "uri": "https://foo.bar/small-image.jpg",
-                        "width": 19,
-                        "height": 200,
-                    },
-                ],
-                "aspectRatio": 2,
+                "id": 1398,
+                "url": "https://foo.bar/source-image.jpg",
+                "alt": "Project image",
             }
         }
 
-        self._set_mock_image_set_service_side_effect(
-            mock_image_set_service, [project_data["image"]]
-        )
-
-        images, sources = store_image(
-            project_data, parent, image_class, image_source_class
-        )
-
-        self.assertEqual(len(images), 1)
-        self.assertEqual(len(sources), 3)
-        self.assertIsNotNone(images[0].image_set)
-
-    @patch("construction_work.etl.load_data.ImageSetService")
-    def test_store_image_width_height_as_strings(self, mock_image_set_service):
-        parent = baker.make(Project, foreign_id=1)
-        image_class = ProjectImage
-        image_source_class = ProjectImageSource
-
-        project_data = {
-            "image": {
+        with mock.patch.object(
+            load_data_module, "ImageSetService"
+        ) as image_set_service:
+            image_set_service.return_value.get_or_upload_from_url.return_value = {
                 "id": 100,
-                "sources": [
+                "variants": [
                     {
-                        "uri": "https://foo.bar/medium-image.jpg",
+                        "image": "https://foo.bar/medium-image.jpg",
                         "width": "200",
                         "height": "20",
                     },
                     {
-                        "uri": "https://foo.bar/big-image.jpg",
-                        "width": "20",
-                        "height": "201",
-                    },
-                    {
-                        "uri": "https://foo.bar/small-image.jpg",
-                        "width": 19,
-                        "height": 200,
+                        "image": "https://foo.bar/big-image.jpg",
+                        "width": 20,
+                        "height": 201,
                     },
                 ],
-                "aspectRatio": 2,
+            }
+            images, source_images = store_image(
+                image_data, project, ProjectImage, ProjectImageSource
+            )
+
+        self.assertEqual(len(source_images), 2)
+        self.assertEqual(images[0].image_set, 100)
+        self.assertEqual(images[0].foreign_id, 1398)
+        self.assertEqual(images[0].alternativeText, "Project image")
+        self.assertEqual(source_images[0].image.image_set, 100)
+        self.assertEqual(source_images[0].uri, "https://foo.bar/medium-image.jpg")
+        self.assertEqual(source_images[1].image.image_set, 100)
+        self.assertEqual(source_images[1].uri, "https://foo.bar/big-image.jpg")
+
+    def test_store_image_allows_source_media_to_be_reused_by_parents(self):
+        projects = [baker.make(Project) for _ in range(2)]
+        image_data = {
+            "image": {
+                "id": 1398,
+                "url": "https://foo.bar/image.jpg",
+                "alt": "Shared image",
             }
         }
 
-        self._set_mock_image_set_service_side_effect(
-            mock_image_set_service, [project_data["image"]]
-        )
-
-        images, sources = store_image(
-            project_data, parent, image_class, image_source_class
-        )
-
-        self.assertEqual(len(images), 1)
-        self.assertEqual(len(sources), 3)
-        self.assertIsNotNone(images[0].image_set)
-
-    def test_store_image_invalid_source_data(self):
-        parent = baker.make(Project, foreign_id=1)
-        image_class = ProjectImage
-        image_source_class = ProjectImageSource
-
-        # Missing width and height
-        project_data = {
-            "image": {"id": 100, "sources": [{"uri": "https://foo.bar/image.jpg"}]}
-        }
-        images, sources = store_image(
-            project_data, parent, image_class, image_source_class
-        )
-        self.assertEqual(len(images), 0)
-        self.assertEqual(len(sources), 0)
-
-        # Width or height not integer
-        project_data = {
-            "image": {
+        with mock.patch.object(
+            load_data_module, "ImageSetService"
+        ) as image_set_service:
+            image_set_service.return_value.get_or_upload_from_url.return_value = {
                 "id": 100,
-                "sources": [
-                    {
-                        "uri": "https://foo.bar/image.jpg",
-                        "width": "not an integer",
-                        "height": 200,
+                "variants": [
+                    {"image": "https://foo.bar/image.jpg", "width": 20, "height": 10}
+                ],
+            }
+            images_and_sources = [
+                store_image(image_data, project, ProjectImage, ProjectImageSource)
+                for project in projects
+            ]
+        images = [
+            image for parent_images, _ in images_and_sources for image in parent_images
+        ]
+        sources = [
+            source
+            for _, parent_sources in images_and_sources
+            for source in parent_sources
+        ]
+
+        ProjectImage.objects.bulk_create(images)
+        ProjectImageSource.objects.bulk_create(sources)
+
+        saved_images = list(ProjectImage.objects.order_by("parent_id"))
+        self.assertEqual(len(saved_images), 2)
+        self.assertEqual({image.foreign_id for image in saved_images}, {1398})
+        self.assertEqual(len({image.id for image in saved_images}), 2)
+        self.assertEqual(ProjectImageSource.objects.count(), 2)
+
+    def test_store_image_without_variants_returns_empty_list(self):
+        project = baker.make(Project, foreign_id=1)
+        with mock.patch.object(
+            load_data_module, "ImageSetService"
+        ) as image_set_service:
+            image_set_service.return_value.get_or_upload_from_url.return_value = {
+                "id": 100,
+                "variants": [],
+            }
+            result = store_image(
+                {
+                    "image": {
+                        "id": 1398,
+                        "url": "https://foo.bar/image.jpg",
+                        "alt": "Project image",
                     }
-                ],
-            }
-        }
-        images, sources = store_image(
-            project_data, parent, image_class, image_source_class
-        )
-        self.assertEqual(len(images), 0)
-        self.assertEqual(len(sources), 0)
+                },
+                project,
+                ProjectImage,
+                ProjectImageSource,
+            )
+        self.assertEqual(result, ([], []))
 
-    def test_store_image_no_sources(self):
-        parent = baker.make(Project, foreign_id=1)
-        image_class = ProjectImage
-        image_source_class = ProjectImageSource
-
-        project_data = {"image": {"id": 100, "sources": []}}
-        images, sources = store_image(
-            project_data, parent, image_class, image_source_class
-        )
-        self.assertEqual(len(images), 0)
-        self.assertEqual(len(sources), 0)
-
-    def test_store_image_missing_source_uri(self):
-        parent = baker.make(Project, foreign_id=1)
-        image_class = ProjectImage
-        image_source_class = ProjectImageSource
-
-        project_data = {
-            "image": {"id": 100, "sources": [{"width": 100, "height": 100}]}
-        }
-        images, sources = store_image(
-            project_data, parent, image_class, image_source_class
-        )
-        self.assertEqual(len(images), 0)
-        self.assertEqual(len(sources), 0)
-
-    @patch("construction_work.etl.load_data.ImageSetService")
-    def test_store_image_http_error(self, mock_image_set_service):
-        mock_image_set_service.return_value.get_or_upload_from_url.side_effect = (
-            HTTPError("Something went wrong")
-        )
-        parent = baker.make(Project, foreign_id=1)
-        image_class = ProjectImage
-        image_source_class = ProjectImageSource
-
-        project_data = {
-            "image": {
-                "id": 100,
-                "sources": [
-                    {"uri": "https://foo.bar/image.jpg", "width": 100, "height": 100}
-                ],
-            }
-        }
-        images, sources = store_image(
-            project_data, parent, image_class, image_source_class
-        )
-        self.assertEqual(len(images), 0)
-        self.assertEqual(len(sources), 0)
+    def test_store_image_http_error_returns_empty_lists(self):
+        project = baker.make(Project)
+        with (
+            mock.patch.object(load_data_module, "ImageSetService") as image_set_service,
+            self.assertLogs("construction_work.etl.load_data", level="ERROR"),
+        ):
+            image_set_service.return_value.get_or_upload_from_url.side_effect = (
+                HTTPError("image service unavailable")
+            )
+            result = store_image(
+                {
+                    "image": {
+                        "id": 1398,
+                        "url": "https://foo.bar/image.jpg",
+                        "alt": "Project image",
+                    }
+                },
+                project,
+                ProjectImage,
+                ProjectImageSource,
+            )
+        self.assertEqual(result, ([], []))

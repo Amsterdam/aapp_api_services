@@ -3,6 +3,7 @@ Fetch all project and article data from DvO via its API
 """
 
 import asyncio
+import logging
 from collections.abc import Mapping
 from typing import Any
 
@@ -10,6 +11,8 @@ from django.conf import settings
 
 from construction_work.etl.queries import news_articles, projects_with_details
 from core.utils.dvo_utils import DvOClient, DvOResponseError
+
+logger = logging.getLogger(__name__)
 
 
 def get_all_drupal_projects_with_content() -> dict[str, Any]:
@@ -29,40 +32,91 @@ async def _get_all_drupal_projects_with_content() -> dict[str, Any]:
             {"paragraphId": settings.DVO_CONSTRUCTION_WORK_PARAGRAPH_ID},
         )
 
-        paragraph_ids = list(
-            dict.fromkeys(
-                paragraph_id
-                for project in projects
-                if (paragraph_id := extract_news_paragraph_id_from_project(project))
-                is not None
+        logger.info(f"Fetched {len(projects)} projects")
+
+        paragraph_ids_by_type = {}
+        for project in projects:
+            try:
+                project_paragraph_id_dicts = (
+                    extract_news_and_work_paragraph_id_from_project(project)
+                )
+            except DvOResponseError as e:
+                logger.error(f"Failed to extract paragraph IDs from project: {e}")
+                continue
+
+            for paragraph_id_dict in project_paragraph_id_dicts:
+                key = (paragraph_id_dict["paragraph_id"], paragraph_id_dict["type"])
+                paragraph_ids_by_type.setdefault(key, paragraph_id_dict)
+        paragraph_ids_dicts = list(paragraph_ids_by_type.values())
+
+        try:
+            news_articles_by_paragraph_id = await client.execute_paginated_view_queries(
+                news_articles.QUERY,
+                [
+                    {"paragraphId": paragraph_id_dict["paragraph_id"]}
+                    for paragraph_id_dict in paragraph_ids_dicts
+                    if paragraph_id_dict["type"] == "news"
+                ],
             )
+        except DvOResponseError as e:
+            logger.error(f"Failed to fetch news articles: {e}")
+            news_articles_by_paragraph_id = {}
+        logger.info(
+            f"Fetched {sum(len(articles) for articles in news_articles_by_paragraph_id)} news articles for {len(news_articles_by_paragraph_id)} paragraph IDs"
         )
 
-        articles_by_paragraph_id = await client.execute_paginated_view_queries(
-            news_articles.QUERY,
-            [{"paragraphId": paragraph_id} for paragraph_id in paragraph_ids],
+        try:
+            work_articles_by_paragraph_id = await client.execute_paginated_view_queries(
+                news_articles.QUERY,
+                [
+                    {"paragraphId": paragraph_id_dict["paragraph_id"]}
+                    for paragraph_id_dict in paragraph_ids_dicts
+                    if paragraph_id_dict["type"] == "work"
+                ],
+            )
+        except DvOResponseError as e:
+            logger.error(f"Failed to fetch work articles: {e}")
+            work_articles_by_paragraph_id = {}
+        logger.info(
+            f"Fetched {sum(len(articles) for articles in work_articles_by_paragraph_id)} work articles for {len(work_articles_by_paragraph_id)} paragraph IDs"
         )
 
     return {
         "projects": projects,
         "news_articles": dict(
-            zip(paragraph_ids, articles_by_paragraph_id, strict=True)
+            zip(
+                [
+                    paragraph_id_dict["paragraph_id"]
+                    for paragraph_id_dict in paragraph_ids_dicts
+                    if paragraph_id_dict["type"] == "news"
+                ],
+                news_articles_by_paragraph_id,
+                strict=True,
+            )
+        ),
+        "work_articles": dict(
+            zip(
+                [
+                    paragraph_id_dict["paragraph_id"]
+                    for paragraph_id_dict in paragraph_ids_dicts
+                    if paragraph_id_dict["type"] == "work"
+                ],
+                work_articles_by_paragraph_id,
+                strict=True,
+            )
         ),
     }
 
 
-def extract_news_paragraph_id_from_project(
+def extract_news_and_work_paragraph_id_from_project(
     project: Mapping[str, Any],
-) -> int | None:
+) -> list[dict[str, int | str]]:
     """
-    Return the first news view paragraph ID, or None if the project has no news view.
+    Return paragraph IDs for all news and work views in a project.
 
-    Some project payloads include ``None`` placeholders in row content, and older
-    news view blocks may omit ``contentIndication`` while still being titled
-    ``Nieuws``.
-
-    TODO: once everything is solid in production, this code may be simplified.
+    Some project payloads include ``None`` placeholders in row content.
     """
+    paragraph_ids = []
     for grid in project.get("content", []) or []:
         if not isinstance(grid, dict):
             continue
@@ -78,14 +132,33 @@ def extract_news_paragraph_id_from_project(
 
                 if (
                     block.get("contentIndication") == "news"
-                    or block.get("title") == "Nieuws"
+                    and block.get("title") == "Nieuws"
                 ):
                     paragraph_id = block.get("id")
                     if isinstance(paragraph_id, int) and not isinstance(
                         paragraph_id, bool
                     ):
-                        return paragraph_id
+                        paragraph_ids.append(
+                            {"paragraph_id": paragraph_id, "type": "news"}
+                        )
+                        continue
                     raise DvOResponseError(
                         "DvO news view paragraph did not contain an integer ID"
                     )
-    return None
+
+                if (
+                    block.get("contentIndication") == "work"
+                    and block.get("title") == "Werk aan de weg"
+                ):
+                    paragraph_id = block.get("id")
+                    if isinstance(paragraph_id, int) and not isinstance(
+                        paragraph_id, bool
+                    ):
+                        paragraph_ids.append(
+                            {"paragraph_id": paragraph_id, "type": "work"}
+                        )
+                        continue
+                    raise DvOResponseError(
+                        "DvO work view paragraph did not contain an integer ID"
+                    )
+    return paragraph_ids

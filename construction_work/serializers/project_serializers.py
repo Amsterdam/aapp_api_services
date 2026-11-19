@@ -18,12 +18,12 @@ from construction_work.serializers.article_serializers import (
     ArticleSerializer,
 )
 from construction_work.serializers.general_serializers import (
+    DvOCoordinatesSerializer,
+    DvOImageSerializer,
+    DvOProjectSectionsSerializer,
+    DvOProjectTimelineSerializer,
     DynamicFieldsModelSerializer,
     ImagePublicSerializer,
-    IproxCoordinatesSerializer,
-    IproxImageSerializer,
-    IproxProjectSectionsSerializer,
-    IproxProjectTimelineSerializer,
     MetaIdSerializer,
 )
 from construction_work.utils.model_utils import create_id_dict
@@ -135,7 +135,7 @@ class WarningMessageWithImagesSerializer(serializers.ModelSerializer):
     def get_meta_id(self, obj: WarningMessage) -> dict:
         return create_id_dict(obj)
 
-    @extend_schema_field(IproxImageSerializer(many=True))
+    @extend_schema_field(DvOImageSerializer(many=True))
     def get_images(self, obj: WarningMessage):
         """Get images"""
         media_url = self.context.get("media_url", "")
@@ -187,7 +187,6 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
     sections = serializers.SerializerMethodField()
     timeline = serializers.SerializerMethodField()
     coordinates = serializers.SerializerMethodField()
-
     contacts = ProjectContactSerializer(many=True)
 
     class Meta:
@@ -200,6 +199,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
             "image",
             "followers",
             "foreign_id",
+            "drupal_id",
             "active",
             "last_seen",
             "title",
@@ -244,7 +244,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
         all_items.sort(key=lambda x: x.get("modification_date", ""), reverse=True)
         return all_items
 
-    @extend_schema_field(IproxProjectSectionsSerializer)
+    @extend_schema_field(DvOProjectSectionsSerializer)
     def get_sections(self, obj):
         response = {key: [] for key in ("where", "what", "when", "work", "contact")}
         for section in obj.sections.all():
@@ -260,7 +260,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
             )
         return response
 
-    @extend_schema_field(IproxProjectTimelineSerializer)
+    @extend_schema_field(DvOProjectTimelineSerializer)
     def get_timeline(self, obj):
         items = self.get_timeline_items(obj.timeline_items.all())
         if not items:
@@ -306,7 +306,7 @@ class ProjectExtendedWithFollowersSerializer(ProjectExtendedSerializer):
             )
         return response
 
-    @extend_schema_field(IproxCoordinatesSerializer)
+    @extend_schema_field(DvOCoordinatesSerializer)
     def get_coordinates(self, obj: Project) -> dict:
         """Get coordinates"""
         return {
