@@ -71,9 +71,9 @@ MOCK_DATA = {
             "geometry_name": "geom",
             "properties": {
                 "ogc_fid": 1,
-                "beschrijvi": "Watertap vlak bij veerpont Akersloot.",
+                "beschrijvi": "Watertap vlak bij veerpont Amsterdam.",
                 "type": "Regulier, 24-7 open",
-                "plaats": "Akersloot",
+                "plaats": "Amsterdam",
                 "x": 111509.237,
                 "y": 509420.738,
             },
@@ -88,9 +88,9 @@ MOCK_DATA = {
             "geometry_name": "geom",
             "properties": {
                 "ogc_fid": 2,
-                "beschrijvi": "Watertap vlak bij Nieuwe Gouw 18, Landsmeer.",
+                "beschrijvi": "Watertap vlak bij boom in Amsterdamse bos.",
                 "type": "Regulier, 24-7 open",
-                "plaats": "Landsmeer",
+                "plaats": "Amsterdamse bos",
                 "x": 122779.849,
                 "y": 493552.549,
             },

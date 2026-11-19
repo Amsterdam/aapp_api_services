@@ -50,6 +50,7 @@ from contact.tests.mock_data.pride import (
     toilets as pride_toilet,
 )
 from core.tests.test_authentication import ResponsesActivatedAPITestCase
+from core.utils.coordinates_utils import rd_to_wgs
 
 
 @override_settings(
@@ -236,7 +237,7 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 "icon_label": "drink_water",
                 "url": settings.TAP_URL,
                 "mock": taps.MOCK_DATA,
-                "expected_features": 3,  # one mock tap is outside Amsterdam municipality
+                "expected_features": 5,  # one mock tap is outside Amsterdam municipality
             },
             {
                 "label": "P+R",
@@ -380,22 +381,27 @@ class TestServiceMapView(ResponsesActivatedAPITestCase):
                 if "fontein" in (properties.get("beschrijvi") or "").lower()
                 else "Watertap"
             )
-            expected_coords.append(
-                [properties.get("longitude"), properties.get("latitude")]
-            )
+            if properties.get("longitude") is not None:
+                expected_coords.append(
+                    [properties["longitude"], properties["latitude"]]
+                )
+            else:
+                x, y = tap["geometry"]["coordinates"][0]
+                expected_coords.append(rd_to_wgs(x, y))
 
         self.assertEqual(len(features), len(expected_taps))
         self.assertEqual(
             [f["properties"].get("aapp_title") for f in features],
             expected_titles,
         )
-        self.assertEqual(
-            [f["geometry"].get("coordinates") for f in features],
-            expected_coords,
-        )
 
-        for feature in features:
+        for feature, (expected_longitude, expected_latitude) in zip(
+            features, expected_coords, strict=True
+        ):
             self.assertEqual(feature["geometry"].get("type"), "Point")
+            longitude, latitude = feature["geometry"]["coordinates"]
+            self.assertAlmostEqual(longitude, expected_longitude)
+            self.assertAlmostEqual(latitude, expected_latitude)
             self.assertEqual(feature["properties"].get("aapp_subtitle"), "Drinkwater")
             self.assertIsNone(feature["properties"].get("aapp_address"))
 
