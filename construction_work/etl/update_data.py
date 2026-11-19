@@ -30,14 +30,17 @@ def extract_transform_load():
 
     # get project ids from extracted data
     found_project_ids = [project["id"] for project in extracted_data["projects"]]
-    found_article_ids = [
-        article["id"]
-        for articles in extracted_data["news_articles"].values()
-        for article in articles
-    ]
+    found_article_ids = list(
+        dict.fromkeys(
+            article["id"]
+            for article_group in ("news_articles", "work_articles")
+            for articles in extracted_data[article_group].values()
+            for article in articles
+        )
+    )
 
     logger.info(f"Extracted {len(found_project_ids)} items from DvO")
-    logger.info(f"Extracted {len(found_article_ids)} news articles from DvO")
+    logger.info(f"Extracted {len(found_article_ids)} articles from DvO")
 
     ### TRANSFORM DATA
     transformed_data = transform_data(extracted_data)

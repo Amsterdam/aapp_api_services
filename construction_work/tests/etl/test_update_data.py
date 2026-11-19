@@ -19,7 +19,11 @@ class ExtractTransformLoadTestCase(SimpleTestCase):
     def test_extract_transform_load(self):
         extracted = {
             "projects": [{"id": 101}],
-            "news_articles": {501: [{"id": 201}, {"id": 202}]},
+            "news_articles": {
+                501: [{"id": 201}, {"id": 202}],
+                502: [{"id": 201}, {"id": 203}],
+            },
+            "work_articles": {503: [{"id": 204}, {"id": 202}]},
         }
         transformed = {"projects": [{"id": 101}], "articles": []}
 
@@ -40,7 +44,7 @@ class ExtractTransformLoadTestCase(SimpleTestCase):
         extract.assert_called_once_with()
         transform.assert_called_once_with(extracted)
         load.assert_called_once_with(transformed)
-        self.assertEqual(result, ([101], [201, 202]))
+        self.assertEqual(result, ([101], [201, 202, 203, 204]))
         self.assertTrue(
             any("Loaded data into Construction-Work" in line for line in logs.output)
         )
