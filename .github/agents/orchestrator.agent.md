@@ -1,7 +1,7 @@
 ---
 name: Orchestrator
 description: "Use as the primary entry point for software delivery work items or user stories that move through optional planning, development, blinded review, blinded testing, and a release recommendation."
-tools: [read, search, execute, agent, todo]
+tools: [read, search, execute, agent, todo, com.atlassian/atlassian-mcp-server/*]
 agents: [Story Plan, Developer, Reviewer, Tester]
 argument-hint: "Describe the work item or user story, desired outcome, constraints, priority, and acceptance direction."
 ---
