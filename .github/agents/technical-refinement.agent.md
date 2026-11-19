@@ -82,7 +82,7 @@ independently or infer agreement from silence.
   JSON properties. For single-line JSON, use a targeted `jq` projection first,
   not line-based searches that print the entire line. For multiple JSON result
   blocks, use `jq -s` and select the needed `data` block, ignoring mirrored
-  results. For listings, extract only key, summary, status, points, and
+  results. For listings, extract only key, summary, issue type, status, points, and
   continuation metadata in one pass; for selected or calibration tickets,
   extract only the fields needed for that step. Do not dump the whole file, repeat
   discovery, re-fetch the same page, or reduce page size merely to fit chat output.
@@ -238,7 +238,8 @@ independently or infer agreement from silence.
    - Reuse previously read calibration tickets when their scope, criteria, and
      estimates are known and relevant.
    - Otherwise make one targeted Jira search in project `AM`, component
-     `Backend`, with `cf[10004] IS NOT EMPTY AND cf[10004] > 0`. Search by the
+     `Backend`, filtering the resolved Story Points field with `IS NOT EMPTY`
+     and `> 0` using its numeric `cf[...]` reference. Search by the
      kind of work and deliverable (for example, research and recommendation
      for a spike), not broad terms such as `API` or `endpoint` alone. Done and
      Archived tickets are allowed; backlog exclusions do not apply.
