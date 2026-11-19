@@ -4,8 +4,9 @@ from django.conf import settings
 
 from contact.enums.taps import TapFilters, TapIcons, TapLayers, TapProperties
 from contact.services.service_abstract import ServiceAbstract
+from core.utils.coordinates_utils import rd_to_wgs
 
-TAP_MUNICIPALITY_PLACES = {"Amsterdam", "Weesp", "Amsterdamse bos"}
+TAP_MUNICIPALITY_PLACES = ["Amsterdam", "Weesp", "Amsterdamse bos"]
 
 
 def tap_is_in_amsterdam_municipality(properties: Dict[str, Any]) -> bool:
@@ -17,18 +18,32 @@ def tap_title_from_properties(properties: Dict[str, Any]) -> str:
     return "Drinkfontein" if "fontein" in description else "Watertap"
 
 
-def tap_geometry_from_properties(properties: Dict[str, Any]) -> Dict[str, Any]:
-    """Return a GeoJSON Point in WGS84 when lat/lon are present."""
-    if properties.get("latitude") is None or properties.get("longitude") is None:
+def tap_geometry_from_properties(
+    properties: Dict[str, Any], geometry: Dict[str, Any] | None = None
+) -> Dict[str, Any]:
+    """Return a GeoJSON Point in WGS84 from tap properties or source geometry."""
+    latitude = properties.get("latitude")
+    longitude = properties.get("longitude")
+    if latitude is not None and longitude is not None:
+        return {"type": "Point", "coordinates": [longitude, latitude]}
+
+    if geometry is None:
         return {}
 
-    return {
-        "type": "Point",
-        "coordinates": [
-            properties.get("longitude"),
-            properties.get("latitude"),
-        ],
-    }
+    geometry_type = geometry.get("type")
+    coordinates = geometry.get("coordinates")
+    if geometry_type == "MultiPoint":
+        if not isinstance(coordinates, list) or not coordinates:
+            return {}
+        coordinates = coordinates[0]
+    elif geometry_type != "Point":
+        return {}
+
+    if not isinstance(coordinates, (list, tuple)) or len(coordinates) < 2:
+        return {}
+
+    longitude, latitude = rd_to_wgs(coordinates[0], coordinates[1])
+    return {"type": "Point", "coordinates": [longitude, latitude]}
 
 
 class TapService(ServiceAbstract):
@@ -54,7 +69,9 @@ class TapService(ServiceAbstract):
                 {
                     "id": int(tap.get("id").split(".")[1]),
                     "type": tap.get("type"),
-                    "geometry": tap_geometry_from_properties(properties),
+                    "geometry": tap_geometry_from_properties(
+                        properties, tap.get("geometry")
+                    ),
                     "properties": new_properties,
                 }
             )

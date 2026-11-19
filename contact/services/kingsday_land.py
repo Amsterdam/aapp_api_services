@@ -66,7 +66,9 @@ class KingsdayLandService(EventAbstractService):
         properties = feature.get("properties", {}) or {}
         properties["title"] = tap_title_from_properties(properties)
         feature["properties"] = properties
-        feature["geometry"] = tap_geometry_from_properties(properties)
+        feature["geometry"] = tap_geometry_from_properties(
+            properties, feature.get("geometry")
+        )
 
     def get_custom_properties(
         self,
