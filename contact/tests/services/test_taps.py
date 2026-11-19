@@ -20,7 +20,7 @@ class TapServiceTest(ResponsesActivatedAPITestCase):
             full_data["properties_to_include"], TapProperties.choices_as_list()
         )
         self.assertEqual(full_data["icons_to_include"], TapIcons.choices_as_dict())
-        self.assertEqual(len(full_data["data"]["features"]), 3)
+        self.assertEqual(len(full_data["data"]["features"]), 5)
 
     def test_filter_data(self):
         # Test that filter_data correctly filters taps based on the provided filters
@@ -28,7 +28,7 @@ class TapServiceTest(ResponsesActivatedAPITestCase):
 
         # Filter for drinking taps
         filtered_taps = self.service.filter_data(taps_data)
-        self.assertEqual(len(filtered_taps), 3)
+        self.assertEqual(len(filtered_taps), 5)
         self.assertTrue(
             all(
                 tap["properties"]["plaats"] in ["Amsterdam", "Weesp", "Amsterdamse bos"]

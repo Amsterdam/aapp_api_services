@@ -8,7 +8,7 @@ transformer = Transformer.from_crs(
 )
 
 
-def wgs_to_rd(lon: float, lat: float):
+def wgs_to_rd(lon: float, lat: float) -> tuple[float, float]:
     """
     lon: longitude in decimal degrees
     lat: latitude in decimal degrees
@@ -16,3 +16,13 @@ def wgs_to_rd(lon: float, lat: float):
     """
     x, y = transformer.transform(lon, lat)
     return x, y
+
+
+def rd_to_wgs(x: float, y: float) -> tuple[float, float]:
+    """
+    x: Rijksdriehoek X (Easting)
+    y: Rijksdriehoek Y (Northing)
+    returns: (lon, lat): longitude and latitude in decimal degrees
+    """
+    lon, lat = transformer.transform(x, y, direction="INVERSE")
+    return lon, lat
