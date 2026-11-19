@@ -28,7 +28,7 @@ ARTICLE_IMAGE_SET = {
 
 @override_settings(
     TIME_ZONE="UTC",
-    DVO_URL="https://source.example.invalid/graphql",
+    DVO_URL="https://source.example.invalid",
 )
 class TransformDataTestCase(SimpleTestCase):
     @patch("construction_work.etl.transform_data.ImageSetService")

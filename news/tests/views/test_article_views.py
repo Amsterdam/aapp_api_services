@@ -5,7 +5,11 @@ from django.urls import reverse
 from model_bakery import baker
 
 from core.tests.test_authentication import BasicAPITestCase
-from news.models import LiveBlogItem, NewsArticle, NewsArticleImage
+from news.models import (
+    LiveBlogItem,
+    NewsArticle,
+    NewsArticleImage,
+)
 from news.views.article_views import ArticleDetailView, ArticleListView
 
 
@@ -50,8 +54,12 @@ class TestArticleListView(BasicAPITestCase):
             is_district=True,
             is_active_liveblog=True,
         )
-        self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
-        self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
+        self.article_1_image_1 = baker.make(
+            NewsArticleImage, article=self.article_1, foreign_id=1001
+        )
+        self.article_1_image_2 = baker.make(
+            NewsArticleImage, article=self.article_1, foreign_id=1001
+        )
 
     def test_article_list(self):
         response = self.client.get(
@@ -79,7 +87,11 @@ class TestArticleListView(BasicAPITestCase):
         self.assertEqual(
             article_1_response["publication_datetime"], "2024-10-11T12:30:10+02:00"
         )
-        self.assertEqual(len(article_1_response["images"]), 2)
+        article_images = article_1_response["images"]
+        self.assertEqual(len(article_images), 2)
+        self.assertEqual(set(article_images[0]), {"uri", "width", "height"})
+        self.assertEqual(article_1_response["image"]["id"], 1001)
+        self.assertEqual(len(article_1_response["image"]["sources"]), 2)
 
         article_2_response = [
             article for article in response_result if article["id"] == self.article_2.id
@@ -89,6 +101,7 @@ class TestArticleListView(BasicAPITestCase):
             article_2_response["publication_datetime"], "2024-10-12T14:45:45+02:00"
         )
         self.assertEqual(len(article_2_response["images"]), 0)
+        self.assertIsNone(article_2_response["image"])
 
     def test_highlight_list(self):
         response = self.client.get(
@@ -250,8 +263,12 @@ class TestArticleDetailView(BasicAPITestCase):
             in_all_news=True,
             publication_datetime=datetime(2024, 10, 11, 12, 30, 10).isoformat(),
         )
-        self.article_1_image_1 = baker.make(NewsArticleImage, article=self.article_1)
-        self.article_1_image_2 = baker.make(NewsArticleImage, article=self.article_1)
+        self.article_1_image_1 = baker.make(
+            NewsArticleImage, article=self.article_1, foreign_id=1001
+        )
+        self.article_1_image_2 = baker.make(
+            NewsArticleImage, article=self.article_1, foreign_id=1001
+        )
 
         self.url = reverse("news-article-detail", kwargs={"id": self.article_1.id})
 
@@ -280,6 +297,9 @@ class TestArticleDetailView(BasicAPITestCase):
             response.data["publication_datetime"], "2024-10-11T12:30:10+02:00"
         )
         self.assertEqual(len(response.data["images"]), 2)
+        self.assertEqual(set(response.data["images"][0]), {"uri", "width", "height"})
+        self.assertEqual(response.data["image"]["id"], 1001)
+        self.assertEqual(len(response.data["image"]["sources"]), 2)
         self.assertNotIn("deleted", response.data)
 
     def test_article_id_not_found(self):

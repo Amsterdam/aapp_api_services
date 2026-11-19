@@ -101,6 +101,8 @@ class BaseImage(models.Model):
         default=0
     )  # needs default value for migration, but will be set to the article's foreign_id when creating an image.
     uri = models.URLField(max_length=2048)
+    alt = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
     width = models.IntegerField()
     height = models.IntegerField()
 
@@ -115,6 +117,15 @@ class NewsArticleImage(BaseImage):
 
     class Meta:
         unique_together = ("article", "uri")
+
+
+class LiveBlogItemImage(BaseImage):
+    liveblog_item = models.ForeignKey(
+        LiveBlogItem, on_delete=models.CASCADE, related_name="images"
+    )
+
+    class Meta:
+        unique_together = ("liveblog_item", "uri")
 
 
 class LiveblogNotification(models.Model):

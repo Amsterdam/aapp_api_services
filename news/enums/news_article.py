@@ -9,53 +9,53 @@ class NewsArticleSource(ChoicesEnum):
     """
 
     ALL_NEWS = NewsArticleExtract(
-        index="all_news", boolean_column="in_all_news", district=None
+        tag_id=531, boolean_column="in_all_news", district=None
     )
     HIGHLIGHT = NewsArticleExtract(
-        index="highlighted",
+        tag_id=491,
         boolean_column="is_highlight",
         district=None,
     )
-    LIVEBLOG = NewsArticleExtract(
-        index="liveblogs", boolean_column="is_liveblog", district=None
+    ACTIVE_LIVEBLOG = NewsArticleExtract(
+        tag_id=2696, boolean_column="is_active_liveblog", district=None
     )
     DISTRICT_NOORD = NewsArticleExtract(
-        index="nieuws-stadsdeel-noord",
+        tag_id=779,
         boolean_column="is_district",
         district="noord",
     )
     DISTRICT_WEST = NewsArticleExtract(
-        index="nieuws-stadsdeel-west",
+        tag_id=781,
         boolean_column="is_district",
         district="west",
     )
     DISTRICT_ZUID = NewsArticleExtract(
-        index="nieuws-stadsdeel-zuid",
+        tag_id=782,
         boolean_column="is_district",
         district="zuid",
     )
     DISTRICT_OOST = NewsArticleExtract(
-        index="nieuws-stadsdeel-oost",
+        tag_id=780,
         boolean_column="is_district",
         district="oost",
     )
     DISTRICT_CENTRUM = NewsArticleExtract(
-        index="nieuws-stadsdeel-centrum",
+        tag_id=777,
         boolean_column="is_district",
         district="centrum",
     )
     DISTRICT_NIEUW_WEST = NewsArticleExtract(
-        index="nieuws-stadsdeel-nieuw-west",
+        tag_id=778,
         boolean_column="is_district",
         district="nieuw-west",
     )
     DISTRICT_ZUIDOOST = NewsArticleExtract(
-        index="nieuws-stadsdeel-zuidoost",
+        tag_id=783,
         boolean_column="is_district",
         district="zuidoost",
     )
     DISTRICT_WEESP = NewsArticleExtract(
-        index="nieuws-stadgebied-weesp",
+        tag_id=814,
         boolean_column="is_district",
         district="weesp",
     )

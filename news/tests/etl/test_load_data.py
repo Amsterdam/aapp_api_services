@@ -9,6 +9,7 @@ from core.services.notification_service import ScheduledNotification
 from news.etl.load_data import NewsArticleLoader, garbage_collect_unseen_articles
 from news.models import (
     LiveBlogItem,
+    LiveBlogItemImage,
     LiveblogNotification,
     NewsArticle,
     NewsArticleImage,
@@ -59,7 +60,11 @@ class LoadDataTest(TestCase):
                 "title": "Test Article",
                 "url": "https://example.com/test-article",
                 "modification_datetime": "2024-01-01T12:00:00Z",
-                "image_url": "https://example.com/image.jpg",
+                "image": {
+                    "url": "https://example.com/image.jpg",
+                    "alt": "Alt text for the image",
+                    "description": "Description of the image",
+                },
                 "in_all_news": True,
                 "is_liveblog": False,
                 "is_highlight": False,
@@ -78,6 +83,36 @@ class LoadDataTest(TestCase):
         self.assertFalse(NewsArticle.objects.first().deleted)
         self.assertEqual(NewsArticleImage.objects.count(), 3)
 
+    @override_settings(ENABLE_LIVEBLOG_NOTIFICATIONS=True)
+    @patch("news.etl.load_data.NewLiveblogNotificationService")
+    def test_load_sends_notification_for_new_active_liveblog(
+        self, mock_notification_service
+    ):
+        liveblog_data = {
+            "foreign_id": "123123",
+            "title": "New liveblog",
+            "url": "https://example.com/liveblog",
+            "is_liveblog": True,
+            "is_active_liveblog": True,
+            "creation_datetime": "2024-01-01T12:00:00Z",
+            "modification_datetime": "2024-01-01T12:00:00Z",
+            "publication_datetime": "2024-01-01T12:00:00Z",
+            "expiration_datetime": None,
+            "liveblog_messages": [],
+        }
+
+        self.loader.load([liveblog_data])
+
+        liveblog = NewsArticle.objects.get(foreign_id=liveblog_data["foreign_id"])
+        mock_notification_service.return_value.send.assert_called_once_with(
+            liveblog_id=liveblog.id,
+            liveblog_title=liveblog_data["title"],
+        )
+        self.assertIsNotNone(liveblog.liveblog_notification_send)
+
+        self.loader.load([liveblog_data])
+        mock_notification_service.return_value.send.assert_called_once()
+
     @patch("news.etl.load_data.ImageSetService")
     def test_load_continues_when_image_upload_fails(self, mock_image_set_service):
         transformed_data = [
@@ -86,7 +121,11 @@ class LoadDataTest(TestCase):
                 "title": "Broken image article",
                 "url": "https://example.com/test-article-1",
                 "modification_datetime": "2024-01-01T12:00:00Z",
-                "image_url": "https://example.com/image-1.jpg",
+                "image": {
+                    "url": "https://example.com/image.jpg",
+                    "alt": "Alt text for the image",
+                    "description": "Description of the image",
+                },
                 "in_all_news": True,
                 "is_liveblog": False,
                 "is_highlight": False,
@@ -100,7 +139,11 @@ class LoadDataTest(TestCase):
                 "title": "Working image article",
                 "url": "https://example.com/test-article-2",
                 "modification_datetime": "2024-01-01T12:00:00Z",
-                "image_url": "https://example.com/image-2.jpg",
+                "image": {
+                    "url": "https://example.com/image-2.jpg",
+                    "alt": "Alt text for second image",
+                    "description": "Description of second image",
+                },
                 "in_all_news": True,
                 "is_liveblog": False,
                 "is_highlight": False,
@@ -159,7 +202,11 @@ class LoadDataTest(TestCase):
                 "title": "Broken image article",
                 "url": "https://example.com/test-article-1",
                 "modification_datetime": "2024-01-01T12:00:00Z",
-                "image_url": "https://example.com/image-1.jpg",
+                "image": {
+                    "url": "https://example.com/image.jpg",
+                    "alt": "Alt text for the image",
+                    "description": "Description of the image",
+                },
                 "in_all_news": True,
                 "is_liveblog": False,
                 "is_highlight": False,
@@ -173,7 +220,11 @@ class LoadDataTest(TestCase):
                 "title": "Working image article",
                 "url": "https://example.com/test-article-2",
                 "modification_datetime": "2024-01-01T12:00:00Z",
-                "image_url": "https://example.com/image-2.jpg",
+                "image": {
+                    "url": "https://example.com/image-2.jpg",
+                    "alt": "Alt text for the second image",
+                    "description": "Description of the second image",
+                },
                 "in_all_news": True,
                 "is_liveblog": False,
                 "is_highlight": False,
@@ -201,6 +252,32 @@ class LoadDataTest(TestCase):
             NewsArticleImage.objects.filter(article__foreign_id="123124").exists()
         )
 
+    def test_load_with_wrong_liveblog_messages(self):
+        transformed_data = [
+            {
+                "foreign_id": "123125",
+                "title": "Liveblog article",
+                "url": "https://example.com/test-article-3",
+                "modification_datetime": "2024-01-01T12:00:00Z",
+                "in_all_news": True,
+                "is_liveblog": True,
+                "is_highlight": False,
+                "is_district": False,
+                "creation_datetime": "2024-01-01T12:00:00Z",
+                "publication_datetime": "2024-01-01T12:00:00Z",
+                "expiration_datetime": None,
+                "liveblog_messages": "not a list",
+            }
+        ]
+
+        loader = NewsArticleLoader(image_set_service=None)
+
+        loader.load(transformed_data)
+        self.assertTrue(NewsArticle.objects.filter(foreign_id="123125").exists())
+        self.assertFalse(
+            LiveBlogItem.objects.filter(article__foreign_id="123125").exists()
+        )
+
     def test_get_news_article_object(self):
         article_data = {
             "foreign_id": "123123",
@@ -218,7 +295,11 @@ class LoadDataTest(TestCase):
             "modification_datetime": "2024-01-01T12:00:00Z",
             "publication_datetime": "2024-01-01T12:00:00Z",
             "expiration_datetime": "2024-01-01T12:00:00Z",
-            "image_url": "https://example.com/image.jpg",
+            "image": {
+                "url": "https://example.com/image.jpg",
+                "alt": "Alt text for the image",
+                "description": "Description of the image",
+            },
         }
         news_article = self.loader._get_news_article_object(article_data)
         self.assertEqual(news_article.title, article_data["title"])
@@ -325,6 +406,7 @@ class LoadDataTest(TestCase):
     def test_garbage_collect_unseen_articles_marks_only_stale_articles(self):
         stale_article = baker.make(NewsArticle, deleted=False, in_all_news=True)
         recent_article = baker.make(NewsArticle, deleted=False, in_all_news=True)
+        cut_off_timestamp = timezone.now() - timezone.timedelta(minutes=45)
 
         NewsArticle.objects.filter(id=stale_article.id).update(
             last_seen=timezone.now() - timezone.timedelta(hours=3)
@@ -333,7 +415,9 @@ class LoadDataTest(TestCase):
             last_seen=timezone.now() - timezone.timedelta(minutes=30)
         )
 
-        deleted_count = garbage_collect_unseen_articles(threshold_seconds=7200)
+        deleted_count = garbage_collect_unseen_articles(
+            cut_off_timestamp=cut_off_timestamp
+        )
 
         stale_article.refresh_from_db()
         recent_article.refresh_from_db()
@@ -365,7 +449,11 @@ class LoadDataTest(TestCase):
         )
         article_data = {
             "foreign_id": "123123",
-            "image_url": "https://example.com/image.jpg",
+            "image": {
+                "url": "https://example.com/image.jpg",
+                "alt": "Alt text for the image",
+                "description": "Description of the image",
+            },
         }
         loader = self._set_mock_image_set_service_side_effect(mock_image_set_service)
 
@@ -386,7 +474,11 @@ class LoadDataTest(TestCase):
         )
         article_data = {
             "foreign_id": "123123",
-            "image_url": "https://example.com/image.jpg",
+            "image": {
+                "url": "https://example.com/image.jpg",
+                "alt": "Alt text for the image",
+                "description": "Description of the image",
+            },
         }
 
         mock_image_set_service.return_value.get_or_upload_from_url.side_effect = (
@@ -417,7 +509,11 @@ class LoadDataTest(TestCase):
         )
         article_data = {
             "foreign_id": "123123",
-            "image_url": "https://example.com/source-image.jpg",
+            "image": {
+                "url": "https://example.com/image.jpg",
+                "alt": "Alt text for the image",
+                "description": "Description of the image",
+            },
         }
         loader = self._set_mock_image_set_service_side_effect(mock_image_set_service)
 
@@ -446,7 +542,11 @@ class LoadDataTest(TestCase):
         )
         article_data = {
             "foreign_id": "123123",
-            "image_url": "https://example.com/source-image.jpg",
+            "image": {
+                "url": "https://example.com/image.jpg",
+                "alt": "Alt text for the image",
+                "description": "Description of the image",
+            },
         }
         loader = self._set_mock_image_set_service_side_effect(mock_image_set_service)
 
@@ -488,7 +588,7 @@ class LoadDataTest(TestCase):
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
             "is_liveblog": True,
-            "body": [
+            "liveblog_messages": [
                 {
                     "title": "A liveblog item",
                     "creation_datetime": "2024-01-01T12:00:00Z",
@@ -501,11 +601,54 @@ class LoadDataTest(TestCase):
                 },
             ],
         }
-        self.loader._upsert_liveblog_items(liveblog_article_data, article)
+        self.loader._upsert_liveblog_items_and_item_images(
+            liveblog_article_data, article
+        )
         self.assertEqual(LiveBlogItem.objects.count(), 2)
         self.assertEqual(
             LiveBlogItem.objects.first().title,
-            liveblog_article_data["body"][0]["title"],
+            liveblog_article_data["liveblog_messages"][0]["title"],
+        )
+
+    @patch("news.etl.load_data.ImageSetService")
+    def test_upsert_liveblog_item_images(self, mock_image_set_service):
+        article = baker.make(
+            NewsArticle,
+            foreign_id=123123,
+            title="A title",
+            url="https://example.com/article/123123",
+            modification_datetime="2024-01-01T13:00:00Z",
+        )
+        liveblog_item = baker.make(
+            LiveBlogItem,
+            article=article,
+            title="A liveblog item",
+            creation_datetime="2024-01-01T12:00:00Z",
+        )
+        loader = self._set_mock_image_set_service_side_effect(mock_image_set_service)
+        message = {
+            "image": {
+                "url": "https://example.com/image.jpg",
+                "alt": "Alt text for the image",
+                "description": "Description of the image",
+            }
+        }
+
+        loader._upsert_liveblog_item_images(message, liveblog_item)
+
+        mock_image_set_service.return_value.get_or_upload_from_url.assert_called_once_with(
+            url=message["image"]["url"],
+            description=message["image"]["alt"],
+        )
+        images = LiveBlogItemImage.objects.filter(liveblog_item=liveblog_item)
+        self.assertEqual(images.count(), 3)
+        self.assertEqual(set(images.values_list("foreign_id", flat=True)), {12345})
+        self.assertEqual(
+            set(images.values_list("alt", flat=True)), {"Alt text for the image"}
+        )
+        self.assertEqual(
+            set(images.values_list("description", flat=True)),
+            {"Description of the image"},
         )
 
     def test_upsert_liveblog_items_existing(self):
@@ -530,7 +673,7 @@ class LoadDataTest(TestCase):
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
             "is_liveblog": True,
-            "body": [
+            "liveblog_messages": [
                 {
                     "title": "Some title",
                     "creation_datetime": "2024-01-01T12:00:00Z",
@@ -543,14 +686,16 @@ class LoadDataTest(TestCase):
                 },
             ],
         }
-        self.loader._upsert_liveblog_items(liveblog_article_data, article)
+        self.loader._upsert_liveblog_items_and_item_images(
+            liveblog_article_data, article
+        )
 
         # number of liveblog items should still be 2 (the existing one should be updated, not duplicated, and the new one should be created)
         self.assertEqual(LiveBlogItem.objects.count(), 2)
         message_order_0_item = LiveBlogItem.objects.get(message_order=0)
         self.assertEqual(
             message_order_0_item.title,
-            liveblog_article_data["body"][0]["title"],
+            liveblog_article_data["liveblog_messages"][0]["title"],
         )
 
     def test_upsert_liveblog_items_creates_notifications_no_devices(self):
@@ -577,7 +722,7 @@ class LoadDataTest(TestCase):
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
             "is_liveblog": True,
-            "body": [
+            "liveblog_messages": [
                 {
                     "title": "Updated existing item",
                     "creation_datetime": "2024-01-01T12:00:00Z",
@@ -591,7 +736,7 @@ class LoadDataTest(TestCase):
             ],
         }
 
-        loader._upsert_liveblog_items(liveblog_article_data, article)
+        loader._upsert_liveblog_items_and_item_images(liveblog_article_data, article)
 
         notifications = ScheduledNotification.objects.all()
 
@@ -628,7 +773,7 @@ class LoadDataTest(TestCase):
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
             "is_liveblog": True,
-            "body": [
+            "liveblog_messages": [
                 {
                     "title": "Updated existing item",
                     "creation_datetime": "2024-01-01T12:00:00Z",
@@ -642,7 +787,7 @@ class LoadDataTest(TestCase):
             ],
         }
 
-        loader._upsert_liveblog_items(liveblog_article_data, article)
+        loader._upsert_liveblog_items_and_item_images(liveblog_article_data, article)
 
         notifications = ScheduledNotification.objects.all()
 
@@ -682,7 +827,7 @@ class LoadDataTest(TestCase):
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
             "is_liveblog": True,
-            "body": [
+            "liveblog_messages": [
                 {
                     "title": "Updated existing item",
                     "creation_datetime": "2024-01-01T12:00:00Z",
@@ -696,7 +841,7 @@ class LoadDataTest(TestCase):
             ],
         }
 
-        loader._upsert_liveblog_items(liveblog_article_data, article)
+        loader._upsert_liveblog_items_and_item_images(liveblog_article_data, article)
 
         self.assertEqual(LiveBlogItem.objects.count(), 2)
         self.assertEqual(ScheduledNotification.objects.count(), 0)
@@ -724,7 +869,7 @@ class LoadDataTest(TestCase):
             "title": "A title",
             "modification_datetime": "2024-01-01T13:00:00Z",
             "is_liveblog": True,
-            "body": [
+            "liveblog_messages": [
                 {
                     "title": "Updated existing item",
                     "creation_datetime": "2024-01-01T12:00:00Z",
@@ -733,7 +878,7 @@ class LoadDataTest(TestCase):
             ],
         }
 
-        loader._upsert_liveblog_items(liveblog_article_data, article)
+        loader._upsert_liveblog_items_and_item_images(liveblog_article_data, article)
 
         notifications = ScheduledNotification.objects.all()
 

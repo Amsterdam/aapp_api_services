@@ -52,7 +52,9 @@ class ArticleListView(ListAPIView):
 @method_decorator(cache_page(ARTICLE_DETAIL_CACHE_TTL_SECONDS), name="get")
 class ArticleDetailView(RetrieveAPIView):
     def get_queryset(self):
-        return NewsArticle.visible_objects.prefetch_related("images", "liveblog_items")
+        return NewsArticle.visible_objects.prefetch_related(
+            "images", "liveblog_items", "liveblog_items__images"
+        )
 
     serializer_class = NewsArticleDetailResponseSerializer
     lookup_field = "id"

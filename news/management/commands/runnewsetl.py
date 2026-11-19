@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from news.etl.extract_data import get_all_drupal_news
 from news.etl.load_data import NewsArticleLoader, garbage_collect_unseen_articles
@@ -19,10 +20,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
+        cut_off_timestamp = timezone.now()
+
         extracted_data = get_all_drupal_news()
         if not extracted_data:
             logger.info("No articles found. Ending ETL process.")
             return
+
+        logger.info(
+            f"Extracted data successfully. Found {len(extracted_data)} articles."
+        )
 
         transformed_data = transform(extracted_data)
         if not transformed_data:
@@ -35,7 +42,7 @@ class Command(BaseCommand):
         # might end up in a situation where we delete all articles because no new articles are created
         if created_articles and settings.DELETE_UNSEEN_ARTICLES:
             deleted_count = garbage_collect_unseen_articles(
-                threshold_seconds=settings.DELETE_UNSEEN_ARTICLES_AFTER_SECONDS
+                cut_off_timestamp=cut_off_timestamp
             )
             logger.info(
                 "News garbage collector completed.",

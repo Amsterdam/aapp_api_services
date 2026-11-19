@@ -131,7 +131,7 @@ class DvOClient:
         timeout_total: float = 30.0,
     ) -> None:
         """Initialize the client using explicit options or DvO Django settings."""
-        self.api_url = api_url if api_url is not None else settings.DVO_URL
+        self.api_url = api_url if api_url is not None else settings.DVO_GRAPHQL_URL
         if headers is None:
             headers = {
                 "Content-Type": "application/json",

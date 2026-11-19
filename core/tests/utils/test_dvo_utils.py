@@ -29,7 +29,7 @@ class DvOClientTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.client.max_concurrent_requests, 2)
 
     @override_settings(
-        DVO_URL=API_URL,
+        DVO_GRAPHQL_URL=API_URL,
         DVO_BASIC_AUTH_USERNAME="dvo-user",
         DVO_BASIC_AUTH_PASSWORD="dvo-password",
     )
