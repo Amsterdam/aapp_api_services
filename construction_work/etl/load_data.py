@@ -225,6 +225,8 @@ def load_articles(article_data: list):
         update_conflicts=True,
         unique_fields=["drupal_id"],
         update_fields=[
+            "active",
+            "last_seen",
             "title",
             "intro",
             "body",
