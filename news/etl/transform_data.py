@@ -23,6 +23,11 @@ def transform(extracted_data: dict[str, list[dict]]) -> list[dict]:
 
     transformed = []
     for article in extracted_data:
+        # NOTE: this is a temporary fix for Blog articles to set the publication date to the changed date, and should be removed once the publication date is correctly set for Blog articles
+        # NOTE: this temporary fix has been approved by the team
+        if article.get("type") == "Blog":
+            article["publicationDate"] = article.get("changedDate")
+
         missing_fields = [
             field for field in REQUIRED_DRUPAL_FIELDS if not article.get(field)
         ]
