@@ -1,62 +1,13 @@
 from copy import deepcopy
-from itertools import chain, repeat
-from unittest.mock import patch
 
 from django.test import SimpleTestCase, override_settings
-from requests import HTTPError
 
 from construction_work.etl.transform_data import (
-    _transform_article,
     _transform_contact_content,
-    _transform_image,
     _transform_project,
     transform_data,
 )
 from construction_work.tests.mock_data import extracted_data
-
-PROJECT_IMAGE_SET = {
-    "id": 12,
-    "description": "test",
-    "variants": [
-        {
-            "image": "https://ontw.app.amsterdam.nl/media/image/small.JPEG",
-            "width": 320,
-            "height": 180,
-        },
-        {
-            "image": "https://ontw.app.amsterdam.nl/media/image/medium.JPEG",
-            "width": 768,
-            "height": 432,
-        },
-        {
-            "image": "https://ontw.app.amsterdam.nl/media/image/large.JPEG",
-            "width": 1280,
-            "height": 720,
-        },
-    ],
-}
-
-ARTICLE_IMAGE_SET = {
-    "id": 13,
-    "description": "test",
-    "variants": [
-        {
-            "image": "https://ontw.app.amsterdam.nl/media/image/small-article.JPEG",
-            "width": 320,
-            "height": 180,
-        },
-        {
-            "image": "https://ontw.app.amsterdam.nl/media/image/medium-article.JPEG",
-            "width": 768,
-            "height": 432,
-        },
-        {
-            "image": "https://ontw.app.amsterdam.nl/media/image/large-article.JPEG",
-            "width": 1280,
-            "height": 720,
-        },
-    ],
-}
 
 
 @override_settings(
@@ -64,17 +15,12 @@ ARTICLE_IMAGE_SET = {
     DVO_URL="https://source.example.invalid/graphql",
 )
 class TransformDataTestCase(SimpleTestCase):
-    @patch("construction_work.etl.transform_data.ImageSetService")
-    def test_transforms_extraction_shape_for_ingestion(self, image_set_service):
-        image_set_service.return_value.get_or_upload_from_url.return_value = (
-            PROJECT_IMAGE_SET
-        )
+    def test_transforms_extraction_shape_for_ingestion(self):
         extracted_payload = deepcopy(extracted_data.MOCK_DATA)
 
         result = transform_data(extracted_payload)
 
         self.assertEqual(extracted_payload, extracted_data.MOCK_DATA)
-        image_set_service.assert_called_once_with()
         self.assertEqual(
             [project["id"] for project in result["projects"]],
             [project["id"] for project in extracted_data.MOCK_DATA["projects"]],
@@ -88,12 +34,20 @@ class TransformDataTestCase(SimpleTestCase):
             {10017: [13452], 17549: [13447]},
         )
         self.assertEqual(
-            len(image_set_service.return_value.get_or_upload_from_url.call_args_list),
-            5,
+            result["projects"][0]["image"],
+            {
+                "id": None,
+                "url": "https://source.example.invalid/sites/default/files/pages/955394/lammetjes.jpg",
+                "alt": "An example image",
+                "description": None,
+            },
+        )
+        self.assertEqual(
+            result["articles"][0]["image"]["url"],
+            "https://source.example.invalid/sites/default/files/pages/1084359/image-ab.jpg",
         )
 
-    @patch("construction_work.etl.transform_data.ImageSetService")
-    def test_handles_missing_images_and_news_views(self, image_set_service):
+    def test_handles_missing_images_and_news_views(self):
         result = transform_data(
             {
                 "projects": [
@@ -112,25 +66,16 @@ class TransformDataTestCase(SimpleTestCase):
         )
 
         self.assertEqual(result["articles"], [])
-        self.assertIsNone(result["projects"][0]["image_set"])
+        self.assertIsNone(result["projects"][0]["image"])
         self.assertIsNone(result["projects"][0]["timeline"]["title"])
-        image_set_service.return_value.get_or_upload_from_url.assert_not_called()
 
-    @patch("construction_work.etl.transform_data.ImageSetService")
-    def test_accepts_empty_extraction_result(self, image_set_service):
+    def test_accepts_empty_extraction_result(self):
         self.assertEqual(
             transform_data({"projects": [], "news_articles": {}, "work_articles": {}}),
             {"projects": [], "articles": []},
         )
-        image_set_service.assert_called_once_with()
 
-    @patch("construction_work.etl.transform_data.ImageSetService")
-    def test_transforms_shared_news_articles_for_multiple_projects(
-        self, image_set_service
-    ):
-        image_set_service.return_value.get_or_upload_from_url.return_value = (
-            PROJECT_IMAGE_SET
-        )
+    def test_transforms_shared_news_articles_for_multiple_projects(self):
         extracted_payload = deepcopy(extracted_data.MOCK_DATA)
         second_project = deepcopy(extracted_payload["projects"][0])
         second_project["id"] = 13453
@@ -142,59 +87,6 @@ class TransformDataTestCase(SimpleTestCase):
             {article["id"]: article["projectIds"] for article in result["articles"]},
             {10017: [13452, 13453], 17549: [13447]},
         )
-
-    def test_requires_image_service_for_project_and_article_images(self):
-        with self.assertRaisesRegex(RuntimeError, "required for project images"):
-            _transform_project({"image": [{"src": "/project.jpg"}]}, None)
-
-        with self.assertRaisesRegex(RuntimeError, "required for article images"):
-            _transform_article({"image": [{"src": "/article.jpg"}]}, None, "news")
-
-    @patch("construction_work.etl.transform_data.ImageSetService")
-    def test_logs_http_error_and_continues_without_image(self, image_set_service):
-        image_set_service.return_value.get_or_upload_from_url.side_effect = chain(
-            [HTTPError("image service unavailable")], repeat(ARTICLE_IMAGE_SET)
-        )
-
-        with self.assertLogs(
-            "construction_work.etl.transform_data", level="ERROR"
-        ) as logs:
-            result = transform_data(deepcopy(extracted_data.MOCK_DATA))
-
-        self.assertIn("Error getting or uploading image", logs.output[0])
-        self.assertIsNone(result["projects"][0]["image_set"])
-        self.assertEqual(
-            result["articles"][0]["image_set"]["id"], ARTICLE_IMAGE_SET["id"]
-        )
-        self.assertEqual(
-            result["articles"][0]["image_set"]["variants"],
-            ARTICLE_IMAGE_SET["variants"],
-        )
-        self.assertEqual(
-            result["articles"][0]["image_set"]["description"],
-            "test",
-        )
-
-    @patch("construction_work.etl.transform_data.ImageSetService")
-    def test_rejects_image_without_source_path(self, image_set_service):
-        extracted_data = {
-            "projects": [
-                {
-                    "id": 1,
-                    "title": "Missing image source",
-                    "path": "https://example.invalid/missing-image-source",
-                    "changedDate": "2026-08-10T09:46:00",
-                    "publicationDate": "2021-11-24T13:00:00",
-                    "image": [{"name": "missing-source.jpg"}],
-                }
-            ],
-            "news_articles": {},
-            "work_articles": {},
-        }
-
-        with self.assertRaisesRegex(ValueError, "did not contain a source path"):
-            transform_data(extracted_data)
-        image_set_service.assert_called_once_with()
 
     def test_transform_contact_content(self):
 
@@ -260,7 +152,7 @@ class TransformDataTestCase(SimpleTestCase):
             ],
         }
 
-        result = _transform_project(project, None)
+        result = _transform_project(project)
 
         self.assertEqual(
             result["contacts"],
@@ -323,7 +215,7 @@ class TransformDataTestCase(SimpleTestCase):
             ],
         }
 
-        result = _transform_project(project, None)
+        result = _transform_project(project)
 
         self.assertEqual(
             result["sections"]["what"],
@@ -364,7 +256,7 @@ class TransformDataTestCase(SimpleTestCase):
             ],
         }
 
-        result = _transform_project(project, None)
+        result = _transform_project(project)
         self.assertEqual(
             result["sections"]["when"],
             [
@@ -375,22 +267,3 @@ class TransformDataTestCase(SimpleTestCase):
                 }
             ],
         )
-
-    @patch("construction_work.etl.transform_data.ImageSetService")
-    def test_transform_image(self, image_set_service):
-        image_set_service.return_value.get_or_upload_from_url.return_value = (
-            PROJECT_IMAGE_SET
-        )
-        images = [
-            {
-                "id": 9876,
-                "src": "/path/to/image.jpg",
-                "alt": "An example image",
-            }
-        ]
-        result = _transform_image(images, image_set_service.return_value)
-        self.assertIsNotNone(result)
-        self.assertEqual(result["id"], 12)
-        self.assertEqual(result["description"], "test")
-        self.assertEqual(result["image_id"], 9876)
-        self.assertEqual(len(result["variants"]), 3)

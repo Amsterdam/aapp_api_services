@@ -3,6 +3,7 @@ from unittest import mock
 from django.test import TestCase
 from django.utils import timezone
 from model_bakery import baker
+from requests import HTTPError
 
 from construction_work.etl import load_data as load_data_module
 from construction_work.etl.load_data import (
@@ -431,17 +432,10 @@ class LoadDataTestCase(TestCase):
                     ],
                     "title": "Wanneer",
                 },
-                "image_set": {
-                    "id": 236,
-                    "variants": [
-                        {
-                            "image": "https://image.jpg",
-                            "width": 940,
-                            "height": 415,
-                        }
-                    ],
-                    "description": "An example image",
-                    "image_id": 98765,
+                "image": {
+                    "id": 98765,
+                    "url": "https://example.com/image.jpg",
+                    "alt": "An example image",
                 },
                 "url": "http://example.com/project/1",
                 "coordinates_lat": 10,
@@ -452,7 +446,20 @@ class LoadDataTestCase(TestCase):
                 "expiration_date": None,
             },
         ]
-        load_projects(project_data)
+        with mock.patch.object(
+            load_data_module, "ImageSetService"
+        ) as image_set_service:
+            image_set_service.return_value.get_or_upload_from_url.return_value = {
+                "id": 236,
+                "variants": [
+                    {
+                        "image": "https://image.jpg",
+                        "width": 940,
+                        "height": 415,
+                    }
+                ],
+            }
+            load_projects(project_data)
 
         # Fetch the project again to check updates
         updated_project = Project.objects.get(drupal_id=1)
@@ -618,22 +625,28 @@ class LoadDataTestCase(TestCase):
                 "publication_date": timezone.now(),
                 "expiration_date": None,
                 "projectIds": [1],
-                "image_set": {
-                    "id": 23626572,
-                    "variants": [
-                        {
-                            "image": "https://image.jpg",
-                            "width": 940,
-                            "height": 415,
-                        }
-                    ],
-                    "description": "An image description",
-                    "image_id": 236572,
+                "image": {
+                    "id": 236572,
+                    "url": "https://example.com/image.jpg",
+                    "alt": "An image description",
                 },
             },
         ]
 
-        load_articles(article_data)
+        with mock.patch.object(
+            load_data_module, "ImageSetService"
+        ) as image_set_service:
+            image_set_service.return_value.get_or_upload_from_url.return_value = {
+                "id": 23626572,
+                "variants": [
+                    {
+                        "image": "https://image.jpg",
+                        "width": 940,
+                        "height": 415,
+                    }
+                ],
+            }
+            load_articles(article_data)
 
         # Fetch the article again to check updates
         updated_article = Article.objects.get(drupal_id=100)
@@ -732,7 +745,17 @@ class LoadDataTestCase(TestCase):
     def test_store_image_creates_one_row_per_variant(self):
         project = baker.make(Project, foreign_id=1)
         image_data = {
-            "image_set": {
+            "image": {
+                "id": 1398,
+                "url": "https://foo.bar/source-image.jpg",
+                "alt": "Project image",
+            }
+        }
+
+        with mock.patch.object(
+            load_data_module, "ImageSetService"
+        ) as image_set_service:
+            image_set_service.return_value.get_or_upload_from_url.return_value = {
                 "id": 100,
                 "variants": [
                     {
@@ -746,14 +769,10 @@ class LoadDataTestCase(TestCase):
                         "height": 201,
                     },
                 ],
-                "description": "Project image",
-                "image_id": 1398,
             }
-        }
-
-        images, source_images = store_image(
-            image_data, project, ProjectImage, ProjectImageSource
-        )
+            images, source_images = store_image(
+                image_data, project, ProjectImage, ProjectImageSource
+            )
 
         self.assertEqual(len(source_images), 2)
         self.assertEqual(images[0].image_set, 100)
@@ -767,20 +786,26 @@ class LoadDataTestCase(TestCase):
     def test_store_image_allows_source_media_to_be_reused_by_parents(self):
         projects = [baker.make(Project) for _ in range(2)]
         image_data = {
-            "image_set": {
+            "image": {
+                "id": 1398,
+                "url": "https://foo.bar/image.jpg",
+                "alt": "Shared image",
+            }
+        }
+
+        with mock.patch.object(
+            load_data_module, "ImageSetService"
+        ) as image_set_service:
+            image_set_service.return_value.get_or_upload_from_url.return_value = {
                 "id": 100,
                 "variants": [
                     {"image": "https://foo.bar/image.jpg", "width": 20, "height": 10}
                 ],
-                "description": "Shared image",
-                "image_id": 1398,
             }
-        }
-
-        images_and_sources = [
-            store_image(image_data, project, ProjectImage, ProjectImageSource)
-            for project in projects
-        ]
+            images_and_sources = [
+                store_image(image_data, project, ProjectImage, ProjectImageSource)
+                for project in projects
+            ]
         images = [
             image for parent_images, _ in images_and_sources for image in parent_images
         ]
@@ -801,12 +826,46 @@ class LoadDataTestCase(TestCase):
 
     def test_store_image_without_variants_returns_empty_list(self):
         project = baker.make(Project, foreign_id=1)
-        self.assertEqual(
-            store_image(
-                {"image_set": {"id": 100, "variants": []}},
+        with mock.patch.object(
+            load_data_module, "ImageSetService"
+        ) as image_set_service:
+            image_set_service.return_value.get_or_upload_from_url.return_value = {
+                "id": 100,
+                "variants": [],
+            }
+            result = store_image(
+                {
+                    "image": {
+                        "id": 1398,
+                        "url": "https://foo.bar/image.jpg",
+                        "alt": "Project image",
+                    }
+                },
                 project,
                 ProjectImage,
                 ProjectImageSource,
-            ),
-            ([], []),
-        )
+            )
+        self.assertEqual(result, ([], []))
+
+    def test_store_image_http_error_returns_empty_lists(self):
+        project = baker.make(Project)
+        with (
+            mock.patch.object(load_data_module, "ImageSetService") as image_set_service,
+            self.assertLogs("construction_work.etl.load_data", level="ERROR"),
+        ):
+            image_set_service.return_value.get_or_upload_from_url.side_effect = (
+                HTTPError("image service unavailable")
+            )
+            result = store_image(
+                {
+                    "image": {
+                        "id": 1398,
+                        "url": "https://foo.bar/image.jpg",
+                        "alt": "Project image",
+                    }
+                },
+                project,
+                ProjectImage,
+                ProjectImageSource,
+            )
+        self.assertEqual(result, ([], []))

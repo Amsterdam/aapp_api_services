@@ -6,6 +6,7 @@ from logging import getLogger
 
 from django.db import transaction
 from django.utils import timezone
+from requests import HTTPError
 
 from construction_work.models.article_models import (
     Article,
@@ -21,6 +22,7 @@ from construction_work.models.project_models import (
     ProjectSectionUrl,
     ProjectTimelineItem,
 )
+from core.services.image_set import ImageSetService
 
 logger = getLogger(__name__)
 
@@ -284,23 +286,40 @@ def get_article_object(data):
 
 
 def store_image(
-    project_data, parent, image_class, image_source_class
+    item_data, parent, image_class, image_source_class
 ) -> tuple[list, list]:
-    image_set_data = project_data.get("image_set")
-    if not image_set_data:
+    """
+    item_data is a dictionary containing project/article information. One of the keys should be "image" containing image details.
+
+    the image is also a dictionary containing the following fields:
+        - id: ID of the image (drupal ID)
+        - url: URL of the image
+        - alt: Alternative text for the image
+        - description: Description of the image
+
+    """
+    image_data = item_data.get("image")
+    if not image_data:
+        return [], []
+
+    try:
+        image_set_data = ImageSetService().get_or_upload_from_url(
+            image_data.get("url"),
+            description=image_data.get("alt"),
+        )
+    except HTTPError as e:
+        logger.error(f"Error getting or uploading image: {e}")
         return [], []
 
     if not image_set_data.get("variants"):
         return [], []
 
     image = image_class(
-        foreign_id=image_set_data.get("image_id"),
+        foreign_id=image_data.get("id"),
         image_set=image_set_data.get("id"),
-        alternativeText=image_set_data.get("description"),
+        alternativeText=image_data.get("alt"),
         parent=parent,
     )
-
-    image.image_set = image_set_data["id"]
 
     image_sources = [
         image_source_class(

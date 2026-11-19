@@ -9,12 +9,10 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.utils import timezone
-from requests import HTTPError
 
 from construction_work.etl.extract_data import (
     extract_news_and_work_paragraph_id_from_project,
 )
-from core.services.image_set import ImageSetService
 
 logger = logging.getLogger(__name__)
 
@@ -48,30 +46,17 @@ def transform_data(
     projects = extracted_data["projects"]
     news_articles = extracted_data["news_articles"]
     work_articles = extracted_data["work_articles"]
-    image_set_service = ImageSetService()
 
-    transformed_projects = [
-        _transform_project(project, image_set_service) for project in projects
-    ]
-    transformed_articles = _transform_articles(
-        projects, news_articles, image_set_service, "news"
-    )
-    transformed_articles += _transform_articles(
-        projects, work_articles, image_set_service, "work"
-    )
+    transformed_projects = [_transform_project(project) for project in projects]
+    transformed_articles = _transform_articles(projects, news_articles, "news")
+    transformed_articles += _transform_articles(projects, work_articles, "work")
     return {"projects": transformed_projects, "articles": transformed_articles}
 
 
 def _transform_project(
     project: Mapping[str, Any],
-    image_set_service: ImageSetService | None,
 ) -> dict[str, Any]:
     """Convert a DvO project, including its content blocks, to loader fields."""
-    image_set = None
-    if project.get("image"):
-        if image_set_service is None:
-            raise RuntimeError("ImageSetService is required for project images")
-        image_set = _transform_image(project["image"], image_set_service)
 
     sections = {}
     contacts = []
@@ -83,6 +68,7 @@ def _transform_project(
     raw_title = project.get("title", "")
     project_title = raw_title.split(":")[0]
     project_subtitle = _get_subtitle(raw_title)
+    project_image = project.get("image", [])[0] if project.get("image") else None
 
     for block in _content_blocks(project):
         typename = block.get("__typename")
@@ -136,14 +122,20 @@ def _transform_project(
             "intro": timeline_intro,
             "items": timeline_items,
         },
-        "image_set": image_set,
+        "image": {
+            "id": project_image.get("id"),
+            "url": construct_image_url(project_image.get("src")),
+            "alt": project_image.get("alt"),
+            "description": project_image.get("description"),
+        }
+        if project_image
+        else None,
     }
 
 
 def _transform_articles(
     projects: list[Mapping[str, Any]],
     articles_by_paragraph_id: Mapping[int | str, list[Mapping[str, Any]]],
-    image_set_service: ImageSetService | None,
     article_type: str,
 ) -> list[dict[str, Any]]:
     """Transform news articles and associate each with its related projects."""
@@ -164,9 +156,7 @@ def _transform_articles(
                 article_id = article.get("id")
                 transformed = transformed_by_id.get(article_id)
                 if transformed is None:
-                    transformed = _transform_article(
-                        article, image_set_service, article_type
-                    )
+                    transformed = _transform_article(article, article_type)
                     transformed["projectIds"] = []
                     transformed_by_id[article_id] = transformed
                 project_id = project.get("id")
@@ -178,15 +168,10 @@ def _transform_articles(
 
 def _transform_article(
     article: Mapping[str, Any],
-    image_set_service: ImageSetService | None,
     article_type: str,
 ) -> dict[str, Any]:
     """Convert a DvO news article and its content to loader fields."""
-    image_set = None
-    if article.get("image"):
-        if image_set_service is None:
-            raise RuntimeError("ImageSetService is required for article images")
-        image_set = _transform_image(article["image"], image_set_service)
+    article_image = article.get("image", [])[0] if article.get("image") else None
 
     body = "".join(
         block.get("content") or ""
@@ -208,7 +193,14 @@ def _transform_article(
         "publication_date": _parse_datetime(article.get("publicationDate")),
         "modification_date": _parse_datetime(article.get("changedDate")),
         "expiration_date": None,
-        "image_set": image_set,
+        "image": {
+            "id": article_image.get("id"),
+            "url": construct_image_url(article_image.get("src")),
+            "alt": article_image.get("alt"),
+            "description": article_image.get("description"),
+        }
+        if article_image
+        else None,
     }
 
 
@@ -372,49 +364,8 @@ def _parse_datetime(value: str | datetime | None) -> datetime | None:
     return parsed
 
 
-def _transform_image(
-    images: list[Mapping[str, Any]],
-    image_set_service: ImageSetService,
-) -> dict[str, Any] | None:
-    """
-    Upload the first DvO image by URL and return its image-set data.
-    Args:
-        images: A list of image data dictionaries from DvO.
-        image_set_service: An instance of ImageSetService to handle image uploads.
-
-    Returns:
-        A dictionary containing the image-set data, or None if the upload fails.
-
-    Example return value:
-        {
-            "id": "image-set-id",
-            "description": "An example image"
-            "variants": [
-                {"image": "url-to-variant", "width": 800, "height": 600},
-                {"image": "url-to-variant", "width": 400, "height": 300},
-            ],
-            "image_id": "source-image-id",
-        }
-    """
-    if not images:
-        return None
-
-    source_image = images[0]
-    image_url = source_image.get("src")
-    if not isinstance(image_url, str) or not image_url:
-        raise ValueError("DvO image did not contain a source path")
-
-    absolute_image_url = urljoin(settings.DVO_URL, image_url)
-    try:
-        image_set = image_set_service.get_or_upload_from_url(absolute_image_url)
-    except HTTPError as e:
-        logger.error(f"Error getting or uploading image: {e}")
-        return None
-
-    return {
-        **image_set,
-        "image_id": source_image.get("id"),
-    }
+def construct_image_url(image_source: str) -> str:
+    return urljoin(settings.DVO_URL, image_source)
 
 
 def _get_subtitle(title: str) -> str | None:
