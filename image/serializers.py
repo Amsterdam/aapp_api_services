@@ -5,7 +5,7 @@ import uuid
 
 import requests
 from django.core.files.base import ContentFile
-from django.db import transaction
+from django.db import IntegrityError, connection, transaction
 from drf_spectacular.utils import extend_schema_field
 from PIL import Image, UnidentifiedImageError
 from rest_framework import serializers
@@ -78,8 +78,25 @@ class ImageSetFromUrlRequestSerializer(ImageSetBaseSerializer):
             raise serializers.ValidationError(
                 "Provided URL does not contain a valid image."
             )
-        validated_data["identifier"] = hashlib.sha256(url.encode("utf-8")).hexdigest()
-        return self.create_set(image_file, validated_data)
+        identifier = hashlib.sha256(url.encode("utf-8")).hexdigest()
+        validated_data["identifier"] = identifier
+
+        try:
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                        [identifier],
+                    )
+                image_set = ImageSet.objects.filter(identifier=identifier).first()
+                if image_set:
+                    return image_set
+                return self.create_set(image_file, validated_data)
+        except IntegrityError:
+            image_set = ImageSet.objects.filter(identifier=identifier).first()
+            if image_set:
+                return image_set
+            raise
 
 
 class ImageVariantSerializer(serializers.ModelSerializer):

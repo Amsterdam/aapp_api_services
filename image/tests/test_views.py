@@ -1,12 +1,18 @@
 import hashlib
-from unittest.mock import patch
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
+from unittest.mock import Mock, patch
 
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import close_old_connections
+from django.test import TransactionTestCase, override_settings
 from django.urls import reverse
 from requests import HTTPError
 from rest_framework import status
+from rest_framework.test import APIClient
 
+from core.authentication import APIKeyAuthentication
 from core.tests.test_authentication import BasicAPITestCase
 from core.utils.image_utils import (
     EXAMPLE_HEIC_FILE,
@@ -131,7 +137,8 @@ class ImageSetFromUrlCreateViewTests(BasicAPITestCase):
         url_hash = hashlib.sha256(payload["url"].encode("utf-8")).hexdigest()
         self.assertEqual(response.data["identifier"], url_hash)
 
-    def test_get_imageset_when_url_hash_exists(self):
+    @patch("image.serializers.requests.get")
+    def test_get_imageset_when_url_hash_exists(self, mock_get):
         payload = {"url": "https://example.com/image.jpg"}
         url_hash = hashlib.sha256(payload["url"].encode("utf-8")).hexdigest()
         image_variant = ImageVariant.objects.create(image=get_example_image_file())
@@ -146,6 +153,46 @@ class ImageSetFromUrlCreateViewTests(BasicAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], image_set.id)
         self.assertEqual(response.data["identifier"], url_hash)
+        mock_get.assert_not_called()
+
+    @patch("image.serializers.requests.get")
+    def test_repeated_url_request_reuses_imageset_without_fetching_again(
+        self, mock_get
+    ):
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.content = get_example_image_data()
+        payload = {"url": "https://example.com/image.jpg"}
+
+        first_response = self.client.post(self.url, payload, headers=self.api_headers)
+        second_response = self.client.post(self.url, payload, headers=self.api_headers)
+
+        self.assertEqual(first_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(first_response.data["id"], second_response.data["id"])
+        self.assertEqual(ImageSet.objects.count(), 1)
+        mock_get.assert_called_once()
+
+    @patch("image.serializers.requests.get")
+    def test_different_urls_create_distinct_imagesets(self, mock_get):
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.content = get_example_image_data()
+        urls = [
+            "https://example.com/first.jpg",
+            "https://example.com/second.jpg",
+        ]
+
+        responses = [
+            self.client.post(self.url, {"url": url}, headers=self.api_headers)
+            for url in urls
+        ]
+
+        self.assertEqual([response.status_code for response in responses], [200, 200])
+        self.assertNotEqual(responses[0].data["id"], responses[1].data["id"])
+        self.assertEqual(
+            [response.data["identifier"] for response in responses],
+            [hashlib.sha256(url.encode("utf-8")).hexdigest() for url in urls],
+        )
+        self.assertEqual(ImageSet.objects.count(), 2)
 
     def test_create_imageset_from_url_invalid_url(self):
         def assert_invalid_url(url):
@@ -175,6 +222,48 @@ class ImageSetFromUrlCreateViewTests(BasicAPITestCase):
         payload = {"url": "https://example.com/image.jpg"}
         response = self.client.post(self.url, payload, headers=self.api_headers)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+@override_settings(
+    STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
+)
+class ImageSetFromUrlCreateConcurrencyTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        self.url = reverse("image-create-imageset-from-url")
+        authentication = APIKeyAuthentication()
+        self.headers = {authentication.api_key_header: authentication.api_keys[0]}
+
+    @patch("image.serializers.requests.get")
+    def test_concurrent_requests_for_same_url_reuse_imageset(self, mock_get):
+        url = "https://example.com/image.jpg"
+        url_hash = hashlib.sha256(url.encode("utf-8")).hexdigest()
+        fetch_barrier = Barrier(2)
+
+        def fetch_image(*args, **kwargs):
+            fetch_barrier.wait(timeout=10)
+            response = Mock(status_code=200, content=get_example_image_data())
+            return response
+
+        mock_get.side_effect = fetch_image
+
+        def post_image():
+            close_old_connections()
+            try:
+                client = APIClient()
+                return client.post(self.url, {"url": url}, headers=self.headers)
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            responses = list(executor.map(lambda _: post_image(), range(2)))
+
+        self.assertEqual([response.status_code for response in responses], [200, 200])
+        self.assertEqual(responses[0].data["id"], responses[1].data["id"])
+        self.assertEqual(ImageSet.objects.filter(identifier=url_hash).count(), 1)
+        self.assertEqual(ImageVariant.objects.count(), 3)
+        self.assertEqual(len(default_storage.listdir("image")[1]), 3)
 
 
 class ImageSetDetailViewTests(BasicAPITestCase):
