@@ -757,7 +757,7 @@ class LoadDataTestCase(TestCase):
 
         self.assertEqual(len(source_images), 2)
         self.assertEqual(images[0].image_set, 100)
-        self.assertEqual(images[0].source_media_id, 1398)
+        self.assertEqual(images[0].foreign_id, 1398)
         self.assertEqual(images[0].alternativeText, "Project image")
         self.assertEqual(source_images[0].image.image_set, 100)
         self.assertEqual(source_images[0].uri, "https://foo.bar/medium-image.jpg")
@@ -795,7 +795,7 @@ class LoadDataTestCase(TestCase):
 
         saved_images = list(ProjectImage.objects.order_by("parent_id"))
         self.assertEqual(len(saved_images), 2)
-        self.assertEqual({image.source_media_id for image in saved_images}, {1398})
+        self.assertEqual({image.foreign_id for image in saved_images}, {1398})
         self.assertEqual(len({image.id for image in saved_images}), 2)
         self.assertEqual(ProjectImageSource.objects.count(), 2)
 

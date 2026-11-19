@@ -20,8 +20,8 @@ def send_article_notifications(
 
         # get image of article
         article_image = ArticleImage.objects.filter(parent=new_article.id).first()
-        if article_image:
-            image_set_id = article_image.foreign_id
+        if article_image and article_image.image_set:
+            image_set_id = article_image.image_set
         else:
             image_set_id = None
 
