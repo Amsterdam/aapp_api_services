@@ -5,15 +5,6 @@ MOCK_RESPONSE = {
     "city": "Amsterdam",
     "postalCode": "1093 SJ",
     "coordinates": {"latitude": "52.366474", "longitude": "4.926436"},
-    "openingTimes": {
-        "twentyfourseven": False,
-        "regularHours": [
-            {"weekday": 1, "periodBegin": "04:15", "periodEnd": "12:15"},
-            {"weekday": 3, "periodBegin": "09:15", "periodEnd": "16:15"},
-            {"weekday": 4, "periodBegin": "09:15", "periodEnd": "15:15"},
-            {"weekday": 2, "periodBegin": "10:15", "periodEnd": "12:15"},
-        ],
-    },
     "chargingStationsIds": ["VCPS-RIK", "VCPS-MULTI", "VCPS-FRANK"],
     "tariffId": "NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY",
     "tariff": {
@@ -122,15 +113,6 @@ MOCK_RESPONSE_OFFLINE_CHARGING_STATION = {
     "city": "Amsterdam",
     "postalCode": "1093 SJ",
     "coordinates": {"latitude": "52.366474", "longitude": "4.926436"},
-    "openingTimes": {
-        "twentyfourseven": False,
-        "regularHours": [
-            {"weekday": 1, "periodBegin": "04:15", "periodEnd": "12:15"},
-            {"weekday": 3, "periodBegin": "09:15", "periodEnd": "16:15"},
-            {"weekday": 4, "periodBegin": "09:15", "periodEnd": "15:15"},
-            {"weekday": 2, "periodBegin": "10:15", "periodEnd": "12:15"},
-        ],
-    },
     "chargingStationsIds": ["VCPS-RIK", "VCPS-7BMY3"],
     "tariffId": "NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY",
     "tariff": {
@@ -178,15 +160,6 @@ MOCK_RESPONSE_RESERVED_CHARGING_STATION = {
     "city": "Amsterdam",
     "postalCode": "1093 SJ",
     "coordinates": {"latitude": "52.366474", "longitude": "4.926436"},
-    "openingTimes": {
-        "twentyfourseven": False,
-        "regularHours": [
-            {"weekday": 1, "periodBegin": "04:15", "periodEnd": "12:15"},
-            {"weekday": 3, "periodBegin": "09:15", "periodEnd": "16:15"},
-            {"weekday": 4, "periodBegin": "09:15", "periodEnd": "15:15"},
-            {"weekday": 2, "periodBegin": "10:15", "periodEnd": "12:15"},
-        ],
-    },
     "chargingStationsIds": ["VCPS-RIK"],
     "tariffId": "NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY",
     "tariff": {

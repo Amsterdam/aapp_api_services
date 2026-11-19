@@ -149,7 +149,6 @@ class SessionView(BaseView):
                     "lon": lon,
                 },
             },
-            "opening_times": self.get_opening_times(location),
             "available_sockets": location.get("availableSockets", 0),
             "total_sockets": location.get("totalSockets", 0),
         }

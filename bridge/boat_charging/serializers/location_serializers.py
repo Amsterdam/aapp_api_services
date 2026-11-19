@@ -4,22 +4,6 @@ from bridge.boat_charging.constants import OPERATION_STATE_CHOICES
 from core.serializers.address_serializers import AddressSerializer
 
 
-class HourMinuteField(serializers.Serializer):
-    hours = serializers.IntegerField()
-    minutes = serializers.IntegerField()
-
-
-class RegularOpeningHoursSerializer(serializers.Serializer):
-    dayOfWeek = serializers.IntegerField()
-    opening = HourMinuteField()
-    closing = HourMinuteField()
-
-
-class OpeningTimesSerializer(serializers.Serializer):
-    regular_hours = RegularOpeningHoursSerializer(many=True, allow_empty=True)
-    twentyfourseven = serializers.BooleanField()
-
-
 class PointGeometrySerializer(serializers.Serializer):
     type = serializers.CharField(default="Point", read_only=True)
     coordinates = serializers.ListField(child=serializers.FloatField())
@@ -29,7 +13,6 @@ class LocationPropertiesSerializer(serializers.Serializer):
     id = serializers.CharField()
     name = serializers.CharField()
     address = AddressSerializer()
-    opening_times = OpeningTimesSerializer()
     available_sockets = serializers.IntegerField()
     total_sockets = serializers.IntegerField()
     status = serializers.ChoiceField(choices=OPERATION_STATE_CHOICES, required=False)
