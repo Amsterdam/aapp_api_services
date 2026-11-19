@@ -62,13 +62,14 @@ Calibration failures are about the quality of the subagent's own report. On cali
 - A Reviewer or Tester submission fails calibration checks a second time after resubmission.
 - Review or testing exposes deeper scope or architecture risk.
 - The Product Owner changes direction mid-stream.
-- There is an issue with the git-lineage.
+- There is an issue with the git-lineage. If there are any changes in the .github repo, you can simply accept these and commit them in the new feature branch, without escalating.
 
 ## Release Recommendation
 - Recommend release only when the original goal is still valid and understood, acceptance direction has been met or explicitly re-negotiated, Reviewer and Tester have each returned a clear outcome that has passed calibration enforcement, and open risks are visible to the human Product Owner.
 
 ## Workflow
 - capture the current `HEAD` as `original_git_hash`.
+- If a jira-ticket-number is supplied, use the Atlassian MCP server to collect the description and acceptatiecriteria. The collected information should be used to inform the Story Plan and any subsequent handoffs.
 - Send `H0 Story Planning Request` to the Story Plan agent. Require `H1 Story Planning Result` in response and require it to create or update the in-memory `plan.md`. As part of this, Story Plan must identify whether the work item is likely to require any new public endpoints, routes, or interfaces; if so and the exact name is not specified, Story Plan must include this in `H1.open_questions`.
 - If `H1.open_questions` is non-empty:
   - Ask the Product Owner those exact questions verbatim.
