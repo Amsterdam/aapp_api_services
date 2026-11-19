@@ -35,6 +35,19 @@ class TransformDataTest(TestCase):
             [[field] for field in required_fields],
         )
 
+    def test_transform_processes_blog_without_publication_date(self):
+        article = {
+            "id": 124,
+            "__typename": "Blog",
+            "title": "A blog title",
+            "changedDate": "2026-11-06T09:00:00Z",
+            "path": "https://example.com/blog",
+        }
+
+        transformed = transform([article])
+
+        self.assertEqual([item["foreign_id"] for item in transformed], [124])
+
     def test_get_article_properties(self):
         tags = [
             {"id": 531, "name": "Nieuws — Nieuws"},
