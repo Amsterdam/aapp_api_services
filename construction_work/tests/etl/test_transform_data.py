@@ -88,6 +88,66 @@ class TransformDataTestCase(SimpleTestCase):
             {10017: [13452, 13453], 17549: [13447]},
         )
 
+    def test_merges_articles_shared_between_news_and_work_views(self):
+        projects = [
+            {
+                "id": 1,
+                "content": [
+                    {
+                        "rows": [
+                            {
+                                "content": [
+                                    {
+                                        "__typename": "ParagraphDdsViews",
+                                        "id": 101,
+                                        "contentIndication": "news",
+                                        "title": "Nieuws",
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+            },
+            {
+                "id": 2,
+                "content": [
+                    {
+                        "rows": [
+                            {
+                                "content": [
+                                    {
+                                        "__typename": "ParagraphDdsViews",
+                                        "id": 202,
+                                        "contentIndication": "work",
+                                        "title": "Werk aan de weg",
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+            },
+        ]
+        shared_article = {"id": 303, "title": "Shared article"}
+
+        with self.assertLogs(
+            "construction_work.etl.transform_data", level="WARNING"
+        ) as logs:
+            result = transform_data(
+                {
+                    "projects": projects,
+                    "news_articles": {101: [shared_article]},
+                    "work_articles": {202: [shared_article]},
+                }
+            )
+
+        self.assertEqual(len(result["articles"]), 1)
+        self.assertEqual(result["articles"][0]["type"], "news")
+        self.assertEqual(result["articles"][0]["projectIds"], [1, 2])
+        self.assertIn("Article 303", logs.output[0])
+        self.assertIn("using news type", logs.output[0])
+
     def test_transform_contact_content(self):
 
         block = {

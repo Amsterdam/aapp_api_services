@@ -48,9 +48,41 @@ def transform_data(
     work_articles = extracted_data["work_articles"]
 
     transformed_projects = [_transform_project(project) for project in projects]
-    transformed_articles = _transform_articles(projects, news_articles, "news")
-    transformed_articles += _transform_articles(projects, work_articles, "work")
+    transformed_news_articles = _transform_articles(projects, news_articles, "news")
+    transformed_work_articles = _transform_articles(projects, work_articles, "work")
+    transformed_articles = _merge_article_groups(
+        transformed_news_articles,
+        transformed_work_articles,
+    )
     return {"projects": transformed_projects, "articles": transformed_articles}
+
+
+def _merge_article_groups(
+    news_articles: list[dict[str, Any]],
+    work_articles: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Deduplicate articles across view groups, preferring news on type conflicts."""
+    articles_by_id = {}
+
+    for article in news_articles + work_articles:
+        article_id = article["id"]
+        existing_article = articles_by_id.get(article_id)
+        if existing_article is None:
+            articles_by_id[article_id] = article
+            continue
+
+        if existing_article["type"] != article["type"]:
+            logger.warning(
+                f"Article {article_id} appears in both news and work views; "
+                "using news type"
+            )
+            existing_article["type"] = "news"
+
+        existing_article["projectIds"] = list(
+            dict.fromkeys(existing_article["projectIds"] + article["projectIds"])
+        )
+
+    return list(articles_by_id.values())
 
 
 def _transform_project(
