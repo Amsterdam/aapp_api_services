@@ -93,6 +93,9 @@ class ParkingPermitsView(BaseSSPView):
         response_payload = []
         for permit in permits_data:
             visitor_json = None
+            permit_zone = permit["details"]["permit"].get("zone") or permit["details"][
+                "permit"
+            ].get("area")
             visitor_data = permit["details"]["ssp"]["visitor_account"]
             if visitor_data["username"]:
                 visitor_json = {
@@ -115,10 +118,10 @@ class ParkingPermitsView(BaseSSPView):
                 "permit_type": permit["details"]["permit"]["mapped_type"],
                 "permit_name": permit["details"]["permit"]["name"],
                 "permit_zone": {
-                    "permit_zone_id": permit["details"]["permit"]["zone"],
-                    "name": permit["details"]["permit"]["zone"],
+                    "permit_zone_id": permit_zone,
+                    "name": permit_zone,
                 }
-                if permit["details"]["permit"]["zone"]
+                if permit_zone
                 else None,
                 "payment_zones": [],  # TODO: once 1.2.8 is deprecated, remove this field from the response
                 "visitor_account": visitor_json,

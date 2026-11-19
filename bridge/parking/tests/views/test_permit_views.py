@@ -67,9 +67,39 @@ class TestParkingPermitsView(BaseSSPTestCase):
         self._setup_permit_mocks_user(visitor_holder.MOCK_RESPONSE)
         response = self.client.get(self.url, headers=self.api_headers)
         self.assertEqual(response.data[0]["permit_type"], "Bezoekersvergunning")
+        self.assertEqual(
+            response.data[0]["permit_zone"],
+            {
+                "permit_zone_id": "CE02E Centrum-2e",
+                "name": "CE02E Centrum-2e",
+                "description": None,
+            },
+        )
         self.assertEqual(response.data[0]["visitor_account"]["seconds_remaining"], 3600)
         self.assertEqual(response.data[0]["parking_machine_favorite"], "10528")
         self.assertEqual(len(response.data), 4)
+
+    def test_permits_user_information_with_area(self):
+        permit_detail = {
+            **visitor_holder.MOCK_RESPONSE,
+            "permit": {
+                **visitor_holder.MOCK_RESPONSE["permit"],
+                "area": visitor_holder.MOCK_RESPONSE["permit"]["zone"],
+            },
+        }
+        del permit_detail["permit"]["zone"]
+        self._setup_permit_mocks_user(permit_detail)
+
+        response = self.client.get(self.url, headers=self.api_headers)
+
+        self.assertEqual(
+            response.data[0]["permit_zone"],
+            {
+                "permit_zone_id": "CE02E Centrum-2e",
+                "name": "CE02E Centrum-2e",
+                "description": None,
+            },
+        )
 
     def test_permits_user_validity_dates(self):
         self._setup_permit_mocks_user(visitor_holder.MOCK_RESPONSE)
