@@ -1,46 +1,11 @@
-import hashlib
-import io
-import logging
-import uuid
-
-import requests
-from django.core.files.base import ContentFile
-from django.db import IntegrityError, connection, transaction
 from drf_spectacular.utils import extend_schema_field
-from PIL import Image, UnidentifiedImageError
 from rest_framework import serializers
 
-from core.utils.image_utils import SCALED_IMAGE_FORMAT, scale_image
 from image.models import ImageSet, ImageVariant
-
-logger = logging.getLogger(__name__)
-
-
-class ImageSetBaseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ImageSet
-        abstract = True
-
-    @transaction.atomic
-    def create_set(self, image_file, validated_data):
-        scaled = scale_image(image_file)
-        image_small = self._get_image_variant(scaled, "small")
-        image_medium = self._get_image_variant(scaled, "medium")
-        image_large = self._get_image_variant(scaled, "large")
-        return ImageSet.objects.create(
-            image_small=image_small,
-            image_medium=image_medium,
-            image_large=image_large,
-            **validated_data,
-        )
-
-    def _get_image_variant(self, scaled_images, key) -> ImageVariant:
-        filename = f"{key}-{uuid.uuid4()}.{SCALED_IMAGE_FORMAT}"
-        content_file = ContentFile(scaled_images[key].read(), filename)
-        return ImageVariant.objects.create(image=content_file)
+from image.services.image_set import create_from_upload, create_from_url
 
 
-class ImageSetRequestSerializer(ImageSetBaseSerializer):
+class ImageSetRequestSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(write_only=True)
 
     class Meta:
@@ -49,11 +14,18 @@ class ImageSetRequestSerializer(ImageSetBaseSerializer):
 
     def create(self, validated_data):
         image_file = validated_data.pop("image")
-        return self.create_set(image_file, validated_data)
+        return create_from_upload(image_file, validated_data)
 
 
-class ImageSetFromUrlRequestSerializer(ImageSetBaseSerializer):
-    url = serializers.URLField(write_only=True)
+class StrictURLField(serializers.URLField):
+    def to_internal_value(self, data):
+        if not isinstance(data, str):
+            self.fail("invalid")
+        return super().to_internal_value(data)
+
+
+class ImageSetFromUrlRequestSerializer(serializers.ModelSerializer):
+    url = StrictURLField(write_only=True)
 
     class Meta:
         model = ImageSet
@@ -61,42 +33,7 @@ class ImageSetFromUrlRequestSerializer(ImageSetBaseSerializer):
 
     def create(self, validated_data):
         url = validated_data.pop("url")
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-        except requests.HTTPError as e:
-            raise serializers.ValidationError(
-                f"Failed creating image set from URL: {e}"
-            )
-
-        image_file = io.BytesIO(response.content)
-        try:
-            image_file.seek(0)
-            Image.open(image_file).verify()
-            image_file.seek(0)
-        except UnidentifiedImageError:
-            raise serializers.ValidationError(
-                "Provided URL does not contain a valid image."
-            )
-        identifier = hashlib.sha256(url.encode("utf-8")).hexdigest()
-        validated_data["identifier"] = identifier
-
-        try:
-            with transaction.atomic():
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT pg_advisory_xact_lock(hashtext(%s))",
-                        [identifier],
-                    )
-                image_set = ImageSet.objects.filter(identifier=identifier).first()
-                if image_set:
-                    return image_set
-                return self.create_set(image_file, validated_data)
-        except IntegrityError:
-            image_set = ImageSet.objects.filter(identifier=identifier).first()
-            if image_set:
-                return image_set
-            raise
+        return create_from_url(url, validated_data)
 
 
 class ImageVariantSerializer(serializers.ModelSerializer):
