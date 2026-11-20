@@ -136,21 +136,6 @@ class TestSessionView(BoatChargingTestCase):
                     "city": "Amsterdam",
                     "postalCode": "1234 AM",
                     "coordinates": {"latitude": "52.327549", "longitude": "4.972519"},
-                    "openingTimes": {
-                        "twentyfourseven": False,
-                        "regularHours": [
-                            {
-                                "weekday": 1,
-                                "periodBegin": "17:41",
-                                "periodEnd": "19:41",
-                            },
-                            {
-                                "weekday": 6,
-                                "periodBegin": "13:41",
-                                "periodEnd": "17:41",
-                            },
-                        ],
-                    },
                     "availableSockets": 0,
                     "totalSockets": 0,
                 },
@@ -225,21 +210,6 @@ class TestSessionView(BoatChargingTestCase):
                     "city": "Amsterdam",
                     "postalCode": "1234 AM",
                     "coordinates": {"latitude": "52.327549", "longitude": "4.972519"},
-                    "openingTimes": {
-                        "twentyfourseven": False,
-                        "regularHours": [
-                            {
-                                "weekday": 1,
-                                "periodBegin": "17:41",
-                                "periodEnd": "19:41",
-                            },
-                            {
-                                "weekday": 6,
-                                "periodBegin": "13:41",
-                                "periodEnd": "17:41",
-                            },
-                        ],
-                    },
                     "availableSockets": 0,
                     "totalSockets": 0,
                 },

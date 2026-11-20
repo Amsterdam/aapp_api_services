@@ -286,56 +286,6 @@ class TestLocationView(BoatChargingTestCase):
         self.assertEqual(cs_data["id"], "CS-1")
         self.assertEqual(cs_data["status"], "UNKNOWN")
 
-    def test_convert_regular_hours(self):
-        regular_hours = [
-            {"weekday": 1, "periodBegin": "08:00", "periodEnd": "18:00"},
-            {"weekday": 2, "periodBegin": "08:00", "periodEnd": "18:00"},
-            {"weekday": 3, "periodBegin": "09:00", "periodEnd": "19:30"},
-            {"weekday": 4, "periodBegin": "04:12", "periodEnd": "08:12"},
-            {"weekday": 5, "periodBegin": "07:12", "periodEnd": "13:12"},
-            {"weekday": 6, "periodBegin": "08:12", "periodEnd": "21:12"},
-            {"weekday": 7, "periodBegin": "07:19", "periodEnd": "08:19"},
-        ]
-        converted_hours = self.view._convert_regular_hours(regular_hours)
-        expected_converted_hours = [
-            {
-                "dayOfWeek": 1,
-                "opening": {"hours": 8, "minutes": 0},
-                "closing": {"hours": 18, "minutes": 0},
-            },
-            {
-                "dayOfWeek": 2,
-                "opening": {"hours": 8, "minutes": 0},
-                "closing": {"hours": 18, "minutes": 0},
-            },
-            {
-                "dayOfWeek": 3,
-                "opening": {"hours": 9, "minutes": 0},
-                "closing": {"hours": 19, "minutes": 30},
-            },
-            {
-                "dayOfWeek": 4,
-                "opening": {"hours": 4, "minutes": 12},
-                "closing": {"hours": 8, "minutes": 12},
-            },
-            {
-                "dayOfWeek": 5,
-                "opening": {"hours": 7, "minutes": 12},
-                "closing": {"hours": 13, "minutes": 12},
-            },
-            {
-                "dayOfWeek": 6,
-                "opening": {"hours": 8, "minutes": 12},
-                "closing": {"hours": 21, "minutes": 12},
-            },
-            {
-                "dayOfWeek": 0,
-                "opening": {"hours": 7, "minutes": 19},
-                "closing": {"hours": 8, "minutes": 19},
-            },
-        ]
-        self.assertEqual(converted_hours, expected_converted_hours)
-
     def test_get_addr(self):
         input_str = "Tilanusstraat 10-2"
         street, number = self.view.split_address(input_str)

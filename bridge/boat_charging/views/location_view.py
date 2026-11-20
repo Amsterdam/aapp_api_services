@@ -86,7 +86,6 @@ class LocationView(BaseView):
                     {"number": number} if number else {}
                 ),  # number cannot be empty string, so only include if it is not empty
             },
-            "opening_times": self.get_opening_times(item),
             "available_sockets": item.get("availableSockets", 0),
             "total_sockets": item.get("totalSockets", 0),
             "status": status,

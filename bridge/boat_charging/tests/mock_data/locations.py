@@ -7,13 +7,6 @@ MOCK_RESPONSE = {
             "city": "Amsterdam",
             "postalCode": "1234 AM",
             "coordinates": {"latitude": "52.327549", "longitude": "4.972519"},
-            "openingTimes": {
-                "twentyfourseven": False,
-                "regularHours": [
-                    {"weekday": 1, "periodBegin": "17:41", "periodEnd": "19:41"},
-                    {"weekday": 6, "periodBegin": "13:41", "periodEnd": "17:41"},
-                ],
-            },
             "chargingStationsIds": ["VCPS-7BMY2", "VCPS-MX1VV", "VCPS-IFZTY"],
             "availableSockets": 0,
             "totalSockets": 3,
@@ -46,7 +39,6 @@ MOCK_RESPONSE = {
             "city": "Amsterdam",
             "postalCode": "1234 AM",
             "coordinates": {"latitude": "52.387313", "longitude": "4.822313"},
-            "openingTimes": {"twentyfourseven": True},
             "chargingStationsIds": [],
             "tariffId": "NLSGMTYVALVHYCHWGFZALJVSWPJKHSICSIK",
             "availableSockets": 0,
@@ -59,15 +51,6 @@ MOCK_RESPONSE = {
             "city": "Amsterdam",
             "postalCode": "1093 SJ",
             "coordinates": {"latitude": "52.366474", "longitude": "4.926436"},
-            "openingTimes": {
-                "twentyfourseven": False,
-                "regularHours": [
-                    {"weekday": 1, "periodBegin": "04:15", "periodEnd": "12:15"},
-                    {"weekday": 3, "periodBegin": "09:15", "periodEnd": "16:15"},
-                    {"weekday": 4, "periodBegin": "09:15", "periodEnd": "15:15"},
-                    {"weekday": 2, "periodBegin": "10:15", "periodEnd": "12:15"},
-                ],
-            },
             "chargingStationsIds": ["VCPS-7BMY3"],
             "tariffId": "NLSGMTRYXYMXMPAOXJFEYLQXIHAYXJPNTOY",
             "tariff": {
