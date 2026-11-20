@@ -5,7 +5,10 @@ These named contracts are required by the Orchestrator. Every major handoff must
 ## Git Lineage Rules
 
 - `original_git_hash` is the repository `HEAD` captured by the Orchestrator before the first subagent for the work item starts.
+- Preserve `original_git_hash` across all Product Owner-authorized additional cycles for the same work item. Record each cycle's starting `HEAD` as `cycle_base_git_hash`; do not replace the original provenance anchor.
 - `git_history_context` summarizes the relevant commits from `original_git_hash` to the current `HEAD`. Use that git history as the provenance record for the work item.
+- An authorized additional cycle reuses the existing work-item feature branch and preserves its commits. Divergence from advancing `main` is recorded in `git_history_context`, not treated as a blocker or permission to merge, rebase, or rewrite history. Keep the worktree clean and verify that `original_git_hash` remains an ancestor of `HEAD`.
+- Include the cycle base and branch in `H0.planning_constraints` and `H2.relevant_codebase_context`; include the cycle base in `H4.git_history_context` and `H6.git_history_context`. Keep prior findings available to planning and development, but exclude them and Developer reasoning from fresh blinded validation requests.
 - Any Developer or Tester session that changes repository content must end with a commit whose subject starts with the subagent name.
 
 ## Schema Catalog

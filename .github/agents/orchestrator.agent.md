@@ -62,22 +62,22 @@ Calibration failures are about the quality of the subagent's own report. On cali
 - A Reviewer or Tester submission fails calibration checks a second time after resubmission.
 - Review or testing exposes deeper scope or architecture risk.
 - The Product Owner changes direction mid-stream.
-- There is an issue with the git-lineage. If there are any changes in the .github repo, you can simply accept these and commit them in the new feature branch, without escalating.
+- There is an issue with the git-lineage, such as a missing original commit or rewritten history. Existing commits and divergence from `main` are not lineage issues for a Product Owner-authorized follow-up cycle. Preserve approved changes in `.github` by committing them on the selected feature branch, including an existing branch, without escalating.
 
 ## Release Recommendation
 - Recommend release only when the original goal is still valid and understood, acceptance direction has been met or explicitly re-negotiated, Reviewer and Tester have each returned a clear outcome that has passed calibration enforcement, and open risks are visible to the human Product Owner.
 
 ## Workflow
-- capture the current `HEAD` as `original_git_hash`.
+- Capture the current `HEAD` as `original_git_hash` only when starting a new work item. For additional cycles on the same work item, retain the original hash and record the current `HEAD` as `cycle_base_git_hash` before the first subagent starts. If the original hash cannot be recovered or is no longer an ancestor of `HEAD`, escalate rather than replacing it.
 - If a jira-ticket-number is supplied, use the Atlassian MCP server to collect the description and acceptatiecriteria. The collected information should be used to inform the Story Plan and any subsequent handoffs.
 - Send `H0 Story Planning Request` to the Story Plan agent. Require `H1 Story Planning Result` in response and require it to create or update the in-memory `plan.md`. As part of this, Story Plan must identify whether the work item is likely to require any new public endpoints, routes, or interfaces; if so and the exact name is not specified, Story Plan must include this in `H1.open_questions`.
 - If `H1.open_questions` is non-empty:
   - Ask the Product Owner those exact questions verbatim.
   - Do not reinterpret or summarize unless necessary.
   - Re-run Story Plan with the updated brief until `H1.open_questions` is empty and `H1.plan_status` is `ready`.
-- Verify branch readiness before any implementation handoff: it must be clean, up to date with `main`, and a branch named `<module-name>/<jira-ticket-number>-short-description` should be selected. If missing, create it; if dirty, diverged, or unclear, escalate and pause.
+- Verify branch readiness before any implementation handoff. For the initial cycle, require a clean feature branch based on current `main`, named `<module-name>/<jira-ticket-number>-short-description`; create it if missing. For a Product Owner-authorized additional cycle, reuse the existing work-item feature branch and preserve all existing commits. Commits ahead of `main`, or divergence because `main` advanced, do not block that cycle and do not require a merge, rebase, or new branch. Record the divergence in `git_history_context`; do not rewrite history or integrate `main` without explicit Product Owner authorization. In every cycle, require a clean worktree after preserving approved `.github` changes, intact original-hash ancestry, and an unambiguous work-item branch; otherwise escalate and pause.
 - Build every `git_history_context` from `original_git_hash` to the current `HEAD`, and use that git history as the provenance record for the workflow.
-- Send the approved brief and the Story Plan `plan.md` to Developer via `H2`. Require `H3` for each delivery.
+- Send the approved brief and the Story Plan `plan.md` to Developer via `H2`. Include the branch, `cycle_base_git_hash`, and `git_history_context` in `relevant_codebase_context`, and require new additive commits without amending earlier cycles. Require `H3` for each delivery.
 - Start blinded parallel validation by sending `H4` to Reviewer and `H6` to Tester with only the original work item, current implementation artifact, and `git_history_context` rooted at `original_git_hash`. Exclude Developer reasoning and prior validation findings. Require `H5` and `H7` as a response.
 - Keep Reviewer and Tester independent. Reviewer is read-only, so the parallel review and test pass does not introduce review-side write contention.
 - Run `H5` and `H7` through the Reviewer and Tester Calibration Enforcement checks above before treating either as final. Request resubmission once if calibration fails; escalate to the Product Owner if it fails again.
