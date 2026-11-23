@@ -92,8 +92,8 @@ def retrieve_image(url):
         response.raise_for_status()
     except requests.Timeout as error:
         raise ValidationError("Timed out fetching image from URL.") from error
-    except requests.HTTPError as error:
-        raise ValidationError(f"Failed creating image set from URL: {error}")
+    except requests.HTTPError:
+        raise ValidationError("Failed creating image set from URL.")
     image_file = io.BytesIO(response.content)
     try:
         Image.open(image_file).verify()
