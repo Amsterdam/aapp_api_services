@@ -25,9 +25,12 @@ def create_set(image_file, validated_data, stored_files=None):
             for size in ("small", "medium", "large"):
                 variant = ImageVariant()
                 filename = f"{size}-{uuid.uuid4()}.{SCALED_IMAGE_FORMAT}"
+                content = ContentFile(scaled[size].read())
                 variant.image.save(
-                    filename, ContentFile(scaled[size].read()), save=False
+                    filename, content, save=False
                 )
+                content.seek(0)
+                variant.image.file = content
                 stored_files.append((variant.image.storage, variant.image.name))
                 variant.save()
                 variants[f"image_{size}"] = variant
