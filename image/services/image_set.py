@@ -5,7 +5,7 @@ import uuid
 
 import requests
 from django.core.files.base import ContentFile
-from django.db import IntegrityError, connection, transaction
+from django.db import IntegrityError, OperationalError, connection, transaction
 from PIL import Image, UnidentifiedImageError
 from rest_framework.exceptions import ValidationError
 
@@ -64,6 +64,7 @@ def create_from_url(url, validated_data):
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
+                cursor.execute("SET LOCAL lock_timeout = '10s'")
                 cursor.execute(
                     "SELECT pg_advisory_xact_lock(hashtext(%s))", [identifier]
                 )
@@ -77,12 +78,20 @@ def create_from_url(url, validated_data):
         if image_set:
             return image_set
         raise
+    except OperationalError as error:
+        if getattr(getattr(error, "__cause__", None), "pgcode", None) == "55P03":
+            raise ValidationError(
+                "Timed out waiting to create image set from URL."
+            ) from error
+        raise
 
 
 def retrieve_image(url):
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
+    except requests.Timeout as error:
+        raise ValidationError("Timed out fetching image from URL.") from error
     except requests.HTTPError as error:
         raise ValidationError(f"Failed creating image set from URL: {error}")
     image_file = io.BytesIO(response.content)

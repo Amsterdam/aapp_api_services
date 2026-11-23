@@ -3,11 +3,18 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Event
 from unittest.mock import patch
 
+import requests
 import responses
 from django.core.files.storage import default_storage
-from django.db import IntegrityError, close_old_connections, connection
+from django.db import (
+    IntegrityError,
+    OperationalError,
+    close_old_connections,
+    connection,
+)
 from django.test import TransactionTestCase, override_settings
 from django.urls import reverse
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
 from core.authentication import APIKeyAuthentication
@@ -157,6 +164,30 @@ class ImageSetServiceTests(TransactionTestCase):
         self.assertEqual(ImageSet.objects.count(), 0)
         self.assertEqual(ImageVariant.objects.count(), 0)
         self.assertEqual(default_storage.listdir("image")[1], [])
+
+    def test_create_from_url_lock_timeout_returns_validation_error(self):
+        error = OperationalError("canceling statement due to lock timeout")
+        cause = Exception("canceling statement due to lock timeout")
+        cause.pgcode = "55P03"
+        error.__cause__ = cause
+        with patch.object(connection, "cursor") as mock_cursor:
+            execute = mock_cursor.return_value.__enter__.return_value.execute
+            execute.side_effect = [None, error]
+            with self.assertRaises(ValidationError) as caught:
+                image_set.create_from_url(self.remote_url, {})
+        self.assertIn("Timed out waiting to create image set", str(caught.exception))
+        self.assertIn(
+            "SET LOCAL lock_timeout = '10s'", execute.call_args_list[0].args[0]
+        )
+
+    def test_retrieve_image_timeout_uses_ten_second_timeout(self):
+        with patch(
+            "image.services.image_set.requests.get", side_effect=requests.Timeout
+        ) as get:
+            with self.assertRaises(ValidationError) as caught:
+                image_set.retrieve_image(self.remote_url)
+        self.assertIn("Timed out fetching image from URL", str(caught.exception))
+        get.assert_called_once_with(self.remote_url, timeout=10)
 
     def test_cleanup_error_is_logged_without_masking_database_error(self):
         failure = IntegrityError("insert failure")
