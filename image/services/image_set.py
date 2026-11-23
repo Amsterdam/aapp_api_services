@@ -15,8 +15,9 @@ from image.models import ImageSet, ImageVariant
 logger = logging.getLogger(__name__)
 
 
-def create_set(image_file, validated_data):
-    stored_files = []
+def create_set(image_file, validated_data, stored_files=None):
+    owns_file_tracking = stored_files is None
+    stored_files = stored_files if stored_files is not None else []
     try:
         with transaction.atomic():
             scaled = scale_image(image_file)
@@ -32,11 +33,8 @@ def create_set(image_file, validated_data):
                 variants[f"image_{size}"] = variant
             return ImageSet.objects.create(**variants, **validated_data)
     except Exception:
-        for storage, name in stored_files:
-            try:
-                storage.delete(name)
-            except Exception:
-                logger.exception("Failed deleting rolled-back image file %s", name)
+        if owns_file_tracking:
+            _cleanup_stored_files(stored_files)
         raise
 
 
@@ -61,6 +59,7 @@ def create_from_upload(image_file, validated_data):
 
 def create_from_url(url, validated_data):
     identifier = hashlib.sha256(url.encode("utf-8")).hexdigest()
+    stored_files = []
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -71,12 +70,30 @@ def create_from_url(url, validated_data):
             if image_set:
                 return image_set
             image_file = retrieve_image(url)
-            return create_set(image_file, {**validated_data, "identifier": identifier})
+            return create_set(
+                image_file,
+                {**validated_data, "identifier": identifier},
+                stored_files,
+            )
     except IntegrityError:
+        _cleanup_stored_files(stored_files)
         image_set = ImageSet.objects.filter(identifier=identifier).first()
         if image_set:
             return image_set
         raise
+    except Exception:
+        _cleanup_stored_files(stored_files)
+        raise
+
+
+def _cleanup_stored_files(stored_files):
+    for storage, name in stored_files:
+        try:
+            if ImageVariant.objects.filter(image=name).exists():
+                continue
+            storage.delete(name)
+        except Exception:
+            logger.exception("Failed deleting rolled-back image file %s", name)
 
 
 def retrieve_image(url):
