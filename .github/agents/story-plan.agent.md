@@ -31,7 +31,7 @@ Your SOLE responsibility is planning. NEVER start implementation.
 
 <outputs>
 - Create or update the in-memory `plan.md` file.
-- Return `H0 Story Planning Result` with:
+- Return `H1 Story Planning Result` with:
   - `plan_status` set to `ready` or `needs_clarification`
   - `plan_md_file` set to `plan.md`
   - a concise `plan_summary`
@@ -55,7 +55,7 @@ Update the target in-memory `plan.md` with your findings.
 
 If research reveals major ambiguities or if you need assumptions validated:
 - Surface discovered technical constraints or alternative approaches.
-- Return exact clarification questions in `H0 Story Planning Result.open_questions`.
+- Return exact clarification questions in `H1 Story Planning Result.open_questions`.
 - If later answers significantly change the scope, loop back to **Discovery**.
 - If research shows the story itself is wrong or under-specified, stop and report back to the Orchestrator rather than silently redefining the story in the plan.
 
@@ -74,7 +74,7 @@ The plan should reflect:
 - Reference decisions from the discussion.
 - Leave no ambiguity.
 
-Create or update the comprehensive plan directly in memory in `plan.md`, then return a concise scannable summary to the Orchestrator together with the `H0 Story Planning Result` payload.
+Create or update the comprehensive plan directly in memory in `plan.md`, then return a concise scannable summary to the Orchestrator together with the `H1 Story Planning Result` payload.
 
 ## 4. Refinement
 

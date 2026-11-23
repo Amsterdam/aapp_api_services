@@ -1,4 +1,3 @@
-import hashlib
 import logging
 
 from drf_spectacular.utils import extend_schema
@@ -82,16 +81,9 @@ class ImageSetFromUrlCreateView(generics.CreateAPIView):
         },
     )
     def post(self, request, *args, **kwargs):
-        url = request.data.get("url")
-        url_hash = hashlib.sha256(url.encode("utf-8")).hexdigest()
-        image_set = ImageSet.objects.filter(identifier=url_hash).first()
-        if not image_set:
-            request_data = request.data.copy()
-            request_data["identifier"] = url_hash
-            create_serializer = self.get_serializer(data=request_data)
-            create_serializer.is_valid(raise_exception=True)
-            image_set = create_serializer.save()
-
+        create_serializer = self.get_serializer(data=request.data)
+        create_serializer.is_valid(raise_exception=True)
+        image_set = create_serializer.save()
         output_serializer = ImageSetSerializer(image_set)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
