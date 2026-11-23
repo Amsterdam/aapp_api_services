@@ -2,9 +2,19 @@ import logging
 from unittest.mock import patch
 
 from django.conf import settings
+from django.http import HttpResponse
 from django.test import SimpleTestCase, override_settings
+from django.urls import path
+from opentelemetry.instrumentation.django import DjangoInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from core.utils.logging_utils import RequestLogSamplingFilter, setup_opentelemetry
+
+urlpatterns = [
+    path("<path:request_path>", lambda request, request_path: HttpResponse()),
+]
 
 
 class TestLoggingUtils(SimpleTestCase):
@@ -152,17 +162,68 @@ class TestLoggingUtils(SimpleTestCase):
     @override_settings(
         APPLICATIONINSIGHTS_CONNECTION_STRING="test", SERVICE_NAME="test"
     )
+    @patch("core.utils.logging_utils.HTTPXClientInstrumentor")
+    @patch("core.utils.logging_utils.DjangoInstrumentor")
     @patch("core.utils.logging_utils.configure_azure_monitor")
-    def test_configure_azure_monitor_called(self, mock_configure_azure_monitor):
+    def test_configure_azure_monitor_called(
+        self, mock_configure_azure_monitor, mock_django_instrumentor, _mock_httpx
+    ):
         setup_opentelemetry()
         mock_configure_azure_monitor.assert_called_once()
         instrumentation_options = mock_configure_azure_monitor.call_args.kwargs[
             "instrumentation_options"
         ]
-        self.assertEqual(
-            instrumentation_options["django"]["excluded_urls"],
-            r".*/[^/]+/health(?:\?.*)?$",
+        self.assertFalse(instrumentation_options["django"]["enabled"])
+        mock_django_instrumentor.return_value.instrument.assert_called_once_with(
+            excluded_urls=r".*/[^/]+/health(?:\?.*)?$"
         )
+
+    @override_settings(
+        APPLICATIONINSIGHTS_CONNECTION_STRING="test",
+        SERVICE_NAME="test",
+        ROOT_URLCONF=__name__,
+        MIDDLEWARE=[],
+        ALLOWED_HOSTS=["testserver"],
+    )
+    @patch("core.utils.logging_utils.HTTPXClientInstrumentor")
+    @patch("core.utils.logging_utils.configure_azure_monitor")
+    def test_health_checks_do_not_produce_request_spans(
+        self, _mock_configure_azure_monitor, _mock_httpx
+    ):
+        exporter = InMemorySpanExporter()
+        provider = TracerProvider()
+        self.addCleanup(provider.shutdown)
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        self.addCleanup(DjangoInstrumentor().uninstrument)
+
+        with patch(
+            "opentelemetry.instrumentation.django.get_tracer",
+            return_value=provider.get_tracer(__name__),
+        ):
+            setup_opentelemetry()
+
+        for request_path in (
+            "/bridge/health",
+            "/bridge/health?ready=1",
+            "/city-pass/health",
+            "/notification/health",
+        ):
+            with self.subTest(request_path=request_path):
+                exporter.clear()
+                response = self.client.get(request_path)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(exporter.get_finished_spans(), ())
+
+        for request_path in (
+            "/bridge/api/v1/example",
+            "/bridge/health-details",
+            "/bridge/api/v1/example?next=/bridge/health",
+        ):
+            with self.subTest(request_path=request_path):
+                exporter.clear()
+                response = self.client.get(request_path)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(len(exporter.get_finished_spans()), 1)
 
     @override_settings(APPLICATIONINSIGHTS_CONNECTION_STRING=None, SERVICE_NAME="test")
     @patch("core.utils.logging_utils.configure_azure_monitor")
