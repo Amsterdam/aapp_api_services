@@ -3,6 +3,7 @@ import random
 
 from azure.monitor.opentelemetry import configure_azure_monitor
 from django.conf import settings
+from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 
@@ -90,10 +91,8 @@ def setup_opentelemetry():
     logger.debug("Setting up OpenTelemetry...")
     instrumentation_options = {
         "azure_sdk": {"enabled": True},
-        "django": {
-            "enabled": True,
-            "excluded_urls": HEALTH_CHECK_OTEL_EXCLUDED_URLS,
-        },
+        # Azure Monitor does not forward excluded_urls to the instrumentor.
+        "django": {"enabled": False},
         "psycopg2": {"enabled": settings.ENVIRONMENT_SLUG in ("o", "t")},
         "requests": {"enabled": True},
         "urllib": {"enabled": True},
@@ -107,5 +106,6 @@ def setup_opentelemetry():
         instrumentation_options=instrumentation_options,
         resource=Resource.create({SERVICE_NAME: f"api-{settings.SERVICE_NAME}"}),
     )
+    DjangoInstrumentor().instrument(excluded_urls=HEALTH_CHECK_OTEL_EXCLUDED_URLS)
     HTTPXClientInstrumentor().instrument()
     logger.debug("OpenTelemetry has been enabled!")
