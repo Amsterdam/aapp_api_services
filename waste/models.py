@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import ForeignKey
 
+from waste.constants import WASTE_NOTIFICATION_FRACTIONS
+
 
 class WeekDay(models.IntegerChoices):
     SUNDAY = 0, "Zondag"
@@ -30,9 +32,27 @@ class ManualNotification(models.Model):
     class Meta:
         verbose_name = "Notificatie"
         verbose_name_plural = "Notificaties"
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(url__isnull=True) | models.Q(deeplink__isnull=True)
+                ),
+                name="waste_notification_destinations_exclusive",
+            )
+        ]
 
     title = models.CharField("Titel", default="Afvalwijzer", max_length=255)
     message = models.TextField("Bericht")
+    url = models.URLField(null=True, blank=True)
+    deeplink = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        choices=[
+            (f"amsterdam://afvalwijzer/{fraction}", fraction)
+            for fraction in WASTE_NOTIFICATION_FRACTIONS
+        ],
+    )
     created_by = ForeignKey(
         User,
         verbose_name="Aangemaakt door",
@@ -55,6 +75,11 @@ class ManualNotification(models.Model):
         help_text="Selecteer de afvalophaalroutes waar deze notificatie voor geldt. Als er geen routes geselecteerd zijn, wordt de notificatie naar alle gebruikers gestuurd.",
         blank=True,
     )
+
+    def clean(self):
+        super().clean()
+        if bool(self.url) == bool(self.deeplink):
+            raise ValidationError("Kies precies één notificatiebestemming.")
 
     def __str__(self) -> str:
         return f"Notificatie: {self.title[:50]}"

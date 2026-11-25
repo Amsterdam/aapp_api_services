@@ -59,6 +59,7 @@ class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
         notification = ManualNotification.objects.create(
             title="Vanaf morgen kun je de kerstbook aan de straat zetten",
             message="Zorg dat je hem op de goede plek zet",
+            deeplink="amsterdam://afvalwijzer/Kerstbomen",
             created_by=self.user,
             send_at=scheduled_for,
         )

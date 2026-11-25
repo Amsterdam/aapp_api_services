@@ -67,6 +67,8 @@ class ManualNotificationService(AbstractNotificationService):
                 message=notification.message,
                 link_source_id=notification.pk,
                 device_ids=device_ids,
+                url=notification.url,
+                deeplink=notification.deeplink,
             )
             scheduled_notification = self.upsert(
                 notification=notification_data,

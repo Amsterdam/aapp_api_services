@@ -33,6 +33,13 @@ class NotificationAdminForm(forms.ModelForm):
             time_widget.input_type = "time"
             send_at_field.widget.widgets[1] = time_widget
 
+    def clean(self):
+        cleaned_data = super().clean()
+        if "url" in cleaned_data and "deeplink" in cleaned_data:
+            if bool(cleaned_data["url"]) == bool(cleaned_data["deeplink"]):
+                raise forms.ValidationError("Kies precies één notificatiebestemming.")
+        return cleaned_data
+
 
 class NotificationAdmin(AuthenticationGroupModelAdmin):
     ROUTE_UPDATE_SESSION_KEY = "waste_manual_notification_route_update_state"
@@ -46,6 +53,8 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     list_display = [
         "title",
         "message",
+        "has_url",
+        "has_deeplink",
         "send",
         "nr_sessions",
         "created_by",
@@ -292,6 +301,14 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
             return exclude
         else:
             return exclude + ["created_by"]
+
+    @admin.display(boolean=True, description="Heeft url")
+    def has_url(self, obj: ManualNotification) -> bool:
+        return bool(obj.url)
+
+    @admin.display(boolean=True, description="Heeft deeplink")
+    def has_deeplink(self, obj: ManualNotification) -> bool:
+        return bool(obj.deeplink)
 
     @admin.display(boolean=True, description="Verstuurd?")
     def send(self, obj: ManualNotification) -> bool:
