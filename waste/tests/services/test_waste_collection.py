@@ -420,6 +420,57 @@ class WasteCollectionServiceTest(TestCase):
             ],
         )
 
+    def test_seasonal_kerstbomen_waste_type(self):
+        expected = {
+            "label": "Kerstbomen",
+            "code": "Kerstbomen",
+            "curb_rules": "28 december tot en met 17 januari",
+            "alert": "31 december en 1 januari geen kerstbomen plaatsen.",
+            "note": "<b>Waar moet u op letten:</b> Kerstboom schoon, zonder versiering, lampjes en pot.<br><br><b>Eerder of later inleveren:</b> Breng deze naar een recyclepunt.</p><p><b>Kunstkerstbomen:</b> Breng deze naar de kringloop, een recyclepunt of bij het grof afval.</p>",
+            "days_array": [],
+            "how": None,
+            "where": "",
+            "button_text": None,
+            "url": None,
+            "frequency": None,
+            "next_date": None,
+            "info_link": None,
+        }
+
+        for day in ["2025-12-14", "2025-12-27", "2025-12-31", "2026-01-01"]:
+            with freezegun.freeze_time(day):
+                waste_types = self.service.get_waste_types([], {})
+                kerstbomen = next(
+                    item for item in waste_types if item["code"] == "Kerstbomen"
+                )
+                expected_item = expected.copy()
+                if day in ["2025-12-31", "2026-01-01"]:
+                    expected_item["sublabel"] = "Inleveren tot 17 januari"
+                self.assertEqual(kerstbomen, expected_item)
+                self.assertNotIn("service_map_id", kerstbomen)
+
+        for day in ["2025-12-13", "2026-01-18"]:
+            with freezegun.freeze_time(day):
+                self.assertEqual(self.service.get_waste_types([], {}), [])
+
+    def test_seasonal_kerstbomen_alert_and_sublabel_boundaries(self):
+        for day in ["2025-12-28", "2025-12-31", "2026-01-01"]:
+            with freezegun.freeze_time(day):
+                item = self.service.get_waste_types([], {})[0]
+                self.assertEqual(item.get("sublabel"), "Inleveren tot 17 januari")
+                self.assertEqual(
+                    item["alert"], "31 december en 1 januari geen kerstbomen plaatsen."
+                )
+
+        for day in ["2026-01-02", "2026-01-17"]:
+            with freezegun.freeze_time(day):
+                item = self.service.get_waste_types([], {})[0]
+                self.assertIsNone(item["alert"])
+                self.assertEqual(item.get("sublabel"), "Inleveren tot 17 januari")
+
+        with freezegun.freeze_time("2025-12-27"):
+            self.assertNotIn("sublabel", self.service.get_waste_types([], {})[0])
+
     def test_sort_waste_types_by_order(self):
         waste_types = [
             {"code": "GFT", "order": 3},
