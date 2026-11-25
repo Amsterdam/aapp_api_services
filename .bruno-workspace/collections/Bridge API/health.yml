@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: https://20.8.147.29:8000/construction-work/health
+  url: "{{baseUrl}}/bridge/health"
   auth: inherit
 
 settings:

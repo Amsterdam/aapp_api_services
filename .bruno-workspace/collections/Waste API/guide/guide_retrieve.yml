@@ -7,13 +7,13 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/waste/api/v1/guide"
+  url: "{{baseUrl}}/waste/api/v1/guide?bag_nummeraanduiding_id=0363200000286134"
   headers:
     - name: X-Api-Key
       value: "{{apiKey}}"
   params:
     - name: bag_nummeraanduiding_id
-      value: ""
+      value: "0363200000286134"
       type: query
   auth:
     type: apikey
@@ -26,6 +26,7 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true
 
 examples:
   - name: 200 Response
