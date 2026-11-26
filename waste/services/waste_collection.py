@@ -100,7 +100,7 @@ class WasteCollectionService(WasteCollectionAbstractService):
                 if today.month == 12 or today.day == 1
                 else None
             ),
-            "note": "<b>Waar moet u op letten:</b> Kerstboom schoon, zonder versiering, lampjes en pot.<br><br><b>Eerder of later inleveren:</b> Breng deze naar een recyclepunt.</p><p><b>Kunstkerstbomen:</b> Breng deze naar de kringloop, een recyclepunt of bij het grof afval.</p>",
+            "note": "<p><b>Waar moet u op letten:</b> Kerstboom schoon, zonder versiering, lampjes en pot.<br><br><b>Eerder of later inleveren:</b> Breng deze naar een recyclepunt.</p><p><b>Kunstkerstbomen:</b> Breng deze naar de kringloop, een recyclepunt of bij het grof afval.</p>",
             "days_array": [],
             "how": None,
             "where": "",
