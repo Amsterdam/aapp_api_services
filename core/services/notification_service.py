@@ -81,6 +81,7 @@ class AbstractNotificationService:
         notification: NotificationData,
         identifier: str | None = None,
         context: dict | None = None,
+        update_context: bool = False,
         scheduled_for: datetime | None = None,
         expires_at: datetime | None = None,
         expiry_minutes: int = 15,
@@ -147,10 +148,12 @@ class AbstractNotificationService:
             return instance
 
         # Perform UPDATE if object exists
-        # Note: notification type, module slug, context and make_push are not updatable
+        # Note: notification type, module slug and make_push are not updatable
         instance.title = notification.title
         instance.body = notification.message
         instance.scheduled_for = scheduled_for
+        if update_context:
+            instance.context = context
 
         if notification.image_set_id is not None:
             instance.image = notification.image_set_id

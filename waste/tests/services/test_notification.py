@@ -106,15 +106,31 @@ class ManualNotificationServiceTest(ResponsesActivatedAPITestCase):
         notification.title = "Bijgewerkte titel"
         notification.message = "Bijgewerkt bericht"
         notification.send_at = updated_send_at
-        notification.save(update_fields=["title", "message", "send_at"])
+        notification.url = "https://example.com/afval"
+        notification.save(update_fields=["title", "message", "send_at", "url"])
 
         self.notification_service.send(notification=notification)
 
         scheduled_notification = ScheduledNotification.objects.get()
+        self.assertEqual(
+            scheduled_notification.context["url"], "https://example.com/afval"
+        )
+
+        notification.url = None
+        notification.deeplink = "amsterdam://afvalwijzer/GA"
+        notification.save(update_fields=["url", "deeplink"])
+
+        self.notification_service.send(notification=notification)
+        scheduled_notification.refresh_from_db()
+
         self.assertEqual(ScheduledNotification.objects.count(), 1)
         self.assertEqual(scheduled_notification.title, "Bijgewerkte titel")
         self.assertEqual(scheduled_notification.body, "Bijgewerkt bericht")
         self.assertEqual(scheduled_notification.scheduled_for, updated_send_at)
+        self.assertNotIn("url", scheduled_notification.context)
+        self.assertEqual(
+            scheduled_notification.context["deeplink"], "amsterdam://afvalwijzer/GA"
+        )
         self.assertEqual(
             scheduled_notification.identifier,
             self.notification_service._create_identifier(notification.id),

@@ -75,6 +75,7 @@ class ManualNotificationService(AbstractNotificationService):
                 scheduled_for=notification.send_at,
                 expires_at=notification.send_at + timedelta(minutes=30),
                 identifier=self._create_identifier(notification.id),
+                update_context=True,
             )
             notification.nr_sessions = scheduled_notification.devices.count()
         else:
