@@ -13,7 +13,7 @@ http:
       value: "{{apiKey}}"
   params:
     - name: version
-      value: ""
+      value: 1.29.1
       type: path
   auth:
     type: apikey
@@ -26,6 +26,7 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true
 
 examples:
   - name: 200 Response

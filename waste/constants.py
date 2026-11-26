@@ -85,3 +85,14 @@ WEEKDAYS = {
 WASTE_TYPES_CODES = ["Rest", "GA", "Papier", "GFT", "Glas", "Textiel"]
 
 WASTE_COLLECTION_BY_APPOINTMENT_CODE = "THUISAFSPR"
+
+WASTE_NOTIFICATION_FRACTIONS = (
+    "GA",
+    "GFT",
+    "Glas",
+    "Kerstbomen",
+    "Papier",
+    "Plastic",
+    "Rest",
+    "Textiel",
+)

@@ -46,6 +46,8 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
     list_display = [
         "title",
         "message",
+        "has_url",
+        "has_deeplink",
         "send",
         "nr_sessions",
         "created_by",
@@ -292,6 +294,14 @@ class NotificationAdmin(AuthenticationGroupModelAdmin):
             return exclude
         else:
             return exclude + ["created_by"]
+
+    @admin.display(boolean=True, description="Heeft url")
+    def has_url(self, obj: ManualNotification) -> bool:
+        return bool(obj.url)
+
+    @admin.display(boolean=True, description="Heeft deeplink")
+    def has_deeplink(self, obj: ManualNotification) -> bool:
+        return bool(obj.deeplink)
 
     @admin.display(boolean=True, description="Verstuurd?")
     def send(self, obj: ManualNotification) -> bool:
