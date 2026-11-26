@@ -33,13 +33,6 @@ class NotificationAdminForm(forms.ModelForm):
             time_widget.input_type = "time"
             send_at_field.widget.widgets[1] = time_widget
 
-    def clean(self):
-        cleaned_data = super().clean()
-        if "url" in cleaned_data and "deeplink" in cleaned_data:
-            if bool(cleaned_data["url"]) == bool(cleaned_data["deeplink"]):
-                raise forms.ValidationError("Kies precies één notificatiebestemming.")
-        return cleaned_data
-
 
 class NotificationAdmin(AuthenticationGroupModelAdmin):
     ROUTE_UPDATE_SESSION_KEY = "waste_manual_notification_route_update_state"

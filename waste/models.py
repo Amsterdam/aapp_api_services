@@ -5,6 +5,8 @@ from django.db.models import ForeignKey
 
 from waste.constants import WASTE_NOTIFICATION_FRACTIONS
 
+DESTINATION_VALIDATION_ERROR = "Vul óf een externe URL óf een deeplink in, niet beide."
+
 
 class WeekDay(models.IntegerChoices):
     SUNDAY = 0, "Zondag"
@@ -38,6 +40,7 @@ class ManualNotification(models.Model):
                     models.Q(url__isnull=True) | models.Q(deeplink__isnull=True)
                 ),
                 name="waste_notification_destinations_exclusive",
+                violation_error_message=DESTINATION_VALIDATION_ERROR,
             )
         ]
 
@@ -79,7 +82,7 @@ class ManualNotification(models.Model):
     def clean(self):
         super().clean()
         if bool(self.url) == bool(self.deeplink):
-            raise ValidationError("Kies precies één notificatiebestemming.")
+            raise ValidationError(DESTINATION_VALIDATION_ERROR)
 
     def __str__(self) -> str:
         return f"Notificatie: {self.title[:50]}"

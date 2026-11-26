@@ -51,6 +51,7 @@ class TestNotificationAdmin(TestCase):
             "created_by": self.user.pk,
         }
         deeplink = "amsterdam://afvalwijzer/GA"
+        destination_error = "Vul óf een externe URL óf een deeplink in, niet beide."
 
         for data in (
             {**base_data, "url": "", "deeplink": ""},
@@ -63,7 +64,7 @@ class TestNotificationAdmin(TestCase):
             with self.subTest(data=data):
                 form = NotificationAdminForm(data=data)
                 self.assertFalse(form.is_valid())
-                self.assertIn("__all__", form.errors)
+                self.assertEqual(list(form.non_field_errors()), [destination_error])
 
     def test_destination_form_accepts_fixed_fraction_deeplink(self):
         form = NotificationAdminForm(
