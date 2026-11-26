@@ -79,11 +79,6 @@ class ManualNotification(models.Model):
         blank=True,
     )
 
-    def clean(self):
-        super().clean()
-        if bool(self.url) == bool(self.deeplink):
-            raise ValidationError(DESTINATION_VALIDATION_ERROR)
-
     def __str__(self) -> str:
         return f"Notificatie: {self.title[:50]}"
 

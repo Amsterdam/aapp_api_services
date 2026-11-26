@@ -44,7 +44,7 @@ class TestNotificationAdmin(TestCase):
         self.assertEqual(widget.widgets[1].input_type, "time")
         self.assertEqual(widget.widgets[1].format, "%H:%M")
 
-    def test_destination_form_requires_exactly_one_destination(self):
+    def test_destination_form_allows_no_destination_but_rejects_both(self):
         base_data = {
             "title": "Test",
             "message": "Keep this message",
@@ -53,18 +53,18 @@ class TestNotificationAdmin(TestCase):
         deeplink = "amsterdam://afvalwijzer/GA"
         destination_error = "Vul óf een externe URL óf een deeplink in, niet beide."
 
-        for data in (
-            {**base_data, "url": "", "deeplink": ""},
-            {
+        form = NotificationAdminForm(data={**base_data, "url": "", "deeplink": ""})
+        self.assertTrue(form.is_valid(), form.errors)
+
+        form = NotificationAdminForm(
+            data={
                 **base_data,
                 "url": "https://example.com/path",
                 "deeplink": deeplink,
-            },
-        ):
-            with self.subTest(data=data):
-                form = NotificationAdminForm(data=data)
-                self.assertFalse(form.is_valid())
-                self.assertEqual(list(form.non_field_errors()), [destination_error])
+            }
+        )
+        self.assertFalse(form.is_valid())
+        self.assertEqual(list(form.non_field_errors()), [destination_error])
 
     def test_destination_form_accepts_fixed_fraction_deeplink(self):
         form = NotificationAdminForm(
