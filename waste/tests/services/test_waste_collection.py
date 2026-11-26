@@ -438,7 +438,7 @@ class WasteCollectionServiceTest(TestCase):
             "code": "Kerstbomen",
             "curb_rules": "28 december tot en met 17 januari",
             "alert": "31 december en 1 januari geen kerstbomen plaatsen.",
-            "note": "<b>Waar moet u op letten:</b> Kerstboom schoon, zonder versiering, lampjes en pot.<br><br><b>Eerder of later inleveren:</b> Breng deze naar een recyclepunt.</p><p><b>Kunstkerstbomen:</b> Breng deze naar de kringloop, een recyclepunt of bij het grof afval.</p>",
+            "note": "<p><b>Waar moet u op letten:</b> Kerstboom schoon, zonder versiering, lampjes en pot.<br><br><b>Eerder of later inleveren:</b> Breng deze naar een recyclepunt.</p><p><b>Kunstkerstbomen:</b> Breng deze naar de kringloop, een recyclepunt of bij het grof afval.</p>",
             "days_array": [],
             "how": None,
             "where": "",
