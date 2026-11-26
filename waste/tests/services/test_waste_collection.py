@@ -420,6 +420,18 @@ class WasteCollectionServiceTest(TestCase):
             ],
         )
 
+    def test_seasonal_kerstbomen_is_first_and_source_order_is_preserved(self):
+        with freezegun.freeze_time("2025-12-14"):
+            validated_data = self.get_validated_mock_data(frequency_weekly.MOCK_DATA)
+            calendar = self.service.create_calendar(validated_data)
+            waste_types = self.service.get_waste_types(
+                validated_data, self.service.get_next_dates(calendar)
+            )
+
+        self.assertEqual(
+            [item["code"] for item in waste_types], ["Kerstbomen", "Rest", "GA"]
+        )
+
     def test_seasonal_kerstbomen_waste_type(self):
         expected = {
             "label": "Kerstbomen",

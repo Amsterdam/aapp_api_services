@@ -79,7 +79,7 @@ class WasteCollectionService(WasteCollectionAbstractService):
         sorted_waste_types = self.sort_waste_types_by_order(waste_types)
         today = date.today()
         if self._is_kerstbomen_season(today):
-            sorted_waste_types.append(self._get_kerstbomen_waste_type(today))
+            sorted_waste_types.insert(0, self._get_kerstbomen_waste_type(today))
 
         return sorted_waste_types
 

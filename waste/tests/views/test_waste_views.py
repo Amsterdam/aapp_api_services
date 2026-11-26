@@ -48,6 +48,22 @@ class TestWasteCalendarView(ResponsesActivatedAPITestCase):
             ],
         )
 
+    @freeze_time("2025-12-14")
+    def test_seasonal_kerstbomen_is_first_in_guide_with_source_data(self):
+        responses.get(settings.WASTE_GUIDE_URL, json=frequency_none.MOCK_DATA)
+
+        response = self.client.get(
+            reverse("waste-guide-calendar"),
+            data={"bag_nummeraanduiding_id": "12345"},
+            headers=self.api_headers,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [item["code"] for item in response.json()["waste_types"]],
+            ["Kerstbomen", "GFT", "Glas"],
+        )
+
     @freeze_time("2024-04-01")
     @override_settings(CALENDAR_LENGTH=14)
     def test_calendar_simple_success(self):
