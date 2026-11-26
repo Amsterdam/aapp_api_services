@@ -7,13 +7,13 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/address/api/v1/address"
+  url: "{{baseUrl}}/address/api/v1/address?query=tilanusstraat 26-2"
   headers:
     - name: X-Api-Key
       value: "{{apiKey}}"
   params:
     - name: query
-      value: ""
+      value: tilanusstraat 26-2
       type: query
     - name: street_name
       value: ""
@@ -30,6 +30,7 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true
 
 examples:
   - name: 200 Response

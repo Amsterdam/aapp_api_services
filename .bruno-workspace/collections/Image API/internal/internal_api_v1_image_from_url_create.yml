@@ -15,9 +15,7 @@ http:
     type: json
     data: |-
       {
-        "id": 0,
-        "url": "",
-        "description": ""
+        "url": "https://images.pexels.com/photos/20804701/pexels-photo-20804701.jpeg"
       }
   auth:
     type: apikey
@@ -30,6 +28,7 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true
 
 examples:
   - name: 200 Response

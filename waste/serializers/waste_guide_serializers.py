@@ -101,18 +101,19 @@ class WasteDataSerializer(serializers.Serializer):
 
 class WasteTypeSerializer(serializers.Serializer):
     label = serializers.CharField()
-    code = serializers.ChoiceField(choices=WASTE_TYPES_CODES)
+    code = serializers.ChoiceField(choices=[*WASTE_TYPES_CODES, "Kerstbomen"])
     curb_rules = serializers.CharField(allow_null=True, default="")
     alert = serializers.CharField(allow_null=True, default="")
     note = serializers.CharField(allow_null=True, default="")
     days_array = serializers.ListField(child=serializers.CharField(), allow_null=True)
     how = serializers.CharField(allow_null=True, default="")
-    where = serializers.CharField(allow_null=True, default="")
+    where = serializers.CharField(allow_null=True, allow_blank=True, default="")
     button_text = serializers.CharField(allow_null=True, default="")
     url = serializers.CharField(allow_null=True, default="")
     frequency = serializers.CharField(allow_null=True, default="")
     next_date = serializers.DateField(allow_null=True)
     info_link = serializers.URLField(allow_null=True)
+    sublabel = serializers.CharField(required=False)
 
 
 class WasteCalendarSerializer(serializers.Serializer):

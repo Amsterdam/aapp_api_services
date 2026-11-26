@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import date
 
 from waste import constants
 from waste.constants import WASTE_TYPES_CODES
@@ -76,8 +77,42 @@ class WasteCollectionService(WasteCollectionAbstractService):
                 )
 
         sorted_waste_types = self.sort_waste_types_by_order(waste_types)
+        today = date.today()
+        if self._is_kerstbomen_season(today):
+            sorted_waste_types.insert(0, self._get_kerstbomen_waste_type(today))
 
         return sorted_waste_types
+
+    @staticmethod
+    def _is_kerstbomen_season(today: date) -> bool:
+        return (today.month == 12 and today.day >= 14) or (
+            today.month == 1 and today.day <= 17
+        )
+
+    @staticmethod
+    def _get_kerstbomen_waste_type(today: date) -> dict:
+        item = {
+            "label": "Kerstbomen",
+            "code": "Kerstbomen",
+            "curb_rules": "28 december tot en met 17 januari",
+            "alert": (
+                "31 december en 1 januari geen kerstbomen plaatsen."
+                if today.month == 12 or today.day == 1
+                else None
+            ),
+            "note": "<p><b>Waar moet u op letten:</b> Kerstboom schoon, zonder versiering, lampjes en pot.<br><br><b>Eerder of later inleveren:</b> Breng deze naar een recyclepunt.</p><p><b>Kunstkerstbomen:</b> Breng deze naar de kringloop, een recyclepunt of bij het grof afval.</p>",
+            "days_array": [],
+            "how": None,
+            "where": "",
+            "button_text": None,
+            "url": None,
+            "frequency": None,
+            "next_date": None,
+            "info_link": None,
+        }
+        if today.month == 1 or today.day >= 28:
+            item["sublabel"] = "Inleveren tot 17 januari"
+        return item
 
     def sort_waste_types_by_order(self, waste_types: list[dict]) -> list[dict]:
         return sorted(
